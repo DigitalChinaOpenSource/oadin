@@ -1,0 +1,15 @@
+version: "0.1"
+name: opac
+services:
+    models:
+        endpoints: ["GET /models"]
+    chat:
+        endpoints: ["POST /chat"]
+    generate:
+        endpoints: ["POST /generate"]
+    embed:
+        endpoints: ["POST /embed"]
+    text_to_speech:
+        endpoints: ["POST /text-to-speech", "GET /text-to-speech"]
+    health:
+        endpoints: ["GET /health"]

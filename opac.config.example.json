@@ -1,0 +1,101 @@
+{
+  "version": "v0.1",
+  "service_providers": {
+    "remote_ollama_chat": {
+      "desc": "Remote ollama chat/completion",
+      "method": "POST",
+      "url": "http://<path:port>/api/chat",
+      "api_flavor": "ollama",
+      "properties": {
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["llama3.1"]
+      }
+    },
+    "local_ollama_chat": {
+      "desc": "Local ollamma chat/completion",
+      "method": "POST",
+      "url": "http://<path:port>/api/chat",
+      "api_flavor": "ollama",
+      "properties": {
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["llama3.1"]
+      }
+    },
+    "local_openai_chat": {
+      "desc": "Local openai chat/completion",
+      "method": "POST",
+      "url": "http://<path:port>/v1/chat/completions",
+      "api_flavor": "openai",
+      "properties": {
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF"]
+      }
+    },
+    "local_ollama_generate": {
+      "desc": "Local ollamma generate",
+      "method": "POST",
+      "url": "http://<path:port>/api/generate",
+      "api_flavor": "ollama",
+      "properties": {
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["llama3"]
+      }
+    },
+    "local_ollama_embed": {
+      "desc": "Local ollamma embed",
+      "method": "POST",
+      "url": "http://<path:port>/api/embed",
+      "api_flavor": "ollama",
+      "properties": {
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["all-minilm"]
+      }
+    },
+
+    "openai_chat_and_function_call": {
+      "desc": "OpenAI chat and function call",
+      "method": "POST",
+      "url": "http://<path:port>/path",
+      "api_flavor": "openai"
+    },
+    "remote_uvicorn_tts": {
+      "desc": "Remote audio/speech",
+      "method": "POST",
+      "url": "http://<path:port>/tts",
+      "api_flavor": "opac",
+      "properties": {}
+    }
+  },
+  "services": {
+    "chat": {
+      "service_providers": {
+        "local": "local_openai_chat",
+        "remote": "remote_ollama_chat"
+      },
+      "hybrid_policy": "default"
+    },
+    "generate": {
+      "service_providers": {
+        "local": "local_ollama_generate"
+      },
+      "hybrid_policy": "default"
+    },
+    "embed": {
+      "service_providers": {
+        "local": "local_ollama_embed"
+      },
+      "hybrid_policy": "default"
+    },
+    "function_call": {
+      "service_providers": {
+        "remote": "openai_chat_and_function_call"
+      },
+      "hybrid_policy": "always_remote"
+    },
+    "text_to_speech": {
+      "service_providers": {
+        "remote": "remote_uvicorn_tts"
+      }
+    }
+  }
+}
