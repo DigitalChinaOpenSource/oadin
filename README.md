@@ -7,6 +7,8 @@
 当前版本支持 chat 和 embed 服务，下层支持 ollama。更多服务如文生图，音频相关，以及其他 AI 引擎，敬请
 期待正在开发的后续版本。
 
+详细中文文档请参见[此处](https://intel.github.io/aog/index.html)
+
 ## AOG 的功能
 
 AOG（AIPC Open Gateway）的目标是解耦 AI PC 上的 AI 应用与它所依赖的 AI 服务。它旨在为开发者提供一个
@@ -202,7 +204,7 @@ aog delete model <model_name>  --provider <provider_name>
 ## 调用 AOG API
 
 AOG API 是一个 Restful API。您可以通过与调用云 AI 服务（如 OpenAI）类似的方式调用该 API。详细的 API
-规范请参见 AOG API 规范.
+规范请参见 [AOG API 规范](https://intel.github.io/aog/index.html).
 
 值得注意的是，当前 AOG 预览提供了基本的 chat 等服务，下一版本将会提供文生图以及语音相关的更多服务。
 
