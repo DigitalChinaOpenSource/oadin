@@ -1,0 +1,88 @@
+{
+  "version": "v0.1",
+  "service_providers": {
+    "local_ollama_chat": {
+      "desc": "Local ollamma chat/completion",
+      "method": "POST",
+      "url": "http://127.0.0.1:11434/api/chat",
+      "api_flavor": "ollama",
+      "properties": {
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["DeepSeek-R1:latest"]
+      }
+    },
+    "local_ollama_models": {
+      "desc": "List local ollama models",
+      "method": "GET",
+      "url": "http://127.0.0.1:11434/api/tags",
+      "api_flavor": "ollama",
+      "properties": {}
+    },
+    "local_ollama_generate": {
+      "desc": "Local ollamma generate",
+      "method": "POST",
+      "url": "http://127.0.0.1:11434/api/generate",
+      "api_flavor": "ollama",
+      "properties": {
+        "xpu": ["cpu"],
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["DeepSeek-R1:latest"]
+      }
+    },
+    "local_ollama_embed": {
+      "desc": "Local ollamma embed",
+      "method": "POST",
+      "url": "qwen2.5:11434/api/embed",
+      "api_flavor": "ollama",
+      "properties": {
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["all-minilm"]
+      }
+    },
+    "remote_openai_chat": {
+      "desc": "Remote openai chat/completion",
+      "method": "POST",
+      "url": "http://10.239.44.34:1234/v1/chat/completions",
+      "api_flavor": "openai",
+      "properties": {
+        "supported_response_mode": ["sync", "stream"],
+        "models": ["lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF"]
+      }
+    },
+    "remote_openai_models": {
+      "desc": "Remote openai models",
+      "method": "GET",
+      "url": "http://10.239.44.34:1234/v1/models",
+      "api_flavor": "openai",
+      "properties": {}
+    }
+  },
+  "services": {
+    "models": {
+      "service_providers": {
+        "local": "local_ollama_models",
+        "remote": "local_ollama_models"
+      },
+      "hybrid_policy": "default"
+    },
+    "chat": {
+      "service_providers": {
+        "local": "local_ollama_chat",
+        "remote": "local_ollama_chat"
+      },
+      "hybrid_policy": "default"
+    },
+    "generate": {
+      "service_providers": {
+        "local": "local_ollama_generate"
+      },
+      "hybrid_policy": "default"
+    },
+    "embed": {
+      "service_providers": {
+        "local": "local_ollama_embed"
+      },
+      "hybrid_policy": "default"
+    }
+  }
+}
