@@ -24,6 +24,7 @@ import (
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/datastore/sqlite"
 	"intel.com/aog/internal/event"
+	"intel.com/aog/internal/provider"
 	"intel.com/aog/internal/schedule"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
@@ -117,16 +118,15 @@ func NewEditServiceCommand() *cobra.Command {
 			remoteProvider, err := cmd.Flags().GetString("remote_provider")
 			localProvider, err := cmd.Flags().GetString("local_provider")
 			if err != nil {
-				fmt.Println("获取 hybrid_policy 参数时出错:", err)
+				fmt.Println("An error occurred while obtaining the hybrid_policy parameter:", err)
 				os.Exit(1)
 			}
 
-			if !isValidHybridPolicy(hybridPolicy) {
-				fmt.Printf("\r无效的 hybrid_policy 值: %s，允许的值为: %v\n", hybridPolicy, allowedHybridPolicies)
+			if !utils.Contains(types.SupportHybridPolicy, hybridPolicy) {
+				fmt.Printf("\rInvalid hybrid_policy value: %s，Allowed values are.: %v\n", hybridPolicy, types.SupportHybridPolicy)
 				os.Exit(1)
 			}
 
-			// todo 调用API 修改服务信息
 			req := dto.UpdateAIGCServiceRequest{
 				ServiceName:  serviceName,
 				HybridPolicy: hybridPolicy,
@@ -167,14 +167,6 @@ func Run(ctx context.Context) error {
 		slog.Error("[Init] Failed to load datastore", "error", err)
 		return err
 	}
-
-	//slog.Info(fmt.Sprintf(
-	//	"[Init]\nRoot Dir: %s\nWorkDir: %s\nDBPath: %s\nLogPath: %s",
-	//	config.GlobalAOGEnvironment.RootDir,
-	//	config.GlobalAOGEnvironment.WorkDir,
-	//	config.GlobalAOGEnvironment.Datastore,
-	//	config.GlobalAOGEnvironment.LogDir,
-	//))
 
 	err = ds.Init()
 	if err != nil {
@@ -340,7 +332,7 @@ func stopAogServer(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// 遍历所有pid文件
+	// Traverse all pid files.
 	for _, pidFile := range files {
 		pidData, err := os.ReadFile(pidFile)
 		if err != nil {
@@ -371,26 +363,13 @@ func stopAogServer(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Successfully stopped process with PID %d\n", pid)
 		}
 
-		// 删除pid文件
+		// remove pid file
 		if err := os.Remove(pidFile); err != nil {
 			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
 		}
 	}
 
 	return nil
-}
-
-// 定义允许的 hybrid_policy 值
-var allowedHybridPolicies = []string{"default", "always_remote", "always_local"}
-
-// 检查输入的 hybrid_policy 是否合法
-func isValidHybridPolicy(policy string) bool {
-	for _, allowed := range allowedHybridPolicies {
-		if allowed == policy {
-			return true
-		}
-	}
-	return false
 }
 
 // NewInstallServiceCommand will install a service
@@ -775,10 +754,6 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 		resp := bcode.Bcode{}
 
 		if remote {
-			// todo 其实获取到Flavor后，authType method url都已经是固定了，需考虑这部分是否需要提供给用户设定
-			// 代码内部需要维护一套关于Flavor的相关信息（authType method url），建议在template/flavor.yaml中设定
-			// remoteURL, _ := cmd.Flags().GetString("remote_url")
-			// authType, _ := cmd.Flags().GetString("auth_type")
 			method, err := cmd.Flags().GetString("method")
 			if err != nil {
 				fmt.Println("Error: failed to get method")
@@ -857,7 +832,6 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 					fmt.Printf("\r你输入的 API Key 是: %s\n", apiKey)
 				}
 
-				// todo 暂时默认远程参数 后期需动态获取
 				req := &dto.CreateAIGCServiceRequest{
 					ServiceName:   "chat",
 					ServiceSource: "remote",
@@ -903,7 +877,60 @@ func CheckAOGServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println("AOG server started successfully.")
+	// Check if the model engine service is started
+	engineProvider := provider.GetModelEngine("ollama")
+	engineConfig := engineProvider.GetConfig()
+
+	err := engineProvider.HealthCheck()
+	if err != nil {
+		cmd := exec.Command(engineConfig.ExecFile, "-h")
+		err = cmd.Run()
+		if err != nil {
+			slog.Info("Model engine not exist...")
+			if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
+				slog.Info("model engine not exist, start download...")
+				err := engineProvider.InstallEngine()
+				if err != nil {
+					slog.Error("Install model engine failed :", err.Error())
+					return
+				}
+				slog.Info("Model engine download completed...")
+			}
+		}
+
+		slog.Info("Setting env...")
+		err := engineProvider.InitEnv()
+		if err != nil {
+			slog.Error("Setting env error: ", err.Error())
+			return
+		}
+
+		slog.Info("Start model engine...")
+		err = engineProvider.StartEngine()
+		if err != nil {
+			slog.Error("Start engine error: ", err.Error())
+			return
+		}
+
+		slog.Info("Waiting ollama engine start 60s...")
+		for i := 60; i > 0; i-- {
+			time.Sleep(time.Second * 1)
+			err = engineProvider.HealthCheck()
+			if err == nil {
+				slog.Info("Start model engine completed...")
+				break
+			}
+			slog.Info("Waiting ollama engine start ...", strconv.Itoa(i), "s")
+		}
+	}
+
+	err = engineProvider.HealthCheck()
+	if err != nil {
+		slog.Error("Ollama engine failed start, Please try again later...")
+		return
+	}
+
+	fmt.Println("AOG server start successfully.")
 }
 
 func isServerRunning() bool {
@@ -918,7 +945,6 @@ func isServerRunning() bool {
 }
 
 func startAogServer() error {
-	// exePath := filepath.Join(config.GlobalAOGEnvironment.WorkDir, "aog.exe")
 	logPath := config.GlobalAOGEnvironment.ConsoleLog
 
 	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
@@ -935,7 +961,7 @@ func startAogServer() error {
 		return fmt.Errorf("failed to start AOG server: %v", err)
 	}
 
-	// 保存 PID 到文件
+	// Save PID to file.
 	pid := cmd.Process.Pid
 	pidFile := filepath.Join(config.GlobalAOGEnvironment.RootDir, "aog.pid")
 	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
@@ -946,7 +972,7 @@ func startAogServer() error {
 	return nil
 }
 
-// 获取用户输入的 API Key
+// Get the API Key entered by the user.
 func getAPIKey() string {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("请输入已申请的 API Key: ")
@@ -958,7 +984,7 @@ func getAPIKey() string {
 	return strings.TrimSpace(input)
 }
 
-// 询问用户是否启用远程服务
+// Ask the user whether to enable remote services.
 func askEnableRemoteService() bool {
 	reader := bufio.NewReader(os.Stdin)
 	for {

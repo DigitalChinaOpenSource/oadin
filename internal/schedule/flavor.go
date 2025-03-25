@@ -88,7 +88,7 @@ type FlavorServiceDef struct {
 	RequestExtraUrl       string              `yaml:"extra_url"`
 	AuthType              string              `yaml:"auth_type"`
 	RequestSegments       int                 `yaml:"request_segments"`
-	ExtraInfo             string              `yaml:"extra_info"`
+	ExtraHeaders          string              `yaml:"extra_headers"`
 	ModelSelector         ModelSelector       `yaml:"model_selector"`
 	RequestToAOG          FlavorConversionDef `yaml:"request_to_aog"`
 	RequestFromAOG        FlavorConversionDef `yaml:"request_from_aog"`
@@ -430,12 +430,12 @@ func ConvertBetweenFlavors(from, to APIFlavor, service string, conv string, cont
 }
 
 type ServiceDefaultInfo struct {
-	DefaultModel    string
-	RequestUrl      string
-	RequestExtraUrl string
-	AuthType        string
-	RequestSegments int
-	ExtraInfo       string
+	DefaultModel    string `json:"default_model"`
+	RequestUrl      string `json:"url"`
+	RequestExtraUrl string `json:"request_extra_url"`
+	AuthType        string `json:"auth_type"`
+	RequestSegments int    `json:"request_segments"`
+	ExtraHeaders    string `json:"extra_headers"`
 }
 
 var FlavorServiceDefaultInfoMap = make(map[string]map[string]ServiceDefaultInfo)
@@ -453,7 +453,7 @@ func InitProviderDefaultModelTemplate(flavor APIFlavor) {
 			RequestExtraUrl: serviceDef.RequestExtraUrl,
 			RequestSegments: serviceDef.RequestSegments,
 			AuthType:        serviceDef.AuthType,
-			ExtraInfo:       serviceDef.ExtraInfo,
+			ExtraHeaders:    serviceDef.ExtraHeaders,
 		}
 	}
 	FlavorServiceDefaultInfoMap[flavor.Name()] = ServiceDefaultInfoMap
@@ -568,9 +568,8 @@ type APIKEYAuthenticator struct {
 type TencentSignAuthenticator struct {
 	AuthInfo     string                `json:"auth_info"`
 	Req          http.Request          `json:"request"`
-	ServiceInfo  ServiceDefaultInfo    `json:"service_default_info"`
 	ProviderInfo types.ServiceProvider `json:"provider_info"`
-	Content      types.HTTPContent     `json:"content"`
+	ReqBody      string                `json:"req_body"`
 }
 
 func (a *APIKEYAuthenticator) Authenticate() error {
@@ -589,13 +588,13 @@ func (s *TencentSignAuthenticator) Authenticate() error {
 		SecretId:      authInfoData.SecretId,
 		SecretKey:     authInfoData.SecretKey,
 		RequestUrl:    s.ProviderInfo.URL,
-		RequestBody:   string(s.Content.Body),
+		RequestBody:   s.ReqBody,
 		RequestHeader: s.Req.Header,
 		RequestMethod: s.Req.Method,
 	}
-	if s.ServiceInfo.ExtraInfo != "" {
+	if s.ProviderInfo.ExtraHeaders != "" {
 		var serviceExtraInfo SignCommonParams
-		err := json.Unmarshal([]byte(s.ServiceInfo.ExtraInfo), &serviceExtraInfo)
+		err := json.Unmarshal([]byte(s.ProviderInfo.ExtraHeaders), &serviceExtraInfo)
 		if err != nil {
 			return err
 		}
@@ -612,8 +611,7 @@ func (s *TencentSignAuthenticator) Authenticate() error {
 type AuthenticatorParams struct {
 	Request      *http.Request
 	ProviderInfo *types.ServiceProvider
-	ServiceInfo  ServiceDefaultInfo
-	Content      types.HTTPContent
+	RequestBody  string
 }
 
 func ChooseProviderAuthenticator(p *AuthenticatorParams) Authenticator {
@@ -624,9 +622,8 @@ func ChooseProviderAuthenticator(p *AuthenticatorParams) Authenticator {
 			authenticator = &TencentSignAuthenticator{
 				Req:          *p.Request,
 				AuthInfo:     p.ProviderInfo.AuthKey,
-				ServiceInfo:  p.ServiceInfo,
 				ProviderInfo: *p.ProviderInfo,
-				Content:      p.Content,
+				ReqBody:      p.RequestBody,
 			}
 		}
 	} else if p.ProviderInfo.AuthType == types.AuthTypeApiKey {

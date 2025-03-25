@@ -10,9 +10,12 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/jaypipes/ghw"
 )
 
 var textContentTypes = []string{"text/", "application/json", "application/xml", "application/javascript", "application/x-ndjson"}
@@ -102,7 +105,6 @@ func DownloadFile(downloadURL string, saveDir string) (string, error) {
 
 	savePath := filepath.Join(saveDir, fileName)
 
-	// 检查当前文件是否已存在，存在则跳过下载
 	if _, err := os.Stat(savePath); err == nil {
 		fmt.Printf("%s already exists, skip download.\n", savePath)
 		return savePath, nil
@@ -156,4 +158,46 @@ func HmacSha256(s, key string) string {
 	hashed := hmac.New(sha256.New, []byte(key))
 	hashed.Write([]byte(s))
 	return string(hashed.Sum(nil))
+}
+
+func GetDownloadDir() (string, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	switch runtime.GOOS {
+	case "windows":
+		downloadsPath := os.Getenv("USERPROFILE")
+		if downloadsPath == "" {
+			return "", fmt.Errorf("unable to get user profile directory on Windows")
+		}
+		return filepath.Join(downloadsPath, "Downloads"), nil
+	case "darwin":
+		return filepath.Join(currentUser.HomeDir, "Downloads"), nil
+	case "linux":
+		xdgDownload := os.Getenv("XDG_DOWNLOAD_DIR")
+		if xdgDownload != "" {
+			return xdgDownload, nil
+		}
+		return filepath.Join(currentUser.HomeDir, "Downloads"), nil
+	default:
+		return "", fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+}
+
+func IpexOllamaSupportGPUStatus() bool {
+	gpu, err := ghw.GPU()
+	if err != nil {
+		return false
+	}
+
+	for _, card := range gpu.GraphicsCards {
+		if strings.Contains(card.DeviceInfo.Product.Name, "Intel") {
+			if strings.Contains(card.DeviceInfo.Product.Name, "Arc") || strings.Contains(card.DeviceInfo.Product.Name, "Core") {
+				return true
+			}
+		}
+	}
+	return false
 }

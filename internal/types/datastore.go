@@ -12,15 +12,18 @@ const (
 	FlavorDeepSeek = "deepseek"
 	FlavorOpenAI   = "openai"
 	FlavorOllama   = "ollama"
+	FlavorBaidu    = "baidu"
+	FlavorAliYun   = "aliyun"
 
 	AuthTypeNone   = "none"
 	AuthTypeApiKey = "apikey"
 	AuthTypeToken  = "token"
 
-	ServiceChat     = "chat"
-	ServiceModels   = "models"
-	ServiceGenerate = "generate"
-	ServiceEmbed    = "embed"
+	ServiceChat        = "chat"
+	ServiceModels      = "models"
+	ServiceGenerate    = "generate"
+	ServiceEmbed       = "embed"
+	ServiceTextToImage = "text_to_image"
 
 	HybridPolicyDefault = "default"
 	HybridPolicyLocal   = "always_local"
@@ -34,7 +37,7 @@ var (
 	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama}
 )
 
-// Service 服务表结构
+// Service  table structure
 type Service struct {
 	Name           string    `gorm:"primaryKey;column:name" json:"name"`
 	HybridPolicy   string    `gorm:"column:hybrid_policy;not null;default:default" json:"hybrid_policy"`
@@ -70,7 +73,7 @@ func (t *Service) Index() map[string]interface{} {
 	return index
 }
 
-// ServiceProvider 服务提供者表结构
+// ServiceProvider Service provider table structure
 type ServiceProvider struct {
 	ID            int       `gorm:"primaryKey;autoIncrement" json:"id"`
 	ProviderName  string    `gorm:"column:provider_name" json:"provider_name"`
@@ -126,7 +129,7 @@ func (t *ServiceProvider) Index() map[string]interface{} {
 	return index
 }
 
-// Model 模型表结构
+// Model  table structure
 type Model struct {
 	ID           int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`
 	ModelName    string    `gorm:"column:model_name;not null" json:"model_name"`

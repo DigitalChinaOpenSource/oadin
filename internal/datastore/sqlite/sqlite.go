@@ -10,7 +10,6 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/types"
 )
@@ -52,7 +51,6 @@ func (ds *SQLite) Init() error {
 		return fmt.Errorf("failed to initialize database tables: %v", err)
 	}
 
-	// 插入初始化数据
 	if err := ds.insertInitialData(); err != nil {
 		return fmt.Errorf("failed to insert initial data: %v", err)
 	}
@@ -62,7 +60,6 @@ func (ds *SQLite) Init() error {
 
 // insertInitialData 插入初始化数据
 func (ds *SQLite) insertInitialData() error {
-	// 检查是否已经存在初始化数据
 	var count int64
 	if err := ds.db.Model(&types.Service{}).Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to count initial data: %v", err)
@@ -85,6 +82,10 @@ func (ds *SQLite) insertInitialData() error {
 		}, &types.Service{
 			Name:         "generate",
 			HybridPolicy: "default",
+			Status:       1,
+		}, &types.Service{
+			Name:         "text_to_image",
+			HybridPolicy: "always_remote",
 			Status:       1,
 		})
 

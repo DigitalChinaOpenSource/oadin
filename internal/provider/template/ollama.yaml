@@ -2,8 +2,14 @@ version: "0.1"
 name: ollama # the name should be aligned with file name
 services:
     models:
-        endpoints: ["GET /api/tags"]
-        install_raw_routes: true
+        url: "http://127.0.0.1:16688/api/tags"
+        endpoints: ["GET /api/tags"] # request to this will use this flavor
+        extra_url: ""
+        auth_type: "none"
+        default_model: ""
+        request_segments: 1 # request
+        install_raw_routes: true # also install routes without aog prefix in url path
+        extra_headers: ""
         response_to_aog:
             conversion:
                 - converter: jsonata
@@ -42,8 +48,14 @@ services:
                       }
 
     chat: # service name defined by AOG
+        url: "http://127.0.0.1:16688/api/chat"
         endpoints: ["POST /api/chat"] # request to this will use this flavor
+        extra_url: ""
+        auth_type: "none"
+        default_model: "deepseek-r1:7b"
+        request_segments: 1 # request
         install_raw_routes: true # also install routes without aog prefix in url path
+        extra_headers: '{}'
         request_to_aog:
             conversion:
                 # NOTE it doesn't directly use input model and stream
@@ -159,9 +171,21 @@ services:
                           Content-Type: application/x-ndjson
 
     generate:
-        endpoints: ["POST /api/generate"]
-        install_raw_routes: true
+        url: "http://127.0.0.1:16688/api/generate"
+        endpoints: ["POST /api/generate"] # request to this will use this flavor
+        extra_url: ""
+        auth_type: "none"
+        default_model: ""
+        request_segments: 1 # request
+        install_raw_routes: true # also install routes without aog prefix in url path
+        extra_headers: '{}'
 
     embed:
-        endpoints: ["POST /api/embed"]
-        install_raw_routes: true
+        url: "http://127.0.0.1:16688/api/embed"
+        endpoints: [ "POST /api/embed"] # request to this will use this flavor
+        extra_url: ""
+        auth_type: "none"
+        default_model: ""
+        request_segments: 1 # request
+        install_raw_routes: true # also install routes without aog prefix in url path
+        extra_headers: '{}'

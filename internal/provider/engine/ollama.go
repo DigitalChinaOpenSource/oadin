@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -28,7 +29,6 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 		}
 	}
 
-	userDir, _ := os.UserHomeDir()
 	AOGDir, err := utils.GetAOGDataDir()
 	if err != nil {
 		slog.Error("Get AOG data dir failed: ", err.Error())
@@ -43,21 +43,10 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 		}
 	}
 
-	execPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
-	execFile := "ollama.exe"
+	ollamaProvider := new(OllamaProvider)
+	ollamaProvider.EngineConfig = ollamaProvider.GetConfig()
 
-	return &OllamaProvider{
-		EngineConfig: &types.EngineRecommendConfig{
-			Host:           "127.0.0.1:16677",
-			Origin:         "127.0.0.1",
-			Scheme:         "http",
-			RecommendModel: "deepseek-r1:7b",
-			DownloadUrl:    "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-Installer-20250122.exe",
-			DownloadPath:   downloadPath,
-			ExecPath:       execPath,
-			ExecFile:       execFile,
-		},
-	}
+	return ollamaProvider
 }
 
 func (o *OllamaProvider) GetDefaultClient() *client.Client {
@@ -80,7 +69,25 @@ func (o *OllamaProvider) GetDefaultClient() *client.Client {
 }
 
 func (o *OllamaProvider) StartEngine() error {
-	cmd := exec.Command(o.EngineConfig.ExecPath+"/"+o.EngineConfig.ExecFile, "serve")
+	execFile := "ollama"
+	switch runtime.GOOS {
+	case "windows":
+		if utils.IpexOllamaSupportGPUStatus() {
+			slog.Info("start ipex-llm-ollama...")
+			execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
+			slog.Info("exec file path: " + execFile)
+		} else {
+			execFile = "ollama.exe"
+		}
+	case "darwin":
+		execFile = "ollama"
+	case "linux":
+		execFile = "ollama"
+	default:
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+
+	cmd := exec.Command(execFile, "serve")
 	err := cmd.Start()
 	if err != nil {
 		return fmt.Errorf("failed to start ollama: %v", err)
@@ -104,7 +111,6 @@ func (o *OllamaProvider) StartEngine() error {
 }
 
 func (o *OllamaProvider) StopEngine() error {
-	// 获取PID文件地址
 	rootPath, err := utils.GetAOGDataDir()
 	if err != nil {
 		return fmt.Errorf("failed get aog dir: %v", err)
@@ -143,13 +149,8 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		slog.Error("Get user home dir failed: ", err.Error())
 		return nil
 	}
-	AOGDir, err := utils.GetAOGDataDir()
-	if err != nil {
-		slog.Error("Get AOG data dir failed: ", err.Error())
-		return nil
-	}
 
-	downloadPath := fmt.Sprintf("%s/%s", AOGDir, "download")
+	downloadPath, err := utils.GetDownloadDir()
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		err := os.MkdirAll(downloadPath, 0o755)
 		if err != nil {
@@ -157,15 +158,42 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		}
 	}
 
-	execPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
-	execFile := "ollama.exe"
+	execFile := ""
+	execPath := ""
+	downloadUrl := ""
+	switch runtime.GOOS {
+	case "windows":
+		if utils.IpexOllamaSupportGPUStatus() {
+			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			execFile = "ollama.exe"
+			downloadUrl = "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-Installer-20250122.exe"
+		} else {
+			execFile = "ollama.exe"
+			execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+			downloadUrl = "http://120.232.136.73:31619/aogdev/OllamaSetup.exe"
+		}
+	case "linux":
+		execFile = "ollama"
+		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+		downloadUrl = "http://120.232.136.73:31619/aogdev/OllamaSetup.exe"
+	case "darwin":
+		execFile = "ollama"
+		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+		if runtime.GOARCH == "amd64" {
+			downloadUrl = "http://120.232.136.73:31619/aogdev/Ollama-darwin.zip"
+		} else {
+			downloadUrl = "http://120.232.136.73:31619/aogdev/Ollama-arm64.zip"
+		}
+	default:
+		return nil
+	}
 
 	return &types.EngineRecommendConfig{
 		Host:           "127.0.0.1:16677",
 		Origin:         "127.0.0.1",
 		Scheme:         "http",
 		RecommendModel: "deepseek-r1:7b",
-		DownloadUrl:    "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-Installer-20250122.exe",
+		DownloadUrl:    downloadUrl,
 		DownloadPath:   downloadPath,
 		ExecPath:       execPath,
 		ExecFile:       execFile,
@@ -186,7 +214,6 @@ func (o *OllamaProvider) InstallEngine() error {
 		return fmt.Errorf("failed to download ollama: %v", err)
 	}
 
-	// 直接执行file
 	slog.Info("[Install Engine] start install...")
 	cmd := exec.Command(file)
 	err = cmd.Run()

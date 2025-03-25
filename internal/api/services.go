@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +12,7 @@ import (
 
 func (t *AOGCoreServer) CreateAIGCService(c *gin.Context) {
 	request := new(dto.CreateAIGCServiceRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
 		return
 	}
@@ -32,7 +34,7 @@ func (t *AOGCoreServer) CreateAIGCService(c *gin.Context) {
 
 func (t *AOGCoreServer) UpdateAIGCService(c *gin.Context) {
 	request := new(dto.UpdateAIGCServiceRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
 		return
 	}
@@ -57,9 +59,11 @@ func (t *AOGCoreServer) GetAIGCService(c *gin.Context) {
 
 func (t *AOGCoreServer) GetAIGCServices(c *gin.Context) {
 	request := new(dto.GetAIGCServicesRequest)
-	if err := c.BindJSON(request); err != nil {
-		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
-		return
+	if err := c.ShouldBindJSON(request); err != nil {
+		if !errors.Is(err, io.EOF) {
+			bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
+			return
+		}
 	}
 
 	if err := validate.Struct(request); err != nil {
@@ -79,7 +83,7 @@ func (t *AOGCoreServer) GetAIGCServices(c *gin.Context) {
 
 func (t *AOGCoreServer) ExportService(c *gin.Context) {
 	request := new(dto.ExportServiceRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
 		return
 	}
@@ -101,7 +105,7 @@ func (t *AOGCoreServer) ExportService(c *gin.Context) {
 
 func (t *AOGCoreServer) ImportService(c *gin.Context) {
 	request := new(dto.ImportServiceRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
 		return
 	}

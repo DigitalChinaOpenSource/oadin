@@ -14,4 +14,6 @@ var (
 	ErrProviderModelEmpty = NewBcode(http.StatusBadRequest, 20004, "provider model empty")
 
 	ErrProviderUpdateFailed = NewBcode(http.StatusBadRequest, 20005, "provider update failed")
+
+	ErrProviderAuthInfoLost = NewBcode(http.StatusBadRequest, 20006, "provider api auth info lost")
 )

@@ -216,40 +216,42 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 		return nil, fmt.Errorf("failed to unmarshal service provider properties: %v", err)
 	}
 	model := task.Request.Model
-	if model == "" {
-		switch location {
-		case types.ServiceSourceLocal:
-			m := &types.Model{
-				ProviderName: sp.ProviderName,
-				ModelName:    task.Request.Model,
+	// Non-query model services do not require model validation
+	if task.Request.Service != types.ServiceModels {
+		if model == "" {
+			switch location {
+			case types.ServiceSourceLocal:
+				m := &types.Model{
+					ProviderName: sp.ProviderName,
+				}
+				sortOption := []datastore.SortOption{
+					{Key: "updated_at", Order: -1},
+				}
+				ms, err := ds.List(context.Background(), m, &datastore.ListOptions{SortBy: sortOption})
+				if err != nil {
+					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+				}
+				if len(ms) == 0 {
+					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+				}
+				model = ms[0].(*types.Model).ModelName
+			case types.ServiceSourceRemote:
+				defaultInfo := GetProviderServiceDefaultInfo(sp.Flavor, task.Request.Service)
+				model = defaultInfo.DefaultModel
 			}
-			sortOption := []datastore.SortOption{
-				{Key: "updated_at", Order: -1},
-			}
-			ms, err := ds.List(context.Background(), m, &datastore.ListOptions{SortBy: sortOption})
-			if err != nil {
-				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-			}
-			if len(ms) == 0 {
-				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-			}
-			model = ms[0].(*types.Model).ModelName
-		case types.ServiceSourceRemote:
-			defaultInfo := GetProviderServiceDefaultInfo(sp.Flavor, task.Request.Service)
-			model = defaultInfo.DefaultModel
-		}
-	} else {
-		if location == types.ServiceSourceLocal {
-			m := &types.Model{
-				ProviderName: sp.ProviderName,
-				ModelName:    task.Request.Model,
-			}
-			ms, err := ds.List(context.Background(), m, &datastore.ListOptions{})
-			if err != nil {
-				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-			}
-			if len(ms) == 0 {
-				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+		} else {
+			if location == types.ServiceSourceLocal {
+				m := &types.Model{
+					ProviderName: sp.ProviderName,
+					ModelName:    task.Request.Model,
+				}
+				ms, err := ds.List(context.Background(), m, &datastore.ListOptions{})
+				if err != nil {
+					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+				}
+				if len(ms) == 0 {
+					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+				}
 			}
 		}
 	}

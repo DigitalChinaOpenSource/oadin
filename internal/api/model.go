@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,9 +12,11 @@ import (
 
 func (t *AOGCoreServer) CreateModel(c *gin.Context) {
 	request := new(dto.CreateModelRequest)
-	if err := c.BindJSON(request); err != nil {
-		bcode.ReturnError(c, bcode.ErrModelBadRequest)
-		return
+	if err := c.ShouldBindJSON(request); err != nil {
+		if !errors.Is(err, io.EOF) {
+			bcode.ReturnError(c, bcode.ErrModelBadRequest)
+			return
+		}
 	}
 
 	if err := validate.Struct(request); err != nil {
@@ -32,7 +36,7 @@ func (t *AOGCoreServer) CreateModel(c *gin.Context) {
 
 func (t *AOGCoreServer) DeleteModel(c *gin.Context) {
 	request := new(dto.DeleteModelRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
 		return
 	}
@@ -54,7 +58,7 @@ func (t *AOGCoreServer) DeleteModel(c *gin.Context) {
 
 func (t *AOGCoreServer) GetModels(c *gin.Context) {
 	request := new(dto.GetModelsRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
 		return
 	}

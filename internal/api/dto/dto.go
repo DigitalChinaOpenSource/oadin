@@ -74,7 +74,7 @@ type ImportServiceResponse struct {
 }
 
 type GetAIGCServicesRequest struct {
-	ServiceName string `json:"service_name"`
+	ServiceName string `json:"service_name,omitempty "`
 }
 
 type CreateAIGCServiceResponse struct {
@@ -119,9 +119,9 @@ type DeleteModelRequest struct {
 }
 
 type GetModelsRequest struct {
-	ProviderName string `json:"provider_name"`
-	ModelName    string `json:"model_name"`
-	ServiceName  string `json:"service_name"`
+	ProviderName string `json:"provider_name,omitempty"`
+	ModelName    string `json:"model_name,omitempty"`
+	ServiceName  string `json:"service_name,omitempty"`
 }
 
 type CreateModelResponse struct {
@@ -183,10 +183,10 @@ type DeleteServiceProviderRequest struct {
 type GetServiceProviderRequest struct{}
 
 type GetServiceProvidersRequest struct {
-	ServiceName   string `json:"service_name"`
-	ServiceSource string `json:"service_source"`
-	ProviderName  string `json:"provider_name"`
-	ApiFlavor     string `json:"api_flavor"`
+	ServiceName   string `json:"service_name,omitempty"`
+	ServiceSource string `json:"service_source,omitempty"`
+	ProviderName  string `json:"provider_name,omitempty"`
+	ApiFlavor     string `json:"api_flavor,omitempty"`
 }
 
 type CreateServiceProviderResponse struct {

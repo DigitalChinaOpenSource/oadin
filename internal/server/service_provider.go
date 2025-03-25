@@ -11,6 +11,7 @@ import (
 	"intel.com/aog/internal/api/dto"
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/provider"
+	"intel.com/aog/internal/schedule"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils/bcode"
 )
@@ -23,10 +24,14 @@ type ServiceProvider interface {
 	GetServiceProviders(ctx context.Context, request *dto.GetServiceProvidersRequest) (*dto.GetServiceProvidersResponse, error)
 }
 
-type ServiceProviderImpl struct{}
+type ServiceProviderImpl struct {
+	Ds datastore.Datastore
+}
 
 func NewServiceProvider() ServiceProvider {
-	return &ServiceProviderImpl{}
+	return &ServiceProviderImpl{
+		Ds: datastore.GetDefaultDatastore(),
+	}
 }
 
 func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request *dto.CreateServiceProviderRequest) (*dto.CreateServiceProviderResponse, error) {
@@ -42,16 +47,27 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 	if isExist {
 		return nil, bcode.ErrAIGCServiceProviderIsExist
 	}
+	providerServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, request.ServiceName)
 
 	sp.ServiceName = request.ServiceName
 	sp.ServiceSource = request.ServiceSource
 	sp.Flavor = request.ApiFlavor
 	sp.AuthType = request.AuthType
+	sp.AuthType = request.AuthType
+	if request.AuthType != types.AuthTypeNone && request.AuthKey == "" {
+		return nil, bcode.ErrProviderAuthInfoLost
+	}
 	sp.AuthKey = request.AuthKey
 	sp.Desc = request.Desc
 	sp.Method = request.Method
 	sp.URL = request.Url
+	if request.Url == "" {
+		sp.URL = providerServiceInfo.RequestUrl
+	}
 	sp.ExtraHeaders = request.ExtraHeaders
+	if request.ExtraHeaders == "" {
+		sp.ExtraHeaders = providerServiceInfo.ExtraHeaders
+	}
 	sp.ExtraJSONBody = request.ExtraJsonBody
 	sp.Properties = request.Properties
 	sp.CreatedAt = time.Now()
@@ -59,7 +75,6 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 
 	modelIsExist := make(map[string]bool)
 
-	// todo 如果是本地，models不为空，检查model是否存在，不存在则直接拉取
 	if request.ServiceSource == types.ServiceSourceLocal {
 		engineProvider := provider.GetModelEngine(request.ApiFlavor)
 		err := engineProvider.HealthCheck()
@@ -104,6 +119,9 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 
 	for _, mName := range request.Models {
 		server := ChooseCheckServer(*sp, mName)
+		if server == nil {
+			return nil, bcode.ErrProviderIsUnavailable
+		}
 		checkRes := server.CheckServer()
 		if !checkRes {
 			return nil, bcode.ErrProviderIsUnavailable
@@ -148,7 +166,6 @@ func (s *ServiceProviderImpl) DeleteServiceProvider(ctx context.Context, request
 		return nil, err
 	}
 
-	// 删除provider下模型
 	m := new(types.Model)
 	m.ProviderName = request.ProviderName
 	list, err := ds.List(ctx, m, &datastore.ListOptions{
@@ -160,7 +177,9 @@ func (s *ServiceProviderImpl) DeleteServiceProvider(ctx context.Context, request
 	}
 
 	if sp.ServiceSource == types.ServiceSourceLocal {
-		// 删除本地已下载模型 , 需检查本地模型是否被其他service provider共同引用，若有，则不删本地模型，只删记录
+		// Delete the locally downloaded model.
+		// It is necessary to check whether the local model is jointly referenced by other service providers.
+		// If so, do not delete the local model but only delete the record.
 		engine := provider.GetModelEngine(sp.Flavor)
 		for _, m := range list {
 			dsModel := m.(*types.Model)
@@ -191,7 +210,7 @@ func (s *ServiceProviderImpl) DeleteServiceProvider(ctx context.Context, request
 		return nil, err
 	}
 
-	// 检查当前设定的local和remote service provider, 若是则置空
+	// Check the currently set local and remote service providers. If so, set them to empty.
 	service := &types.Service{Name: sp.ServiceName}
 	err = ds.Get(ctx, service)
 	if err != nil {
@@ -271,6 +290,9 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 	}
 
 	server := ChooseCheckServer(*sp, model.ModelName)
+	if server == nil {
+		return nil, bcode.ErrProviderIsUnavailable
+	}
 	checkRes := server.CheckServer()
 	if !checkRes {
 		return nil, bcode.ErrProviderIsUnavailable
@@ -287,7 +309,6 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 }
 
 func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *dto.GetServiceProviderRequest) (*dto.GetServiceProviderResponse, error) {
-	// todo 实际实现逻辑
 	return &dto.GetServiceProviderResponse{}, nil
 }
 
@@ -380,36 +401,24 @@ type CheckGenerateServer struct {
 
 type CheckEmbeddingServer struct {
 	ServiceProvider types.ServiceProvider
+	ModelName       string
+}
+
+type CheckTextToImageServer struct {
+	ServiceProvider types.ServiceProvider
+	ModelName       string
 }
 
 func (m *CheckModelsServer) CheckServer() bool {
-	client := &http.Client{}
 	req, err := http.NewRequest(m.ServiceProvider.Method, m.ServiceProvider.URL, nil)
 	if err != nil {
 		return false
 	}
-	if m.ServiceProvider.AuthType != "none" {
-		req.Header.Set("Authorization", "Bearer "+m.ServiceProvider.AuthKey)
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		slog.Error("[Schedule] Failed to request", "error", resp.StatusCode)
-		return false
-	}
-	return true
+	status := CheckServerRequest(req, m.ServiceProvider, "")
+	return status
 }
 
 func (c *CheckChatServer) CheckServer() bool {
-	transport := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    30 * time.Second,
-		DisableCompression: true,
-	}
-	client := &http.Client{Transport: transport}
 	type Message struct {
 		Role    string `json:"role"`
 		Content string `json:"content"`
@@ -441,21 +450,8 @@ func (c *CheckChatServer) CheckServer() bool {
 		return false
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	if c.ServiceProvider.AuthType != "none" {
-		req.Header.Set("Authorization", "Bearer "+c.ServiceProvider.AuthKey)
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		slog.Error("[Schedule] Failed to request", "error", err)
-		return false
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		slog.Error("[Schedule] Failed to request", "error", resp.StatusCode)
-		return false
-	}
-	return true
+	status := CheckServerRequest(req, c.ServiceProvider, string(jsonData))
+	return status
 }
 
 func (g *CheckGenerateServer) CheckServer() bool {
@@ -463,7 +459,99 @@ func (g *CheckGenerateServer) CheckServer() bool {
 }
 
 func (e *CheckEmbeddingServer) CheckServer() bool {
-	return false
+	type RequestBody struct {
+		Model          string   `json:"model"`
+		Input          []string `json:"input"`
+		Dimensions     int      `json:"dimensions"`
+		EncodingFormat string   `json:"encoding_format"`
+	}
+	requestBody := RequestBody{
+		Model:          e.ModelName,
+		Input:          []string{"test text"},
+		Dimensions:     1024,
+		EncodingFormat: "float",
+	}
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		slog.Error("[Schedule] Failed to marshal request body", "error", err)
+		return false
+	}
+	req, err := http.NewRequest(e.ServiceProvider.Method, e.ServiceProvider.URL, bytes.NewReader(jsonData))
+	if err != nil {
+		slog.Error("[Schedule] Failed to prepare request", "error", err)
+		return false
+	}
+
+	status := CheckServerRequest(req, e.ServiceProvider, string(jsonData))
+	return status
+}
+
+func (e *CheckTextToImageServer) CheckServer() bool {
+	prompt := "画一只小狗"
+	var jsonData []byte
+	var err error
+	switch e.ServiceProvider.Flavor {
+	case types.FlavorTencent:
+		type RequestBody struct {
+			Model      string `json:"model"`
+			Prompt     string `json:"Prompt"`
+			RspImgType string `json:"RspImgType"`
+		}
+		requestBody := RequestBody{
+			Model:      e.ModelName,
+			Prompt:     prompt,
+			RspImgType: "url",
+		}
+		jsonData, err = json.Marshal(requestBody)
+	case types.FlavorAliYun:
+		type InputData struct {
+			Prompt string `json:"prompt"`
+		}
+		type RequestBody struct {
+			Model string    `json:"model"`
+			Input InputData `json:"input"`
+		}
+		inputData := InputData{
+			Prompt: prompt,
+		}
+		requestBody := RequestBody{
+			Model: e.ModelName,
+			Input: inputData,
+		}
+		jsonData, err = json.Marshal(requestBody)
+	case types.FlavorBaidu:
+		type RequestBody struct {
+			Model  string `json:"model"`
+			Prompt string `json:"prompt"`
+		}
+		requestBody := RequestBody{
+			Model:  e.ModelName,
+			Prompt: prompt,
+		}
+		jsonData, err = json.Marshal(requestBody)
+	default:
+		type RequestBody struct {
+			Model  string `json:"model"`
+			Prompt string `json:"prompt"`
+		}
+		requestBody := RequestBody{
+			Model:  e.ModelName,
+			Prompt: prompt,
+		}
+		jsonData, err = json.Marshal(requestBody)
+	}
+	if err != nil {
+		slog.Error("[Schedule] Failed to marshal request body", "error", err)
+		return false
+	}
+	req, err := http.NewRequest(e.ServiceProvider.Method, e.ServiceProvider.URL, bytes.NewReader(jsonData))
+	if err != nil {
+		slog.Error("[Schedule] Failed to prepare request", "error", err)
+		return false
+	}
+
+	status := CheckServerRequest(req, e.ServiceProvider, string(jsonData))
+	return status
 }
 
 func ChooseCheckServer(sp types.ServiceProvider, modelName string) ModelServiceManager {
@@ -476,10 +564,60 @@ func ChooseCheckServer(sp types.ServiceProvider, modelName string) ModelServiceM
 	case types.ServiceGenerate:
 		server = &CheckGenerateServer{ServiceProvider: sp, ModelName: modelName}
 	case types.ServiceEmbed:
-		server = &CheckEmbeddingServer{ServiceProvider: sp}
+		server = &CheckEmbeddingServer{ServiceProvider: sp, ModelName: modelName}
+	case types.ServiceTextToImage:
+		server = &CheckTextToImageServer{ServiceProvider: sp, ModelName: modelName}
 	default:
 		slog.Error("[Schedule] Unknown service name", "error", sp.ServiceName)
 		return nil
 	}
 	return server
+}
+
+func CheckServerRequest(req *http.Request, serviceProvider types.ServiceProvider, reqBodyString string) bool {
+	transport := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    30 * time.Second,
+		DisableCompression: true,
+	}
+	if serviceProvider.ExtraHeaders != "{}" {
+		var extraHeader map[string]interface{}
+		err := json.Unmarshal([]byte(serviceProvider.ExtraHeaders), &extraHeader)
+		if err != nil {
+			slog.Error("Error parsing JSON:", err.Error())
+			return false
+		}
+		for k, v := range extraHeader {
+			req.Header.Set(k, v.(string))
+		}
+
+	}
+	client := &http.Client{Transport: transport}
+	req.Header.Set("Content-Type", "application/json")
+	if serviceProvider.AuthType != "none" {
+		authParams := &schedule.AuthenticatorParams{
+			Request:      req,
+			ProviderInfo: &serviceProvider,
+			RequestBody:  reqBodyString,
+		}
+		authenticator := schedule.ChooseProviderAuthenticator(authParams)
+		if authenticator == nil {
+			return false
+		}
+		err := authenticator.Authenticate()
+		if err != nil {
+			return false
+		}
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		slog.Error("[Schedule] Failed to request", "error", err)
+		return false
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		slog.Error("[Schedule] Failed to request", "error", resp.StatusCode)
+		return false
+	}
+	return true
 }

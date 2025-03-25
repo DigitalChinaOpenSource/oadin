@@ -18,20 +18,23 @@ type Model interface {
 	GetModels(ctx context.Context, request *dto.GetModelsRequest) (*dto.GetModelsResponse, error)
 }
 
-type ModelImpl struct{}
+type ModelImpl struct {
+	Ds datastore.Datastore
+}
 
 func NewModel() Model {
-	return &ModelImpl{}
+	return &ModelImpl{
+		Ds: datastore.GetDefaultDatastore(),
+	}
 }
 
 func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelRequest) (*dto.CreateModelResponse, error) {
-	ds := datastore.GetDefaultDatastore()
 	sp := new(types.ServiceProvider)
 	if request.ProviderName != "" {
 		sp.ProviderName = request.ProviderName
 	} else {
-		// 获取service 默认provider
-		// todo 暂只支持chat、generate服务拉取模型
+		// get default service provider
+		// todo Currently only chat and generate services support pulling models.
 		if request.ServiceName != types.ServiceChat && request.ServiceName != types.ServiceGenerate {
 			return nil, bcode.ErrServer
 		}
@@ -39,7 +42,7 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 		service := &types.Service{}
 		service.Name = request.ServiceName
 
-		err := ds.Get(ctx, service)
+		err := s.Ds.Get(ctx, service)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +57,7 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 	sp.ServiceName = request.ServiceName
 	sp.ServiceSource = request.ServiceSource
 
-	err := ds.Get(ctx, sp)
+	err := s.Ds.Get(ctx, sp)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		// todo debug log output
 		return nil, bcode.ErrServer
@@ -66,7 +69,7 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 	m.ProviderName = sp.ProviderName
 	m.ModelName = request.ModelName
 
-	err = ds.Get(ctx, m)
+	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		// todo debug log output
 		return nil, bcode.ErrServer
@@ -86,7 +89,7 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 	slog.Info("Pull model %s completed ..." + request.ModelName)
 
 	m.Status = "downloaded"
-	err = ds.Add(ctx, m)
+	err = s.Ds.Add(ctx, m)
 	if err != nil {
 		return nil, bcode.ErrAddModel
 	}
@@ -97,11 +100,10 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 }
 
 func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelRequest) (*dto.DeleteModelResponse, error) {
-	ds := datastore.GetDefaultDatastore()
 	sp := new(types.ServiceProvider)
 	sp.ProviderName = request.ProviderName
 
-	err := ds.Get(ctx, sp)
+	err := s.Ds.Get(ctx, sp)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		// todo err debug log output
 		return nil, bcode.ErrServer
@@ -113,7 +115,7 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	m.ProviderName = request.ProviderName
 	m.ModelName = request.ModelName
 
-	err = ds.Get(ctx, m)
+	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		// todo err debug log output
 		return nil, bcode.ErrServer
@@ -121,7 +123,7 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 		return nil, bcode.ErrModelRecordNotFound
 	}
 
-	// 3. 调用engin delete model
+	// Call engin to delete model.
 	modelEngine := provider.GetModelEngine(sp.Flavor)
 	deleteReq := &types.DeleteRequest{
 		Model: request.ModelName,
@@ -133,7 +135,7 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 		return nil, bcode.ErrEngineDeleteModel
 	}
 
-	err = ds.Delete(ctx, m)
+	err = s.Ds.Delete(ctx, m)
 	if err != nil {
 		// todo err debug log output
 		return nil, err
@@ -144,7 +146,6 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 }
 
 func (s *ModelImpl) GetModels(ctx context.Context, request *dto.GetModelsRequest) (*dto.GetModelsResponse, error) {
-	ds := datastore.GetDefaultDatastore()
 	m := &types.Model{}
 	if request.ModelName != "" {
 		m.ModelName = request.ModelName
@@ -152,7 +153,7 @@ func (s *ModelImpl) GetModels(ctx context.Context, request *dto.GetModelsRequest
 	if request.ProviderName != "" {
 		m.ProviderName = request.ProviderName
 	}
-	list, err := ds.List(ctx, m, &datastore.ListOptions{
+	list, err := s.Ds.List(ctx, m, &datastore.ListOptions{
 		Page:     0,
 		PageSize: 1000,
 	})

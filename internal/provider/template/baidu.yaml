@@ -1,40 +1,15 @@
 version: "0.1"
 name: baidu # the name should be aligned with file name
 services:
-    models:
-        endpoints: ["GET /v1/models"]
-        install_raw_routes: false
-        response_to_aog:
-            conversion:
-                - converter: jsonata
-                  config: |
-                      {
-                          "models": [data.{
-                            "name": id
-                          }] 
-                      }
-
-        response_from_aog:
-            conversion:
-                - converter: jsonata
-                  config: |
-                      {
-                          "data": [models.{
-                            "id": name,
-                            "object": "model",
-                            "permission": []
-                          }],
-                          "object": "list"
-                      }
-
     chat: # service name defined by AOG
         url: "https://qianfan.baidubce.com/v2/chat/completions"
-        endpoints: ["POST /v1/chat/completions"] # request to this will use this flavor
+        endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
         default_model: ernie-3.5-8k
         request_segments: 1 # request
-        install_raw_routes: false # also install routes without aog prefix in url path
+        install_raw_routes: false  # also install routes without aog prefix in url path
+        extra_headers: '{}'
         request_to_aog:
             conversion:
                 - converter: jsonata
@@ -57,7 +32,6 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-                          Authorization: <Your Token Here>
 
         request_from_aog:
             conversion:
@@ -81,7 +55,6 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-                          Authorization: <Your Token Here>
 
         response_to_aog:
             conversion:
@@ -148,13 +121,13 @@ services:
                       }
     embed:
         url: "https://qianfan.baidubce.com/v2/embeddings"
-        endpoints: ["POST /v1/embeddings"] # request to this will use this flavor
+        endpoints: [ "POST /v1/embeddings" ] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
         default_model: embedding-v1
         request_segments: 1 # request
         install_raw_routes: false # also install routes without aog prefix in url path# request to this will use this flavor
-        extra_info: ""
+        extra_headers: '{}'
         request_to_aog:
             conversion:
                 - converter: jsonata
@@ -213,6 +186,7 @@ services:
         install_raw_routes: false # also install routes without aog prefix in url path
         default_model: irag-1.0
         request_segments: 1 # request
+        extra_headers: '{}'
         request_to_aog:
             conversion:
                 - converter: jsonata
@@ -232,7 +206,7 @@ services:
                   config: |
                       {
                          "model": $model,
-                         "prompt": input.prompt
+                         "prompt": prompt
                       }
 
                 - converter: header
@@ -246,7 +220,9 @@ services:
                       {
                           "id": id,
                           "created": created,
-                          "data": data
+                           "data": {
+                               "url": data[0].url
+                                   }
                       }
         response_from_aog:
             conversion:
@@ -255,5 +231,7 @@ services:
                       {
                            "id": id,
                            "created": created,
-                           "data": data
+                           "data": {
+                               "url": data[0].url
+                                   }
                       }

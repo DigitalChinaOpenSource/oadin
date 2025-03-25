@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"intel.com/aog/internal/schedule"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"intel.com/aog/internal/api/dto"
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/provider"
+	"intel.com/aog/internal/schedule"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
 	"intel.com/aog/internal/utils/bcode"
@@ -28,10 +28,14 @@ type AIGCService interface {
 	ImportService(ctx context.Context, request *dto.ImportServiceRequest) (*dto.ImportServiceResponse, error)
 }
 
-type AIGCServiceImpl struct{}
+type AIGCServiceImpl struct {
+	Ds datastore.Datastore
+}
 
 func NewAIGCService() AIGCService {
-	return &AIGCServiceImpl{}
+	return &AIGCServiceImpl{
+		Ds: datastore.GetDefaultDatastore(),
+	}
 }
 
 func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.CreateAIGCServiceRequest) (*dto.CreateAIGCServiceResponse, error) {
@@ -49,20 +53,29 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 	sp.Flavor = request.ApiFlavor
 
 	m.ProviderName = request.ProviderName
-
+	providerServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, request.ServiceName)
 	if request.ServiceSource == types.ServiceSourceRemote {
 		sp.URL = request.Url
+		if request.Url == "" {
+			sp.URL = providerServiceInfo.RequestUrl
+		}
 		sp.AuthType = request.AuthType
+		if request.AuthType != types.AuthTypeNone && request.AuthKey == "" {
+			return nil, bcode.ErrProviderAuthInfoLost
+		}
 		sp.AuthKey = request.AuthKey
 		sp.ExtraJSONBody = request.ExtraJsonBody
 		sp.ExtraHeaders = request.ExtraHeaders
+		if request.ExtraHeaders == "" {
+			sp.ExtraHeaders = providerServiceInfo.ExtraHeaders
+		}
 		sp.Properties = request.Properties
 
-		providerServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ProviderName, request.ServiceName)
 		m.ModelName = providerServiceInfo.DefaultModel
 	} else {
 		recommendConfig := getRecommendConfig(request.ServiceName)
-		// 2. 检查本地是否安装了 ollama 以及 ollama 是否可用, 可用则进行下一步，否则 提示ollama 未安装
+		// Check if ollama is installed locally and if it is available.
+		// If it is available, proceed to the next step. Otherwise, prompt that ollama is not installed.
 		engineProvider := provider.GetModelEngine(recommendConfig.ModelEngine)
 		engineConfig := engineProvider.GetConfig()
 		if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
@@ -104,7 +117,8 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 			return nil, bcode.ErrAIGCServiceStartEngine
 		}
 
-		// 3. 检查本地是否已经拉取过deepseek-r1，已拉取进行下一步，否则调用ollama api 拉取
+		// Check whether deepseek-r1 has been pulled locally.
+		// If it has been pulled, proceed to the next step. Otherwise, call the ollama API to pull it.
 		models, err := engineProvider.ListModels(ctx)
 		if err != nil {
 			slog.Error("Get model list error: ", err.Error())
@@ -146,30 +160,29 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 		m.Status = "downloaded"
 	}
 
-	ds := datastore.GetDefaultDatastore()
-	// 检查service provider是否已存在
-	spIsExist, err := ds.IsExist(ctx, sp)
+	// Check whether the service provider already exists.
+	spIsExist, err := s.Ds.IsExist(ctx, sp)
 	if err != nil {
 		spIsExist = false
 	}
 
-	// 检查 service provider model 是否已存在
-	mIsExist, err := ds.IsExist(ctx, m)
+	// Check whether the service provider model already exists.
+	mIsExist, err := s.Ds.IsExist(ctx, m)
 	if spIsExist && mIsExist {
 		slog.Error("Service Provider model already exist")
 		return nil, bcode.ErrModelIsExist
 	}
 
-	// todo 待进行事务处理
+	// todo: pending transaction processing
 	if !spIsExist {
-		err = ds.Add(ctx, sp)
+		err = s.Ds.Add(ctx, sp)
 		if err != nil {
 			slog.Error("Add service provider error: %s", err.Error())
 			return nil, bcode.ErrAIGCServiceAddProvider
 		}
 
-		// 临时逻辑，后期去除
-		// 添加模型服务
+		// Temporary logic, to be removed later.
+		// Add model service
 		modelService := &types.ServiceProvider{
 			ProviderName:  fmt.Sprintf("%s_%s_%s", "local", "ollama", "models"),
 			ServiceName:   "models",
@@ -185,25 +198,25 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 			Properties:    "{}",
 			Status:        1,
 		}
-		err = ds.Add(ctx, modelService)
+		err = s.Ds.Add(ctx, modelService)
 		if err != nil {
 			slog.Error("Add model service error: %s", err.Error())
 			return nil, bcode.ErrAddModelService
 		}
-		err = defaultProviderProcess(ctx, "models", "local", fmt.Sprintf("%s_%s_%s", "local", "ollama", "models"))
+		err = s.defaultProviderProcess(ctx, "models", "local", fmt.Sprintf("%s_%s_%s", "local", "ollama", "models"))
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err = ds.Add(ctx, m)
+	err = s.Ds.Add(ctx, m)
 	if err != nil {
 		slog.Error("Add model error: %s", err.Error())
 		return nil, bcode.ErrAddModel
 	}
 
 	// Default provider processing
-	err = defaultProviderProcess(ctx, sp.ServiceName, sp.ServiceSource, sp.ProviderName)
+	err = s.defaultProviderProcess(ctx, sp.ServiceName, sp.ServiceSource, sp.ProviderName)
 	if err != nil {
 		return nil, err
 	}
@@ -214,12 +227,11 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 }
 
 func (s *AIGCServiceImpl) UpdateAIGCService(ctx context.Context, request *dto.UpdateAIGCServiceRequest) (*dto.UpdateAIGCServiceResponse, error) {
-	ds := datastore.GetDefaultDatastore()
 	service := types.Service{
 		Name: request.ServiceName,
 	}
 
-	err := ds.Get(ctx, &service)
+	err := s.Ds.Get(ctx, &service)
 	if err != nil {
 		return nil, bcode.ErrServiceRecordNotFound
 	}
@@ -231,7 +243,7 @@ func (s *AIGCServiceImpl) UpdateAIGCService(ctx context.Context, request *dto.Up
 		service.LocalProvider = request.LocalProvider
 	}
 	service.HybridPolicy = request.HybridPolicy
-	err = ds.Put(ctx, &service)
+	err = s.Ds.Put(ctx, &service)
 	if err != nil {
 		return nil, bcode.ErrServiceRecordNotFound
 	}
@@ -242,7 +254,6 @@ func (s *AIGCServiceImpl) UpdateAIGCService(ctx context.Context, request *dto.Up
 }
 
 func (s *AIGCServiceImpl) GetAIGCService(ctx context.Context, request *dto.GetAIGCServiceRequest) (*dto.GetAIGCServiceResponse, error) {
-	// todo 实际实现逻辑
 	return &dto.GetAIGCServiceResponse{}, nil
 }
 
@@ -279,7 +290,6 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 	dbService := &types.Service{}
 	dbProvider := &types.ServiceProvider{}
 	model := &types.Model{}
-	ds := datastore.GetDefaultDatastore()
 
 	dbServices, err := getAllServices(dbService, dbProvider, model)
 	if err != nil {
@@ -364,9 +374,9 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			tmpModel.Status = "downloaded"
 			tmpModel.UpdatedAt = time.Now()
 
-			isExist, err := ds.IsExist(ctx, tmpModel)
+			isExist, err := s.Ds.IsExist(ctx, tmpModel)
 			if err != nil || !isExist {
-				err := ds.Add(ctx, tmpModel)
+				err := s.Ds.Add(ctx, tmpModel)
 				if err != nil {
 					return nil, bcode.ErrAddModel
 				}
@@ -375,18 +385,18 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 		}
 
 		if _, ok := dbServices.ServiceProviders[providerName]; ok {
-			err := ds.Put(ctx, tmpSp)
+			err := s.Ds.Put(ctx, tmpSp)
 			if err != nil {
 				return nil, bcode.ErrProviderUpdateFailed
 			}
 		} else {
-			err := ds.Add(ctx, tmpSp)
+			err := s.Ds.Add(ctx, tmpSp)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		// 检查DBServices中LocalProvider和RemoteProvider是否存在，不存在则添加
+		// Check whether LocalProvider and RemoteProvider exist in DBServices. If they do not exist, add them.
 		dbService.Name = p.ServiceName
 		if p.ServiceSource == types.ServiceSourceLocal && dbServices.Services[p.ServiceName].ServiceProviders.Local == "" {
 			dbService.LocalProvider = tmpSp.ProviderName
@@ -396,7 +406,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 		}
 		dbService.HybridPolicy = dbServices.Services[p.ServiceName].HybridPolicy
 
-		err := ds.Put(ctx, dbService)
+		err := s.Ds.Put(ctx, dbService)
 		if err != nil {
 			return nil, bcode.ErrServiceUpdateFailed
 		}
@@ -408,13 +418,12 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 }
 
 func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetAIGCServicesRequest) (*dto.GetAIGCServicesResponse, error) {
-	ds := datastore.GetDefaultDatastore()
 	service := &types.Service{}
 	if request.ServiceName != "" {
 		service.Name = request.ServiceName
 	}
 
-	list, err := ds.List(ctx, service, &datastore.ListOptions{PageSize: 10, Page: 0})
+	list, err := s.Ds.List(ctx, service, &datastore.ListOptions{PageSize: 10, Page: 0})
 	if err != nil {
 		return nil, err
 	}
@@ -442,30 +451,28 @@ func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetA
 	}, nil
 }
 
-func defaultProviderProcess(ctx context.Context, serviceName, serviceSource, providerName string) error {
-	ds := datastore.GetDefaultDatastore()
-
-	s := &types.Service{
+func (s *AIGCServiceImpl) defaultProviderProcess(ctx context.Context, serviceName, serviceSource, providerName string) error {
+	service := &types.Service{
 		Name: serviceName,
 	}
-	err := ds.Get(ctx, s)
+	err := s.Ds.Get(ctx, service)
 	if err != nil {
 		return err
 	}
 
-	if serviceSource == types.ServiceSourceLocal && s.LocalProvider != "" {
+	if serviceSource == types.ServiceSourceLocal && service.LocalProvider != "" {
 		return nil
-	} else if serviceSource == types.ServiceSourceRemote && s.RemoteProvider != "" {
+	} else if serviceSource == types.ServiceSourceRemote && service.RemoteProvider != "" {
 		return nil
 	}
 
 	if serviceSource == types.ServiceSourceLocal {
-		s.LocalProvider = providerName
+		service.LocalProvider = providerName
 	} else if serviceSource == types.ServiceSourceRemote {
-		s.RemoteProvider = providerName
+		service.RemoteProvider = providerName
 	}
 
-	err = ds.Put(ctx, s)
+	err = s.Ds.Put(ctx, service)
 	if err != nil {
 		slog.Error("Service default ", serviceSource, " provider set failed")
 		return err

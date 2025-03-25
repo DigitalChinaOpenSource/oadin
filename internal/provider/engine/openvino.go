@@ -75,7 +75,6 @@ func (o *OpenvinoProvider) PullModel(ctx context.Context, req *types.PullModelRe
 
 func (o *OpenvinoProvider) DeleteModel(ctx context.Context, req *types.DeleteRequest) error {
 	fmt.Printf("Ollama: Deleting model %s\n", req.Model)
-	// 实现具体的删除模型逻辑
 	return nil
 }
 

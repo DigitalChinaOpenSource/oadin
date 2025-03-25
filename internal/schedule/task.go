@@ -166,16 +166,21 @@ func (st *ServiceTask) Run() error {
 		}
 
 	}
-	authParams := &AuthenticatorParams{
-		Request:      req,
-		Content:      content,
-		ProviderInfo: sp,
-		ServiceInfo:  serviceDefaultInfo,
-	}
-	authenticator := ChooseProviderAuthenticator(authParams)
-	err = authenticator.Authenticate()
-	if err != nil {
-		return err
+	// remote provider auth
+	if sp.AuthType != types.AuthTypeNone {
+		authParams := &AuthenticatorParams{
+			Request:      req,
+			ProviderInfo: sp,
+			RequestBody:  string(content.Body),
+		}
+		authenticator := ChooseProviderAuthenticator(authParams)
+		if authenticator == nil {
+			return fmt.Errorf("[Service] Failed to choose authenticator")
+		}
+		err = authenticator.Authenticate()
+		if err != nil {
+			return err
+		}
 	}
 	// TODO: further fine tuning of the transport
 	transport := &http.Transport{
@@ -247,7 +252,6 @@ func (st *ServiceTask) Run() error {
 			}
 			getTaskAuthParams := AuthenticatorParams{
 				Request:      GetTaskReq,
-				ServiceInfo:  serviceDefaultInfo,
 				ProviderInfo: sp,
 			}
 			getTaskAuthenticator := ChooseProviderAuthenticator(&getTaskAuthParams)
@@ -285,16 +289,14 @@ func (st *ServiceTask) Run() error {
 			}
 			taskStatus := getRespData.Output.TaskStatus
 			if taskStatus == "FAILED" || taskStatus == "SUCCEEDED" || taskStatus == "UNKNOWN" {
+				newReader := bytes.NewReader(body)
+				readCloser := io.NopCloser(newReader)
+				resp.Body = readCloser
 				break
 			}
 			time.Sleep(500 * time.Millisecond)
 		}
 
-	} else {
-		body, err = io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
 	}
 
 	slog.Debug("[Service] Response Receiving", "taskid", st.Schedule.Id, "header",
@@ -310,7 +312,7 @@ func (st *ServiceTask) Run() error {
 	respConvertCtx := convert.ConvertContext{"id": fmt.Sprintf("%d%d", rand.Uint64(), st.Schedule.Id)}
 
 	if !respStreamMode.IsStream() {
-		// body, err := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			slog.Error("[Service] Failed to read response body", "taskid", st.Schedule.Id, "error", err.Error())
 			return fmt.Errorf("[Service] Failed to read response body: %s", err.Error())

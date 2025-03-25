@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +12,7 @@ import (
 
 func (t *AOGCoreServer) CreateServiceProvider(c *gin.Context) {
 	request := new(dto.CreateServiceProviderRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
 		return
 	}
@@ -32,7 +34,7 @@ func (t *AOGCoreServer) CreateServiceProvider(c *gin.Context) {
 
 func (t *AOGCoreServer) DeleteServiceProvider(c *gin.Context) {
 	request := new(dto.DeleteServiceProviderRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
 		return
 	}
@@ -54,7 +56,7 @@ func (t *AOGCoreServer) DeleteServiceProvider(c *gin.Context) {
 
 func (t *AOGCoreServer) UpdateServiceProvider(c *gin.Context) {
 	request := new(dto.UpdateServiceProviderRequest)
-	if err := c.BindJSON(request); err != nil {
+	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
 		return
 	}
@@ -78,10 +80,12 @@ func (t *AOGCoreServer) GetServiceProvider(c *gin.Context) {
 }
 
 func (t *AOGCoreServer) GetServiceProviders(c *gin.Context) {
-	request := new(dto.GetServiceProvidersRequest)
-	if err := c.BindJSON(request); err != nil {
-		bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
-		return
+	request := &dto.GetServiceProvidersRequest{}
+	if err := c.ShouldBindJSON(request); err != nil {
+		if !errors.Is(err, io.EOF) {
+			bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
+			return
+		}
 	}
 
 	if err := validate.Struct(request); err != nil {
