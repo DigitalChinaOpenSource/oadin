@@ -1,0 +1,16 @@
+{
+    "version": "0.2",
+    "service": {
+        "chat": {
+            "models": [
+                "qwen2.5:0.5b",
+                "qwen2.5:7b"
+            ]
+        },
+        "text-to-image": {
+            "models": [
+                "stable-diffusion-1.5-int4"
+            ]
+        }
+    }
+}

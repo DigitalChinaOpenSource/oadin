@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FreeChat.MainPage">
+
+    <Grid RowDefinitions="*, Auto" ColumnDefinitions="Auto, *">
+        <CollectionView x:Name="OptionsList" 
+                        SelectionMode="Single" 
+                        SelectionChanged="OnSelectionChanged"
+                        Grid.RowSpan="1" 
+                        Grid.Column="0"
+                        BackgroundColor="LightGray">
+            <CollectionView.ItemsSource>
+                <x:Array Type="{x:Type x:String}">
+                    <x:String>Chat</x:String>
+                    <x:String>File</x:String>
+                    <x:String>TextToImage</x:String>
+                    <x:String>Settings</x:String>
+                </x:Array>
+            </CollectionView.ItemsSource>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Label Text="{Binding}" Padding="10" />
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Frame Grid.Row="0" Grid.Column="1" Margin="10" BorderColor="Gray" CornerRadius="10" BackgroundColor="LightGray">
+            <ContentView x:Name="ChatView">
+                <Grid RowDefinitions="*, Auto" ColumnDefinitions="800, 200">
+                    <ScrollView Grid.Row="0" Grid.ColumnSpan="2">
+                        <StackLayout x:Name="Dialog" Padding="10">
+                        </StackLayout>
+                    </ScrollView>
+                    <Entry x:Name="PromptText" 
+                           Text="输入内容" 
+                           Focused="OnEntryFocused"
+                           Unfocused="OnEntryUnfocused"
+                           Grid.Row="1"
+                           Grid.Column="0"
+                           Margin="0,0,0,10" />
+                    <Button x:Name="SendButton" 
+                            Text="Send" 
+                            Clicked="OnSend" 
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="0,0,0,10" />
+                </Grid>
+            </ContentView>
+        </Frame>
+
+        <Frame x:Name="FileFrame" Grid.Row="0" Grid.Column="1" Margin="10" BorderColor="Gray" CornerRadius="10" IsVisible="False" BackgroundColor="LightGray">
+            <ContentView x:Name="FileView">
+                <StackLayout Padding="10">
+                    <Button Text="上传文件" Clicked="OnUploadFileClicked" WidthRequest="200" HeightRequest="50"/>
+                    <Label x:Name="FileLabel" Text="未上传文件" />
+                    <ScrollView Orientation="Vertical">
+                        <CollectionView x:Name="FilesCollectionView" ItemsLayout="VerticalList" HorizontalOptions="Start">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame BorderColor="Blue" Padding="5" Margin="5" WidthRequest="300" HeightRequest="300" HorizontalOptions="Start" BackgroundColor="LightGray">
+                                        <ScrollView Orientation="Vertical">
+                                            <StackLayout Orientation="Vertical">
+                                                <Label Text="{Binding FileName}" FontAttributes="Bold" HorizontalOptions="Center" />
+                                                <CollectionView ItemsSource="{Binding Segments}" ItemsLayout="VerticalList" HorizontalOptions="Start">
+                                                    <CollectionView.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Frame BorderColor="Red" Padding="10" Margin="5" WidthRequest="200" HeightRequest="80" BackgroundColor="LightGray">
+                                                                <Label Text="{Binding DisplayText}" />
+                                                                <Frame.GestureRecognizers>
+                                                                    <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="OnSegmentTapped" />
+                                                                </Frame.GestureRecognizers>
+                                                            </Frame>
+                                                        </DataTemplate>
+                                                    </CollectionView.ItemTemplate>
+                                                </CollectionView>
+                                            </StackLayout>
+                                        </ScrollView>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </ScrollView>
+                </StackLayout>
+            </ContentView>
+        </Frame>
+
+        <Frame x:Name="TextToImageFrame" 
+               Grid.Row="0" 
+               Grid.Column="1" 
+               Margin="10" 
+               BorderColor="Gray" 
+               CornerRadius="10" 
+               IsVisible="False" 
+               BackgroundColor="LightGray"> 
+            <ContentView x:Name="TextToImageView">
+                <StackLayout Padding="10">
+                    <Entry x:Name="PromptEntry" 
+                           Placeholder="输入图片描述（例如：一只在草地上玩耍的柯基犬）"
+                           Completed="OnGenerateImage"/>    
+                    <Button Text="生成图片" 
+                            Clicked="OnGenerateImage"
+                            HorizontalOptions="Center"
+                            WidthRequest="200"/>
+                    <ActivityIndicator x:Name="LoadingIndicator"
+                                       IsRunning="False"
+                                       Color="Blue"/>
+                    <Image x:Name="GeneratedImage" 
+                           HeightRequest="300"
+                           Aspect="AspectFit"/>
+                    <Label x:Name="StatusLabel" 
+                           TextColor="Red"
+                           IsVisible="False"/>
+                </StackLayout>
+            </ContentView>
+        </Frame>
+
+        <Frame x:Name="SettingsFrame" Grid.Row="0" Grid.Column="1" Margin="10" BorderColor="Gray" CornerRadius="10" IsVisible="False" BackgroundColor="LightGray">
+            <ContentView x:Name="SettingsView">
+                <StackLayout Padding="10">
+                    <Label Text="Settings" FontSize="24" />
+                    <Entry x:Name="ApiUrlEntry" Placeholder="Enter Chat API URL" TextChanged="OnApiUrlChanged" />
+                    <Entry x:Name="ApiKeyEntry" Placeholder="Enter Chat API Key" TextChanged="OnApiKeyChanged" />
+                    <Entry x:Name="ModelNameEntry" Placeholder="Enter Model Name" TextChanged="OnModelNameChanged"/>
+                </StackLayout>
+            </ContentView>
+        </Frame>
+    </Grid>
+
+</ContentPage>

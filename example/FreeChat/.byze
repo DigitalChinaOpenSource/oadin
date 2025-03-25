@@ -1,0 +1,10 @@
+{
+    "version": "0.2",
+    "service": {
+        "chat": {
+            "models": [
+                "deepseek-r1:7b"
+            ]
+        }   
+    }
+}
