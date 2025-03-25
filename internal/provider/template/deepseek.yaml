@@ -1,0 +1,121 @@
+version: "0.1"
+name: deepseek # the name should be aligned with file name
+services:
+    chat: # service name defined by Byze
+        url: "https://api.lkeap.cloud.tencent.com/v1/chat/completions"
+        endpoints: [ "POST /v1/chat/completions" ]  # request to this will use this flavor
+        extra_url: ""
+        auth_type: "apikey"
+        default_model: deepseek-r1
+        request_segments: 1 # request
+        install_raw_routes: false # also install routes without byze prefix in url path
+        extra_headers: '{}'
+        request_to_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "stream": $stream,
+                          "messages": messages,
+                          "tools": tools,
+                          "seed": seed,
+                          "temperature": temperature,
+                          "top_p": top_p,
+                          "top_k": top_k,
+                          "stop": stop,
+                          "max_tokens": $exists(max_tokens) ? max_tokens : max_completion_tokens,
+                          "keep_alive": keep_alive
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        request_from_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "stream": $stream,
+                          "messages": messages,
+                          "tools": tools,
+                          "seed": seed,
+                          "temperature": temperature,
+                          "top_p": top_p,
+                          "top_k": top_k,
+                          "stop": stop,
+                          "max_tokens": max_tokens,
+                          "keep_alive": keep_alive
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        response_to_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": model,
+                          "created_at": created,
+                          "message": choices[0].message,
+                          "finished": true,
+                          "finish_reason": choices[0].finish_reason
+                      }
+
+        stream_response_to_byze:
+            conversion:
+                - converter: action_if
+                  config:
+                      trim: true
+                      pattern: "[DONE]" # ignore if the content is [DONE]
+                      action: drop
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": model,
+                          "created_at": created,
+                          "message": choices[0].delta,
+                          "finished": choices[0].finish_reason = "stop" ? true : false,
+                          "finish_reason": choices[0].finish_reason
+                      }
+
+        response_from_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": model,
+                          "object": "chat.completion",
+                          "created": created_at,
+                          "choices": [{
+                                "index": 0,
+                                "message": message,
+                                "finish_reason": finish_reason
+                          }]
+                      }
+
+        stream_response_from_byze:
+            epilogue: ["[DONE]"] # openai adds a data: [DONE] at the end
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": model,
+                          "object": "chat.completion.chunk",
+                          "created": created_at,
+                          "choices": [{
+                                "index": 0,
+                                "delta": message,
+                                "finish_reason": finish_reason
+                          }]
+                      }
