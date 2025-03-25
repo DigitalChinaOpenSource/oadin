@@ -1,0 +1,275 @@
+version: "0.1"
+name: tencent # the name should be aligned with file name
+services:
+  models:
+    url: "https://api.hunyuan.cloud.tencent.com/v1/models"
+    endpoints: [ "GET /v1/models" ]  # request to this will use this flavor
+    extra_url: ""
+    auth_type: "apikey"
+    default_model: ""
+    request_segments: 1 # request
+    install_raw_routes: false # also install routes without byze prefix in url path
+    extra_headers: '{}'
+    response_to_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "models": [data.{
+                  "name": id
+                }] 
+            }
+
+    response_from_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "data": [models.{
+                  "id": name,
+                  "object": "model",
+                  "permission": []
+                }],
+                "object": "list"
+            }
+
+  chat: # service name defined by Byze
+    url: "https://api.hunyuan.cloud.tencent.com/v1/chat/completions"
+    endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
+    extra_url: ""
+    auth_type: "apikey"
+    install_raw_routes: false # also install routes without byze prefix in url path
+    default_model: hunyuan-turbo
+    request_segments: 1 # request
+    extra_headers: '{}'
+    request_to_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "stream": $stream,
+                "messages": messages,
+                "tools": tools,
+                "seed": seed,
+                "temperature": temperature,
+                "top_p": top_p,
+                "top_k": top_k,
+                "stop": stop,
+                "max_tokens": $exists(max_tokens) ? max_tokens : max_completion_tokens,
+                "keep_alive": keep_alive
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    request_from_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "stream": $stream,
+                "messages": messages,
+                "tools": tools,
+                "seed": seed,
+                "temperature": temperature,
+                "top_p": top_p,
+                "top_k": top_k,
+                "stop": stop,
+                "max_tokens": max_tokens,
+                "keep_alive": keep_alive
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    response_to_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "created_at": created,
+                "message": choices[0].message,
+                "finished": true,
+                "finish_reason": choices[0].finish_reason
+            }
+
+    stream_response_to_byze:
+      conversion:
+        - converter: action_if
+          config:
+            trim: true
+            pattern: "[DONE]" # ignore if the content is [DONE]
+            action: drop
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "created_at": created,
+                "message": choices[0].delta,
+                "finished": choices[0].finish_reason = "stop" ? true : false,
+                "finish_reason": choices[0].finish_reason
+            }
+
+    response_from_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "object": "chat.completion",
+                "created": created_at,
+                "choices": [{
+                      "index": 0,
+                      "message": message,
+                      "finish_reason": finish_reason
+                }]
+            }
+
+    stream_response_from_byze:
+      epilogue: [ "[DONE]" ] # openai adds a data: [DONE] at the end
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "object": "chat.completion.chunk",
+                "created": created_at,
+                "choices": [{
+                      "index": 0,
+                      "delta": message,
+                      "finish_reason": finish_reason
+                }]
+            }
+
+  embed:
+    url: "https://api.hunyuan.cloud.tencent.com/v1/embeddings"
+    endpoints: [ "POST /v1/embeddings" ] # request to this will use this flavor
+    extra_url: ""
+    auth_type: "apikey"
+    install_raw_routes: false # also install routes without byze prefix in url path
+    default_model: "hunyuan-embedding"
+    request_segments: 1 # request
+    extra_headers: '{}'
+    request_to_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "input": input,
+                "dimensions": dimensions,
+                "encoding_format": encoding_format
+            }
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    request_from_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+               "model": $model,
+               "input": input,
+               "dimensions": dimensions,
+               "encoding_format": encoding_format
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    response_to_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "data": data
+            }
+    response_from_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                 "id": id,
+                 "model": model,
+                 "data": data
+            }
+  text_to_image:
+    url: "https://hunyuan.tencentcloudapi.com/"
+    endpoints: [ "POST /v1/text-to-image" ] # request to this will use this flavor
+    extra_url: ""
+    auth_type: "token"
+    install_raw_routes: false # also install routes without byze prefix in url path
+    default_model: ""
+    request_segments: 1 # request
+    extra_headers: '{"Action": "TextToImageLite", "Version": "2023-09-01", "Region": "ap-guangzhou"}'
+    request_to_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+               "model": $model,
+               "input": prompt,
+               "RspImgType": $exists(RspImgType) ? RspImgType : "url",
+               "parameters": parameters
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+    request_from_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+               "model": $model,
+               "Prompt": prompt,
+               "RspImgType": $exists(RspImgType) ? RspImgType : "url",
+               "NegativePrompt": input.negative_prompt
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+    response_to_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": Response.RequestId,
+                "data": {
+                    "url": Response.ResultImage,
+                     "code": Response.Error.Code,
+                     "message": Response.Error.Message
+                        }
+            }
+    response_from_byze:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": Response.RequestId,
+                "data": {
+                     "url": Response.ResultImage,
+                     "code": Response.Error.Code,
+                     "message": Response.Error.Message
+                        }
+            }

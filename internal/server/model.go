@@ -1,0 +1,181 @@
+package server
+
+import (
+	"aipc/byze/internal/api/dto"
+	"aipc/byze/internal/datastore"
+	"aipc/byze/internal/provider"
+	"aipc/byze/internal/types"
+	"aipc/byze/internal/utils/bcode"
+	"context"
+	"errors"
+	"log/slog"
+)
+
+type Model interface {
+	CreateModel(ctx context.Context, request *dto.CreateModelRequest) (*dto.CreateModelResponse, error)
+	DeleteModel(ctx context.Context, request *dto.DeleteModelRequest) (*dto.DeleteModelResponse, error)
+	GetModels(ctx context.Context, request *dto.GetModelsRequest) (*dto.GetModelsResponse, error)
+}
+
+type ModelImpl struct {
+	Ds datastore.Datastore
+}
+
+func NewModel() Model {
+	return &ModelImpl{
+		Ds: datastore.GetDefaultDatastore(),
+	}
+}
+
+func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelRequest) (*dto.CreateModelResponse, error) {
+	sp := new(types.ServiceProvider)
+	if request.ProviderName != "" {
+		sp.ProviderName = request.ProviderName
+	} else {
+		// get default service provider
+		// todo Currently only chat and generate services support pulling models.
+		if request.ServiceName != types.ServiceChat && request.ServiceName != types.ServiceGenerate {
+			return nil, bcode.ErrServer
+		}
+
+		service := &types.Service{}
+		service.Name = request.ServiceName
+
+		err := s.Ds.Get(ctx, service)
+		if err != nil {
+			return nil, err
+		}
+
+		if request.ServiceSource == types.ServiceSourceLocal && service.LocalProvider != "" {
+			sp.ProviderName = service.LocalProvider
+		} else if request.ServiceSource == types.ServiceSourceRemote && service.RemoteProvider != "" {
+			sp.ProviderName = service.RemoteProvider
+		}
+	}
+
+	sp.ServiceName = request.ServiceName
+	sp.ServiceSource = request.ServiceSource
+
+	err := s.Ds.Get(ctx, sp)
+	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+		// todo debug log output
+		return nil, bcode.ErrServer
+	} else if errors.Is(err, datastore.ErrEntityInvalid) {
+		return nil, bcode.ErrServiceRecordNotFound
+	}
+
+	m := new(types.Model)
+	m.ProviderName = sp.ProviderName
+	m.ModelName = request.ModelName
+
+	err = s.Ds.Get(ctx, m)
+	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+		// todo debug log output
+		return nil, bcode.ErrServer
+	}
+
+	modelEngine := provider.GetModelEngine(sp.Flavor)
+	stream := false
+	pullReq := &types.PullModelRequest{
+		Model:  request.ModelName,
+		Stream: &stream,
+	}
+	_, err = modelEngine.PullModel(ctx, pullReq, nil)
+	if err != nil {
+		slog.Error("Pull model error: ", err.Error())
+		return nil, bcode.ErrEnginePullModel
+	}
+	slog.Info("Pull model %s completed ..." + request.ModelName)
+
+	m.Status = "downloaded"
+	err = s.Ds.Add(ctx, m)
+	if err != nil {
+		return nil, bcode.ErrAddModel
+	}
+
+	return &dto.CreateModelResponse{
+		Bcode: *bcode.ModelCode,
+	}, nil
+}
+
+func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelRequest) (*dto.DeleteModelResponse, error) {
+	sp := new(types.ServiceProvider)
+	sp.ProviderName = request.ProviderName
+
+	err := s.Ds.Get(ctx, sp)
+	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+		// todo err debug log output
+		return nil, bcode.ErrServer
+	} else if errors.Is(err, datastore.ErrEntityInvalid) {
+		return nil, bcode.ErrServiceRecordNotFound
+	}
+
+	m := new(types.Model)
+	m.ProviderName = request.ProviderName
+	m.ModelName = request.ModelName
+
+	err = s.Ds.Get(ctx, m)
+	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+		// todo err debug log output
+		return nil, bcode.ErrServer
+	} else if errors.Is(err, datastore.ErrEntityInvalid) {
+		return nil, bcode.ErrModelRecordNotFound
+	}
+
+	// Call engin to delete model.
+	modelEngine := provider.GetModelEngine(sp.Flavor)
+	deleteReq := &types.DeleteRequest{
+		Model: request.ModelName,
+	}
+
+	err = modelEngine.DeleteModel(ctx, deleteReq)
+	if err != nil {
+		// todo err debug log output
+		return nil, bcode.ErrEngineDeleteModel
+	}
+
+	err = s.Ds.Delete(ctx, m)
+	if err != nil {
+		// todo err debug log output
+		return nil, err
+	}
+	return &dto.DeleteModelResponse{
+		Bcode: *bcode.ModelCode,
+	}, nil
+}
+
+func (s *ModelImpl) GetModels(ctx context.Context, request *dto.GetModelsRequest) (*dto.GetModelsResponse, error) {
+	m := &types.Model{}
+	if request.ModelName != "" {
+		m.ModelName = request.ModelName
+	}
+	if request.ProviderName != "" {
+		m.ProviderName = request.ProviderName
+	}
+	list, err := s.Ds.List(ctx, m, &datastore.ListOptions{
+		Page:     0,
+		PageSize: 1000,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	respData := make([]dto.Model, 0)
+	for _, v := range list {
+		tmp := new(dto.Model)
+		dsModel := v.(*types.Model)
+
+		tmp.ModelName = dsModel.ModelName
+		tmp.ProviderName = dsModel.ProviderName
+		tmp.Status = dsModel.Status
+		tmp.CreatedAt = dsModel.CreatedAt
+		tmp.UpdatedAt = dsModel.UpdatedAt
+
+		respData = append(respData, *tmp)
+	}
+
+	return &dto.GetModelsResponse{
+		Bcode: *bcode.ModelCode,
+		Data:  respData,
+	}, nil
+}
