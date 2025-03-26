@@ -16,13 +16,14 @@ ByzeLib 将协助开发者使用 Byze（白泽模型框架）。
 
 首先在 NodeJS 项目中安装该 Node Module：
 
-```sh
+
+``` sh
 npm install byze-lib-1.0.0.tgz
 ```
 
 然后在项目中引入该 Node Module：
 
-```javascript
+``` JavaScript
 const ByzeLib = require('byze-lib');
 
 const byze = new ByzeLib();

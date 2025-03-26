@@ -6,7 +6,8 @@ const os = require('os');
 const { spawn } = require('child_process');
 
 class Byze {
-  IsByzeAvailable(){
+  // 检查 Byze 服务是否启动
+  IsByzeAvailiable(){
       return new Promise((resolve) => {
           const options = {
             hostname: 'localhost',
@@ -27,13 +28,17 @@ class Byze {
       });
   }
 
-  IsByzeExist(){
-      const userDir = os.homedir();
-      const destDir = path.join(userDir, 'Byze');
-      const dest = path.join(destDir, 'Byze.exe');
-      return fs.existsSync(dest);
+  // 检查用户目录是否存在 Byze.exe
+  IsByzeExisted() {
+    return new Promise((resolve) => {
+        const userDir = os.homedir();
+        const destDir = path.join(userDir, 'Byze');
+        const dest = path.join(destDir, 'Byze.exe');
+        resolve(fs.existsSync(dest));
+    });
   }
 
+  // 从服务器下载 Byze.exe
   DownloadByze() {
       return new Promise((resolve) => {
         const url = 'http://120.232.136.73:31619/Byzedev/Byze.exe';
@@ -53,6 +58,7 @@ class Byze {
       });
   }
 
+  // 启动 Byze 服务
   InstallByze() {
     return new Promise((resolve) => {
       const userDir = os.homedir();
