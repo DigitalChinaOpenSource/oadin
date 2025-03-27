@@ -22,10 +22,10 @@ build-cli-linux:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
 
 build-dll-win:
-	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o AogChecker.dll -buildmode=c-shared checker/AogChecker.go
+	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o ByzeChecker.dll -buildmode=c-shared checker/ByzeChecker.go
 
 build-dll-darwin:
-	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o AogChecker.dylib -buildmode=c-shared checker/AogChecker.go
+	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o ByzeChecker.dylib -buildmode=c-shared checker/ByzeChecker.go
 
 build-dll-linux:
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o AogChecker.so -buildmode=c-shared checker/AogChecker.go
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o ByzeChecker.so -buildmode=c-shared checker/ByzeChecker.go

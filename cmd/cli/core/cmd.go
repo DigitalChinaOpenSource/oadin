@@ -317,11 +317,11 @@ func NewStopApiServerCommand() *cobra.Command {
 		Short: "Stop byze server daemon",
 		Long:  "Stop byze server daemon",
 		Args:  cobra.ExactArgs(0), // 不需要参数
-		RunE:  stopAogServer,
+		RunE:  stopByzeServer,
 	}
 }
 
-func stopAogServer(cmd *cobra.Command, args []string) error {
+func stopByzeServer(cmd *cobra.Command, args []string) error {
 	files, err := filepath.Glob(filepath.Join(config.GlobalByzeEnvironment.RootDir, "*.pid"))
 	if err != nil {
 		return fmt.Errorf("failed to list pid files: %v", err)
@@ -865,7 +865,7 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println("Byze server is not running. Starting the server...")
-	if err := startAogServer(); err != nil {
+	if err := startByzeServer(); err != nil {
 		log.Fatalf("Failed to start Byze server: %s \n", err.Error())
 		return
 	}
@@ -944,7 +944,7 @@ func isServerRunning() bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-func startAogServer() error {
+func startByzeServer() error {
 	logPath := config.GlobalByzeEnvironment.ConsoleLog
 
 	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
