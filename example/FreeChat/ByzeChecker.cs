@@ -34,7 +34,7 @@ namespace byze_checker_0
             string logPath = Path.Combine(userFolder, "byze_log.txt");
             File.WriteAllText(logPath, "Byze 初始化开始\n");
 
-            var byzeAvailable = await CheckAogAvailabilityAsync(page);
+            var byzeAvailable = await CheckByzeAvailabilityAsync(page);
             if (!byzeAvailable)
             {
                 return;
@@ -61,13 +61,13 @@ namespace byze_checker_0
         }
 
         // Check whether Byze is available
-        public static async Task<bool> CheckAogAvailabilityAsync(Page page)
+        public static async Task<bool> CheckByzeAvailabilityAsync(Page page)
         {
             // Change
             bool isAvailable = false;
             string userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string logPath = Path.Combine(userFolder, "byze_log.txt");
-            File.AppendAllText(logPath, "CheckAogAvailabilityAsync\n");
+            File.AppendAllText(logPath, "CheckByzeAvailabilityAsync\n");
             try
             {
                 using (var client = new HttpClient())
@@ -79,13 +79,13 @@ namespace byze_checker_0
             catch
             {
             }
-            File.AppendAllText(logPath, "CheckAogAvailabilityAsync开始弹窗询问\n");
+            File.AppendAllText(logPath, "CheckByzeAvailabilityAsync开始弹窗询问\n");
             if (!isAvailable)
             {
                 var result = await page.DisplayAlert("Byze 服务不可用", "是否下载并安装 Byze？", "是", "否");
                 if (result)
                 {
-                    await DownloadAogAsync();
+                    await DownloadByzeAsync();
                     await page.DisplayAlert("安装完成", "Byze 已下载并安装，请重启应用程序。", "确定");
                     return false;
                 }
@@ -100,7 +100,7 @@ namespace byze_checker_0
 
 
         // Download Byze
-        public static async Task DownloadAogAsync()
+        public static async Task DownloadByzeAsync()
         {
             string downloadUrl = "http://120.232.136.73:31619/byzedev/byze.exe";
             string userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -124,7 +124,7 @@ namespace byze_checker_0
 
             ExecuteCommand("byze server start -d");
 
-            File.AppendAllText(logPath, "DownloadAogAsync执行完成\n");
+            File.AppendAllText(logPath, "DownloadByzeAsync执行完成\n");
         }
 
         private static void ExecuteCommand(string command)

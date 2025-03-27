@@ -74,8 +74,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Reference Include="AogCheckerLib">
-	    <HintPath>..\..\AogCheckerLib\src\bin\Release\net8.0\AogCheckerLib.dll</HintPath>
+	  <Reference Include="ByzeCheckerLib">
+	    <HintPath>..\..\ByzeCheckerLib\src\bin\Release\net8.0\ByzeCheckerLib.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
 	
