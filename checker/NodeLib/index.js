@@ -97,13 +97,14 @@ class Byze {
     return new Promise((resolve) => {
       const userDir = os.homedir();
       const byzePath = path.join(userDir, 'Byze', 'byze.exe');
-
+      process.env.PATH = `${process.env.PATH};${byzePath}`;
       const child = spawn(byzePath, ['server', 'start', '-d'], { detached: true, stdio: 'ignore' });
 
       child.on('error', (err) => {
         console.error(`启动 Byze 服务失败: ${err.message}`);
         return resolve(false);
       });
+
 
       const checkServer = () => {
         const options = {
@@ -125,7 +126,7 @@ class Byze {
         });
 
         req.on('error', () => {
-            console.error('Byze 服务未启动，端口不可用');
+            console.error('Byze 服务未启动');
             resolve(false);
         });
 
