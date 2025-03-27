@@ -33,7 +33,7 @@ class Byze {
     return new Promise((resolve) => {
         const userDir = os.homedir();
         const destDir = path.join(userDir, 'Byze');
-        const dest = path.join(destDir, 'Byze.exe');
+        const dest = path.join(destDir, 'byze.exe');
         resolve(fs.existsSync(dest));
     });
   }
@@ -41,10 +41,10 @@ class Byze {
   // 从服务器下载 Byze.exe
   DownloadByze() {
     return new Promise((resolve) => {
-      const url = 'http://120.232.136.73:31619/Byzedev/Byze.exe';
+      const url = 'http://120.232.136.73:31619/Byzedev/byze.exe';
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'Byze');
-      const dest = path.join(destDir, 'Byze.exe');
+      const dest = path.join(destDir, 'byze.exe');
 
       fs.mkdir(destDir, { recursive: true }, (err) => {
         if (err) return resolve(false);
