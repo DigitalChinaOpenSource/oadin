@@ -2,7 +2,7 @@ version: "0.1"
 name: ollama # the name should be aligned with file name
 services:
     models:
-        url: "http://127.0.0.1:16688/api/tags"
+        url: "http://127.0.0.1:16677/api/tags"
         endpoints: ["GET /api/tags"] # request to this will use this flavor
         extra_url: ""
         auth_type: "none"
@@ -48,7 +48,7 @@ services:
                       }
 
     chat: # service name defined by Byze
-        url: "http://127.0.0.1:16688/api/chat"
+        url: "http://127.0.0.1:16677/api/chat"
         endpoints: ["POST /api/chat"] # request to this will use this flavor
         extra_url: ""
         auth_type: "none"
@@ -171,7 +171,7 @@ services:
                           Content-Type: application/x-ndjson
 
     generate:
-        url: "http://127.0.0.1:16688/api/generate"
+        url: "http://127.0.0.1:16677/api/generate"
         endpoints: ["POST /api/generate"] # request to this will use this flavor
         extra_url: ""
         auth_type: "none"
@@ -181,7 +181,7 @@ services:
         extra_headers: '{}'
 
     embed:
-        url: "http://127.0.0.1:16688/api/embed"
+        url: "http://127.0.0.1:16677/api/embed"
         endpoints: [ "POST /api/embed"] # request to this will use this flavor
         extra_url: ""
         auth_type: "none"
