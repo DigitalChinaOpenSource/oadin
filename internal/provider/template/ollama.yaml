@@ -189,3 +189,52 @@ services:
         request_segments: 1 # request
         install_raw_routes: true # also install routes without byze prefix in url path
         extra_headers: '{}'
+        request_to_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "input": input,
+                          "dimensions": dimensions,
+                          "encoding_format": encoding_format
+                      }
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        request_from_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                         "model": $model,
+                         "input": input,
+                         "dimensions": dimensions,
+                         "encoding_format": encoding_format
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        response_to_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": model,
+                          "data": data
+                      }
+        response_from_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                           "id": id,
+                           "model": model,
+                           "data": data
+                      }
