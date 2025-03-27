@@ -18,7 +18,7 @@ ByzeLib 将协助开发者使用 Byze（白泽模型框架）。
 
 
 ``` sh
-npm install byze-lib-1.0.2.tgz
+npm install byze-lib-1.0.0.tgz
 ```
 
 然后在项目中引入该 Node Module：
@@ -45,6 +45,11 @@ byze.DownloadByze().then((result) => {
 
 // 启动 byze 服务
 byze.InstallByze().then((result) => {
+    console.log(result);
+});
+
+// 安装 byze chat服务
+byze.InstallChat().then((result) => {
     console.log(result);
 });
 

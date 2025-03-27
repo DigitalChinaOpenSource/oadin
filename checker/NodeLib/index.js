@@ -143,6 +143,37 @@ class Byze {
     });
   }
 
+  InstallChat() {
+    return new Promise((resolve) => {
+      const userDir = os.homedir();
+      const byzePath = path.join(userDir, 'Byze', 'byze.exe');
+      process.env.PATH = `${process.env.PATH};${byzePath}`;
+
+      const child = spawn(byzePath, ['install', 'chat'], { detached: true });
+
+      child.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          console.log('安装 Byze 聊天插件成功');
+          resolve(true);
+        } else {
+          console.error(`安装 Byze 聊天插件失败，退出码: ${code}`);
+          resolve(false);
+        }
+      });
+
+      child.on('error', (err) => {
+        console.error(`启动 Byze 安装命令失败: ${err.message}`);
+        resolve(false);
+      });
+
+      child.unref();
+    });
+  }
+
   ByzeInit(){
 
   }
