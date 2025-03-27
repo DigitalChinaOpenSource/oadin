@@ -42,6 +42,7 @@ services:
         request_segments: 1 # request
         install_raw_routes: false # also install routes without byze prefix in url path
         extra_headers: '{}'
+        support_models: ["qwen-max", "qwen-plus", "qwen-turbo", "qwen-long", "qwen-vl-max"]
         request_to_byze:
             conversion:
                 - converter: jsonata
@@ -160,6 +161,7 @@ services:
         request_segments: 1 # request
         install_raw_routes: false # also install routes without byze prefix in url path# request to this will use this flavor
         extra_headers: '{}'
+        support_models: ["text-embedding-v1", "text-embedding-v2", "text-embedding-v3"]
         request_to_byze:
             conversion:
                 - converter: jsonata
@@ -219,6 +221,7 @@ services:
         default_model: wanx2.1-t2i-turbo
         request_segments: 2 # request
         extra_headers: '{"X-DashScope-Async": "enable"}'
+        support_models: ["wanx2.1-t2i-turbo", "wanx2.1-t2i-plus", "wanx2.0-t2i-turbo"]
         request_to_byze:
             conversion:
                 - converter: jsonata

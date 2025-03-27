@@ -6,10 +6,11 @@ services:
         endpoints: [ "POST /v1/chat/completions" ]  # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
-        default_model: deepseek-r1
+        default_model: deepseek-chat
         request_segments: 1 # request
         install_raw_routes: false # also install routes without byze prefix in url path
         extra_headers: '{}'
+        support_models: ["deepseek-chat", "deepseek-resoning"]
         request_to_byze:
             conversion:
                 - converter: jsonata
