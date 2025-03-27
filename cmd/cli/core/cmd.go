@@ -821,9 +821,9 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		fmt.Println("Service chat install success!")
+		fmt.Printf("Service %s install success!", serviceName)
 
-		if !remote {
+		if !remote && serviceName == types.ServiceChat {
 			askRes := askEnableRemoteService()
 			if askRes {
 				fmt.Println("请前往 https://platform.deepseek.com/ 网址申请 APIKEY。")
