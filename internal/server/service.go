@@ -147,7 +147,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 			slog.Info("Pull model %s completed ..." + engineConfig.RecommendModel)
 		}
 
-		sp.URL = fmt.Sprintf("%s://%s/%s", engineConfig.Scheme, engineConfig.Host, "api/chat")
+		sp.URL = providerServiceInfo.RequestUrl
 		sp.AuthType = types.AuthTypeNone
 		sp.AuthKey = ""
 		sp.ExtraJSONBody = ""
@@ -539,13 +539,13 @@ func getRecommendConfig(service string) types.RecommendConfig {
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250122.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	case types.ServiceEmbed:
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "bge-m3",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250122.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	case types.ServiceModels:
 		return types.RecommendConfig{}
@@ -553,7 +553,7 @@ func getRecommendConfig(service string) types.RecommendConfig {
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250122.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	default:
 		return types.RecommendConfig{}
