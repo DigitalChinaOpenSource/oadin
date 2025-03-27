@@ -28,6 +28,11 @@ byze.InstallByze().then((result) => {
     console.log(result);
 });
 
+// 安装 byze chat服务
+byze.InstallChat().then((result) => {
+    console.log(result);
+});
+
 ```
 
 将应用程序与 ``.byze`` 文件一同打包发布。
