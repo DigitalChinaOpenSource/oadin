@@ -3,9 +3,31 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const axios = require('axios');
+const Ajv = require('ajv');
 const { spawn } = require('child_process');
 
+const schemas = require('./schemas.json');
+
 class Byze {
+  version = "byze/v0.2";
+
+  constructor(version) {
+    this.client = axios.create({
+      baseURL: `http://localhost:16688/${this.version}`,
+      headers: {"Content-Type": "application/json" },
+    })
+    this.ajv = new Ajv();
+  }
+
+  async validateSchema(schema, data) {
+    const validate = this.ajv.compile(schema);
+    if(!validate(data)) {
+      throw new Error(`Schema validation failed: ${JSON.stringify(validate.errors)}`);
+    }
+    return data;
+  }
+
   // 检查 Byze 服务是否启动
   IsByzeAvailiable(){
       return new Promise((resolve) => {
@@ -143,6 +165,7 @@ class Byze {
     });
   }
 
+  // 执行 byze install chat
   InstallChat() {
     return new Promise((resolve) => {
       const userDir = os.homedir();
@@ -172,6 +195,26 @@ class Byze {
 
       child.unref();
     });
+  }
+
+  // 获取当前服务
+  async GetServices() {
+    const res = await this.client.get('/service');
+    return this.validateSchema(schemas.getServicesSchema, res.data);
+  }
+
+  // 创建新服务
+  async CreateService(data) {
+    this.validateSchema(schemas.installServiceRequestSchema, data);
+    const res = await this.client.post('/service', data);
+    return this.validateSchema(schemas.ResponseSchema, res.data);
+  }
+  
+  // 更新服务
+  async UpdateService(data) {
+    this.validateSchema(schemas.updateServiceRequestSchema, data);
+    const res = await this.client.put('/service', data);
+    return this.validateSchema(schemas.ResponseSchema, res.data);
   }
 
   ByzeInit(){
