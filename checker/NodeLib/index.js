@@ -5,6 +5,7 @@ const path = require('path');
 const os = require('os');
 const axios = require('axios');
 const Ajv = require('ajv');
+const addFormats = require('ajv-formats')
 const { spawn } = require('child_process');
 
 const schemas = require('./schema.js');
@@ -18,6 +19,7 @@ class Byze {
       headers: {"Content-Type": "application/json" },
     })
     this.ajv = new Ajv();
+    addFormats(this.ajv);
   }
 
   async validateSchema(schema, data) {
