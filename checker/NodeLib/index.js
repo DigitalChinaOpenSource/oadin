@@ -7,7 +7,7 @@ const axios = require('axios');
 const Ajv = require('ajv');
 const { spawn } = require('child_process');
 
-const schemas = require('./schemas.json');
+const schemas = require('./schema.js');
 
 class Byze {
   version = "byze/v0.2";
@@ -130,34 +130,45 @@ class Byze {
 
       const checkServer = () => {
         const options = {
-            hostname: 'localhost',
-            port: 16688,
-            path: '/',
-            method: 'GET',
-            timeout: 3000,
+          hostname: 'localhost',
+          port: 16688,
+          path: '/',
+          method: 'GET',
+          timeout: 3000, // 超时时间为 3 秒
         };
-
+      
+        let isResolved = false; // 添加标志变量，防止重复触发
+      
         const req = http.request(options, (res) => {
+          if (!isResolved) {
+            isResolved = true; // 标记请求已完成
             if (res.statusCode === 200) {
-                console.log('Byze 服务启动成功，端口正常');
-                resolve(true);
+              console.log('Byze 服务启动成功，端口正常');
+              resolve(true);
             } else {
-                console.error(`Byze 服务启动失败，返回状态码: ${res.statusCode}`);
-                resolve(false);
+              console.error(`Byze 服务启动失败，返回状态码: ${res.statusCode}`);
+              resolve(false);
             }
+          }
         });
-
+      
         req.on('error', () => {
+          if (!isResolved) {
+            isResolved = true; // 标记请求已完成
             console.error('Byze 服务未启动');
             resolve(false);
+          }
         });
-
+      
         req.on('timeout', () => {
+          if (!isResolved) {
+            isResolved = true; // 标记请求已完成
             console.error('检查 Byze 服务超时');
             req.destroy();
             resolve(false);
+          }
         });
-
+      
         req.end();
       };
       setTimeout(checkServer, 3000);
@@ -166,16 +177,24 @@ class Byze {
   }
 
   // 执行 byze install chat
-  InstallChat() {
+  InstallChat(remote = null) {
     return new Promise((resolve) => {
       const userDir = os.homedir();
       const byzePath = path.join(userDir, 'Byze', 'byze.exe');
       process.env.PATH = `${process.env.PATH};${byzePath}`;
 
-      const child = spawn(byzePath, ['install', 'chat'], { detached: true });
+      const child = spawn(byzePath, ['install', 'chat'], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
+
+        if (data.toString().includes('(y/n)')) {
+          if (remote) {
+            child.stdin.write('${autoAnswer}\n');
+          } else {
+            child.stdin.write('n\n');
+          }
+        }
       });
 
       child.on('close', (code) => {
