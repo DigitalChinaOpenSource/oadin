@@ -1,4 +1,4 @@
-
+// ========== 服务管理 ==========
 const getServicesSchema = {
     type: "object",
     properties: {
@@ -38,7 +38,7 @@ const installServiceRequestSchema = {
         hybrid_policy: { type: "string" },
         flavor_name: { type: "string" },
         provider_name: { type: "string" },
-        auth_type: { type: "string", enum: ["apikey", "oauth", "none"] },
+        auth_type: { type: "string", enum: ["apikey", "none"] },
         auth_key: { type: "string" }
     },
     required: [
@@ -63,9 +63,164 @@ const updateServiceRequestSchema = {
     ]
 };
 
+// ========== 模型管理 ==========
+const getModelsSchema = {
+    type: "object",
+    properties: {
+        business_code: { type: "integer" },
+        message: { type: "string" },
+        data: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    model_name: { type: "string" },
+                    povider_name: { type: "string" },
+                    status: { type: "integer" },
+                    created_at: { type: "string", format: "date-time" },
+                    updated_at: { type: "string", format: "date-time" }
+                },
+                required: [
+                    "model_name",
+                    "provider_name",
+                    "status",
+                ]
+            }
+        }
+    },
+    required: ["business_code", "message", "data"]
+};
 
+const installModelRequestSchema = {
+    type: "object",
+    properties: {
+        model_name: { type: "string" },
+        service_name: { type: "string" },
+        service_source: { type: "string"},
+        provider_name: { type: "string" },
+    },
+    required: [
+        "model_name",
+        "service_name",
+        "service_source",
+    ]
+};
 
+const deleteModelRequestSchema = {
+    type: "object",
+    properties: {
+        model_name: { type: "string" },
+        service_name: { type: "string" },
+        service_source: { type: "string"},
+        provider_name: { type: "string" },
+    },
+    required: [
+        "model_name",
+        "service_name",
+        "service_source",
+    ]
+};
 
+// ========== 服务提供商管理 ==========
+const getServiceProvidersSchema = {
+    type: "object",
+    properties: {
+        business_code: { type: "integer" },
+        message: { type: "string" },
+        data: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    provider_name: { type: "string" },
+                    service_name: { type: "string" },
+                    service_source: { type: "string" },
+                    desc: { type: "string" },
+                    auth_type: { type: "string", enum: ["apikey", "none"] },
+                    auth_key: { type: "string" },
+                    flavor: { type: "string" },
+                    properties: { type: "string" },
+                    models: { type: "array", items: { type: "string" } },
+                    status: { type: "integer" },
+                    created_at: { type: "string", format: "date-time" },
+                    updated_at: { type: "string", format: "date-time" }
+                },
+                required: [
+                    "provider_name",
+                    "status",
+                ]
+            }
+        }
+    },
+    required: ["business_code", "message", "data"]
+};
+
+const installServiceProviderRequestSchema = {
+    type: "object",
+    properties: {
+        service_name: { type: "string" },
+        service_source: { type: "string" },
+        flavor_name: { type: "string" },
+        provider_name: { type: "string" },
+        desc: { type: "string" },
+        method: { type: "string" },
+        auth_type: { type: "string", enum: ["apikey", "none"] },
+        auth_key: { type: "string" },
+        models: { type: "array", items: { type: "string" } },
+        extra_headers: { type: "object" },
+        extra_json_body: { type: "object" },
+        properties: { type: "object" },
+    },
+    required: [
+        "service_name",
+        "service_source",
+        "flavor_name",
+        "provider_name",
+    ]
+};
+
+const updateServiceProviderRequestSchema = {
+    type: "object",
+    properties: {
+        service_name: { type: "string" },
+        service_source: { type: "string" },
+        flavor_name: { type: "string" },
+        provider_name: { type: "string" },
+        desc: { type: "string" },
+        method: { type: "string" },
+        auth_type: { type: "string", enum: ["apikey", "none"] },
+        auth_key: { type: "string" },
+        models: { type: "array", items: { type: "string" } },
+        extra_headers: { type: "object" },
+        extra_json_body: { type: "object" },
+        properties: { type: "object" },
+    },
+    required: [
+        "service_name",
+        "service_source",
+        "flavor_name",
+        "provider_name",
+    ]
+};
+
+const deleteServiceProviderRequestSchema = {
+    type: "object",
+    properties: {
+        provider_name: { type: "string" },
+    },
+    required: [
+        "provider_name",
+    ]   
+};
+
+// ========= 导入导出 ==========
+const exportSchema = {
+
+};
+
+const importSchema = {
+
+};
 
 const ResponseSchema = {
     type: "object",

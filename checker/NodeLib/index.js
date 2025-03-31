@@ -122,7 +122,11 @@ class Byze {
       const userDir = os.homedir();
       const byzePath = path.join(userDir, 'Byze', 'byze.exe');
       process.env.PATH = `${process.env.PATH};${byzePath}`;
-      const child = spawn(byzePath, ['server', 'start', '-d'], { detached: true, stdio: 'ignore' });
+      const child = spawn(byzePath, ['server', 'start', '-d'], {
+        detached: true, 
+        stdio: 'ignore',
+        windowsHide: true, // 隐藏窗口  
+      });
 
       child.on('error', (err) => {
         console.error(`启动 Byze 服务失败: ${err.message}`);
@@ -218,7 +222,7 @@ class Byze {
     });
   }
 
-  // 获取当前服务
+  // 查看当前服务
   async GetServices() {
     const res = await this.client.get('/service');
     return this.validateSchema(schemas.getServicesSchema, res.data);
@@ -236,6 +240,70 @@ class Byze {
     this.validateSchema(schemas.updateServiceRequestSchema, data);
     const res = await this.client.put('/service', data);
     return this.validateSchema(schemas.ResponseSchema, res.data);
+  }
+
+  // 查看模型
+  async GetModels() {
+    const res = await this.client.get('/model');
+    return this.validateSchema(schemas.getModelsSchema, res.data);
+  }
+
+  // 安装模型
+  async InstallModel(data) {
+    this.validateSchema(schemas.installModelRequestSchema, data);
+    const res = await this.client.post('/model', data);
+    return this.validateSchema(schemas.ResponseSchema, res.data);
+  }
+
+  // 卸载模型
+  async UninstallModel(data) {
+    this.validateSchema(schemas.uninstallModelRequestSchema, data);
+    const res = await this.client.delete('/model', { data });
+    return this.validateSchema(schemas.ResponseSchema, res.data);
+  }
+
+  // 查看服务提供商
+  async GetServiceProviders() {
+    const res = await this.client.get('/service-provider');
+    return this.validateSchema(schemas.getServiceProvidersSchema, res.data);
+  }
+
+  // 新增服务提供商
+  async CreateServiceProvider(data) {
+    this.validateSchema(schemas.createServiceProviderRequestSchema, data);
+    const res = await this.client.post('/service-provider', data);
+    return this.validateSchema(schemas.ResponseSchema, res.data);
+  }
+
+  // 更新服务提供商
+  async UpdateServiceProvider(data) {
+    this.validateSchema(schemas.updateServiceProviderRequestSchema, data);
+    const res = await this.client.put('/service-provider', data);
+    return this.validateSchema(schemas.ResponseSchema, res.data);
+  }
+
+  // 删除服务提供商
+  async DeleteServiceProvider(data) {
+    this.validateSchema(schemas.deleteServiceProviderRequestSchema, data);
+    const res = await this.client.delete('/service-provider', { data });
+    return this.validateSchema(schemas.ResponseSchema, res.data);
+  }
+
+  // 导入配置文件
+  async ImportConfig(path) {
+    data = fs.readFile(path, 'utf8', (err, data) => { 
+      if (err) {
+        console.error(err);
+        return;
+      }
+      return data;
+    });
+    const res = await this.client.post('/manage/service/import', data);
+    return this.validateSchema(schemas.ResponseSchema, res.data);
+  }
+
+  // 导出配置文件
+  async ExportConfig(){
   }
 
   ByzeInit(){
