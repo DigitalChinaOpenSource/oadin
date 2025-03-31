@@ -257,7 +257,7 @@ class Byze {
 
   // 卸载模型
   async UninstallModel(data) {
-    this.validateSchema(schemas.uninstallModelRequestSchema, data);
+    this.validateSchema(schemas.deleteModelRequestSchema, data);
     const res = await this.client.delete('/model', { data });
     return this.validateSchema(schemas.ResponseSchema, res.data);
   }
@@ -270,7 +270,7 @@ class Byze {
 
   // 新增服务提供商
   async CreateServiceProvider(data) {
-    this.validateSchema(schemas.createServiceProviderRequestSchema, data);
+    this.validateSchema(schemas.installServiceProviderRequestSchema, data);
     const res = await this.client.post('/service-provider', data);
     return this.validateSchema(schemas.ResponseSchema, res.data);
   }

@@ -235,6 +235,15 @@ module.exports = {
     getServicesSchema,
     installServiceRequestSchema,
     ResponseSchema,
-    updateServiceRequestSchema
+    updateServiceRequestSchema,
+    getModelsSchema,
+    installModelRequestSchema,
+    deleteModelRequestSchema,
+    getServiceProvidersSchema,
+    installServiceProviderRequestSchema,
+    updateServiceProviderRequestSchema,
+    deleteServiceProviderRequestSchema,
+    exportSchema,
+    importSchema,
 };
     
