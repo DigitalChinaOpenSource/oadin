@@ -229,7 +229,7 @@ class Byze {
   }
 
   // 创建新服务
-  async CreateService(data) {
+  async InstallService(data) {
     this.validateSchema(schemas.installServiceRequestSchema, data);
     const res = await this.client.post('/service', data);
     return this.validateSchema(schemas.ResponseSchema, res.data);
@@ -256,7 +256,7 @@ class Byze {
   }
 
   // 卸载模型
-  async UninstallModel(data) {
+  async DeleteModel(data) {
     this.validateSchema(schemas.deleteModelRequestSchema, data);
     const res = await this.client.delete('/model', { data });
     return this.validateSchema(schemas.ResponseSchema, res.data);
@@ -264,21 +264,21 @@ class Byze {
 
   // 查看服务提供商
   async GetServiceProviders() {
-    const res = await this.client.get('/service-provider');
+    const res = await this.client.get('/service_provider');
     return this.validateSchema(schemas.getServiceProvidersSchema, res.data);
   }
 
   // 新增服务提供商
-  async CreateServiceProvider(data) {
+  async InstallServiceProvider(data) {
     this.validateSchema(schemas.installServiceProviderRequestSchema, data);
-    const res = await this.client.post('/service-provider', data);
+    const res = await this.client.post('/service_provider', data);
     return this.validateSchema(schemas.ResponseSchema, res.data);
   }
 
   // 更新服务提供商
   async UpdateServiceProvider(data) {
     this.validateSchema(schemas.updateServiceProviderRequestSchema, data);
-    const res = await this.client.put('/service-provider', data);
+    const res = await this.client.put('/service_provider', data);
     return this.validateSchema(schemas.ResponseSchema, res.data);
   }
 

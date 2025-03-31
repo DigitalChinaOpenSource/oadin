@@ -76,7 +76,7 @@ const getModelsSchema = {
                 properties: {
                     model_name: { type: "string" },
                     povider_name: { type: "string" },
-                    status: { type: "integer" },
+                    status: { type: "string" },
                     created_at: { type: "string", format: "date-time" },
                     updated_at: { type: "string", format: "date-time" }
                 },
@@ -140,7 +140,7 @@ const getServiceProvidersSchema = {
                     auth_key: { type: "string" },
                     flavor: { type: "string" },
                     properties: { type: "string" },
-                    models: { type: "array", items: { type: "string" } },
+                    models: { type: ["array", "null"], items: { type: "string" } },
                     status: { type: "integer" },
                     created_at: { type: "string", format: "date-time" },
                     updated_at: { type: "string", format: "date-time" }
