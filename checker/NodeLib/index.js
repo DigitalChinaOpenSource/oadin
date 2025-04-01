@@ -306,6 +306,31 @@ class Byze {
   async ExportConfig(){
   }
 
+  // 获取模型列表
+  async GetModelsAvailiable(){
+    const res = await this.client.get('/services/models');
+    return this.validateSchema(schemas.modelsResponse, res.data);
+  }
+
+  // 获取推荐模型列表
+  async GetModelsRecommended(){
+    const res = await this.client.get('/model/recommend');
+    return this.validateSchema(schemas.recommendModelsResponse, res.data);
+  }
+
+  // 获取支持模型列表
+  async GetModelsSupported(data){
+    this.validateSchema(schemas.getModelsSupported, data);
+    const res = await this.client.get('/model/support', data) ;
+    return this.validateSchema(schemas.recommendModelsResponse, res.data);
+  }
+
+  // chat服务
+
+  // 生文服务
+
+  // 生图服务
+
   ByzeInit(){
 
   }

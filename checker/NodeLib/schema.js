@@ -231,6 +231,90 @@ const ResponseSchema = {
     required: ["business_code", "message"]
 };
 
+const modelsResponse = {
+    type: "object",
+    properties: {
+        models: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    name: { type: "string" },
+                    model: { type: "string" },
+                    size: { type: "integer" },
+                    modified_at: { type: "string", format: "date-time" },
+                    digest: { type: "string" },
+                    details: {
+                        type: "object",
+                        properties: {
+                            parent_model: { type: "string" },
+                            format: { type: "string" },
+                            family: { type: "string" },
+                            families: { type: ["array", "null"], items: { type: "string" } },
+                            provider_name: { type: "string" },
+                            status: { type: "string" },
+                            parameter_size: { type: "string" },
+                            quantization_level: { type: "string" }
+                        }
+                    }
+                },
+                required: [
+                    "model",
+                ]
+            }
+        }
+    },
+    required: ["models"]
+}
+
+const getModelsSupported = {
+    type: "object",
+    properties: {
+        service_source: { type: "string", enum: ["local", "remote"]},
+        flavor: { type:"string" }
+    },
+    required: [ "service_source", "flavor"]
+}
+
+const recommendModelsResponse = {
+    type: "object",
+    properties: {
+        business_code: { type: "integer" },
+        message: { type: "string" },
+        data: {
+            type: "object",
+            properties: {
+                chat: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            service_name: { type: "string" },
+                            api_flavor: { type: "string" },
+                            method: { type: "string" },
+                            desc: { type: "string" },
+                            url: { type: "string" },
+                            auth_type: { type: "string" },
+                            auth_apply_url: { type: "string" },
+                            auth_fields: { type: ["array", "null"], items: { type: "string" } },
+                            name: { type: "string" },
+                            service_provider_name: { type: "string" },
+                            size: { type: "string" },
+                            is_recommended: { type: "boolean" }
+                        },
+                        required: ["name", "size", "is_recommended"]
+                    }
+                }
+            },
+            required: ["chat"]
+        }
+    },
+    required: ["business_code", "message", "data"]
+};
+
+
+
+
 module.exports = {
     getServicesSchema,
     installServiceRequestSchema,
@@ -245,5 +329,8 @@ module.exports = {
     deleteServiceProviderRequestSchema,
     exportSchema,
     importSchema,
+    modelsResponse,
+    getModelsSupported,
+    recommendModelsResponse
 };
     
