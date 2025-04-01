@@ -326,10 +326,91 @@ class Byze {
   }
 
   // chat服务
+  async Chat(data) {
+    this.validateSchema(schemas.chatRequestSchema, data);
+
+    // 选择适当的请求方式
+    const config = { responseType: data.stream ? 'stream' : 'json' };
+    const res = await this.client.post('/chat', data, config);
+
+    if (data.stream) {
+        return new Promise((resolve, reject) => {
+            const result = [];
+            res.data.on('data', (chunk) => {
+                try {
+                    const response = JSON.parse(chunk.toString());
+                    if (response) {
+                        this.validateSchema(schemas.chatResponse, response);
+                        result.push(response);
+                        if (response.finished) {
+                            resolve(result);
+                        }
+                    }
+                } catch (err) {
+                    reject(`解析流数据失败: ${err.message}`);
+                }
+            });
+
+            res.data.on('error', (err) => {
+                reject(`流式响应错误: ${err.message}`);
+            });
+
+            res.data.on('end', () => {
+                resolve(result);
+            });
+        });
+    } else {
+        return this.validateSchema(schemas.chatResponse, res.data);
+    }
+  }
 
   // 生文服务
+  async GenerateText(data) {
+    this.validateSchema(schemas.textGenerationRequestSchema, data);
+
+    const config = { responseType: data.stream ? 'stream' : 'json' };
+    const res = await this.client.post('/generate-text', data, config);
+
+    if (data.stream) {
+        return new Promise((resolve, reject) => {
+            const result = [];
+            res.data.on('data', (chunk) => {
+                try {
+                    const response = JSON.parse(chunk.toString());
+                    if (response) {
+                        this.validateSchema(schemas.textGenerationStreamResponseSchema, response);
+                        result.push(response.response);
+                        if (response.done) {
+                            resolve(result.join(""));
+                        }
+                    }
+                } catch (err) {
+                    reject(`解析流数据失败: ${err.message}`);
+                }
+            });
+
+            res.data.on('error', (err) => {
+                reject(`流式响应错误: ${err.message}`);
+            });
+
+            res.data.on('end', () => {
+                resolve(result.join(""));
+            });
+        });
+    } else {
+        this.validateSchema(schemas.textGenerationResponseSchema, res.data);
+        return res.data.message.content;
+    }
+  }
 
   // 生图服务
+  async TextToImage(data) {
+    this.validateSchema(schemas.textToImageRequestSchema, data);
+    const res = await this.client.post('/service/text-to-image', data);
+    return this.validateSchema(schemas.textToImageResponseSchema, res.data);
+  }
+
+  // embed服务
 
   ByzeInit(){
 

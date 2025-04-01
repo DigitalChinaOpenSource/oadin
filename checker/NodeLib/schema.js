@@ -1,3 +1,5 @@
+const { str } = require("ajv");
+
 // ========== 服务管理 ==========
 const getServicesSchema = {
     type: "object",
@@ -332,7 +334,88 @@ const chatRequest = {
     required: ["model", "messages"]
 };
 
-const chatResponse = {}
+const chatResponse = {
+    type: "object",
+    properties: {
+        created_at: { type: "string", format: "date-time" },
+        finish_reason: { type: "string" },
+        finished: { type: "boolean" },
+        id: { type: "string" },
+        message: {
+            type: "object",
+            properties: {
+                content: { type: "string" },
+                role: { type: "string", enum: ["assistant"] }
+            },
+            required: ["content", "role"]
+        },
+        model: { type: "string" }
+    },
+    required: ["created_at", "finish_reason", "finished", "id", "message", "model"]
+};
+
+
+// ========= generate ==========
+const generateRequest = {
+    type: "object",
+    properties: {
+        model: { type: "string" },
+        stream: { type: "boolean" },
+        prompt: { type: "string" }
+    },
+    required: ["model", "prompt"]
+};  
+
+const generateResponse = {
+    type: "object",
+    properties: {
+        model: { type: "string" },
+        created_at: { type: "string", format: "date-time" },
+        message: {
+            type: "object",
+            properties: {
+                role: { type: "string", enum: ["assistant"] },
+                content: { type: "string" }
+            },
+            required: ["role", "content"]
+        },
+        done: { type: "boolean" },
+        done_reason: { type: "string" },
+        total_duration: { type: "integer" },
+        load_duration: { type: "integer" },
+        prompt_eval_count: { type: "integer" },
+        prompt_eval_duration: { type: "integer" },
+        eval_count: { type: "integer" },
+        eval_duration: { type: "integer" }
+    },
+    required: ["model", "created_at", "message", "done", "done_reason"]
+}
+
+// ========= text-to-image ==========
+const textToImageRequest = {
+    type: "object",
+    properties: {
+        model: { type: "string" },
+        prompt: { type: "string" }
+    },
+    required: ["model", "prompt"]
+};
+
+const textToImageResponse = {
+    type: "object",
+    properties: {
+        data: {
+            type: "object",
+            properties: {
+                url: { type: "string" }
+            },
+        },
+        id: { type: "string" },
+    },
+    required: ["data"]
+};
+
+// ========= embedding ==========
 
 
 
@@ -352,6 +435,12 @@ module.exports = {
     importSchema,
     modelsResponse,
     getModelsSupported,
-    recommendModelsResponse
+    recommendModelsResponse,
+    chatRequest,
+    chatResponse,
+    generateRequest,
+    generateResponse,
+    textToImageRequest,
+    textToImageResponse
 };
     
