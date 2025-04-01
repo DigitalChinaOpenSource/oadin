@@ -222,6 +222,7 @@ const importSchema = {
 
 };
 
+// ========= 以上的响应 ==========
 const ResponseSchema = {
     type: "object",
     properties: {
@@ -231,6 +232,7 @@ const ResponseSchema = {
     required: ["business_code", "message"]
 };
 
+// ========= 获取模型/支持模型/推荐模型 ==========
 const modelsResponse = {
     type: "object",
     properties: {
@@ -239,27 +241,17 @@ const modelsResponse = {
             items: {
                 type: "object",
                 properties: {
-                    name: { type: "string" },
-                    model: { type: "string" },
-                    size: { type: "integer" },
-                    modified_at: { type: "string", format: "date-time" },
                     digest: { type: "string" },
-                    details: {
-                        type: "object",
-                        properties: {
-                            parent_model: { type: "string" },
-                            format: { type: "string" },
-                            family: { type: "string" },
-                            families: { type: ["array", "null"], items: { type: "string" } },
-                            provider_name: { type: "string" },
-                            status: { type: "string" },
-                            parameter_size: { type: "string" },
-                            quantization_level: { type: "string" }
-                        }
-                    }
+                    family: { type: "string" },
+                    format: { type: "string" },
+                    modified_at: { type: "string", format: "date-time" },
+                    name: { type: "string" },
+                    parameter_size: { type: "string" },
+                    quantization_level: { type: "string" },
+                    size: { type: "integer" }
                 },
                 required: [
-                    "model",
+                    "name",
                 ]
             }
         }
@@ -312,6 +304,35 @@ const recommendModelsResponse = {
     required: ["business_code", "message", "data"]
 };
 
+// ========= chat ==========
+const chatRequest = {
+    type: "object",
+    properties: {
+        model: { type: "string" },
+        stream: { type: "boolean" },
+        messages: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    role: { type: "string", enum: ["user", "assistant", "system"] },
+                    content: { type: "string" }
+                },
+                required: ["role", "content"]
+            }
+        },
+        options:{
+            type: "object",
+            properties: {
+                temperature: { type: "number" },
+                max_tokens: { type: "integer" },
+            }
+        }
+    },
+    required: ["model", "messages"]
+};
+
+const chatResponse = {}
 
 
 

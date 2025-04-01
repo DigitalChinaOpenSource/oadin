@@ -321,7 +321,7 @@ class Byze {
   // 获取支持模型列表
   async GetModelsSupported(data){
     this.validateSchema(schemas.getModelsSupported, data);
-    const res = await this.client.get('/model/support', data) ;
+    const res = await this.client.get('/model/support', {params: data});
     return this.validateSchema(schemas.recommendModelsResponse, res.data);
   }
 
