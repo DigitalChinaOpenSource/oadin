@@ -5,7 +5,8 @@ const path = require('path');
 const os = require('os');
 const axios = require('axios');
 const Ajv = require('ajv');
-const addFormats = require('ajv-formats')
+const addFormats = require('ajv-formats');
+const EventEmitter = require('events');
 const { spawn } = require('child_process');
 
 const schemas = require('./schema.js');
@@ -346,86 +347,83 @@ class Byze {
   // chat服务
   async Chat(data) {
     this.validateSchema(schemas.chatRequest, data);
-
-    // 通过stream判断
+  
+    // 判断是否是流式
     const config = { responseType: data.stream ? 'stream' : 'json' };
     const res = await this.client.post('/services/chat', data, config);
-
+  
     if (data.stream) {
-        return new Promise((resolve, reject) => {
-            const result = [];
-            res.data.on('data', (chunk) => {
-                try {
-                    const response = JSON.parse(chunk.toString());
-                    if (response) {
-                        this.validateSchema(schemas.chatResponse, response);
-                        result.push(response);
-                        if (response.finished) {
-                            resolve(result);
-                        }
-                    }
-                } catch (err) {
-                    reject(`解析流数据失败: ${err.message}`);
-                }
-            });
+      const eventEmitter = new EventEmitter();
+  
+      res.data.on('data', (chunk) => {
+        try {
+          const response = JSON.parse(chunk.toString());
+          if (response) {
+            this.validateSchema(schemas.chatResponse, response);
+            eventEmitter.emit('data', response);  // 触发事件，实时传输数据
+          }
+        } catch (err) {
+          eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+        }
+      });
+  
+      res.data.on('error', (err) => {
+        eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+      });
 
-            res.data.on('error', (err) => {
-                reject(`流式响应错误: ${err.message}`);
-            });
-
-            res.data.on('end', () => {
-                resolve(result);
-            });
-        });
+      res.data.on('end', () => {
+        eventEmitter.emit('end');  // 触发结束事件
+      });
+  
+      return eventEmitter;  // 返回 EventEmitter 实例
     } else {
-        return this.validateSchema(schemas.chatResponse, res.data);
+      return this.validateSchema(schemas.chatResponse, res.data);
     }
   }
 
+
   // 生文服务
-  async GenerateText(data) {
-    this.validateSchema(schemas.textGenerationRequestSchema, data);
+  async Generate(data) {
+    this.validateSchema(schemas.generateRequest, data);
 
     const config = { responseType: data.stream ? 'stream' : 'json' };
     const res = await this.client.post('/services/generate', data, config);
 
     if (data.stream) {
-        return new Promise((resolve, reject) => {
-            const result = [];
-            res.data.on('data', (chunk) => {
-                try {
-                    const response = JSON.parse(chunk.toString());
-                    if (response) {
-                        this.validateSchema(schemas.textGenerationStreamResponseSchema, response);
-                        result.push(response.response);
-                        if (response.done) {
-                            resolve(result.join(""));
-                        }
-                    }
-                } catch (err) {
-                    reject(`解析流数据失败: ${err.message}`);
-                }
-            });
+      const eventEmitter = new EventEmitter();
 
-            res.data.on('error', (err) => {
-                reject(`流式响应错误: ${err.message}`);
-            });
+      res.data.on('data', (chunk) => {
+        try {
+          const response = JSON.parse(chunk.toString());
+          if (response) {
+            this.validateSchema(schemas.generateResponse, response);
+            eventEmitter.emit('data', response.response);  // 逐步传输响应内容
+          }
+        } catch (err) {
+          eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+        }
+      });
 
-            res.data.on('end', () => {
-                resolve(result.join(""));
-            });
-        });
+      res.data.on('error', (err) => {
+        eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+      });
+
+      res.data.on('end', () => {
+        eventEmitter.emit('end');  // 触发结束事件
+      });
+
+      return eventEmitter;  // 返回 EventEmitter 实例
     } else {
-        this.validateSchema(schemas.textGenerationResponseSchema, res.data);
-        return res.data.message.content;
+      return this.validateSchema(schemas.generateResponse, res.data);
     }
   }
+  
 
   // 生图服务
   async TextToImage(data) {
-    this.validateSchema(schemas.textToImageRequestSchema, data);
+    this.validateSchema(schemas.textToImageRequest, data);
     const res = await this.client.post('/services/text-to-image', data);
-    return this.validateSchema(schemas.textToImageResponseSchema, res.data);
+    return this.validateSchema(schemas.textToImageResponse, res.data);
   }
 
   // embed服务
