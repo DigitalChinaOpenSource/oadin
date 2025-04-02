@@ -309,24 +309,35 @@ class Byze {
   }
 
   // 导出配置文件
-  async ExportConfig(data){
+  async ExportConfig(data = {}) {
     this.validateSchema(schemas.exportRequestSchema, data);
-    // 添加请求头
-    const res = await this.client.get('/service/export', {params: data});
-    // 将相应存入.byze文件
+    const res = await this.client.post('/service/export', data);
+
+    // 将响应数据存入 .byze 文件
     const userDir = os.homedir();
     const destDir = path.join(userDir, 'Byze');
     const dest = path.join(destDir, '.byze');
-    // 返回“已将生成文件{path/to/.byze}”
+
+    // 确保目录存在并写入文件
     fs.mkdir(destDir, { recursive: true }, (err) => {
-      if (err) return resolve(false);
-      fs.writeFile(dest, res.data, (err) => {
-        if (err) return resolve(false);
-        console.log(`已将生成文件${dest}`);
-        return resolve(true);
-      });
+        if (err) {
+            console.error(`创建目录失败: ${err.message}`);
+            return;
+        }
+
+        // 将响应数据序列化为 JSON 字符串
+        const fileContent = JSON.stringify(res.data, null, 2); // 格式化为易读的 JSON
+
+        fs.writeFile(dest, fileContent, (err) => {
+            if (err) {
+                console.error(`写入文件失败: ${err.message}`);
+                return;
+            }
+            console.log(`已将生成文件写入到 ${dest}`);
+        });
     });
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+
+    return res.data;
   }
 
   // 获取模型列表
