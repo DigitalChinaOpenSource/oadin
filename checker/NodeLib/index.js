@@ -24,8 +24,13 @@ class Byze {
   }
 
   async validateSchema(schema, data) {
+    if (!data || Object.keys(data).length === 0) {
+      // 如果 data 为空或是空对象，跳过验证
+      return data;
+    }
+  
     const validate = this.ajv.compile(schema);
-    if(!validate(data)) {
+    if (!validate(data)) {
       throw new Error(`Schema validation failed: ${JSON.stringify(validate.errors)}`);
     }
     return data;
@@ -305,7 +310,7 @@ class Byze {
 
   // 导出配置文件
   async ExportConfig(data){
-    this.validateSchema(schemas.getModelsSupported, data);
+    this.validateSchema(schemas.exportRequestSchema, data);
     // 添加请求头
     const res = await this.client.get('/service/export', {params: data});
     // 将相应存入.byze文件
