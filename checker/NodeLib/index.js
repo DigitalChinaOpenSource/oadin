@@ -298,12 +298,29 @@ class Byze {
       }
       return data;
     });
-    const res = await this.client.post('/manage/service/import', data);
+    const res = await this.client.post('/service/import', data);
     return this.validateSchema(schemas.ResponseSchema, res.data);
   }
 
   // 导出配置文件
-  async ExportConfig(){
+  async ExportConfig(data){
+    this.validateSchema(schemas.getModelsSupported, data);
+    // 添加请求头
+    const res = await this.client.get('/services/export', {params: data});
+    // 将相应存入.byze文件
+    const userDir = os.homedir();
+    const destDir = path.join(userDir, 'Byze');
+    const dest = path.join(destDir, '.byze');
+    // 返回“已将生成文件{path/to/.byze}”
+    fs.mkdir(destDir, { recursive: true }, (err) => {
+      if (err) return resolve(false);
+      fs.writeFile(dest, res.data, (err) => {
+        if (err) return resolve(false);
+        console.log(`已将生成文件${dest}`);
+        return resolve(true);
+      });
+    });
+    return this.validateSchema(schemas.ResponseSchema, res.data);
   }
 
   // 获取模型列表
@@ -321,6 +338,7 @@ class Byze {
   // 获取支持模型列表
   async GetModelsSupported(data){
     this.validateSchema(schemas.getModelsSupported, data);
+    // 添加请求头
     const res = await this.client.get('/model/support', {params: data});
     return this.validateSchema(schemas.recommendModelsResponse, res.data);
   }
@@ -329,7 +347,7 @@ class Byze {
   async Chat(data) {
     this.validateSchema(schemas.chatRequestSchema, data);
 
-    // 选择适当的请求方式
+    // 通过stream判断
     const config = { responseType: data.stream ? 'stream' : 'json' };
     const res = await this.client.post('/chat', data, config);
 

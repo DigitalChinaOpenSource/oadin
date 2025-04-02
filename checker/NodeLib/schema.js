@@ -216,13 +216,92 @@ const deleteServiceProviderRequestSchema = {
 };
 
 // ========= 导入导出 ==========
-const exportSchema = {
-
+const exportRequestSchema = {
+    type: "object",
+    properties: {
+        service_name: { type: "string" }
+    },
 };
 
-const importSchema = {
-
+const jsonConfigSchema = {
+    type: "object",
+    properties: {
+        chat: {
+            type: "object",
+            properties: {
+                hybrid_policy: { type: "string" },
+                services: {
+                    type: "object",
+                    properties: {
+                        local: {
+                            $ref: "#/definitions/serviceSchema"
+                        },
+                        remote: {
+                            $ref: "#/definitions/serviceSchema"
+                        }
+                    }
+                }
+            },
+            required: ["hybrid_policy", "services"]
+        },
+        embed: {
+            type: "object",
+            properties: {
+                hybrid_policy: { type: "string" },
+                status: { type: "string" },
+                services: {
+                    type: "object",
+                    properties: {
+                        local: { type: "object" },
+                        remote: { type: "object" }
+                    }
+                }
+            },
+            required: ["hybrid_policy", "status", "services"]
+        }
+    },
+    required: ["chat", "embed"],
+    definitions: {
+        serviceSchema: {
+            type: "object",
+            properties: {
+                service_id: { type: "integer" },
+                service_type: { type: "string", enum: ["local", "remote"] },
+                provider: {
+                    type: "object",
+                    properties: {
+                        name: { type: "string" },
+                        desc: { type: "string" },
+                        method: { type: "string", enum: ["POST", "GET"] },
+                        url: { type: "string", format: "uri" },
+                        api_flavor: { type: "string" },
+                        properties: {
+                            type: "object",
+                            properties: {
+                                supported_response_mode: {
+                                    type: "array",
+                                    items: { type: "string", enum: ["sync", "stream"] }
+                                },
+                                models: {
+                                    type: "array",
+                                    items: { type: "string" }
+                                }
+                            },
+                            required: ["supported_response_mode", "models"]
+                        },
+                        status: { type: "string" }
+                    },
+                    required: ["name", "desc", "method", "url", "api_flavor", "properties", "status"]
+                },
+                created_at: { type: "string", format: "date-time" },
+                updated_at: { type: "string", format: "date-time" }
+            },
+            required: ["service_id", "service_type", "provider", "created_at", "updated_at"]
+        }
+    }
 };
+
+
 
 // ========= 以上的响应 ==========
 const ResponseSchema = {
@@ -431,8 +510,8 @@ module.exports = {
     installServiceProviderRequestSchema,
     updateServiceProviderRequestSchema,
     deleteServiceProviderRequestSchema,
-    exportSchema,
-    importSchema,
+    exportRequestSchema,
+    jsonConfigSchema,
     modelsResponse,
     getModelsSupported,
     recommendModelsResponse,
