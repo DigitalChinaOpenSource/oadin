@@ -306,7 +306,7 @@ class Byze {
   async ExportConfig(data){
     this.validateSchema(schemas.getModelsSupported, data);
     // 添加请求头
-    const res = await this.client.get('/services/export', {params: data});
+    const res = await this.client.get('/service/export', {params: data});
     // 将相应存入.byze文件
     const userDir = os.homedir();
     const destDir = path.join(userDir, 'Byze');
@@ -345,11 +345,11 @@ class Byze {
 
   // chat服务
   async Chat(data) {
-    this.validateSchema(schemas.chatRequestSchema, data);
+    this.validateSchema(schemas.chatRequest, data);
 
     // 通过stream判断
     const config = { responseType: data.stream ? 'stream' : 'json' };
-    const res = await this.client.post('/chat', data, config);
+    const res = await this.client.post('/services/chat', data, config);
 
     if (data.stream) {
         return new Promise((resolve, reject) => {
@@ -387,7 +387,7 @@ class Byze {
     this.validateSchema(schemas.textGenerationRequestSchema, data);
 
     const config = { responseType: data.stream ? 'stream' : 'json' };
-    const res = await this.client.post('/generate-text', data, config);
+    const res = await this.client.post('/services/generate', data, config);
 
     if (data.stream) {
         return new Promise((resolve, reject) => {
@@ -424,7 +424,7 @@ class Byze {
   // 生图服务
   async TextToImage(data) {
     this.validateSchema(schemas.textToImageRequestSchema, data);
-    const res = await this.client.post('/service/text-to-image', data);
+    const res = await this.client.post('/services/text-to-image', data);
     return this.validateSchema(schemas.textToImageResponseSchema, res.data);
   }
 
