@@ -292,7 +292,7 @@ class Byze {
 
   // 导入配置文件
   async ImportConfig(path) {
-    data = fs.readFile(path, 'utf8', (err, data) => { 
+    const data = fs.readFile(path, 'utf8', (err, data) => { 
       if (err) {
         console.error(err);
         return;
@@ -357,11 +357,10 @@ class Byze {
   
       res.data.on('data', (chunk) => {
         try {
-          const response = JSON.parse(chunk.toString());
-          if (response) {
-            this.validateSchema(schemas.chatResponse, response);
-            eventEmitter.emit('data', response);  // 触发事件，实时传输数据
-          }
+          const rawData = chunk.toString().trim();
+          const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
+          const response = JSON.parse(jsonString);
+          eventEmitter.emit('data', response);  // 触发事件，实时传输数据
         } catch (err) {
           eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
         }

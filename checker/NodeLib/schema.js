@@ -226,6 +226,7 @@ const exportRequestSchema = {
 const jsonConfigSchema = {
     type: "object",
     properties: {
+        version: { type: "string" },
         chat: {
             type: "object",
             properties: {
@@ -291,12 +292,12 @@ const jsonConfigSchema = {
                         },
                         status: { type: "string" }
                     },
-                    required: ["name", "desc", "method", "url", "api_flavor", "properties", "status"]
+                    required: ["name", "method", "url", "api_flavor", "properties", "status"]
                 },
                 created_at: { type: "string", format: "date-time" },
                 updated_at: { type: "string", format: "date-time" }
             },
-            required: ["service_id", "service_type", "provider", "created_at", "updated_at"]
+            required: ["service_type", "provider"]
         }
     }
 };
@@ -430,7 +431,7 @@ const chatResponse = {
         },
         model: { type: "string" }
     },
-    required: ["created_at", "finish_reason", "finished", "id", "message", "model"]
+    required: ["created_at", "id", "message", "model"]
 };
 
 
@@ -467,7 +468,7 @@ const generateResponse = {
         eval_count: { type: "integer" },
         eval_duration: { type: "integer" }
     },
-    required: ["model", "created_at", "message", "done", "done_reason"]
+    required: ["model", "created_at", "message"]
 }
 
 // ========= text-to-image ==========
