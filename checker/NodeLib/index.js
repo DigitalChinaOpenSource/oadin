@@ -8,8 +8,57 @@ const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 const EventEmitter = require('events');
 const { spawn } = require('child_process');
+const { exec } = require('child_process');
 
 const schemas = require('./schema.js');
+
+function AddToUserPath(newPath) {
+  return new Promise((resolve, reject) => {
+    if (!path.isAbsolute(newPath)) {
+      console.error('请使用绝对路径');
+      return resolve(false);
+    }
+
+    // 查询当前用户 PATH
+    exec('reg query "HKCU\\Environment" /v PATH', (err, stdout, stderr) => {
+      let currentPath = '';
+
+      if (!err) {
+        const match = stdout.match(/PATH\s+REG_SZ\s+(.*)/);
+        if (match) {
+          currentPath = match[1].trim();
+        }
+      } else if (err.code !== 1) {
+        console.error('读取注册表出错：', stderr || err.message);
+        return resolve(false);
+      }
+
+      // 检查是否已包含
+      const pathList = currentPath.split(';').map(p => p.trim());
+      if (pathList.includes(newPath)) {
+        console.log('该路径已存在于 PATH 中，无需添加。');
+        return resolve(true);
+      }
+
+      // 拼接新的 PATH
+      const newFullPath = currentPath
+        ? `${currentPath};${newPath}`
+        : newPath;
+
+      // 写入注册表
+      const command = `reg add "HKCU\\Environment" /v PATH /d "${newFullPath}" /f`;
+      exec(command, (err, stdout, stderr) => {
+        if (err) {
+          console.error('写入注册表失败：', stderr || err.message);
+          return resolve(false);
+        }
+
+        console.log(`✅ 成功将路径添加到用户 PATH：${newPath}`);
+        resolve(true);
+      });
+    });
+  });
+}
 
 class Byze {
   version = "byze/v0.2";
@@ -75,47 +124,18 @@ class Byze {
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'Byze');
       const dest = path.join(destDir, 'byze.exe');
-
-      fs.mkdir(destDir, { recursive: true }, (err) => {
+  
+      fs.mkdir(destDir, { recursive: true }, async (err) => {
         if (err) return resolve(false);
-
+  
         const file = fs.createWriteStream(dest);
         http.get(url, (res) => {
           res.pipe(file);
-          file.on('finish', () => {
-            file.close(() => {
+          file.on('finish', async () => {
+            file.close();
             // 下载完成后添加到环境变量
-              const { exec } = require('child_process');
-              const command = `setx PATH "%PATH%;${destDir}"`;
-
-              exec('reg query "HKCU\\Environment" /v PATH', (error, stdout) => {
-                  if (error) {
-                      console.error(`查询 PATH 失败: ${error.message}`);
-                      return resolve(false);
-                  }
-              
-                  const match = stdout.match(/PATH\s+REG_SZ\s+(.+)/);
-                  const currentPath = match ? match[1].trim() : "";
-              
-                  // 避免重复添加
-                  if (!currentPath.includes(destDir)) {
-                      const updatedPath = `${currentPath};${destDir}`;
-              
-                      // 安全追加 PATH
-                      exec(`reg add "HKCU\\Environment" /v PATH /t REG_SZ /d "${updatedPath}" /f`, (error) => {
-                          if (error) {
-                              console.error(`更新 PATH 失败: ${error.message}`);
-                              return resolve(false);
-                          }
-                          console.log("✅ 环境变量已成功添加！");
-                          return resolve(true);
-                      });
-                  } else {
-                      console.log("✅ 该路径已存在于 PATH 中，无需重复添加。");
-                      return resolve(true);
-                  }
-              });
-            });
+            const done = await AddToUserPath(destDir);
+            resolve(done);
           });
         }).on('error', () => resolve(false));
       });
