@@ -120,24 +120,45 @@ class Byze {
   // 从服务器下载 Byze.exe
   DownloadByze() {
     return new Promise((resolve) => {
-      const url = 'http://120.232.136.73:31619/Byzedev/byze.exe';
+      const url = 'http://120.232.136.73:31397/browser/byzedev/byze.exe';
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'Byze');
       const dest = path.join(destDir, 'byze.exe');
   
       fs.mkdir(destDir, { recursive: true }, async (err) => {
-        if (err) return resolve(false);
+        if (err) {
+          console.error('❌ 创建目录失败:', err.message);
+          return resolve(false);
+        }
   
+        console.log('🔍 正在下载文件:', url);
         const file = fs.createWriteStream(dest);
-        http.get(url, (res) => {
+        const request = http.get(url, (res) => {
+          // 检查 HTTP 响应状态码
+          if (res.statusCode !== 200) {
+            console.error(`❌ 下载失败，HTTP 状态码: ${res.statusCode}`);
+            file.close();
+            fs.unlink(dest, () => {}); // 删除已创建的空文件
+            return resolve(false);
+          }
+  
           res.pipe(file);
           file.on('finish', async () => {
             file.close();
+            console.log('✅ 下载完成:', dest);
+  
             // 下载完成后添加到环境变量
             const done = await AddToUserPath(destDir);
             resolve(done);
           });
-        }).on('error', () => resolve(false));
+        });
+  
+        request.on('error', (err) => {
+          console.error('❌ 下载失败:', err.message);
+          file.close();
+          fs.unlink(dest, () => {}); // 删除已创建的空文件
+          resolve(false);
+        });
       });
     });
   }
@@ -147,8 +168,8 @@ class Byze {
     return new Promise((resolve) => {
       const userDir = os.homedir();
       const byzePath = path.join(userDir, 'Byze', 'byze.exe');
-      process.env.PATH = `${process.env.PATH};${byzePath}`;
-      const child = spawn(byzePath, ['server', 'start', '-d'], {
+      process.env.PATH = `${process.env.PATH};${path.dirname(byzePath)}`;
+      const child = spawn('byze', ['server', 'start', '-d'], {
         detached: true, 
         stdio: 'ignore',
         windowsHide: true, // 隐藏窗口  
