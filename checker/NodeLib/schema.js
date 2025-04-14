@@ -478,7 +478,7 @@ const textToImageRequest = {
         model: { type: "string" },
         prompt: { type: "string" }
     },
-    required: ["model", "prompt"]
+    required: ["prompt"]
 };
 
 const textToImageResponse = {
