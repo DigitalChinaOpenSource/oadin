@@ -7,57 +7,80 @@ const axios = require('axios');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 const EventEmitter = require('events');
+const AdmZip = require('adm-zip');
 const { spawn } = require('child_process');
 const { exec } = require('child_process');
 
 const schemas = require('./schema.js');
 
-function AddToUserPath(newPath) {
-  return new Promise((resolve, reject) => {
-    if (!path.isAbsolute(newPath)) {
-      console.error('请使用绝对路径');
-      return resolve(false);
-    }
+function AddToUserPath(destDir) {
+  const isMacOS = process.platform === 'darwin';
 
-    // 查询当前用户 PATH
-    exec('reg query "HKCU\\Environment" /v PATH', (err, stdout, stderr) => {
+  if (isMacOS) {
+    try {
+      // 确定shell配置文件
+      const shell = process.env.SHELL || '';
+      let shellConfigName = '.zshrc';
+      if (shell.includes('bash')) shellConfigName = '.bash_profile';
+      
+      const shellConfigPath = path.join(os.homedir(), shellConfigName);
+      const exportLine = `export PATH="$PATH:${destDir}"\n`;
+
+      // 确保配置文件存在
+      if (!fs.existsSync(shellConfigPath)) {
+        fs.writeFileSync(shellConfigPath, '');
+      }
+
+      // 检查是否已存在路径
+      const content = fs.readFileSync(shellConfigPath, 'utf8');
+      if (content.includes(exportLine)) {
+        console.log('✅ 环境变量已存在');
+        return true;
+      }
+
+      // 追加路径到配置文件
+      fs.appendFileSync(shellConfigPath, `\n${exportLine}`);
+      console.log(`✅ 已添加到 ${shellConfigName}，请执行以下命令生效：\nsource ${shellConfigPath}`);
+      return true;
+    } catch (err) {
+      console.error('❌ 添加环境变量失败:', err.message);
+      return false;
+    }
+  } else {
+    // Windows环境变量处理
+    try {
+      const regKey = 'HKCU\\Environment';
       let currentPath = '';
 
-      if (!err) {
-        const match = stdout.match(/PATH\s+REG_SZ\s+(.*)/);
-        if (match) {
-          currentPath = match[1].trim();
-        }
-      } else if (err.code !== 1) {
-        console.error('读取注册表出错：', stderr || err.message);
-        return resolve(false);
+      try {
+        const output = execSync(`REG QUERY "${regKey}" /v Path`, { 
+          encoding: 'utf-8',
+          stdio: ['pipe', 'pipe', 'ignore'] 
+        });
+        const match = output.match(/REG_EXPAND_SZ\s+(.*)/);
+        currentPath = match ? match[1].trim() : '';
+      } catch {}
+
+      // 检查路径是否已存在
+      const paths = currentPath.split(';').filter(p => p);
+      if (paths.includes(destDir)) {
+        console.log('✅ 环境变量已存在');
+        return true;
       }
 
-      // 检查是否已包含
-      const pathList = currentPath.split(';').map(p => p.trim());
-      if (pathList.includes(newPath)) {
-        console.log('该路径已存在于 PATH 中，无需添加。');
-        return resolve(true);
-      }
-
-      // 拼接新的 PATH
-      const newFullPath = currentPath
-        ? `${currentPath};${newPath}`
-        : newPath;
-
-      // 写入注册表
-      const command = `reg add "HKCU\\Environment" /v PATH /d "${newFullPath}" /f`;
-      exec(command, (err, stdout, stderr) => {
-        if (err) {
-          console.error('写入注册表失败：', stderr || err.message);
-          return resolve(false);
-        }
-
-        console.log(`✅ 成功将路径添加到用户 PATH：${newPath}`);
-        resolve(true);
+      // 更新Path值
+      const newPath = currentPath ? `${currentPath};${destDir}` : destDir;
+      execSync(`REG ADD "${regKey}" /v Path /t REG_EXPAND_SZ /d "${newPath}" /f`, { 
+        stdio: 'inherit' 
       });
-    });
-  });
+      
+      console.log('✅ 已添加到环境变量，请重新启动应用程序使更改生效');
+      return true;
+    } catch (error) {
+      console.error('❌ 添加环境变量失败:', error.message);
+      return false;
+    }
+  }
 }
 
 class Byze {
@@ -120,10 +143,15 @@ class Byze {
   // 从服务器下载 Byze.exe
   DownloadByze() {
     return new Promise((resolve) => {
-      const url = 'http://120.232.136.73:31397/browser/byzedev/byze.exe';
+      const isMacOS = process.platform === 'darwin';
+      const url = isMacOS 
+        ? 'http://120.232.136.73:31619/byzedev/byze.zip'
+        : 'http://120.232.136.73:31619/byzedev/byze.exe';
+      
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'Byze');
-      const dest = path.join(destDir, 'byze.exe');
+      const destFileName = isMacOS ? 'byze.zip' : 'byze.exe';
+      const dest = path.join(destDir, destFileName);
   
       fs.mkdir(destDir, { recursive: true }, async (err) => {
         if (err) {
@@ -133,12 +161,12 @@ class Byze {
   
         console.log('🔍 正在下载文件:', url);
         const file = fs.createWriteStream(dest);
+        
         const request = http.get(url, (res) => {
-          // 检查 HTTP 响应状态码
           if (res.statusCode !== 200) {
             console.error(`❌ 下载失败，HTTP 状态码: ${res.statusCode}`);
             file.close();
-            fs.unlink(dest, () => {}); // 删除已创建的空文件
+            fs.unlink(dest, () => {});
             return resolve(false);
           }
   
@@ -147,7 +175,28 @@ class Byze {
             file.close();
             console.log('✅ 下载完成:', dest);
   
-            // 下载完成后添加到环境变量
+            // macOS解压处理
+            if (isMacOS) {
+              try {
+                const zip = new AdmZip(dest);
+                zip.extractAllTo(destDir, true);
+                console.log('✅ 解压完成');
+                
+                // 删除原始ZIP文件
+                fs.unlinkSync(dest);
+                
+                // 设置可执行权限（根据需要）
+                const execPath = path.join(destDir, 'byze'); // 假设解压后的可执行文件名
+                if (fs.existsSync(execPath)) {
+                  fs.chmodSync(execPath, 0o755);
+                }
+              } catch (e) {
+                console.error('❌ 解压失败:', e.message);
+                return resolve(false);
+              }
+            }
+  
+            // 添加环境变量
             const done = await AddToUserPath(destDir);
             resolve(done);
           });
@@ -156,7 +205,7 @@ class Byze {
         request.on('error', (err) => {
           console.error('❌ 下载失败:', err.message);
           file.close();
-          fs.unlink(dest, () => {}); // 删除已创建的空文件
+          fs.unlink(dest, () => {});
           resolve(false);
         });
       });
@@ -166,65 +215,73 @@ class Byze {
   // 启动 Byze 服务
   InstallByze() {
     return new Promise((resolve) => {
+      const isMacOS = process.platform === 'darwin';
       const userDir = os.homedir();
-      const byzePath = path.join(userDir, 'Byze', 'byze.exe');
-      process.env.PATH = `${process.env.PATH};${path.dirname(byzePath)}`;
+      const byzeDir = path.join(userDir, 'Byze');
+  
+      // 确保PATH包含Byze目录（兼容跨平台）
+      if (!process.env.PATH.includes(byzeDir)) {
+        process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
+      }
+  
+      // 统一使用命令启动（不再需要路径）
       const child = spawn('byze', ['server', 'start', '-d'], {
-        detached: true, 
+        detached: true,
         stdio: 'ignore',
-        windowsHide: true, // 隐藏窗口  
+        // 仅Windows需要隐藏窗口
+        ...(isMacOS ? {} : { windowsHide: true })
       });
-
+  
       child.on('error', (err) => {
-        console.error(`启动 Byze 服务失败: ${err.message}`);
-        return resolve(false);
+        console.error(`❌ 启动失败: ${err.message}`);
+        // 常见错误处理
+        if (err.code === 'ENOENT') {
+          console.log([
+            '💡 可能原因:',
+            `1. 未找到byze可执行文件，请检查下载是否成功`,
+            `2. 环境变量未生效，请尝试重启终端`,
+            isMacOS ? '3. 可能需要执行: chmod +x ~/Byze/byze' : ''
+          ].filter(Boolean).join('\n'));
+        }
+        resolve(false);
       });
-
-
-      const checkServer = () => {
-        const options = {
+  
+      // 智能服务检测（带重试机制）
+      const checkServer = (attempt = 1) => {
+        const req = http.request({
           hostname: 'localhost',
           port: 16688,
-          path: '/',
-          method: 'GET',
-          timeout: 3000, // 超时时间为 3 秒
-        };
-      
-        let isResolved = false; // 添加标志变量，防止重复触发
-      
-        const req = http.request(options, (res) => {
-          if (!isResolved) {
-            isResolved = true; // 标记请求已完成
-            if (res.statusCode === 200) {
-              console.log('Byze 服务启动成功，端口正常');
-              resolve(true);
-            } else {
-              console.error(`Byze 服务启动失败，返回状态码: ${res.statusCode}`);
-              resolve(false);
-            }
+          method: 'HEAD',
+          timeout: 5000
+        }, (res) => {
+          if (res.statusCode === 200) {
+            console.log('✅ 服务已就绪');
+            resolve(true);
+          } else {
+            console.log(`⚠️ 服务响应异常: HTTP ${res.statusCode}`);
+            if (attempt < 3) setTimeout(() => checkServer(attempt + 1), 2000);
+            else resolve(false);
           }
         });
-      
+  
         req.on('error', () => {
-          if (!isResolved) {
-            isResolved = true; // 标记请求已完成
-            console.error('Byze 服务未启动');
-            resolve(false);
-          }
+          console.log(`⌛ 检测尝试 ${attempt}/3`);
+          if (attempt < 3) setTimeout(() => checkServer(attempt + 1), 2000);
+          else resolve(false);
         });
-      
+  
         req.on('timeout', () => {
-          if (!isResolved) {
-            isResolved = true; // 标记请求已完成
-            console.error('检查 Byze 服务超时');
-            req.destroy();
-            resolve(false);
-          }
+          console.log(`⏳ 检测超时 ${attempt}/3`);
+          req.destroy();
+          if (attempt < 3) setTimeout(() => checkServer(attempt + 1), 2000);
+          else resolve(false);
         });
-      
+  
         req.end();
       };
-      setTimeout(checkServer, 3000);
+  
+      // 动态调整首次检测时间
+      setTimeout(() => checkServer(1), isMacOS ? 4000 : 2500);
       child.unref();
     });
   }

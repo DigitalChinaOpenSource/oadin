@@ -60,13 +60,13 @@ byze.GetServices().then((result) => {
 
 // 创建新服务
 const data = {
-    service_name = "chat/embed/generate/text-to-image",
-    service_source = "remote/local",
-    hybrid_policy = "default/always_local/always_remote",
-    flavor_name = "ollama/openai/...",
-    provider_name = "local_ollama_chat/remote_openai_chat/...",
-    auth_type = "none/apikey",
-    auth_key = "your_api_key",
+    service_name: "chat/embed/generate/text-to-image",
+    service_source: "remote/local",
+    hybrid_policy: "default/always_local/always_remote",
+    flavor_name: "ollama/openai/...",
+    provider_name: "local_ollama_chat/remote_openai_chat/...",
+    auth_type: "none/apikey",
+    auth_key: "your_api_key",
 }; // 必填service_name, service_source, hybrid_policy, flavor_name, provider_name
 
 byze.CreateService(data).then((result) => {
@@ -75,10 +75,10 @@ byze.CreateService(data).then((result) => {
 
 // 更新服务
 const data = {
-    service_name = "chat/embed/generate/text-to-image",
-    hybrid_policy = "default/always_local/always_remote",
-    remote_provider = "",
-    local_provider = ""
+    service_name: "chat/embed/generate/text-to-image",
+    hybrid_policy: "default/always_local/always_remote",
+    remote_provider: "",
+    local_provider: ""
 }; // 必填service_name
 
 byze.UpdateService(data).then((result) => {
@@ -92,10 +92,10 @@ byze.GetModels().then((result) => {
 
 // 安装模型
 const data = {
-    model_name = "llama2",
-    service_name = "chat/embed/generate/text-to-image",
-    service_source = "remote/local",
-    provider_name = "local_ollama_chat/remote_openai_chat/...",
+    model_name: "llama2",
+    service_name: "chat/embed/generate/text-to-image",
+    service_source: "remote/local",
+    provider_name: "local_ollama_chat/remote_openai_chat/...",
 }; // 必填model_name, service_name, service_source
 
 byze.InstallModel(data).then((result) => {
@@ -104,10 +104,10 @@ byze.InstallModel(data).then((result) => {
 
 // 卸载模型
 const data = {
-    model_name = "llama2",
-    service_name = "chat/embed/generate/text-to-image",
-    service_source = "remote/local",
-    provider_name = "local_ollama_chat/remote_openai_chat/...",
+    model_name: "llama2",
+    service_name: "chat/embed/generate/text-to-image",
+    service_source: "remote/local",
+    provider_name: "local_ollama_chat/remote_openai_chat/...",
 }; // 必填model_name, service_name, service_source
 
 byze.DeleteModel(data).then((result) => {
@@ -121,18 +121,18 @@ byze.GetServiceProviders().then((result) => {
 
 // 新增模型提供商
 const data = {
-    service_name = "chat/embed/generate/text-to-image",
-    service_source = "remote/local",
-    flavor_name = "ollama/openai/...",
-    provider_name = "local_ollama_chat/remote_openai_chat/...",
-    desc = "",
-    method = "",
-    auth_type = "none/apikey",
-    auth_key = "your_api_key",
-    models = ["qwen2:7b", "deepseek-r1:7b", ...],
-    extra_headers = {},
-    extra_json_body = {},
-    properties = {}
+    service_name: "chat/embed/generate/text-to-image",
+    service_source: "remote/local",
+    flavor_name: "ollama/openai/...",
+    provider_name: "local_ollama_chat/remote_openai_chat/...",
+    desc: "",
+    method: "",
+    auth_type: "none/apikey",
+    auth_key: "your_api_key",
+    models: ["qwen2:7b", "deepseek-r1:7b", ...],
+    extra_headers: {},
+    extra_json_body: {},
+    properties: {}
 }; // 必填service_name, service_source, flavor_name, provider_name
 bzye.InstallserviceProvider(data).then((result) => {
     console.log(result);
@@ -140,18 +140,18 @@ bzye.InstallserviceProvider(data).then((result) => {
 
 // 更新模型提供商
 const data = {
-    service_name = "chat/embed/generate/text-to-image",
-    service_source = "remote/local",
-    flavor_name = "ollama/openai/...",
-    provider_name = "local_ollama_chat/remote_openai_chat/...",
-    desc = "",
-    method = "",
-    auth_type = "none/apikey",
-    auth_key = "your_api_key",
-    models = ["qwen2:7b", "deepseek-r1:7b", ...],
-    extra_headers = {},
-    extra_json_body = {},
-    properties = {}
+    service_name: "chat/embed/generate/text-to-image",
+    service_source: "remote/local",
+    flavor_name: "ollama/openai/...",
+    provider_name: "local_ollama_chat/remote_openai_chat/...",
+    desc: "",
+    method: "",
+    auth_type: "none/apikey",
+    auth_key: "your_api_key",
+    models: ["qwen2:7b", "deepseek-r1:7b", ...],
+    extra_headers: {},
+    extra_json_body: {},
+    properties: {}
 }; // 必填service_name, service_source, flavor_name, provider_name
 
 bzye.updateServiceProvider(data).then((result) => {
@@ -160,7 +160,7 @@ bzye.updateServiceProvider(data).then((result) => {
 
 // 删除服务提供商
 const data = {
-    provider_name = ""
+    provider_name: ""
 };
 
 byze.DeleteServiceProvider(data).then((reult) => {
@@ -174,14 +174,14 @@ byze.ImportConfig("path/to/.byze").then((result) => {
 
 // 导出配置文件
 const data = {
-    service_name = "chat/embed/generate/text-to-image"
+    service_name: "chat/embed/generate/text-to-image"
 };
 
 byze.ExportConfig(data).then((result) => { // 不填data则导出全部
     console.log(result);
 });
 
-// 获取模型列表
+// 获取模型列表（查看ollama的模型）
 byze.GetModelsAvailiable().then((result) => {
     console.log(result);
 });
@@ -192,22 +192,26 @@ byze.GetModelsRecommended().then((result) => {
 });
 
 // 获取支持模型列表
+const data = {
+    service_source: "remote/local",
+    flavor: "ollama/openai/..." // local 则默认为ollama
+}; // 必填service_source, flavor
 byze.GetModelsSurpported().then((result) => {
     console.log(result);
 });
 
 // Chat服务（流式）
 const data = {
-    model = "deepseek-r1:7b",
-    stream = true,
-    messages = [
+    model: "deepseek-r1:7b",
+    stream: true,
+    messages: [
         {
-            role = "user",
-            content = "你好"
+            role: "user",
+            content: "你好"
         }
     ],
-    temperature = 0.7,
-    max_tokens = 100,
+    temperature: 0.7,
+    max_tokens: 100,
 }
 
 byze.Chat(data).then((chatStream) => {
@@ -224,16 +228,16 @@ byze.Chat(data).then((chatStream) => {
 
 // Chat服务（非流式）
 const data = {
-    model = "deepseek-r1:7b",
-    stream = false,
-    messages = [
+    model: "deepseek-r1:7b",
+    stream: false,
+    messages: [
         {
-            role = "user",
-            content = "你好"
+            role: "user",
+            content: "你好"
         }
     ],
-    temperature = 0.7,
-    max_tokens = 100,
+    temperature: 0.7,
+    max_tokens: 100,
 }
 
 byze.Chat(data).then((result) => {
@@ -242,9 +246,9 @@ byze.Chat(data).then((result) => {
 
 // 生文服务（流式）
 const data = {
-    model = "deepseek-r1:7b",
-    stream = true,
-    prompt = "你好",
+    model: "deepseek-r1:7b",
+    stream: true,
+    prompt: "你好",
 }
 byze.Generate(data).then((generateStream) => {
     generateStream.on('data', (data) => {
@@ -260,9 +264,9 @@ byze.Generate(data).then((generateStream) => {
 
 // 生文服务（非流式）
 const data = {
-    model = "deepseek-r1:7b",
-    stream = false,
-    prompt = "你好",
+    model: "deepseek-r1:7b",
+    stream: false,
+    prompt: "你好",
 }
 byze.Generate(data).then((result) => {
     console.log(result);
@@ -270,8 +274,8 @@ byze.Generate(data).then((result) => {
 
 // 文生图服务
 const data = {
-    model = "wanx2.1-t2i-turbo",
-    prompt = "一间有着精致窗户的花店，漂亮的木质门，摆放着花朵",
+    model: "wanx2.1-t2i-turbo",
+    prompt: "一间有着精致窗户的花店，漂亮的木质门，摆放着花朵",
 }
 
 byze.TextToImage(data).then((result) => {
@@ -279,6 +283,3 @@ byze.TextToImage(data).then((result) => {
 });
 
 ```
-
-
-
