@@ -496,7 +496,43 @@ const textToImageResponse = {
 };
 
 // ========= embedding ==========
+const embeddingRequest = {
+    type: "object",
+    properties: {
+        model: { type: "string" },
+        input: { 
+            type: "array",
+            items: {
+                type: "string"
+            }
+        }
+    },
+    required: ["model", "input"]
+};
 
+const embeddingResponse = {
+    type: "object",
+    properties: {
+        model: { type: "string" },
+        id: { type: "string" },
+        data: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    embedding: {
+                        type: "array",
+                        items: { type: "number" }
+                    },
+                    index: { type: "integer" },
+                    object: { type: "string" },
+                },
+                required: ["embedding", "index"]
+            }
+        }
+    },
+    required: ["model", "data"]
+};
 
 
 module.exports = {
@@ -521,6 +557,8 @@ module.exports = {
     generateRequest,
     generateResponse,
     textToImageRequest,
-    textToImageResponse
+    textToImageResponse,
+    embeddingRequest,
+    embeddingResponse
 };
     

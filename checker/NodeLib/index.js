@@ -531,7 +531,6 @@ class Byze {
     }
   }
   
-
   // 生图服务
   async TextToImage(data) {
     this.validateSchema(schemas.textToImageRequest, data);
@@ -540,6 +539,11 @@ class Byze {
   }
 
   // embed服务
+  async Embed(data) {
+    this.validateSchema(schemas.embeddingRequest, data);
+    const res = await this.client.post('/services/embed', data);
+    return this.validateSchema(schemas.embeddingResponse, res.data);
+  }
 
   ByzeInit(){
 
