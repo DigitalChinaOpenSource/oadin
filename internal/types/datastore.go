@@ -31,10 +31,10 @@ const (
 )
 
 var (
-	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate}
+	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate, ServiceTextToImage}
 	SupportHybridPolicy = []string{HybridPolicyDefault, HybridPolicyLocal, HybridPolicyRemote}
 	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeToken}
-	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama}
+	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun}
 )
 
 // Service  table structure
@@ -88,7 +88,7 @@ type ServiceProvider struct {
 	ExtraHeaders  string    `gorm:"column:extra_headers;default:'{}'" json:"extra_headers"`
 	ExtraJSONBody string    `gorm:"column:extra_json_body;default:'{}'" json:"extra_json_body"`
 	Properties    string    `gorm:"column:properties;default:'{}'" json:"properties"`
-	Status        int       `gorm:"column:status;not null;default:1" json:"status"`
+	Status        int       `gorm:"column:status;not null;default:0" json:"status"`
 	CreatedAt     time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt     time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
 }

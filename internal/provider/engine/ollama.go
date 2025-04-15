@@ -144,6 +144,9 @@ func (o *OllamaProvider) StopEngine() error {
 }
 
 func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
+	if o.EngineConfig != nil {
+		return o.EngineConfig
+	}
 	userDir, err := os.UserHomeDir()
 	if err != nil {
 		slog.Error("Get user home dir failed: ", err.Error())
@@ -167,22 +170,28 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 			execFile = "ollama.exe"
 			downloadUrl = "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250122.exe"
+			//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama-Installer-20250226.exe"
 		} else {
 			execFile = "ollama.exe"
-			execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+			execPath = fmt.Sprintf("%s/%s/%s/%s/%s", userDir, "AppData", "Local", "Programs", "Ollama")
 			downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
+
+			//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/OllamaSetup.exe"
 		}
 	case "linux":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
 		downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
+		//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+		execPath = fmt.Sprintf("%s/%s/%s/%s", userDir, "Library", "Application Support", "Ollama")
 		if runtime.GOARCH == "amd64" {
 			downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-darwin.zip"
+			//	downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
 		} else {
 			downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-arm64.zip"
+			//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
 		}
 	default:
 		return nil
@@ -242,11 +251,26 @@ func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequ
 	c := o.GetDefaultClient()
 
 	var resp types.ProgressResponse
+	//Abortable HTTP request
+	ctx, cancel := context.WithCancel(ctx)
+	modelArray := append(client.ModelClientMap[req.Model], cancel)
+	client.ModelClientMap[req.Model] = modelArray
 	if err := c.Do(ctx, http.MethodPost, "/api/pull", req, &resp); err != nil {
 		slog.Error("Pull model failed : " + err.Error())
 		return &resp, err
 	}
 	return &resp, nil
+}
+
+func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullModelRequest) (chan []byte, chan error) {
+	c := o.GetDefaultClient()
+	// Abortable HTTP request
+	ctx, cancel := context.WithCancel(ctx)
+	modelArray := append(client.ModelClientMap[req.Model], cancel)
+	client.ModelClientMap[req.Model] = modelArray
+	defer cancel()
+	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req)
+	return dataCh, errCh
 }
 
 func (o *OllamaProvider) DeleteModel(ctx context.Context, req *types.DeleteRequest) error {

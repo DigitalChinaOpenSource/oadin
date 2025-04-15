@@ -72,6 +72,12 @@ func (o *OpenvinoProvider) PullModel(ctx context.Context, req *types.PullModelRe
 	return nil, nil
 }
 
+func (o *OpenvinoProvider) PullModelStream(ctx context.Context, req *types.PullModelRequest) (chan []byte, chan error) {
+	dataCh := make(chan []byte)
+	errCh := make(chan error)
+	return dataCh, errCh
+}
+
 func (o *OpenvinoProvider) DeleteModel(ctx context.Context, req *types.DeleteRequest) error {
 	fmt.Printf("Ollama: Deleting model %s\n", req.Model)
 	return nil

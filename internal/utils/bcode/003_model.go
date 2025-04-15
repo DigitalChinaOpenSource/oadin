@@ -16,4 +16,6 @@ var (
 	ErrDeleteModel = NewBcode(http.StatusBadRequest, 30005, "model delete db failed")
 
 	ErrEngineDeleteModel = NewBcode(http.StatusBadRequest, 30006, "engine delete model failed")
+
+	ErrNoRecommendModel = NewBcode(http.StatusBadRequest, 30007, "No Recommend Model")
 )
