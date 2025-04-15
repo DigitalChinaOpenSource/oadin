@@ -19,6 +19,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	r := e.Router.Group("/byze/" + version.ByzeVersion)
 
 	r.Handle(http.MethodGet, "/health", healthHeader)
+	r.Handle(http.MethodGet, "/version", getVersion)
 
 	// service import / export
 	r.Handle(http.MethodPost, "/service/export", e.ExportService)
@@ -37,6 +38,10 @@ func InjectRouter(e *ByzeCoreServer) {
 	r.Handle(http.MethodGet, "/model", e.GetModels)
 	r.Handle(http.MethodPost, "/model", e.CreateModel)
 	r.Handle(http.MethodDelete, "/model", e.DeleteModel)
+	r.Handle(http.MethodPost, "/model/stream", e.CreateModelStream)
+	r.Handle(http.MethodPost, "/model/stream/cancel", e.CancelModelStream)
+	r.Handle(http.MethodGet, "/model/recommend", e.GetRecommendModels)
+	r.Handle(http.MethodGet, "/model/support", e.GetModelList)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }
@@ -47,4 +52,8 @@ func rootHandler(c *gin.Context) {
 
 func healthHeader(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]string{"status": "UP"})
+}
+
+func getVersion(c *gin.Context) {
+	c.JSON(http.StatusOK, map[string]string{"version": version.ByzeVersion})
 }

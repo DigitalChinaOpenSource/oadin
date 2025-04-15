@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -368,6 +369,17 @@ func stopByzeServer(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
 		}
 	}
+	if runtime.GOOS == "windows" {
+		extraProcessName := "ollama-lib.exe"
+		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+		_, err := extraCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", extraProcessName)
+			return nil
+		}
+
+		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+	}
 
 	return nil
 }
@@ -375,13 +387,15 @@ func stopByzeServer(cmd *cobra.Command, args []string) error {
 // NewInstallServiceCommand will install a service
 func NewInstallServiceCommand() *cobra.Command {
 	var (
-		providerName string
-		remoteFlag   bool
-		remoteURL    string
-		authType     string
-		method       string
-		authKey      string
-		flavor       string
+		providerName  string
+		remoteFlag    bool
+		remoteURL     string
+		authType      string
+		method        string
+		authKey       string
+		flavor        string
+		skipModelFlag bool
+		model         string
 	)
 
 	installServiceCmd := &cobra.Command{
@@ -401,6 +415,8 @@ func NewInstallServiceCommand() *cobra.Command {
 	installServiceCmd.Flags().StringVar(&authKey, "auth_key", "", "Authentication key json format")
 	installServiceCmd.Flags().StringVar(&flavor, "flavor", "", "Flavor (tencent/deepseek)")
 	installServiceCmd.Flags().StringP("file", "f", "", "Path to the service provider file (required for service_provider)")
+	installServiceCmd.Flags().BoolVarP(&skipModelFlag, "skip_model", "", false, "Skip the model download")
+	installServiceCmd.Flags().StringVarP(&model, "model_name", "m", "", "Pull model name")
 
 	return installServiceCmd
 }
@@ -790,7 +806,16 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 			req.ApiFlavor = types.FlavorOllama
 			req.AuthType = types.AuthTypeNone
 		}
-
+		skipModelFlag, err := cmd.Flags().GetBool("skip_model")
+		if err != nil {
+			skipModelFlag = false
+		}
+		modelName, err := cmd.Flags().GetString("model_name")
+		if err != nil {
+			modelName = ""
+		}
+		req.SkipModelFlag = skipModelFlag
+		req.ModelName = modelName
 		req.ServiceName = serviceName
 		req.ProviderName = providerName
 		if req.ProviderName == "" {
@@ -823,39 +848,39 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 
 		fmt.Printf("Service %s install success!", serviceName)
 
-		if !remote && serviceName == types.ServiceChat {
-			askRes := askEnableRemoteService()
-			if askRes {
-				fmt.Println("请前往 https://platform.deepseek.com/ 网址申请 APIKEY。")
-				apiKey := getAPIKey()
-				if apiKey != "" {
-					fmt.Printf("\r你输入的 API Key 是: %s\n", apiKey)
-				}
-
-				req := &dto.CreateAIGCServiceRequest{
-					ServiceName:   "chat",
-					ServiceSource: "remote",
-					ApiFlavor:     "deepseek",
-					ProviderName:  "remote_deepseek_chat",
-					Desc:          "remote deepseek model service",
-					Method:        http.MethodPost,
-					Url:           "https://api.lkeap.cloud.tencent.com/v1/chat/completions",
-					AuthType:      "apikey",
-					AuthKey:       apiKey,
-					ExtraHeaders:  "{}",
-					ExtraJsonBody: "{}",
-					Properties:    `{"max_input_tokens": 131072,"supported_response_mode":["stream","sync"]}`,
-				}
-
-				err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
-				if err != nil {
-					fmt.Printf("\rService install failed: %s ", err.Error())
-					return
-				}
-			} else {
-				fmt.Println("下次您可以通过 byze install chat -r --flavor deepseek --auth_type apikey 来启用远程DeepSeek服务")
-			}
-		}
+		//if !remote && serviceName == types.ServiceChat {
+		//	askRes := askEnableRemoteService()
+		//	if askRes {
+		//		fmt.Println("请前往 https://platform.deepseek.com/ 网址申请 APIKEY。")
+		//		apiKey := getAPIKey()
+		//		if apiKey != "" {
+		//			fmt.Printf("\r你输入的 API Key 是: %s\n", apiKey)
+		//		}
+		//
+		//		req := &dto.CreateAIGCServiceRequest{
+		//			ServiceName:   "chat",
+		//			ServiceSource: "remote",
+		//			ApiFlavor:     "deepseek",
+		//			ProviderName:  "remote_deepseek_chat",
+		//			Desc:          "remote deepseek model service",
+		//			Method:        http.MethodPost,
+		//			Url:           "https://api.lkeap.cloud.tencent.com/v1/chat/completions",
+		//			AuthType:      "apikey",
+		//			AuthKey:       apiKey,
+		//			ExtraHeaders:  "{}",
+		//			ExtraJsonBody: "{}",
+		//			Properties:    `{"max_input_tokens": 131072,"supported_response_mode":["stream","sync"]}`,
+		//		}
+		//
+		//		err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
+		//		if err != nil {
+		//			fmt.Printf("\rService install failed: %s ", err.Error())
+		//			return
+		//		}
+		//	} else {
+		//		fmt.Println("下次您可以通过 byze install chat -r --flavor deepseek --auth_type apikey 来启用远程DeepSeek服务")
+		//	}
+		//}
 	}
 }
 
@@ -952,8 +977,11 @@ func startByzeServer() error {
 		return fmt.Errorf("failed to open log file: %v", err)
 	}
 	defer logFile.Close()
-
-	cmd := exec.Command("byze.exe", "server", "start")
+	execCmd := "byze.exe"
+	if runtime.GOOS != "windows" {
+		execCmd = "byze"
+	}
+	cmd := exec.Command(execCmd, "server", "start")
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 
@@ -1034,12 +1062,12 @@ func PullHandler(cmd *cobra.Command, args []string) {
 	req.ServiceName = serviceName
 	req.ProviderName = providerName
 
-	var wg sync.WaitGroup
-	stopChan := make(chan struct{})
-
-	wg.Add(1)
-	msg := "Pulling model"
-	go progress.ShowLoadingAnimation(stopChan, &wg, msg)
+	//var wg sync.WaitGroup
+	//stopChan := make(chan struct{})
+	//
+	//wg.Add(1)
+	//msg := "Pulling model"
+	//go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
 	c := config.NewByzeClient()
 	routerPath := fmt.Sprintf("/byze/%s/model", version.ByzeVersion)
@@ -1050,8 +1078,8 @@ func PullHandler(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	close(stopChan)
-	wg.Wait()
+	//close(stopChan)
+	//wg.Wait()
 
 	if resp.HTTPCode > 200 {
 		fmt.Printf("\rPull model  failed: %s", resp.Message)
