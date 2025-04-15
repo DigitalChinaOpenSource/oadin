@@ -6,6 +6,7 @@ services:
         endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
+        auth_apply_url: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps
         default_model: ernie-3.5-8k
         request_segments: 1 # request
         install_raw_routes: false  # also install routes without byze prefix in url path
@@ -125,6 +126,7 @@ services:
         endpoints: [ "POST /v1/embeddings" ] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
+        auth_apply_url: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps
         default_model: embedding-v1
         request_segments: 1 # request
         install_raw_routes: false # also install routes without byze prefix in url path# request to this will use this flavor

@@ -1,0 +1,47 @@
+{
+  "service": "chat",
+  "memory_size_models_map_list": [
+    {
+      "memory_size": 32,
+      "memory_type": ["DDR5"],
+      "models": [
+        {
+          "name": "Qwen2.5:7b",
+          "size": "4.7G"
+        },
+        {
+          "name": "Deepseek-r1:7b",
+          "size": "4.7G"
+        }
+      ]
+    },
+    {
+      "memory_type": ["DDR5"],
+      "memory_size": 18,
+      "models": [
+        {
+          "name": "Qwen2.5:7b",
+          "size": "4.7G"
+        },
+        {
+          "name": "Deepseek-r1:7b",
+          "size": "4.7G"
+        }
+      ]
+    },
+    {
+      "memory_size": 4,
+      "memory_type": ["DDR3", "DDR4", "DDR5"],
+      "models": [
+        {
+          "name": "Qwen2.5:1.5b",
+          "size": "4.7G"
+        },
+        {
+          "name": "Deepseek-r1:1.5b",
+          "size": "4.7G"
+        }
+      ]
+    }
+  ]
+}

@@ -86,8 +86,10 @@ type FlavorServiceDef struct {
 	RequestUrl             string              `yaml:"url"`
 	RequestExtraUrl        string              `yaml:"extra_url"`
 	AuthType               string              `yaml:"auth_type"`
+	AuthApplyUrl           string              `yaml:"auth_apply_url"`
 	RequestSegments        int                 `yaml:"request_segments"`
 	ExtraHeaders           string              `yaml:"extra_headers"`
+	SupportModels          []string            `yaml:"support_models"`
 	ModelSelector          ModelSelector       `yaml:"model_selector"`
 	RequestToByze          FlavorConversionDef `yaml:"request_to_byze"`
 	RequestFromByze        FlavorConversionDef `yaml:"request_from_byze"`
@@ -429,12 +431,15 @@ func ConvertBetweenFlavors(from, to APIFlavor, service string, conv string, cont
 }
 
 type ServiceDefaultInfo struct {
-	DefaultModel    string `json:"default_model"`
-	RequestUrl      string `json:"url"`
-	RequestExtraUrl string `json:"request_extra_url"`
-	AuthType        string `json:"auth_type"`
-	RequestSegments int    `json:"request_segments"`
-	ExtraHeaders    string `json:"extra_headers"`
+	Endpoints       []string `json:"endpoints"`
+	DefaultModel    string   `json:"default_model"`
+	RequestUrl      string   `json:"url"`
+	RequestExtraUrl string   `json:"request_extra_url"`
+	AuthType        string   `json:"auth_type"`
+	RequestSegments int      `json:"request_segments"`
+	ExtraHeaders    string   `json:"extra_headers"`
+	SupportModels   []string `json:"support_models"`
+	AuthApplyUrl    string   `json:"auth_apply_url"`
 }
 
 var FlavorServiceDefaultInfoMap = make(map[string]map[string]ServiceDefaultInfo)
@@ -447,12 +452,15 @@ func InitProviderDefaultModelTemplate(flavor APIFlavor) {
 	ServiceDefaultInfoMap := make(map[string]ServiceDefaultInfo)
 	for service, serviceDef := range def.Services {
 		ServiceDefaultInfoMap[service] = ServiceDefaultInfo{
+			Endpoints:       serviceDef.Endpoints,
 			DefaultModel:    serviceDef.DefaultModel,
 			RequestUrl:      serviceDef.RequestUrl,
 			RequestExtraUrl: serviceDef.RequestExtraUrl,
 			RequestSegments: serviceDef.RequestSegments,
 			AuthType:        serviceDef.AuthType,
 			ExtraHeaders:    serviceDef.ExtraHeaders,
+			SupportModels:   serviceDef.SupportModels,
+			AuthApplyUrl:    serviceDef.AuthApplyUrl,
 		}
 	}
 	FlavorServiceDefaultInfoMap[flavor.Name()] = ServiceDefaultInfoMap
