@@ -134,11 +134,27 @@ class Byze {
   IsByzeExisted() {
     return new Promise((resolve) => {
         const userDir = os.homedir();
-        const destDir = path.join(userDir, 'Byze');
-        const dest = path.join(destDir, 'byze.exe');
+        const platform = process.platform; // 获取当前平台
+
+        let destDir;
+        let dest;
+
+        if (platform === 'win32') {
+            // Windows 平台路径
+            destDir = path.join(userDir, 'Byze');
+            dest = path.join(destDir, 'byze.exe');
+        } else if (platform === 'darwin') {
+            // macOS 平台路径
+            destDir = path.join(userDir, 'Byze');
+            dest = path.join(destDir, 'byze'); // 假设 macOS 的可执行文件名为 'byze'
+        } else {
+            console.error('❌ 不支持的操作系统');
+            return resolve(false);
+        }
+
         resolve(fs.existsSync(dest));
     });
-  }
+}
 
   // 从服务器下载 Byze.exe
   DownloadByze() {
