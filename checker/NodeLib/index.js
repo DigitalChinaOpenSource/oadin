@@ -247,7 +247,7 @@ class Byze {
         const req = http.request({
           hostname: 'localhost',
           port: 16688,
-          method: 'HEAD',
+          method: 'GET',
           timeout: 5000
         }, (res) => {
           if (res.statusCode === 200) {
@@ -277,7 +277,7 @@ class Byze {
       };
   
       // 动态调整首次检测时间
-      setTimeout(() => checkServer(1), isMacOS ? 4000 : 2500);
+      setTimeout(() => checkServer(1), 5000);
       child.unref();
     });
   }
