@@ -282,4 +282,15 @@ byze.TextToImage(data).then((result) => {
     console.log(result);
 });
 
+// embed 服务
+const data = {
+    model: "embedding-v1",
+    text: [ "这球你能踢歪了", "二彪子", "球门送到你脸上还不进", "你不配赢", "你就适合打人机" ]
+}
+
+byze.Embed(data).then((result) => {
+    console.log(result);
+});
+
+
 ```

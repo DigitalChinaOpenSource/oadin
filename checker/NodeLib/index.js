@@ -224,23 +224,19 @@ class Byze {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
       }
   
-      // 统一使用命令启动（不再需要路径）
       const child = spawn('byze', ['server', 'start', '-d'], {
-        detached: true,
         stdio: 'ignore',
-        // 仅Windows需要隐藏窗口
-        ...(isMacOS ? {} : { windowsHide: true })
+        windowsHide: true
       });
+      child.unref();
   
       child.on('error', (err) => {
         console.error(`❌ 启动失败: ${err.message}`);
-        // 常见错误处理
         if (err.code === 'ENOENT') {
           console.log([
             '💡 可能原因:',
             `1. 未找到byze可执行文件，请检查下载是否成功`,
-            `2. 环境变量未生效，请尝试重启终端`,
-            isMacOS ? '3. 可能需要执行: chmod +x ~/Byze/byze' : ''
+            `2. 环境变量未生效，请尝试重启终端`
           ].filter(Boolean).join('\n'));
         }
         resolve(false);
