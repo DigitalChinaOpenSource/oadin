@@ -179,6 +179,116 @@ services:
         request_segments: 1 # request
         install_raw_routes: true # also install routes without byze prefix in url path
         extra_headers: '{}'
+        request_to_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "stream": $stream,
+                          "messages": messages,
+                          "seed": options.seed,
+                          "temperature": options.temperature,
+                          "template": options.template,
+                          "top_p": options.top_p,
+                          "top_k": options.top_k,
+                          "stop": options.stop,
+                          "max_tokens": options.num_predict,
+                          "keep_alive": keep_alive
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        request_from_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "stream": $stream,
+                          "prompt": prompt,
+                          "tools": tools,
+                          "keep_alive": keep_alive,
+                          "options": {
+                              "seed": seed,
+                              "temperature": temperature,
+                              "top_p": top_p,
+                              "top_k": top_k,
+                              "num_predict": max_tokens,
+                              "stop": stop
+                          }
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        # response need additional converter for responses from stream
+        response_to_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": $id,
+                          "model": model,
+                          "created_at": created_at,
+                          "response": response,
+                          "finished": done,
+                          "finish_reason": done_reason
+                      }
+
+        stream_response_to_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": $id,
+                          "model": model,
+                          "created_at": created_at,
+                          "response": response,
+                          "finished": done,
+                          "finish_reason": done_reason
+                      }
+
+                - converter: header
+                  config:
+                      del: [ "Content-Type" ]
+                      add:
+                          Content-Type: text/event-stream
+
+        response_from_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": model,
+                          "created_at": created_at,
+                          "response": response,
+                          "done": finished,
+                          "done_reason": finish_reason
+                      }
+
+        stream_response_from_byze:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": model,
+                          "created_at": created_at,
+                          "response": response,
+                          "done": finished,
+                          "done_reason": finish_reason
+                      }
+
+                - converter: header
+                  config:
+                      del: [ "Content-Type" ]
+                      add:
+                          Content-Type: application/x-ndjson
 
     embed:
         url: "http://127.0.0.1:16677/api/embed"

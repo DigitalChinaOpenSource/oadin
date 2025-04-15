@@ -18,6 +18,8 @@ type CreateAIGCServiceRequest struct {
 	ExtraHeaders  string `json:"extra_headers"`
 	ExtraJsonBody string `json:"extra_json_body"`
 	Properties    string `json:"properties"`
+	SkipModelFlag bool   `json:"skip_model",default:"true"`
+	ModelName     string `json:"model_name"`
 }
 
 type UpdateAIGCServiceRequest struct {
@@ -110,6 +112,13 @@ type CreateModelRequest struct {
 	ServiceSource string `json:"service_source" validate:"required"`
 }
 
+type CreateModelStreamRequest struct {
+	ProviderName  string `json:"provider_name"`
+	ModelName     string `json:"model_name" validate:"required"`
+	ServiceName   string `json:"service_name"`
+	ServiceSource string `json:"service_source"`
+}
+
 type DeleteModelRequest struct {
 	ProviderName  string `json:"provider_name"`
 	ModelName     string `json:"model_name" validate:"required"`
@@ -121,6 +130,15 @@ type GetModelsRequest struct {
 	ProviderName string `json:"provider_name,omitempty"`
 	ModelName    string `json:"model_name,omitempty"`
 	ServiceName  string `json:"service_name,omitempty"`
+}
+
+type GetModelListRequest struct {
+	ServiceSource string `form:"service_source" validate:"required"`
+	Flavor        string `form:"flavor" validate:"required"`
+}
+
+type ModelStreamCancelRequest struct {
+	ModelName string `json:"model_name" validate:"required"`
 }
 
 type CreateModelResponse struct {
@@ -136,12 +154,37 @@ type GetModelsResponse struct {
 	Data []Model `json:"data"`
 }
 
+type RecommendModelResponse struct {
+	bcode.Bcode
+	Data map[string][]RecommendModelData `json:"data"`
+}
+
+type ModelStreamCancelResponse struct {
+	bcode.Bcode
+}
+
 type Model struct {
 	ModelName    string    `json:"model_name"`
 	ProviderName string    `json:"provider_name"`
 	Status       string    `json:"status"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type RecommendModelData struct {
+	Service         string   `json:"service_name"`
+	Flavor          string   `json:"api_flavor"`
+	Method          string   `json:"method" default:"POST"`
+	Desc            string   `json:"desc"`
+	Url             string   `json:"url"`
+	AuthType        string   `json:"auth_type"`
+	AuthApplyUrl    string   `json:"auth_apply_url"`
+	AuthFields      []string `json:"auth_fields"`
+	Name            string   `json:"name"`
+	ServiceProvider string   `json:"service_provider_name"`
+	Size            string   `json:"size"`
+	IsRecommended   bool     `json:"is_recommended" default:"false"`
+	Status          string   `json:"status"`
 }
 
 type CreateServiceProviderRequest struct {

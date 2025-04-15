@@ -181,10 +181,15 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 		location = types.ServiceSourceLocal
 	} else if task.Request.HybridPolicy == "always_remote" {
 		location = types.ServiceSourceRemote
-	}
-	if location == types.ServiceSourceLocal {
-		cpuTotalPercent, _ := cpu.Percent(3*time.Second, false)
-		if cpuTotalPercent[0] > 80.0 {
+	} else if task.Request.HybridPolicy == "default" {
+		gpuUtilization, err := utils.GetGpuInfo()
+		if err != nil {
+			cpuTotalPercent, _ := cpu.Percent(3*time.Second, false)
+			if cpuTotalPercent[0] > 80.0 {
+				location = types.ServiceSourceRemote
+			}
+		}
+		if gpuUtilization >= 80.0 {
 			location = types.ServiceSourceRemote
 		}
 	}
@@ -239,18 +244,16 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 				model = defaultInfo.DefaultModel
 			}
 		} else {
-			if location == types.ServiceSourceLocal {
-				m := &types.Model{
-					ProviderName: sp.ProviderName,
-					ModelName:    task.Request.Model,
-				}
-				ms, err := ds.List(context.Background(), m, &datastore.ListOptions{})
-				if err != nil {
-					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-				}
-				if len(ms) == 0 {
-					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-				}
+			m := &types.Model{
+				ProviderName: sp.ProviderName,
+				ModelName:    task.Request.Model,
+			}
+			ms, err := ds.List(context.Background(), m, &datastore.ListOptions{})
+			if err != nil {
+				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+			}
+			if len(ms) == 0 {
+				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
 			}
 		}
 	}

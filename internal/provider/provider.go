@@ -2,11 +2,9 @@ package provider
 
 import (
 	"aipc/byze/internal/provider/engine"
-	"aipc/byze/internal/schedule"
 	"aipc/byze/internal/types"
 	"aipc/byze/internal/utils/client"
 	"context"
-	"log/slog"
 )
 
 // ModelServiceProvider local model engine
@@ -18,6 +16,7 @@ type ModelServiceProvider interface {
 	HealthCheck() error
 	InitEnv() error
 	PullModel(ctx context.Context, req *types.PullModelRequest, fn types.PullProgressFunc) (*types.ProgressResponse, error)
+	PullModelStream(ctx context.Context, req *types.PullModelRequest) (chan []byte, chan error)
 	DeleteModel(ctx context.Context, req *types.DeleteRequest) error
 	ListModels(ctx context.Context) (*types.ListResponse, error)
 	GetConfig() *types.EngineRecommendConfig
@@ -32,22 +31,5 @@ func GetModelEngine(engineName string) ModelServiceProvider {
 		return engine.NewOpenvinoProvider(nil)
 	default:
 		return engine.NewOllamaProvider(nil)
-	}
-}
-
-type ServiceProviderInfo struct {
-	AuthType string
-	Endpoint string
-}
-
-func GetServiceProviderInfo(flavor string) ServiceProviderInfo {
-	def, err := schedule.LoadFlavorDef(flavor, "/")
-	if err != nil {
-		slog.Error("[Provider]Failed to load file", "provider_name", flavor, "error", err.Error())
-		return ServiceProviderInfo{AuthType: "none", Endpoint: "none"}
-	}
-	return ServiceProviderInfo{
-		AuthType: def.AuthType,
-		Endpoint: def.Endpoint,
 	}
 }

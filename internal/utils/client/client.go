@@ -19,6 +19,8 @@ type Client struct {
 	http *http.Client
 }
 
+var ModelClientMap = make(map[string][]context.CancelFunc)
+
 func checkError(resp *http.Response, body []byte) error {
 	if resp.StatusCode < http.StatusBadRequest {
 		return nil
@@ -69,7 +71,6 @@ func (c *Client) Do(ctx context.Context, method, path string, reqData, respData 
 	if err != nil {
 		return err
 	}
-
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Accept", "application/json")
 	// request.Header.Set("User-Agent", fmt.Sprintf("ollama/%s (%s %s) Go/%s", version.Version, runtime.GOARCH, runtime.GOOS, runtime.Version()))
@@ -153,4 +154,82 @@ func (c *Client) Stream(ctx context.Context, method, path string, data any, fn f
 	}
 
 	return nil
+}
+
+func (c *Client) StreamResponse(ctx context.Context, method, path string, reqData any) (chan []byte, chan error) {
+	dataCh := make(chan []byte)
+	errCh := make(chan error, 1) // 缓冲通道避免goroutine阻塞
+
+	go func() {
+		defer close(dataCh)
+		defer close(errCh)
+
+		// 准备请求体
+		var reqBody io.Reader
+		switch v := reqData.(type) {
+		case io.Reader:
+			reqBody = v
+		case nil:
+			// 无请求体
+		default:
+			data, err := json.Marshal(v)
+			if err != nil {
+				errCh <- fmt.Errorf("marshal request data failed: %w", err)
+				return
+			}
+			reqBody = bytes.NewReader(data)
+		}
+
+		// 创建请求
+		requestURL := c.base.JoinPath(path)
+		request, err := http.NewRequestWithContext(ctx, method, requestURL.String(), reqBody)
+		if err != nil {
+			errCh <- fmt.Errorf("create request failed: %w", err)
+			return
+		}
+
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Accept", "application/json") // Ollama通常返回JSON流
+
+		// 发送请求
+		resp, err := c.http.Do(request)
+		if err != nil {
+			errCh <- fmt.Errorf("execute request failed: %w", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		// 检查响应状态
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			errCh <- fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+			return
+		}
+
+		// 使用Scanner逐行读取流式响应
+		scanner := bufio.NewScanner(resp.Body)
+		for scanner.Scan() {
+			select {
+			case <-ctx.Done():
+				errCh <- ctx.Err()
+				return
+			default:
+				line := scanner.Bytes()
+				if len(line) == 0 {
+					continue
+				}
+
+				// 复制数据避免重用缓冲区
+				chunk := make([]byte, len(line))
+				copy(chunk, line)
+				dataCh <- chunk
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			errCh <- fmt.Errorf("reading response failed: %w", err)
+		}
+	}()
+
+	return dataCh, errCh
 }
