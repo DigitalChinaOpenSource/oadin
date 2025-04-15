@@ -123,6 +123,25 @@ const deleteModelRequestSchema = {
     ]
 };
 
+const installModelStreamResponseSchema = {
+    type: "object",
+    properties: {
+        status: { type: "string" },
+        digest: { type: "string" },
+        total: { type: "integer" },
+        completed: { type: "integer" }
+    },
+    required: ["status"]
+};
+
+const cancelModelStreamRequestSchema = {
+    type: "object",
+    properties: {
+        model_name: { type: "string" }
+    },
+    required: ["model_name"]
+};
+
 // ========== 服务提供商管理 ==========
 const getServiceProvidersSchema = {
     type: "object",
@@ -544,6 +563,8 @@ module.exports = {
     installModelRequestSchema,
     deleteModelRequestSchema,
     getServiceProvidersSchema,
+    installModelStreamResponseSchema,
+    cancelModelStreamRequestSchema,
     installServiceProviderRequestSchema,
     updateServiceProviderRequestSchema,
     deleteServiceProviderRequestSchema,
