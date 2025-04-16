@@ -405,6 +405,66 @@ const recommendModelsResponse = {
     required: ["business_code", "message", "data"]
 };
 
+const SmartvisionModelSupportRequest = {
+    type: "object",
+    properties: {
+        EnvType: { type: "string", enum: ["dev", "product"] }
+    },
+    required: ["EnvType"]
+};
+
+const SmartvisionModelSupport = {
+    type: "object",
+    properties: {
+        business_code: { type: "integer" },
+        message: { type: "string" },
+        data: {
+            type: "object",
+            properties: {
+                code: { type: "integer" },
+                data: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            id: { type: "integer" },
+                            name: { type: "string" },
+                            avatar: { type: "string" },
+                            type: { type: "integer" },
+                            provider: { type: "string" },
+                            modelKey: { type: "string" },
+                            credentialParamsId: { type: "string" },
+                            introduce: { type: "string" },
+                            tags: {
+                                type: "array",
+                                items: { type: "string" }
+                            },
+                            credentialParams: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        id: { type: "integer" },
+                                        name: { type: "string" },
+                                        label: { type: "string" },
+                                        type: { type: "string" },
+                                        placeholder: { type: "string" },
+                                        required: { type: "integer" },
+                                        value: { type: ["string", "null"] },
+                                        sort: { type: "integer" },
+                                        createTime: { type: "integer" },
+                                        updateTime: { type: "integer" }
+                                    } 
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+};
+
 // ========= chat ==========
 const chatRequest = {
     type: "object",
@@ -573,6 +633,8 @@ module.exports = {
     modelsResponse,
     getModelsSupported,
     recommendModelsResponse,
+    SmartvisionModelSupportRequest,
+    SmartvisionModelSupport,
     chatRequest,
     chatResponse,
     generateRequest,

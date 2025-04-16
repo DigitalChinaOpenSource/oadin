@@ -515,6 +515,14 @@ class Byze {
     return this.validateSchema(schemas.recommendModelsResponse, res.data);
   }
 
+  // 获取问学平台支持模型列表
+  async GetSmartvisionModelsSupported(data){
+    this.validateSchema(schemas.SmartvisionModelSupportRequest, data);
+    // 添加请求头
+    const res = await this.client.get('/model/support/smartvision', {params: data});
+    return this.validateSchema(schemas.SmartvisionModelSupport, res.data);
+  }
+
   // chat服务
   async Chat(data) {
     this.validateSchema(schemas.chatRequest, data);

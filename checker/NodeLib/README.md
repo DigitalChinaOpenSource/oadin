@@ -102,6 +102,34 @@ byze.InstallModel(data).then((result) => {
     console.log(result);
 });
 
+// 安装模型（流式）
+const data = {
+    model_name: "llama2",
+    service_name: "chat/embed/generate/text-to-image",
+    service_source: "remote/local",
+    provider_name: "local_ollama_chat/remote_openai_chat/...",
+    stream: true,
+}; // 必填model_name, service_name, service_source
+byze.InstallModelStream(data).then((Stream) => {
+  Stream.on('data', (data) => {
+      console.log(data);
+  });
+  Stream.on('error', (error) => {
+      console.error(error);
+  });
+  Stream.on('end', () => {
+      console.log('Ended');
+  });
+});
+
+// 暂停下载模型（流式）
+const data = {
+    model_name: "qwen2:7b"
+}; // 必填model_name
+byze.CancelInstallModel(data).then((result) => {
+    console.log(result);
+});
+
 // 卸载模型
 const data = {
     model_name: "llama2",
@@ -197,6 +225,14 @@ const data = {
     flavor: "ollama/openai/..." // local 则默认为ollama
 }; // 必填service_source, flavor
 byze.GetModelsSurpported().then((result) => {
+    console.log(result);
+});
+
+// 获取问学平台支持模型列表
+const data = {
+    EnvType: "product/dev"
+}; // 必填EnvType
+byze.GetSmartvisionModelsSupported(data).then((result) => {
     console.log(result);
 });
 
