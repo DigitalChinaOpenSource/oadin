@@ -10,7 +10,7 @@ func GetMemoryInfo() (*MemoryInfo, error) {
 		return &MemoryInfo{}, err
 	}
 	memorySize := int(memoryObj.TotalUsableBytes / 1024 / 1024 / 1024)
-	memoryInfo = &MemoryInfo{
+	memoryInfo := &MemoryInfo{
 		Size: memorySize,
 	}
 	return memoryInfo, nil
