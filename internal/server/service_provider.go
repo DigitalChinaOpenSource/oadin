@@ -67,6 +67,9 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 	if request.Url == "" {
 		sp.URL = providerServiceInfo.RequestUrl
 	}
+	if request.Method == "" {
+		sp.Method = "POST"
+	}
 	sp.ExtraHeaders = request.ExtraHeaders
 	if request.ExtraHeaders == "" {
 		sp.ExtraHeaders = providerServiceInfo.ExtraHeaders
@@ -342,19 +345,25 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 	}
 	sp.UpdatedAt = time.Now()
 
-	model := types.Model{ProviderName: sp.ProviderName}
-	err = ds.Get(ctx, &model)
-	if err != nil {
-		return nil, err
-	}
-
-	server := ChooseCheckServer(*sp, model.ModelName)
-	if server == nil {
-		return nil, bcode.ErrProviderIsUnavailable
-	}
-	checkRes := server.CheckServer()
-	if !checkRes {
-		return nil, bcode.ErrProviderIsUnavailable
+	for _, modelName := range request.Models {
+		model := types.Model{ProviderName: sp.ProviderName, ModelName: modelName}
+		err = ds.Get(ctx, &model)
+		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+			return nil, err
+		} else if errors.Is(err, datastore.ErrEntityInvalid) {
+			server := ChooseCheckServer(*sp, model.ModelName)
+			if server == nil {
+				return nil, bcode.ErrProviderIsUnavailable
+			}
+			checkRes := server.CheckServer()
+			if !checkRes {
+				return nil, bcode.ErrProviderIsUnavailable
+			}
+			err = ds.Add(ctx, &model)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	err = ds.Put(ctx, sp)
@@ -492,7 +501,8 @@ func (m *CheckModelsServer) CheckServer() bool {
 	if err != nil {
 		return false
 	}
-	status := CheckServerRequest(req, m.ServiceProvider, "")
+	content := types.HTTPContent{}
+	status := CheckServerRequest(req, m.ServiceProvider, content)
 	return status
 }
 
@@ -527,8 +537,11 @@ func (c *CheckChatServer) CheckServer() bool {
 		slog.Error("[Schedule] Failed to prepare request", "error", err)
 		return false
 	}
-
-	status := CheckServerRequest(req, c.ServiceProvider, string(jsonData))
+	content := types.HTTPContent{
+		Body:   jsonData,
+		Header: req.Header,
+	}
+	status := CheckServerRequest(req, c.ServiceProvider, content)
 	return status
 }
 
@@ -559,8 +572,12 @@ func (e *CheckEmbeddingServer) CheckServer() bool {
 		slog.Error("[Schedule] Failed to prepare request", "error", err)
 		return false
 	}
+	content := types.HTTPContent{
+		Body:   jsonData,
+		Header: req.Header,
+	}
 
-	status := CheckServerRequest(req, e.ServiceProvider, string(jsonData))
+	status := CheckServerRequest(req, e.ServiceProvider, content)
 	return status
 }
 
@@ -627,8 +644,11 @@ func (e *CheckTextToImageServer) CheckServer() bool {
 		slog.Error("[Schedule] Failed to prepare request", "error", err)
 		return false
 	}
-
-	status := CheckServerRequest(req, e.ServiceProvider, string(jsonData))
+	content := types.HTTPContent{
+		Body:   jsonData,
+		Header: req.Header,
+	}
+	status := CheckServerRequest(req, e.ServiceProvider, content)
 	return status
 }
 
@@ -652,7 +672,7 @@ func ChooseCheckServer(sp types.ServiceProvider, modelName string) ModelServiceM
 	return server
 }
 
-func CheckServerRequest(req *http.Request, serviceProvider types.ServiceProvider, reqBodyString string) bool {
+func CheckServerRequest(req *http.Request, serviceProvider types.ServiceProvider, content types.HTTPContent) bool {
 	transport := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    30 * time.Second,
@@ -676,7 +696,7 @@ func CheckServerRequest(req *http.Request, serviceProvider types.ServiceProvider
 		authParams := &schedule.AuthenticatorParams{
 			Request:      req,
 			ProviderInfo: &serviceProvider,
-			RequestBody:  reqBodyString,
+			Content:      content,
 		}
 		authenticator := schedule.ChooseProviderAuthenticator(authParams)
 		if authenticator == nil {
