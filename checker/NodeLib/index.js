@@ -104,7 +104,7 @@ class Byze {
   
     const validate = this.ajv.compile(schema);
     if (!validate(data)) {
-      throw new Error(`Schema validation failed: ${JSON.stringify(validate.errors)}`);
+      return new Error(`Schema validation failed: ${JSON.stringify(validate.errors)}`);
     }
     return data;
   }
