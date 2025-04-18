@@ -15,8 +15,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"runtime"
 	"strings"
+	"time"
 )
 
 type Model interface {
@@ -42,7 +44,8 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 	} else {
 		// get default service provider
 		// todo Currently only chat and generate services support pulling models.
-		if request.ServiceName != types.ServiceChat && request.ServiceName != types.ServiceGenerate && request.ServiceName != types.ServiceEmbed {
+		if request.ServiceName != types.ServiceChat && request.ServiceName != types.ServiceGenerate && request.ServiceName != types.ServiceEmbed &&
+			request.ServiceName != types.ServiceTextToImage {
 			return nil, bcode.ErrServer
 		}
 
@@ -185,23 +188,20 @@ func (s *ModelImpl) GetModels(ctx context.Context, request *dto.GetModelsRequest
 }
 
 func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (chan []byte, chan error) {
-	dataChan := make(chan []byte)
-	errChan := make(chan error)
-	defer close(dataChan)
-	defer close(errChan)
+	newDataChan := make(chan []byte)
+	newErrChan := make(chan error)
+	defer close(newDataChan)
+	defer close(newErrChan)
 	ds := datastore.GetDefaultDatastore()
 	sp := new(types.ServiceProvider)
 	if request.ProviderName != "" {
 		sp.ProviderName = request.ProviderName
 	} else {
-
-		defer close(dataChan)
-		defer close(errChan)
 		// get default service provider
 		// todo Currently only chat and generate services support pulling models.
 		if request.ServiceName != types.ServiceChat && request.ServiceName != types.ServiceGenerate && request.ServiceName != types.ServiceEmbed {
-			errChan <- bcode.ErrServer
-			return dataChan, errChan
+			newErrChan <- bcode.ErrServer
+			return newDataChan, newErrChan
 		}
 
 		service := &types.Service{}
@@ -209,8 +209,8 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 
 		err := ds.Get(ctx, service)
 		if err != nil {
-			errChan <- err
-			return dataChan, errChan
+			newErrChan <- err
+			return newDataChan, newErrChan
 		}
 
 		if request.ServiceSource == types.ServiceSourceLocal && service.LocalProvider != "" {
@@ -222,11 +222,11 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 	err := ds.Get(ctx, sp)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		// todo debug log output
-		errChan <- err
-		return dataChan, errChan
+		newErrChan <- err
+		return newDataChan, newErrChan
 	} else if errors.Is(err, datastore.ErrEntityInvalid) {
-		errChan <- err
-		return dataChan, errChan
+		newErrChan <- err
+		return newDataChan, newErrChan
 	}
 	modelName := request.ModelName
 	providerEngine := provider.GetModelEngine(sp.Flavor)
@@ -235,7 +235,7 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 		Model:  modelName,
 		Stream: &steam,
 	}
-	dataChan, errChan = providerEngine.PullModelStream(ctx, &req)
+	dataChan, errChan := providerEngine.PullModelStream(ctx, &req)
 	return dataChan, errChan
 
 }
@@ -255,21 +255,25 @@ func ModelStreamCancel(ctx context.Context, req *dto.ModelStreamCancelRequest) (
 func AsyncPullModel(ctx context.Context, sp *types.ServiceProvider, m *types.Model, pullReq *types.PullModelRequest) {
 	ds := datastore.GetDefaultDatastore()
 	newCtx := context.Background()
-	modelEngine := provider.GetModelEngine(sp.Flavor)
-	_, err := modelEngine.PullModel(newCtx, pullReq, nil)
-	if err != nil {
-		slog.Error("Pull model error: ", err.Error())
-		m.Status = "failed"
-		err = ds.Put(newCtx, m)
+	if sp.ServiceSource == types.ServiceSourceLocal {
+
+		modelEngine := provider.GetModelEngine(sp.Flavor)
+		_, err := modelEngine.PullModel(newCtx, pullReq, nil)
 		if err != nil {
+			slog.Error("Pull model error: ", err.Error())
+			m.Status = "failed"
+			err = ds.Put(newCtx, m)
+			if err != nil {
+				return
+			}
 			return
 		}
-		return
 	}
+
 	slog.Info("Pull model %s completed ..." + m.ModelName)
 
 	m.Status = "downloaded"
-	err = ds.Put(newCtx, m)
+	err := ds.Put(newCtx, m)
 	if err != nil {
 		slog.Error("[Pull model] Update model error:", err.Error())
 		return
@@ -375,7 +379,7 @@ func RecommendModels() (map[string][]dto.RecommendModelData, error) {
 	}
 	//Windows system needs to include memory module model detection.
 	if runtime.GOOS == "windows" {
-		windowsVersion := utils.GetWindowsSystemVersion()
+		windowsVersion := utils.GetSystemVersion()
 		if windowsVersion < 10 {
 			slog.Error("[Model] windows version < 10")
 			return nil, bcode.ErrNoRecommendModel
@@ -415,27 +419,89 @@ func GetRecommendModel() (dto.RecommendModelResponse, error) {
 	return dto.RecommendModelResponse{Bcode: *bcode.ModelCode, Data: recommendModel}, nil
 }
 
-func GetSupportModelList(source string, flavor string) (dto.RecommendModelResponse, error) {
+func GetSupportModelList(source string, flavor string) (*dto.RecommendModelResponse, error) {
+	ds := datastore.GetDefaultDatastore()
+	//ms, err := ds.List(context.Background(), m)
 	var serviceModelList = make(map[string][]dto.RecommendModelData)
 	if source == types.ServiceSourceLocal {
+		var localOllamaSupportModel []dto.LocalSupportModelData
+		var localOllamaModelMap = make(map[string]dto.LocalSupportModelData)
+		fileContent, err := template.FlavorTemplateFs.ReadFile("local_model.json")
+		if err != nil {
+			fmt.Printf("Read file failed: %v\n", err)
+			return nil, err
+		}
+		// parse struct
+		err = json.Unmarshal(fileContent, &localOllamaSupportModel)
+		if err != nil {
+			fmt.Printf("Parse JSON failed: %v\n", err)
+			return nil, err
+		}
+		for _, localModel := range localOllamaSupportModel {
+			localOllamaModelMap[localModel.Name] = localModel
+		}
+
+		var recommendModelParamsSize float32
 		recommendModel, err := RecommendModels()
 		if err != nil {
-			return dto.RecommendModelResponse{Data: nil}, err
+			return &dto.RecommendModelResponse{Data: nil}, err
 		}
 		flavor = "ollama"
 		service := "chat"
+		var resModelNameList []string
 		providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, service)
 		parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
 		for _, model := range recommendModel[service] {
+			localModelInfo := localOllamaModelMap[model.Name]
+			modelQuery := new(types.Model)
+			modelQuery.ModelName = model.Name
+			canSelect := true
+			err := ds.Get(context.Background(), modelQuery)
+			if err != nil {
+				canSelect = false
+			}
 			model.Service = service
 			model.Flavor = flavor
 			model.Method = parts[0]
-			model.Desc = fmt.Sprintf("%s %s %s", source, flavor, parts[1])
+			model.Desc = localModelInfo.Description
 			model.Url = providerServiceDefaultInfo.RequestUrl
 			model.AuthType = providerServiceDefaultInfo.AuthType
 			model.IsRecommended = true
-			model.ServiceProvider = fmt.Sprintf("%s %s %s", source, flavor, service)
+			model.CanSelect = canSelect
+			model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, service)
+			model.Avatar = localModelInfo.Avatar
+			model.Class = localModelInfo.Class
+			model.OllamaId = localModelInfo.OllamaId
 			serviceModelList[service] = append(serviceModelList[service], model)
+			recommendModelParamsSize = model.ParamsSize
+			resModelNameList = append(resModelNameList, model.Name)
+		}
+		for _, localModel := range localOllamaSupportModel {
+			if localModel.ParamsSize <= recommendModelParamsSize && !utils.Contains(resModelNameList, localModel.Name) {
+				modelQuery := new(types.Model)
+				modelQuery.ModelName = localModel.Name
+				canSelect := true
+				err := ds.Get(context.Background(), modelQuery)
+				if err != nil {
+					canSelect = false
+				}
+				model := new(dto.RecommendModelData)
+				model.Name = localModel.Name
+				model.Service = service
+				model.Flavor = flavor
+				model.Method = parts[0]
+				model.Desc = localModel.Description
+				model.Url = providerServiceDefaultInfo.RequestUrl
+				model.AuthType = providerServiceDefaultInfo.AuthType
+				model.IsRecommended = false
+				model.CanSelect = canSelect
+				model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, service)
+				model.Avatar = localModel.Avatar
+				model.Class = localModel.Class
+				model.OllamaId = localModel.OllamaId
+				serviceModelList[service] = append(serviceModelList[service], *model)
+				resModelNameList = append(resModelNameList, model.Name)
+			}
 		}
 
 	} else {
@@ -450,6 +516,13 @@ func GetSupportModelList(source string, flavor string) (dto.RecommendModelRespon
 				authFields = []string{"SecretId", "SecretKey"}
 			}
 			for _, model := range providerServiceDefaultInfo.SupportModels {
+				modelQuery := new(types.Model)
+				modelQuery.ModelName = model
+				canSelect := true
+				err := ds.Get(context.Background(), modelQuery)
+				if err != nil {
+					canSelect = false
+				}
 				modelData := dto.RecommendModelData{
 					Name:            model,
 					Service:         service,
@@ -461,13 +534,60 @@ func GetSupportModelList(source string, flavor string) (dto.RecommendModelRespon
 					AuthFields:      authFields,
 					AuthApplyUrl:    providerServiceDefaultInfo.AuthApplyUrl,
 					ServiceProvider: fmt.Sprintf("%s %s %s", source, flavor, service),
+					CanSelect:       canSelect,
 				}
 				serviceModelList[service] = append(serviceModelList[service], modelData)
 			}
 		}
 	}
-	return dto.RecommendModelResponse{
+	return &dto.RecommendModelResponse{
 		Bcode: *bcode.ModelCode,
 		Data:  serviceModelList,
 	}, nil
+}
+
+func GetSupportSmartVisionModels(request *dto.SmartVisionSupportModelRequest) (*dto.SmartVisionSupportModelResponse, error) {
+	transport := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    30 * time.Second,
+		DisableCompression: true,
+	}
+	client := &http.Client{Transport: transport}
+	envType := request.EnvType
+	smartVisionUrlMap := utils.GetSmartVisionUrl()
+	smartVisionUrl := smartVisionUrlMap[envType]
+	modelUrl := smartVisionUrl.Url + "/admin-api/api/model/list"
+	req, err := http.NewRequest("GET", modelUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Bearer "+smartVisionUrl.AccessToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, bcode.ErrServer
+	}
+	var res dto.SmartVisionSupportModelRes
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return nil, err
+	}
+	if res.Code != 0 {
+		return nil, bcode.ErrServer
+	}
+	var smartVisionModelDataList []dto.SmartVisionModelData
+	for _, model := range res.Data {
+		model.Provider = "remote_smartvision_chat"
+		smartVisionModelDataList = append(smartVisionModelDataList, model)
+	}
+	res.Data = smartVisionModelDataList
+
+	return &dto.SmartVisionSupportModelResponse{
+		Bcode: *bcode.ModelCode,
+		Data:  res,
+	}, nil
+
 }

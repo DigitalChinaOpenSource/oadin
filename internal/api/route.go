@@ -42,6 +42,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	r.Handle(http.MethodPost, "/model/stream/cancel", e.CancelModelStream)
 	r.Handle(http.MethodGet, "/model/recommend", e.GetRecommendModels)
 	r.Handle(http.MethodGet, "/model/support", e.GetModelList)
+	r.Handle(http.MethodGet, "/model/support/smartvision", e.GetSmartVisionSupportModelList)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }

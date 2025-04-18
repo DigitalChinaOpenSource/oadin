@@ -376,9 +376,9 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			return nil, bcode.ErrUnSupportAIGCService
 		}
 
-		if len(p.Models) == 0 && p.ServiceName != types.ServiceModels {
-			return nil, bcode.ErrProviderModelEmpty
-		}
+		//if len(p.Models) == 0 && p.ServiceName != types.ServiceModels {
+		//	return nil, bcode.ErrProviderModelEmpty
+		//}
 		providerDefaultInfo := schedule.GetProviderServiceDefaultInfo(p.APIFlavor, p.ServiceName)
 		tmpSp := &types.ServiceProvider{}
 		tmpSp.ProviderName = providerName
@@ -463,11 +463,11 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			if err != nil {
 				return nil, bcode.ErrProviderUpdateFailed
 			}
-			if checkSp.Status == 0 {
-				err := s.Ds.Put(ctx, tmpSp)
-				if err != nil {
-					return nil, bcode.ErrProviderUpdateFailed
-				}
+			tmpSp.ID = checkSp.ID
+			tmpSp.Status = checkSp.Status
+			err := s.Ds.Put(ctx, tmpSp)
+			if err != nil {
+				return nil, bcode.ErrProviderUpdateFailed
 			}
 
 		} else {
