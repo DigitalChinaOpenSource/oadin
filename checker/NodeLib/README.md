@@ -282,4 +282,9 @@ byze.TextToImage(data).then((result) => {
     console.log(result);
 });
 
+// 如果不需要做得很详细，直接调用ByzeInit即可完成下载和启动
+byze.ByzeInit().then((result) => {
+    console.log(result);
+});
+
 ```
