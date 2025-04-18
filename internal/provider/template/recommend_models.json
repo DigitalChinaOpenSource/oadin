@@ -7,11 +7,13 @@
       "models": [
         {
           "name": "Qwen2.5:7b",
-          "size": "4.7G"
+          "size": "4.7G",
+          "params_size": 7
         },
         {
           "name": "Deepseek-r1:7b",
-          "size": "4.7G"
+          "size": "4.7G",
+          "params_size": 7
         }
       ]
     },
@@ -21,11 +23,13 @@
       "models": [
         {
           "name": "Qwen2.5:7b",
-          "size": "4.7G"
+          "size": "4.7G",
+          "params_size": 7
         },
         {
           "name": "Deepseek-r1:7b",
-          "size": "4.7G"
+          "size": "4.7G",
+          "params_size": 7
         }
       ]
     },
@@ -35,11 +39,13 @@
       "models": [
         {
           "name": "Qwen2.5:1.5b",
-          "size": "4.7G"
+          "size": "4.7G",
+          "params_size": 1.5
         },
         {
           "name": "Deepseek-r1:1.5b",
-          "size": "4.7G"
+          "size": "4.7G",
+          "params_size": 1.5
         }
       ]
     }

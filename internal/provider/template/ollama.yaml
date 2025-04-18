@@ -337,7 +337,7 @@ services:
                       {
                           "id": id,
                           "model": model,
-                          "data": data
+                          "data": [embeddings.{"index": $index, "embeddings": $, "object": "embedding"}]
                       }
         response_from_byze:
             conversion:
@@ -346,5 +346,5 @@ services:
                       {
                            "id": id,
                            "model": model,
-                           "data": data
+                           "data": [embeddings.{"index": $index, "embeddings": $, "object": "embedding"}]
                       }

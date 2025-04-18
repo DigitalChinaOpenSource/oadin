@@ -169,7 +169,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		if utils.IpexOllamaSupportGPUStatus() {
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 			execFile = "ollama.exe"
-			downloadUrl = "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250122.exe"
+			downloadUrl = "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe"
 			//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama-Installer-20250226.exe"
 		} else {
 			execFile = "ollama.exe"
@@ -268,7 +268,6 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 	ctx, cancel := context.WithCancel(ctx)
 	modelArray := append(client.ModelClientMap[req.Model], cancel)
 	client.ModelClientMap[req.Model] = modelArray
-	defer cancel()
 	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req)
 	return dataCh, errCh
 }

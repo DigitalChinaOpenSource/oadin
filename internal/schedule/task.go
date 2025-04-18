@@ -170,7 +170,7 @@ func (st *ServiceTask) Run() error {
 		authParams := &AuthenticatorParams{
 			Request:      req,
 			ProviderInfo: sp,
-			RequestBody:  string(content.Body),
+			Content:      content,
 		}
 		authenticator := ChooseProviderAuthenticator(authParams)
 		if authenticator == nil {

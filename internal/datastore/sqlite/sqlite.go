@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -169,6 +170,7 @@ func (ds *SQLite) Put(ctx context.Context, entity datastore.Entity) error {
 		for i, field := range fields {
 			updateMap[field] = values[i]
 		}
+		updateMap["updated_at"] = time.Now()
 
 		db := ds.db.WithContext(ctx).Model(entity)
 		for key, value := range entity.Index() {

@@ -73,6 +73,10 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 		bcode.ReturnError(c, err)
 		return
 	}
+	//c.Writer.Header().Set("Content-Type", "text/event-stream")
+	//c.Writer.Header().Set("Cache-Control", "no-cache")
+	//c.Writer.Header().Set("Connection", "keep-alive")
+	//c.Writer.Header().Set("Transfer-Encoding", "chunked")
 
 	ctx := c.Request.Context()
 
@@ -90,8 +94,8 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 		case data, ok := <-dataCh:
 			if !ok {
 				// 数据通道关闭，发送结束标记
-				//fmt.Fprintf(w, "data: [DONE]\n\n")
-				fmt.Fprintf(w, "\n[DONE]\n\n")
+				fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
+				//fmt.Fprintf(w, "\n[DONE]\n\n")
 				flusher.Flush()
 				client.ModelClientMap[request.ModelName] = nil
 				return
@@ -108,7 +112,7 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 			// 使用SSE格式发送到前端
 			//fmt.Fprintf(w, "data: %s\n\n", response)
 			if resp.Completed > 0 || resp.Status == "success" {
-				fmt.Fprintf(w, string(data)+"\n")
+				fmt.Fprintf(w, "%s\n\n", string(data))
 				flusher.Flush()
 			}
 
@@ -200,6 +204,25 @@ func (t *ByzeCoreServer) GetModelList(c *gin.Context) {
 		return
 	}
 	data, err := server.GetSupportModelList(request.ServiceSource, request.Flavor)
+	if err != nil {
+		bcode.ReturnError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, data)
+}
+
+func (t *ByzeCoreServer) GetSmartVisionSupportModelList(c *gin.Context) {
+	request := new(dto.SmartVisionSupportModelRequest)
+	if err := c.Bind(request); err != nil {
+		bcode.ReturnError(c, bcode.ErrModelBadRequest)
+		return
+	}
+
+	if err := validate.Struct(request); err != nil {
+		bcode.ReturnError(c, err)
+		return
+	}
+	data, err := server.GetSupportSmartVisionModels(request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
