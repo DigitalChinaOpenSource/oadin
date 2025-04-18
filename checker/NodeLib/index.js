@@ -341,40 +341,64 @@ class Byze {
 
   // 查看当前服务
   async GetServices() {
-    const res = await this.client.get('/service');
-    return this.validateSchema(schemas.getServicesSchema, res.data);
+    try {
+      const res = await this.client.get('/service');
+      return this.validateSchema(schemas.getServicesSchema, res.data);
+    } catch (error) {
+      throw new Error(`获取服务失败: ${error.message}`);
+    }
   }
 
   // 创建新服务
   async InstallService(data) {
-    this.validateSchema(schemas.installServiceRequestSchema, data);
-    const res = await this.client.post('/service', data);
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      this.validateSchema(schemas.installServiceRequestSchema, data);
+      const res = await this.client.post('/service', data);
+      return this.validateSchema(schemas.ResponseSchema, res.data);
+    } catch (error) {
+      throw new Error(`创建服务失败: ${error.message}`);
+    }
   }
   
   // 更新服务
   async UpdateService(data) {
-    this.validateSchema(schemas.updateServiceRequestSchema, data);
-    const res = await this.client.put('/service', data);
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      const res = await this.client.put('/service', data);
+      return res.data;
+    } catch (error) {
+      throw new Error(`更新服务失败: ${error.message}`);
+    }
+
   }
 
   // 查看模型
   async GetModels() {
-    const res = await this.client.get('/model');
-    return this.validateSchema(schemas.getModelsSchema, res.data);
+    try {
+      const res = await this.client.get('/model');
+      return this.validateSchema(schemas.getModelsSchema, res.data);
+    } catch (error) { 
+      throw new Error(`获取模型失败: ${error.message}`);
+    }
   }
 
   // 安装模型
   async InstallModel(data) {
-    this.validateSchema(schemas.installModelRequestSchema, data);
-    const res = await this.client.post('/model', data);
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      this.validateSchema(schemas.installModelRequestSchema, data);
+      const res = await this.client.post('/model', data);
+      return this.validateSchema(schemas.ResponseSchema, res.data);
+    } catch (error) {
+      throw new Error(`安装模型失败: ${error.message}`);
+    }
   }
 
   // 安装模型（流式）
   async InstallModelStream(data) {
-    this.validateSchema(schemas.installModelRequestSchema, data);
+    try {
+      this.validateSchema(schemas.installModelRequestSchema, data);
+    } catch (error) {
+      throw new Error(`流式安装模型失败: ${error.message}`);
+    }
 
     const config = { responseType: 'stream' };
 
@@ -417,110 +441,158 @@ class Byze {
 
   // 取消安装模型（流式）
   async CancelInstallModel(data) {
-    this.validateSchema(schemas.cancelModelStreamRequestSchema, data);
-    const res = await this.client.post('/model/stream/cancel', data);
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      this.validateSchema(schemas.cancelModelStreamRequestSchema, data);
+      const res = await this.client.post('/model/stream/cancel', data);
+      return this.validateSchema(schemas.ResponseSchema, res.data);
+    } catch (error) {
+      throw new Error(`取消安装模型失败: ${error.message}`);
+    }
   }
 
   // 卸载模型
   async DeleteModel(data) {
-    this.validateSchema(schemas.deleteModelRequestSchema, data);
-    const res = await this.client.delete('/model', { data });
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      this.validateSchema(schemas.deleteModelRequestSchema, data);
+      const res = await this.client.delete('/model', { data });
+      return this.validateSchema(schemas.ResponseSchema, res.data);
+    } catch (error) {
+      throw new Error(`卸载模型失败: ${error.message}`);
+    }
   }
 
   // 查看服务提供商
   async GetServiceProviders() {
-    const res = await this.client.get('/service_provider');
-    return this.validateSchema(schemas.getServiceProvidersSchema, res.data);
+    try {
+      const res = await this.client.get('/service_provider');
+      return this.validateSchema(schemas.getServiceProvidersSchema, res.data);
+    } catch (error) {
+      throw new Error(`获取服务提供商失败: ${error.message}`);
+    }
   }
 
   // 新增服务提供商
   async InstallServiceProvider(data) {
-    this.validateSchema(schemas.installServiceProviderRequestSchema, data);
-    const res = await this.client.post('/service_provider', data);
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      this.validateSchema(schemas.installServiceProviderRequestSchema, data);
+      const res = await this.client.post('/service_provider', data);
+      return this.validateSchema(schemas.ResponseSchema, res.data);
+    } catch (error) {
+      throw new Error(`新增服务提供商失败: ${error.message}`);
+    }
   }
 
   // 更新服务提供商
   async UpdateServiceProvider(data) {
-    this.validateSchema(schemas.updateServiceProviderRequestSchema, data);
-    const res = await this.client.put('/service_provider', data);
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      this.validateSchema(schemas.updateServiceProviderRequestSchema, data);
+      const res = await this.client.put('/service_provider', data);
+      return this.validateSchema(schemas.ResponseSchema, res.data);
+    } catch (error) {
+      throw new Error(`更新服务提供商失败: ${error.message}`);
+    }
   }
 
   // 删除服务提供商
   async DeleteServiceProvider(data) {
-    this.validateSchema(schemas.deleteServiceProviderRequestSchema, data);
-    const res = await this.client.delete('/service-provider', { data });
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      this.validateSchema(schemas.deleteServiceProviderRequestSchema, data);
+      const res = await this.client.delete('/service-provider', { data });
+      return this.validateSchema(schemas.ResponseSchema, res.data);
+    } catch (error) {
+      throw new Error(`删除服务提供商失败: ${error.message}`);
+    }
   }
 
   // 导入配置文件
   async ImportConfig(path) {
-    const data = await fsPromises.readFile(path, 'utf8');
-    const res = await this.client.post('/service/import', data);
-    return this.validateSchema(schemas.ResponseSchema, res.data);
+    try {
+      const data = await fsPromises.readFile(path, 'utf8');
+      const res = await this.client.post('/service/import', data);
+      return this.validateSchema(schemas.ResponseSchema, res.data);
+    } catch (error) {
+      throw new Error(`导入配置文件失败: ${error.message}`);
+    }
   }
 
   // 导出配置文件
   async ExportConfig(data = {}) {
-    this.validateSchema(schemas.exportRequestSchema, data);
-    const res = await this.client.post('/service/export', data);
+    try{
+      this.validateSchema(schemas.exportRequestSchema, data);
+      const res = await this.client.post('/service/export', data);
 
-    // 将响应数据存入 .byze 文件
-    const userDir = os.homedir();
-    const destDir = path.join(userDir, 'Byze');
-    const dest = path.join(destDir, '.byze');
+      // 将响应数据存入 .byze 文件
+      const userDir = os.homedir();
+      const destDir = path.join(userDir, 'Byze');
+      const dest = path.join(destDir, '.byze');
 
-    // 确保目录存在并写入文件
-    fs.mkdir(destDir, { recursive: true }, (err) => {
-        if (err) {
-            console.error(`创建目录失败: ${err.message}`);
-            return;
-        }
+      // 确保目录存在并写入文件
+      fs.mkdir(destDir, { recursive: true }, (err) => {
+          if (err) {
+              console.error(`创建目录失败: ${err.message}`);
+              return;
+          }
 
-        // 将响应数据序列化为 JSON 字符串
-        const fileContent = JSON.stringify(res.data, null, 2); // 格式化为易读的 JSON
+          // 将响应数据序列化为 JSON 字符串
+          const fileContent = JSON.stringify(res.data, null, 2); // 格式化为易读的 JSON
 
-        fs.writeFile(dest, fileContent, (err) => {
-            if (err) {
-                console.error(`写入文件失败: ${err.message}`);
-                return;
-            }
-            console.log(`已将生成文件写入到 ${dest}`);
-        });
-    });
+          fs.writeFile(dest, fileContent, (err) => {
+              if (err) {
+                  console.error(`写入文件失败: ${err.message}`);
+                  return;
+              }
+              console.log(`已将生成文件写入到 ${dest}`);
+          });
+      });
 
-    return res.data;
+      return res.data;
+    } catch (error) {
+      throw new Error(`导出配置文件失败: ${error.message}`);
+    }
   }
 
   // 获取模型列表
   async GetModelsAvailiable(){
-    const res = await this.client.get('/services/models');
-    return this.validateSchema(schemas.modelsResponse, res.data);
+    try {
+      const res = await this.client.get('/services/models');
+      return this.validateSchema(schemas.modelsResponse, res.data);
+    } catch (error) {
+      throw new Error(`获取模型列表失败: ${error.message}`);
+    }
   }
 
   // 获取推荐模型列表
   async GetModelsRecommended(){
-    const res = await this.client.get('/model/recommend');
-    return this.validateSchema(schemas.recommendModelsResponse, res.data);
+    try {
+      const res = await this.client.get('/model/recommend');
+      return this.validateSchema(schemas.recommendModelsResponse, res.data);
+    } catch (error) {
+      throw new Error(`获取推荐模型列表失败: ${error.message}`);
+    }
   }
 
   // 获取支持模型列表
   async GetModelsSupported(data){
-    this.validateSchema(schemas.getModelsSupported, data);
-    // 添加请求头
-    const res = await this.client.get('/model/support', {params: data});
-    return this.validateSchema(schemas.recommendModelsResponse, res.data);
+    try {
+      this.validateSchema(schemas.getModelsSupported, data);
+      // 添加请求头
+      const res = await this.client.get('/model/support', {params: data});
+      return this.validateSchema(schemas.recommendModelsResponse, res.data);
+    } catch (error) {
+      throw new Error(`获取支持模型列表失败: ${error.message}`);
+    }
   }
 
   // 获取问学平台支持模型列表
   async GetSmartvisionModelsSupported(data){
-    this.validateSchema(schemas.SmartvisionModelSupportRequest, data);
-    // 添加请求头
-    const res = await this.client.get('/model/support/smartvision', {params: data});
-    return this.validateSchema(schemas.SmartvisionModelSupport, res.data);
+    try {
+      this.validateSchema(schemas.SmartvisionModelSupportRequest, data);
+      // 添加请求头
+      const res = await this.client.get('/model/support/smartvision', {params: data});
+      return this.validateSchema(schemas.SmartvisionModelSupport, res.data);
+    } catch (error) {
+      throw new Error(`获取问学平台支持模型列表失败: ${error.message}`);
+    }
   }
 
   // chat服务
@@ -598,20 +670,60 @@ class Byze {
   
   // 生图服务
   async TextToImage(data) {
-    this.validateSchema(schemas.textToImageRequest, data);
-    const res = await this.client.post('/services/text-to-image', data);
-    return this.validateSchema(schemas.textToImageResponse, res.data);
+    try {
+      this.validateSchema(schemas.textToImageRequest, data);
+      const res = await this.client.post('/services/text-to-image', data);
+      return this.validateSchema(schemas.textToImageResponse, res.data);
+    } catch (error) {
+      throw new Error(`生图服务请求失败: ${error.message}`);
+    }
   }
 
   // embed服务
   async Embed(data) {
-    this.validateSchema(schemas.embeddingRequest, data);
-    const res = await this.client.post('/services/embed', data);
-    return this.validateSchema(schemas.embeddingResponse, res.data);
+    try {
+      this.validateSchema(schemas.embeddingRequest, data);
+      const res = await this.client.post('/services/embed', data);
+      return this.validateSchema(schemas.embeddingResponse, res.data);
+    } catch (error) {
+      throw new Error(`Embed服务请求失败: ${error.message}`);
+    }
   }
 
-  ByzeInit(){
+  // 用于一键安装 Byze 和 导入配置
+  async ByzeInit(path){
+    const isByzeAvailable = await this.IsByzeAvailiable();
+    if (isByzeAvailable) {
+      console.log('✅ Byze 服务已启动，跳过安装。');
+      return true;
+    }
+    
+    const isByzeExisted = await this.IsByzeExisted();
+    if (!isByzeExisted) {
+      const downloadSuccess = await this.DownloadByze();
+      if (!downloadSuccess) {
+        console.error('❌ 下载 Byze 失败，请检查网络连接或手动下载。');
+        return false;
+      }
+    } else {
+      console.log('✅ Byze 已存在，跳过下载。');
+    }
 
+    const installSuccess = await this.InstallByze();
+    if (!installSuccess) {
+      console.error('❌ 启动 Byze 服务失败，请检查配置或手动启动。');
+      return false;
+    } else {
+      console.log('✅ Byze 服务已启动。');
+    }
+
+    const importSuccess = await this.ImportConfig(path);
+    if (!importSuccess) {
+      console.error('❌ 导入配置文件失败。');
+      return false;
+    } else {
+      console.log('✅ 配置文件导入成功。');
+    }
   }
 }
 
