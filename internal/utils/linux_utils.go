@@ -2,14 +2,9 @@
 
 package utils
 
-import "github.com/jaypipes/ghw"
-
 func GetMemoryInfo() (*MemoryInfo, error) {
-	memoryObj, err := ghw.Memory()
-	if err != nil {
-		return &MemoryInfo{}, err
-	}
-	memorySize := int(memoryObj.TotalUsableBytes / 1024 / 1024 / 1024)
+	v, _ := mem.VirtualMemory()
+	memorySize := v.Total / 1024 / 1024 / 1024
 	memoryInfo := &MemoryInfo{
 		Size: memorySize,
 	}
