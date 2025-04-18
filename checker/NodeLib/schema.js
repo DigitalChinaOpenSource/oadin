@@ -40,7 +40,7 @@ const installServiceRequestSchema = {
         hybrid_policy: { type: "string" },
         flavor_name: { type: "string" },
         provider_name: { type: "string" },
-        auth_type: { type: "string", enum: ["apikey", "none"] },
+        auth_type: { type: "string", enum: ["apikey", "none", "credentials"] },
         auth_key: { type: "string" }
     },
     required: [
@@ -123,6 +123,25 @@ const deleteModelRequestSchema = {
     ]
 };
 
+const installModelStreamResponseSchema = {
+    type: "object",
+    properties: {
+        status: { type: "string" },
+        digest: { type: "string" },
+        total: { type: "integer" },
+        completed: { type: "integer" }
+    },
+    required: ["status"]
+};
+
+const cancelModelStreamRequestSchema = {
+    type: "object",
+    properties: {
+        model_name: { type: "string" }
+    },
+    required: ["model_name"]
+};
+
 // ========== 服务提供商管理 ==========
 const getServiceProvidersSchema = {
     type: "object",
@@ -138,7 +157,7 @@ const getServiceProvidersSchema = {
                     service_name: { type: "string" },
                     service_source: { type: "string" },
                     desc: { type: "string" },
-                    auth_type: { type: "string", enum: ["apikey", "none"] },
+                    auth_type: { type: "string", enum: ["apikey", "none", "credentials"] },
                     auth_key: { type: "string" },
                     flavor: { type: "string" },
                     properties: { type: "string" },
@@ -166,7 +185,7 @@ const installServiceProviderRequestSchema = {
         provider_name: { type: "string" },
         desc: { type: "string" },
         method: { type: "string" },
-        auth_type: { type: "string", enum: ["apikey", "none"] },
+        auth_type: { type: "string", enum: ["apikey", "none", "credentials"] },
         auth_key: { type: "string" },
         models: { type: "array", items: { type: "string" } },
         extra_headers: { type: "object" },
@@ -190,7 +209,7 @@ const updateServiceProviderRequestSchema = {
         provider_name: { type: "string" },
         desc: { type: "string" },
         method: { type: "string" },
-        auth_type: { type: "string", enum: ["apikey", "none"] },
+        auth_type: { type: "string", enum: ["apikey", "none", "credentials"] },
         auth_key: { type: "string" },
         models: { type: "array", items: { type: "string" } },
         extra_headers: { type: "object" },
@@ -386,6 +405,66 @@ const recommendModelsResponse = {
     required: ["business_code", "message", "data"]
 };
 
+const SmartvisionModelSupportRequest = {
+    type: "object",
+    properties: {
+        EnvType: { type: "string", enum: ["dev", "product"] }
+    },
+    required: ["EnvType"]
+};
+
+const SmartvisionModelSupport = {
+    type: "object",
+    properties: {
+        business_code: { type: "integer" },
+        message: { type: "string" },
+        data: {
+            type: "object",
+            properties: {
+                code: { type: "integer" },
+                data: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            id: { type: "integer" },
+                            name: { type: "string" },
+                            avatar: { type: "string" },
+                            type: { type: "integer" },
+                            provider: { type: "string" },
+                            modelKey: { type: "string" },
+                            credentialParamsId: { type: "string" },
+                            introduce: { type: "string" },
+                            tags: {
+                                type: "array",
+                                items: { type: "string" }
+                            },
+                            credentialParams: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        id: { type: "integer" },
+                                        name: { type: "string" },
+                                        label: { type: "string" },
+                                        type: { type: "string" },
+                                        placeholder: { type: "string" },
+                                        required: { type: "integer" },
+                                        value: { type: ["string", "null"] },
+                                        sort: { type: "integer" },
+                                        createTime: { type: "integer" },
+                                        updateTime: { type: "integer" }
+                                    } 
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+};
+
 // ========= chat ==========
 const chatRequest = {
     type: "object",
@@ -544,6 +623,8 @@ module.exports = {
     installModelRequestSchema,
     deleteModelRequestSchema,
     getServiceProvidersSchema,
+    installModelStreamResponseSchema,
+    cancelModelStreamRequestSchema,
     installServiceProviderRequestSchema,
     updateServiceProviderRequestSchema,
     deleteServiceProviderRequestSchema,
@@ -552,6 +633,8 @@ module.exports = {
     modelsResponse,
     getModelsSupported,
     recommendModelsResponse,
+    SmartvisionModelSupportRequest,
+    SmartvisionModelSupport,
     chatRequest,
     chatResponse,
     generateRequest,
