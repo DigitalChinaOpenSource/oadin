@@ -1,12 +1,6 @@
 package server
 
 import (
-	"aipc/byze/internal/api/dto"
-	"aipc/byze/internal/datastore"
-	"aipc/byze/internal/provider"
-	"aipc/byze/internal/schedule"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils/bcode"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -16,6 +10,13 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"byze/internal/api/dto"
+	"byze/internal/datastore"
+	"byze/internal/provider"
+	"byze/internal/schedule"
+	"byze/internal/types"
+	"byze/internal/utils/bcode"
 )
 
 type ServiceProvider interface {
@@ -146,12 +147,12 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 		for _, mName := range request.Models {
 			server := ChooseCheckServer(*sp, mName)
 			if server == nil {
-				//return nil, bcode.ErrProviderIsUnavailable
+				// return nil, bcode.ErrProviderIsUnavailable
 				continue
 			}
 			checkRes := server.CheckServer()
 			if !checkRes {
-				//return nil, bcode.ErrProviderIsUnavailable
+				// return nil, bcode.ErrProviderIsUnavailable
 				continue
 			}
 

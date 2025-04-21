@@ -4,10 +4,11 @@ package utils
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/StackExchange/wmi"
 	"github.com/jaypipes/ghw"
 	"golang.org/x/sys/windows"
-	"strconv"
 )
 
 type Win32_PhysicalMemory struct {

@@ -1,12 +1,13 @@
 package engine
 
 import (
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils/client"
 	"context"
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"byze/internal/types"
+	"byze/internal/utils/client"
 )
 
 type OpenvinoProvider struct {

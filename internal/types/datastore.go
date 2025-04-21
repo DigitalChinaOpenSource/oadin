@@ -16,9 +16,10 @@ const (
 	FlavorAliYun      = "aliyun"
 	FlavorSmartVision = "smartvision"
 
-	AuthTypeNone   = "none"
-	AuthTypeApiKey = "apikey"
-	AuthTypeToken  = "token"
+	AuthTypeNone        = "none"
+	AuthTypeApiKey      = "apikey"
+	AuthTypeToken       = "token"
+	AuthTypeCredentials = "credentials"
 
 	ServiceChat        = "chat"
 	ServiceModels      = "models"

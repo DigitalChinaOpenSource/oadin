@@ -5,17 +5,12 @@
 package schedule
 
 import (
-	"aipc/byze/config"
-	"aipc/byze/internal/convert"
-	"aipc/byze/internal/event"
-	"aipc/byze/internal/provider/template"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils"
-	"aipc/byze/version"
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -23,6 +18,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"byze/config"
+	"byze/internal/convert"
+	"byze/internal/event"
+	"byze/internal/provider/template"
+	"byze/internal/types"
+	"byze/internal/utils"
+	"byze/version"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
@@ -488,7 +491,7 @@ type SignCommonParams struct {
 	Region  string `json:"region"`
 }
 
-func TencentSignGenerate(p SignParams, req http.Request) error {
+func TencentSignGenerate(p SignParams, req *http.Request) error {
 	secretId := p.SecretId
 	secretKey := p.SecretKey
 	parseUrl, err := url.Parse(p.RequestUrl)
@@ -564,36 +567,48 @@ type SignAuthInfo struct {
 	SecretId  string `json:"secret_id"`
 	SecretKey string `json:"secret_key"`
 }
+
+type ApiKeyAuthInfo struct {
+	ApiKey string `json:"api_key"`
+}
 type Authenticator interface {
 	Authenticate() error
 }
 
 type APIKEYAuthenticator struct {
-	APIKey string
-	Req    http.Request
+	AuthInfo string `json:"auth_info"`
+	Req      http.Request
 }
 
 type TencentSignAuthenticator struct {
 	AuthInfo     string                `json:"auth_info"`
-	Req          http.Request          `json:"request"`
+	Req          *http.Request         `json:"request"`
 	ProviderInfo types.ServiceProvider `json:"provider_info"`
 	ReqBody      string                `json:"req_body"`
 }
 
 type CredentialsAuthInfo struct {
-	ApiKey  string `json:"api_key"`
-	ApiHost string `json:"api_host"`
+	EvnType  string `json:"env_type"`
+	ApiKey   string `json:"api_key"`
+	ApiHost  string `json:"api_host"`
+	Provider string `json:"provider"`
+	ModelKey string `json:"model_key"`
 }
 
 type CredentialsAuthenticator struct {
 	AuthInfo     string                `json:"auth_info"`
-	Req          http.Request          `json:"request"`
+	Req          *http.Request         `json:"request"`
 	ProviderInfo types.ServiceProvider `json:"provider_info"`
 	Content      types.HTTPContent     `json:"content"`
 }
 
 func (a *APIKEYAuthenticator) Authenticate() error {
-	a.Req.Header.Set("Authorization", "Bearer "+a.APIKey)
+	var authInfoData ApiKeyAuthInfo
+	err := json.Unmarshal([]byte(a.AuthInfo), &authInfoData)
+	if err != nil {
+		return err
+	}
+	a.Req.Header.Set("Authorization", "Bearer "+authInfoData.ApiKey)
 	return nil
 }
 
@@ -644,18 +659,58 @@ func (c *CredentialsAuthenticator) Authenticate() error {
 	if !ok {
 		return errors.New("credentials auth info missing model")
 	}
-	accessToken, ok := reqData["access_token"].(string)
-	if !ok {
-		return errors.New("credentials auth info missing access_token")
-	}
-	c.Req.Header.Set("Authorization", "Bearer "+accessToken)
+
 	authInfo := CredentialsAuthInfoMap[model]
-	reqData["credentials"] = authInfo
+	envType := authInfo.EvnType
+	if envType == "" {
+		return errors.New("credentials auth info missing env_type")
+	}
+	smartVisionEnvInfo := utils.GetSmartVisionUrl()
+	smartVisionInfo := smartVisionEnvInfo[envType]
+	c.Req.Header.Set("Authorization", "Bearer "+smartVisionInfo.AccessToken)
+
+	type credentials struct {
+		ApiKey  string `json:"api_key"`
+		ApiHost string `json:"api_host"`
+	}
+	var reqUrl string
+	if c.ProviderInfo.ServiceName == types.ServiceChat {
+		reqUrl = smartVisionInfo.Url + smartVisionInfo.ChatEnterPoint
+		type modelConfig struct {
+			Provider    string      `json:"provider"`
+			Name        string      `json:"name"`
+			ModelKey    string      `json:"model_key"`
+			Credentials credentials `json:"credentials"`
+		}
+		reqData["model_config"] = modelConfig{
+			Provider: authInfo.Provider,
+			Name:     model,
+			ModelKey: authInfo.ModelKey,
+			Credentials: credentials{
+				ApiKey:  authInfo.ApiKey,
+				ApiHost: authInfo.ApiHost,
+			},
+		}
+	} else if c.ProviderInfo.ServiceName == types.ServiceEmbed {
+		reqUrl = smartVisionInfo.Url + smartVisionInfo.ChatEnterPoint
+		reqData["credentials"] = credentials{
+			ApiKey:  authInfo.ApiKey,
+			ApiHost: authInfo.ApiHost,
+		}
+	}
+
 	reqBody, err := json.Marshal(reqData)
 	if err != nil {
 		return err
 	}
-	c.Content.Body = reqBody
+	u, err := url.Parse(reqUrl)
+	if err != nil {
+		return err
+	}
+	c.Req.URL = u
+	body := bytes.NewReader(reqBody)
+	c.Req.Body = io.NopCloser(body)
+	c.Req.ContentLength = int64(len(reqBody))
 	return nil
 }
 
@@ -671,7 +726,7 @@ func ChooseProviderAuthenticator(p *AuthenticatorParams) Authenticator {
 		switch p.ProviderInfo.Flavor {
 		case types.FlavorTencent:
 			authenticator = &TencentSignAuthenticator{
-				Req:          *p.Request,
+				Req:          p.Request,
 				AuthInfo:     p.ProviderInfo.AuthKey,
 				ProviderInfo: *p.ProviderInfo,
 				ReqBody:      string(p.Content.Body),
@@ -679,8 +734,15 @@ func ChooseProviderAuthenticator(p *AuthenticatorParams) Authenticator {
 		}
 	} else if p.ProviderInfo.AuthType == types.AuthTypeApiKey {
 		authenticator = &APIKEYAuthenticator{
-			APIKey: p.ProviderInfo.AuthKey,
-			Req:    *p.Request,
+			AuthInfo: p.ProviderInfo.AuthKey,
+			Req:      *p.Request,
+		}
+	} else if p.ProviderInfo.AuthType == types.AuthTypeCredentials {
+		authenticator = &CredentialsAuthenticator{
+			AuthInfo:     p.ProviderInfo.AuthKey,
+			Req:          p.Request,
+			Content:      p.Content,
+			ProviderInfo: *p.ProviderInfo,
 		}
 	}
 	return authenticator
