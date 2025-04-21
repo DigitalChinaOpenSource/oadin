@@ -14,6 +14,7 @@ import (
 	"aipc/byze/version"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -579,6 +580,18 @@ type TencentSignAuthenticator struct {
 	ReqBody      string                `json:"req_body"`
 }
 
+type CredentialsAuthInfo struct {
+	ApiKey  string `json:"api_key"`
+	ApiHost string `json:"api_host"`
+}
+
+type CredentialsAuthenticator struct {
+	AuthInfo     string                `json:"auth_info"`
+	Req          http.Request          `json:"request"`
+	ProviderInfo types.ServiceProvider `json:"provider_info"`
+	Content      types.HTTPContent     `json:"content"`
+}
+
 func (a *APIKEYAuthenticator) Authenticate() error {
 	a.Req.Header.Set("Authorization", "Bearer "+a.APIKey)
 	return nil
@@ -615,10 +628,41 @@ func (s *TencentSignAuthenticator) Authenticate() error {
 	return nil
 }
 
+// byze
+func (c *CredentialsAuthenticator) Authenticate() error {
+	var reqData map[string]interface{}
+
+	if err := json.Unmarshal(c.Content.Body, &reqData); err != nil {
+		return err
+	}
+
+	var CredentialsAuthInfoMap map[string]CredentialsAuthInfo
+	if err := json.Unmarshal([]byte(c.AuthInfo), &CredentialsAuthInfoMap); err != nil {
+		return err
+	}
+	model, ok := reqData["model"].(string)
+	if !ok {
+		return errors.New("credentials auth info missing model")
+	}
+	accessToken, ok := reqData["access_token"].(string)
+	if !ok {
+		return errors.New("credentials auth info missing access_token")
+	}
+	c.Req.Header.Set("Authorization", "Bearer "+accessToken)
+	authInfo := CredentialsAuthInfoMap[model]
+	reqData["credentials"] = authInfo
+	reqBody, err := json.Marshal(reqData)
+	if err != nil {
+		return err
+	}
+	c.Content.Body = reqBody
+	return nil
+}
+
 type AuthenticatorParams struct {
 	Request      *http.Request
 	ProviderInfo *types.ServiceProvider
-	RequestBody  string
+	Content      types.HTTPContent
 }
 
 func ChooseProviderAuthenticator(p *AuthenticatorParams) Authenticator {
@@ -630,7 +674,7 @@ func ChooseProviderAuthenticator(p *AuthenticatorParams) Authenticator {
 				Req:          *p.Request,
 				AuthInfo:     p.ProviderInfo.AuthKey,
 				ProviderInfo: *p.ProviderInfo,
-				ReqBody:      p.RequestBody,
+				ReqBody:      string(p.Content.Body),
 			}
 		}
 	} else if p.ProviderInfo.AuthType == types.AuthTypeApiKey {

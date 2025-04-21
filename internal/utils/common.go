@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"golang.org/x/sys/windows"
 	"io"
 	"net/http"
 	"net/url"
@@ -19,10 +18,14 @@ import (
 	"strings"
 
 	"github.com/jaypipes/ghw"
-	"github.com/yusufpapurcu/wmi"
 )
 
 var textContentTypes = []string{"text/", "application/json", "application/xml", "application/javascript", "application/x-ndjson"}
+
+type MemoryInfo struct {
+	Size       int
+	MemoryType string
+}
 
 func IsHTTPText(header http.Header) bool {
 	if contentType := header.Get("Content-Type"); contentType != "" {
@@ -206,70 +209,6 @@ func IpexOllamaSupportGPUStatus() bool {
 	return false
 }
 
-type MemoryInfo struct {
-	Size       int
-	MemoryType string
-}
-
-type Win32_PhysicalMemory struct {
-	SMBIOSMemoryType int
-}
-
-func GetMemoryInfo() (*MemoryInfo, error) {
-	var win32Memories []Win32_PhysicalMemory
-	q := wmi.CreateQuery(&win32Memories, "")
-	err := wmi.Query(q, &win32Memories)
-	if err != nil {
-		fmt.Println(err)
-	}
-	memory, err := ghw.Memory()
-	if err != nil {
-		return nil, err
-	}
-	memoryType := strconv.Itoa(win32Memories[0].SMBIOSMemoryType)
-	finalMemoryType := memoryTypeFromCode(memoryType)
-	memoryInfo := MemoryInfo{
-		MemoryType: finalMemoryType,
-		Size:       int(memory.TotalPhysicalBytes / 1024 / 1024 / 1024),
-	}
-	return &memoryInfo, nil
-}
-
-func GetWindowsSystemVersion() int {
-	systemVersion := 0
-	info := windows.RtlGetVersion()
-	if info.MajorVersion == 10 {
-		if info.BuildNumber >= 22000 {
-			systemVersion = 11
-		} else if info.BuildNumber >= 10240 && info.BuildNumber <= 19045 {
-			systemVersion = 10
-		}
-	}
-	return systemVersion
-}
-
-// Convert Windows memory type codes to DDR types.
-func memoryTypeFromCode(code string) string {
-	switch code {
-	case "20":
-		return "DDR"
-	case "21":
-		return "DDR2"
-	case "22":
-		return "DDR2 FB-DIMM"
-	case "24":
-		return "DDR3"
-	case "26":
-		return "DDR4"
-	case "34":
-		return "DDR5"
-	case "35":
-		return "DDR5"
-	default:
-		return "Unknown (" + code + ")"
-	}
-}
-
 // +-----------------------------+--------------------------------------------------------------------+
 // | Device ID                   | 0                                                                  |
 // +-----------------------------+--------------------------------------------------------------------+
@@ -320,4 +259,23 @@ func GetGpuInfo() (int, error) {
 		return 0, err
 	}
 	return gpuUtilization, nil
+}
+
+type SmartVisionUrlInfo struct {
+	Url         string `json:"url"`
+	AccessToken string `json:"access_token"`
+}
+
+func GetSmartVisionUrl() map[string]SmartVisionUrlInfo {
+	var SmartVisionUrlMap = make(map[string]SmartVisionUrlInfo)
+	SmartVisionUrlMap["product"] = SmartVisionUrlInfo{
+		Url:         "https://smartvision.dcclouds.com",
+		AccessToken: "private-CA004JS8Xkzblqv1gp8M6iBS",
+	}
+	SmartVisionUrlMap["dev"] = SmartVisionUrlInfo{
+		Url:         "https://smartvision-dev.digitalchina.com",
+		AccessToken: "private-doBMjUAikf2ErGqVUGzs4yGe",
+	}
+	return SmartVisionUrlMap
+
 }

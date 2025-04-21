@@ -8,12 +8,13 @@ const (
 	ServiceSourceLocal  = "local"
 	ServiceSourceRemote = "remote"
 
-	FlavorTencent  = "tencent"
-	FlavorDeepSeek = "deepseek"
-	FlavorOpenAI   = "openai"
-	FlavorOllama   = "ollama"
-	FlavorBaidu    = "baidu"
-	FlavorAliYun   = "aliyun"
+	FlavorTencent     = "tencent"
+	FlavorDeepSeek    = "deepseek"
+	FlavorOpenAI      = "openai"
+	FlavorOllama      = "ollama"
+	FlavorBaidu       = "baidu"
+	FlavorAliYun      = "aliyun"
+	FlavorSmartVision = "smartvision"
 
 	AuthTypeNone   = "none"
 	AuthTypeApiKey = "apikey"
@@ -34,7 +35,7 @@ var (
 	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate, ServiceTextToImage}
 	SupportHybridPolicy = []string{HybridPolicyDefault, HybridPolicyLocal, HybridPolicyRemote}
 	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeToken}
-	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun}
+	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorSmartVision}
 )
 
 // Service  table structure

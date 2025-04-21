@@ -141,6 +141,45 @@ type ModelStreamCancelRequest struct {
 	ModelName string `json:"model_name" validate:"required"`
 }
 
+type SmartVisionSupportModelRequest struct {
+	EnvType string `form:"env_type" validate:"required"`
+}
+
+type SmartVisionSupportModelResponse struct {
+	bcode.Bcode
+	Data SmartVisionSupportModelRes `json:"data"`
+}
+type SmartVisionSupportModelRes struct {
+	Code int                    `json:"code"`
+	Data []SmartVisionModelData `json:"data"`
+}
+
+type SmartVisionModelData struct {
+	ID                 int                          `json:"id"`
+	Name               string                       `json:"name"`
+	Avatar             string                       `json:"avatar"`
+	Type               int                          `json:"type"`
+	Provider           string                       `json:"provider"`
+	ModelKey           string                       `json:"modelKey"`
+	CredentialParamsID string                       `json:"credentialParamsId"`
+	Introduce          string                       `json:"introduce"`
+	Tags               []string                     `json:"tags"`
+	CredentialParams   []SmartVisionCredentialParam `json:"credentialParams"`
+}
+
+type SmartVisionCredentialParam struct {
+	ID          int64       `json:"id"`
+	Name        string      `json:"name"`
+	Label       string      `json:"label"`
+	Type        string      `json:"type"`
+	Placeholder string      `json:"placeholder"`
+	Required    int         `json:"required"`
+	Value       interface{} `json:"value"`
+	Sort        int         `json:"sort"`
+	CreateTime  int64       `json:"createTime"`
+	UpdateTime  int64       `json:"updateTime"`
+}
+
 type CreateModelResponse struct {
 	bcode.Bcode
 }
@@ -171,6 +210,17 @@ type Model struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+type LocalSupportModelData struct {
+	OllamaId    string  `json:"id"`
+	Name        string  `json:"name"`
+	Avatar      string  `json:"avatar"`
+	Description string  `json:"description"`
+	Class       string  `json:"class"`
+	Flavor      string  `json:"flavor"`
+	Size        string  `json:"size"`
+	ParamsSize  float32 `json:"params_size"`
+}
+
 type RecommendModelData struct {
 	Service         string   `json:"service_name"`
 	Flavor          string   `json:"api_flavor"`
@@ -185,6 +235,11 @@ type RecommendModelData struct {
 	Size            string   `json:"size"`
 	IsRecommended   bool     `json:"is_recommended" default:"false"`
 	Status          string   `json:"status"`
+	Avatar          string   `json:"avatar"`
+	CanSelect       bool     `json:"can_select" default:"false"`
+	Class           string   `json:"class"`
+	OllamaId        string   `json:"ollama_id"`
+	ParamsSize      float32  `json:"params_size"`
 }
 
 type CreateServiceProviderRequest struct {
@@ -204,18 +259,19 @@ type CreateServiceProviderRequest struct {
 }
 
 type UpdateServiceProviderRequest struct {
-	ProviderName  string `json:"provider_name" validate:"required"`
-	ServiceName   string `json:"service_name"`
-	ServiceSource string `json:"service_source"`
-	ApiFlavor     string `json:"api_flavor"`
-	Desc          string `json:"desc"`
-	Method        string `json:"method"`
-	Url           string `json:"url"`
-	AuthType      string `json:"auth_type"`
-	AuthKey       string `json:"auth_key"`
-	ExtraHeaders  string `json:"extra_headers"`
-	ExtraJsonBody string `json:"extra_json_body"`
-	Properties    string `json:"properties"`
+	ProviderName  string   `json:"provider_name" validate:"required"`
+	ServiceName   string   `json:"service_name"`
+	ServiceSource string   `json:"service_source"`
+	ApiFlavor     string   `json:"api_flavor"`
+	Desc          string   `json:"desc"`
+	Method        string   `json:"method"`
+	Url           string   `json:"url"`
+	AuthType      string   `json:"auth_type"`
+	AuthKey       string   `json:"auth_key"`
+	Models        []string `json:"models"`
+	ExtraHeaders  string   `json:"extra_headers"`
+	ExtraJsonBody string   `json:"extra_json_body"`
+	Properties    string   `json:"properties"`
 }
 
 type DeleteServiceProviderRequest struct {
