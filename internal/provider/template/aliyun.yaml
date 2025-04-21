@@ -231,7 +231,7 @@ services:
                 - converter: jsonata
                   config: |
                       {
-                          "model": $model,
+                        "model": $model,
                          "input": {
                                   "prompt": prompt 
                                   },

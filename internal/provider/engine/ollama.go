@@ -1,10 +1,6 @@
 package engine
 
 import (
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils"
-	"aipc/byze/internal/utils/client"
-	"aipc/byze/internal/utils/progress"
 	"context"
 	"fmt"
 	"log/slog"
@@ -12,8 +8,14 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
+
+	"byze/internal/types"
+	"byze/internal/utils"
+	"byze/internal/utils/client"
+	"byze/internal/utils/progress"
 
 	"github.com/spf13/cobra"
 )
@@ -170,19 +172,19 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 			execFile = "ollama.exe"
 			downloadUrl = "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe"
-			//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama-Installer-20250226.exe"
+			// downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama-Installer-20250226.exe"
 		} else {
 			execFile = "ollama.exe"
 			execPath = fmt.Sprintf("%s/%s/%s/%s/%s", userDir, "AppData", "Local", "Programs", "Ollama")
 			downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
 
-			//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/OllamaSetup.exe"
+			// downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/OllamaSetup.exe"
 		}
 	case "linux":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
 		downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
-		//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
+		// downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s/%s/%s", userDir, "Library", "Application Support", "Ollama")
@@ -191,7 +193,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			//	downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
 		} else {
 			downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-arm64.zip"
-			//downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
+			// downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
 		}
 	default:
 		return nil
@@ -224,10 +226,27 @@ func (o *OllamaProvider) InstallEngine() error {
 	}
 
 	slog.Info("[Install Engine] start install...")
-	cmd := exec.Command(file)
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("failed to install ollama: %v", err)
+	if runtime.GOOS == "darwin" {
+		unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
+		if err := unzipCmd.Run(); err != nil {
+			return fmt.Errorf("failed to unzip file: %v", err)
+		}
+		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		cmd := exec.Command("open", appPath)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to open ollama installer: %v", err)
+		}
+		// move it to Applications
+		mvCmd := exec.Command("mv", appPath, "/Applications/")
+		if err := mvCmd.Run(); err != nil {
+			return fmt.Errorf("failed to move ollama to Applications: %v", err)
+		}
+	} else {
+		// Handle other operating systems
+		cmd := exec.Command(file)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to install ollama: %v", err)
+		}
 	}
 
 	slog.Info("[Install Engine] model engine install completed")
@@ -251,7 +270,7 @@ func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequ
 	c := o.GetDefaultClient()
 
 	var resp types.ProgressResponse
-	//Abortable HTTP request
+	// Abortable HTTP request
 	ctx, cancel := context.WithCancel(ctx)
 	modelArray := append(client.ModelClientMap[req.Model], cancel)
 	client.ModelClientMap[req.Model] = modelArray

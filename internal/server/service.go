@@ -1,14 +1,6 @@
 package server
 
 import (
-	"aipc/byze/internal/api/dto"
-	"aipc/byze/internal/datastore"
-	"aipc/byze/internal/provider"
-	"aipc/byze/internal/schedule"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils"
-	"aipc/byze/internal/utils/bcode"
-	"aipc/byze/version"
 	"context"
 	"errors"
 	"fmt"
@@ -18,6 +10,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"byze/internal/api/dto"
+	"byze/internal/datastore"
+	"byze/internal/provider"
+	"byze/internal/schedule"
+	"byze/internal/types"
+	"byze/internal/utils"
+	"byze/internal/utils/bcode"
+	"byze/version"
 )
 
 type AIGCService interface {
@@ -397,7 +398,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			tmpSp.Properties = `{"max_input_tokens":2048,"supported_response_mode":["stream","sync"],"mode_is_changeable":true,"xpu":["GPU"]}`
 		}
 
-		//engineProvider := provider.GetModelEngine(tmpSp.Flavor)
+		// engineProvider := provider.GetModelEngine(tmpSp.Flavor)
 		for _, m := range p.Models {
 			if p.ServiceSource == types.ServiceSourceLocal && !utils.Contains(dbServices.ServiceProviders[providerName].Models, m) {
 				slog.Info(fmt.Sprintf("Pull model %s start ...", m))
@@ -579,7 +580,7 @@ func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetA
 			}
 		}
 		tmp.HybridPolicy = dsService.HybridPolicy
-		//tmp.Status = dsService.Status
+		// tmp.Status = dsService.Status
 		tmp.Status = serviceStatus
 		tmp.UpdatedAt = dsService.UpdatedAt
 		tmp.CreatedAt = dsService.CreatedAt

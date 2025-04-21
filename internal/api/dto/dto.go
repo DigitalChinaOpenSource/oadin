@@ -1,8 +1,9 @@
 package dto
 
 import (
-	"aipc/byze/internal/utils/bcode"
 	"time"
+
+	"byze/internal/utils/bcode"
 )
 
 type CreateAIGCServiceRequest struct {
@@ -127,9 +128,9 @@ type DeleteModelRequest struct {
 }
 
 type GetModelsRequest struct {
-	ProviderName string `json:"provider_name,omitempty"`
-	ModelName    string `json:"model_name,omitempty"`
-	ServiceName  string `json:"service_name,omitempty"`
+	ProviderName string `form:"provider_name,omitempty"`
+	ModelName    string `form:"model_name,omitempty"`
+	ServiceName  string `form:"service_name,omitempty"`
 }
 
 type GetModelListRequest struct {
@@ -165,6 +166,7 @@ type SmartVisionModelData struct {
 	Introduce          string                       `json:"introduce"`
 	Tags               []string                     `json:"tags"`
 	CredentialParams   []SmartVisionCredentialParam `json:"credentialParams"`
+	CanSelect          bool                         `json:"can_select"`
 }
 
 type SmartVisionCredentialParam struct {

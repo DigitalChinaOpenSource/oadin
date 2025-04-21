@@ -1,19 +1,6 @@
 package cli
 
 import (
-	"aipc/byze/config"
-	"aipc/byze/internal/api"
-	"aipc/byze/internal/api/dto"
-	"aipc/byze/internal/datastore"
-	"aipc/byze/internal/datastore/sqlite"
-	"aipc/byze/internal/event"
-	"aipc/byze/internal/provider"
-	"aipc/byze/internal/schedule"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils"
-	"aipc/byze/internal/utils/bcode"
-	"aipc/byze/internal/utils/progress"
-	"aipc/byze/version"
 	"bufio"
 	"context"
 	"encoding/json"
@@ -29,6 +16,20 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"byze/config"
+	"byze/internal/api"
+	"byze/internal/api/dto"
+	"byze/internal/datastore"
+	"byze/internal/datastore/sqlite"
+	"byze/internal/event"
+	"byze/internal/provider"
+	"byze/internal/schedule"
+	"byze/internal/types"
+	"byze/internal/utils"
+	"byze/internal/utils/bcode"
+	"byze/internal/utils/progress"
+	"byze/version"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -912,7 +913,9 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 		err = cmd.Run()
 		if err != nil {
 			slog.Info("Model engine not exist...")
-			if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
+			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
+			err = reCheckCmd.Run()
+			if err != nil {
 				slog.Info("model engine not exist, start download...")
 				err := engineProvider.InstallEngine()
 				if err != nil {
@@ -921,6 +924,8 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 				}
 				slog.Info("Model engine download completed...")
 			}
+			//if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
+			//}
 		}
 
 		slog.Info("Setting env...")
@@ -1078,8 +1083,8 @@ func PullHandler(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	//close(stopChan)
-	//wg.Wait()
+	// close(stopChan)
+	// wg.Wait()
 
 	if resp.HTTPCode > 200 {
 		fmt.Printf("\rPull model  failed: %s", resp.Message)

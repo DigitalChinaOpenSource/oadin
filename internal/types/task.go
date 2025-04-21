@@ -1,13 +1,14 @@
 package types
 
 import (
-	"aipc/byze/internal/utils"
 	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+
+	"byze/internal/utils"
 )
 
 type ServiceResultType int

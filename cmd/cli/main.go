@@ -1,8 +1,9 @@
 package main
 
 import (
-	cli "aipc/byze/cmd/cli/core"
 	"os"
+
+	cli "byze/cmd/cli/core"
 )
 
 func main() {

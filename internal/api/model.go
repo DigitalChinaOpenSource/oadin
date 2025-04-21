@@ -1,17 +1,18 @@
 package api
 
 import (
-	"aipc/byze/internal/api/dto"
-	"aipc/byze/internal/server"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils/bcode"
-	"aipc/byze/internal/utils/client"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+
+	"byze/internal/api/dto"
+	"byze/internal/server"
+	"byze/internal/types"
+	"byze/internal/utils/bcode"
+	"byze/internal/utils/client"
 
 	"github.com/gin-gonic/gin"
 )
@@ -73,10 +74,10 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 		bcode.ReturnError(c, err)
 		return
 	}
-	//c.Writer.Header().Set("Content-Type", "text/event-stream")
-	//c.Writer.Header().Set("Cache-Control", "no-cache")
-	//c.Writer.Header().Set("Connection", "keep-alive")
-	//c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	// c.Writer.Header().Set("Content-Type", "text/event-stream")
+	// c.Writer.Header().Set("Cache-Control", "no-cache")
+	// c.Writer.Header().Set("Connection", "keep-alive")
+	// c.Writer.Header().Set("Transfer-Encoding", "chunked")
 
 	ctx := c.Request.Context()
 
@@ -95,7 +96,7 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 			if !ok {
 				// 数据通道关闭，发送结束标记
 				fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
-				//fmt.Fprintf(w, "\n[DONE]\n\n")
+				// fmt.Fprintf(w, "\n[DONE]\n\n")
 				flusher.Flush()
 				client.ModelClientMap[request.ModelName] = nil
 				return
@@ -110,7 +111,7 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 
 			// 获取响应文本
 			// 使用SSE格式发送到前端
-			//fmt.Fprintf(w, "data: %s\n\n", response)
+			// fmt.Fprintf(w, "data: %s\n\n", response)
 			if resp.Completed > 0 || resp.Status == "success" {
 				fmt.Fprintf(w, "%s\n\n", string(data))
 				flusher.Flush()
@@ -134,11 +135,9 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 			return
 		}
 	}
-
 }
 
 func (t *ByzeCoreServer) ModelStreamStop(c *gin.Context) {
-
 }
 
 func (t *ByzeCoreServer) GetModels(c *gin.Context) {
@@ -203,7 +202,8 @@ func (t *ByzeCoreServer) GetModelList(c *gin.Context) {
 		bcode.ReturnError(c, err)
 		return
 	}
-	data, err := server.GetSupportModelList(request.ServiceSource, request.Flavor)
+	ctx := c.Request.Context()
+	data, err := server.GetSupportModelList(ctx, *request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
@@ -222,7 +222,9 @@ func (t *ByzeCoreServer) GetSmartVisionSupportModelList(c *gin.Context) {
 		bcode.ReturnError(c, err)
 		return
 	}
-	data, err := server.GetSupportSmartVisionModels(request)
+
+	ctx := c.Request.Context()
+	data, err := server.GetSupportSmartVisionModels(ctx, request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return

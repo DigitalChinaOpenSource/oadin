@@ -5,13 +5,14 @@
 package convert
 
 import (
-	"aipc/byze/internal/types"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"regexp"
+
+	"byze/internal/types"
 
 	jsonata "github.com/blues/jsonata-go"
 )

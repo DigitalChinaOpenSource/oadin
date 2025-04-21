@@ -1,11 +1,6 @@
 package schedule
 
 import (
-	"aipc/byze/internal/convert"
-	"aipc/byze/internal/datastore"
-	"aipc/byze/internal/event"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils"
 	"bufio"
 	"bytes"
 	"compress/gzip"
@@ -20,6 +15,12 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"byze/internal/convert"
+	"byze/internal/datastore"
+	"byze/internal/event"
+	"byze/internal/types"
+	"byze/internal/utils"
 )
 
 type ServiceTask struct {
@@ -356,6 +357,8 @@ func (st *ServiceTask) Run() error {
 				slog.Debug("[Service] Stream: Got Chunk Response", "taskid", st.Schedule.Id, "chunk", string(chunk))
 			}
 
+			chunkStr := strings.TrimPrefix(string(chunk), "data:")
+			chunk = []byte(chunkStr)
 			content = types.HTTPContent{Body: chunk, Header: resp.Header.Clone()}
 			var convertErr error
 			if conversionNeeded { // need convert response
