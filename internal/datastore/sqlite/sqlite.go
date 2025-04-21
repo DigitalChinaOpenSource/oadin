@@ -1,8 +1,6 @@
 package sqlite
 
 import (
-	"aipc/byze/internal/datastore"
-	"aipc/byze/internal/types"
 	"context"
 	"errors"
 	"fmt"
@@ -10,6 +8,9 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	"byze/internal/datastore"
+	"byze/internal/types"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

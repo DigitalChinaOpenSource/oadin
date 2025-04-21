@@ -1,10 +1,11 @@
 package sqlite
 
 import (
-	"aipc/byze/internal/datastore"
-	"aipc/byze/internal/types"
 	"context"
 	"testing"
+
+	"byze/internal/datastore"
+	"byze/internal/types"
 )
 
 func TestNew(t *testing.T) {

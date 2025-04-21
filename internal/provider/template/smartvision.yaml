@@ -6,8 +6,8 @@ services:
         endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
         extra_url: ""
         auth_type: "credentials"
-        auth_apply_url: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps
-        default_model: ernie-3.5-8k
+        auth_apply_url: ""
+        default_model: ""
         request_segments: 1 # request
         install_raw_routes: false  # also install routes without byze prefix in url path
         extra_headers: '{}'
@@ -19,14 +19,19 @@ services:
                       {
                           "model": $model,
                           "stream": $stream,
-                          "messages": messages,
+                          "prompt_messages": messages,
                           "tools": tools,
                           "seed": seed,
                           "temperature": temperature,
-                          "top_p": top_p,
                           "top_k": top_k,
                           "stop": stop,
-                          "max_tokens": $exists(max_tokens) ? max_tokens : max_completion_tokens,
+                          "completion_params": {
+                              "presence_penalty": 0.1,
+                              "max_tokens": $exists(max_tokens) ? max_tokens : max_completion_tokens,
+                              "top_p": top_p,
+                              "frequency_penalty": 0.1,
+                              "temperature": 0.8
+                                },
                           "keep_alive": keep_alive
                       }
 
@@ -42,14 +47,19 @@ services:
                       {
                           "model": $model,
                           "stream": $stream,
-                          "messages": messages,
+                          "prompt_messages": messages,
                           "tools": tools,
                           "seed": seed,
                           "temperature": temperature,
-                          "top_p": top_p,
                           "top_k": top_k,
                           "stop": stop,
-                          "max_tokens": max_tokens,
+                          "completion_params": {
+                              "presence_penalty": 0.1,
+                              "max_tokens": $exists(max_tokens) ? max_tokens : max_completion_tokens,
+                              "top_p": top_p,
+                              "frequency_penalty": 0.1,
+                              "temperature": 0.8
+                                },
                           "keep_alive": keep_alive
                       }
 
@@ -64,11 +74,11 @@ services:
                   config: |
                       {
                           "id": id,
-                          "model": model,
+                          "model": data.model,
                           "created_at": created,
-                          "message": choices[0].message,
+                          "message": data.message,
                           "finished": true,
-                          "finish_reason": choices[0].finish_reason
+                          "finish_reason": data.finish_reason
                       }
 
         stream_response_to_byze:
@@ -84,9 +94,9 @@ services:
                           "id": id,
                           "model": model,
                           "created_at": created,
-                          "message": choices[0].delta,
-                          "finished": choices[0].finish_reason = "stop" ? true : false,
-                          "finish_reason": choices[0].finish_reason
+                          "message": delta.message,
+                          "finished": delta.finish_reason = "stop" ? true : false,
+                          "finish_reason": delta.finish_reason
                       }
 
         response_from_byze:
@@ -94,16 +104,14 @@ services:
                 - converter: jsonata
                   config: |
                       {
-                          "id": id,
-                          "model": model,
-                          "object": "chat.completion",
-                          "created": created_at,
-                          "choices": [{
-                                "index": 0,
-                                "message": message,
-                                "finish_reason": finish_reason
-                          }]
+                         "id": id,
+                          "model": data.model,
+                          "created_at": created,
+                          "message": data.message,
+                          "finished": true,
+                          "finish_reason": data.finish_reason
                       }
+                      
 
         stream_response_from_byze:
             epilogue: ["[DONE]"] # openai adds a data: [DONE] at the end
@@ -111,23 +119,20 @@ services:
                 - converter: jsonata
                   config: |
                       {
-                          "id": id,
+                       "id": id,
                           "model": model,
-                          "object": "chat.completion.chunk",
-                          "created": created_at,
-                          "choices": [{
-                                "index": 0,
-                                "delta": message,
-                                "finish_reason": finish_reason
-                          }]
+                          "created_at": created,
+                          "message": delta.message,
+                          "finished": delta.finish_reason = "stop" ? true : false,
+                          "finish_reason": delta.finish_reason
                       }
     embed:
         url: "https://smartvision-dev.digitalchina.com/api/v1/aipc/chat/embedding"
         endpoints: [ "POST /v1/embeddings" ] # request to this will use this flavor
         extra_url: ""
         auth_type: "credentials"
-        auth_apply_url:
-        default_model: embedding-v1
+        auth_apply_url: ""
+        default_model: ""
         request_segments: 1 # request
         install_raw_routes: false # also install routes without byze prefix in url path# request to this will use this flavor
         extra_headers: '{}'

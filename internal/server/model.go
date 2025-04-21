@@ -1,15 +1,6 @@
 package server
 
 import (
-	"aipc/byze/internal/api/dto"
-	"aipc/byze/internal/datastore"
-	"aipc/byze/internal/provider"
-	"aipc/byze/internal/provider/template"
-	"aipc/byze/internal/schedule"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils"
-	"aipc/byze/internal/utils/bcode"
-	"aipc/byze/internal/utils/client"
 	"context"
 	"encoding/json"
 	"errors"
@@ -19,6 +10,16 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"byze/internal/api/dto"
+	"byze/internal/datastore"
+	"byze/internal/provider"
+	"byze/internal/provider/template"
+	"byze/internal/schedule"
+	"byze/internal/types"
+	"byze/internal/utils"
+	"byze/internal/utils/bcode"
+	"byze/internal/utils/client"
 )
 
 type Model interface {
@@ -237,7 +238,6 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 	}
 	dataChan, errChan := providerEngine.PullModelStream(ctx, &req)
 	return dataChan, errChan
-
 }
 
 func ModelStreamCancel(ctx context.Context, req *dto.ModelStreamCancelRequest) (*dto.ModelStreamCancelResponse, error) {
@@ -377,7 +377,7 @@ func RecommendModels() (map[string][]dto.RecommendModelData, error) {
 		fmt.Printf("Parse JSON failed: %v\n", err)
 		return nil, err
 	}
-	//Windows system needs to include memory module model detection.
+	// Windows system needs to include memory module model detection.
 	if runtime.GOOS == "windows" {
 		windowsVersion := utils.GetSystemVersion()
 		if windowsVersion < 10 {
@@ -419,28 +419,31 @@ func GetRecommendModel() (dto.RecommendModelResponse, error) {
 	return dto.RecommendModelResponse{Bcode: *bcode.ModelCode, Data: recommendModel}, nil
 }
 
-func GetSupportModelList(source string, flavor string) (*dto.RecommendModelResponse, error) {
+func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (*dto.RecommendModelResponse, error) {
 	ds := datastore.GetDefaultDatastore()
-	//ms, err := ds.List(context.Background(), m)
-	var serviceModelList = make(map[string][]dto.RecommendModelData)
-	if source == types.ServiceSourceLocal {
-		var localOllamaSupportModel []dto.LocalSupportModelData
-		var localOllamaModelMap = make(map[string]dto.LocalSupportModelData)
+	flavor := request.Flavor
+	source := request.ServiceSource
+	serviceModelList := make(map[string][]dto.RecommendModelData)
+	if request.ServiceSource == types.ServiceSourceLocal {
+		localOllamaModelMap := make(map[string]dto.LocalSupportModelData)
+		localOllamaServiceMap := make(map[string][]dto.LocalSupportModelData)
 		fileContent, err := template.FlavorTemplateFs.ReadFile("local_model.json")
 		if err != nil {
 			fmt.Printf("Read file failed: %v\n", err)
 			return nil, err
 		}
 		// parse struct
-		err = json.Unmarshal(fileContent, &localOllamaSupportModel)
+		err = json.Unmarshal(fileContent, &localOllamaServiceMap)
 		if err != nil {
 			fmt.Printf("Parse JSON failed: %v\n", err)
 			return nil, err
 		}
-		for _, localModel := range localOllamaSupportModel {
-			localOllamaModelMap[localModel.Name] = localModel
+		for _, serviceInfo := range localOllamaServiceMap {
+			for _, model := range serviceInfo {
+				localOllamaModelMap[model.Name] = model
+			}
 		}
-
+		//
 		var recommendModelParamsSize float32
 		recommendModel, err := RecommendModels()
 		if err != nil {
@@ -449,59 +452,75 @@ func GetSupportModelList(source string, flavor string) (*dto.RecommendModelRespo
 		flavor = "ollama"
 		service := "chat"
 		var resModelNameList []string
-		providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, service)
-		parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
-		for _, model := range recommendModel[service] {
-			localModelInfo := localOllamaModelMap[model.Name]
-			modelQuery := new(types.Model)
-			modelQuery.ModelName = model.Name
-			canSelect := true
-			err := ds.Get(context.Background(), modelQuery)
-			if err != nil {
-				canSelect = false
-			}
-			model.Service = service
-			model.Flavor = flavor
-			model.Method = parts[0]
-			model.Desc = localModelInfo.Description
-			model.Url = providerServiceDefaultInfo.RequestUrl
-			model.AuthType = providerServiceDefaultInfo.AuthType
-			model.IsRecommended = true
-			model.CanSelect = canSelect
-			model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, service)
-			model.Avatar = localModelInfo.Avatar
-			model.Class = localModelInfo.Class
-			model.OllamaId = localModelInfo.OllamaId
-			serviceModelList[service] = append(serviceModelList[service], model)
-			recommendModelParamsSize = model.ParamsSize
-			resModelNameList = append(resModelNameList, model.Name)
-		}
-		for _, localModel := range localOllamaSupportModel {
-			if localModel.ParamsSize <= recommendModelParamsSize && !utils.Contains(resModelNameList, localModel.Name) {
+
+		for modelService, modelInfo := range recommendModel {
+			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, modelService)
+			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
+			for _, model := range modelInfo {
+				localModelInfo := localOllamaModelMap[model.Name]
 				modelQuery := new(types.Model)
-				modelQuery.ModelName = localModel.Name
+				modelQuery.ModelName = model.Name
 				canSelect := true
 				err := ds.Get(context.Background(), modelQuery)
 				if err != nil {
 					canSelect = false
 				}
-				model := new(dto.RecommendModelData)
-				model.Name = localModel.Name
+				if modelQuery.Status != "downloaded" {
+					canSelect = false
+				}
 				model.Service = service
 				model.Flavor = flavor
 				model.Method = parts[0]
-				model.Desc = localModel.Description
+				model.Desc = localModelInfo.Description
 				model.Url = providerServiceDefaultInfo.RequestUrl
 				model.AuthType = providerServiceDefaultInfo.AuthType
-				model.IsRecommended = false
+				model.IsRecommended = true
 				model.CanSelect = canSelect
 				model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, service)
-				model.Avatar = localModel.Avatar
-				model.Class = localModel.Class
-				model.OllamaId = localModel.OllamaId
-				serviceModelList[service] = append(serviceModelList[service], *model)
+				model.Avatar = localModelInfo.Avatar
+				model.Class = localModelInfo.Class
+				model.OllamaId = localModelInfo.OllamaId
+				serviceModelList[service] = append(serviceModelList[service], model)
+				recommendModelParamsSize = model.ParamsSize
 				resModelNameList = append(resModelNameList, model.Name)
 			}
+
+		}
+		for modelService, modelInfo := range localOllamaServiceMap {
+			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, modelService)
+			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
+			for _, localModel := range modelInfo {
+				if localModel.ParamsSize <= recommendModelParamsSize && !utils.Contains(resModelNameList, localModel.Name) {
+					modelQuery := new(types.Model)
+					modelQuery.ModelName = localModel.Name
+					modelQuery.Status = "downloaded"
+					canSelect := true
+					err := ds.Get(context.Background(), modelQuery)
+					if err != nil {
+						canSelect = false
+					}
+					if modelQuery.Status != "downloaded" {
+						canSelect = false
+					}
+					model := new(dto.RecommendModelData)
+					model.Name = localModel.Name
+					model.Service = modelService
+					model.Flavor = flavor
+					model.Method = parts[0]
+					model.Desc = localModel.Description
+					model.Url = providerServiceDefaultInfo.RequestUrl
+					model.AuthType = providerServiceDefaultInfo.AuthType
+					model.IsRecommended = false
+					model.CanSelect = canSelect
+					model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
+					model.Avatar = localModel.Avatar
+					model.Class = localModel.Class
+					model.OllamaId = localModel.OllamaId
+					serviceModelList[modelService] = append(serviceModelList[modelService], *model)
+					resModelNameList = append(resModelNameList, model.Name)
+				}
+			}
+
 		}
 
 	} else {
@@ -511,16 +530,20 @@ func GetSupportModelList(source string, flavor string) (*dto.RecommendModelRespo
 			}
 			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, service)
 			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
-			authFields := []string{"Api key"}
+			authFields := []string{"api_key"}
 			if providerServiceDefaultInfo.AuthType == types.AuthTypeToken {
-				authFields = []string{"SecretId", "SecretKey"}
+				authFields = []string{"secret_id", "secret_key"}
 			}
 			for _, model := range providerServiceDefaultInfo.SupportModels {
 				modelQuery := new(types.Model)
 				modelQuery.ModelName = model
+				modelQuery.Status = "downloaded"
 				canSelect := true
 				err := ds.Get(context.Background(), modelQuery)
 				if err != nil {
+					canSelect = false
+				}
+				if modelQuery.Status != "downloaded" {
 					canSelect = false
 				}
 				modelData := dto.RecommendModelData{
@@ -546,7 +569,7 @@ func GetSupportModelList(source string, flavor string) (*dto.RecommendModelRespo
 	}, nil
 }
 
-func GetSupportSmartVisionModels(request *dto.SmartVisionSupportModelRequest) (*dto.SmartVisionSupportModelResponse, error) {
+func GetSupportSmartVisionModels(ctx context.Context, request *dto.SmartVisionSupportModelRequest) (*dto.SmartVisionSupportModelResponse, error) {
 	transport := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    30 * time.Second,
@@ -578,16 +601,31 @@ func GetSupportSmartVisionModels(request *dto.SmartVisionSupportModelRequest) (*
 	if res.Code != 0 {
 		return nil, bcode.ErrServer
 	}
-	var smartVisionModelDataList []dto.SmartVisionModelData
-	for _, model := range res.Data {
-		model.Provider = "remote_smartvision_chat"
-		smartVisionModelDataList = append(smartVisionModelDataList, model)
-	}
-	res.Data = smartVisionModelDataList
 
+	ds := datastore.GetDefaultDatastore()
+	var resData []dto.SmartVisionModelData
+	for _, model := range res.Data {
+		modelQuery := new(types.Model)
+		if model.Name == "微软｜神州数码o1" {
+			fmt.Printf("123")
+		}
+		modelQuery.ModelName = model.Name
+
+		canSelect := true
+		err := ds.Get(ctx, modelQuery)
+		if err != nil {
+			canSelect = false
+		}
+
+		if modelQuery.Status != "downloaded" {
+			canSelect = false
+		}
+		model.CanSelect = canSelect
+		resData = append(resData, model)
+	}
+	res.Data = resData
 	return &dto.SmartVisionSupportModelResponse{
 		Bcode: *bcode.ModelCode,
 		Data:  res,
 	}, nil
-
 }

@@ -262,20 +262,25 @@ func GetGpuInfo() (int, error) {
 }
 
 type SmartVisionUrlInfo struct {
-	Url         string `json:"url"`
-	AccessToken string `json:"access_token"`
+	Url             string `json:"url"`
+	AccessToken     string `json:"access_token"`
+	ChatEnterPoint  string `json:"chat_enter_point"`
+	EmbedEnterPoint string `json:"embed_enter_point"`
 }
 
 func GetSmartVisionUrl() map[string]SmartVisionUrlInfo {
-	var SmartVisionUrlMap = make(map[string]SmartVisionUrlInfo)
+	SmartVisionUrlMap := make(map[string]SmartVisionUrlInfo)
 	SmartVisionUrlMap["product"] = SmartVisionUrlInfo{
-		Url:         "https://smartvision.dcclouds.com",
-		AccessToken: "private-CA004JS8Xkzblqv1gp8M6iBS",
+		Url:             "https://smartvision.dcclouds.com",
+		AccessToken:     "private-CA004JS8Xkzblqv1gp8M6iBS",
+		ChatEnterPoint:  "/api/v1/aipc/chat/completions",
+		EmbedEnterPoint: "/api/v1/aipc/chat/embedding",
 	}
 	SmartVisionUrlMap["dev"] = SmartVisionUrlInfo{
-		Url:         "https://smartvision-dev.digitalchina.com",
-		AccessToken: "private-doBMjUAikf2ErGqVUGzs4yGe",
+		Url:             "https://smartvision-dev.digitalchina.com",
+		AccessToken:     "private-doBMjUAikf2ErGqVUGzs4yGe",
+		ChatEnterPoint:  "/api/v1/aipc/chat/completions",
+		EmbedEnterPoint: "/api/v1/aipc/chat/embedding",
 	}
 	return SmartVisionUrlMap
-
 }

@@ -5,10 +5,6 @@
 package schedule
 
 import (
-	"aipc/byze/internal/datastore"
-	"aipc/byze/internal/event"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -17,6 +13,11 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"byze/internal/datastore"
+	"byze/internal/event"
+	"byze/internal/types"
+	"byze/internal/utils"
 
 	"github.com/shirou/gopsutil/cpu"
 )
