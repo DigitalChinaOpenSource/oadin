@@ -58,8 +58,8 @@ function AddToUserPath(destDir) {
           encoding: 'utf-8',
           stdio: ['pipe', 'pipe', 'ignore'] 
         });
-        const match = output.match(/REG_EXPAND_SZ\s+(.*)/);
-        currentPath = match ? match[1].trim() : '';
+        const match = output.match(/Path\s+REG_(SZ|EXPAND_SZ)\s+(.*)/);
+        currentPath = match ? match[2].trim() : '';
       } catch {}
 
       // 检查路径是否已存在
