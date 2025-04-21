@@ -444,7 +444,7 @@ class Byze {
     try {
       this.validateSchema(schemas.cancelModelStreamRequestSchema, data);
       const res = await this.client.post('/model/stream/cancel', data);
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      return res.data;
     } catch (error) {
       throw new Error(`取消安装模型失败: ${error.message}`);
     }
