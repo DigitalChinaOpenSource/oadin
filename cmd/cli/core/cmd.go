@@ -912,7 +912,9 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 		err = cmd.Run()
 		if err != nil {
 			slog.Info("Model engine not exist...")
-			if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
+			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
+			err = reCheckCmd.Run()
+			if err != nil {
 				slog.Info("model engine not exist, start download...")
 				err := engineProvider.InstallEngine()
 				if err != nil {
@@ -921,6 +923,8 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 				}
 				slog.Info("Model engine download completed...")
 			}
+			//if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
+			//}
 		}
 
 		slog.Info("Setting env...")

@@ -127,9 +127,9 @@ type DeleteModelRequest struct {
 }
 
 type GetModelsRequest struct {
-	ProviderName string `json:"provider_name,omitempty"`
-	ModelName    string `json:"model_name,omitempty"`
-	ServiceName  string `json:"service_name,omitempty"`
+	ProviderName string `form:"provider_name,omitempty"`
+	ModelName    string `form:"model_name,omitempty"`
+	ServiceName  string `form:"service_name,omitempty"`
 }
 
 type GetModelListRequest struct {
