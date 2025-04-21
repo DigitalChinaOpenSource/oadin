@@ -1,11 +1,12 @@
 package types
 
 import (
-	"aipc/byze/internal/utils"
 	"container/list"
 	"fmt"
 	"net/http"
 	"time"
+
+	"byze/internal/utils"
 )
 
 type HTTPContent struct {

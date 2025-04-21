@@ -1,11 +1,12 @@
 package api
 
 import (
-	"aipc/byze/internal/api/dto"
-	"aipc/byze/internal/utils/bcode"
 	"errors"
 	"io"
 	"net/http"
+
+	"byze/internal/api/dto"
+	"byze/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,9 +1,6 @@
 package config
 
 import (
-	"aipc/byze/internal/utils"
-	"aipc/byze/internal/utils/client"
-	"aipc/byze/version"
 	"log/slog"
 	"net"
 	"net/http"
@@ -14,6 +11,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"byze/internal/utils"
+	"byze/internal/utils/client"
+	"byze/version"
 
 	"github.com/MatusOllah/slogcolor"
 	"github.com/fatih/color"

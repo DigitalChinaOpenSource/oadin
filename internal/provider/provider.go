@@ -1,10 +1,11 @@
 package provider
 
 import (
-	"aipc/byze/internal/provider/engine"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils/client"
 	"context"
+
+	"byze/internal/provider/engine"
+	"byze/internal/types"
+	"byze/internal/utils/client"
 )
 
 // ModelServiceProvider local model engine

@@ -5,10 +5,11 @@
 package api
 
 import (
-	"aipc/byze/config"
-	"aipc/byze/version"
 	"log/slog"
 	"net/http"
+
+	"byze/config"
+	"byze/version"
 
 	"github.com/gin-gonic/gin"
 )

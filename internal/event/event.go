@@ -5,16 +5,17 @@
 package event
 
 import (
-	"aipc/byze/config"
-	"aipc/byze/internal/logger"
-	"aipc/byze/internal/types"
-	"aipc/byze/internal/utils"
 	"bytes"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"sort"
 	"strings"
+
+	"byze/config"
+	"byze/internal/logger"
+	"byze/internal/types"
+	"byze/internal/utils"
 )
 
 // A simple event system for UI and logging purpose

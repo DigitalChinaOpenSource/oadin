@@ -1,8 +1,6 @@
 package client
 
 import (
-	"aipc/byze/internal/utils/bcode"
-	"aipc/byze/internal/utils/progress"
 	"bufio"
 	"bytes"
 	"context"
@@ -12,6 +10,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+
+	"byze/internal/utils/bcode"
+	"byze/internal/utils/progress"
 )
 
 type Client struct {

@@ -1,8 +1,9 @@
 package dto
 
 import (
-	"aipc/byze/internal/utils/bcode"
 	"time"
+
+	"byze/internal/utils/bcode"
 )
 
 type CreateAIGCServiceRequest struct {
@@ -165,6 +166,7 @@ type SmartVisionModelData struct {
 	Introduce          string                       `json:"introduce"`
 	Tags               []string                     `json:"tags"`
 	CredentialParams   []SmartVisionCredentialParam `json:"credentialParams"`
+	CanSelect          bool                         `json:"can_select"`
 }
 
 type SmartVisionCredentialParam struct {
