@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 
@@ -224,10 +225,27 @@ func (o *OllamaProvider) InstallEngine() error {
 	}
 
 	slog.Info("[Install Engine] start install...")
-	cmd := exec.Command(file)
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("failed to install ollama: %v", err)
+	if runtime.GOOS == "darwin" {
+		unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
+		if err := unzipCmd.Run(); err != nil {
+			return fmt.Errorf("failed to unzip file: %v", err)
+		}
+		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		cmd := exec.Command("open", appPath)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to open ollama installer: %v", err)
+		}
+		// move it to Applications
+		mvCmd := exec.Command("mv", appPath, "/Applications/")
+		if err := mvCmd.Run(); err != nil {
+			return fmt.Errorf("failed to move ollama to Applications: %v", err)
+		}
+	} else {
+		// Handle other operating systems
+		cmd := exec.Command(file)
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to install ollama: %v", err)
+		}
 	}
 
 	slog.Info("[Install Engine] model engine install completed")
