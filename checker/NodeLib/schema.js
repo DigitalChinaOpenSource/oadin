@@ -408,9 +408,9 @@ const recommendModelsResponse = {
 const SmartvisionModelSupportRequest = {
     type: "object",
     properties: {
-        EnvType: { type: "string", enum: ["dev", "product"] }
+        env_type: { type: "string", enum: ["dev", "product"] }
     },
-    required: ["EnvType"]
+    required: ["env_type"]
 };
 
 const SmartvisionModelSupport = {
