@@ -413,8 +413,7 @@ class Byze {
                 const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
                 const response = JSON.parse(jsonString);
 
-                // 检查是否为 "canceled" 状态
-                if (response.status === 'canceled') {
+                if (response.status === 'error') {
                     eventEmitter.emit('end', response);
                     return;
                 }
@@ -603,37 +602,41 @@ class Byze {
 
   // chat服务
   async Chat(data) {
-    this.validateSchema(schemas.chatRequest, data);
+    try{
+      this.validateSchema(schemas.chatRequest, data);
+    
+      // 判断是否是流式
+      const config = { responseType: data.stream ? 'stream' : 'json' };
+      const res = await this.client.post('/services/chat', data, config);
   
-    // 判断是否是流式
-    const config = { responseType: data.stream ? 'stream' : 'json' };
-    const res = await this.client.post('/services/chat', data, config);
-  
-    if (data.stream) {
-      const eventEmitter = new EventEmitter();
-  
-      res.data.on('data', (chunk) => {
-        try {
-          const rawData = chunk.toString().trim();
-          const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
-          const response = JSON.parse(jsonString);
-          eventEmitter.emit('data', response);  // 触发事件，实时传输数据
-        } catch (err) {
-          eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
-        }
-      });
-  
-      res.data.on('error', (err) => {
-        eventEmitter.emit('error', `流式响应错误: ${err.message}`);
-      });
+      if (data.stream) {
+        const eventEmitter = new EventEmitter();
+    
+        res.data.on('data', (chunk) => {
+          try {
+            const rawData = chunk.toString().trim();
+            const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
+            const response = JSON.parse(jsonString);
+            eventEmitter.emit('data', response);  // 触发事件，实时传输数据
+          } catch (err) {
+            eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+          }
+        });
+    
+        res.data.on('error', (err) => {
+          eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+        });
 
-      res.data.on('end', () => {
-        eventEmitter.emit('end');  // 触发结束事件
-      });
-  
-      return eventEmitter;  // 返回 EventEmitter 实例
-    } else {
-      return this.validateSchema(schemas.chatResponse, res.data);
+        res.data.on('end', () => {
+          eventEmitter.emit('end');  // 触发结束事件
+        });
+    
+        return eventEmitter;  // 返回 EventEmitter 实例
+      } else {
+        return this.validateSchema(schemas.chatResponse, res.data);
+      }
+    } catch (error) {
+      throw new Error(`Chat服务请求失败: ${error.message}`);
     }
   }
 
