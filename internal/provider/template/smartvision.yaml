@@ -176,7 +176,7 @@ services:
                       {
                            "id": id,
                            "model": model,
-                           "data": [data.{"index": $index, "embeddings": $, "object": "embedding"}]
+                           "data": [$map(data, function($v, $i){{"index": $i, "embedding": $v}})]
                        }
         response_from_byze:
             conversion:
@@ -185,5 +185,5 @@ services:
                       {
                           "id": id,
                           "model": model,
-                          "data": [data.{"index": $index, "embeddings": $, "object": "embedding"}]
+                          "data": [$map(data, function($v, $i){{"index": $i, "embedding": $v}})]
                       }
