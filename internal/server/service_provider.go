@@ -360,6 +360,7 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 			if !checkRes {
 				return nil, bcode.ErrProviderIsUnavailable
 			}
+			model.Status = "downloaded"
 			err = ds.Add(ctx, &model)
 			if err != nil {
 				return nil, err

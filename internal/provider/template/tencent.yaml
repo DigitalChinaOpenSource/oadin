@@ -44,7 +44,7 @@ services:
     default_model: hunyuan-turbo
     request_segments: 1 # request
     extra_headers: '{}'
-    support_models: ["hunyuan-turbo", "hunyuan-T1", "hunyuan-large", "hunyuan-standard", "hunyuan-TurboS"]
+    support_models: ["hunyuan-turbo", "hunyuan-t1-latest", "hunyuan-large", "hunyuan-standard", "hunyuan-turbos-latest"]
     request_to_byze:
       conversion:
         - converter: jsonata

@@ -391,6 +391,9 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 		tmpSp.ServiceName = p.ServiceName
 		tmpSp.ServiceSource = p.ServiceSource
 		tmpSp.URL = p.URL
+		if p.URL == "" {
+			tmpSp.URL = providerDefaultInfo.RequestUrl
+		}
 		tmpSp.Status = 0
 		tmpSp.ExtraHeaders = providerDefaultInfo.ExtraHeaders
 		tmpSp.ExtraJSONBody = "{}"
@@ -466,6 +469,11 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			}
 			tmpSp.ID = checkSp.ID
 			tmpSp.Status = checkSp.Status
+			if tmpSp.AuthType == "none" {
+				tmpSp.AuthType = checkSp.AuthType
+				tmpSp.AuthKey = checkSp.AuthKey
+			}
+
 			err := s.Ds.Put(ctx, tmpSp)
 			if err != nil {
 				return nil, bcode.ErrProviderUpdateFailed
