@@ -135,17 +135,17 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 		return nil, bcode.ErrModelRecordNotFound
 	}
 
-	// Call engin to delete model.
-	//modelEngine := provider.GetModelEngine(sp.Flavor)
-	//deleteReq := &types.DeleteRequest{
-	//	Model: request.ModelName,
-	//}
+	//Call engin to delete model.
+	modelEngine := provider.GetModelEngine(sp.Flavor)
+	deleteReq := &types.DeleteRequest{
+		Model: request.ModelName,
+	}
 
-	//err = modelEngine.DeleteModel(ctx, deleteReq)
-	//if err != nil {
-	//	// todo err debug log output
-	//	return nil, bcode.ErrEngineDeleteModel
-	//}
+	err = modelEngine.DeleteModel(ctx, deleteReq)
+	if err != nil {
+		// todo err debug log output
+		return nil, bcode.ErrEngineDeleteModel
+	}
 
 	err = s.Ds.Delete(ctx, m)
 	if err != nil {
