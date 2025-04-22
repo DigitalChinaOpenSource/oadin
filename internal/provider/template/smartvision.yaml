@@ -182,9 +182,8 @@ services:
             conversion:
                 - converter: jsonata
                   config: |
-                      {{
+                      {
                           "id": id,
                           "model": model,
                           "data": [data.{"index": $index, "embeddings": $, "object": "embedding"}]
-                      }
                       }
