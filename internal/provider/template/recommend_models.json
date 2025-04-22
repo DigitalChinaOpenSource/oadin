@@ -6,12 +6,12 @@
       "memory_type": ["DDR5"],
       "models": [
         {
-          "name": "Qwen2.5:7b",
+          "name": "qwen2.5:7b",
           "size": "4.7G",
           "params_size": 7
         },
         {
-          "name": "Deepseek-r1:7b",
+          "name": "deepseek-r1:7b",
           "size": "4.7G",
           "params_size": 7
         }
@@ -22,12 +22,12 @@
       "memory_size": 18,
       "models": [
         {
-          "name": "Qwen2.5:7b",
+          "name": "qwen2.5:7b",
           "size": "4.7G",
           "params_size": 7
         },
         {
-          "name": "Deepseek-r1:7b",
+          "name": "deepseek-r1:7b",
           "size": "4.7G",
           "params_size": 7
         }
@@ -38,12 +38,12 @@
       "memory_type": ["DDR3", "DDR4", "DDR5"],
       "models": [
         {
-          "name": "Qwen2.5:1.5b",
+          "name": "qwen2.5:1.5b",
           "size": "4.7G",
           "params_size": 1.5
         },
         {
-          "name": "Deepseek-r1:1.5b",
+          "name": "deepseek-r1:1.5b",
           "size": "4.7G",
           "params_size": 1.5
         }
