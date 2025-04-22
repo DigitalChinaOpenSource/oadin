@@ -149,7 +149,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 
 			if !isPulled {
 				m.ProviderName = sp.ProviderName
-				m.ModelName = recommendConfig.ModelName
+				m.ModelName = strings.ToLower(recommendConfig.ModelName)
 
 				err = s.Ds.Get(ctx, m)
 				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -412,7 +412,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 				}
 				modelObj := new(types.Model)
 				modelObj.ProviderName = tmpSp.ProviderName
-				modelObj.ModelName = m
+				modelObj.ModelName = strings.ToLower(m)
 
 				err = s.Ds.Get(ctx, modelObj)
 				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {

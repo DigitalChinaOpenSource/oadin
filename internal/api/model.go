@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"byze/internal/api/dto"
 	"byze/internal/server"
@@ -98,7 +99,7 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 				fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
 				// fmt.Fprintf(w, "\n[DONE]\n\n")
 				flusher.Flush()
-				client.ModelClientMap[request.ModelName] = nil
+				client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
 				return
 			}
 
@@ -123,15 +124,15 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 			}
 			log.Printf("Error: %v", err)
 			// 发送错误信息到前端
-			fmt.Fprintf(w, "event: error\ndata: %v\n\n", err)
+			fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
 			flusher.Flush()
-			client.ModelClientMap[request.ModelName] = nil
+			client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
 			return
 
 		case <-ctx.Done():
-			fmt.Fprintf(w, "event: timeout\ndata: request timeout\n\n")
+			fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"timeout\"}\n\n")
 			flusher.Flush()
-			client.ModelClientMap[request.ModelName] = nil
+			client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
 			return
 		}
 	}

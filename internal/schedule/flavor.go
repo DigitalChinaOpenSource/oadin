@@ -588,11 +588,10 @@ type TencentSignAuthenticator struct {
 }
 
 type CredentialsAuthInfo struct {
-	EvnType  string `json:"env_type"`
-	ApiKey   string `json:"api_key"`
-	ApiHost  string `json:"api_host"`
-	Provider string `json:"provider"`
-	ModelKey string `json:"model_key"`
+	EvnType    string `json:"env_type"`
+	Credential string `json:"credential"`
+	Provider   string `json:"provider"`
+	ModelKey   string `json:"model_key"`
 }
 
 type CredentialsAuthenticator struct {
@@ -669,9 +668,10 @@ func (c *CredentialsAuthenticator) Authenticate() error {
 	smartVisionInfo := smartVisionEnvInfo[envType]
 	c.Req.Header.Set("Authorization", "Bearer "+smartVisionInfo.AccessToken)
 
-	type credentials struct {
-		ApiKey  string `json:"api_key"`
-		ApiHost string `json:"api_host"`
+	var credentials map[string]interface{}
+	err := json.Unmarshal([]byte(authInfo.Credential), &credentials)
+	if err != nil {
+		return err
 	}
 	var reqUrl string
 	if c.ProviderInfo.ServiceName == types.ServiceChat {
@@ -680,23 +680,17 @@ func (c *CredentialsAuthenticator) Authenticate() error {
 			Provider    string      `json:"provider"`
 			Name        string      `json:"name"`
 			ModelKey    string      `json:"model_key"`
-			Credentials credentials `json:"credentials"`
+			Credentials interface{} `json:"credentials"`
 		}
 		reqData["model_config"] = modelConfig{
-			Provider: authInfo.Provider,
-			Name:     model,
-			ModelKey: authInfo.ModelKey,
-			Credentials: credentials{
-				ApiKey:  authInfo.ApiKey,
-				ApiHost: authInfo.ApiHost,
-			},
+			Provider:    authInfo.Provider,
+			Name:        model,
+			ModelKey:    authInfo.ModelKey,
+			Credentials: credentials,
 		}
 	} else if c.ProviderInfo.ServiceName == types.ServiceEmbed {
 		reqUrl = smartVisionInfo.Url + smartVisionInfo.ChatEnterPoint
-		reqData["credentials"] = credentials{
-			ApiKey:  authInfo.ApiKey,
-			ApiHost: authInfo.ApiHost,
-		}
+		reqData["credentials"] = credentials
 	}
 
 	reqBody, err := json.Marshal(reqData)
