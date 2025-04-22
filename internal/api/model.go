@@ -137,9 +137,6 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 	}
 }
 
-func (t *ByzeCoreServer) ModelStreamStop(c *gin.Context) {
-}
-
 func (t *ByzeCoreServer) GetModels(c *gin.Context) {
 	request := new(dto.GetModelsRequest)
 	if err := c.Bind(request); err != nil {

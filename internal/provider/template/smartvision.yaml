@@ -174,16 +174,16 @@ services:
                 - converter: jsonata
                   config: |
                       {
-                          "id": id,
-                          "model": model,
-                          "data": data
-                      }
+                           "id": id,
+                           "model": model,
+                           "data": [$map(data, function($v, $i){{"index": $i, "embedding": $v}})]
+                       }
         response_from_byze:
             conversion:
                 - converter: jsonata
                   config: |
                       {
-                           "id": id,
-                           "model": model,
-                           "data": data
+                          "id": id,
+                          "model": model,
+                          "data": [$map(data, function($v, $i){{"index": $i, "embedding": $v}})]
                       }

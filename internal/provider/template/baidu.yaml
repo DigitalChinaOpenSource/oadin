@@ -131,7 +131,7 @@ services:
         request_segments: 1 # request
         install_raw_routes: false # also install routes without byze prefix in url path# request to this will use this flavor
         extra_headers: '{}'
-        support_models: ["embedding-v1", ""]
+        support_models: ["embedding-v1"]
         request_to_byze:
             conversion:
                 - converter: jsonata

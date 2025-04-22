@@ -147,6 +147,21 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 		// todo err debug log output
 		return nil, err
 	}
+	if request.ServiceName == types.ServiceChat {
+		generateM := types.Model{
+			ProviderName: strings.Replace(request.ProviderName, "chat", "generate", -1),
+			ModelName:    request.ModelName,
+		}
+		err = s.Ds.Get(ctx, &generateM)
+		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+			return nil, err
+		}
+		err = s.Ds.Delete(ctx, &generateM)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &dto.DeleteModelResponse{
 		Bcode: *bcode.ModelCode,
 	}, nil
@@ -450,7 +465,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			return &dto.RecommendModelResponse{Data: nil}, err
 		}
 		flavor = "ollama"
-		service := "chat"
+		//service := "chat"
 		var resModelNameList []string
 
 		for modelService, modelInfo := range recommendModel {
@@ -459,7 +474,8 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			for _, model := range modelInfo {
 				localModelInfo := localOllamaModelMap[model.Name]
 				modelQuery := new(types.Model)
-				modelQuery.ModelName = model.Name
+				modelQuery.ModelName = strings.ToLower(model.Name)
+				modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
 				canSelect := true
 				err := ds.Get(context.Background(), modelQuery)
 				if err != nil {
@@ -468,7 +484,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 				if modelQuery.Status != "downloaded" {
 					canSelect = false
 				}
-				model.Service = service
+				model.Service = modelService
 				model.Flavor = flavor
 				model.Method = parts[0]
 				model.Desc = localModelInfo.Description
@@ -476,11 +492,11 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 				model.AuthType = providerServiceDefaultInfo.AuthType
 				model.IsRecommended = true
 				model.CanSelect = canSelect
-				model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, service)
+				model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
 				model.Avatar = localModelInfo.Avatar
 				model.Class = localModelInfo.Class
 				model.OllamaId = localModelInfo.OllamaId
-				serviceModelList[service] = append(serviceModelList[service], model)
+				serviceModelList[modelService] = append(serviceModelList[modelService], model)
 				recommendModelParamsSize = model.ParamsSize
 				resModelNameList = append(resModelNameList, model.Name)
 			}
@@ -492,8 +508,8 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			for _, localModel := range modelInfo {
 				if localModel.ParamsSize <= recommendModelParamsSize && !utils.Contains(resModelNameList, localModel.Name) {
 					modelQuery := new(types.Model)
-					modelQuery.ModelName = localModel.Name
-					modelQuery.Status = "downloaded"
+					modelQuery.ModelName = strings.ToLower(localModel.Name)
+					modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
 					canSelect := true
 					err := ds.Get(context.Background(), modelQuery)
 					if err != nil {
@@ -537,7 +553,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			for _, model := range providerServiceDefaultInfo.SupportModels {
 				modelQuery := new(types.Model)
 				modelQuery.ModelName = model
-				modelQuery.Status = "downloaded"
+				modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, service)
 				canSelect := true
 				err := ds.Get(context.Background(), modelQuery)
 				if err != nil {
@@ -556,7 +572,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 					AuthType:        providerServiceDefaultInfo.AuthType,
 					AuthFields:      authFields,
 					AuthApplyUrl:    providerServiceDefaultInfo.AuthApplyUrl,
-					ServiceProvider: fmt.Sprintf("%s %s %s", source, flavor, service),
+					ServiceProvider: fmt.Sprintf("%s_%s_%s", source, flavor, service),
 					CanSelect:       canSelect,
 				}
 				serviceModelList[service] = append(serviceModelList[service], modelData)
@@ -606,9 +622,6 @@ func GetSupportSmartVisionModels(ctx context.Context, request *dto.SmartVisionSu
 	var resData []dto.SmartVisionModelData
 	for _, model := range res.Data {
 		modelQuery := new(types.Model)
-		if model.Name == "微软｜神州数码o1" {
-			fmt.Printf("123")
-		}
 		modelQuery.ModelName = model.Name
 
 		canSelect := true
