@@ -79,7 +79,9 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 	m := new(types.Model)
 	m.ProviderName = sp.ProviderName
 	m.ModelName = request.ModelName
-
+	if sp.ServiceSource == types.ServiceSourceLocal {
+		m.ModelName = strings.ToLower(request.ModelName)
+	}
 	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		// todo debug log output
@@ -121,6 +123,9 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	m := new(types.Model)
 	m.ProviderName = request.ProviderName
 	m.ModelName = request.ModelName
+	if request.ServiceSource == types.ServiceSourceLocal {
+		m.ModelName = strings.ToLower(request.ModelName)
+	}
 
 	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -131,16 +136,16 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	}
 
 	// Call engin to delete model.
-	modelEngine := provider.GetModelEngine(sp.Flavor)
-	deleteReq := &types.DeleteRequest{
-		Model: request.ModelName,
-	}
+	//modelEngine := provider.GetModelEngine(sp.Flavor)
+	//deleteReq := &types.DeleteRequest{
+	//	Model: request.ModelName,
+	//}
 
-	err = modelEngine.DeleteModel(ctx, deleteReq)
-	if err != nil {
-		// todo err debug log output
-		return nil, bcode.ErrEngineDeleteModel
-	}
+	//err = modelEngine.DeleteModel(ctx, deleteReq)
+	//if err != nil {
+	//	// todo err debug log output
+	//	return nil, bcode.ErrEngineDeleteModel
+	//}
 
 	err = s.Ds.Delete(ctx, m)
 	if err != nil {
@@ -150,7 +155,7 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	if request.ServiceName == types.ServiceChat {
 		generateM := types.Model{
 			ProviderName: strings.Replace(request.ProviderName, "chat", "generate", -1),
-			ModelName:    request.ModelName,
+			ModelName:    m.ModelName,
 		}
 		err = s.Ds.Get(ctx, &generateM)
 		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -256,7 +261,7 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 }
 
 func ModelStreamCancel(ctx context.Context, req *dto.ModelStreamCancelRequest) (*dto.ModelStreamCancelResponse, error) {
-	modelClientCancelArray := client.ModelClientMap[req.ModelName]
+	modelClientCancelArray := client.ModelClientMap[strings.ToLower(req.ModelName)]
 	if modelClientCancelArray != nil {
 		for _, cancel := range modelClientCancelArray {
 			cancel()

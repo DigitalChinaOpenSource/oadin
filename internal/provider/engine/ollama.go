@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"byze/internal/types"
 	"byze/internal/utils"
@@ -272,8 +273,8 @@ func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequ
 	var resp types.ProgressResponse
 	// Abortable HTTP request
 	ctx, cancel := context.WithCancel(ctx)
-	modelArray := append(client.ModelClientMap[req.Model], cancel)
-	client.ModelClientMap[req.Model] = modelArray
+	modelArray := append(client.ModelClientMap[strings.ToLower(req.Model)], cancel)
+	client.ModelClientMap[strings.ToLower(req.Model)] = modelArray
 	if err := c.Do(ctx, http.MethodPost, "/api/pull", req, &resp); err != nil {
 		slog.Error("Pull model failed : " + err.Error())
 		return &resp, err
@@ -285,8 +286,8 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 	c := o.GetDefaultClient()
 	// Abortable HTTP request
 	ctx, cancel := context.WithCancel(ctx)
-	modelArray := append(client.ModelClientMap[req.Model], cancel)
-	client.ModelClientMap[req.Model] = modelArray
+	modelArray := append(client.ModelClientMap[strings.ToLower(req.Model)], cancel)
+	client.ModelClientMap[strings.ToLower(req.Model)] = modelArray
 	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req)
 	return dataCh, errCh
 }
