@@ -466,7 +466,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			}
 		}
 		//
-		var recommendModelParamsSize float32
+		//var recommendModelParamsSize float32
 		recommendModel, err := RecommendModels()
 		if err != nil {
 			return &dto.RecommendModelResponse{Data: nil}, err
@@ -504,7 +504,6 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 				model.Class = localModelInfo.Class
 				model.OllamaId = localModelInfo.OllamaId
 				serviceModelList[modelService] = append(serviceModelList[modelService], model)
-				recommendModelParamsSize = model.ParamsSize
 				resModelNameList = append(resModelNameList, model.Name)
 			}
 
