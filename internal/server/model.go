@@ -79,7 +79,9 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 	m := new(types.Model)
 	m.ProviderName = sp.ProviderName
 	m.ModelName = request.ModelName
-
+	if sp.ServiceSource == types.ServiceSourceLocal {
+		m.ModelName = strings.ToLower(request.ModelName)
+	}
 	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		// todo debug log output
@@ -121,6 +123,9 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	m := new(types.Model)
 	m.ProviderName = request.ProviderName
 	m.ModelName = request.ModelName
+	if request.ServiceSource == types.ServiceSourceLocal {
+		m.ModelName = strings.ToLower(request.ModelName)
+	}
 
 	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -130,16 +135,18 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 		return nil, bcode.ErrModelRecordNotFound
 	}
 
-	// Call engin to delete model.
-	modelEngine := provider.GetModelEngine(sp.Flavor)
-	deleteReq := &types.DeleteRequest{
-		Model: request.ModelName,
-	}
+	//Call engin to delete model.
+	if m.Status == "downloaded" {
+		modelEngine := provider.GetModelEngine(sp.Flavor)
+		deleteReq := &types.DeleteRequest{
+			Model: request.ModelName,
+		}
 
-	err = modelEngine.DeleteModel(ctx, deleteReq)
-	if err != nil {
-		// todo err debug log output
-		return nil, bcode.ErrEngineDeleteModel
+		err = modelEngine.DeleteModel(ctx, deleteReq)
+		if err != nil {
+			// todo err debug log output
+			return nil, bcode.ErrEngineDeleteModel
+		}
 	}
 
 	err = s.Ds.Delete(ctx, m)
@@ -150,7 +157,7 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	if request.ServiceName == types.ServiceChat {
 		generateM := types.Model{
 			ProviderName: strings.Replace(request.ProviderName, "chat", "generate", -1),
-			ModelName:    request.ModelName,
+			ModelName:    m.ModelName,
 		}
 		err = s.Ds.Get(ctx, &generateM)
 		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -256,7 +263,7 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 }
 
 func ModelStreamCancel(ctx context.Context, req *dto.ModelStreamCancelRequest) (*dto.ModelStreamCancelResponse, error) {
-	modelClientCancelArray := client.ModelClientMap[req.ModelName]
+	modelClientCancelArray := client.ModelClientMap[strings.ToLower(req.ModelName)]
 	if modelClientCancelArray != nil {
 		for _, cancel := range modelClientCancelArray {
 			cancel()
@@ -459,7 +466,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			}
 		}
 		//
-		var recommendModelParamsSize float32
+		//var recommendModelParamsSize float32
 		recommendModel, err := RecommendModels()
 		if err != nil {
 			return &dto.RecommendModelResponse{Data: nil}, err
@@ -497,7 +504,6 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 				model.Class = localModelInfo.Class
 				model.OllamaId = localModelInfo.OllamaId
 				serviceModelList[modelService] = append(serviceModelList[modelService], model)
-				recommendModelParamsSize = model.ParamsSize
 				resModelNameList = append(resModelNameList, model.Name)
 			}
 
@@ -506,7 +512,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, modelService)
 			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
 			for _, localModel := range modelInfo {
-				if localModel.ParamsSize <= recommendModelParamsSize && !utils.Contains(resModelNameList, localModel.Name) {
+				if !utils.Contains(resModelNameList, localModel.Name) {
 					modelQuery := new(types.Model)
 					modelQuery.ModelName = strings.ToLower(localModel.Name)
 					modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)

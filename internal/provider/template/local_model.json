@@ -2,7 +2,7 @@
 "chat": [
   {
     "id": "a42b25d8c10a",
-    "name": "Deepseek-r1:1.5b",
+    "name": "deepseek-r1:1.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
     "description": "Deepseek-r1-1.5B 是 Deepseek 团队研发的语言模型，约15亿参数，属于Deepseek-R1模型系列中的轻量级版本，适合基础任务和低资源环境。",
     "class": "文本生成",
@@ -12,7 +12,7 @@
   },
   {
     "id": "0a8c26691023",
-    "name": "Deepseek-r1:7b",
+    "name": "deepseek-r1:7b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
     "description": "Deepseek-r1-7B 是一款 Deepseek 团队研发的模型，主要用于大模型推理场景，具有70亿参数，适用于多种应用场景。",
     "class": "文本生成",
@@ -22,7 +22,7 @@
   },
   {
     "id": "28f8fd6cdc67",
-    "name": "Deepseek-r1:8b",
+    "name": "deepseek-r1:8b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
     "description": "‌Deepseek-r1-8B‌是一款基于 Llama 架构的语言模型，拥有80亿的参数数量，经过深度蒸馏处理，使得模型在复杂的自然语言处理任务中表现出色，同时节省计算资源‌。",
     "class": "文本生成",
@@ -32,7 +32,7 @@
   },
   {
     "id": "ea35dfe18182",
-    "name": "Deepseek-r1:14b",
+    "name": "deepseek-r1:14b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
     "description": "Deepseek-r1-14B 是 Deepseek 团队研发的大规模语言模型，其参数量达到140亿。该模型在自然语言处理任务中表现出色，能够提供高质量的语言理解和生成能力。",
     "class": "文本生成",
@@ -42,7 +42,7 @@
   },
   {
     "id": "a8b0c5157701",
-    "name": "Qwen2.5:0.5b",
+    "name": "qwen2.5:0.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-0.5B 是阿里巴巴通义千问团队推出的第三代小参数模型，约5亿参数，属于轻量级模型‌，提供代码生成、文本理解等核心能力，适合轻量级自然语言任务。‌",
     "class": "文本生成",
@@ -52,7 +52,7 @@
   },
   {
     "id": "65ec06548149",
-    "name": "Qwen2.5:1.5b",
+    "name": "qwen2.5:1.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-1.5B 是阿里巴巴通义千问团队推出的第三代轻量级模型，约15亿参数，在保持轻量化的同时，通过架构优化与数据扩展实现了与更大规模模型相近的推理能力。",
     "class": "文本生成",
@@ -62,7 +62,7 @@
   },
   {
     "id": "357c53fb659c",
-    "name": "Qwen2.5:3b",
+    "name": "qwen2.5:3b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-3B 是阿里巴巴通义千问团队推出的第三代模型，约30亿参数，覆盖中文、英文、日文等 29 种语言，在保持端侧部署优势的同时，通过架构优化实现了与 7B 参数模型相近的任务处理能力‌。",
     "class": "文本生成",
@@ -72,7 +72,7 @@
   },
   {
     "id": "845dbda0ea48",
-    "name": "Qwen2.5:7b",
+    "name": "qwen2.5:7b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-7B 是阿里巴巴通义千问团队推出的第三代模型，约70亿参数，在长文本处理、多语言支持和专业领域任务中展现了与更大规模模型相近的性能，是平衡算力成本与任务精度的优选方案。",
     "class": "文本生成",
@@ -82,7 +82,7 @@
   },
   {
     "id": "7cdf5a0187d5",
-    "name": "Qwen2.5:14b",
+    "name": "qwen2.5:14b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-14B 是阿里巴巴通义千问团队推出的第三代大模型，约147亿参数，支持多语言，在数学推理、代码生成和多语言任务中表现卓越。",
     "class": "文本生成",
@@ -102,7 +102,7 @@
   },
   {
     "id": "d392ed348d5b",
-    "name": "Qwen2.5-coder:0.5b",
+    "name": "qwen2.5-coder:0.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-coder-0.5B 是阿里巴巴通义千问团队推出的编程向第三代模型，约5亿参数，基于 Qwen2.5 架构‌与 Transformer 解码器‌设计，支持 Python 等92种编程语言。",
     "class": "文本生成",
@@ -112,7 +112,7 @@
   },
   {
     "id": "6d3abb8d2d53",
-    "name": "Qwen2.5-coder:1.5b",
+    "name": "qwen2.5-coder:1.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-coder-1.5B 是阿里巴巴通义千问团队推出的编程向第三代模型，约15亿参数，支持 92 种编程语言，针对轻量化设备提供高效代码生成、补全与修复能力。",
     "class": "文本生成",
@@ -122,7 +122,7 @@
   },
   {
     "id": "e7149271c296",
-    "name": "Qwen2.5-coder:3b",
+    "name": "qwen2.5-coder:3b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-coder-3B 是阿里巴巴通义千问团队推出的编程向第三代模型，约30亿参数，基于 Qwen2.5 架构‌与 Transformer 解码器‌设计，重点增强多语言代码生成与优化能力，适用于中等复杂度编程任务。",
     "class": "文本生成",
@@ -132,7 +132,7 @@
   },
   {
     "id": "2b0496514337",
-    "name": "Qwen2.5-coder:7b",
+    "name": "qwen2.5-coder:7b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-coder-7B 是阿里巴巴通义千问团队推出的编程向第三代模型，约70亿参数，支持 92 种编程语言，重点提升代码推理与修复能力，适用于复杂编程任务。",
     "class": "文本生成",
@@ -142,7 +142,7 @@
   },
   {
     "id": "3028237cc8c5",
-    "name": "Qwen2.5-coder:14b",
+    "name": "qwen2.5-coder:14b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2.5-coder-14B 是阿里巴巴通义千问团队推出的编程向第三代大模型，约140亿参数，支持 92 种编程语言，重点优化大型代码库协同开发与复杂逻辑推理能力。",
     "class": "文本生成",
@@ -172,7 +172,7 @@
   },
   {
     "id": "a4fdda0c6cc5",
-    "name": "Qwen2-math:1.5b",
+    "name": "qwen2-math:1.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2-math-1.5B 是阿里巴巴通义千问团队推出的数学与推理向第二代模型，约15亿参数，适用于多步逻辑推理与竞赛数学题求解‌。",
     "class": "文本生成",
@@ -182,7 +182,7 @@
   },
   {
     "id": "28cc3a337734",
-    "name": "Qwen2-math:7b",
+    "name": "qwen2-math:7b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2-math-7B 是阿里巴巴通义千问团队推出的数学与推理向第二代模型，约70亿参数，擅长多步逻辑推理与竞赛数学题求解‌，支持中英双语数学问题解析‌。",
     "class": "文本生成",
@@ -212,7 +212,7 @@
   },
   {
     "id": "6f48b936a09f",
-    "name": "Qwen2:0.5b",
+    "name": "qwen2:0.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2-0.5B 是阿里巴巴通义千问团队推出的第二代模型，约5亿参数，面向入门级应用和小型任务开发‌。",
     "class": "文本生成",
@@ -222,7 +222,7 @@
   },
   {
     "id": "f6daf2b25194",
-    "name": "Qwen2:1.5b",
+    "name": "qwen2:1.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2-1.5B 是阿里巴巴通义千问团队推出的第二代模型，约15亿参数，擅长文本分类、数学推理等任务‌。",
     "class": "文本生成",
@@ -232,7 +232,7 @@
   },
   {
     "id": "dd314f039b9d",
-    "name": "Qwen2:7b",
+    "name": "qwen2:7b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen2-7B 是阿里巴巴通义千问团队推出的第二代模型，约70亿参数，支持 ‌27 种语言。",
     "class": "文本生成",
@@ -242,7 +242,7 @@
   },
   {
     "id": "7c8c332f2df7",
-    "name": "Deepseek-v2:16b",
+    "name": "deepseek-v2:16b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
     "description": "Deepseek-v2:16B 是 Deepseek 团队开发的升级版大语言模型，约160亿参数，擅长代码生成、数学推理等任务‌。",
     "class": "文本生成",
@@ -252,7 +252,7 @@
   },
   {
     "id": "df352abf55b1",
-    "name": "codeQwen:7b",
+    "name": "codeqwen:7b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "codeQwen-7B 是阿里巴巴通义千问团队推出的编程模型，约70亿参数，支持多语言编程，作为通义灵码的核心技术底座提供高效编程辅助‌。",
     "class": "文本生成",
@@ -262,7 +262,7 @@
   },
   {
     "id": "b5dc5e784f2a",
-    "name": "Qwen:0.5b",
+    "name": "qwen:0.5b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen-0.5B 是阿里巴巴通义千问团队推出的轻量级模型，约5亿参数，专为低成本部署设计，适用于入门级AI应用场景‌。",
     "class": "文本生成",
@@ -272,7 +272,7 @@
   },
   {
     "id": "b6e8ec2e7126",
-    "name": "Qwen:1.8b",
+    "name": "qwen:1.8b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen-1.8B 是阿里巴巴通义千问团队推出的模型，约18亿参数，具备多语言处理能力‌与‌稀疏注意力机制‌‌，适用于轻量化场景下的文本生成、问答等任务‌。",
     "class": "文本生成",
@@ -282,7 +282,7 @@
   },
   {
     "id": "d53d04290064",
-    "name": "Qwen:4b",
+    "name": "qwen:4b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen-4B 是阿里巴巴通义千问团队推出的模型，约40亿参数，支持多语言，适用于本地化代码生成、文档分析等中等负载场景‌。",
     "class": "文本生成",
@@ -292,7 +292,7 @@
   },
   {
     "id": "2091ee8c8d8f",
-    "name": "Qwen:7b",
+    "name": "qwen:7b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
     "description": "Qwen-7B 是阿里巴巴通义千问团队推出的模型，约70亿参数，适用于文本生成、智能问答及本地化知识库构建等中高负载场景‌。",
     "class": "文本生成",
@@ -302,7 +302,7 @@
   },
   {
     "id": "9aab369a853b",
-    "name": "Deepseek-llm:7b",
+    "name": "deepseek-llm:7b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
     "description": "Deepseek-llm-7B 是 Deepseek 团队开发的中文/多语言大模型，约70亿参数，在数学推理、代码生成等任务中表现优异‌。",
     "class": "文本生成",

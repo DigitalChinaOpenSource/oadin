@@ -122,7 +122,7 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 					Stream: &stream,
 				}
 				m := new(types.Model)
-				m.ModelName = mName
+				m.ModelName = strings.ToLower(mName)
 				m.ProviderName = request.ProviderName
 				err = s.Ds.Get(ctx, m)
 				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -247,19 +247,21 @@ func (s *ServiceProviderImpl) DeleteServiceProvider(ctx context.Context, request
 		for _, m := range list {
 			dsModel := m.(*types.Model)
 			tmpModel := &types.Model{
-				ModelName: dsModel.ModelName,
+				ModelName: strings.ToLower(dsModel.ModelName),
 			}
 			count, err := ds.Count(ctx, tmpModel, &datastore.FilterOptions{})
 			if err != nil || count > 1 {
 				continue
 			}
+			if dsModel.Status == "downloaded" {
+				delReq := &types.DeleteRequest{Model: dsModel.ModelName}
 
-			delReq := &types.DeleteRequest{Model: dsModel.ModelName}
-
-			err = engine.DeleteModel(ctx, delReq)
-			if err != nil {
-				return nil, err
+				err = engine.DeleteModel(ctx, delReq)
+				if err != nil {
+					return nil, err
+				}
 			}
+
 		}
 	}
 
@@ -348,6 +350,10 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 
 	for _, modelName := range request.Models {
 		model := types.Model{ProviderName: sp.ProviderName, ModelName: modelName}
+		if request.ServiceSource == types.ServiceSourceLocal {
+			model = types.Model{ProviderName: sp.ProviderName, ModelName: strings.ToLower(modelName)}
+		}
+
 		err = ds.Get(ctx, &model)
 		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 			return nil, err

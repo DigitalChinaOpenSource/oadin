@@ -588,11 +588,10 @@ type TencentSignAuthenticator struct {
 }
 
 type CredentialsAuthInfo struct {
-	EvnType  string `json:"env_type"`
-	ApiKey   string `json:"api_key"`
-	ApiHost  string `json:"api_host"`
-	Provider string `json:"provider"`
-	ModelKey string `json:"model_key"`
+	EvnType    string                 `json:"env_type"`
+	Credential map[string]interface{} `json:"credential"`
+	Provider   string                 `json:"provider"`
+	ModelKey   string                 `json:"model_key"`
 }
 
 type CredentialsAuthenticator struct {
@@ -651,7 +650,7 @@ func (c *CredentialsAuthenticator) Authenticate() error {
 		return err
 	}
 
-	var CredentialsAuthInfoMap map[string]CredentialsAuthInfo
+	var CredentialsAuthInfoMap map[string]interface{}
 	if err := json.Unmarshal([]byte(c.AuthInfo), &CredentialsAuthInfoMap); err != nil {
 		return err
 	}
@@ -661,18 +660,33 @@ func (c *CredentialsAuthenticator) Authenticate() error {
 	}
 
 	authInfo := CredentialsAuthInfoMap[model]
-	envType := authInfo.EvnType
-	if envType == "" {
+	if authInfo == nil {
+		return errors.New("credentials auth info missing model")
+	}
+	authInfoMap := authInfo.(map[string]interface{})
+	envType, ok := authInfoMap["env_type"].(string)
+	if !ok {
 		return errors.New("credentials auth info missing env_type")
 	}
+	provider, ok := authInfoMap["provider"].(string)
+	if !ok {
+		return errors.New("credentials auth info missing provider")
+	}
+	modelKey, ok := authInfoMap["model_key"].(string)
+	if !ok {
+		return errors.New("credentials auth info missing model_key")
+	}
+
 	smartVisionEnvInfo := utils.GetSmartVisionUrl()
 	smartVisionInfo := smartVisionEnvInfo[envType]
 	c.Req.Header.Set("Authorization", "Bearer "+smartVisionInfo.AccessToken)
 
-	type credentials struct {
-		ApiKey  string `json:"api_key"`
-		ApiHost string `json:"api_host"`
-	}
+	credentials := authInfoMap["credentials"].(map[string]interface{})
+	//var credentials map[string]interface{}
+	//err := json.Unmarshal([]byte(authInfo.Credential), &credentials)
+	//if err != nil {
+	//	return err
+	//}
 	var reqUrl string
 	if c.ProviderInfo.ServiceName == types.ServiceChat {
 		reqUrl = smartVisionInfo.Url + smartVisionInfo.ChatEnterPoint
@@ -680,23 +694,17 @@ func (c *CredentialsAuthenticator) Authenticate() error {
 			Provider    string      `json:"provider"`
 			Name        string      `json:"name"`
 			ModelKey    string      `json:"model_key"`
-			Credentials credentials `json:"credentials"`
+			Credentials interface{} `json:"credentials"`
 		}
 		reqData["model_config"] = modelConfig{
-			Provider: authInfo.Provider,
-			Name:     model,
-			ModelKey: authInfo.ModelKey,
-			Credentials: credentials{
-				ApiKey:  authInfo.ApiKey,
-				ApiHost: authInfo.ApiHost,
-			},
+			Provider:    provider,
+			Name:        model,
+			ModelKey:    modelKey,
+			Credentials: credentials,
 		}
 	} else if c.ProviderInfo.ServiceName == types.ServiceEmbed {
 		reqUrl = smartVisionInfo.Url + smartVisionInfo.ChatEnterPoint
-		reqData["credentials"] = credentials{
-			ApiKey:  authInfo.ApiKey,
-			ApiHost: authInfo.ApiHost,
-		}
+		reqData["credentials"] = credentials
 	}
 
 	reqBody, err := json.Marshal(reqData)
