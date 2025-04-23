@@ -513,7 +513,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, modelService)
 			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
 			for _, localModel := range modelInfo {
-				if localModel.ParamsSize <= recommendModelParamsSize && !utils.Contains(resModelNameList, localModel.Name) {
+				if !utils.Contains(resModelNameList, localModel.Name) {
 					modelQuery := new(types.Model)
 					modelQuery.ModelName = strings.ToLower(localModel.Name)
 					modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
