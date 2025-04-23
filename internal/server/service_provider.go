@@ -253,13 +253,15 @@ func (s *ServiceProviderImpl) DeleteServiceProvider(ctx context.Context, request
 			if err != nil || count > 1 {
 				continue
 			}
+			if dsModel.Status == "downloaded" {
+				delReq := &types.DeleteRequest{Model: dsModel.ModelName}
 
-			delReq := &types.DeleteRequest{Model: dsModel.ModelName}
-
-			err = engine.DeleteModel(ctx, delReq)
-			if err != nil {
-				return nil, err
+				err = engine.DeleteModel(ctx, delReq)
+				if err != nil {
+					return nil, err
+				}
 			}
+
 		}
 	}
 
