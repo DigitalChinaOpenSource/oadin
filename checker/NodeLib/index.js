@@ -636,7 +636,17 @@ class Byze {
         return this.validateSchema(schemas.chatResponse, res.data);
       }
     } catch (error) {
-      throw new Error(`Chat服务请求失败: ${error.message}`);
+        // 检查是否是 axios 错误
+        if (error.response) {
+          const { status, statusText, data: errorData } = error.response;
+          throw new Error(`Chat服务请求失败: 状态码 ${status} - ${statusText}，错误信息: ${JSON.stringify(errorData)}`);
+      } else if (error.request) {
+          // 请求已发送但未收到响应
+          throw new Error(`Chat服务请求失败: 未收到服务器响应，错误信息: ${error.message}`);
+      } else {
+          // 其他错误
+          throw new Error(`Chat服务请求失败: ${error.message}`);
+      }
     }
   }
 
@@ -695,7 +705,17 @@ class Byze {
       const res = await this.client.post('/services/embed', data);
       return this.validateSchema(schemas.embeddingResponse, res.data);
     } catch (error) {
-      throw new Error(`Embed服务请求失败: ${error.message}`);
+        // 检查是否是 axios 错误
+      if (error.response) {
+        const { status, statusText, data: errorData } = error.response;
+        throw new Error(`Embed服务请求失败: 状态码 ${status} - ${statusText}，错误信息: ${JSON.stringify(errorData)}`);
+      } else if (error.request) {
+        // 请求已发送但未收到响应
+        throw new Error(`Embed服务请求失败: 未收到服务器响应，错误信息: ${error.message}`);
+      } else {
+        // 其他错误
+        throw new Error(`Embed服务请求失败: ${error.message}`);
+      }
     }
   }
 
