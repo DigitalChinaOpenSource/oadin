@@ -1,0 +1,152 @@
+stages:
+  - build
+  - upload
+  - notify
+
+variables:
+  GIT_STRATEGY: none
+  MAC_FILE_NAME: "byze-${CI_COMMIT_TAG}"
+  WIN_FILE_NAME: "byze-${CI_COMMIT_TAG}.exe"
+
+
+# 测试环境
+build_mac_test:
+  stage: build
+  tags:
+    - aipc-mac
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^test/'
+  script:
+    - echo "🔧 Mac 构建"
+    - cd /Users/dcone/WebstormProjects/byze/
+    - git reset --hard
+    - git clean -fd
+    - git fetch
+    - git checkout $CI_COMMIT_TAG
+    - go mod tidy
+    - CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
+    - mkdir -p upload
+    - mv byze upload/${MAC_FILE_NAME}
+
+# 测试环境
+build_win_test:
+  stage: build
+  tags:
+    - aipc-win
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^test/'
+  script:
+    - echo "🔧 Win 构建"
+    - cd C:\Users\Administrator\WebstormProjects\byze
+    - git reset --hard
+    - git clean -fd
+    - git fetch
+    - git checkout $CI_COMMIT_TAG
+    - go mod tidy
+    - go build -o byze.exe -ldflags="-s -w"  cmd/cli/main.go
+    - if (!(Test-Path "upload")) { mkdir upload }
+    - Move-Item -Path "byze.exe" -Destination "upload\${WIN_FILE_NAME}"
+
+upload_to_nexus_mac:
+  stage: upload
+  tags:
+    - aipc-mac
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^test/'
+  script:
+    - echo "📤 上传到 Nexus 仓库"
+    - |
+      curl -v -u "admin:${NEXUS_PASSWORD}" \
+        --upload-file "/Users/dcone/WebstormProjects/byze/upload/${MAC_FILE_NAME}" \
+        "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/${MAC_FILE_NAME}"
+    - cd /Users/dcone/WebstormProjects/byze
+    - git reset --hard
+    - git clean -fd
+    - git checkout main
+    - git tag -d $CI_COMMIT_TAG
+
+upload_to_nexus_win:
+  stage: upload
+  tags:
+    - aipc-win
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^test/'
+  script:
+    - echo "📤 上传到 Nexus 仓库"
+    - cd C:\Users\Administrator\WebstormProjects\byze\
+    - curl.exe -v -u "admin:${NEXUS_PASSWORD}" --upload-file "upload/${WIN_FILE_NAME}" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/${WIN_FILE_NAME}"
+    - git reset --hard
+    - git clean -fd
+    - git checkout main
+    - git tag -d ${CI_COMMIT_TAG}
+
+# 生产环境
+build_mac_prod:
+  stage: build
+  tags:
+    - aipc-mac
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
+  script:
+    - echo "🔧 Mac 构建"
+    - cd /Users/dcone/WebstormProjects/byze/
+    - git reset --hard
+    - git clean -fd
+    - git fetch
+    - git checkout $CI_COMMIT_TAG
+    - go mod tidy
+    - CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
+    - mkdir -p upload
+    - mv byze upload/${MAC_FILE_NAME}
+
+# 生产环境
+build_win_prod:
+  stage: build
+  tags:
+    - aipc-win
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
+  script:
+    - echo "🔧 Win 构建"
+    - cd C:\Users\Administrator\WebstormProjects\byze
+    - git reset --hard
+    - git clean -fd
+    - git fetch
+    - git checkout $CI_COMMIT_TAG
+    - go mod tidy
+    - go build -o byze.exe -ldflags="-s -w"  cmd/cli/main.go
+    - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{${WIN_SIGN_PASSWORD}}}]=p11#942acfc7f5754f2e" "C:\Users\Administrator\WebstormProjects\byze\byze.exe"
+    - if (!(Test-Path "upload")) { mkdir upload }
+    - Move-Item -Path "byze.exe" -Destination "upload\${WIN_FILE_NAME}"
+
+upload_to_oss_mac:
+  stage: upload
+  tags:
+    - aipc-mac
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
+  script:
+    - echo "📤 上传到 阿里云oss"
+    - cd /Users/dcone/WebstormProjects/byze/upload
+    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/byze/releases/macos/${MAC_FILE_NAME}" --force
+    - echo "✅ 上传完成"
+    - git reset --hard
+    - git clean -fd
+    - git checkout main
+    - git tag -d $CI_COMMIT_TAG
+
+upload_to_oss_win:
+  stage: upload
+  tags:
+    - aipc-win
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
+  script:
+    - echo "📤 上传到 阿里云oss"
+    - cd C:\Users\Administrator\WebstormProjects\byze\upload
+    - ossutil cp "${WIN_FILE_NAME}" "oss://smartvision-aipc/byze/releases/windows/${WIN_FILE_NAME}" --force
+    - echo "✅ 上传完成"
+    - git reset --hard
+    - git clean -fd
+    - git checkout main
+    - git tag -d $CI_COMMIT_TAG
