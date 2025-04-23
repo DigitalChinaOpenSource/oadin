@@ -136,15 +136,17 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	}
 
 	//Call engin to delete model.
-	modelEngine := provider.GetModelEngine(sp.Flavor)
-	deleteReq := &types.DeleteRequest{
-		Model: request.ModelName,
-	}
+	if m.Status == "downloaded" {
+		modelEngine := provider.GetModelEngine(sp.Flavor)
+		deleteReq := &types.DeleteRequest{
+			Model: request.ModelName,
+		}
 
-	err = modelEngine.DeleteModel(ctx, deleteReq)
-	if err != nil {
-		// todo err debug log output
-		return nil, bcode.ErrEngineDeleteModel
+		err = modelEngine.DeleteModel(ctx, deleteReq)
+		if err != nil {
+			// todo err debug log output
+			return nil, bcode.ErrEngineDeleteModel
+		}
 	}
 
 	err = s.Ds.Delete(ctx, m)
