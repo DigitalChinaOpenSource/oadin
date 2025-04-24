@@ -241,7 +241,7 @@ class Byze {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
       }
   
-      const stderrContent = '';
+      let stderrContent = '';
 
       const child = spawn('byze', ['server', 'start', '-d'], {
         stdio: ['pipe', 'pipe', 'pipe'],
