@@ -397,6 +397,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 		tmpSp.Status = 0
 		tmpSp.ExtraHeaders = providerDefaultInfo.ExtraHeaders
 		tmpSp.ExtraJSONBody = "{}"
+		tmpSp.Properties = "{}"
 		if p.ServiceName == types.ServiceChat || p.ServiceName == types.ServiceGenerate {
 			tmpSp.Properties = `{"max_input_tokens":2048,"supported_response_mode":["stream","sync"],"mode_is_changeable":true,"xpu":["GPU"]}`
 		}
@@ -498,6 +499,9 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			generateSp.Desc = strings.Replace(tmpSp.Desc, "chat", "generate", -1)
 			generateSp.Flavor = tmpSp.Flavor
 			generateSp.URL = generateProviderServiceInfo.RequestUrl
+			generateSp.Properties = tmpSp.Properties
+			generateSp.ExtraJSONBody = tmpSp.ExtraJSONBody
+			generateSp.ExtraHeaders = tmpSp.ExtraHeaders
 
 			generateSpIsExist, err := s.Ds.IsExist(ctx, generateSp)
 			if err != nil {
@@ -520,6 +524,10 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 
 		// Check whether LocalProvider and RemoteProvider exist in DBServices. If they do not exist, add them.
 		dbService.Name = p.ServiceName
+		err := s.Ds.Get(ctx, dbService)
+		if err != nil {
+			return nil, err
+		}
 		if p.ServiceSource == types.ServiceSourceLocal && dbServices.Services[p.ServiceName].ServiceProviders.Local == "" {
 			dbService.LocalProvider = tmpSp.ProviderName
 		}
@@ -528,7 +536,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 		}
 		dbService.HybridPolicy = dbServices.Services[p.ServiceName].HybridPolicy
 
-		err := s.Ds.Put(ctx, dbService)
+		err = s.Ds.Put(ctx, dbService)
 		if err != nil {
 			return nil, bcode.ErrServiceUpdateFailed
 		}

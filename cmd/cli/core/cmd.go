@@ -920,6 +920,7 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 				err := engineProvider.InstallEngine()
 				if err != nil {
 					slog.Error("Install model engine failed :", err.Error())
+					log.Fatal("Install model engine failed")
 					return
 				}
 				slog.Info("Model engine download completed...")

@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"byze/internal/types"
 	"byze/internal/utils"
@@ -228,6 +229,16 @@ func (o *OllamaProvider) InstallEngine() error {
 
 	slog.Info("[Install Engine] start install...")
 	if runtime.GOOS == "darwin" {
+		files, err := os.ReadDir(o.EngineConfig.DownloadPath)
+		if err != nil {
+			slog.Error("[Install Engine] read dir failed: ", o.EngineConfig.DownloadPath)
+		}
+		for _, f := range files {
+			if f.IsDir() && f.Name() == "__MACOSX" {
+				fPath := filepath.Join(o.EngineConfig.DownloadPath, f.Name())
+				os.RemoveAll(fPath)
+			}
+		}
 		unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
 		if err := unzipCmd.Run(); err != nil {
 			return fmt.Errorf("failed to unzip file: %v", err)
@@ -244,7 +255,19 @@ func (o *OllamaProvider) InstallEngine() error {
 		}
 	} else {
 		// Handle other operating systems
-		cmd := exec.Command(file)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, file)
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			// 如果是超时错误
+			if ctx.Err() == context.DeadlineExceeded {
+				fmt.Println("cmd execute timeout")
+				return err
+			}
+			fmt.Printf("cmd execute error: %v\n", err)
+			return err
+		}
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("failed to install ollama: %v", err)
 		}
