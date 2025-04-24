@@ -20,7 +20,6 @@ import (
 	"byze/internal/datastore"
 	"byze/internal/event"
 	"byze/internal/types"
-	"byze/internal/utils"
 )
 
 type ServiceTask struct {
@@ -191,8 +190,8 @@ func (st *ServiceTask) Run() error {
 	client := &http.Client{Transport: transport}
 	slog.Info("[Service] Request Sending to Service Provider ...", "taskid", st.Schedule.Id, "url", req.URL.String())
 	slog.Debug("[Service] Request Sending to Service Provider ...", "taskid", st.Schedule.Id, "method",
-		req.Method, "url", req.URL.String(), "header", fmt.Sprintf("%+v", req.Header), "body", string(content.Body))
-	event.SysEvents.NotifyHTTPRequest("invoke_service_provider", req.Method, req.URL.String(), content.Header, content.Body)
+		req.Method, "url", req.URL.String(), "header", fmt.Sprintf("%+v", req.Header), "body", nil)
+	event.SysEvents.NotifyHTTPRequest("invoke_service_provider", req.Method, req.URL.String(), content.Header, nil)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -318,8 +317,8 @@ func (st *ServiceTask) Run() error {
 			return fmt.Errorf("[Service] Failed to read response body: %s", err.Error())
 		}
 
-		slog.Debug("[Service] Response Content (non-stream)", "taskid", st.Schedule.Id, "body", utils.BodyToString(resp.Header, body))
-		event.SysEvents.NotifyHTTPResponse("service_provider_response", resp.StatusCode, resp.Header, body)
+		slog.Debug("[Service] Response Content (non-stream)", "taskid", st.Schedule.Id, "body", nil)
+		event.SysEvents.NotifyHTTPResponse("service_provider_response", resp.StatusCode, resp.Header, nil)
 
 		content = types.HTTPContent{Body: body, Header: resp.Header.Clone()}
 
