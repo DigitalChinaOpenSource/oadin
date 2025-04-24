@@ -432,7 +432,6 @@ class Byze {
 
                 if (response.status === 'error') {
                     eventEmitter.emit('end', response);
-                    return;
                 }
 
                 // 触发事件，传递解析后的数据
