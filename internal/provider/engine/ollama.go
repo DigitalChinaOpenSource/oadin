@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -232,10 +231,10 @@ func (o *OllamaProvider) InstallEngine() error {
 	if runtime.GOOS == "darwin" {
 		files, err := os.ReadDir(o.EngineConfig.DownloadPath)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("[Install Engine] read dir failed: ", o.EngineConfig.DownloadPath)
 		}
 		for _, f := range files {
-			if f.IsDir() && f.Name() == "_MACOSX" {
+			if f.IsDir() && f.Name() == "__MACOSX" {
 				fPath := filepath.Join(o.EngineConfig.DownloadPath, f.Name())
 				os.RemoveAll(fPath)
 			}
