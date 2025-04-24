@@ -169,7 +169,15 @@ func (ds *SQLite) Put(ctx context.Context, entity datastore.Entity) error {
 
 		updateMap := make(map[string]interface{})
 		for i, field := range fields {
-			updateMap[field] = values[i]
+			putFlag := true
+			switch values[i].(type) {
+			case string:
+				putFlag = values[i].(string) != ""
+			}
+			if putFlag {
+				updateMap[field] = values[i]
+			}
+
 		}
 		updateMap["updated_at"] = time.Now()
 
