@@ -155,7 +155,7 @@ class Byze {
 
         resolve(fs.existsSync(dest));
     });
-}
+  }
 
   // 从服务器下载 Byze.exe
   DownloadByze() {
@@ -241,11 +241,23 @@ class Byze {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
       }
   
+      const stderrContent = '';
+
       const child = spawn('byze', ['server', 'start', '-d'], {
-        stdio: 'ignore',
+        stdio: ['pipe', 'pipe', 'pipe'],
         windowsHide: true
       });
-      child.unref();
+
+      child.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+      });
+
+      child.stderr.on('data', (data) => {
+        const errorMessage = data.toString().trim();
+        stderrContent += errorMessage + '\n';
+        console.error(`stderr: ${errorMessage}`);
+      });
+
   
       child.on('error', (err) => {
         console.error(`❌ 启动失败: ${err.message}`);
@@ -258,44 +270,19 @@ class Byze {
         }
         resolve(false);
       });
-  
-      // 智能服务检测（带重试机制）
-      const checkServer = (attempt = 1) => {
-        const req = http.request({
-          hostname: 'localhost',
-          port: 16688,
-          method: 'GET',
-          timeout: 5000
-        }, (res) => {
-          if (res.statusCode === 200) {
-            console.log('✅ 服务已就绪');
-            resolve(true);
-          } else {
-            console.log(`⚠️ 服务响应异常: HTTP ${res.statusCode}`);
-            if (attempt < 3) setTimeout(() => checkServer(attempt + 1), 2000);
-            else resolve(false);
-          }
-        });
-  
-        req.on('error', () => {
-          console.log(`⌛ 检测尝试 ${attempt}/3`);
-          if (attempt < 3) setTimeout(() => checkServer(attempt + 1), 2000);
-          else resolve(false);
-        });
-  
-        req.on('timeout', () => {
-          console.log(`⏳ 检测超时 ${attempt}/3`);
-          req.destroy();
-          if (attempt < 3) setTimeout(() => checkServer(attempt + 1), 2000);
-          else resolve(false);
-        });
-  
-        req.end();
-      };
-  
-      // 动态调整首次检测时间
-      setTimeout(() => checkServer(1), 5000);
-      child.unref();
+
+      child.on('close', (code) => {
+        if (stderrContent.includes('Install model engine failed')){
+          console.error('❌ 启动失败: 模型引擎安装失败。');
+          resolve(false);
+        } else if (code === 0) {
+          console.log('✅ Byze 服务已启动');
+          this.checkServerStatus(resolve);
+        } else {
+          console.error(`❌ 启动失败，退出码: ${code}`);
+          resolve(false);
+        }
+      });
     });
   }
 
@@ -337,6 +324,36 @@ class Byze {
 
       child.unref();
     });
+  }
+
+  checkServerStatus(resolve) {
+    const options = {
+      hostname: 'localhost',
+      port: 16688,
+      path: '/',
+      method: 'GET',
+      timeout: 3000,
+    };
+
+    const req = http.request(options, (res) => {
+      if (res.statusCode === 200) {
+        console.log('✅ Byze 服务已启动');
+        resolve(true);
+      } else {
+        console.error(`❌ Byze 服务未启动，HTTP 状态码: ${res.statusCode}`);
+        resolve(false);
+      }
+    });
+    req.on('error', (err) => {
+      console.error(`❌ Byze 服务未启动: ${err.message}`);
+      resolve(false);
+    });
+    req.on('timeout', () => {
+      req.destroy();
+      console.error('❌ Byze 服务未启动: 请求超时');
+      resolve(false);
+    });
+    req.end();
   }
 
   // 查看当前服务
