@@ -75,8 +75,12 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 	if request.ExtraHeaders == "" {
 		sp.ExtraHeaders = providerServiceInfo.ExtraHeaders
 	}
-	sp.ExtraJSONBody = request.ExtraJsonBody
-	sp.Properties = request.Properties
+	if request.ExtraJsonBody == "" {
+		sp.ExtraJSONBody = "{}"
+	}
+	if request.Properties == "" {
+		sp.Properties = "{}"
+	}
 	sp.CreatedAt = time.Now()
 	sp.UpdatedAt = time.Now()
 
