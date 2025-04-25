@@ -9,9 +9,7 @@
   left: 0;
   top: 0;
   border-right: 1px solid #e4e6eb;
-  :global(.ant-menu) {
-    border-inline-end: unset !important;
-  }
+  
   .logo {
     padding: 16px 0;
     img {
@@ -20,41 +18,58 @@
     }
   }
   
-  .menu {
-    flex: 1;
+  .menuContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     width: 100%;
-    border-right: none;
     
-    :global {
-      .ant-menu-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 60px;
-        padding: 8px 0;
-        
-        .anticon {
-          font-size: 20px;
-          margin-right: 0;
-        }
+    .menuItem {
+      width: 60px;
+      height: 48px;
+      font-size: 12px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 8px auto;
+      cursor: pointer;
+      
+      .icon {
+        margin-bottom: 4px;
+      }
+      
+      &.selected {
+        background-color: #f0f0f0;
+      }
+      
+      &:hover {
+        opacity: 0.8;
       }
     }
   }
   
   .downloadBtn {
+    margin-top: auto;
     margin-bottom: 20px;
     
     button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      height: auto;
-      padding: 8px;
-      width: 60px;
+      padding: 0;
       
       .anticon {
-        font-size: 20px;
-        margin-right: 0;
+        font-size: 18px;
+        margin: 0;
+      }
+      
+      span:not(.anticon) {
+        display: none;
       }
     }
   }

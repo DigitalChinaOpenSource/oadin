@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, Button } from 'antd';
+import { Button } from 'antd';
 import { AppstoreOutlined, CloudServerOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.scss';
@@ -44,21 +44,24 @@ const Sidebar = () => {
         {/* 替换logo */}
         <img src={favicon} alt="Logo" />
       </div>
-      <Menu
-        mode="inline"
-        selectedKeys={[selectedKey]}
-        className={styles.menu}
-        items={menuItems}
-        onClick={({ key }) => handleMenuClick(key)}
-      />
+      <div className={styles.menuContainer}>
+        {menuItems.map(item => (
+          <div 
+            key={item.key}
+            className={`${styles.menuItem} ${selectedKey === item.key ? styles.selected : ''}`}
+            onClick={() => handleMenuClick(item.key)}
+          >
+            <div className={styles.icon}>{item.icon}</div>
+            <div className={styles.label}>{item.label}</div>
+          </div>
+        ))}
+      </div>
       <div className={styles.downloadBtn}>
         <Button
           type="primary"
           icon={<DownloadOutlined />}
           onClick={handleDownload}
-        >
-          下载模型
-        </Button>
+        />
       </div>
     </div>
   );
