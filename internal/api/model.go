@@ -96,9 +96,9 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 		case data, ok := <-dataCh:
 			if !ok {
 				// 数据通道关闭，发送结束标记
-				fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
+				//fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
 				// fmt.Fprintf(w, "\n[DONE]\n\n")
-				flusher.Flush()
+				//flusher.Flush()
 				client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
 				return
 			}
