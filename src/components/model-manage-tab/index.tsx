@@ -1,12 +1,6 @@
-'use client';
-
-/** 模型管理 */
-import React from 'react';
 import styles from './index.module.scss';
-import ModelSource from './model-source';
-import ModelPath from './model-path';
-import ModelTitleSearch from './model-title-search';
-import ModelCardList from '../model-card-list';
+import ModelSearch from './model-search';
+import ModallistContent from './model-list-content';
 import { useViewModel } from "./view-model";
 
 export default function ModelManageTab() {
@@ -14,10 +8,14 @@ export default function ModelManageTab() {
 
   return (
     <div className={styles.modelManageTab}>
-      <ModelSource modelSourceVal={vm.modelSourceVal} onModelSourceChange={vm.onModelSourceChange} />
-      <ModelPath modelPathVal={vm.modelPathVal} onModelPathChange={vm.onModelPathChange} />
-      <ModelTitleSearch modelNums={vm.modelNums} modelSearchVal={vm.modelSearchVal} onModelTitleSearch={vm.onModelTitleSearch} />
-      <ModelCardList />
+      <ModelSearch
+        modelSearchVal={vm.modelSearchVal}
+        modelSourceVal={vm.modelSourceVal}
+        onModelSearch={vm.onModelSearch}
+        onModelSourceChange={vm.onModelSourceChange}
+      />
+
+      <ModallistContent />
     </div>
   );
 };

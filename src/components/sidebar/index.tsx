@@ -35,13 +35,11 @@ const Sidebar = () => {
 
   const handleDownload = () => {
     console.log('下载模型');
-    // 实现模型下载逻辑
   };
 
   return (
     <div className={styles.sidebar}>
       <div className={styles.logo}>
-        {/* 替换logo */}
         <img src={favicon} alt="Logo" />
       </div>
       <div className={styles.menuContainer}>

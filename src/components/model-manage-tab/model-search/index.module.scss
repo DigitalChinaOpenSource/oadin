@@ -1,0 +1,10 @@
+.modelSearch {
+  margin-bottom: 24px;
+  :global(.ant-card-body) {
+    display: flex;
+  }
+  .searchInput {
+    margin-right: 16px;
+  }
+}
+
