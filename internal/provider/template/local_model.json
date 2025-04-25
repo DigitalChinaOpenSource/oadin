@@ -332,7 +332,7 @@
   },
     {
     "id": "790764642607",
-    "name": "bge-m3",
+    "name": "bge-m3:567m",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/BAAI.png",
     "description": "BGE-M3 是 BAAI 推出的一款新机型，以多功能、多语言和多粒度的多功能性而著称。",
     "class": "文本向量化",
@@ -350,7 +350,7 @@
   },
     {
       "id": "b3d71c928059",
-      "name": "bge-large",
+      "name": "quentinz/bge-large-zh-v1.5:f16",
       "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/BAAI.png",
       "description":"bge-large可以将任何文本映射到低维密集向量，用于检索、分类、聚类或语义搜索等任务。它也可以用于 LLM 的向量数据库。",
       "class": "文本向量化",
