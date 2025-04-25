@@ -3,6 +3,8 @@ import { Button, Table, Space } from 'antd';
 import { PlusSquareOutlined } from '@ant-design/icons';
 import { useViewModel } from './view-model';
 import ServiceProviderDetail from './service-provider-detail';
+import ServiceProviderEdit from './service-provider-edit';
+
 
 
 
@@ -20,7 +22,7 @@ export default function ServiceProviderManageTab() {
         <Space>
           <a className={styles.linkA} onClick={() => vm.handleDetail(record.id)} >查看详情</a>
 
-          <a className={styles.linkA} onClick={() => vm.handleEdit(record.id)}>编辑</a>
+          <a className={styles.linkA} onClick={() => vm.setEditVisible(true)}>编辑</a>
         </Space>
       )
     }
@@ -32,7 +34,7 @@ export default function ServiceProviderManageTab() {
         <span>服务提供商管理</span>
         <span>(12)</span>
         <div className={styles.btnBlock}>
-          <Button type="primary"  icon={<PlusSquareOutlined />}>新增服务提供商</Button>
+          <Button type="primary" onClick={() => vm.setEditVisible(true)}  icon={<PlusSquareOutlined />}>新增服务提供商</Button>
           <Button onClick={vm.handleDeleteAll} className={styles.deleteBtn}>批量删除</Button>
         </div>
       </div>
@@ -51,6 +53,13 @@ export default function ServiceProviderManageTab() {
          onCancel={() => vm.setDetailVisible(false)}
          onSubmit={() => {}}
        />
+
+
+      <ServiceProviderEdit
+         visible={vm.editVisible}
+         onCancel={() => vm.setEditVisible(false)}
+         id={vm.editId}
+      />
     </div>
   );
 };

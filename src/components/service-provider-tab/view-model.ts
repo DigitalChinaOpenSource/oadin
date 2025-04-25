@@ -13,6 +13,8 @@ export function useViewModel() {
     const [dataList, setDataList] = useState(dataSource)
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
     const [detailVisible, setDetailVisible] = useState(false);
+    const [editVisible, setEditVisible] = useState(false);
+    const [editId, setEditId] = useState<string>('');
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 10,
@@ -56,5 +58,5 @@ export function useViewModel() {
             setSelectedRowKeys(keys)
         },
     };
-    return { dataList, detailVisible, columns, pagination, rowSelection, setDetailVisible, handlePageChange, handleEdit, handleDeleteAll, handleDetail };
+    return { editId, editVisible, dataList, detailVisible, columns, pagination, rowSelection, setEditVisible, setDetailVisible, handlePageChange, handleEdit, handleDeleteAll, handleDetail };
 }

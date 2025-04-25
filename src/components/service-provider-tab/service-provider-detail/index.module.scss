@@ -23,13 +23,42 @@
     color: #344054;
 }
 
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
 .infoItem {
     width: 50%;
+    display: flex;
+    align-items: center;
 }
 
 .infoLabel {
     margin-right: 8px;
 }
+
+.readyStatus {
+    color: #10B981;
+    display: flex;
+    align-items: center;
+    gap: 8;
+    .dot {
+        background-color: #10B981;
+    }
+}
+
+.disabledStatus {
+    color: red;
+    display: flex;
+    align-items: center;
+    gap: 8;
+    .dot {
+        background-color: red;
+    }
+}
+
 
 .infoRow {
     width: 100%;
@@ -49,10 +78,76 @@
 .modelItem {
     padding: 16px 0;
     border-bottom:  1px solid #E4E6EB;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    &:last-child {
+        border-bottom: none;
+    }
 }
 
 .modelTitle {
     color: #000115;
     font-size: 16px;
     font-weight: 600;
+}
+
+.modelBaseInfo {
+    color: #000;
+    font-weight: 600;
+    margin-right: 16px;
+}
+
+.modelLabel {
+    margin: 0 8px;
+    font-size: 14px;
+    line-height: 22px;
+}
+
+.modelLeft {
+    display: flex;
+    align-items: center;
+}
+
+.modelRight {
+    color: #9DA3BB;
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.tagItem {
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid #E4E6EB;
+    background: #FFF;
+    font-size: 12px;
+    font-weight: 400;
+    color: #344054;
+    margin-left: 8px;
+}
+
+.modelRight {
+    display: flex;
+    align-items: center;
+}
+
+.line {
+    width: 1px;
+    height: 14px;
+    background-color: #9DA3BB;
+    margin: 0 12px;
+}
+
+.pageBlock {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.timeInfo {
+    font-size: 12px;
+    font-weight: 400;
+    color: #898EA3;
+    margin-top: 16px;
 }
