@@ -1,0 +1,16 @@
+.container {
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+}
+
+.item {
+    display: flex;
+    padding: 16px 24px;
+    line-height: 42px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item:first-child {
+    border-bottom: 1px solid #E4E6EB;
+}

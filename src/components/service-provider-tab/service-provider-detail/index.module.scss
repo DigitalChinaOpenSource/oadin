@@ -1,0 +1,58 @@
+
+.modalTitle {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 28px; 
+}
+
+.infoName {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px; 
+    color: #000115;
+    margin-top: 24px;
+}
+
+.infoBlock {
+    display: flex;
+    row-gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #344054;
+}
+
+.infoItem {
+    width: 50%;
+}
+
+.infoLabel {
+    margin-right: 8px;
+}
+
+.infoRow {
+    width: 100%;
+}
+
+.modelList {
+    display: flex;
+    padding: 16px;
+    flex-direction: column;
+    justify-content: center;
+    align-self: stretch;
+    border-radius: 8px;
+    border: 1px solid  #E4E6EB;
+    margin-top: 16px;
+}
+
+.modelItem {
+    padding: 16px 0;
+    border-bottom:  1px solid #E4E6EB;
+}
+
+.modelTitle {
+    color: #000115;
+    font-size: 16px;
+    font-weight: 600;
+}

@@ -1,0 +1,60 @@
+.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    gap: 16px;
+    align-self: stretch;
+    border-radius: 8px;
+    background: var(--Background-color-background-body, #FFF);
+    /* hover-button */
+    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
+}
+
+.logoIcon {
+    width: 48px;
+    height: 48px;
+    aspect-ratio: 1/1;
+    fill: linear-gradient(180deg, #FFF 0%, #FFF 100%);
+    stroke-width: 1px;
+    stroke: var(--border-color-border-weak, #E4E6EB);
+}
+
+.infoBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-self: stretch;
+}
+
+.leftBlock {
+    display: flex;
+    gap: 4px;
+    align-self: stretch;
+    color: rgba(0, 0, 0, 0.85);
+    font-family: "PingFang SC";
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 24px; /* 150% */
+}
+
+.statusName {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+    color: #10B981;
+    font-weight: 400;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 8px;
+    background-color: #10B981;
+}
+
+.refreshBlock {
+    color: #412A98 !important;
+}

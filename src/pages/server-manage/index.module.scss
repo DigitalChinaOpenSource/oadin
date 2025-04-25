@@ -1,0 +1,9 @@
+.serviceManagePage {
+  :global(.ant-tabs-nav) {
+      padding: 0 24px;
+      margin: 0;
+  }
+  :global(.ant-tabs-content-holder) {
+      padding: 24px;
+  }
+}

@@ -1,0 +1,16 @@
+.modelPath {
+  display: flex;
+  margin-bottom: 16px;
+}
+.modelPathTitle {
+  margin-right: 16px;
+}
+.modelPathInput {
+  width: 300px !important;
+  :global(.ant-btn) {
+    height: 22px;
+    &:hover {
+      background: unset !important;
+    }
+  }
+}

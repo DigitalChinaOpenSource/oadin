@@ -1,0 +1,72 @@
+.modelCard {
+  // 您的卡片样式
+  :global(.ant-card-body) {
+    padding: 16px;
+  }
+}
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.contentWrapper {
+  position: relative;
+  margin-top: 12px;
+}
+
+.textContent {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-height: calc(1.5em * 2); // 两行文字的高度
+  color: #344054;
+  &.expanded {
+    -webkit-line-clamp: unset;
+    max-height: none;
+  }
+}
+
+.modelCard .contentWrapper .moreButton {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background: white;
+  padding-left: 4px;
+  margin: 0;
+  height: 22px;
+  line-height: 22px;
+  z-index: 1;
+  color: #344054 !important;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover {
+    background-color: #ffffff !important;
+  }
+  &::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff);
+  }
+}
+
+.infoWrapper {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+  color: #9da3bb;
+}
+
+.splitLine {
+  margin: 0 4px;
+}
+
+.beUsed {
+  color: #5429ff;
+}

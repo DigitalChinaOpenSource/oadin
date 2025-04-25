@@ -1,0 +1,61 @@
+.sidebar {
+  width: 76px;
+  height: 100vh;
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  border-right: 1px solid #e4e6eb;
+  :global(.ant-menu) {
+    border-inline-end: unset !important;
+  }
+  .logo {
+    padding: 16px 0;
+    img {
+      width: 40px;
+      height: 40px;
+    }
+  }
+  
+  .menu {
+    flex: 1;
+    width: 100%;
+    border-right: none;
+    
+    :global {
+      .ant-menu-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 60px;
+        padding: 8px 0;
+        
+        .anticon {
+          font-size: 20px;
+          margin-right: 0;
+        }
+      }
+    }
+  }
+  
+  .downloadBtn {
+    margin-bottom: 20px;
+    
+    button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: auto;
+      padding: 8px;
+      width: 60px;
+      
+      .anticon {
+        font-size: 20px;
+        margin-right: 0;
+      }
+    }
+  }
+}
