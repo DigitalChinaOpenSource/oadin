@@ -242,11 +242,20 @@ class Byze {
       }
   
       let stderrContent = '';
+      let child;
 
-      const child = spawn('byze', ['server', 'start', '-d'], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        windowsHide: true
-      });
+      if (isMacOS) {
+          child = spawn('sh', ['-c', 'nohup byze server start -d > /dev/null 2>&1 &'], {
+            stdio: ['ignore', 'ignore', 'ignore'], // 忽略所有输出
+            detached: true,
+            windowsHide: true,
+        });
+      } else {
+          child = spawn('byze', ['server', 'start', '-d'], {
+              stdio: ['pipe', 'pipe', 'pipe'],
+              windowsHide: true,
+          });
+      }
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
