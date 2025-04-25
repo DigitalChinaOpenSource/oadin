@@ -1,6 +1,6 @@
 # Byze Quick Start
 
-Byze 是一个模型框架，它能耦 AI PC 上的 AI 应用与它所依赖的 AI 服务。它旨在为开发者提供一个 极其简单易用的基础设施，以便他们在开发环境中安装本地 AI 服务，并发布他们的 AI 应用程序，无需打包自己 的 AI 堆栈和模型。
+Byze 是一个模型框架，它能解耦 AI PC 上的 AI 应用与它所依赖的 AI 服务。它旨在为开发者提供一个 极其简单易用的基础设施，以便他们在开发环境中安装本地 AI 服务，并发布他们的 AI 应用程序，无需打包自己 的 AI 堆栈和模型。
 
 ### 下载和启动
 
@@ -13,6 +13,13 @@ byze server start -d
 ```
 
 如弹框下载和安装 `ollama` ，确认安装即可。
+
+### 检查当前 byze 是否启动
+
+通过 api 即向本地的16688端口发送GET请求可以检查 byze 是否正常。响应如下则正常：
+```
+Open Platform for AIPC
+```
 
 ### 快速使用服务( 以 `chat` 服务为例)
 
@@ -46,7 +53,7 @@ POST /service
 ```json
 {
     "service_name": "chat",
-    "service_source": "remote",
+    "service_source": "local",
     "service_provider_name": "local_ollama_chat",
     "flavor_name": "ollama",
 }
@@ -54,7 +61,6 @@ POST /service
 ```
 
 响应如下：
-    
 ```json
 {
     "business_code": 10000,
@@ -202,4 +208,107 @@ async function chat(messages) {
 
     return eventEmitter;
 }
+```
+
+### 导入配置文件
+byze 的导入配置文件功能可以帮助你快速导入服务和模型配置。配置文件(.byze)是一个json格式的文件，示例：
+```json
+{
+  "version": "v0.2",
+  "services": { // 当前包含的服务信息
+    "chat": {
+      "service_providers": {
+        "local": "local_ollama_chat",
+        "remote": "remote_smartvision_chat"
+      },
+      "hybrid_policy": "always_local"
+    },
+    "embed": {
+      "service_providers": {
+        "local": "local_ollama_embed",
+        "remote": "remote_smartvision_embed"
+      },
+      "hybrid_policy": "always_local"
+    },
+    "text_to_image": {
+      "service_providers": {
+        "remote": "remote_aliyun_text_to_image"
+      },
+      "hybrid_policy": "always_remote"
+    }
+  },
+  "service_providers": { // 服务提供商的详细信息
+    "local_ollama_chat": {
+      "service_name": "chat",
+      "service_source": "local",
+      "desc": "Local ollama chat/completion",
+      "api_flavor": "ollama",
+      "method": "POST",
+      "auth_type": "none",
+      "auth_key": "",
+      "models": [
+      ]
+    },
+    "local_ollama_embed": {
+      "desc": "Local ollama embed",
+      "service_name": "embed",
+      "service_source": "local",
+      "api_flavor": "ollama",
+      "method": "POST",
+      "auth_type": "none",
+      "auth_key": "",
+      "models": []
+    },
+    "remote_smartvision_chat": {
+      "desc": "Remote smartVision chat",
+      "service_name": "chat",
+      "service_source": "remote",
+      "api_flavor": "smartvision",
+      "method": "POST",
+      "auth_type": "none",
+      "auth_key": "{\\\"神州数码|DeepSeek-R1\\\":{\\\"provider\\\":\\\"dcmodel\\\",\\\"model_key\\\":\\\"DeepSeek-R1\\\",\\\"env_type\\\":\\\"production\\\",\\\"credentials\\\":{\\\"api_key\\\":\\\"aGmXnTbWqLpZvYrKsDfVcJhQ\\\",\\\"endpoint_url\\\":\\\"http://120.232.136.137:8100/v1\\\"}}}",
+      "models": ["神州数码|DeepSeek-R1"]
+    },
+    "remote_smartvision_embed": {
+      "desc": "Remote smartVision embed",
+      "service_name": "embed",
+      "service_source": "remote",
+      "api_flavor": "smartvision",
+      "method": "POST",
+      "auth_type": "none",
+      "auth_key": "",
+      "models": []
+    },
+    "remote_aliyun_text_to_image": {
+      "desc": "Remote aliyun tti",
+      "service_name": "text_to_image",
+      "service_source": "remote",
+      "api_flavor": "aliyun",
+      "method": "POST",
+      "auth_type": "none",
+      "auth_key": "",
+      "models": []
+    }
+  }
+}
+```
+
+可以通过 api 调用
+```
+POST /service/import
+```
+
+将配置文件作为请求，得到的响应示例：
+```json
+{
+    "business_code": 0,
+    "message": ""
+}
+```
+
+### 停止 byze 服务
+
+在终端运行以下命令即可：
+```bash
+byze server stop
 ```
