@@ -439,10 +439,6 @@ class Byze {
                 const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
                 const response = JSON.parse(jsonString);
 
-                if (response.status === 'error') {
-                    eventEmitter.emit('end', response);
-                }
-
                 // 触发事件，传递解析后的数据
                 eventEmitter.emit('data', response);
 
