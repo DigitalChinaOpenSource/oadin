@@ -1,4 +1,3 @@
-import React from 'react';
 import { Modal, Button } from 'antd';
 import ModelCard from '../model-card';
 
@@ -12,7 +11,6 @@ export default function ModelDetailModal(props: IModelDetailModalProps) {
     <Modal
       title="模型详情"
       open={true}
-      // width={800}
       onCancel={onDetailClose}
       footer={[
         <Button key="back" onClick={onDetailClose}>
@@ -20,9 +18,7 @@ export default function ModelDetailModal(props: IModelDetailModalProps) {
         </Button>,
       ]}
     >
-      {/* <div style={{overflow: 'hidden'}}> */}
-        <ModelCard isDetail={true} />
-      {/* </div> */}
+      <ModelCard isDetail={true} />
     </Modal>
   )
 }

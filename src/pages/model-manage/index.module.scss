@@ -1,8 +1,15 @@
 .modelManage {
+  height: 100%;
   :global(.ant-tabs-nav) {
     background-color: #FFFFFF;
     margin: unset;
     padding: 0px 24px;
+  }
+  :global(.ant-tabs-content) {
+    height: 100%;
+  }
+  :global(.ant-tabs-tabpane) {
+    height: 100%;
   }
   :global(.ant-tabs-nav::before) {
     border-bottom: 1px solid #e4e6eb;

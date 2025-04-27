@@ -1,4 +1,8 @@
 .modelSearch {
+  display: flex;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 24px;
   margin-bottom: 24px;
   :global(.ant-card-body) {
     display: flex;

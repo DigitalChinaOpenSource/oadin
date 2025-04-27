@@ -1,7 +1,22 @@
 .modelListContent {
+  background-color: #fff;
+  border-radius: 8px;
+  height: calc(100vh - 200px);
   padding: 24px;
+  .contentContainer {
+    height: 100%;
+    overflow: hidden;
+  }
   .titlepath {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 10px;
+    .title {
+      font-weight: 500;
+      color: #000115;
+    }
+    .changePath {
+      color: #5429ff;
+    }
   }
 }
