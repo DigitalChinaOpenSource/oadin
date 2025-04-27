@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>ByzeClient</id>
+    <version>1.0.0</version>
+    <authors>zhoulxg</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <description>byze sdk</description>
+    <repository type="git" />
+    <dependencies>
+      <group targetFramework="net8.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="C:\File\PycharmProjects\ByzeLib\DotnetLib\bin\Release\net8.0\DotnetLib.dll" target="lib\net8.0\DotnetLib.dll" />
+  </files>
+</package>

@@ -12,10 +12,10 @@
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "restore": {
       "projectUniqueName": "C:\\File\\PycharmProjects\\ByzeLib\\DotnetLib\\DotnetLib.csproj",
-      "projectName": "DotnetLib",
+      "projectName": "ByzeClient",
       "projectPath": "C:\\File\\PycharmProjects\\ByzeLib\\DotnetLib\\DotnetLib.csproj",
       "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
       "outputPath": "C:\\File\\PycharmProjects\\ByzeLib\\DotnetLib\\obj\\",
@@ -35,6 +35,7 @@
         "C:\\File\\PycharmProjects\\AogCheckerLib\\src\\bin\\Release": {},
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "C:\\Program Files\\dotnet\\library-packs": {},
+        "C:\\Users\\Lenovo\\AppData\\Roaming\\NuGet\\local-nuget": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
