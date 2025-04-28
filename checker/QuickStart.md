@@ -2,6 +2,9 @@
 
 Byze 是一个模型框架，它能解耦 AI PC 上的 AI 应用与它所依赖的 AI 服务。它旨在为开发者提供一个 极其简单易用的基础设施，以便他们在开发环境中安装本地 AI 服务，并发布他们的 AI 应用程序，无需打包自己 的 AI 堆栈和模型。
 
+### 系统要求
+- windows 10 64位及以上版本/ macOS 14及以上版本
+
 ### 下载和启动
 
 你可以前往 http://120.232.136.73:31619/byzedev/byze.exe 下载 `byze.exe` 到你的用户目录下，并添加到环境变量。
@@ -30,7 +33,7 @@ Open Platform for AIPC
 首先通过 api `/service` 一键安装 `chat` 服务
 
 ```
-POST /service
+POST http:127.0.0.1:16688/byze/v0.2/service
 ```
 
 请求参数如下：
@@ -75,7 +78,7 @@ POST /service
 `chat` 服务同样通过 api 调用
 
 ```
-POST /services/chat
+POST http:127.0.0.1:16688/byze/v0.2/services/chat
 ```
 
 请求参数如下：
@@ -157,7 +160,7 @@ data:{
 }
 ```
 
-接着就可以在你的应用程序代码中替换 chat() 函数的url使用服务了
+接着就可以在你的应用程序代码中替换 chat() 函数的url使用服务了，下面给出了用 byze 提供的 url 替换原代码的示例：
 
 ```javascript
 async function chat(messages) {
@@ -298,7 +301,7 @@ async function chat(messages) {
 
 可以通过 api 调用
 ```
-POST /service/import
+POST http:127.0.0.1:16688/byze/v0.2/service/import
 ```
 
 将配置文件作为请求，得到的响应示例：
@@ -322,7 +325,7 @@ POST /service/import
 
 首先，你需要在 Byze 中安装一个服务提供商，例如 `local_ollama_chat`，你可以通过 api 调用：
 ```
-POST /service_provider
+POST http:127.0.0.1:16688/byze/v0.2/service_provider
 ```
 请求参数如下：
 ```json
@@ -355,7 +358,7 @@ POST /service_provider
 
 例如 `local_ollama_chat`，你可以通过 api 调用
 ```
-POST /model
+POST http:127.0.0.1:16688/byze/v0.2/model
 ```
 请求参数
 ```json
