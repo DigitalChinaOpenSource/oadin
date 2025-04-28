@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Win32;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -192,15 +196,242 @@ namespace Byze
         }
 
         // 获取问学支持模型列表
-        public async Task<string> GetSmartvisionModelsSupportedAsync()
+        public async Task<string> GetSmartvisionModelsSupportedAsync(object data)
         {
-            var headers = new Dictionary<string, string>
-            {
-                { "Custom-Header", "HeaderValue" } // 替换为实际的请求头键值对
-            };
+            var headers = data as Dictionary<string, string>;
 
             return await RequestAsync(HttpMethod.Get, "/model/support/smartvision", null, headers);
         }
+
+        // 导入配置文件
+        public async Task<string> ImportConfigAsync(string filePath)
+        {
+            var data = new { file_path = filePath };
+            return await RequestAsync(HttpMethod.Post, "/config/import", data);
+        }
+
+        // 导出配置文件
+        public async Task<string> ExportConfigAsync(object data)
+        {
+            try
+            {
+                // 调用 RequestAsync 获取配置文件的 JSON 响应
+                var config = await RequestAsync(HttpMethod.Get, "/config/export", data);
+
+                // 获取用户目录
+                string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+                // 构造 Byze 文件夹路径
+                string byzeDirectory = Path.Combine(userDirectory, "Byze");
+
+                // 如果 Byze 文件夹不存在，则创建
+                if (!Directory.Exists(byzeDirectory))
+                {
+                    Directory.CreateDirectory(byzeDirectory);
+                }
+
+                // 构造 .byze 文件路径
+                string byzeFilePath = Path.Combine(byzeDirectory, ".byze");
+
+                // 将 JSON 写入 .byze 文件
+                await File.WriteAllTextAsync(byzeFilePath, config);
+
+                // 返回文件路径
+                return byzeFilePath;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"导出配置文件失败: {ex.Message}");
+            }
+        }
+
+        // Chat
+        public async Task<string> ChatAsync(object data, bool isStream = false, Action<JsonElement>? onData = null, Action<string>? onError = null, Action? onEnd = null)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(data);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                if (isStream)
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Post, "/services/chat")
+                    {
+                        Content = content
+                    };
+
+                    var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    using var reader = new System.IO.StreamReader(stream);
+
+                    while (!reader.EndOfStream)
+                    {
+                        var line = await reader.ReadLineAsync();
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
+
+                        try
+                        {
+                            string rawData = line.StartsWith("data:") ? line.Substring(5) : line;
+                            var responseData = JsonSerializer.Deserialize<JsonElement>(rawData);
+
+                            onData?.Invoke(responseData);
+
+                            var status = responseData.GetProperty("status").GetString();
+                            if (status == "success" || status == "error")
+                            {
+                                onEnd?.Invoke();
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            onError?.Invoke($"解析流数据失败: {ex.Message}");
+                        }
+                    }
+
+                    return "Stream completed";
+                }
+                else
+                {
+                    var response = await _client.PostAsync("/services/chat", content);
+                    response.EnsureSuccessStatusCode();
+
+                    return await response.Content.ReadAsStringAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Chat 服务请求失败: {ex.Message}");
+            }
+        }
+
+        // Generate
+        public async Task<string> GenerateAsync(object data, bool isStream = false, Action<JsonElement>? onData = null, Action<string>? onError = null, Action? onEnd = null)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(data);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                if (isStream)
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Post, "/services/generate")
+                    {
+                        Content = content
+                    };
+
+                    var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    using var reader = new System.IO.StreamReader(stream);
+
+                    while (!reader.EndOfStream)
+                    {
+                        var line = await reader.ReadLineAsync();
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
+
+                        try
+                        {
+                            string rawData = line.StartsWith("data:") ? line.Substring(5) : line;
+                            var responseData = JsonSerializer.Deserialize<JsonElement>(rawData);
+
+                            onData?.Invoke(responseData);
+
+                            var status = responseData.GetProperty("status").GetString();
+                            if (status == "success" || status == "error")
+                            {
+                                onEnd?.Invoke();
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            onError?.Invoke($"解析流数据失败: {ex.Message}");
+                        }
+                    }
+
+                    return "Stream completed";
+                }
+                else
+                {
+                    var response = await _client.PostAsync("/services/generate", content);
+                    response.EnsureSuccessStatusCode();
+
+                    return await response.Content.ReadAsStringAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Generate 服务请求失败: {ex.Message}");
+            }
+        }
+
+        // embed
+        public async Task<string> EmbedAsync(object data)
+        {
+            return await RequestAsync(HttpMethod.Post, "/services/embed", data);
+        }
+
+        // text-to-image
+        public async Task<string> TextToImageAsync(object data)
+        {
+            return await RequestAsync(HttpMethod.Post, "/services/text-to-image", data);
+        }
+
+        // 检查 byze 状态
+        public async Task<bool> IsByzeAvailiableAsync()
+        {
+            try
+            {
+                var response = await _client.GetAsync("/");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"检查 Byze 状态失败: {ex.Message}");
+            }
+        }
+
+        // 检查 byze 是否下载
+        public bool IsByzeExisted()
+        {
+            try
+            {
+                // 获取用户目录
+                string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+                // 根据操作系统设置路径
+                string byzePath;
+                if (OperatingSystem.IsWindows())
+                {
+                    byzePath = Path.Combine(userDirectory, "Byze", "byze.exe");
+                }
+                else if (OperatingSystem.IsMacOS())
+                {
+                    byzePath = Path.Combine(userDirectory, "Byze", "byze");
+                }
+                else
+                {
+                    throw new PlatformNotSupportedException("当前操作系统不支持");
+                }
+
+                // 检查文件是否存在
+                return File.Exists(byzePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"检查 Byze 文件失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        
+
 
 
     }
