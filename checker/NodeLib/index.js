@@ -357,11 +357,6 @@ class Byze {
       console.error(`❌ Byze 服务未启动: ${err.message}`);
       resolve(false);
     });
-    req.on('timeout', () => {
-      req.destroy();
-      console.error('❌ Byze 服务未启动: 请求超时');
-      resolve(false);
-    });
     req.end();
   }
 
