@@ -255,7 +255,7 @@ func (o *OllamaProvider) InstallEngine() error {
 		}
 	} else {
 		// Handle other operating systems
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 		cmd := exec.CommandContext(ctx, file)
 		_, err := cmd.CombinedOutput()
@@ -268,9 +268,10 @@ func (o *OllamaProvider) InstallEngine() error {
 			fmt.Printf("cmd execute error: %v\n", err)
 			return err
 		}
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to install ollama: %v", err)
-		}
+		return nil
+		//if err := cmd.Run(); err != nil {
+		//	return fmt.Errorf("failed to install ollama: %v", err)
+		//}
 	}
 
 	slog.Info("[Install Engine] model engine install completed")

@@ -146,31 +146,38 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 					break
 				}
 			}
+			m.ProviderName = sp.ProviderName
+			m.ModelName = strings.ToLower(recommendConfig.ModelName)
+
+			err = s.Ds.Get(ctx, m)
+			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+				// todo debug log output
+				return nil, bcode.ErrServer
+			} else if errors.Is(err, datastore.ErrEntityInvalid) {
+				m.Status = "downloading"
+				err = s.Ds.Add(ctx, m)
+				if err != nil {
+					return nil, bcode.ErrAddModel
+				}
+				slog.Info("[services] Add model: ", m.ModelName)
+			}
+			if m.Status == "failed" {
+				m.Status = "downloading"
+			}
 
 			if !isPulled {
-				m.ProviderName = sp.ProviderName
-				m.ModelName = strings.ToLower(recommendConfig.ModelName)
-
-				err = s.Ds.Get(ctx, m)
-				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
-					// todo debug log output
-					return nil, bcode.ErrServer
-				} else if errors.Is(err, datastore.ErrEntityInvalid) {
-					m.Status = "downloading"
-					err = s.Ds.Add(ctx, m)
-					if err != nil {
-						return nil, bcode.ErrAddModel
-					}
-				}
-				if m.Status == "failed" {
-					m.Status = "downloading"
-				}
 				stream := false
 				pullReq := &types.PullModelRequest{
 					Model:  recommendConfig.ModelName,
 					Stream: &stream,
 				}
 				go AsyncPullModel(ctx, sp, m, pullReq)
+			} else {
+				m.Status = "downloaded"
+				err = s.Ds.Put(ctx, m)
+				if err != nil {
+					return nil, bcode.ErrAddModel
+				}
 			}
 		}
 
