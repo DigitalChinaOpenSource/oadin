@@ -1,0 +1,11 @@
+C:\File\PycharmProjects\ByzeLib\DotnetLib\bin\Release\net8.0\DotnetLib.deps.json
+C:\File\PycharmProjects\ByzeLib\DotnetLib\bin\Release\net8.0\DotnetLib.dll
+C:\File\PycharmProjects\ByzeLib\DotnetLib\bin\Release\net8.0\DotnetLib.pdb
+C:\File\PycharmProjects\ByzeLib\DotnetLib\obj\Release\net8.0\DotnetLib.GeneratedMSBuildEditorConfig.editorconfig
+C:\File\PycharmProjects\ByzeLib\DotnetLib\obj\Release\net8.0\DotnetLib.AssemblyInfoInputs.cache
+C:\File\PycharmProjects\ByzeLib\DotnetLib\obj\Release\net8.0\DotnetLib.AssemblyInfo.cs
+C:\File\PycharmProjects\ByzeLib\DotnetLib\obj\Release\net8.0\DotnetLib.csproj.CoreCompileInputs.cache
+C:\File\PycharmProjects\ByzeLib\DotnetLib\obj\Release\net8.0\DotnetLib.dll
+C:\File\PycharmProjects\ByzeLib\DotnetLib\obj\Release\net8.0\refint\DotnetLib.dll
+C:\File\PycharmProjects\ByzeLib\DotnetLib\obj\Release\net8.0\DotnetLib.pdb
+C:\File\PycharmProjects\ByzeLib\DotnetLib\obj\Release\net8.0\ref\DotnetLib.dll
