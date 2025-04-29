@@ -510,6 +510,9 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 		}
 		for modelService, modelInfo := range localOllamaServiceMap {
 			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, modelService)
+			if providerServiceDefaultInfo.Endpoints == nil {
+				continue
+			}
 			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
 			for _, localModel := range modelInfo {
 				if !utils.Contains(resModelNameList, localModel.Name) {
