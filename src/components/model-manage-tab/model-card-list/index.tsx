@@ -1,6 +1,7 @@
 import styles from './index.module.scss';
 import {Col,Row} from 'antd';
 import ModelCard from './model-card';
+
 export default function ModelCardList() {
   return (
     <div className={styles.modelCardList}>

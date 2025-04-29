@@ -1,7 +1,7 @@
 import styles from './index.module.scss';
 import ModelSearch from './model-search';
 import ModallistContent from './model-list-content';
-import { useViewModel } from "./view-model";
+import { useViewModel } from './view-model';
 
 export default function ModelManageTab() {
   const vm = useViewModel();
@@ -18,4 +18,4 @@ export default function ModelManageTab() {
       <ModallistContent />
     </div>
   );
-};
+}

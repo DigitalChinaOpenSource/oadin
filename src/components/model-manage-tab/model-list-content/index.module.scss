@@ -5,18 +5,23 @@
   padding: 24px;
   .contentContainer {
     height: 100%;
-    overflow: hidden;
   }
   .titlepath {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
     .title {
+      font-size: 16px;
       font-weight: 500;
       color: #000115;
     }
     .changePath {
       color: #5429ff;
+      padding: unset;
     }
+  }
+  .pagination {
+    margin-top: 8px;
+    margin-top: 0 auto;
   }
 }

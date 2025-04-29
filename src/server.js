@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
-const PORT = 3001;
+const PORT = 33333;
 
 // 允许跨域请求
 app.use((req, res, next) => {
@@ -81,13 +81,10 @@ function getMountInfo(targetPath) {
 
   // 检测操作系统类型
   const platform = os.platform();
-
   try {
     if (platform === "win32") {
-      // Windows 系统
       // 获取盘符（如 C:）
       const driveLetter = path.parse(targetPath).root;
-
       // 使用 wmic 命令获取文件系统信息
       const output = execSync(
         `wmic logicaldisk where "DeviceID='${driveLetter.replace(
@@ -96,7 +93,6 @@ function getMountInfo(targetPath) {
         )}'" get FileSystem, DeviceID, VolumeName /format:csv`,
         { encoding: "utf8" }
       );
-
       const lines = output.trim().split("\n");
       if (lines.length >= 2) {
         const parts = lines[1].split(",");
@@ -107,7 +103,6 @@ function getMountInfo(targetPath) {
           };
         }
       }
-
       // 如果无法获取详细信息，返回默认值
       return {
         filesystem: "NTFS",

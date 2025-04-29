@@ -1,72 +1,116 @@
 .modelCard {
-  // 您的卡片样式
   :global(.ant-card-body) {
     padding: 16px;
   }
-}
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.contentWrapper {
-  position: relative;
-  margin-top: 12px;
-}
-
-.textContent {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.5;
-  max-height: calc(1.5em * 2); // 两行文字的高度
-  color: #344054;
-  &.expanded {
-    -webkit-line-clamp: unset;
-    max-height: none;
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .cardTitle {
+      height: 24px;
+      display: flex;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    .localOrCloud {
+      font-size: 12px;
+      background-color: #f0f0f0;
+      color: #898ea3;
+      border-radius: 999px;
+      padding: 4px 8px;
+      display: flex;
+      margin: 0 16px 0 8px;
+      .localOrCloudText {
+        margin-left: 2px;
+      }
+    }
+    .recommend {
+      background-color: #fcf2d9;
+      color: #b07f08;
+      font-size: 12px;
+      padding: 4px 6px;
+      line-height: 18px;
+      border-radius: 4px;
+    }
+    .authorized {
+      background-color: #d2f2fd;
+      color: #448a96;
+      font-size: 12px;
+      padding: 4px 6px;
+      line-height: 18px;
+      border-radius: 4px;
+    }
   }
-}
-
-.modelCard .contentWrapper .moreButton {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  background: white;
-  padding-left: 4px;
-  margin: 0;
-  height: 22px;
-  line-height: 22px;
-  z-index: 1;
-  color: #344054 !important;
-  font-weight: 600;
-  cursor: pointer;
-  &:hover {
-    background-color: #ffffff !important;
+  .contentWrapper {
+    position: relative;
+    margin-top: 12px;
   }
-  &::before {
-    content: '';
+  .moreButton {
     position: absolute;
-    right: 100%;
-    width: 30px;
-    height: 100%;
-    background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff);
+    right: 0;
+    bottom: 0;
+    background: white;
+    padding-left: 14px;
+    padding-right: 0px;
+    margin: 0;
+    height: 22px;
+    line-height: 22px;
+    z-index: 1;
+    color: #344054 !important;
+    font-weight: 600;
+    cursor: pointer;
+    &:hover {
+      background-color: #ffffff !important;
+    }
+    &::before {
+      content: '';
+      position: absolute;
+      right: 100%;
+      width: 30px;
+      height: 100%;
+      background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff);
+    }
+  }
+  .textContent {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    max-height: calc(1.5em * 2); // 两行文字的高度
+    color: #344054;
+    &.expanded {
+      -webkit-line-clamp: unset;
+      max-height: none;
+    }
+  }
+
+  .infoWrapper {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    color: #9da3bb;
+  }
+
+  .splitLine,
+  .splitLine2 {
+    margin: 0 4px;
+  }
+
+  .beUsed {
+    .splitLine2 {
+      color: #9da3bb;
+    }
   }
 }
 
-.infoWrapper {
-  display: flex;
-  align-items: center;
-  margin: 8px 0;
-  color: #9da3bb;
-}
-
-.splitLine {
-  margin: 0 4px;
-}
-
-.beUsed {
-  color: #5429ff;
+.modelCardStyle {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  padding: 16px;
 }

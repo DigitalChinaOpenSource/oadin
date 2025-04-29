@@ -1,0 +1,32 @@
+.modelPathModal {
+  .tips {
+    color: #344054;
+  }
+  .mark {
+    font-weight: 600;
+  }
+  .modelPathInput {
+    position: relative;
+    display: flex;
+    margin-top: 16px;
+    margin-bottom: 48px;
+    .pathTitle {
+      width: 150px;
+      line-height: 32px;
+      .required {
+        color: #ff4d4f;
+        margin-right: 4px;
+      }
+    }
+  }
+  .diskSpace {
+    position: absolute;
+    left: 100px;
+    top: 40px;
+    color: #9da3bb;
+
+    .diskCanUse {
+      color: #5429ff;
+    }
+  }
+}

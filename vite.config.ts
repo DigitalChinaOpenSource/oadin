@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { spawn } from 'child_process';
+import path from 'path'
 
 // 启动后端服务器的函数
 function startBackendServer() {
@@ -15,8 +16,12 @@ function startBackendServer() {
   });
 }
 
-// https://vitejs.dev/config/
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
   plugins: [
     react(),
     {
@@ -29,7 +34,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:33333',
         changeOrigin: true,
         rewrite: (path) => path
       }

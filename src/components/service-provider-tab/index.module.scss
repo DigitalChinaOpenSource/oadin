@@ -1,33 +1,24 @@
 .container {
-
 }
 
 .titleBlock {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color:  #000115;
-    font-family: "PingFang SC";
-    font-size: 16px;
-    font-style: normal;
-    font-weight: 500;
-    line-height: 24px;
-    margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #000115;
+  font-family: 'PingFang SC';
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 24px;
+  margin-bottom: 16px;
 }
 
 .btnBlock {
-    display: flex;
-    gap: 16px;
+  display: flex;
+  gap: 16px;
 }
 
 .deleteBtn {
-    color: #412A98 !important;
-}
-
-.linkA {
-    color: #5429FF;
-}
-
-.linkA:hover {
-    color: #5429FF;
+  color: #412a98 !important;
 }

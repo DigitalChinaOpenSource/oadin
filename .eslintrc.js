@@ -31,6 +31,8 @@ module.exports = {
         'newlines-between': 'always',
       },
     ],
+    semi: 'off',
+    '@typescript-eslint/semi': 'off',
   },
   settings: {
     react: {
