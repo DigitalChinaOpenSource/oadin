@@ -6,7 +6,7 @@ import "github.com/shirou/gopsutil/mem"
 
 func GetMemoryInfo() (*MemoryInfo, error) {
 	v, _ := mem.VirtualMemory()
-	memorySize := v.Total / 1024 / 1024 / 1024
+	memorySize := int(v.Total / 1024 / 1024 / 1024)
 	memoryInfo := &MemoryInfo{
 		Size: memorySize,
 	}

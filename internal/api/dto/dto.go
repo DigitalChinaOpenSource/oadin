@@ -218,7 +218,7 @@ type LocalSupportModelData struct {
 	Avatar      string  `json:"avatar"`
 	Description string  `json:"description"`
 	Class       string  `json:"class"`
-	Flavor      string  `json:"flavor"`
+	Flavor      string  `json:"provider"`
 	Size        string  `json:"size"`
 	ParamsSize  float32 `json:"params_size"`
 }

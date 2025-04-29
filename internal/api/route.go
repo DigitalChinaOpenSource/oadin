@@ -5,22 +5,29 @@
 package api
 
 import (
+	"byze/internal/datastore"
+	"byze/internal/types"
+	"fmt"
+	"github.com/gin-gonic/gin"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	"byze/config"
+	"byze/internal/utils"
 	"byze/version"
-
-	"github.com/gin-gonic/gin"
 )
 
 func InjectRouter(e *ByzeCoreServer) {
 	e.Router.Handle(http.MethodGet, "/", rootHandler)
+	e.Router.Handle(http.MethodGet, "/health", healthHeader)
+	e.Router.Handle(http.MethodGet, "/version", getVersion)
+	e.Router.Handle(http.MethodGet, "/update/status", updateAvailableHandler)
+	e.Router.Handle(http.MethodPost, "/update", updateHandler)
 
 	r := e.Router.Group("/byze/" + version.ByzeVersion)
-
-	r.Handle(http.MethodGet, "/health", healthHeader)
-	r.Handle(http.MethodGet, "/version", getVersion)
 
 	// service import / export
 	r.Handle(http.MethodPost, "/service/export", e.ExportService)
@@ -58,4 +65,75 @@ func healthHeader(c *gin.Context) {
 
 func getVersion(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]string{"version": version.ByzeVersion})
+}
+
+func updateAvailableHandler(c *gin.Context) {
+	ctx := c.Request.Context()
+	status, updateResp := version.IsNewVersionAvailable(ctx)
+	if status {
+		c.JSON(http.StatusOK, map[string]string{"message": fmt.Sprintf("Ollama version %s is ready to install", updateResp.UpdateVersion)})
+	} else {
+		c.JSON(http.StatusOK, map[string]string{"message": ""})
+	}
+
+}
+
+func updateHandler(c *gin.Context) {
+	// check server
+	status := utils.IsServerRunning()
+	if status {
+		// stop server
+		pidFilePath := filepath.Join(config.GlobalByzeEnvironment.RootDir, "byze.pid")
+		err := utils.StopByzeServer(pidFilePath)
+		if err != nil {
+			c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
+		}
+	}
+	// rm old version file
+	byzeFileName := "byze.exe"
+	if runtime.GOOS != "windows" {
+		byzeFileName = "byze"
+	}
+	byzeFilePath := filepath.Join(config.GlobalByzeEnvironment.RootDir, byzeFileName)
+	err := os.Remove(byzeFilePath)
+	if err != nil {
+		slog.Error("[Update] Failed to remove byze file %s: %v\n", byzeFilePath, err)
+		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
+	}
+	// install new version
+	downloadPath := filepath.Join(config.GlobalByzeEnvironment.RootDir, "download", byzeFileName)
+	err = os.Rename(downloadPath, byzeFilePath)
+	if err != nil {
+		slog.Error("[Update] Failed to rename byze file %s: %v\n", downloadPath, err)
+		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
+	}
+	// start server
+	logPath := config.GlobalByzeEnvironment.ConsoleLog
+	rootDir := config.GlobalByzeEnvironment.RootDir
+	err = utils.StartByzeServer(logPath, rootDir)
+	if err != nil {
+		slog.Error("[Update] Failed to start byze log %s: %v\n", logPath, err)
+		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
+	}
+	ds := datastore.GetDefaultDatastore()
+	ctx := c.Request.Context()
+	vr := &types.VersionUpdateRecord{}
+	sortOption := []datastore.SortOption{
+		{Key: "created_at", Order: -1},
+	}
+	versionRecoreds, err := ds.List(ctx, vr, &datastore.ListOptions{SortBy: sortOption})
+	if err != nil {
+		slog.Error("[Update] Failed to list versions: %v\n", err)
+		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
+	}
+	versionRecord := versionRecoreds[0].(*types.VersionUpdateRecord)
+	if versionRecord.Status == types.VersionRecordStatusInstalled {
+		versionRecord.Status = types.VersionRecordStatusUpdated
+	}
+	err = ds.Put(ctx, versionRecord)
+	if err != nil {
+		slog.Error("[Update] Failed to update versions: %v\n", err)
+		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
+	}
+	c.JSON(http.StatusOK, map[string]string{"message": ""})
 }
