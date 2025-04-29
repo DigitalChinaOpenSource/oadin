@@ -178,6 +178,7 @@ func Run(ctx context.Context) error {
 
 	datastore.SetDefaultDatastore(ds)
 
+	//version.StartCheckUpdate(ctx)
 	// Initialize core core app server
 	byzeServer := api.NewByzeCoreServer()
 	byzeServer.Register()
@@ -324,51 +325,10 @@ func NewStopApiServerCommand() *cobra.Command {
 }
 
 func stopByzeServer(cmd *cobra.Command, args []string) error {
-	files, err := filepath.Glob(filepath.Join(config.GlobalByzeEnvironment.RootDir, "*.pid"))
+	pidFile := filepath.Join(config.GlobalByzeEnvironment.RootDir, "*.pid")
+	err := utils.StopByzeServer(pidFile)
 	if err != nil {
-		return fmt.Errorf("failed to list pid files: %v", err)
-	}
-
-	if len(files) == 0 {
-		fmt.Println("No running processes found")
-		return nil
-	}
-
-	// Traverse all pid files.
-	for _, pidFile := range files {
-		pidData, err := os.ReadFile(pidFile)
-		if err != nil {
-			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
-		if err != nil {
-			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		process, err := os.FindProcess(pid)
-		if err != nil {
-			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
-			continue
-		}
-
-		if err := process.Kill(); err != nil {
-			if strings.Contains(err.Error(), "process already finished") {
-				fmt.Printf("Process with PID %d is already stopped\n", pid)
-			} else {
-				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
-				continue
-			}
-		} else {
-			fmt.Printf("Successfully stopped process with PID %d\n", pid)
-		}
-
-		// remove pid file
-		if err := os.Remove(pidFile); err != nil {
-			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
-		}
+		fmt.Printf("[Stop] Failed to stop byze server err: %s", err)
 	}
 	if runtime.GOOS == "windows" {
 		extraProcessName := "ollama-lib.exe"
@@ -886,7 +846,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 }
 
 func CheckByzeServer(cmd *cobra.Command, args []string) {
-	if isServerRunning() {
+	if utils.IsServerRunning() {
 		return
 	}
 
@@ -898,7 +858,7 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 
 	time.Sleep(6 * time.Second)
 
-	if !isServerRunning() {
+	if !utils.IsServerRunning() {
 		log.Fatal("Failed to start Byze server.")
 		return
 	}
@@ -919,8 +879,9 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 				slog.Info("model engine not exist, start download...")
 				err := engineProvider.InstallEngine()
 				if err != nil {
+					fmt.Println("Install model engine failed :", err.Error())
 					slog.Error("Install model engine failed :", err.Error())
-					log.Fatal("Install model engine failed")
+					log.Fatalf("Install model engine failed err %s", err.Error())
 					return
 				}
 				slog.Info("Model engine download completed...")
@@ -964,45 +925,14 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 	fmt.Println("Byze server start successfully.")
 }
 
-func isServerRunning() bool {
-	serverUrl := "http://127.0.0.1:16688/byze/" + version.ByzeVersion + "/health"
-	resp, err := http.Get(serverUrl)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-
-	return resp.StatusCode == http.StatusOK
-}
-
 func startByzeServer() error {
 	logPath := config.GlobalByzeEnvironment.ConsoleLog
-
-	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	rootDir := config.GlobalByzeEnvironment.RootDir
+	err := utils.StartByzeServer(logPath, rootDir)
 	if err != nil {
-		return fmt.Errorf("failed to open log file: %v", err)
+		fmt.Printf("byze server start failed: %s", err.Error())
+		return err
 	}
-	defer logFile.Close()
-	execCmd := "byze.exe"
-	if runtime.GOOS != "windows" {
-		execCmd = "byze"
-	}
-	cmd := exec.Command(execCmd, "server", "start")
-	cmd.Stdout = logFile
-	cmd.Stderr = logFile
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start Byze server: %v", err)
-	}
-
-	// Save PID to file.
-	pid := cmd.Process.Pid
-	pidFile := filepath.Join(config.GlobalByzeEnvironment.RootDir, "byze.pid")
-	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
-		return fmt.Errorf("failed to save PID to file: %v", err)
-	}
-
-	fmt.Printf("\rByze server started with PID: %d\n", cmd.Process.Pid)
 	return nil
 }
 

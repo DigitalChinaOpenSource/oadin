@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jaypipes/ghw"
 )
@@ -167,6 +169,33 @@ func HmacSha256(s, key string) string {
 	return string(hashed.Sum(nil))
 }
 
+// generate nonce str
+const (
+	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+func GenerateNonceString(n int) string {
+	var src = rand.NewSource(time.Now().UnixNano())
+	b := make([]byte, n)
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
+}
+
 func GetDownloadDir() (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
@@ -254,6 +283,7 @@ func GetGpuInfo() (int, error) {
 		}
 		gpuInfo = string(output)
 	}
+	gpuInfo = strings.TrimSpace(gpuInfo)
 	gpuUtilization, err := strconv.Atoi(gpuInfo)
 	if err != nil {
 		return 0, err
@@ -261,6 +291,7 @@ func GetGpuInfo() (int, error) {
 	return gpuUtilization, nil
 }
 
+// byze
 type SmartVisionUrlInfo struct {
 	Url             string `json:"url"`
 	AccessToken     string `json:"access_token"`
@@ -283,4 +314,94 @@ func GetSmartVisionUrl() map[string]SmartVisionUrlInfo {
 		EmbedEnterPoint: "/api/v1/aipc/chat/embedding",
 	}
 	return SmartVisionUrlMap
+}
+
+func IsServerRunning() bool {
+	serverUrl := "http://127.0.0.1:16688" + "/health"
+	resp, err := http.Get(serverUrl)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK
+}
+
+func StartByzeServer(logPath string, pidFilePath string) error {
+	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return fmt.Errorf("failed to open log file: %v", err)
+	}
+	defer logFile.Close()
+	execCmd := "byze.exe"
+	if runtime.GOOS != "windows" {
+		execCmd = "byze"
+	}
+	cmd := exec.Command(execCmd, "server", "start")
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start Byze server: %v", err)
+	}
+
+	// Save PID to file.
+	pid := cmd.Process.Pid
+	pidFile := filepath.Join(pidFilePath, "byze.pid")
+	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
+		return fmt.Errorf("failed to save PID to file: %v", err)
+	}
+
+	fmt.Printf("\rByze server started with PID: %d\n", cmd.Process.Pid)
+	return nil
+}
+
+func StopByzeServer(pidFilePath string) error {
+	files, err := filepath.Glob(pidFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to list pid files: %v", err)
+	}
+
+	if len(files) == 0 {
+		fmt.Println("No running processes found")
+		return nil
+	}
+
+	// Traverse all pid files.
+	for _, pidFile := range files {
+		pidData, err := os.ReadFile(pidFile)
+		if err != nil {
+			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
+			continue
+		}
+
+		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
+		if err != nil {
+			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
+			continue
+		}
+
+		process, err := os.FindProcess(pid)
+		if err != nil {
+			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
+			continue
+		}
+
+		if err := process.Kill(); err != nil {
+			if strings.Contains(err.Error(), "process already finished") {
+				fmt.Printf("Process with PID %d is already stopped\n", pid)
+			} else {
+				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
+				continue
+			}
+		} else {
+			fmt.Printf("Successfully stopped process with PID %d\n", pid)
+		}
+
+		// remove pid file
+		if err := os.Remove(pidFile); err != nil {
+			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
+		}
+	}
+	return nil
 }
