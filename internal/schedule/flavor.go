@@ -703,7 +703,7 @@ func (c *CredentialsAuthenticator) Authenticate() error {
 			Credentials: credentials,
 		}
 	} else if c.ProviderInfo.ServiceName == types.ServiceEmbed {
-		reqUrl = smartVisionInfo.Url + smartVisionInfo.ChatEnterPoint
+		reqUrl = smartVisionInfo.Url + smartVisionInfo.EmbedEnterPoint
 		reqData["credentials"] = credentials
 	}
 
