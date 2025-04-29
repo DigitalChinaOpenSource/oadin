@@ -537,6 +537,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 					model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
 					model.Avatar = localModel.Avatar
 					model.Class = localModel.Class
+					model.Size = localModel.Size
 					model.OllamaId = localModel.OllamaId
 					serviceModelList[modelService] = append(serviceModelList[modelService], *model)
 					resModelNameList = append(resModelNameList, model.Name)
@@ -546,19 +547,35 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 		}
 
 	} else {
+		RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
+		fileContent, err := template.FlavorTemplateFs.ReadFile("remote_model.json")
+		if err != nil {
+			fmt.Printf("Read file failed: %v\n", err)
+			return nil, err
+		}
+		// parse struct
+		err = json.Unmarshal(fileContent, &RemoteServiceMap)
+		if err != nil {
+			fmt.Printf("Parse JSON failed: %v\n", err)
+			return nil, err
+		}
 		for _, service := range types.SupportService {
 			if service == types.ServiceModels || service == types.ServiceGenerate {
 				continue
 			}
+			remoteModelInfoList := RemoteServiceMap[service]
 			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, service)
 			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
 			authFields := []string{"api_key"}
 			if providerServiceDefaultInfo.AuthType == types.AuthTypeToken {
 				authFields = []string{"secret_id", "secret_key"}
 			}
-			for _, model := range providerServiceDefaultInfo.SupportModels {
+			for _, model := range remoteModelInfoList {
+				if model.Flavor != flavor {
+					continue
+				}
 				modelQuery := new(types.Model)
-				modelQuery.ModelName = model
+				modelQuery.ModelName = model.Name
 				modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, service)
 				canSelect := true
 				err := ds.Get(context.Background(), modelQuery)
@@ -569,10 +586,11 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 					canSelect = false
 				}
 				modelData := dto.RecommendModelData{
-					Name:            model,
+					Name:            model.Name,
+					Avatar:          model.Avatar,
+					Desc:            model.Description,
 					Service:         service,
 					Flavor:          flavor,
-					Desc:            fmt.Sprintf("%s %s %s", source, flavor, parts[1]),
 					Method:          parts[0],
 					Url:             providerServiceDefaultInfo.RequestUrl,
 					AuthType:        providerServiceDefaultInfo.AuthType,

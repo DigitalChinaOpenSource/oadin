@@ -176,22 +176,24 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	// ================
 	// TODO: so far we all dispatch to local, unless force
 
-	location := "local"
-
+	location := types.ServiceSourceLocal
+	model := task.Request.Model
 	if task.Request.HybridPolicy == "always_local" {
 		location = types.ServiceSourceLocal
 	} else if task.Request.HybridPolicy == "always_remote" {
 		location = types.ServiceSourceRemote
 	} else if task.Request.HybridPolicy == "default" {
-		gpuUtilization, err := utils.GetGpuInfo()
-		if err != nil {
-			cpuTotalPercent, _ := cpu.Percent(3*time.Second, false)
-			if cpuTotalPercent[0] > 80.0 {
+		if model == "" {
+			gpuUtilization, err := utils.GetGpuInfo()
+			if err != nil {
+				cpuTotalPercent, _ := cpu.Percent(15*time.Second, false)
+				if cpuTotalPercent[0] > 80.0 {
+					location = types.ServiceSourceRemote
+				}
+			}
+			if gpuUtilization >= 80.0 {
 				location = types.ServiceSourceRemote
 			}
-		}
-		if gpuUtilization >= 80.0 {
-			location = types.ServiceSourceRemote
 		}
 	}
 	ds := datastore.GetDefaultDatastore()
@@ -208,6 +210,13 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	if location == types.ServiceSourceRemote && service.RemoteProvider != "" {
 		providerName = service.RemoteProvider
 	}
+	if model == "" && task.Request.HybridPolicy == "default" && providerName == "" {
+		if location == types.ServiceSourceLocal {
+			providerName = service.RemoteProvider
+		} else if location == types.ServiceSourceRemote {
+			providerName = service.LocalProvider
+		}
+	}
 	sp := &types.ServiceProvider{
 		ProviderName: providerName,
 	}
@@ -220,7 +229,6 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal service provider properties: %v", err)
 	}
-	model := task.Request.Model
 	// Non-query model services do not require model validation
 	if task.Request.Service != types.ServiceModels {
 		if model == "" {
@@ -239,6 +247,14 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 				if len(ms) == 0 {
 					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
 				}
+				for _, mObj := range ms {
+					dsModel := mObj.(*types.Model)
+					if dsModel.Status == "download" {
+						model = dsModel.ModelName
+						break
+					}
+
+				}
 				model = ms[0].(*types.Model).ModelName
 			case types.ServiceSourceRemote:
 				defaultInfo := GetProviderServiceDefaultInfo(sp.Flavor, task.Request.Service)
@@ -249,12 +265,12 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 				ProviderName: sp.ProviderName,
 				ModelName:    task.Request.Model,
 			}
-			ms, err := ds.List(context.Background(), m, &datastore.ListOptions{})
+			err := ds.Get(context.Background(), m)
 			if err != nil {
 				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
 			}
-			if len(ms) == 0 {
-				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+			if m.Status != "downloaded" {
+				return nil, fmt.Errorf("model installing %s of Service %s, please wait", location, task.Request.Service)
 			}
 		}
 	}

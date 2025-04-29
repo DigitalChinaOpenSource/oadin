@@ -212,21 +212,22 @@ func (st *ServiceTask) Run() error {
 			Body:       b,
 		}
 	}
+	var reader io.ReadCloser
+	switch resp.Header.Get("Content-Encoding") {
+	case "gzip":
+		reader, err = gzip.NewReader(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer reader.Close()
+		resp.Body = reader
+		resp.Header.Set("Content-Encoding", "application/json")
+	}
+
 	var body []byte
 	// second request
 	if serviceDefaultInfo.RequestSegments > 1 {
-		var reader io.ReadCloser
-		switch resp.Header.Get("Content-Encoding") {
-		case "gzip":
-			reader, err = gzip.NewReader(resp.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer reader.Close()
-		default:
-			reader = resp.Body
-		}
-		body, err = io.ReadAll(reader)
+		body, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
