@@ -1,60 +1,67 @@
-.container {
+.byzeServiceTab {
+  padding: 24px;
+  width: 100%;
+  .card {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
     gap: 16px;
-    align-self: stretch;
     border-radius: 8px;
-    background: var(--Background-color-background-body, #FFF);
-    /* hover-button */
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
+    align-self: stretch;
+    background: var(--Background-color-background-body, #fff);
+    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.15),
+      0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+  }
 }
 
 .logoIcon {
-    width: 48px;
-    height: 48px;
-    aspect-ratio: 1/1;
-    fill: linear-gradient(180deg, #FFF 0%, #FFF 100%);
-    stroke-width: 1px;
-    stroke: var(--border-color-border-weak, #E4E6EB);
+  width: 48px;
+  height: 48px;
+  border: 1px solid #e4e6eb;
+  border-radius: 8px;
+  margin-right: 16px;
+  aspect-ratio: 1/1;
+  fill: linear-gradient(180deg, #fff 0%, #fff 100%);
+  stroke-width: 1px;
+  stroke: var(--border-color-border-weak, #e4e6eb);
 }
 
 .infoBlock {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: stretch;
 }
 
 .leftBlock {
-    display: flex;
-    gap: 4px;
-    align-self: stretch;
-    color: rgba(0, 0, 0, 0.85);
-    font-family: "PingFang SC";
-    font-size: 16px;
-    font-style: normal;
-    font-weight: 500;
-    line-height: 24px; /* 150% */
+  display: flex;
+  gap: 4px;
+  align-self: stretch;
+  color: rgba(0, 0, 0, 0.85);
+  font-family: 'PingFang SC';
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 24px; /* 150% */
 }
 
 .statusName {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    font-size: 12px;
-    color: #10B981;
-    font-weight: 400;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 400;
 }
 
 .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 8px;
-    background-color: #10B981;
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
+  background-color: #10b981;
 }
 
 .refreshBlock {
-    color: #412A98 !important;
+  color: #412a98 !important;
 }

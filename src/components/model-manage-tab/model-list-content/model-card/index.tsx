@@ -1,9 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import { Button, Tag } from 'antd';
-import { useViewModel } from './view-model.ts';
-import ModelDetailModal from '../model-detail-modal/index.tsx';
 import modelLogo from '@/assets/modelLogo.png';
+import { IModelAuthType } from '../../types';
 
 export interface IModelCardProps {
   // 是否用于详情展示
@@ -12,13 +11,16 @@ export interface IModelCardProps {
   isLocal?: boolean;
   content?: string;
   tags?: string[];
+  onDetailModalVisible?: (visible: boolean) => void;
+  onModelAuthVisible?: (visible: boolean, type: IModelAuthType) => void;
+  deleteConfirm?: (modelData: any) => void;
+  downloadConfirm?: (modelData: any) => void;
 }
 
 export default function ModelCard(props: IModelCardProps) {
-  const { isDetail, isLocal } = props;
+  const { isDetail, isLocal = true, onDetailModalVisible, onModelAuthVisible, deleteConfirm, downloadConfirm } = props;
   const [isOverflow, setIsOverflow] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
-  const vm = useViewModel(props);
   const content =
     '这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容';
   const tags = ['深度思考', '文本模型', '语言理解', '逻辑思维', '情感分析', '信息检索'];
@@ -80,32 +82,42 @@ export default function ModelCard(props: IModelCardProps) {
               {isLocal ? (
                 <>
                   {/* 本地下载相关内容 */}
-                  {/* <div>
-                          <span>已下载</span>
-                          <DeleteOutlined />
-                        </div> */}
-                  {/* <Button type="text" style={{ color: '#344054', padding: 'unset' }}>
-                        已下载
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#344054" viewBox="0 0 256 256">
-                          <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"></path>
-                        </svg>
-                      </Button>
-                      <Button type="text" style={{ color: '#344054', padding: 'unset' }}>
-                        下载中
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#344054" viewBox="0 0 256 256">
-                          <path d="M136,32V64a8,8,0,0,1-16,0V32a8,8,0,0,1,16,0Zm37.25,58.75a8,8,0,0,0,5.66-2.35l22.63-22.62a8,8,0,0,0-11.32-11.32L167.6,77.09a8,8,0,0,0,5.65,13.66ZM224,120H192a8,8,0,0,0,0,16h32a8,8,0,0,0,0-16Zm-45.09,47.6a8,8,0,0,0-11.31,11.31l22.62,22.63a8,8,0,0,0,11.32-11.32ZM128,184a8,8,0,0,0-8,8v32a8,8,0,0,0,16,0V192A8,8,0,0,0,128,184ZM77.09,167.6,54.46,190.22a8,8,0,0,0,11.32,11.32L88.4,178.91A8,8,0,0,0,77.09,167.6ZM72,128a8,8,0,0,0-8-8H32a8,8,0,0,0,0,16H64A8,8,0,0,0,72,128ZM65.78,54.46A8,8,0,0,0,54.46,65.78L77.09,88.4A8,8,0,0,0,88.4,77.09Z"></path>
-                        </svg>
-                      </Button> */}
-                  {/* 下载失败也回到下载 */}
-                  <Button type="primary" size="small">
-                    下载
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#fff" viewBox="0 0 256 256">
-                      <path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"></path>
+                  <Button type="text" className={styles.hasLoaded} onClick={() => deleteConfirm?.({})}>
+                    已下载
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#344054" viewBox="0 0 256 256">
+                      <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"></path>
                     </svg>
                   </Button>
+                  {/* <Button type="text" style={{ color: '#344054', padding: 'unset' }} >
+                    下载中
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#344054" viewBox="0 0 256 256">
+                      <path d="M136,32V64a8,8,0,0,1-16,0V32a8,8,0,0,1,16,0Zm37.25,58.75a8,8,0,0,0,5.66-2.35l22.63-22.62a8,8,0,0,0-11.32-11.32L167.6,77.09a8,8,0,0,0,5.65,13.66ZM224,120H192a8,8,0,0,0,0,16h32a8,8,0,0,0,0-16Zm-45.09,47.6a8,8,0,0,0-11.31,11.31l22.62,22.63a8,8,0,0,0,11.32-11.32ZM128,184a8,8,0,0,0-8,8v32a8,8,0,0,0,16,0V192A8,8,0,0,0,128,184ZM77.09,167.6,54.46,190.22a8,8,0,0,0,11.32,11.32L88.4,178.91A8,8,0,0,0,77.09,167.6ZM72,128a8,8,0,0,0-8-8H32a8,8,0,0,0,0,16H64A8,8,0,0,0,72,128ZM65.78,54.46A8,8,0,0,0,54.46,65.78L77.09,88.4A8,8,0,0,0,88.4,77.09Z"></path>
+                    </svg>
+                  </Button> */}
+                  {/* 下载失败也回到下载 */}
+                  {/* <Button type="primary" size="small" onClick={() => downloadConfirm?.({})}>
+                    下载
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="#fff"
+                      viewBox="0 0 256 256"
+                    >
+                      <path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"></path>
+                    </svg>
+                  </Button> */}
                 </>
               ) : (
-                <>{/* 云端下载相关内容 */}</>
+                <>
+                  {/* 云端下载相关内容 */}
+                  <Button type="primary" size="small" onClick={() => onModelAuthVisible?.(true, 'config')}>
+                    配置授权
+                  </Button>
+                  {/* <Button className={styles.updateSetting} variant="filled" size="small" onClick={() => onModelAuthorizeVisible?.('update')}>
+                    更新配置
+                  </Button> */}
+                </>
               )}
             </div>
           )}
@@ -117,7 +129,7 @@ export default function ModelCard(props: IModelCardProps) {
             {content}
           </div>
           {isOverflow && !isDetail && (
-            <Button type="link" size="small" className={styles.moreButton} onClick={vm.handleDetailVisible}>
+            <Button type="link" size="small" className={styles.moreButton} onClick={() => onDetailModalVisible?.(true)}>
               更多
             </Button>
           )}
@@ -148,7 +160,6 @@ export default function ModelCard(props: IModelCardProps) {
           ))}
         </div>
       </div>
-      {vm.isDetailVisible && <ModelDetailModal onDetailClose={vm.onDetailClose} />}
     </>
   );
 }

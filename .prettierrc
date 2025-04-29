@@ -1,8 +1,7 @@
 {
-  "printWidth": 180,
   "tabWidth": 2,
+  "printWidth": 300,
   "useTabs": false,
-  "semi": true,
   "singleQuote": true,
   "quoteProps": "as-needed",
   "jsxSingleQuote": false,
@@ -14,6 +13,14 @@
   "insertPragma": false,
   "proseWrap": "preserve",
   "htmlWhitespaceSensitivity": "css",
-  "endOfLine": "lf",
-  "embeddedLanguageFormatting": "auto"
+  "endOfLine": "auto",
+  "embeddedLanguageFormatting": "auto",
+  "singleLine": false,
+  "wrap": "auto",
+  "html": {
+    "wrapAttributes": "auto",
+    "indent": 2,
+    "singleLine": false,
+    "wrap": "auto"
+  }
 }

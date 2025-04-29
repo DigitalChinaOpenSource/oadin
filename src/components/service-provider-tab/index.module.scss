@@ -1,10 +1,15 @@
-.container {
+.serviceProviderTab {
+  height: 100%;
+  padding: 24px;
+  .container {
+    height: 100%;
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 24px;
+  }
 }
 
 .titleBlock {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   color: #000115;
   font-family: 'PingFang SC';
   font-size: 16px;

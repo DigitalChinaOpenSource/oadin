@@ -3,7 +3,7 @@ import { Tabs } from 'antd';
 import type { TabsProps } from 'antd';
 import ByzeServiceTab from '../../components/byze-service-tab';
 import ServiceProviderManage from '../../components/service-provider-tab';
-import ServiceConvention from '../../components/service-convention-tab';
+// import ServiceConvention from '../../components/service-convention-tab';
 
 export default function ServiceManage() {
   const items: TabsProps['items'] = [
@@ -17,18 +17,23 @@ export default function ServiceManage() {
       label: '服务提供商管理',
       children: <ServiceProviderManage />,
     },
-    {
-      key: 'serviceConventionTab',
-      label: '服务协议',
-      children: <ServiceConvention />,
-    }
+    // {
+    //   key: 'serviceConventionTab',
+    //   label: '服务协议',
+    //   children: <ServiceConvention />,
+    // }
   ];
-  
+
   const onChange = (key: string) => {
     console.log(key);
   };
 
   return (
-    <Tabs className={styles.serviceManagePage} defaultActiveKey="serviceProvider" items={items} onChange={onChange} />
+    <Tabs
+      className={styles.serviceManagePage}
+      defaultActiveKey="serviceProvider"
+      items={items}
+      onChange={onChange}
+    />
   );
 }

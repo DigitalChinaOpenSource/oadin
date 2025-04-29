@@ -7,18 +7,15 @@ import { Button, Modal, Pagination } from 'antd';
 import { useViewModel } from './view-model';
 import modelPng from '../../../assets/modelLogo.png';
 
-
-
-     
 interface ServiceProviderDetailProps {
   id: string;
   visible: boolean;
   onCancel: () => void;
 }
 
-export default function ServiceProviderDetail({ 
+export default function ServiceProviderDetail({
   id,
-  visible, 
+  visible,
   onCancel,
 }: ServiceProviderDetailProps) {
   const vm = useViewModel();
@@ -26,11 +23,13 @@ export default function ServiceProviderDetail({
 
   return (
     <Modal
+      centered
       open={visible}
       width={860}
       footer={null}
       title={<div className={styles.modalTitle}>查看服务提供商详情</div>}
       onCancel={onCancel}
+      okText="确认"
     >
       <div className={styles.infoName}>基础信息</div>
       <div className={styles.infoBlock}>
@@ -52,7 +51,13 @@ export default function ServiceProviderDetail({
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务提供商状态:</span>
-          <div className={baseInfo.statusCode === '1' ? styles.readyStatus : styles.disabledStatus}>
+          <div
+            className={
+              baseInfo.statusCode === '1'
+                ? styles.readyStatus
+                : styles.disabledStatus
+            }
+          >
             <div className={styles.dot}></div>
             {baseInfo.statusCode === '1' ? '可用' : '禁用'}
           </div>
@@ -75,39 +80,55 @@ export default function ServiceProviderDetail({
         <div className={styles.infoRow}>
           <span className={styles.infoLabel}>请求URL:</span>
           {baseInfo.name}
-        </div><div className={styles.infoRow}>
+        </div>
+        <div className={styles.infoRow}>
           <span className={styles.infoLabel}>鉴权类型:</span>
           {baseInfo.name}
-        </div><div className={styles.infoRow}>
+        </div>
+        <div className={styles.infoRow}>
           <span className={styles.infoLabel}>鉴权信息:</span>
           {baseInfo.name}
         </div>
       </div>
 
-      <div className={styles.modelList}>
+      <div className={styles.pageBlock}>
         <div className={styles.modelTitle}>支持的模型列表</div>
-          {modelList.map((model, index) => <div className={styles.modelItem} key={index}>
+        <Pagination
+          current={pagination.current}
+          showSizeChanger={false}
+          total={pagination.total}
+          onChange={handlePagChange}
+          show-less-items
+        />
+      </div>
+      <div className={styles.modelList}>
+        {modelList.map((model, index) => (
+          <div className={styles.modelItem} key={index}>
             <div className={styles.modelLeft}>
               <img src={modelPng} alt="modelLogo" />
-              <span className={styles.modelBaseInfo}><span className={styles.modelLabel}>模型名称: </span>{model.name}</span>
-              {model.tags.map((tag, tagIndex) => <span key={tagIndex} className={styles.tagItem}>{tag}</span>)}
+              <span className={styles.modelBaseInfo}>
+                <span className={styles.modelLabel}>模型名称: </span>
+                {model.name}
+              </span>
+              {model.tags.map((tag, tagIndex) => (
+                <span key={tagIndex} className={styles.tagItem}>
+                  {tag}
+                </span>
+              ))}
             </div>
             <div className={styles.modelRight}>
               {model.text}
               <div className={styles.line}></div>
-              上下文长度:  {model.size}k
-              <div className={styles.line}></div>
+              上下文长度: {model.size}k<div className={styles.line}></div>
               {model.status === 1 ? '已下载' : '未下载'}
             </div>
-          </div>)}
-          <div className={styles.pageBlock}>
-            <Pagination current={pagination.current} showSizeChanger={false} total={pagination.total} onChange={handlePagChange} show-less-items />
           </div>
-          <div className={styles.timeInfo}>
-            <span>创建时间: {baseInfo.createTime}</span>
-            <span>更新时间: {baseInfo.updateTime}</span>
-          </div>
+        ))}
+      </div>
+      <div className={styles.timeInfo}>
+        <span>创建时间: {baseInfo.createTime}</span>
+        <span>更新时间: {baseInfo.updateTime}</span>
       </div>
     </Modal>
   );
-};
+}

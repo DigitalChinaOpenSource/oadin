@@ -106,6 +106,17 @@
       color: #9da3bb;
     }
   }
+  .updateSetting {
+    color: #5429ff;
+    background-color: #f3f1f1;
+  }
+  .hasLoaded {
+    color: '#344054';
+    padding: unset;
+    &:hover {
+      background-color: unset !important;
+    }
+  }
 }
 
 .modelCardStyle {

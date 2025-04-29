@@ -3,6 +3,13 @@
   border-radius: 8px;
   height: calc(100vh - 200px);
   padding: 24px;
+  .modelCardList {
+    width: 100%;
+    height: calc(100% - 82px);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
   .contentContainer {
     height: 100%;
   }
@@ -18,6 +25,9 @@
     .changePath {
       color: #5429ff;
       padding: unset;
+    }
+    .changeFailed {
+      margin-left: 8px;
     }
   }
   .pagination {

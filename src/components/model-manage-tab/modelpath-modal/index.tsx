@@ -27,7 +27,7 @@ export default function ModelPathModal(props: IModelPathModalProps) {
   };
 
   return (
-    <Modal title="修改模型存储路径" width={480} open onOk={handleToSavePath} onCancel={onModalPathClose} className={styles.modelPathModal} okText="确认">
+    <Modal centered title="修改模型存储路径" width={480} open onOk={handleToSavePath} onCancel={onModalPathClose} className={styles.modelPathModal} okText="确认">
       <div className={styles.modelPathModal}>
         <div className={styles.tips}>
           <p>若本地模型正在工作中，该操作可能会造成业务的中断。</p>

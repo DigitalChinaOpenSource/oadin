@@ -1,153 +1,152 @@
-
 .modalTitle {
-    font-size: 18px;
-    font-weight: 500;
-    line-height: 28px; 
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 28px;
 }
 
 .infoName {
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 24px; 
-    color: #000115;
-    margin-top: 24px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #000115;
+  margin-top: 24px;
 }
 
 .infoBlock {
-    display: flex;
-    row-gap: 16px;
-    flex-wrap: wrap;
-    margin-top: 16px;
-    font-size: 14px;
-    font-weight: 400;
-    color: #344054;
+  display: flex;
+  row-gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #344054;
 }
 
 .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
 }
 
 .infoItem {
-    width: 50%;
-    display: flex;
-    align-items: center;
+  width: 50%;
+  display: flex;
+  align-items: center;
 }
 
 .infoLabel {
-    margin-right: 8px;
+  margin-right: 8px;
 }
 
 .readyStatus {
-    color: #10B981;
-    display: flex;
-    align-items: center;
-    gap: 8;
-    .dot {
-        background-color: #10B981;
-    }
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 8;
+  .dot {
+    background-color: #10b981;
+    margin-right: 8px;
+  }
 }
 
 .disabledStatus {
-    color: red;
-    display: flex;
-    align-items: center;
-    gap: 8;
-    .dot {
-        background-color: red;
-    }
+  color: red;
+  display: flex;
+  align-items: center;
+  gap: 8;
+  .dot {
+    background-color: red;
+    margin-right: 8px;
+  }
 }
 
-
 .infoRow {
-    width: 100%;
+  width: 100%;
 }
 
 .modelList {
-    display: flex;
-    padding: 16px;
-    flex-direction: column;
-    justify-content: center;
-    align-self: stretch;
-    border-radius: 8px;
-    border: 1px solid  #E4E6EB;
-    margin-top: 16px;
+  display: flex;
+  padding: 16px;
+  flex-direction: column;
+  justify-content: center;
+  align-self: stretch;
+  border-radius: 8px;
 }
 
 .modelItem {
-    padding: 16px 0;
-    border-bottom:  1px solid #E4E6EB;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    &:last-child {
-        border-bottom: none;
-    }
+  padding: 16px 0;
+  border-bottom: 1px solid #e4e6eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .modelTitle {
-    color: #000115;
-    font-size: 16px;
-    font-weight: 600;
+  color: #000115;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .modelBaseInfo {
-    color: #000;
-    font-weight: 600;
-    margin-right: 16px;
+  color: #000;
+  font-weight: 600;
+  margin-right: 16px;
 }
 
 .modelLabel {
-    margin: 0 8px;
-    font-size: 14px;
-    line-height: 22px;
+  margin: 0 8px;
+  font-size: 14px;
+  line-height: 22px;
 }
 
 .modelLeft {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .modelRight {
-    color: #9DA3BB;
-    font-weight: 400;
-    font-size: 12px;
+  color: #9da3bb;
+  font-weight: 400;
+  font-size: 12px;
 }
 
 .tagItem {
-    padding: 2px 8px;
-    border-radius: 4px;
-    border: 1px solid #E4E6EB;
-    background: #FFF;
-    font-size: 12px;
-    font-weight: 400;
-    color: #344054;
-    margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #e4e6eb;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  color: #344054;
+  margin-left: 8px;
 }
 
 .modelRight {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .line {
-    width: 1px;
-    height: 14px;
-    background-color: #9DA3BB;
-    margin: 0 12px;
+  width: 1px;
+  height: 14px;
+  background-color: #9da3bb;
+  margin: 0 12px;
 }
 
 .pageBlock {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
 }
 
 .timeInfo {
-    font-size: 12px;
-    font-weight: 400;
-    color: #898EA3;
-    margin-top: 16px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #898ea3;
+  margin-top: 16px;
 }
