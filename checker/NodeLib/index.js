@@ -719,7 +719,7 @@ class Byze {
     try {
       this.validateSchema(schemas.embeddingRequest, data);
       const res = await this.client.post('/services/embed', data);
-      return this.validateSchema(schemas.embeddingResponse, res.data);
+      return res.data;
     } catch (error) {
         // 检查是否是 axios 错误
       if (error.response) {
