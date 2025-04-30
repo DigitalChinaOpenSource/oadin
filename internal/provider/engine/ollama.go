@@ -244,10 +244,10 @@ func (o *OllamaProvider) InstallEngine() error {
 			return fmt.Errorf("failed to unzip file: %v", err)
 		}
 		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
-		cmd := exec.Command("open", appPath)
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to open ollama installer: %v", err)
-		}
+		//cmd := exec.Command("open", appPath)
+		//if err := cmd.Run(); err != nil {
+		//	return fmt.Errorf("failed to open ollama installer: %v", err)
+		//}
 		// move it to Applications
 		mvCmd := exec.Command("mv", appPath, "/Applications/")
 		if err := mvCmd.Run(); err != nil {
