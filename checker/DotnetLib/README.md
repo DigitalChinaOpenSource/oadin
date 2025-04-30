@@ -11,4 +11,44 @@ cp ./bin/Release/ByzeClient.1.0.0.nupkg ./local-nuget
 dotnet nuget add source ./local-nuget --name LocalByze
 
 dotnet add package ByzeClient --version 1.0.0 --source LocalByze
+dotnet add package ByzeClient --version 1.0.0 --source .
+```
+
+```csharp
+using ByzeClient;
+
+var client = new ByzeClient();
+
+
+// 流式下载模型
+var requestData = new
+{
+    model_name = "nomic-embed-text",
+    service_name = "embed",
+    service_source = "local",
+    provider_name = "local_ollama_embed"
+};
+await client.InstallModelStreamAsync(
+    requestData,
+    onData: (json) => Console.WriteLine("流数据: " + json),
+    onError: (error) => Console.WriteLine("错误: " + error),
+    onEnd: () => Console.WriteLine("流式安装完成")
+);
+
+// 流式Chat
+var requestData = new { 
+    model = "deepseek-r1:7b", 
+    stream = true,
+    messages = new[] { 
+        new { role = "user", content = "你是谁？" } 
+    }
+};
+await client.ChatAsync(
+    requestData,
+    isStream: true,
+    onData: (data) => Console.WriteLine("流数据: " + data),
+    onError: (error) => Console.WriteLine("错误: " + error),
+    onEnd: () => Console.WriteLine("流式请求结束")
+);
+
 ```
