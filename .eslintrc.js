@@ -4,12 +4,7 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  extends: [
-    'eslint:recommended',
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
-    'plugin:@typescript-eslint/recommended',
-  ],
+  extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended', 'plugin:@typescript-eslint/recommended'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaFeatures: {
@@ -33,6 +28,8 @@ module.exports = {
     ],
     semi: 'off',
     '@typescript-eslint/semi': 'off',
+    'no-unused-vars': 'off',
+    'import/no-unused-modules': 'off',
   },
   settings: {
     react: {

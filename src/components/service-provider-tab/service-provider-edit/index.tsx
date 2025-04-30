@@ -29,10 +29,10 @@ export default function ServiceProviderEdit({ id = '', visible, onCancel }: Serv
 
   // 初始化表单值
   useEffect(() => {
-    if (visible && id) {
-    } else {
-      form.resetFields();
-    }
+    // if (visible && id) {
+    // } else {
+    //   form.resetFields();
+    // }
   }, [visible, id]);
 
   return (
@@ -65,7 +65,7 @@ export default function ServiceProviderEdit({ id = '', visible, onCancel }: Serv
         <Form.Item label="服务来源" name="serviceName" rules={[{ required: true, message: '请选择服务来源' }]}>
           <Select placeholder="请选择服务名称">
             {serviceOrgList.map((item) => (
-              <Select.Option key={item.id} value={item.name}>
+              <Select.Option key={item?.key} value={item.name}>
                 {item.name}
               </Select.Option>
             ))}
@@ -75,7 +75,7 @@ export default function ServiceProviderEdit({ id = '', visible, onCancel }: Serv
         <Form.Item label="服务名称" name="serviceName" rules={[{ required: true, message: '请选择服务名称' }]}>
           <Select placeholder="请选择服务名称">
             {modelList.map((item) => (
-              <Select.Option key={item.id} value={item.name}>
+              <Select.Option key={item?.key} value={item.name}>
                 {item.name}
               </Select.Option>
             ))}
