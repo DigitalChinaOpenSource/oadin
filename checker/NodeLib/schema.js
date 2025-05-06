@@ -510,7 +510,7 @@ const chatResponse = {
         },
         model: { type: "string" }
     },
-    required: ["created_at", "id", "message", "model"]
+    required: ["message", "model"]
 };
 
 

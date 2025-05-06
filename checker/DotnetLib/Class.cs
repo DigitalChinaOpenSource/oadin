@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Web;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,13 +17,13 @@ namespace Byze
 
         public ByzeClient(string version = "byze/v0.2")
         {
+            if (!version.EndsWith("/")) version += "/";
             _baseUrl = $"http://127.0.0.1:16688/{version}";
             _client = new HttpClient { BaseAddress = new Uri(_baseUrl) };
         }
-
         
         // 通用请求方法
-        private async Task<string> RequestAsync(HttpMethod method, string path, object? data = null, Dictionary<string, string>? headers = null)
+        private async Task<string> RequestAsync(HttpMethod method, string path, object? data = null)
         {
             try
             {
@@ -31,21 +32,15 @@ namespace Byze
                     path = path.TrimStart('/');
                 }
 
-                HttpRequestMessage request = new HttpRequestMessage(method, $"{_baseUrl}/{path}");
-
-                if (headers != null)
-                {
-                    foreach (var header in headers)
-                    {
-                        request.Headers.Add(header.Key, header.Value);
-                    }
-                }
+                HttpRequestMessage request = new HttpRequestMessage(method, path); // 使用相对路径
 
                 if (data != null)
                 {
                     var json = JsonSerializer.Serialize(data);
                     request.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
                 }
+                Console.WriteLine($"Request URL: {request.RequestUri}");
+                Console.WriteLine($"Headers: {string.Join(", ", request.Headers)}");
 
                 var response = await _client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
@@ -99,7 +94,7 @@ namespace Byze
             {
                 var json = JsonSerializer.Serialize(data);
                 var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Post, "/model/stream")
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}model/stream")
                 {
                     Content = content
                 };
@@ -196,18 +191,29 @@ namespace Byze
         }
 
         // 获取问学支持模型列表
-        public async Task<string> GetSmartvisionModelsSupportedAsync(object data)
+        public async Task<string> GetSmartvisionModelsSupportedAsync(Dictionary<string, string> headers)
         {
-            var headers = data as Dictionary<string, string>;
+            // 构建带查询参数的 URL
+            var queryParams = HttpUtility.ParseQueryString(string.Empty);
+            foreach (var header in headers)
+            {
+                if (header.Key.ToLower() == "env_type") // 忽略大小写
+                {
+                    queryParams[header.Key] = header.Value;
+                }
+            }
+            string fullPath = $"/model/support/smartvision?{queryParams.ToString()}";
 
-            return await RequestAsync(HttpMethod.Get, "/model/support/smartvision", null, headers);
+            return await RequestAsync(HttpMethod.Get, fullPath, null); // 不再传递 headers
         }
 
         // 导入配置文件
         public async Task<string> ImportConfigAsync(string filePath)
         {
-            var data = new { file_path = filePath };
-            return await RequestAsync(HttpMethod.Post, "/config/import", data);
+            // 读取json文件内容
+            string jsonContent = await File.ReadAllTextAsync(filePath);
+            var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonContent);
+            return await RequestAsync(HttpMethod.Post, "/config/import", jsonElement);
         }
 
         // 导出配置文件
@@ -218,22 +224,10 @@ namespace Byze
                 // 调用 RequestAsync 获取配置文件的 JSON 响应
                 var config = await RequestAsync(HttpMethod.Get, "/config/export", data);
 
-                // 获取用户目录
                 string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-                // 构造 Byze 文件夹路径
                 string byzeDirectory = Path.Combine(userDirectory, "Byze");
-
-                // 如果 Byze 文件夹不存在，则创建
-                if (!Directory.Exists(byzeDirectory))
-                {
-                    Directory.CreateDirectory(byzeDirectory);
-                }
-
-                // 构造 .byze 文件路径
                 string byzeFilePath = Path.Combine(byzeDirectory, ".byze");
 
-                // 将 JSON 写入 .byze 文件
                 await File.WriteAllTextAsync(byzeFilePath, config);
 
                 // 返回文件路径
@@ -255,7 +249,7 @@ namespace Byze
 
                 if (isStream)
                 {
-                    var request = new HttpRequestMessage(HttpMethod.Post, "/services/chat")
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}services/chat")
                     {
                         Content = content
                     };
@@ -279,12 +273,15 @@ namespace Byze
 
                             onData?.Invoke(responseData);
 
-                            var status = responseData.GetProperty("status").GetString();
-                            if (status == "success" || status == "error")
+                            if (responseData.TryGetProperty("finished", out var finishedProperty) && finishedProperty.GetBoolean())
                             {
                                 onEnd?.Invoke();
                                 break;
                             }
+                        }
+                        catch (JsonException jsonEx)
+                        {
+                            onError?.Invoke($"JSON 解析错误: {jsonEx.Message}");    
                         }
                         catch (Exception ex)
                         {
@@ -296,7 +293,7 @@ namespace Byze
                 }
                 else
                 {
-                    var response = await _client.PostAsync("/services/chat", content);
+                    var response = await _client.PostAsync("services/chat", content);
                     response.EnsureSuccessStatusCode();
 
                     return await response.Content.ReadAsStringAsync();
@@ -318,7 +315,7 @@ namespace Byze
 
                 if (isStream)
                 {
-                    var request = new HttpRequestMessage(HttpMethod.Post, "/services/generate")
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}services/generate")
                     {
                         Content = content
                     };
@@ -430,8 +427,198 @@ namespace Byze
             }
         }
 
-        
+        // 下载 Byze
+        public async Task<bool> DownloadByzeAsync()
+        {
+            try
+            {
+                // 根据操作系统选择下载 URL 和目标路径
+                string url = OperatingSystem.IsMacOS()
+                    ? "http://120.232.136.73:31619/byzedev/byze.zip"
+                    : "http://120.232.136.73:31619/byzedev/byze.exe";
 
+                string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string byzeDirectory = Path.Combine(userDirectory, "Byze");
+                string destFileName = OperatingSystem.IsMacOS() ? "byze.zip" : "byze.exe";
+                string destFilePath = Path.Combine(byzeDirectory, destFileName);
+
+                // 创建 Byze 目录
+                if (!Directory.Exists(byzeDirectory))
+                {
+                    Directory.CreateDirectory(byzeDirectory);
+                }
+
+                // 下载文件
+                using var client = new HttpClient();
+                using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
+
+                using var fileStream = new FileStream(destFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await response.Content.CopyToAsync(fileStream);
+
+                Console.WriteLine($"✅ 下载完成: {destFilePath}");
+
+                // 如果是 macOS，解压 ZIP 文件
+                if (OperatingSystem.IsMacOS())
+                {
+                    string extractedPath = Path.Combine(byzeDirectory, "byze");
+                    System.IO.Compression.ZipFile.ExtractToDirectory(destFilePath, byzeDirectory, true);
+                    File.Delete(destFilePath);
+                    Console.WriteLine($"✅ 解压完成: {extractedPath}");
+
+                    // 设置可执行权限
+                    if (File.Exists(extractedPath))
+                    {
+                        var chmod = new ProcessStartInfo
+                        {
+                            FileName = "chmod",
+                            Arguments = "+x " + extractedPath,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        Process.Start(chmod)?.WaitForExit();
+                    }
+                }
+
+                // 添加 Byze 目录到环境变量
+                AddToEnvironmentPath(byzeDirectory);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ 下载 Byze 失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        // 将路径添加到环境变量
+        private void AddToEnvironmentPath(string directory)
+        {
+            try
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    // Windows: 修改注册表以永久添加到 PATH
+                    const string regKey = @"Environment";
+                    using var key = Registry.CurrentUser.OpenSubKey(regKey, writable: true);
+                    if (key == null) throw new Exception("无法打开注册表键");
+
+                    string? currentPath = key.GetValue("Path", "", RegistryValueOptions.DoNotExpandEnvironmentNames)?.ToString();
+                    if (currentPath == null || !currentPath.Contains(directory))
+                    {
+                        string newPath = string.IsNullOrEmpty(currentPath) ? directory : $"{currentPath};{directory}";
+                        key.SetValue("Path", newPath, RegistryValueKind.ExpandString);
+                        Console.WriteLine("✅ 已将 Byze 目录添加到环境变量 PATH");
+                    }
+                    else
+                    {
+                        Console.WriteLine("✅ Byze 目录已存在于环境变量 PATH 中");
+                    }
+                }
+                else if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+                {
+                    // macOS/Linux: 修改 shell 配置文件
+                    string shellConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".zshrc");
+                    if (!File.Exists(shellConfigPath))
+                    {
+                        shellConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".bashrc");
+                    }
+
+                    string exportLine = $"export PATH=\"$PATH:{directory}\"";
+                    if (File.Exists(shellConfigPath))
+                    {
+                        string content = File.ReadAllText(shellConfigPath);
+                        if (!content.Contains(exportLine))
+                        {
+                            File.AppendAllText(shellConfigPath, Environment.NewLine + exportLine);
+                            Console.WriteLine($"✅ 已将 Byze 目录添加到 {Path.GetFileName(shellConfigPath)}，请执行以下命令使其生效：\nsource {shellConfigPath}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"✅ Byze 目录已存在于 {Path.GetFileName(shellConfigPath)} 中");
+                        }
+                    }
+                    else
+                    {
+                        File.WriteAllText(shellConfigPath, exportLine + Environment.NewLine);
+                        Console.WriteLine($"✅ 已创建 {Path.GetFileName(shellConfigPath)} 并添加 Byze 目录，请执行以下命令使其生效：\nsource {shellConfigPath}");
+                    }
+                }
+                else
+                {
+                    throw new PlatformNotSupportedException("当前操作系统不支持添加环境变量");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ 添加 Byze 目录到环境变量失败: {ex.Message}");
+            }
+        }
+
+        // 启动 Byze 服务
+        public bool InstallByze()
+        {
+            try
+            {
+                string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string byzeDirectory = Path.Combine(userDirectory, "Byze");
+                string byzeExecutable = OperatingSystem.IsMacOS()
+                    ? Path.Combine(byzeDirectory, "byze")
+                    : Path.Combine(byzeDirectory, "byze.exe");
+
+                if (!File.Exists(byzeExecutable))
+                {
+                    Console.WriteLine("❌ Byze 可执行文件不存在，请先下载。");
+                    return false;
+                }
+
+                // 确保 PATH 包含 Byze 目录
+                string pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+                if (!pathEnv.Contains(byzeDirectory))
+                {
+                    Environment.SetEnvironmentVariable("PATH", pathEnv + Path.PathSeparator + byzeDirectory);
+                }
+
+                // 启动 Byze 服务
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = byzeExecutable,
+                    Arguments = "server start -d",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var process = Process.Start(processStartInfo);
+                if (process == null)
+                {
+                    Console.WriteLine("❌ 启动 Byze 服务失败。");
+                    return false;
+                }
+
+                process.WaitForExit();
+
+                if (process.ExitCode == 0)
+                {
+                    Console.WriteLine("✅ Byze 服务已启动。");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Byze 服务启动失败，退出码: {process.ExitCode}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ 启动 Byze 服务失败: {ex.Message}");
+                return false;
+            }
+        }
 
 
     }
