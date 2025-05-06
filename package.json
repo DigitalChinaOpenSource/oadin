@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "node src/server.js",
     "build": "tsc -b && vite build",
-    "start": "node src/server.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -15,10 +13,6 @@
     "@ant-design/icons": "^6.0.0",
     "antd": "^5.24.8",
     "axios": "^1.8.4",
-    "cors": "^2.8.5",
-    "diskusage": "^1.2.0",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "^7.5.2",
