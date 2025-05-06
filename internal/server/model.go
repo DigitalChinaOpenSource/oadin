@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"runtime"
@@ -211,8 +212,8 @@ func (s *ModelImpl) GetModels(ctx context.Context, request *dto.GetModelsRequest
 }
 
 func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (chan []byte, chan error) {
-	newDataChan := make(chan []byte)
-	newErrChan := make(chan error)
+	newDataChan := make(chan []byte, 100)
+	newErrChan := make(chan error, 1)
 	defer close(newDataChan)
 	defer close(newErrChan)
 	ds := datastore.GetDefaultDatastore()
@@ -251,6 +252,19 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 		newErrChan <- err
 		return newDataChan, newErrChan
 	}
+	m := new(types.Model)
+	m.ModelName = strings.ToLower(request.ModelName)
+	m.ProviderName = sp.ProviderName
+	err = ds.Get(ctx, m)
+	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+		newErrChan <- err
+	} else if errors.Is(err, datastore.ErrEntityInvalid) {
+		m.Status = "downloading"
+		err = ds.Add(ctx, m)
+		if err != nil {
+			newErrChan <- err
+		}
+	}
 	modelName := request.ModelName
 	providerEngine := provider.GetModelEngine(sp.Flavor)
 	steam := true
@@ -259,7 +273,65 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 		Stream: &steam,
 	}
 	dataChan, errChan := providerEngine.PullModelStream(ctx, &req)
-	return dataChan, errChan
+
+	newDataCh := make(chan []byte, 100)
+	newErrorCh := make(chan error, 1)
+	go func() {
+
+		defer close(newDataCh)
+		defer close(newErrorCh)
+		for {
+			select {
+			case data, ok := <-dataChan:
+				if !ok {
+					// 数据通道关闭，发送结束标记
+					//fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
+					// fmt.Fprintf(w, "\n[DONE]\n\n")
+					//flusher.Flush()
+					client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
+					return
+				}
+
+				// 解析Ollama响应
+				var resp types.ProgressResponse
+				if err := json.Unmarshal(data, &resp); err != nil {
+					log.Printf("Error unmarshaling response: %v", err)
+					continue
+				}
+
+				// 获取响应文本
+				// 使用SSE格式发送到前端
+				// fmt.Fprintf(w, "data: %s\n\n", response)
+				if resp.Completed > 0 || resp.Status == "success" {
+					if resp.Status == "success" {
+						m.Status = "downloaded"
+						err = ds.Put(ctx, m)
+						if err != nil {
+							newErrorCh <- err
+							return
+						}
+					}
+					newDataCh <- data
+				}
+
+			case err, ok := <-errChan:
+				if !ok {
+					return
+				}
+				log.Printf("Error: %v", err)
+				client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
+				m.Status = "failed"
+				err = ds.Put(ctx, m)
+				if err != nil {
+					newErrorCh <- err
+				}
+			case <-ctx.Done():
+				newErrorCh <- ctx.Err()
+			}
+
+		}
+	}()
+	return newDataCh, newErrorCh
 }
 
 func ModelStreamCancel(ctx context.Context, req *dto.ModelStreamCancelRequest) (*dto.ModelStreamCancelResponse, error) {
