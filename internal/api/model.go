@@ -1,21 +1,17 @@
 package api
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"log"
-	"net/http"
-	"strings"
-
 	"byze/internal/api/dto"
 	"byze/internal/server"
 	"byze/internal/types"
 	"byze/internal/utils/bcode"
-	"byze/internal/utils/client"
-
+	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"io"
+	"log"
+	"net/http"
 )
 
 func (t *ByzeCoreServer) CreateModel(c *gin.Context) {
@@ -99,7 +95,6 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 				//fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
 				// fmt.Fprintf(w, "\n[DONE]\n\n")
 				//flusher.Flush()
-				client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
 				return
 			}
 
@@ -126,13 +121,11 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 			// 发送错误信息到前端
 			fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
 			flusher.Flush()
-			client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
 			return
 
 		case <-ctx.Done():
 			fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"timeout\"}\n\n")
 			flusher.Flush()
-			client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
 			return
 		}
 	}
