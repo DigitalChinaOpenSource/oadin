@@ -1,6 +1,6 @@
 {
   "tabWidth": 2,
-  "printWidth": 300,
+  "printWidth": 200,
   "useTabs": false,
   "singleQuote": true,
   "quoteProps": "as-needed",
@@ -22,5 +22,6 @@
     "indent": 2,
     "singleLine": false,
     "wrap": "auto"
-  }
+  },
+  "singleAttributePerLine": true
 }

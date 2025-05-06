@@ -1,15 +1,16 @@
 .sidebar {
   width: 76px;
   height: 100vh;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
   position: fixed;
   left: 0;
   top: 0;
+  z-index: 9999;
   border-right: 1px solid #e4e6eb;
-  
+
   .logo {
     padding: 16px 0;
     img {
@@ -17,60 +18,62 @@
       height: 40px;
     }
   }
-  
+
   .menuContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    
+
     .menuItem {
       width: 60px;
       height: 48px;
       font-size: 12px;
       border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      padding: 6px;
       margin: 8px auto;
+      text-align: center;
       cursor: pointer;
-      
       .icon {
-        margin-bottom: 4px;
+        height: 20px;
       }
-      
       &.selected {
         background-color: #f0f0f0;
       }
-      
       &:hover {
         opacity: 0.8;
       }
     }
   }
-  
-  .downloadBtn {
+
+  .downloadBtnBox {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    padding: 4px;
     margin-top: auto;
     margin-bottom: 20px;
-    
-    button {
-      width: 36px;
-      height: 36px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    cursor: pointer;
+    .downloadBtn {
+      width: 100%;
+      height: 100%;
+      padding: 6px;
       border-radius: 8px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 0;
-      
-      .anticon {
-        font-size: 18px;
-        margin: 0;
-      }
-      
-      span:not(.anticon) {
-        display: none;
-      }
+      background-color: #5429ff;
+    }
+
+    .downloadListWrapper {
+      position: absolute;
+      left: 44px;
+      bottom: 0px;
+      width: 340px;
+      min-height: 200px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0px 4px 12px rgba(0, 1, 21, 0.2);
     }
   }
 }

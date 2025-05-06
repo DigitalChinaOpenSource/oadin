@@ -11,18 +11,25 @@ const ModelManage = () => {
       label: '模型管理',
       children: <ModelManageTab />,
     },
-    {
-      key: 'modelChangeTab',
-      label: '智能模型切换',
-      children: <ModelChangeTab />,
-    },
+    // {
+    //   key: 'modelChangeTab',
+    //   label: '智能模型切换',
+    //   children: <ModelChangeTab />,
+    // },
   ];
 
   const onChange = (key: string) => {
     console.log(key);
   };
 
-  return <Tabs className={styles.modelManage} defaultActiveKey="1" items={items} onChange={onChange} />;
+  return (
+    <Tabs
+      className={styles.modelManage}
+      defaultActiveKey="1"
+      items={items}
+      onChange={onChange}
+    />
+  );
 };
 
 export default ModelManage;

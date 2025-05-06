@@ -1,0 +1,46 @@
+.downloadItem {
+  width: 100%;
+  height: 78px;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  &:hover {
+    background-color: #f9faff;
+  }
+  .titleControlBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    .title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #000115;
+    }
+    .modelImg {
+      width: 24px;
+      height: 24px;
+      padding: 2px;
+      margin-right: 8px;
+    }
+    .controlBar {
+      cursor: pointer;
+    }
+    .cancel {
+      margin-left: 12px;
+    }
+  }
+  .speedSizeStatus {
+    display: flex;
+    color: #898ea3;
+    font-size: 12px;
+    margin-bottom: 2px;
+    .status {
+      margin-left: auto;
+      display: flex;
+      .isloading {
+        margin-left: 4px;
+      }
+    }
+  }
+}
