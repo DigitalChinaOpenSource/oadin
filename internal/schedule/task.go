@@ -223,7 +223,31 @@ func (st *ServiceTask) Run() error {
 		resp.Body = reader
 		resp.Header.Set("Content-Encoding", "application/json")
 	}
-
+	if sp.Flavor == "smartvision" && resp.Header.Get("Content-Type") == "application/json" {
+		bodyData, _ := io.ReadAll(resp.Body)
+		var respData map[string]interface{}
+		err = json.Unmarshal(bodyData, &respData)
+		if err != nil {
+			return err
+		}
+		statusCode, ok := respData["status_code"].(float64)
+		if ok {
+			if statusCode != 200 {
+				return &types.HTTPErrorResponse{
+					StatusCode: 400,
+					Header:     resp.Header.Clone(),
+					Body:       bodyData,
+				}
+			}
+		} else {
+			return &types.HTTPErrorResponse{
+				StatusCode: 400,
+				Header:     resp.Header.Clone(),
+				Body:       bodyData,
+			}
+		}
+		resp.Body = io.NopCloser(bytes.NewReader(bodyData))
+	}
 	var body []byte
 	// second request
 	if serviceDefaultInfo.RequestSegments > 1 {

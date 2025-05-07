@@ -49,6 +49,7 @@ func (ds *SQLite) Init() error {
 		&types.ServiceProvider{},
 		&types.Service{},
 		&types.Model{},
+		&types.VersionUpdateRecord{},
 	); err != nil {
 		return fmt.Errorf("failed to initialize database tables: %v", err)
 	}
