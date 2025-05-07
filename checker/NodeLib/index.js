@@ -19,13 +19,13 @@ function AddToUserPath(destDir) {
 
   if (isMacOS) {
     try {
-      // 确定shell配置文件
+      // 确定 shell 配置文件
       const shell = process.env.SHELL || '';
-      let shellConfigName = '.zshrc';
+      let shellConfigName = '.zprofile';
       if (shell.includes('bash')) shellConfigName = '.bash_profile';
-      
+
       const shellConfigPath = path.join(os.homedir(), shellConfigName);
-      const exportLine = `export PATH="$PATH:${destDir}"\n`;
+      const exportLine = `export PATH="$PATH:${destDir}"`;
 
       // 确保配置文件存在
       if (!fs.existsSync(shellConfigPath)) {
@@ -34,13 +34,14 @@ function AddToUserPath(destDir) {
 
       // 检查是否已存在路径
       const content = fs.readFileSync(shellConfigPath, 'utf8');
-      if (content.includes(exportLine)) {
-        console.log('✅ 环境变量已存在');
+      const pathRegex = new RegExp(`(^|\\n)export PATH=.*${destDir}.*`, 'm');
+      if (pathRegex.test(content)) {
+        console.log('✅ 环境变量已存在:', destDir);
         return true;
       }
 
       // 追加路径到配置文件
-      fs.appendFileSync(shellConfigPath, `\n${exportLine}`);
+      fs.appendFileSync(shellConfigPath, `\n${exportLine}\n`);
       console.log(`✅ 已添加到 ${shellConfigName}，请执行以下命令生效：\nsource ${shellConfigPath}`);
       return true;
     } catch (err) {
