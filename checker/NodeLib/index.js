@@ -370,7 +370,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.getServicesSchema, res.data);
+      await this.validateSchema(schemas.getServicesSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -397,7 +397,7 @@ class Byze {
           data: null
         };
       }
-      this.validateSchema(schemas.ResponseSchema, res.data);
+      await this.validateSchema(schemas.ResponseSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -424,7 +424,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.ResponseSchema, res.data);
+      await this.validateSchema(schemas.ResponseSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -450,7 +450,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.getModelsSchema, res.data);
+      await this.validateSchema(schemas.getModelsSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -477,7 +477,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.ResponseSchema, res.data);
+      await this.validateSchema(schemas.ResponseSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -584,7 +584,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.ResponseSchema, res.data);
+      await this.validateSchema(schemas.ResponseSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -610,7 +610,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.getServiceProvidersSchema, res.data);
+      await this.validateSchema(schemas.getServiceProvidersSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -637,7 +637,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.ResponseSchema, res.data);
+      await this.validateSchema(schemas.ResponseSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -664,7 +664,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.ResponseSchema, res.data);
+      await this.validateSchema(schemas.ResponseSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -691,7 +691,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.ResponseSchema, res.data);
+      await this.validateSchema(schemas.ResponseSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -718,7 +718,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.ResponseSchema, res.data);
+      await this.validateSchema(schemas.ResponseSchema, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -810,7 +810,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.recommendModelsResponse, res.data);
+      await this.validateSchema(schemas.recommendModelsResponse, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -837,7 +837,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.recommendModelsResponse, res.data);
+      await this.validateSchema(schemas.recommendModelsResponse, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -864,7 +864,7 @@ class Byze {
           data: null,
         };
       }
-      this.validateSchema(schemas.SmartvisionModelSupport, res.data);
+      await this.validateSchema(schemas.SmartvisionModelSupport, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -893,7 +893,7 @@ class Byze {
           msg: res.data?.message || 'Bad Request',
           data: null,
         };
-      }
+      };
 
       if (data.stream) {
         const eventEmitter = new EventEmitter();
@@ -920,13 +920,13 @@ class Byze {
         return eventEmitter; // 返回 EventEmitter 实例
       } else {
         // 非流式响应处理
-        this.validateSchema(schemas.chatResponse, res.data);
+        await this.validateSchema(schemas.chatResponse, res.data);
         return {
           code: 200,
           msg: res.data.message || null,
           data: res.data,
         };
-      }
+      };
     } catch (error) {
       return {
         code: 400,
@@ -978,7 +978,7 @@ class Byze {
         return eventEmitter; // 返回 EventEmitter 实例
       } else {
         // 非流式响应处理
-        this.validateSchema(schemas.generateResponse, res.data);
+        await this.validateSchema(schemas.generateResponse, res.data);
         return {
           code: 200,
           msg: res.data.message || null,
@@ -1006,7 +1006,7 @@ class Byze {
           data: null,
         };
       };
-      this.validateSchema(schemas.textToImageResponse, res.data);
+      await this.validateSchema(schemas.textToImageResponse, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
@@ -1033,7 +1033,7 @@ class Byze {
           data: null,
         };
       };
-      this.validateSchema(schemas.embeddingResponse, res.data);
+      await this.validateSchema(schemas.embeddingResponse, res.data);
       return {
         code: 200,
         msg: res.data.message || null,
