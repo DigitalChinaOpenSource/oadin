@@ -98,13 +98,12 @@ class Byze {
 
   async validateSchema(schema, data) {
     if (!data || Object.keys(data).length === 0) {
-      // 如果 data 为空或是空对象，跳过验证
       return data;
     }
   
     const validate = this.ajv.compile(schema);
     if (!validate(data)) {
-      return new Error(`Schema validation failed: ${JSON.stringify(validate.errors)}`);
+      throw new Error(`Schema validation failed: ${JSON.stringify(validate.errors)}`);
     }
     return data;
   }
@@ -364,13 +363,25 @@ class Byze {
   async GetServices() {
     try {
       const res = await this.client.get('/service');
-      const validatedData = this.validateSchema(schemas.getServicesSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.getServicesSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data,
+      };
     } catch (error) {
-      return { status: 0, err_msg: `获取服务失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -379,27 +390,52 @@ class Byze {
     try {
       this.validateSchema(schemas.installServiceRequestSchema, data);
       const res = await this.client.post('/service', data);
-      const validatedData = this.validateSchema(schemas.ResponseSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      return { status: 0, err_msg: `创建服务失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
   // 更新服务
   async UpdateService(data) {
     try {
+      this.validateSchema(schemas.updateServiceRequestSchema, data);
       const res = await this.client.put('/service', data);
-      const validatedData = this.validateSchema(schemas.ResponseSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      return { status: 0, err_msg: `更新服务失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -407,40 +443,68 @@ class Byze {
   async GetModels() {
     try {
       const res = await this.client.get('/model');
-      const validatedData = this.validateSchema(schemas.getModelsSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
-    } catch (error) {
-      return { status: 0, err_msg: `获取模型失败: ${error.message}`, data: null };
+      this.validateSchema(schemas.getModelsSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
+
   // 安装模型
   async InstallModel(data) {
     try {
       this.validateSchema(schemas.installModelRequestSchema, data);
       const res = await this.client.post('/model', data);
-      const validatedData = this.validateSchema(schemas.ResponseSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      return { status: 0, err_msg: `安装模型失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
-  
+
   // 安装模型（流式）
   async InstallModelStream(data) {
     try {
-        this.validateSchema(schemas.installModelRequestSchema, data);
+      this.validateSchema(schemas.installModelRequestSchema, data);
     } catch (error) {
-        throw new Error(`流式安装模型失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
 
     const config = { responseType: 'stream' };
-
     try {
         const res = await this.client.post('/model/stream', data, config);
         const eventEmitter = new EventEmitter();
@@ -474,7 +538,11 @@ class Byze {
 
         return eventEmitter; // 返回 EventEmitter 实例
     } catch (error) {
-        throw new Error(`流式安装模型失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      }
     }
 }
 
@@ -483,9 +551,24 @@ class Byze {
     try {
       this.validateSchema(schemas.cancelModelStreamRequestSchema, data);
       const res = await this.client.post('/model/stream/cancel', data);
-      return res.data;
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      throw new Error(`取消安装模型失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -494,13 +577,25 @@ class Byze {
     try {
       this.validateSchema(schemas.deleteModelRequestSchema, data);
       const res = await this.client.delete('/model', { data });
-      const validatedData = this.validateSchema(schemas.ResponseSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      return { status: 0, err_msg: `卸载模型失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -508,13 +603,25 @@ class Byze {
   async GetServiceProviders() {
     try {
       const res = await this.client.get('/service_provider');
-      const validatedData = this.validateSchema(schemas.getServiceProvidersSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
-    } catch (error) {
-      return { status: 0, err_msg: `获取服务提供商失败: ${error.message}`, data: null };
+      this.validateSchema(schemas.getServiceProvidersSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -523,13 +630,25 @@ class Byze {
     try {
       this.validateSchema(schemas.installServiceProviderRequestSchema, data);
       const res = await this.client.post('/service_provider', data);
-      const validatedData = this.validateSchema(schemas.ResponseSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null,
+      };
     } catch (error) {
-      return { status: 0, err_msg: `新增服务提供商失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -538,13 +657,25 @@ class Byze {
     try {
       this.validateSchema(schemas.updateServiceProviderRequestSchema, data);
       const res = await this.client.put('/service_provider', data);
-      const validatedData = this.validateSchema(schemas.ResponseSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null,
+      };
     } catch (error) {
-      return { status: 0, err_msg: `更新服务提供商失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -553,13 +684,25 @@ class Byze {
     try {
       this.validateSchema(schemas.deleteServiceProviderRequestSchema, data);
       const res = await this.client.delete('/service-provider', { data });
-      const validatedData = this.validateSchema(schemas.ResponseSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null,
+      };
     } catch (error) {
-      return { status: 0, err_msg: `删除服务提供商失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -568,13 +711,25 @@ class Byze {
     try {
       const data = await fsPromises.readFile(path, 'utf8');
       const res = await this.client.post('/service/import', data);
-      const validatedData = this.validateSchema(schemas.ResponseSchema, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
+      this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null,
+      };
     } catch (error) {
-      return { status: 0, err_msg: `导入配置文件失败: ${error.message}`, data: null };
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -583,7 +738,13 @@ class Byze {
     try{
       this.validateSchema(schemas.exportRequestSchema, data);
       const res = await this.client.post('/service/export', data);
-
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
       // 将响应数据存入 .byze 文件
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'Byze');
@@ -608,37 +769,59 @@ class Byze {
           });
       });
 
-      return { status: 200, err_msg: null, data: res.data};
-    } catch (error) {
-      return { status: 0, err_msg: `导出配置文件失败: ${error.message}`, data: null };
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
-// 获取模型列表
-async GetModelsAvailiable() {
-  try {
-    const res = await this.client.get('/services/models');
-    const validatedData = this.validateSchema(schemas.modelsResponse, res.data);
-    if (validatedData instanceof Error) {
-      return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+  // 获取模型列表 （已弃用）
+  async GetModelsAvailiable() {
+    try {
+      const res = await this.client.get('/services/models');
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || null,
+        }
+      }
+      this.validateSchema(schemas.modelsResponse, res.data);
+    } catch (error) {
+      return { status: 0, err_msg: `获取模型列表失败: ${error.message}`, data: null };
     }
-    return { status: 200, err_msg: null, data: validatedData };
-  } catch (error) {
-    return { status: 0, err_msg: `获取模型列表失败: ${error.message}`, data: null };
   }
-}
 
   // 获取推荐模型列表
   async GetModelsRecommended() {
     try {
       const res = await this.client.get('/model/recommend');
-      const validatedData = this.validateSchema(schemas.recommendModelsResponse, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
-    } catch (error) {
-      return { status: 0, err_msg: `获取推荐模型列表失败: ${error.message}`, data: null };
+      this.validateSchema(schemas.recommendModelsResponse, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -647,13 +830,25 @@ async GetModelsAvailiable() {
     try {
       this.validateSchema(schemas.getModelsSupported, data);
       const res = await this.client.get('/model/support', { params: data });
-      const validatedData = this.validateSchema(schemas.recommendModelsResponse, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
-    } catch (error) {
-      return { status: 0, err_msg: `获取支持模型列表失败: ${error.message}`, data: null };
+      this.validateSchema(schemas.recommendModelsResponse, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -662,13 +857,25 @@ async GetModelsAvailiable() {
     try {
       this.validateSchema(schemas.SmartvisionModelSupportRequest, data);
       const res = await this.client.get('/model/support/smartvision', { params: data });
-      const validatedData = this.validateSchema(schemas.SmartvisionModelSupport, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
       }
-      return { status: 200, err_msg: null, data: validatedData };
-    } catch (error) {
-      return { status: 0, err_msg: `获取问学平台支持模型列表失败: ${error.message}`, data: null };
+      this.validateSchema(schemas.SmartvisionModelSupport, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -680,6 +887,13 @@ async GetModelsAvailiable() {
       // 判断是否是流式
       const config = { responseType: data.stream ? 'stream' : 'json' };
       const res = await this.client.post('/services/chat', data, config);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
 
       if (data.stream) {
         const eventEmitter = new EventEmitter();
@@ -706,24 +920,19 @@ async GetModelsAvailiable() {
         return eventEmitter; // 返回 EventEmitter 实例
       } else {
         // 非流式响应处理
-        const validatedData = this.validateSchema(schemas.chatResponse, res.data);
-        if (validatedData instanceof Error) {
-          return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
-        }
-        return { status: 200, err_msg: null, data: validatedData };
+        this.validateSchema(schemas.chatResponse, res.data);
+        return {
+          code: 200,
+          msg: res.data.message || null,
+          data: res.data,
+        };
       }
     } catch (error) {
-      // 检查是否是 axios 错误
-      if (error.response) {
-        const { status, statusText, data: errorData } = error.response;
-        return { status: 0, err_msg: `Chat服务请求失败: 状态码 ${status} - ${statusText}`, data: errorData };
-      } else if (error.request) {
-        // 请求已发送但未收到响应
-        return { status: 0, err_msg: `Chat服务请求失败: 未收到服务器响应，错误信息: ${error.message}`, data: null };
-      } else {
-        // 其他错误
-        return { status: 0, err_msg: `Chat服务请求失败: ${error.message}`, data: null };
-      }
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -735,6 +944,13 @@ async GetModelsAvailiable() {
   
       const config = { responseType: data.stream ? 'stream' : 'json' };
       const res = await this.client.post('/services/generate', data, config);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
   
       if (data.stream) {
         const eventEmitter = new EventEmitter();
@@ -762,24 +978,19 @@ async GetModelsAvailiable() {
         return eventEmitter; // 返回 EventEmitter 实例
       } else {
         // 非流式响应处理
-        const validatedData = this.validateSchema(schemas.generateResponse, res.data);
-        if (validatedData instanceof Error) {
-          return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
-        }
-        return { status: 200, err_msg: null, data: validatedData };
+        this.validateSchema(schemas.generateResponse, res.data);
+        return {
+          code: 200,
+          msg: res.data.message || null,
+          data: res.data,
+        };
       }
     } catch (error) {
-      // 检查是否是 axios 错误
-      if (error.response) {
-        const { status, statusText, data: errorData } = error.response;
-        return { status: 0, err_msg: `Generate服务请求失败: 状态码 ${status} - ${statusText}`, data: errorData };
-      } else if (error.request) {
-        // 请求已发送但未收到响应
-        return { status: 0, err_msg: `Generate服务请求失败: 未收到服务器响应，错误信息: ${error.message}`, data: null };
-      } else {
-        // 其他错误
-        return { status: 0, err_msg: `Generate服务请求失败: ${error.message}`, data: null };
-      }
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
   
@@ -788,20 +999,25 @@ async GetModelsAvailiable() {
     try {
       this.validateSchema(schemas.textToImageRequest, data);
       const res = await this.client.post('/services/text-to-image', data);
-      const validatedData = this.validateSchema(schemas.textToImageResponse, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
-      }
-      return { status: 200, err_msg: null, data: validatedData };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      };
+      this.validateSchema(schemas.textToImageResponse, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data,
+      };
     } catch (error) {
-      if (error.response) {
-        const { status, statusText, data: errorData } = error.response;
-        return { status: 0, err_msg: `生图服务请求失败: 状态码 ${status} - ${statusText}`, data: errorData };
-      } else if (error.request) {
-        return { status: 0, err_msg: `生图服务请求失败: 未收到服务器响应，错误信息: ${error.message}`, data: null };
-      } else {
-        return { status: 0, err_msg: `生图服务请求失败: ${error.message}`, data: null };
-      }
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -810,20 +1026,25 @@ async GetModelsAvailiable() {
     try {
       this.validateSchema(schemas.embeddingRequest, data);
       const res = await this.client.post('/services/embed', data);
-      const validatedData = this.validateSchema(schemas.embeddingResponse, res.data);
-      if (validatedData instanceof Error) {
-        return { status: 0, err_msg: `验证失败: ${validatedData.message}`, data: null };
-      }
-      return { status: 200, err_msg: null, data: validatedData };
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      };
+      this.validateSchema(schemas.embeddingResponse, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data,
+      };
     } catch (error) {
-      if (error.response) {
-        const { status, statusText, data: errorData } = error.response;
-        return { status: 0, err_msg: `Embed服务请求失败: 状态码 ${status} - ${statusText}`, data: errorData };
-      } else if (error.request) {
-        return { status: 0, err_msg: `Embed服务请求失败: 未收到服务器响应，错误信息: ${error.message}`, data: null };
-      } else {
-        return { status: 0, err_msg: `Embed服务请求失败: ${error.message}`, data: null };
-      }
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
