@@ -375,7 +375,7 @@ class Byze {
       return {
         code: 200,
         msg: res.data.message || null,
-        data: res.data,
+        data: res.data.data,
       };
     } catch (error) {
       return {
