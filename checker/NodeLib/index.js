@@ -110,25 +110,34 @@ class Byze {
   }
 
   // 检查 Byze 服务是否启动
-  IsByzeAvailiable(){
-      return new Promise((resolve) => {
+  IsByzeAvailiable() {
+    return new Promise((resolve) => {
+      const checkPort = (port) => {
+        return new Promise((resolvePort) => {
           const options = {
             hostname: 'localhost',
-            port: 16688,
+            port: port,
             path: '/',
             method: 'GET',
             timeout: 3000,
           };
           const req = http.request(options, (res) => {
-            resolve(res.statusCode === 200);
+            resolvePort(res.statusCode === 200);
           });
-          req.on('error', () => resolve(false));
+          req.on('error', () => resolvePort(false));
           req.on('timeout', () => {
             req.destroy();
-            resolve(false);
+            resolvePort(false);
           });
           req.end();
+        });
+      };
+
+      // 同时检查 16688 和 16677 两个端口
+      Promise.all([checkPort(16688), checkPort(16677)]).then((results) => {
+        resolve(results.every((status) => status)); // 两个端口都可用时返回 true
       });
+    });
   }
 
   // 检查用户目录是否存在 Byze.exe
