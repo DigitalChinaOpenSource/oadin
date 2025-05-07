@@ -24,6 +24,9 @@
   gap: 16px;
 }
 
-.deleteBtn {
-  color: #412a98 !important;
+.linkA {
+  color: #5429ff;
+  &:hover {
+    color: #5429ffcc;
+  }
 }
