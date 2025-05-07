@@ -204,6 +204,10 @@ type ModelStreamCancelResponse struct {
 	bcode.Bcode
 }
 
+type ModelStreamResponse struct {
+	bcode.Bcode
+}
+
 type Model struct {
 	ModelName    string    `json:"model_name"`
 	ProviderName string    `json:"provider_name"`

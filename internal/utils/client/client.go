@@ -158,7 +158,7 @@ func (c *Client) Stream(ctx context.Context, method, path string, data any, fn f
 }
 
 func (c *Client) StreamResponse(ctx context.Context, method, path string, reqData any) (chan []byte, chan error) {
-	dataCh := make(chan []byte)
+	dataCh := make(chan []byte, 100)
 	errCh := make(chan error, 1) // 缓冲通道避免goroutine阻塞
 
 	go func() {
