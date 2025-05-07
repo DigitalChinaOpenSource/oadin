@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Modal } from 'antd';
-import { useHttp } from '../../utils/useHttp';
+import { useRequest } from '../../utils/useRequest';
 
 const { confirm } = Modal;
 
 export function useViewModel() {
   // 移除了mock数据
 
-  const { get } = useHttp();
+  const { get } = useRequest();
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);

@@ -5,22 +5,16 @@ import ModelPathModal from '../modelpath-modal';
 import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
-import {SettingIcon, FailedIcon, LoadingIcon} from '../../icons';
+import { SettingIcon, FailedIcon, LoadingIcon } from '../../icons';
 
-export default function ModelListContent() {
+export interface IModelListContent {
+  modelListData: any[];
+}
+
+export default function ModelListContent(props: IModelListContent) {
+  const { modelListData } = props;
   const vm = useViewModel();
-  const {
-    modalPathVisible,
-    onModelPathVisible,
-    modelPath,
-    modelAuthorize,
-    modelAuthVisible,
-    onModelAuthVisible,
-    onSetModelAuthorize,
-    isDetailVisible,
-    onDetailModalVisible,
-    modelAuthType,
-  } = vm;
+  const { modalPathVisible, onModelPathVisible, modelPath, modelAuthorize, modelAuthVisible, onModelAuthVisible, onSetModelAuthorize, isDetailVisible, onDetailModalVisible, modelAuthType } = vm;
   return (
     <div className={styles.modelListContent}>
       <div className={styles.contentContainer}>
@@ -48,24 +42,25 @@ export default function ModelListContent() {
 
         <div className={styles.modelCardList}>
           <Row gutter={[16, 16]}>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((item, index) => {
-              return (
-                <Col
-                  xs={24}
-                  sm={24}
-                  md={24}
-                  lg={12}
-                  xl={12}
-                  span={4}
-                  key={index}
-                >
-                  <ModelCard
-                    onDetailModalVisible={onDetailModalVisible}
-                    onModelAuthVisible={onModelAuthVisible}
-                  />
-                </Col>
-              );
-            })}
+            {Array.isArray(modelListData) &&
+              modelListData.map((item, index) => {
+                return (
+                  <Col
+                    xs={24}
+                    sm={24}
+                    md={24}
+                    lg={12}
+                    xl={12}
+                    span={4}
+                    key={index}
+                  >
+                    <ModelCard
+                      onDetailModalVisible={onDetailModalVisible}
+                      onModelAuthVisible={onModelAuthVisible}
+                    />
+                  </Col>
+                );
+              })}
           </Row>
         </div>
 
@@ -95,9 +90,7 @@ export default function ModelListContent() {
         />
       )}
       {/* 模型详情弹窗 */}
-      {isDetailVisible && (
-        <ModelDetailModal onDetailModalVisible={onDetailModalVisible} />
-      )}
+      {isDetailVisible && <ModelDetailModal onDetailModalVisible={onDetailModalVisible} />}
     </div>
   );
 }

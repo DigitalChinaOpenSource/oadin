@@ -24,16 +24,11 @@ export default function ServiceManage() {
     // }
   ];
 
-  const onChange = (key: string) => {
-    console.log(key);
-  };
-
   return (
     <Tabs
       className={styles.serviceManagePage}
       defaultActiveKey="serviceProvider"
       items={items}
-      onChange={onChange}
     />
   );
 }

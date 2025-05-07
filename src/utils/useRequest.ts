@@ -22,7 +22,7 @@ export interface ResponseData<T = any> {
  * 请求 Hook
  * @returns 请求方法
  */
-export const useHttp = () => {
+export const useRequest = () => {
   const [api] = notification.useNotification();
   // 请求拦截器
   instance.interceptors.request.use(
@@ -107,5 +107,3 @@ export const useHttp = () => {
     request: instance.request,
   };
 };
-
-export default useHttp;

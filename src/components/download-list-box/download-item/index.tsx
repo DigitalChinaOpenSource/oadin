@@ -1,5 +1,4 @@
-import React from 'react';
-import { Image, Progress } from 'antd';
+import { Image, Progress, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import { PauseIcon, PlayPauseIcon, CloseIcon, LoadingIcon } from '../../icons';
 import ModelPng from '../../../assets/model.png';
@@ -13,7 +12,10 @@ export default function DownloadItem(props: IDownloadItemProps) {
     <div className={styles.downloadItem}>
       <div className={styles.titleControlBar}>
         <div>
-          <Image className={styles.modelImg} src={ModelPng}></Image>
+          <Image
+            className={styles.modelImg}
+            src={ModelPng}
+          ></Image>
           <span className={styles.title}>DeepSeek-R1-7B</span>
         </div>
         <div className={styles.controlBar}>
@@ -44,7 +46,12 @@ export default function DownloadItem(props: IDownloadItemProps) {
       </div>
 
       <div className={styles.progress}>
-        <Progress percent={50} showInfo={false} strokeColor="#5429ff" size="small" />
+        <Progress
+          percent={50}
+          showInfo={false}
+          strokeColor="#5429ff"
+          size="small"
+        />
       </div>
     </div>
   );

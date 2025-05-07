@@ -8,9 +8,14 @@ export default function ModelManageTab() {
 
   return (
     <div className={styles.modelManageTab}>
-      <ModelSearch modelSearchVal={vm.modelSearchVal} modelSourceVal={vm.modelSourceVal} onModelSearch={vm.onModelSearch} onModelSourceChange={vm.onModelSourceChange} />
+      <ModelSearch
+        modelSearchVal={vm.modelSearchVal}
+        modelSourceVal={vm.modelSourceVal}
+        onModelSearch={vm.onModelSearch}
+        onModelSourceChange={vm.onModelSourceChange}
+      />
 
-      <ModallistContent />
+      <ModallistContent modelListData={vm.modelListData} />
     </div>
   );
 }
