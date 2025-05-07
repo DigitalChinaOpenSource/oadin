@@ -169,6 +169,14 @@ func HmacSha256(s, key string) string {
 	return string(hashed.Sum(nil))
 }
 
+func HmacSha256String(s, key string) string {
+	hashed := hmac.New(sha256.New, []byte(key))
+	hashed.Write([]byte(s))
+	hmacResult := hashed.Sum(nil)
+	signature := hex.EncodeToString(hmacResult)
+	return signature
+}
+
 // generate nonce str
 const (
 	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
