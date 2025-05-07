@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -330,7 +331,30 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 		sp.AuthType = request.AuthType
 	}
 	if request.AuthKey != "" {
-		sp.AuthKey = request.AuthKey
+		if request.ApiFlavor == "smartvision" {
+			var dbAuthInfoMap map[string]interface{}
+			var requestInfoMap map[string]interface{}
+			err = json.Unmarshal([]byte(request.AuthKey), &requestInfoMap)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal([]byte(sp.AuthKey), &dbAuthInfoMap)
+			if err != nil {
+				return nil, err
+			}
+			for k, v := range requestInfoMap {
+				dbAuthInfoMap[k] = v
+			}
+			jsonBytes, err := json.Marshal(dbAuthInfoMap)
+			if err != nil {
+				fmt.Println("JSON 编码错误:", err)
+				return nil, err
+			}
+			sp.AuthKey = string(jsonBytes)
+		} else {
+			sp.AuthKey = request.AuthKey
+		}
+
 	}
 	if request.Desc != "" {
 		sp.Desc = request.Desc
@@ -438,15 +462,16 @@ func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *
 		dsProvider := v.(*types.ServiceProvider)
 		serviceProviderStatus := 0
 		if dsProvider.ServiceSource == types.ServiceSourceRemote {
-			model := types.Model{
-				ProviderName: dsProvider.ProviderName,
-			}
-			err = ds.Get(ctx, &model)
-			checkServerObj := ChooseCheckServer(*dsProvider, model.ModelName)
-			status := checkServerObj.CheckServer()
-			if status {
-				serviceProviderStatus = 1
-			}
+			fmt.Println(1)
+			//model := types.Model{
+			//	ProviderName: dsProvider.ProviderName,
+			//}
+			//err = ds.Get(ctx, &model)
+			//checkServerObj := ChooseCheckServer(*dsProvider, model.ModelName)
+			//status := checkServerObj.CheckServer()
+			//if status {
+			//	serviceProviderStatus = 1
+			//}
 		} else {
 			providerEngine := provider.GetModelEngine(dsProvider.Flavor)
 			err = providerEngine.HealthCheck()
