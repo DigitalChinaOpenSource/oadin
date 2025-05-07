@@ -1,38 +1,20 @@
 import styles from './index.module.scss';
-import { Table, Space, Modal } from 'antd';
+import { Table } from 'antd';
 import { useViewModel } from './view-model';
 import ServiceProviderDetail from './service-provider-detail';
-
-const { confirm } = Modal;
+import { useTableColumns } from './table-columns';
 
 export default function ServiceProviderManageTab() {
   const vm = useViewModel();
+  const columns = useTableColumns({ handleDetail: vm.handleDetail, handleDeleteConfirm: vm.handleDeleteConfirm });
 
-  const columnsList = [
-    ...vm.columns,
-    {
-      title: '操作',
-      key: 'action',
-      fixed: 'right',
-      width: 200,
-      render: (_: any, record: any) => (
-        <Space>
-          <a
-            className={styles.linkA}
-            onClick={() => vm.handleDetail(record.id)}
-          >
-            查看详情
-          </a>
-          <a
-            className={styles.linkA}
-            onClick={() => vm.handleDeleteConfirm(record)}
-          >
-            删除
-          </a>
-        </Space>
-      ),
-    },
-  ];
+  const pagination =
+    vm.dataList.length > 10
+      ? {
+          ...vm.pagination,
+          onChange: vm.handlePageChange,
+        }
+      : undefined;
 
   return (
     <div className={styles.serviceProviderTab}>
@@ -40,13 +22,10 @@ export default function ServiceProviderManageTab() {
         <div className={styles.titleBlock}>服务提供商管理</div>
 
         <Table
-          rowSelection={vm.rowSelection}
-          columns={columnsList as any}
+          loading={vm.loading}
+          columns={columns}
           dataSource={vm.dataList}
-          pagination={{
-            ...vm.pagination,
-            onChange: vm.handlePageChange,
-          }}
+          pagination={pagination}
         />
       </div>
       {vm.detailVisible && (

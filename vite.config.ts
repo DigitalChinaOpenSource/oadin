@@ -11,7 +11,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  plugins: [
-    react(),
-  ],
+  plugins: [react()],
+  server: {
+    proxy: {
+      '/byze/v0.2': {
+        target: 'http://127.0.0.1:16688',
+        changeOrigin: true,
+      },
+    },
+  },
 });

@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import { Button, Tag } from 'antd';
-import modelLogo from '@/assets/modelLogo.png';
+import modelLogo from '../../../../assets/modelLogo.png';
 import { IModelAuthType } from '../../types';
-import {LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon} from '../../../icons';
+import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '../../../icons';
 
 export interface IModelCardProps {
   // 是否用于详情展示
@@ -47,7 +47,10 @@ export default function ModelCard(props: IModelCardProps) {
         {/* title */}
         <div className={styles.cardHeader}>
           <div className={styles.cardTitle}>
-            <img src={modelLogo} width={24} />
+            <img
+              src={modelLogo}
+              width={24}
+            />
             <div className={styles.title}>模型名称待替换</div>
 
             {/* 本地还是云端 */}
@@ -76,7 +79,11 @@ export default function ModelCard(props: IModelCardProps) {
               {isLocal ? (
                 <>
                   {/* 本地下载相关内容 */}
-                  <Button type="text" className={styles.hasLoaded} onClick={() => deleteConfirm?.({})}>
+                  <Button
+                    type="text"
+                    className={styles.hasLoaded}
+                    onClick={() => deleteConfirm?.({})}
+                  >
                     已下载
                     <DeleteIcon />
                   </Button>
@@ -93,7 +100,11 @@ export default function ModelCard(props: IModelCardProps) {
               ) : (
                 <>
                   {/* 云端下载相关内容 */}
-                  <Button type="primary" size="small" onClick={() => onModelAuthVisible?.(true, 'config')}>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => onModelAuthVisible?.(true, 'config')}
+                  >
                     配置授权
                   </Button>
                   {/* <Button className={styles.updateSetting} variant="filled" size="small" onClick={() => onModelAuthorizeVisible?.('update')}>
@@ -107,11 +118,19 @@ export default function ModelCard(props: IModelCardProps) {
 
         {/* content */}
         <div className={styles.contentWrapper}>
-          <div ref={textRef} className={`${isDetail ? '' : styles.textContent}`}>
+          <div
+            ref={textRef}
+            className={`${isDetail ? '' : styles.textContent}`}
+          >
             {content}
           </div>
           {isOverflow && !isDetail && (
-            <Button type="link" size="small" className={styles.moreButton} onClick={() => onDetailModalVisible?.(true)}>
+            <Button
+              type="link"
+              size="small"
+              className={styles.moreButton}
+              onClick={() => onDetailModalVisible?.(true)}
+            >
               更多
             </Button>
           )}

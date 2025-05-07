@@ -1,18 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from 'antd';
+import { useHttp } from '../../utils/useHttp';
+
 const { confirm } = Modal;
 
 export function useViewModel() {
-  const dataSource = Array.from({ length: 46 }).map((_, i) => ({
-    index: i,
-    id: i,
-    key: i,
-    name: `Edward King ${i}`,
-    age: 32,
-    address: `London, Park Lane no. ${i}`,
-  }));
+  // 移除了mock数据
 
-  const [dataList, setDataList] = useState(dataSource);
+  const { get } = useHttp();
+  const [dataList, setDataList] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
@@ -22,6 +19,26 @@ export function useViewModel() {
     pageSize: 10,
     total: 0,
   });
+
+  useEffect(() => {
+    fetchServiceProviders();
+  }, []);
+
+  // 获取服务提供商数据
+  const fetchServiceProviders = async () => {
+    setLoading(true);
+    try {
+      const data = await get('/service_provider');
+      if (data) {
+        setDataList(data);
+        setPagination({ ...pagination, total: data.length });
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      console.error('获取服务提供商数据失败:', error);
+    }
+  };
 
   const handlePageChange = (current: any) => {
     console.log('---page', current);
@@ -33,14 +50,6 @@ export function useViewModel() {
     setSelectId(id);
     setDetailVisible(true);
   };
-
-  const columns = [
-    { title: '序号', dataIndex: 'index' },
-    { title: '服务提供商名称', dataIndex: 'name' },
-    { title: '服务名称', dataIndex: 'address' },
-    { title: '服务来源', dataIndex: 'address' },
-    { title: '模型数量', dataIndex: 'address' },
-  ];
 
   const rowSelection = {
     selectedRowKeys,
@@ -67,5 +76,5 @@ export function useViewModel() {
     });
   };
 
-  return { selectId, editVisible, dataList, detailVisible, columns, pagination, rowSelection, setEditVisible, setDetailVisible, handlePageChange, handleDetail, handleDeleteConfirm };
+  return { selectId, editVisible, dataList, detailVisible, pagination, rowSelection, loading, setEditVisible, setDetailVisible, handlePageChange, handleDetail, handleDeleteConfirm };
 }
