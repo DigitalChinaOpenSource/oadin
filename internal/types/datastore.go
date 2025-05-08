@@ -38,7 +38,7 @@ const (
 var (
 	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate, ServiceTextToImage}
 	SupportHybridPolicy = []string{HybridPolicyDefault, HybridPolicyLocal, HybridPolicyRemote}
-	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeToken}
+	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeToken, AuthTypeCredentials}
 	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorSmartVision}
 )
 
