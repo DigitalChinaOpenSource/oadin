@@ -9,7 +9,9 @@
     overflow-y: auto;
     overflow-x: hidden;
   }
-
+  :global(.ant-list-pagination) {
+    margin-block-start: 0px;
+  }
   .contentContainer {
     height: 100%;
   }

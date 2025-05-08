@@ -6,15 +6,16 @@ import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
 import { SettingIcon, FailedIcon, LoadingIcon } from '../../icons';
+import { IModelSourceType } from '../types';
 
 export interface IModelListContent {
-  modelListData: any[];
+  modelSearchVal: string;
+  modelSourceVal: IModelSourceType;
 }
 
 export default function ModelListContent(props: IModelListContent) {
-  const { modelListData } = props;
-  const vm = useViewModel();
-  const { modalPathVisible, onModelPathVisible, modelPath, modelAuthorize, modelAuthVisible, onModelAuthVisible, onSetModelAuthorize, isDetailVisible, onDetailModalVisible, modelAuthType } = vm;
+  const vm = useViewModel(props);
+
   return (
     <div className={styles.modelListContent}>
       <div className={styles.contentContainer}>
@@ -24,7 +25,7 @@ export default function ModelListContent(props: IModelListContent) {
             <Button
               className={styles.changePath}
               type="text"
-              onClick={onModelPathVisible}
+              onClick={vm.onModelPathVisible}
             >
               <SettingIcon />
               修改存储路径
@@ -42,8 +43,8 @@ export default function ModelListContent(props: IModelListContent) {
 
         <div className={styles.modelCardList}>
           <Row gutter={[16, 16]}>
-            {Array.isArray(modelListData) &&
-              modelListData.map((item, index) => {
+            {Array.isArray(vm.pagenationData) &&
+              vm.pagenationData.map((item, index) => {
                 return (
                   <Col
                     xs={24}
@@ -55,8 +56,9 @@ export default function ModelListContent(props: IModelListContent) {
                     key={index}
                   >
                     <ModelCard
-                      onDetailModalVisible={onDetailModalVisible}
-                      onModelAuthVisible={onModelAuthVisible}
+                      modelData={item}
+                      onDetailModalVisible={vm.onDetailModalVisible}
+                      onModelAuthVisible={vm.onModelAuthVisible}
                     />
                   </Col>
                 );
@@ -66,31 +68,33 @@ export default function ModelListContent(props: IModelListContent) {
 
         <Pagination
           className={styles.pagination}
-          current={1}
-          total={500}
           align="end"
-          pageSizeOptions={[10, 20, 50, 100]}
+          {...vm.pagination}
+          pageSizeOptions={[10, 30, 50]}
           showSizeChanger
+          hideOnSinglePage
+          onChange={vm.onPageChange}
+          onShowSizeChange={vm.onShowSizeChange}
         />
       </div>
       {/* 模型路径弹窗 */}
-      {modalPathVisible && (
+      {vm.modalPathVisible && (
         <ModelPathModal
-          modalPath={modelPath}
-          onModalPathClose={onModelPathVisible}
+          modalPath={vm.modelPath}
+          onModalPathClose={vm.onModelPathVisible}
         />
       )}
       {/* 配置授权弹窗 */}
-      {modelAuthVisible && (
+      {vm.modelAuthVisible && (
         <ModelAuthorizeModal
-          modelAuthType={modelAuthType}
-          modelAuthorize={modelAuthorize}
-          onSetModelAuthorize={onSetModelAuthorize}
-          onModelAuthVisible={onModelAuthVisible}
+          modelAuthType={vm.modelAuthType}
+          modelAuthorize={vm.modelAuthorize}
+          onSetModelAuthorize={vm.onSetModelAuthorize}
+          onModelAuthVisible={vm.onModelAuthVisible}
         />
       )}
       {/* 模型详情弹窗 */}
-      {isDetailVisible && <ModelDetailModal onDetailModalVisible={onDetailModalVisible} />}
+      {vm.isDetailVisible && <ModelDetailModal onDetailModalVisible={vm.onDetailModalVisible} />}
     </div>
   );
 }

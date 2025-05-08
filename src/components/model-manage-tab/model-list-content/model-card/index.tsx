@@ -1,29 +1,26 @@
 import { useRef, useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import { Button, Tag } from 'antd';
-import modelLogo from '../../../../assets/modelLogo.png';
-import { IModelAuthType } from '../../types';
+import { IModelAuthType, ModelDataItem } from '../../types';
 import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '../../../icons';
 
 export interface IModelCardProps {
   // 是否用于详情展示
   isDetail?: boolean;
-  // 本地还是云端
-  isLocal?: boolean;
-  content?: string;
-  tags?: string[];
+  // 模型数据
+  modelData?: ModelDataItem;
   onDetailModalVisible?: (visible: boolean) => void;
   onModelAuthVisible?: (visible: boolean, type: IModelAuthType) => void;
-  deleteConfirm?: (modelData: any) => void;
-  downloadConfirm?: (modelData: any) => void;
+  deleteConfirm?: (modelData: ModelDataItem) => void;
+  downloadConfirm?: (modelData: ModelDataItem) => void;
 }
 
 export default function ModelCard(props: IModelCardProps) {
-  const { isDetail, isLocal = true, onDetailModalVisible, onModelAuthVisible, deleteConfirm, downloadConfirm } = props;
+  const { isDetail, onDetailModalVisible, onModelAuthVisible, deleteConfirm, downloadConfirm, modelData } = props;
+
   const [isOverflow, setIsOverflow] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
-  const content =
-    '这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容这是内容';
+
   const tags = ['深度思考', '文本模型', '语言理解', '逻辑思维', '情感分析', '信息检索'];
 
   useEffect(() => {
@@ -39,23 +36,22 @@ export default function ModelCard(props: IModelCardProps) {
     checkOverflow();
     window.addEventListener('resize', checkOverflow);
     return () => window.removeEventListener('resize', checkOverflow);
-  }, []);
+  }, [modelData]);
 
   return (
     <>
       <div className={`${isDetail ? '' : styles.modelCardStyle} ${styles.modelCard}`}>
-        {/* title */}
         <div className={styles.cardHeader}>
           <div className={styles.cardTitle}>
             <img
-              src={modelLogo}
+              src={modelData?.avatar}
               width={24}
             />
-            <div className={styles.title}>模型名称待替换</div>
+            <div className={styles.title}>{modelData?.name}</div>
 
             {/* 本地还是云端 */}
             <div className={styles.localOrCloud}>
-              {isLocal ? (
+              {modelData?.source === 'local' ? (
                 <>
                   <LocalIcon />
                   <div className={styles.localOrCloudText}>本地</div>
@@ -69,32 +65,40 @@ export default function ModelCard(props: IModelCardProps) {
             </div>
 
             {/* 推荐使用 */}
-            <div className={styles.recommend}>🔥 推荐使用</div>
+            {modelData?.is_recommended && <div className={styles.recommend}>🔥 推荐使用</div>}
+
             {/* 已授权 */}
             {/* <div className={styles.authorized}>已授权</div> */}
           </div>
 
           {!isDetail && (
             <div className={styles.cardDownload}>
-              {isLocal ? (
+              {modelData?.source === 'local' ? (
                 <>
                   {/* 本地下载相关内容 */}
-                  <Button
-                    type="text"
-                    className={styles.hasLoaded}
-                    onClick={() => deleteConfirm?.({})}
-                  >
-                    已下载
-                    <DeleteIcon />
-                  </Button>
+                  {modelData?.can_select ? (
+                    <Button
+                      type="text"
+                      className={styles.hasLoaded}
+                      onClick={() => deleteConfirm?.(modelData!)}
+                    >
+                      已下载
+                      <DeleteIcon />
+                    </Button>
+                  ) : (
+                    // 下载失败也回到下载
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={() => downloadConfirm?.(modelData!)}
+                    >
+                      下载
+                      <DownloadIcon />
+                    </Button>
+                  )}
                   {/* <Button type="text" style={{ color: '#344054', padding: 'unset' }} >
                     下载中
                     <LoadingIcon />
-                  </Button> */}
-                  {/* 下载失败也回到下载 */}
-                  {/* <Button type="primary" size="small" onClick={() => downloadConfirm?.({})}>
-                    下载
-                    <DownloadIcon />
                   </Button> */}
                 </>
               ) : (
@@ -116,13 +120,12 @@ export default function ModelCard(props: IModelCardProps) {
           )}
         </div>
 
-        {/* content */}
         <div className={styles.contentWrapper}>
           <div
             ref={textRef}
             className={`${isDetail ? '' : styles.textContent}`}
           >
-            {content}
+            {modelData?.desc}
           </div>
           {isOverflow && !isDetail && (
             <Button
@@ -141,17 +144,17 @@ export default function ModelCard(props: IModelCardProps) {
           <div className={styles.contextLength}>
             <span className={styles.splitLine}>｜</span>
             <span>上下文长度：</span>
-            <span>4096k</span>
+            <span>测试暂无</span>
           </div>
           <div className={styles.modelSize}>
             <span className={styles.splitLine}>｜</span>
             <span>大小：</span>
-            <span>3.8GB</span>
+            <span>{modelData?.size}</span>
           </div>
           <div className={styles.beUsed}>
             <span className={styles.splitLine2}>｜</span>
             <span>使用中：</span>
-            <span>2个应用</span>
+            <span>测试2个</span>
           </div>
         </div>
 

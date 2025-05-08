@@ -15,7 +15,10 @@ export default function ModelManageTab() {
         onModelSourceChange={vm.onModelSourceChange}
       />
 
-      <ModallistContent modelListData={vm.modelListData} />
+      <ModallistContent
+        modelSearchVal={vm.modelSearchVal}
+        modelSourceVal={vm.modelSourceVal}
+      />
     </div>
   );
 }

@@ -6,6 +6,8 @@ export interface IModelAuthorize {
 
 export type IModelAuthType = 'config' | 'update';
 
+export type IModelSourceType = 'local' | 'remote' | 'all';
+
 export interface ModelDataItem {
   service_name: string;
   api_flavor: string;
@@ -25,6 +27,7 @@ export interface ModelDataItem {
   class: string;
   ollama_id: string;
   params_size: number;
+  source?: IModelSourceType;
 }
 // 定义模型数据类型
 export interface ModelData {
