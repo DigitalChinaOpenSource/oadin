@@ -231,7 +231,6 @@ services:
         - converter: jsonata
           config: |
             {
-               "model": $model,
                "input": prompt,
                "RspImgType": $exists(RspImgType) ? RspImgType : "url",
                "parameters": parameters
@@ -246,7 +245,6 @@ services:
         - converter: jsonata
           config: |
             {
-               "model": $model,
                "Prompt": prompt,
                "RspImgType": $exists(RspImgType) ? RspImgType : "url",
                "NegativePrompt": input.negative_prompt
