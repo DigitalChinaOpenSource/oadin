@@ -22,9 +22,10 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
       <div className={styles.searchInput}>
         <Input
           prefix={<SearchIcon />}
+          allowClear
           placeholder="请输入模型名称"
           value={modelSearchVal}
-          onChange={(e) => onModelSearch(e.target.value)}
+          onChange={(e) => onModelSearch(e.target.value.trim())}
           style={{ width: 380 }}
         />
       </div>

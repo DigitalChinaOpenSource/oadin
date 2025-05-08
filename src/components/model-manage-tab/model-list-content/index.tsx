@@ -15,7 +15,7 @@ export interface IModelListContent {
 
 export default function ModelListContent(props: IModelListContent) {
   const vm = useViewModel(props);
-
+  console.log('ModelListContent-props', props);
   return (
     <div className={styles.modelListContent}>
       <div className={styles.contentContainer}>
@@ -42,40 +42,49 @@ export default function ModelListContent(props: IModelListContent) {
         </div>
 
         <div className={styles.modelCardList}>
-          <Row gutter={[16, 16]}>
-            {Array.isArray(vm.pagenationData) &&
-              vm.pagenationData.map((item, index) => {
-                return (
-                  <Col
-                    xs={24}
-                    sm={24}
-                    md={24}
-                    lg={12}
-                    xl={12}
-                    span={4}
-                    key={index}
-                  >
-                    <ModelCard
-                      modelData={item}
-                      onDetailModalVisible={vm.onDetailModalVisible}
-                      onModelAuthVisible={vm.onModelAuthVisible}
-                    />
-                  </Col>
-                );
-              })}
-          </Row>
+          {vm.pagenationData.length > 0 ? (
+            <Row gutter={[16, 16]}>
+              {Array.isArray(vm.pagenationData) &&
+                vm.pagenationData.map((item, index) => {
+                  return (
+                    <Col
+                      xs={24}
+                      sm={24}
+                      md={24}
+                      lg={12}
+                      xl={12}
+                      span={4}
+                      key={index}
+                    >
+                      <ModelCard
+                        modelData={item}
+                        onDetailModalVisible={vm.onDetailModalVisible}
+                        onModelAuthVisible={vm.onModelAuthVisible}
+                      />
+                    </Col>
+                  );
+                })}
+            </Row>
+          ) : (
+            <div className={styles.noData}>
+              {/* <div className={styles.noDataIcon}>
+                  
+                </div> */}
+              <div className={styles.noDataText}>暂无相关模型</div>
+            </div>
+          )}
         </div>
-
-        <Pagination
-          className={styles.pagination}
-          align="end"
-          {...vm.pagination}
-          pageSizeOptions={[10, 30, 50]}
-          showSizeChanger
-          hideOnSinglePage
-          onChange={vm.onPageChange}
-          onShowSizeChange={vm.onShowSizeChange}
-        />
+        {vm.pagenationData.length > 0 && (
+          <Pagination
+            className={styles.pagination}
+            align="end"
+            {...vm.pagination}
+            pageSizeOptions={[10, 30, 50]}
+            showSizeChanger
+            onChange={vm.onPageChange}
+            onShowSizeChange={vm.onShowSizeChange}
+          />
+        )}
       </div>
       {/* 模型路径弹窗 */}
       {vm.modalPathVisible && (

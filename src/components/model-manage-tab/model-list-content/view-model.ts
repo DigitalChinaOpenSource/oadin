@@ -40,7 +40,7 @@ export function useViewModel(props: IViewModel) {
 
   const { get } = useAxios();
 
-  const fetchModelList = async (serviceSource: IModelSourceType) => {
+  const fetchModelSupport = async (serviceSource: IModelSourceType) => {
     const data = await get<ModelData>('/model/support', {
       service_source: serviceSource,
       flavor: 'ollama',
@@ -48,7 +48,7 @@ export function useViewModel(props: IViewModel) {
     return data?.chat || [];
   };
 
-  const { loading, run } = useRequest(fetchModelList, {
+  const { loading, run } = useRequest(fetchModelSupport, {
     manual: true,
     onSuccess: (data) => {
       const dataWithSource = data.map(
@@ -77,17 +77,29 @@ export function useViewModel(props: IViewModel) {
     fetchModelListData();
   }, [modelSourceVal]);
 
+  // 根据搜索值和分页参数更新分页数据
   useEffect(() => {
-    setPagenationData(paginatedData(pagination));
-  }, [modelListData]);
+    const filteredData = getFilteredData();
+    setPagination(prev => ({ ...prev, total: filteredData.length }));
+    setPagenationData(paginatedData(pagination, filteredData));
+  }, [modelListData, modelSearchVal, pagination.current, pagination.pageSize]);
+
+  // 获取过滤后的数据
+  const getFilteredData = () => {
+    if (!modelSearchVal || modelSearchVal.trim() === '') {
+      return modelListData;
+    }
+    return modelListData.filter(model => 
+      model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase())
+    );
+  };
 
   // 添加分页数据计算逻辑
-  const paginatedData = (pagination: any) => {
-    console.log('pagination====>', pagination);
+  const paginatedData = (pagination: any, data = getFilteredData()) => {
     const { current, pageSize } = pagination;
     const startIndex = (current - 1) * pageSize;
     const endIndex = current * pageSize;
-    return modelListData.slice(startIndex, endIndex);
+    return data.slice(startIndex, endIndex);
   };
 
   const onPageChange = (current: number) => {
@@ -96,13 +108,11 @@ export function useViewModel(props: IViewModel) {
       lastPageSizeRef.current = pagination.pageSize;
       return;
     }
-    setPagenationData(paginatedData({ ...pagination, current }));
     setPagination({ ...pagination, current });
   };
 
   const onShowSizeChange = (current: number, pageSize: number) => {
     lastPageSizeRef.current = pageSize;
-    setPagenationData(paginatedData({ ...pagination, current: 1, pageSize }));
     setPagination({ ...pagination, current: 1, pageSize });
   };
 
