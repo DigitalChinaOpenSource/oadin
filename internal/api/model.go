@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func (t *ByzeCoreServer) CreateModel(c *gin.Context) {
@@ -91,11 +92,22 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 		select {
 		case data, ok := <-dataCh:
 			if !ok {
+				select {
+				case err, _ := <-errCh:
+					if err != nil {
+						fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
+						flusher.Flush()
+						return
+					}
+				}
 				// 数据通道关闭，发送结束标记
 				//fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
 				// fmt.Fprintf(w, "\n[DONE]\n\n")
 				//flusher.Flush()
-				return
+				// 通道中没有数据，再结束推送
+				if data == nil {
+					return
+				}
 			}
 
 			// 解析Ollama响应
@@ -113,15 +125,19 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 				flusher.Flush()
 			}
 
-		case err, ok := <-errCh:
-			if !ok {
+		case err, _ := <-errCh:
+			if err != nil {
+				log.Printf("Error: %v", err)
+				// 发送错误信息到前端
+				if strings.Contains(err.Error(), "context cancel") {
+					fmt.Fprintf(w, "{\"status\": \"canceled\", \"data\":\"%v\"}\n\n", err)
+				} else {
+					fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
+				}
+
+				flusher.Flush()
 				return
 			}
-			log.Printf("Error: %v", err)
-			// 发送错误信息到前端
-			fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
-			flusher.Flush()
-			return
 
 		case <-ctx.Done():
 			fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"timeout\"}\n\n")
