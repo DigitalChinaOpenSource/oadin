@@ -254,8 +254,8 @@ class Byze {
       let child;
 
       if (isMacOS) {
-          child = spawn('sh', ['-c', 'nohup byze server start -d > /dev/null 2>&1 &'], {
-            stdio: ['ignore', 'ignore', 'ignore'], // 忽略所有输出
+          child = spawn('sh', ['-c', 'nohup byze server start -d > byze_output.log 2>&1 & tail -f byze_output.log'], {
+            stdio: ['pipe', 'pipe', 'pipe'],
             detached: true,
             windowsHide: true,
         });
@@ -294,7 +294,8 @@ class Byze {
           console.error('❌ 启动失败: 模型引擎安装失败。');
           resolve(false);
         } else if (code === 0) {
-          console.log('✅ Byze 服务已启动');
+          console.log('进程退出，正在检查服务状态...');
+          
           this.checkServerStatus(resolve);
         } else {
           console.error(`❌ 启动失败，退出码: ${code}`);
@@ -521,30 +522,39 @@ class Byze {
 
         res.data.on('data', (chunk) => {
             try {
-                // 解析流数据
-                const rawData = chunk.toString().trim();
-                const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
-                const response = JSON.parse(jsonString);
+              // 解析流数据
+              const rawData = chunk.toString().trim();
+              const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
+              const response = JSON.parse(jsonString);
 
-                // 触发事件，传递解析后的数据
-                eventEmitter.emit('data', response);
+              // 触发事件，传递解析后的数据
+              eventEmitter.emit('data', response);
 
-                // 如果状态为 "success"，触发完成事件
-                if (response.status === 'success') {
-                    eventEmitter.emit('end', response);
-                }
+              // 如果状态为 "success"，触发完成事件
+              if (response.status === 'success') {
+                eventEmitter.emit('end', response);
+              }
+
+              if (response.status === 'canceled') {
+                eventEmitter.emit('canceled', response);
+              }
+
+              if (response.status === 'error') {
+                eventEmitter.emit('end', response);
+              }
+
             } catch (err) {
-                eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+              eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
             }
         });
 
         res.data.on('error', (err) => {
-            eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+          eventEmitter.emit('error', `流式响应错误: ${err.message}`);
         });
 
-        res.data.on('end', () => {
-            eventEmitter.emit('end'); // 触发结束事件
-        });
+        // res.data.on('end', () => {
+        //     eventEmitter.emit('end'); // 触发结束事件
+        // });
 
         return eventEmitter; // 返回 EventEmitter 实例
     } catch (error) {
