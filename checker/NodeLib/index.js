@@ -255,7 +255,7 @@ class Byze {
 
       if (isMacOS) {
           child = spawn('sh', ['-c', 'nohup byze server start -d > /dev/null 2>&1 &'], {
-            stdio: ['pip', 'pip', 'pip'],
+            stdio: ['pipe', 'pipe', 'pipe'],
             detached: true,
             windowsHide: true,
         });
@@ -266,41 +266,42 @@ class Byze {
           });
       }
 
-      child.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-      });
-
       child.stderr.on('data', (data) => {
         const errorMessage = data.toString().trim();
         stderrContent += errorMessage + '\n';
         console.error(`stderr: ${errorMessage}`);
+
+        // 检测到指定日志时返回 true，但不终止进程
+        if (errorMessage.includes('INFO [Install Engine] start install...')) {
+          console.log('✅ 检测到安装引擎启动日志，返回成功状态');
+          resolve(true);
+        }
       });
 
-  
+      child.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+      });
+
       child.on('error', (err) => {
         console.error(`❌ 启动失败: ${err.message}`);
         if (err.code === 'ENOENT') {
           console.log([
             '💡 可能原因:',
-            `1. 未找到byze可执行文件，请检查下载是否成功`,
+            `1. 未找到 byze 可执行文件，请检查下载是否成功`,
             `2. 环境变量未生效，请尝试重启终端`
-          ].filter(Boolean).join('\n'));
+          ].join('\n'));
         }
         resolve(false);
       });
 
       child.on('close', (code) => {
-        if (stderrContent.includes('Install model engine failed')){
-          console.error('❌ 启动失败: 模型引擎安装失败。');
-          resolve(false);
-        } else if (code === 0) {
-          console.log('✅ Byze 服务已启动');
-          this.checkServerStatus(resolve);
-        } else {
+        if (code !== 0) {
           console.error(`❌ 启动失败，退出码: ${code}`);
           resolve(false);
         }
       });
+
+      child.unref();
     });
   }
 
