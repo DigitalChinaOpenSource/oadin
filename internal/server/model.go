@@ -342,11 +342,16 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 				}
 				log.Printf("Error: %v", err)
 				client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
+				if err != nil {
+					newErrorCh <- err
+					return
+				}
 				m.Status = "failed"
 				err = ds.Put(ctx, m)
 				if err != nil {
 					newErrorCh <- err
 				}
+				return
 			case <-ctx.Done():
 				newErrorCh <- ctx.Err()
 			}
