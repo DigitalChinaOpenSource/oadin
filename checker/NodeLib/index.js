@@ -255,7 +255,7 @@ class Byze {
 
       if (isMacOS) {
           child = spawn('sh', ['-c', 'nohup byze server start -d > /dev/null 2>&1 &'], {
-            stdio: ['ignore', 'ignore', 'ignore'], // 忽略所有输出
+            stdio: ['pip', 'pip', 'pip'],
             detached: true,
             windowsHide: true,
         });
