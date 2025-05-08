@@ -173,29 +173,29 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		if utils.IpexOllamaSupportGPUStatus() {
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 			execFile = "ollama.exe"
-			downloadUrl = "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe"
-			// downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama-Installer-20250226.exe"
+			//downloadUrl = "http://120.232.136.73:31619/byzedev/ollama-0.5.4-ipex-llm-2.2.0b20250226-win.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama.zip"
 		} else {
 			execFile = "ollama.exe"
 			execPath = fmt.Sprintf("%s/%s/%s/%s/%s", userDir, "AppData", "Local", "Programs", "Ollama")
-			downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
+			//downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
 
-			// downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/OllamaSetup.exe"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/OllamaSetup.exe"
 		}
 	case "linux":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-		downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
-		// downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
+		//downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
+		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s/%s/%s", userDir, "Library", "Application Support", "Ollama")
 		if runtime.GOARCH == "amd64" {
-			downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-darwin.zip"
-			//	downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
+			//downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-darwin.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
 		} else {
-			downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-arm64.zip"
-			// downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
+			//downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-arm64.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
 		}
 	default:
 		return nil
@@ -221,10 +221,19 @@ func (o *OllamaProvider) HealthCheck() error {
 	return nil
 }
 
+func (o *OllamaProvider) GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error) {
+	c := o.GetDefaultClient()
+	if err := c.Do(ctx, http.MethodGet, "/api/version", nil, resp); err != nil {
+		slog.Error("Get engine version : " + err.Error())
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (o *OllamaProvider) InstallEngine() error {
 	file, err := utils.DownloadFile(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath)
 	if err != nil {
-		return fmt.Errorf("failed to download ollama: %v", err)
+		return fmt.Errorf("failed to download ollama: %v, url: %v", err, o.EngineConfig.DownloadUrl)
 	}
 
 	slog.Info("[Install Engine] start install...")
@@ -254,26 +263,41 @@ func (o *OllamaProvider) InstallEngine() error {
 			return fmt.Errorf("failed to move ollama to Applications: %v", err)
 		}
 	} else {
-		// Handle other operating systems
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		defer cancel()
-		cmd := exec.CommandContext(ctx, file)
-		_, err := cmd.CombinedOutput()
-		if err != nil {
-			// 如果是超时错误
-			if ctx.Err() == context.DeadlineExceeded {
-				fmt.Println("cmd execute timeout")
+		if utils.IpexOllamaSupportGPUStatus() {
+			// 解压文件
+			userDir, err := os.UserHomeDir()
+			if err != nil {
+				slog.Error("Get user home dir failed: ", err.Error())
 				return err
 			}
-			fmt.Printf("cmd execute error: %v\n", err)
-			return err
+			ipexPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			_, err = os.Stat(ipexPath)
+			if err != nil {
+				os.MkdirAll(ipexPath, 0o755)
+			}
+			if runtime.GOOS == "windows" {
+				unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
+				if err := unzipCmd.Run(); err != nil {
+					return fmt.Errorf("failed to unzip file: %v", err)
+				}
+			}
+		} else { // Handle other operating systems
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, file)
+			_, err := cmd.CombinedOutput()
+			if err != nil {
+				// 如果是超时错误
+				if ctx.Err() == context.DeadlineExceeded {
+					fmt.Println("cmd execute timeout")
+					return err
+				}
+				fmt.Printf("cmd execute error: %v\n", err)
+				return err
+			}
+			return nil
 		}
-		return nil
-		//if err := cmd.Run(); err != nil {
-		//	return fmt.Errorf("failed to install ollama: %v", err)
-		//}
 	}
-
 	slog.Info("[Install Engine] model engine install completed")
 	return nil
 }
