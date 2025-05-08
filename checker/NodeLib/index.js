@@ -254,7 +254,7 @@ class Byze {
       let child;
 
       if (isMacOS) {
-          child = spawn('sh', ['-c', 'nohup byze server start -d > byze_output.log 2>&1 & tail -f byze_output.log'], {
+          child = spawn('sh', ['-c', 'byze server start -d'], {
             stdio: ['pipe', 'pipe', 'pipe'],
             detached: true,
             windowsHide: true,
@@ -302,6 +302,7 @@ class Byze {
           resolve(false);
         }
       });
+      child.unref();
     });
   }
 
