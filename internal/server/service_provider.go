@@ -331,26 +331,31 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 		sp.AuthType = request.AuthType
 	}
 	if request.AuthKey != "" {
-		if request.ApiFlavor == "smartvision" {
-			var dbAuthInfoMap map[string]interface{}
-			var requestInfoMap map[string]interface{}
-			err = json.Unmarshal([]byte(request.AuthKey), &requestInfoMap)
-			if err != nil {
-				return nil, err
+		if request.ApiFlavor == "smartvision" || sp.Flavor == "smartvision" {
+			if sp.AuthKey != "" {
+				var dbAuthInfoMap map[string]interface{}
+				var requestInfoMap map[string]interface{}
+				err = json.Unmarshal([]byte(request.AuthKey), &requestInfoMap)
+				if err != nil {
+					return nil, err
+				}
+				err = json.Unmarshal([]byte(sp.AuthKey), &dbAuthInfoMap)
+				if err != nil {
+					return nil, err
+				}
+				for k, v := range requestInfoMap {
+					dbAuthInfoMap[k] = v
+				}
+				jsonBytes, err := json.Marshal(dbAuthInfoMap)
+				if err != nil {
+					fmt.Println("JSON 编码错误:", err)
+					return nil, err
+				}
+				sp.AuthKey = string(jsonBytes)
+			} else {
+				sp.AuthKey = request.AuthKey
 			}
-			err = json.Unmarshal([]byte(sp.AuthKey), &dbAuthInfoMap)
-			if err != nil {
-				return nil, err
-			}
-			for k, v := range requestInfoMap {
-				dbAuthInfoMap[k] = v
-			}
-			jsonBytes, err := json.Marshal(dbAuthInfoMap)
-			if err != nil {
-				fmt.Println("JSON 编码错误:", err)
-				return nil, err
-			}
-			sp.AuthKey = string(jsonBytes)
+
 		} else {
 			sp.AuthKey = request.AuthKey
 		}
