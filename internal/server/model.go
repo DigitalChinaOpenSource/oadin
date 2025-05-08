@@ -342,16 +342,19 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 				}
 				log.Printf("Error: %v", err)
 				client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
-				if err != nil {
-					newErrorCh <- err
-					return
+				if err != nil && strings.Contains(err.Error(), "context cancel") {
+					if strings.Contains(err.Error(), "context cancel") {
+						newErrorCh <- err
+						return
+					} else {
+						m.Status = "failed"
+						err = ds.Put(ctx, m)
+						if err != nil {
+							newErrorCh <- err
+						}
+						return
+					}
 				}
-				m.Status = "failed"
-				err = ds.Put(ctx, m)
-				if err != nil {
-					newErrorCh <- err
-				}
-				return
 			case <-ctx.Done():
 				newErrorCh <- ctx.Err()
 			}
@@ -479,9 +482,8 @@ type MemoryModelsInfo struct {
 	Models     []dto.RecommendModelData `json:"models"`
 }
 
-var RecommendModelData = make(map[string][]dto.RecommendModelData)
-
 func RecommendModels() (map[string][]dto.RecommendModelData, error) {
+	var recommendModelDataMap = make(map[string][]dto.RecommendModelData)
 	memoryInfo, err := utils.GetMemoryInfo()
 	if err != nil {
 		return nil, err
@@ -514,8 +516,8 @@ func RecommendModels() (map[string][]dto.RecommendModelData, error) {
 				}
 			}
 			if (memoryModel.MemorySize < memoryInfo.Size) && memoryTypeStatus {
-				RecommendModelData[serviceModelInfo.Service] = memoryModel.Models
-				return RecommendModelData, nil
+				recommendModelDataMap[serviceModelInfo.Service] = memoryModel.Models
+				return recommendModelDataMap, nil
 			}
 		}
 
@@ -523,8 +525,8 @@ func RecommendModels() (map[string][]dto.RecommendModelData, error) {
 		// Non-Windows systems determine based only on memory size.
 		for _, memoryModel := range serviceModelInfo.MemoryModelsMapList {
 			if memoryModel.MemorySize < memoryInfo.Size {
-				RecommendModelData[serviceModelInfo.Service] = memoryModel.Models
-				return RecommendModelData, nil
+				recommendModelDataMap[serviceModelInfo.Service] = memoryModel.Models
+				return recommendModelDataMap, nil
 			}
 		}
 	}
