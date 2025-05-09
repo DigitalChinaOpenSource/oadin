@@ -59,6 +59,12 @@ func (o *OpenvinoProvider) HealthCheck() error {
 	return nil
 }
 
+func (o *OpenvinoProvider) GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error) {
+	return &types.EngineVersionResponse{
+		Version: "1.0",
+	}, nil
+}
+
 func (o *OpenvinoProvider) InstallEngine() error {
 	// todo
 	return nil

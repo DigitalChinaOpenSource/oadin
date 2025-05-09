@@ -288,8 +288,10 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 					//fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
 					// fmt.Fprintf(w, "\n[DONE]\n\n")
 					//flusher.Flush()
-					client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
-					return
+					if data == nil {
+						client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
+						return
+					}
 				}
 
 				// 解析Ollama响应
