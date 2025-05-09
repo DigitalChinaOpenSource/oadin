@@ -19,18 +19,22 @@ function AddToUserPath(destDir) {
 
   if (isMacOS) {
     try {
-      // 确定 shell 配置文件
-      const shell = process.env.SHELL || '';
-      let shellConfigName = '.zprofile';
-      if (shell.includes('bash')) shellConfigName = '.bash_profile';
+      // 优先检查 .zprofile 文件
+      const zprofilePath = path.join(os.homedir(), '.zprofile');
+      const bashProfilePath = path.join(os.homedir(), '.bash_profile');
+      let shellConfigPath = '';
 
-      const shellConfigPath = path.join(os.homedir(), shellConfigName);
-      const exportLine = `export PATH="$PATH:${destDir}"`;
-
-      // 确保配置文件存在
-      if (!fs.existsSync(shellConfigPath)) {
+      if (fs.existsSync(zprofilePath)) {
+        shellConfigPath = zprofilePath;
+      } else if (fs.existsSync(bashProfilePath)) {
+        shellConfigPath = bashProfilePath;
+      } else {
+        // 如果两个文件都不存在，默认创建 .zprofile
+        shellConfigPath = zprofilePath;
         fs.writeFileSync(shellConfigPath, '');
       }
+
+      const exportLine = `export PATH="$PATH:${destDir}"`;
 
       // 检查是否已存在路径
       const content = fs.readFileSync(shellConfigPath, 'utf8');
@@ -42,22 +46,22 @@ function AddToUserPath(destDir) {
 
       // 追加路径到配置文件
       fs.appendFileSync(shellConfigPath, `\n${exportLine}\n`);
-      console.log(`✅ 已添加到 ${shellConfigName}，请执行以下命令生效：\nsource ${shellConfigPath}`);
+      console.log(`✅ 已添加到 ${path.basename(shellConfigPath)}，请执行以下命令生效：\nsource ${shellConfigPath}`);
       return true;
     } catch (err) {
       console.error('❌ 添加环境变量失败:', err.message);
       return false;
     }
   } else {
-    // Windows环境变量处理
+    // Windows 环境变量处理
     try {
       const regKey = 'HKCU\\Environment';
       let currentPath = '';
 
       try {
-        const output = execSync(`REG QUERY "${regKey}" /v Path`, { 
+        const output = execSync(`REG QUERY "${regKey}" /v Path`, {
           encoding: 'utf-8',
-          stdio: ['pipe', 'pipe', 'ignore'] 
+          stdio: ['pipe', 'pipe', 'ignore']
         });
         const match = output.match(/Path\s+REG_(SZ|EXPAND_SZ)\s+(.*)/);
         currentPath = match ? match[2].trim() : '';
@@ -70,12 +74,12 @@ function AddToUserPath(destDir) {
         return true;
       }
 
-      // 更新Path值
+      // 更新 Path 值
       const newPath = currentPath ? `${currentPath};${destDir}` : destDir;
-      execSync(`REG ADD "${regKey}" /v Path /t REG_EXPAND_SZ /d "${newPath}" /f`, { 
-        stdio: 'inherit' 
+      execSync(`REG ADD "${regKey}" /v Path /t REG_EXPAND_SZ /d "${newPath}" /f`, {
+        stdio: 'inherit'
       });
-      
+
       console.log('✅ 已添加到环境变量，请重新启动应用程序使更改生效');
       return true;
     } catch (error) {
