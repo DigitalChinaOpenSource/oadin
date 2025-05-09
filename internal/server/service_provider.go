@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -390,20 +391,19 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 		err = ds.Get(ctx, &model)
 		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 			return nil, err
-		} else if errors.Is(err, datastore.ErrEntityInvalid) {
-			server := ChooseCheckServer(*sp, model.ModelName)
-			if server == nil {
-				return nil, bcode.ErrProviderIsUnavailable
-			}
-			checkRes := server.CheckServer()
-			if !checkRes {
-				return nil, bcode.ErrProviderIsUnavailable
-			}
-			model.Status = "downloaded"
-			err = ds.Add(ctx, &model)
-			if err != nil {
-				return nil, err
-			}
+		}
+		server := ChooseCheckServer(*sp, model.ModelName)
+		if server == nil {
+			return nil, bcode.ErrProviderIsUnavailable
+		}
+		checkRes := server.CheckServer()
+		if !checkRes {
+			return nil, bcode.ErrProviderIsUnavailable
+		}
+		model.Status = "downloaded"
+		err = ds.Add(ctx, &model)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -755,9 +755,29 @@ func CheckServerRequest(req *http.Request, serviceProvider types.ServiceProvider
 		return false
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		slog.Error("[Schedule] Failed to request", "error", resp.StatusCode)
 		return false
+	}
+	if serviceProvider.Flavor == types.FlavorSmartVision {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			slog.Error("[Schedule] Failed to read response body", "error", err)
+			return false
+		}
+		var respData map[string]interface{}
+		err = json.Unmarshal(body, &respData)
+		if err != nil {
+			return false
+		}
+		statusCode, ok := respData["status_code"].(float64)
+		if !ok {
+			return false
+		}
+		if statusCode != 200 {
+			return false
+		}
 	}
 	return true
 }
