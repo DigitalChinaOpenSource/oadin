@@ -1,5 +1,6 @@
 // const express = require('express');
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -192,7 +193,7 @@ class Byze {
         console.log('🔍 正在下载文件:', url);
         const file = fs.createWriteStream(dest);
         
-        const request = http.get(url, (res) => {
+        const request = https.get(url, (res) => {
           if (res.statusCode !== 200) {
             console.error(`❌ 下载失败，HTTP 状态码: ${res.statusCode}`);
             file.close();
