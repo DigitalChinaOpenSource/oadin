@@ -2,9 +2,6 @@ stages:
   - build
   - upload
 
-before_script:
-  - chcp 65001 > $null
-
 variables:
   GIT_STRATEGY: none
   MAC_FILE_NAME: "byze-${CI_COMMIT_TAG}"
@@ -39,6 +36,7 @@ build_win_test:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^test/'
   script:
+    - chcp 65001 > $null
     - echo "🔧 Win 构建"
     - cd C:\Users\Administrator\WebstormProjects\byze
     - git reset --hard
@@ -76,6 +74,7 @@ upload_to_nexus_win:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^test/'
   script:
+    - chcp 65001 > $null
     - echo "📤 上传到 Nexus 仓库"
     - cd C:\Users\Administrator\WebstormProjects\byze\
     - curl.exe -v -u "admin:${NEXUS_PASSWORD}" --upload-file "upload/${WIN_FILE_NAME}" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/${WIN_FILE_NAME}"
@@ -117,6 +116,7 @@ build_win_prod:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
   script:
+    - chcp 65001 > $null
     - echo "🔧 Win 构建"
     - cd C:\Users\Administrator\WebstormProjects\byze
     - git reset --hard
@@ -154,6 +154,7 @@ upload_to_oss_win:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
   script:
+    - chcp 65001 > $null
     - echo "📤 上传到 阿里云oss"
     - cd C:\Users\Administrator\WebstormProjects\byze\upload
     - ossutil cp "${WIN_FILE_NAME}" "oss://smartvision-aipc/byze/releases/windows/${WIN_FILE_NAME}" --force
