@@ -3,10 +3,10 @@ import { Input, Select } from 'antd';
 import { SearchIcon } from '../../icons';
 import { IModelSourceType } from '../types';
 
-interface IModelTitleSearchProps {
-  onModelSearch: (val: string) => void;
+export interface IModelTitleSearchProps {
   modelSearchVal: string;
   modelSourceVal: string;
+  onModelSearch: (val: string) => void;
   onModelSourceChange: (val: IModelSourceType) => void;
 }
 
