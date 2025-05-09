@@ -171,12 +171,12 @@ class Byze {
     return new Promise((resolve) => {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS 
-        ? 'http://120.232.136.73:31619/byzedev/byze.zip'
-        : 'http://120.232.136.73:31619/byzedev/byze.exe';
+        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-latest'
+        : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-latest.exe';
       
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'Byze');
-      const destFileName = isMacOS ? 'byze.zip' : 'byze.exe';
+      const destFileName = isMacOS ? 'byze' : 'byze.exe';
       const dest = path.join(destDir, destFileName);
   
       fs.mkdir(destDir, { recursive: true }, async (err) => {
@@ -201,26 +201,26 @@ class Byze {
             file.close();
             console.log('✅ 下载完成:', dest);
   
-            // macOS解压处理
-            if (isMacOS) {
-              try {
-                const zip = new AdmZip(dest);
-                zip.extractAllTo(destDir, true);
-                console.log('✅ 解压完成');
+            // // macOS解压处理
+            // if (isMacOS) {
+            //   try {
+            //     const zip = new AdmZip(dest);
+            //     zip.extractAllTo(destDir, true);
+            //     console.log('✅ 解压完成');
                 
-                // 删除原始ZIP文件
-                fs.unlinkSync(dest);
+            //     // 删除原始ZIP文件
+            //     fs.unlinkSync(dest);
                 
-                // 设置可执行权限（根据需要）
-                const execPath = path.join(destDir, 'byze'); // 假设解压后的可执行文件名
-                if (fs.existsSync(execPath)) {
-                  fs.chmodSync(execPath, 0o755);
-                }
-              } catch (e) {
-                console.error('❌ 解压失败:', e.message);
-                return resolve(false);
-              }
-            }
+            //     // 设置可执行权限（根据需要）
+            //     const execPath = path.join(destDir, 'byze'); // 假设解压后的可执行文件名
+            //     if (fs.existsSync(execPath)) {
+            //       fs.chmodSync(execPath, 0o755);
+            //     }
+            //   } catch (e) {
+            //     console.error('❌ 解压失败:', e.message);
+            //     return resolve(false);
+            //   }
+            // }
   
             // 添加环境变量
             const done = await AddToUserPath(destDir);
