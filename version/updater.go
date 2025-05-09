@@ -17,17 +17,20 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
 var (
 	// awawit provide
-	UpdateCheckUrlBase  = "https://api-aipc-test.dcclouds.com"
+	UpdateCheckUrlBase = "https://api-aipc-test.dcclouds.com"
+	//UpdateCheckUrlBase  = "http://10.3.74.123:3000"
 	UpdateCheckInterval = 60 * 60 * time.Second
 
 	AppKey    = "byze"
-	AppSecret = "39ee3ba7b2003ee239d700b53da8dfa4c29f09ee5a460b9641a8bc9d89eac99a\n"
+	AppSecret = "39ee3ba7b2003ee239d700b53da8dfa4c29f09ee5a460b9641a8bc9d89eac99a"
 )
 
 type UpdateRequest struct {
@@ -42,10 +45,11 @@ type UpdateResponse struct {
 }
 
 type UpdateAuthRequest struct {
-	AppKey    string `json:"app_key"`
-	Timestamp int64  `json:"timestamp"`
-	NonceStr  string `json:"nonce"`
-	Sign      string `json:"sign"`
+	AppKey     string `json:"appKey"`
+	Timestamp  int64  `json:"timestamp"`
+	NonceStr   string `json:"nonce"`
+	Sign       string `json:"sign"`
+	ClientType string `json:"clientType"`
 }
 
 type UpdateAuthResponse struct {
@@ -56,25 +60,59 @@ type UpdateAuthResponse struct {
 }
 
 func UpdaterAuth() (UpdateAuthResponse, error) {
+	awaitSignMap := make(map[string]string)
 	nonceStr := utils.GenerateNonceString(8)
 	timeStamp := time.Now().Unix()
-	awaitSignStr := AppKey + nonceStr + strconv.FormatInt(timeStamp, 10)
-	signature := utils.HmacSha256(awaitSignStr, AppSecret)
+	awaitSignMap["appKey"] = AppKey
+	awaitSignMap["nonce"] = nonceStr
+	awaitSignMap["timestamp"] = strconv.FormatInt(timeStamp, 10)
+	var keys []string
+	for k := range awaitSignMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	awaitSignStr := ""
+	for _, k := range keys {
+		awaitSignStr += k + "=" + awaitSignMap[k] + "&"
+	}
+	awaitSignStr = strings.TrimSuffix(awaitSignStr, "&")
+	signature := utils.HmacSha256String(awaitSignStr, AppSecret)
 	authUrl := UpdateCheckUrlBase + "/api/auth/sign"
+	systemType := runtime.GOOS
+	clientType := ""
+	switch systemType {
+	case "windows":
+		clientType = "win"
+	case "darwin":
+		clientType = "mac"
+	case "linux":
+		clientType = "linux"
+	default:
+		clientType = "web"
+	}
 	reqBody := UpdateAuthRequest{
-		AppKey:    AppKey,
-		NonceStr:  nonceStr,
-		Timestamp: timeStamp,
-		Sign:      signature,
+		AppKey:     AppKey,
+		NonceStr:   nonceStr,
+		Timestamp:  timeStamp,
+		Sign:       signature,
+		ClientType: clientType,
 	}
 	res := UpdateAuthResponse{}
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequest("POST", authUrl, bytes.NewBuffer(reqData))
+
 	if err != nil {
 		return UpdateAuthResponse{}, err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	transport := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    30 * time.Second,
+		DisableCompression: true,
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{Transport: transport}
+	resp, err := client.Do(req)
 	if err != nil {
 		return UpdateAuthResponse{}, err
 	}
@@ -111,7 +149,6 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 	}
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), bytes.NewBuffer(reqData))
-	req.Header.Set("X-Access-Code", authResp.Code)
 
 	if err != nil {
 		slog.Warn(fmt.Sprintf("failed to check for update: %s", err))
@@ -121,6 +158,8 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 	// todo add auth info
 
 	slog.Debug("checking for available update", "requestURL", requestURL)
+	req.Header.Set("X-Access-Code", authResp.Code)
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		slog.Warn(fmt.Sprintf("failed to check for update: %s", err))

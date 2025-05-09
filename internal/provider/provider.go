@@ -21,6 +21,7 @@ type ModelServiceProvider interface {
 	DeleteModel(ctx context.Context, req *types.DeleteRequest) error
 	ListModels(ctx context.Context) (*types.ListResponse, error)
 	GetConfig() *types.EngineRecommendConfig
+	GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error)
 }
 
 func GetModelEngine(engineName string) ModelServiceProvider {
