@@ -80,6 +80,10 @@ type ListModelResponse struct {
 	Details    ModelDetails `json:"details,omitempty"`
 }
 
+type EngineVersionResponse struct {
+	Version string `json:"version"`
+}
+
 // ModelDetails provides details about a model.
 type ModelDetails struct {
 	ParentModel       string   `json:"parent_model"`
