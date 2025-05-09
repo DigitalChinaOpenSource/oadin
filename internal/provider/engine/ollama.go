@@ -171,7 +171,8 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	switch runtime.GOOS {
 	case "windows":
 		if utils.IpexOllamaSupportGPUStatus() {
-			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			execPath = fmt.Sprintf("%s/%s/%s", userDir, "ipex-llm-ollama", "ipex-llm-ollama")
+			slog.Info("start ipex-llm-ollama ------------- ", execPath)
 			execFile = "ollama.exe"
 			//downloadUrl = "http://120.232.136.73:31619/byzedev/ollama-0.5.4-ipex-llm-2.2.0b20250226-win.zip"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama.zip"
@@ -279,16 +280,16 @@ func (o *OllamaProvider) InstallEngine() error {
 				return err
 			}
 			ipexPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
-			_, err = os.Stat(ipexPath)
-			if err != nil {
+			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
-			}
-			if runtime.GOOS == "windows" {
-				unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
-				if err := unzipCmd.Run(); err != nil {
-					return fmt.Errorf("failed to unzip file: %v", err)
+				if runtime.GOOS == "windows" {
+					unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
+					if err := unzipCmd.Run(); err != nil {
+						return fmt.Errorf("failed to unzip file: %v", err)
+					}
 				}
 			}
+
 		} else { // Handle other operating systems
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			defer cancel()
