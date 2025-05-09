@@ -189,7 +189,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("%s/%s/%s/%s", userDir, "Library", "Application Support", "Ollama")
+		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", "ollama")
 		if runtime.GOARCH == "amd64" {
 			//downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-darwin.zip"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
@@ -248,20 +248,28 @@ func (o *OllamaProvider) InstallEngine() error {
 				os.RemoveAll(fPath)
 			}
 		}
-		unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
-		if err := unzipCmd.Run(); err != nil {
-			return fmt.Errorf("failed to unzip file: %v", err)
-		}
 		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		if os.Stat(appPath); os.IsNotExist(err) {
+			unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
+			if err := unzipCmd.Run(); err != nil {
+				return fmt.Errorf("failed to unzip file: %v", err)
+			}
+			appPath = filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		}
+
 		//cmd := exec.Command("open", appPath)
 		//if err := cmd.Run(); err != nil {
 		//	return fmt.Errorf("failed to open ollama installer: %v", err)
 		//}
 		// move it to Applications
-		mvCmd := exec.Command("mv", appPath, "/Applications/")
-		if err := mvCmd.Run(); err != nil {
-			return fmt.Errorf("failed to move ollama to Applications: %v", err)
+		applicationPath := filepath.Join("/Applications/", "Ollama.app")
+		if os.Stat(applicationPath); os.IsNotExist(err) {
+			mvCmd := exec.Command("mv", appPath, "/Applications/")
+			if err := mvCmd.Run(); err != nil {
+				return fmt.Errorf("failed to move ollama to Applications: %v", err)
+			}
 		}
+
 	} else {
 		if utils.IpexOllamaSupportGPUStatus() {
 			// 解压文件
