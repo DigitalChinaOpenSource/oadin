@@ -401,7 +401,16 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 			return nil, bcode.ErrProviderIsUnavailable
 		}
 		model.Status = "downloaded"
-		err = ds.Add(ctx, &model)
+		err = ds.Get(ctx, &model)
+		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+			return nil, err
+		} else if errors.Is(err, datastore.ErrEntityInvalid) {
+			err = ds.Add(ctx, &model)
+			if err != nil {
+				return nil, err
+			}
+		}
+		err = ds.Put(ctx, &model)
 		if err != nil {
 			return nil, err
 		}
@@ -595,12 +604,14 @@ func (e *CheckEmbeddingServer) CheckServer() bool {
 	type RequestBody struct {
 		Model          string   `json:"model"`
 		Input          []string `json:"input"`
+		Inputs         []string `json:"inputs"`
 		Dimensions     int      `json:"dimensions"`
 		EncodingFormat string   `json:"encoding_format"`
 	}
 	requestBody := RequestBody{
 		Model:          e.ModelName,
 		Input:          []string{"test text"},
+		Inputs:         []string{"test text"},
 		Dimensions:     1024,
 		EncodingFormat: "float",
 	}
