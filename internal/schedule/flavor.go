@@ -702,6 +702,12 @@ func (c *CredentialsAuthenticator) Authenticate() error {
 			ModelKey:    modelKey,
 			Credentials: credentials,
 		}
+		_, pOk := reqData["prompt_messages"].([]interface{})
+		Messages, mOk := reqData["messages"].([]interface{})
+		if !pOk && mOk {
+			reqData["prompt_messages"] = Messages
+		}
+
 	} else if c.ProviderInfo.ServiceName == types.ServiceEmbed {
 		reqUrl = smartVisionInfo.Url + smartVisionInfo.EmbedEnterPoint
 		reqData["credentials"] = credentials

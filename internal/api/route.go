@@ -5,17 +5,19 @@
 package api
 
 import (
-	"byze/internal/datastore"
-	"byze/internal/types"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"github.com/gin-gonic/gin"
+
 	"byze/config"
+	"byze/internal/datastore"
+	"byze/internal/provider"
+	"byze/internal/types"
 	"byze/internal/utils"
 	"byze/version"
 )
@@ -23,7 +25,9 @@ import (
 func InjectRouter(e *ByzeCoreServer) {
 	e.Router.Handle(http.MethodGet, "/", rootHandler)
 	e.Router.Handle(http.MethodGet, "/health", healthHeader)
+	e.Router.Handle(http.MethodGet, "engine/health", engineHealthHandler)
 	e.Router.Handle(http.MethodGet, "/version", getVersion)
+	e.Router.Handle(http.MethodGet, "/engine/version", getEngineVersion)
 	e.Router.Handle(http.MethodGet, "/update/status", updateAvailableHandler)
 	e.Router.Handle(http.MethodPost, "/update", updateHandler)
 
@@ -63,8 +67,32 @@ func healthHeader(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]string{"status": "UP"})
 }
 
+func engineHealthHandler(c *gin.Context) {
+	providerName := "ollama"
+	engine := provider.GetModelEngine(providerName)
+	err := engine.HealthCheck()
+	status := 1
+	if err != nil {
+		status = 0
+	}
+	c.JSON(http.StatusOK, map[string]interface{}{"status": status})
+}
+
 func getVersion(c *gin.Context) {
-	c.JSON(http.StatusOK, map[string]string{"version": version.ByzeVersion})
+	c.JSON(http.StatusOK, map[string]string{"version": version.ByzeVersion + "." + version.ByzeSubVersion})
+}
+
+func getEngineVersion(c *gin.Context) {
+	ctx := c.Request.Context()
+	providerName := "ollama"
+	engine := provider.GetModelEngine(providerName)
+	var respData types.EngineVersionResponse
+	resp, err := engine.GetVersion(ctx, &respData)
+	if err != nil {
+		c.JSON(http.StatusOK, map[string]string{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, map[string]interface{}{"version": resp.Version})
 }
 
 func updateAvailableHandler(c *gin.Context) {

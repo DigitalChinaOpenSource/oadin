@@ -84,7 +84,7 @@ func (o *OllamaProvider) StartEngine() error {
 			execFile = "ollama.exe"
 		}
 	case "darwin":
-		execFile = "ollama"
+		execFile = "/Applications/Ollama.app/Contents/Resources/ollama"
 	case "linux":
 		execFile = "ollama"
 	default:
@@ -171,7 +171,8 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	switch runtime.GOOS {
 	case "windows":
 		if utils.IpexOllamaSupportGPUStatus() {
-			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			execPath = fmt.Sprintf("%s/%s/%s", userDir, "ipex-llm-ollama", "ipex-llm-ollama")
+			slog.Info("start ipex-llm-ollama ------------- ", execPath)
 			execFile = "ollama.exe"
 			//downloadUrl = "http://120.232.136.73:31619/byzedev/ollama-0.5.4-ipex-llm-2.2.0b20250226-win.zip"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama.zip"
@@ -189,7 +190,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("%s/%s/%s/%s", userDir, "Library", "Application Support", "Ollama")
+		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", "ollama")
 		if runtime.GOARCH == "amd64" {
 			//downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-darwin.zip"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
@@ -248,20 +249,28 @@ func (o *OllamaProvider) InstallEngine() error {
 				os.RemoveAll(fPath)
 			}
 		}
-		unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
-		if err := unzipCmd.Run(); err != nil {
-			return fmt.Errorf("failed to unzip file: %v", err)
-		}
 		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		if _, err = os.Stat(appPath); os.IsNotExist(err) {
+			unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
+			if err := unzipCmd.Run(); err != nil {
+				return fmt.Errorf("failed to unzip file: %v", err)
+			}
+			appPath = filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		}
+
 		//cmd := exec.Command("open", appPath)
 		//if err := cmd.Run(); err != nil {
 		//	return fmt.Errorf("failed to open ollama installer: %v", err)
 		//}
 		// move it to Applications
-		mvCmd := exec.Command("mv", appPath, "/Applications/")
-		if err := mvCmd.Run(); err != nil {
-			return fmt.Errorf("failed to move ollama to Applications: %v", err)
+		applicationPath := filepath.Join("/Applications/", "Ollama.app")
+		if _, err = os.Stat(applicationPath); os.IsNotExist(err) {
+			mvCmd := exec.Command("mv", appPath, "/Applications/")
+			if err := mvCmd.Run(); err != nil {
+				return fmt.Errorf("failed to move ollama to Applications: %v", err)
+			}
 		}
+
 	} else {
 		if utils.IpexOllamaSupportGPUStatus() {
 			// 解压文件
@@ -271,16 +280,16 @@ func (o *OllamaProvider) InstallEngine() error {
 				return err
 			}
 			ipexPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
-			_, err = os.Stat(ipexPath)
-			if err != nil {
+			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
-			}
-			if runtime.GOOS == "windows" {
-				unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
-				if err := unzipCmd.Run(); err != nil {
-					return fmt.Errorf("failed to unzip file: %v", err)
+				if runtime.GOOS == "windows" {
+					unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
+					if err := unzipCmd.Run(); err != nil {
+						return fmt.Errorf("failed to unzip file: %v", err)
+					}
 				}
 			}
+
 		} else { // Handle other operating systems
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			defer cancel()

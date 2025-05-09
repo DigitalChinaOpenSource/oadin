@@ -21,6 +21,7 @@ build_mac_test:
     - git reset --hard
     - git clean -fd
     - git fetch
+    - echo $CI_COMMIT_TAG
     - git checkout $CI_COMMIT_TAG
     - go mod tidy
     - CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
@@ -40,11 +41,13 @@ build_win_test:
     - git reset --hard
     - git clean -fd
     - git fetch
-    - git checkout $CI_COMMIT_TAG
+    - echo $env:CI_COMMIT_TAG
+    - git checkout $env:CI_COMMIT_TAG
     - go mod tidy
     - go build -o byze.exe -ldflags="-s -w"  cmd/cli/main.go
+    - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "C:\Users\Administrator\WebstormProjects\byze\byze.exe"
     - New-Item -ItemType Directory -Path "upload" -Force
-    - Move-Item -Path "byze.exe" -Destination "upload\${WIN_FILE_NAME}"
+    - Move-Item -Path "byze.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
 
 upload_to_nexus_mac:
   stage: upload
@@ -73,11 +76,11 @@ upload_to_nexus_win:
   script:
     - echo "📤 上传到 Nexus 仓库"
     - cd C:\Users\Administrator\WebstormProjects\byze\
-    - curl.exe -v -u "admin:${NEXUS_PASSWORD}" --upload-file "upload/${WIN_FILE_NAME}" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/${WIN_FILE_NAME}"
+    - curl.exe -v -u "admin:$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/$($env:WIN_FILE_NAME)"
     - git reset --hard
     - git clean -fd
     - git checkout main
-    - git tag -d ${CI_COMMIT_TAG}
+    - git tag -d $env:CI_COMMIT_TAG
 
 
 
@@ -97,6 +100,7 @@ build_mac_prod:
     - git reset --hard
     - git clean -fd
     - git fetch
+    - echo $CI_COMMIT_TAG
     - git checkout $CI_COMMIT_TAG
     - go mod tidy
     - CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
@@ -116,12 +120,13 @@ build_win_prod:
     - git reset --hard
     - git clean -fd
     - git fetch
-    - git checkout $CI_COMMIT_TAG
+    - echo $env:CI_COMMIT_TAG
+    - git checkout $env:CI_COMMIT_TAG
     - go mod tidy
     - go build -o byze.exe -ldflags="-s -w"  cmd/cli/main.go
-    - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{${WIN_SIGN_PASSWORD}}}]=p11#942acfc7f5754f2e" "C:\Users\Administrator\WebstormProjects\byze\byze.exe"
+    - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "C:\Users\Administrator\WebstormProjects\byze\byze.exe"
     - New-Item -ItemType Directory -Path "upload" -Force
-    - Move-Item -Path "byze.exe" -Destination "upload\${WIN_FILE_NAME}"
+    - Move-Item -Path "byze.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
 
 upload_to_oss_mac:
   stage: upload
@@ -149,10 +154,10 @@ upload_to_oss_win:
   script:
     - echo "📤 上传到 阿里云oss"
     - cd C:\Users\Administrator\WebstormProjects\byze\upload
-    - ossutil cp "${WIN_FILE_NAME}" "oss://smartvision-aipc/byze/releases/windows/${WIN_FILE_NAME}" --force
-    - ossutil cp "${WIN_FILE_NAME}" "oss://smartvision-aipc/byze/releases/windows/byze-latest.exe" --force
+    - ossutil cp "$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/byze/releases/windows/$($env:WIN_FILE_NAME)" --force
+    - ossutil cp "$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/byze/releases/windows/byze-latest.exe" --force
     - echo "✅ 上传完成"
     - git reset --hard
     - git clean -fd
     - git checkout main
-    - git tag -d $CI_COMMIT_TAG
+    - git tag -d $env:CI_COMMIT_TAG
