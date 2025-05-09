@@ -5,7 +5,7 @@ stages:
 variables:
   GIT_STRATEGY: none
   MAC_FILE_NAME: "byze-${CI_COMMIT_TAG}"
-  WIN_FILE_NAME: "byze-${$env:CI_COMMIT_TAG}.exe"
+  WIN_FILE_NAME: "byze-${CI_COMMIT_TAG}.exe"
 
 
 # 测试环境
