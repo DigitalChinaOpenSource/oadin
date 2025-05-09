@@ -249,7 +249,7 @@ func (o *OllamaProvider) InstallEngine() error {
 			}
 		}
 		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
-		if os.Stat(appPath); os.IsNotExist(err) {
+		if _, err = os.Stat(appPath); os.IsNotExist(err) {
 			unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
 			if err := unzipCmd.Run(); err != nil {
 				return fmt.Errorf("failed to unzip file: %v", err)
@@ -263,7 +263,7 @@ func (o *OllamaProvider) InstallEngine() error {
 		//}
 		// move it to Applications
 		applicationPath := filepath.Join("/Applications/", "Ollama.app")
-		if os.Stat(applicationPath); os.IsNotExist(err) {
+		if _, err = os.Stat(applicationPath); os.IsNotExist(err) {
 			mvCmd := exec.Command("mv", appPath, "/Applications/")
 			if err := mvCmd.Run(); err != nil {
 				return fmt.Errorf("failed to move ollama to Applications: %v", err)
