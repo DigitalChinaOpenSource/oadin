@@ -206,30 +206,34 @@ class Byze {
             file.close();
             console.log('✅ 下载完成:', dest);
   
-            // // macOS解压处理
-            // if (isMacOS) {
-            //   try {
-            //     const zip = new AdmZip(dest);
-            //     zip.extractAllTo(destDir, true);
-            //     console.log('✅ 解压完成');
-                
-            //     // 删除原始ZIP文件
-            //     fs.unlinkSync(dest);
-                
-            //     // 设置可执行权限（根据需要）
-            //     const execPath = path.join(destDir, 'byze'); // 假设解压后的可执行文件名
-            //     if (fs.existsSync(execPath)) {
-            //       fs.chmodSync(execPath, 0o755);
-            //     }
-            //   } catch (e) {
-            //     console.error('❌ 解压失败:', e.message);
-            //     return resolve(false);
-            //   }
-            // }
+            if (isMacOS) {
+              // macOS 平台：创建软链接到 /usr/local/bin
+              try {
+                const symlinkPath = '/usr/local/bin/byze';
+                if (fs.existsSync(symlinkPath)) {
+                  fs.unlinkSync(symlinkPath); // 删除已有的软链接
+                }
+                fs.symlinkSync(dest, symlinkPath); // 创建软链接
+                console.log(`✅ 已创建软链接: ${symlinkPath} -> ${dest}`);
+              } catch (err) {
+                console.error(`❌ 创建软链接失败: ${err.message}`);
+                return resolve(false);
+              }
+            } else {
+              // Windows 平台：添加到环境变量
+              try {
+                const added = AddToUserPath(destDir);
+                if (!added) {
+                  console.error('❌ 添加到环境变量失败');
+                  return resolve(false);
+                }
+              } catch (err) {
+                console.error(`❌ 添加到环境变量时出错: ${err.message}`);
+                return resolve(false);
+              }
+            }
   
-            // 添加环境变量
-            const done = await AddToUserPath(destDir);
-            resolve(done);
+            resolve(true);
           });
         });
   
