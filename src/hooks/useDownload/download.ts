@@ -60,12 +60,16 @@ async function startDownLoad(data: any, options: any) {
   let noDataTimer: any = null;
   let totalTimeoutId: any = null;
   const hasRetriedRef: any = { current: false };
+  // 记录是否收到过第一条消息
+  let hasReceivedFirstMessage = false;
   // 创建状态追踪器
   const stateTracker = createStateTracker();
 
   const resetNoDataTimer = () => {
     clearTimers(noDataTimer);
-    noDataTimer = setupNoDataTimer(options.onerror, startFetch, hasRetriedRef);
+    if (hasReceivedFirstMessage) {
+      noDataTimer = setupNoDataTimer(options.onerror, startFetch, hasRetriedRef);
+    }
   };
 
   async function startFetch() {
@@ -75,18 +79,16 @@ async function startDownLoad(data: any, options: any) {
     // 处理请求参数，确保与后端接口兼容
     const requestData = {
       ...data,
-      provider_name: data.serviceName === 'text_to_image' ? 'baidu' : data.providerName
+      provider_name: data.serviceName === 'text_to_image' ? 'baidu' : data.providerName,
     };
 
-    await fetchEventSource(`/byze/installModelStream`, {
+    await fetchEventSource(`/model/stream`, {
       method: 'POST',
       headers: baseHeaders(),
       body: JSON.stringify(requestData),
       openWhenHidden: true,
       signal,
       onopen: async (response: Response) => {
-        // 连接打开时开始监听无数据超时
-        resetNoDataTimer();
         options.onopen?.();
         console.log('Event source opened');
       },
@@ -97,14 +99,15 @@ async function startDownLoad(data: any, options: any) {
             const currentState = stateTracker.getState();
             const parsedData = JSON.parse(event.data);
             const processedData = processStreamData(event, currentState);
-            
+
             if (processedData) {
               // 更新状态追踪器
               stateTracker.update(parsedData, processedData);
               // 调用回调
               options.onmessage?.(processedData);
             }
-            
+            // 标记已收到第一条消息
+            hasReceivedFirstMessage = true;
             // 收到消息则重置无数据计时器
             resetNoDataTimer();
           } catch (err) {
