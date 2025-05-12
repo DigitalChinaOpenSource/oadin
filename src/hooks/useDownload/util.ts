@@ -40,3 +40,59 @@ export const checkIsMaxDownloadCount = ({ modelList, downList, modelType, id }: 
   }
   return false;
 };
+
+export function eventStreamToAsyncIterator(emitter: any, endEvent = 'end') {
+  const asyncIterable = {
+    [Symbol.asyncIterator]() {
+      const queue = [] as any[];
+      let resolve: any;
+      let reject: any;
+      let done = false;
+
+      const onData = (data: any) => {
+        if (resolve) {
+          resolve({ value: data, done: false });
+          resolve = null;
+        } else {
+          queue.push(data);
+        }
+      };
+
+      const onEnd = () => {
+        done = true;
+        if (resolve) {
+          resolve({ value: undefined, done: true });
+        }
+      };
+
+      const onError = (err: any) => {
+        if (reject) reject(err);
+      };
+      emitter.on('data', onData);
+      emitter.once(endEvent, onEnd);
+      emitter.once('error', onError);
+
+      return {
+        next() {
+          if (queue.length > 0) {
+            return Promise.resolve({ value: queue.shift(), done: false });
+          }
+          if (done) {
+            return Promise.resolve({ value: undefined, done: true });
+          }
+          return new Promise((res, rej) => {
+            resolve = res;
+            reject = rej;
+          });
+        },
+        return() {
+          emitter.removeListener('data', onData);
+          emitter.removeListener(endEvent, onEnd);
+          emitter.removeListener('error', onError);
+          return Promise.resolve({ done: true });
+        },
+      };
+    },
+  };
+  return asyncIterable;
+}

@@ -1,5 +1,6 @@
 import { baseHeaders } from '../../utils/index';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
+import { processStreamData, createStateTracker } from './streamProcessor';
 
 const NO_DATA_TIMEOUT = 5000; // 5秒无数据就断开
 const TOTAL_TIMEOUT = 10000; // 总超时时间
@@ -59,6 +60,8 @@ async function startDownLoad(data: any, options: any) {
   let noDataTimer: any = null;
   let totalTimeoutId: any = null;
   const hasRetriedRef: any = { current: false };
+  // 创建状态追踪器
+  const stateTracker = createStateTracker();
 
   const resetNoDataTimer = () => {
     clearTimers(noDataTimer);
@@ -69,10 +72,16 @@ async function startDownLoad(data: any, options: any) {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
+    // 处理请求参数，确保与后端接口兼容
+    const requestData = {
+      ...data,
+      provider_name: data.serviceName === 'text_to_image' ? 'baidu' : data.providerName
+    };
+
     await fetchEventSource(`/byze/installModelStream`, {
       method: 'POST',
       headers: baseHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(requestData),
       openWhenHidden: true,
       signal,
       onopen: async (response: Response) => {
@@ -84,8 +93,18 @@ async function startDownLoad(data: any, options: any) {
       onmessage: (event) => {
         if (event.data && event.data !== '[DONE]') {
           try {
+            // 使用新的流处理逻辑
+            const currentState = stateTracker.getState();
             const parsedData = JSON.parse(event.data);
-            options.onmessage?.(parsedData);
+            const processedData = processStreamData(event, currentState);
+            
+            if (processedData) {
+              // 更新状态追踪器
+              stateTracker.update(parsedData, processedData);
+              // 调用回调
+              options.onmessage?.(processedData);
+            }
+            
             // 收到消息则重置无数据计时器
             resetNoDataTimer();
           } catch (err) {
