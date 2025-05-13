@@ -51,7 +51,7 @@ export default function ModelListContent(props: IModelListContent) {
                       xs={24}
                       sm={24}
                       md={24}
-                      lg={12}
+                      lg={24}
                       xl={12}
                       span={4}
                       key={index}
@@ -60,6 +60,8 @@ export default function ModelListContent(props: IModelListContent) {
                         modelData={item}
                         onDetailModalVisible={vm.onDetailModalVisible}
                         onModelAuthVisible={vm.onModelAuthVisible}
+                        onDownloadConfirm={vm.onDownloadConfirm}
+                        onDeleteConfirm={vm.onDeleteConfirm}
                       />
                     </Col>
                   );
@@ -79,7 +81,7 @@ export default function ModelListContent(props: IModelListContent) {
             className={styles.pagination}
             align="end"
             {...vm.pagination}
-            pageSizeOptions={[10, 30, 50]}
+            pageSizeOptions={[6, 10, 30, 50]}
             showSizeChanger
             onChange={vm.onPageChange}
             onShowSizeChange={vm.onShowSizeChange}

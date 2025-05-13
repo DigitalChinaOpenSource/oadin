@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect, useMemo } from 'react';
 import { useImmer } from 'use-immer';
-import { startDownLoad, abortDownload } from './download';
+import { modelDownloadStream, abortDownload } from './download';
 import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
 import { DOWNLOAD_STATUS } from '../../constants';
 import downLoadCompleteEventBus from '../../utils/downloadEvent';
@@ -63,9 +63,9 @@ export const useDownLoad = () => {
   const downloadingItems = useMemo(() => downList.filter((item) => item.status === IN_PROGRESS), [downList]);
 
   // 开始下载
-  const downLoadStart = useCallback((params: any, downObj: any) => {
+  const downLoadStart = useCallback((params: any) => {
     // modelType: 模型提供商类型
-    const { id, type, modelType, serviceProviderName, serviceName } = downObj;
+    const { id, type, modelType, source, service_provider_name, service_name } = params;
 
     // 最大下载数量
     const isMaxNum = checkIsMaxDownloadCount({
@@ -78,26 +78,24 @@ export const useDownLoad = () => {
     // 兼容处理第一条数据id===0的场景
     if (id === undefined || id === null) return;
 
-    // 处理参数
     const paramsTemp = {
-      ...params,
-      serviceName: serviceName,
-      serviceSource: 'local',
-      providerName: serviceProviderName || 'local_ollama_chat',
+      model_name: params.modelName,
+      service_name: service_name || 'chat',
+      service_source: source || 'local',
+      provider_name: service_provider_name || 'local_ollama_chat',
     };
 
     // 更新下载列表
     setDownList((draft) => {
       const foundItem = draft.find((item) => item.type === type && item.modelType === modelType && item.id === id);
       if (!foundItem) {
-        draft.push({ ...downObj, status: IN_PROGRESS });
+        draft.push({ ...params, status: IN_PROGRESS });
       } else {
         foundItem.status = IN_PROGRESS;
       }
     });
 
-    // 调用API开始下载
-    startDownLoad(paramsTemp, {
+    modelDownloadStream(paramsTemp, {
       onmessage: (parsedData: any) => {
         const { completedsize, progress, status, totalsize, error } = parsedData;
 
@@ -176,15 +174,13 @@ export const useDownLoad = () => {
       const refreshDownListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.REFRESH_DOWN_LIST);
       if (refreshDownListLocal.length > 0) {
         refreshDownListLocal.forEach((item: any) => {
-          downLoadStart(
-            { modelName: item.name },
-            {
-              ...item,
-              type: item.type,
-              status: IN_PROGRESS,
-              modelType: item.modelType,
-            },
-          );
+          downLoadStart({
+            ...item,
+            modelName: item.name,
+            type: item.type,
+            status: IN_PROGRESS,
+            modelType: item.modelType,
+          });
         });
       }
       localStorage.removeItem(LOCAL_STORAGE_KEYS.REFRESH_DOWN_LIST);

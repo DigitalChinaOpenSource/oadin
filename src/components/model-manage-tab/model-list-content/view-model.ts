@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { IModelAuthorize, IModelAuthType, ModelData, ModelDataItem, IModelSourceType } from '../types';
-import { useAxios } from '../../../utils/useAxios';
+import { DOWNLOAD_STATUS } from '../../../constants';
+import { httpRequest } from '../../../utils/httpRequest';
+import { useDownLoad } from '../../../hooks/useDownload';
 import { Modal } from 'antd';
 import { useRequest } from 'ahooks';
 
@@ -32,16 +34,15 @@ export function useViewModel(props: IViewModel) {
   const [pagenationData, setPagenationData] = useState<ModelDataItem[]>([]);
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 10,
+    pageSize: 6,
     total: 0,
   });
 
   const lastPageSizeRef = useRef(pagination.pageSize);
-
-  const { get } = useAxios();
+  const { downLoadStart } = useDownLoad();
 
   const fetchModelSupport = async (serviceSource: IModelSourceType) => {
-    const data = await get<ModelData>('/model/support', {
+    const data = await httpRequest.get<ModelData>('/model/support', {
       service_source: serviceSource,
       flavor: 'ollama',
     });
@@ -52,10 +53,12 @@ export function useViewModel(props: IViewModel) {
     manual: true,
     onSuccess: (data) => {
       const dataWithSource = data.map(
-        (item) =>
+        (item, index) =>
           ({
             ...item,
             source: 'local',
+            type: 0,
+            id: index + 1,
           } as any),
       );
       setModelListData(dataWithSource);
@@ -80,7 +83,7 @@ export function useViewModel(props: IViewModel) {
   // 根据搜索值和分页参数更新分页数据
   useEffect(() => {
     const filteredData = getFilteredData();
-    setPagination(prev => ({ ...prev, total: filteredData.length }));
+    setPagination((prev) => ({ ...prev, total: filteredData.length }));
     setPagenationData(paginatedData(pagination, filteredData));
   }, [modelListData, modelSearchVal, pagination.current, pagination.pageSize]);
 
@@ -89,9 +92,7 @@ export function useViewModel(props: IViewModel) {
     if (!modelSearchVal || modelSearchVal.trim() === '') {
       return modelListData;
     }
-    return modelListData.filter(model => 
-      model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase())
-    );
+    return modelListData.filter((model) => model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase()));
   };
 
   // 添加分页数据计算逻辑
@@ -139,12 +140,19 @@ export function useViewModel(props: IViewModel) {
     setModelAuthorize(authData);
   };
 
-  const downloadConfirm = (modelData: ModelDataItem) => {
+  const onDownloadConfirm = (modelData: ModelDataItem) => {
     confirm({
       title: '确认下载此模型？',
       okText: '确认下载',
+      centered: true,
       onOk() {
-        console.log('OK');
+        downLoadStart({
+          ...modelData,
+          modelName: modelData.name,
+          type: modelData.type,
+          status: DOWNLOAD_STATUS.IN_PROGRESS,
+          modelType: 'local',
+        });
       },
       onCancel() {
         console.log('Cancel');
@@ -152,10 +160,11 @@ export function useViewModel(props: IViewModel) {
     });
   };
 
-  const deleteConfirm = (modelData: ModelDataItem) => {
+  const onDeleteConfirm = (modelData: ModelDataItem) => {
     confirm({
       title: '是否确认删除此模型',
       content: '此操作将删除您与该模型的所有对话记录、文件信息，并终止相关进程。',
+      centered: true,
       okButtonProps: {
         style: { backgroundColor: '#e85951' },
       },
@@ -185,8 +194,8 @@ export function useViewModel(props: IViewModel) {
     onDetailModalVisible,
     modelAuthType,
 
-    deleteConfirm,
-    downloadConfirm,
+    onDeleteConfirm,
+    onDownloadConfirm,
 
     loading,
     pagenationData, // 分页后的数据

@@ -11,12 +11,12 @@ export interface IModelCardProps {
   modelData?: ModelDataItem;
   onDetailModalVisible?: (visible: boolean) => void;
   onModelAuthVisible?: (visible: boolean, type: IModelAuthType) => void;
-  deleteConfirm?: (modelData: ModelDataItem) => void;
-  downloadConfirm?: (modelData: ModelDataItem) => void;
+  onDeleteConfirm?: (modelData: ModelDataItem) => void;
+  onDownloadConfirm?: (modelData: ModelDataItem) => void;
 }
 
 export default function ModelCard(props: IModelCardProps) {
-  const { isDetail, onDetailModalVisible, onModelAuthVisible, deleteConfirm, downloadConfirm, modelData } = props;
+  const { isDetail, onDetailModalVisible, onModelAuthVisible, onDeleteConfirm, onDownloadConfirm, modelData } = props;
 
   const [isOverflow, setIsOverflow] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
@@ -80,7 +80,7 @@ export default function ModelCard(props: IModelCardProps) {
                     <Button
                       type="text"
                       className={styles.hasLoaded}
-                      onClick={() => deleteConfirm?.(modelData!)}
+                      onClick={() => onDeleteConfirm?.(modelData)}
                     >
                       已下载
                       <DeleteIcon />
@@ -90,7 +90,7 @@ export default function ModelCard(props: IModelCardProps) {
                     <Button
                       type="primary"
                       size="small"
-                      onClick={() => downloadConfirm?.(modelData!)}
+                      onClick={() => onDownloadConfirm?.(modelData)}
                     >
                       下载
                       <DownloadIcon />

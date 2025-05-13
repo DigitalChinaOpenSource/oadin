@@ -28,6 +28,7 @@ export interface ModelDataItem {
   ollama_id: string;
   params_size: number;
   source?: IModelSourceType;
+  type?: string;
 }
 // 定义模型数据类型
 export interface ModelData {

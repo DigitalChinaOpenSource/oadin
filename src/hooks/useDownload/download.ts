@@ -1,23 +1,15 @@
 import { baseHeaders } from '../../utils/index';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
-import { processStreamData, createStateTracker } from './streamProcessor';
-
-const NO_DATA_TIMEOUT = 5000; // 5秒无数据就断开
-const TOTAL_TIMEOUT = 10000; // 总超时时间
+import { httpRequest } from '../../utils/httpRequest';
 
 /**
  * 暂停模型下载
  * @param data - 请求体参数
  */
-function abortDownload(data: any) {
-  return fetch(`/byze/cancelDownload`, {
-    method: 'POST',
-    headers: baseHeaders() as any,
-    body: JSON.stringify(data),
-  })
-    .then((res) => {
-      return res.json();
-    })
+async function abortDownload(data: any) {
+  return await httpRequest
+    .post('/model/stream/cancel', data)
+    .then((res) => res)
     .catch((e) => {
       console.error(e);
       return { models: null, error: e.message };
@@ -25,124 +17,170 @@ function abortDownload(data: any) {
 }
 
 /**
- * 设置无数据定时器
- * @param onTimeout - 超时时的回调
- * @param retryFn - 重试函数
- * @param hasRetriedRef - 是否已重试的引用
+ * 启动模型下载任务，处理流式数据并返回进度和状态
  */
-function setupNoDataTimer(onTimeout: (err: any) => void, retryFn: () => void, hasRetriedRef: any) {
-  return setTimeout(() => {
-    if (!hasRetriedRef.current) {
-      console.warn('首次5秒内无数据返回，开始重试...');
-      hasRetriedRef.current = true;
-      retryFn();
-    } else {
-      console.error('重试后仍未收到数据，触发总超时');
-      onTimeout(new Error('流式请求超时：10秒未收到数据'));
-    }
-  }, NO_DATA_TIMEOUT);
-}
-
-/**
- * 清除所有的定时器
- * @param timers - 定时器数组
- */
-function clearTimers(...timers: any[]) {
-  timers.forEach((timer) => timer && clearTimeout(timer));
-}
-
-/**
- * 开始下载（带单次重试 + 总超时）
- * @param data - 请求体参数
- * @param options - 包含各种回调的对象
- */
-async function startDownLoad(data: any, options: any) {
+async function modelDownloadStream(data: any, { onmessage, onerror, onopen, onclose }: any) {
   let noDataTimer: any = null;
   let totalTimeoutId: any = null;
-  const hasRetriedRef: any = { current: false };
-  // 记录是否收到过第一条消息
-  let hasReceivedFirstMessage = false;
-  // 创建状态追踪器
-  const stateTracker = createStateTracker();
+  let hasRetried = false; // 是否已重试一次
+  const NO_DATA_TIMEOUT = 5000; // 5秒无数据断开
+  const TOTAL_TIMEOUT = 10000; // 总超时时间
 
-  const resetNoDataTimer = () => {
-    clearTimers(noDataTimer);
-    if (hasReceivedFirstMessage) {
-      noDataTimer = setupNoDataTimer(options.onerror, startFetch, hasRetriedRef);
-    }
+  // 状态变量
+  let lastUsefulDataObj: any = null;
+  let lastCompleted = 0;
+  let overallProgress = 0;
+  let lastDigest: any = null;
+  let isFirstChunk = true;
+
+  const clearTimers = () => {
+    if (noDataTimer) clearTimeout(noDataTimer);
+    if (totalTimeoutId) clearTimeout(totalTimeoutId);
   };
 
-  async function startFetch() {
+  const resetNoDataTimer = () => {
+    clearTimers();
+    noDataTimer = setTimeout(() => {
+      if (!hasRetried) {
+        console.warn('首次5秒内无数据返回，开始重试...');
+        hasRetried = true;
+        clearTimers();
+        startFetch();
+      } else {
+        console.error('重试后仍未收到数据，触发总超时');
+        onerror?.(new Error('流式请求超时：10秒未收到数据'));
+      }
+    }, NO_DATA_TIMEOUT);
+  };
+
+  const sendCompletionMessage = (lastUsefulDataObj: any) => {
+    const finalDataObj = {
+      progress: 100,
+      status: 'success',
+      completedsize: lastUsefulDataObj ? lastUsefulDataObj.completedsize : 0,
+      totalsize: lastUsefulDataObj ? lastUsefulDataObj.totalsize : 0,
+    };
+    onmessage?.(finalDataObj);
+    console.log('模型下载完成:', finalDataObj);
+  };
+
+  const processProgressData = (part: any) => {
+    let dataObj = { status: part.status };
+
+    if (part?.digest) {
+      let percent = 0;
+      if (part.completed && part.total) {
+        const completed = Math.max(part.completed, lastCompleted);
+
+        if (isFirstChunk) {
+          // 第一个 chunk 占据总量的 94%
+          percent = Math.round((completed / part.total) * 94);
+        } else {
+          // 其他 chunk 占据剩余的 6%，分 6 等份
+          const chunkProgress = 6 / 6;
+          percent = overallProgress + chunkProgress;
+        }
+
+        dataObj = {
+          progress: percent,
+          status: part.status,
+          completedsize: Math.floor(completed / 1000000),
+          totalsize: Math.floor(part.total / 1000000),
+        } as any;
+
+        // 更新状态
+        lastCompleted = completed;
+        overallProgress = percent;
+        if (part.digest !== lastDigest) {
+          isFirstChunk = false;
+        }
+        lastDigest = part.digest;
+        lastUsefulDataObj = dataObj;
+      }
+    }
+
+    return dataObj;
+  };
+
+  const startFetch = () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
-    // 处理请求参数，确保与后端接口兼容
-    const requestData = {
-      ...data,
-      provider_name: data.serviceName === 'text_to_image' ? 'baidu' : data.providerName,
-    };
-
-    await fetchEventSource(`/model/stream`, {
+    fetchEventSource(`/byze/v0.2/model/stream`, {
       method: 'POST',
       headers: baseHeaders(),
-      body: JSON.stringify(requestData),
+      body: JSON.stringify(data),
       openWhenHidden: true,
       signal,
-      onopen: async (response: Response) => {
-        options.onopen?.();
-        console.log('Event source opened');
-      },
       onmessage: (event) => {
         if (event.data && event.data !== '[DONE]') {
           try {
-            // 使用新的流处理逻辑
-            const currentState = stateTracker.getState();
             const parsedData = JSON.parse(event.data);
-            const processedData = processStreamData(event, currentState);
-
-            if (processedData) {
-              // 更新状态追踪器
-              stateTracker.update(parsedData, processedData);
-              // 调用回调
-              options.onmessage?.(processedData);
+            // 处理错误
+            if (parsedData?.status === 'error') {
+              onmessage?.({
+                status: 'error',
+                message: parsedData.message || '模型下载失败',
+              });
+              return;
             }
-            // 标记已收到第一条消息
-            hasReceivedFirstMessage = true;
-            // 收到消息则重置无数据计时器
+            // 处理取消
+            if (parsedData?.status === 'canceled') {
+              onmessage?.({
+                ...(lastUsefulDataObj || {}),
+                status: 'canceled',
+              });
+              return;
+            }
+            // 处理成功
+            if (parsedData?.status === 'success') {
+              sendCompletionMessage(lastUsefulDataObj);
+              return;
+            }
+            // 处理进度数据
+            const dataObj = processProgressData(parsedData);
+            onmessage?.(dataObj);
             resetNoDataTimer();
           } catch (err) {
             console.error('解析事件流失败:', err);
-            options.onerror?.(new Error('事件流格式错误'));
+            onerror?.(new Error('事件流格式错误'));
           }
         }
       },
-      onclose: () => {
-        clearTimers(noDataTimer, totalTimeoutId);
-        console.log('Event source closed');
-        options.onclose?.();
-      },
       onerror: (error) => {
-        clearTimers(noDataTimer, totalTimeoutId);
+        clearTimers();
         console.error('EventSource 错误:', error);
-        options.onerror?.(error);
+        onerror?.(error);
+      },
+      // @ts-ignore
+      onopen: () => {
+        resetNoDataTimer();
+        onopen?.();
+        console.log('Event source opened');
+      },
+      onclose: () => {
+        clearTimers();
+        console.log('Event source closed');
+        onclose?.();
       },
     });
-  }
+  };
 
-  // 设置一个总的10秒超时定时器
+  // 设置总超时定时器
   totalTimeoutId = setTimeout(() => {
-    if (!hasRetriedRef.current) {
+    if (!hasRetried) {
       console.warn('10秒总超时前强制进行一次重试');
-      hasRetriedRef.current = true;
+      hasRetried = true;
       startFetch();
     } else {
       console.error('总超时：10秒内未收到任何数据');
-      options.onerror?.(new Error('流式请求超时：10秒未收到数据'));
+      onerror?.(new Error('流式请求超时：10秒未收到数据'));
     }
   }, TOTAL_TIMEOUT);
 
   // 首次启动请求
-  await startFetch();
+  startFetch();
 }
 
-export { abortDownload, startDownLoad };
+// 导出独立函数
+export { abortDownload, modelDownloadStream };
