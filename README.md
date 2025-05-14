@@ -4,8 +4,10 @@
 
 当前为 AOG 预览版 v0.3.0，更多功能和稳定性正在不断完善过程中。欢迎就发现的缺陷提交 Issues。
 
-当前版本支持 chat、embed、text_to_image 服务，下层支持 ollama 和 openvino model server。更多服务如视频、音频相关，以及其他 AI 引擎，敬请
-期待正在开发的后续版本。
+当前版本支持 chat、embed、text_to_image 服务，下层支持 ollama 和 openvino model server。更多服务如视
+频、音频相关，以及其他 AI 引擎，敬请期待正在开发的后续版本。
+
+详细中文文档请参见[此处](https://intel.github.io/aog/index.html)
 
 ## AOG 的功能
 
@@ -206,8 +208,9 @@ aog delete model <model_name>  --provider <provider_name>
 AOG API 是一个 Restful API。您可以通过与调用云 AI 服务（如 OpenAI）类似的方式调用该 API。详细的 API
 规范请参见 AOG API 规范.
 
-值得注意的是，当前 AOG 预览提供了基本的 chat 等服务，下一版本将会提供视频、音频相关的更多服务。
-当前版本的文生图服务基于 OpenVION 实现（仅支持 Windows 系统），通过 modelscope 拉取openvino转换过的 IR 格式的文生图模型提供服务。 
+值得注意的是，当前 AOG 预览提供了基本的 chat 等服务，下一版本将会提供视频、音频相关的更多服务。当前
+版本的文生图服务基于 OpenVION 实现（仅支持 Windows 系统），通过 modelscope 拉取 openvino 转换过的 IR
+格式的文生图模型提供服务。
 
 例如，您可以使用 `curl` 在 Windows 上测试聊天服务。
 
