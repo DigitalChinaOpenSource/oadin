@@ -1,8 +1,9 @@
-version: "0.1"
+version: "0.2"
 name: openai # the name should be aligned with file name
 auth_type: "apikey"
 services:
     models:
+        protocol: "HTTP"
         endpoints: ["GET /v1/models"]
         install_raw_routes: true
         response_to_aog:
@@ -29,6 +30,7 @@ services:
                       }
 
     chat: # service name defined by AOG
+        protocol: "HTTP"
         endpoints: ["POST /v1/chat/completions"] # request to this will use this flavor
         install_raw_routes: true # also install routes without aog prefix in url path
         default_model: gpt-3.5-turbo

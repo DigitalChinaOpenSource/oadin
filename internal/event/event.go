@@ -31,14 +31,6 @@ func NewEventManager(supportedEventTypes []string) *types.EventManager {
 	}
 }
 
-func NewFileLogger(logFilePath string) *slog.Logger {
-	logger.NewSysLogger(logger.NewLogConfig{
-		LogLevel: config.GlobalAOGEnvironment.LogLevel,
-		LogPath:  logFilePath,
-	})
-	return logger.GlobalLogger
-}
-
 func LogHTTPRequest(l *slog.Logger, title string, method string, url string, header http.Header, body []byte) {
 	//if !l.isEnabled {
 	//	return
@@ -91,21 +83,20 @@ func InitSysEvents() {
 	if config.GlobalAOGEnvironment.LogHTTP == "" {
 		return
 	}
-	fl := NewFileLogger(config.GlobalAOGEnvironment.LogHTTP)
-	testLog := logger.GetModuleLogger("test")
+	testLog := logger.ApiLogger
 	testLog.Info("test start http log")
 	SysEvents.AddListener(func(eventType string, data any) {
 		switch eventType {
 		case "start_app":
-			fl.Info("start app")
+			testLog.Info("start app")
 		case "start_session":
-			fl.Info("start session")
+			testLog.Info("start session")
 		case "receive_service_request", "request_converted_to_aog", "invoke_service_provider":
 			d := data.(types.HttpRequestEventData)
-			LogHTTPRequest(fl, eventType, d.Method, d.Url, d.Header, d.Body)
+			LogHTTPRequest(testLog, eventType, d.Method, d.Url, d.Header, d.Body)
 		case "service_provider_response", "response_converted_to_aog", "send_back_response":
 			d := data.(types.HttpResponseEventData)
-			LogHTTPResponse(fl, eventType, d.StatusCode, d.Header, d.Body)
+			LogHTTPResponse(testLog, eventType, d.StatusCode, d.Header, d.Body)
 		}
 	})
 }

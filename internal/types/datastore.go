@@ -4,39 +4,6 @@ import (
 	"time"
 )
 
-const (
-	ServiceSourceLocal  = "local"
-	ServiceSourceRemote = "remote"
-
-	FlavorTencent  = "tencent"
-	FlavorDeepSeek = "deepseek"
-	FlavorOpenAI   = "openai"
-	FlavorOllama   = "ollama"
-	FlavorBaidu    = "baidu"
-	FlavorAliYun   = "aliyun"
-
-	AuthTypeNone   = "none"
-	AuthTypeApiKey = "apikey"
-	AuthTypeToken  = "token"
-
-	ServiceChat        = "chat"
-	ServiceModels      = "models"
-	ServiceGenerate    = "generate"
-	ServiceEmbed       = "embed"
-	ServiceTextToImage = "text_to_image"
-
-	HybridPolicyDefault = "default"
-	HybridPolicyLocal   = "always_local"
-	HybridPolicyRemote  = "always_remote"
-)
-
-var (
-	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate}
-	SupportHybridPolicy = []string{HybridPolicyDefault, HybridPolicyLocal, HybridPolicyRemote}
-	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeToken}
-	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama}
-)
-
 // Service  table structure
 type Service struct {
 	Name           string    `gorm:"primaryKey;column:name" json:"name"`
@@ -88,7 +55,7 @@ type ServiceProvider struct {
 	ExtraHeaders  string    `gorm:"column:extra_headers;default:'{}'" json:"extra_headers"`
 	ExtraJSONBody string    `gorm:"column:extra_json_body;default:'{}'" json:"extra_json_body"`
 	Properties    string    `gorm:"column:properties;default:'{}'" json:"properties"`
-	Status        int       `gorm:"column:status;not null;default:1" json:"status"`
+	Status        int       `gorm:"column:status;not null;default:0" json:"status"`
 	CreatedAt     time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt     time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
@@ -163,6 +130,41 @@ func (t *Model) Index() map[string]interface{} {
 
 	if t.ProviderName != "" {
 		index["provider_name"] = t.ProviderName
+	}
+
+	return index
+}
+
+// VersionUpdateRecord  table structure
+type VersionUpdateRecord struct {
+	ID           int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`
+	Version      string    `gorm:"column:version;not null" json:"version"`
+	ReleaseNotes string    `gorm:"column:release_notes;not null" json:"release_notes"`
+	Status       int       `gorm:"column:status;not null" json:"status"`
+	CreatedAt    time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+
+func (t *VersionUpdateRecord) SetCreateTime(time time.Time) {
+	t.CreatedAt = time
+}
+
+func (t *VersionUpdateRecord) SetUpdateTime(time time.Time) {
+	t.UpdatedAt = time
+}
+
+func (t *VersionUpdateRecord) PrimaryKey() string {
+	return "id"
+}
+
+func (t *VersionUpdateRecord) TableName() string {
+	return "aog_version_update_record"
+}
+
+func (t *VersionUpdateRecord) Index() map[string]interface{} {
+	index := make(map[string]interface{})
+	if t.Version != "" {
+		index["version"] = t.Version
 	}
 
 	return index

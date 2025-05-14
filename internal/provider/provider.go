@@ -2,26 +2,24 @@ package provider
 
 import (
 	"context"
-	"log/slog"
 
 	"intel.com/aog/internal/provider/engine"
-	"intel.com/aog/internal/schedule"
 	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils/client"
 )
 
 // ModelServiceProvider local model engine
 type ModelServiceProvider interface {
-	GetDefaultClient() *client.Client
 	InstallEngine() error
-	StartEngine() error
+	StartEngine(mode string) error
 	StopEngine() error
 	HealthCheck() error
 	InitEnv() error
 	PullModel(ctx context.Context, req *types.PullModelRequest, fn types.PullProgressFunc) (*types.ProgressResponse, error)
+	PullModelStream(ctx context.Context, req *types.PullModelRequest) (chan []byte, chan error)
 	DeleteModel(ctx context.Context, req *types.DeleteRequest) error
 	ListModels(ctx context.Context) (*types.ListResponse, error)
 	GetConfig() *types.EngineRecommendConfig
+	GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error)
 }
 
 func GetModelEngine(engineName string) ModelServiceProvider {
@@ -33,22 +31,5 @@ func GetModelEngine(engineName string) ModelServiceProvider {
 		return engine.NewOpenvinoProvider(nil)
 	default:
 		return engine.NewOllamaProvider(nil)
-	}
-}
-
-type ServiceProviderInfo struct {
-	AuthType string
-	Endpoint string
-}
-
-func GetServiceProviderInfo(flavor string) ServiceProviderInfo {
-	def, err := schedule.LoadFlavorDef(flavor, "/")
-	if err != nil {
-		slog.Error("[Provider]Failed to load file", "provider_name", flavor, "error", err.Error())
-		return ServiceProviderInfo{AuthType: "none", Endpoint: "none"}
-	}
-	return ServiceProviderInfo{
-		AuthType: def.AuthType,
-		Endpoint: def.Endpoint,
 	}
 }

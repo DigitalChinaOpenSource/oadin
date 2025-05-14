@@ -6,6 +6,7 @@ services:
         endpoints: ["GET /v1/models"]  # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
+        auth_apply_url: https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key?spm=a2c4g.11186623.0.0.110f4d4dZvW4Ml
         default_model: ""
         request_segments: 1 # request
         install_raw_routes: false # also install routes without aog prefix in url path
@@ -33,15 +34,17 @@ services:
                           "object": "list"
                       }
 
-    chat: # service name defined by AOG
+    chat: # service name defined by aog
         url: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
         endpoints: ["POST /v1/chat/completions"]  # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
+        auth_apply_url: https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key?spm=a2c4g.11186623.0.0.110f4d4dZvW4Ml
         default_model: qwen-plus
         request_segments: 1 # request
         install_raw_routes: false # also install routes without aog prefix in url path
         extra_headers: '{}'
+        support_models: ["qwen-max", "qwen-plus", "qwen-turbo", "qwen-long", "qwen-vl-max"]
         request_to_aog:
             conversion:
                 - converter: jsonata
@@ -156,10 +159,12 @@ services:
         endpoints: ["POST /v1/embeddings"] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
+        auth_apply_url: https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key?spm=a2c4g.11186623.0.0.110f4d4dZvW4Ml
         default_model: text-embedding-v1
         request_segments: 1 # request
         install_raw_routes: false # also install routes without aog prefix in url path# request to this will use this flavor
         extra_headers: '{}'
+        support_models: ["text-embedding-v1", "text-embedding-v2", "text-embedding-v3"]
         request_to_aog:
             conversion:
                 - converter: jsonata
@@ -215,16 +220,18 @@ services:
         endpoints: [ "POST /v1/text-to-image" ] # request to this will use this flavor
         extra_url: "https://dashscope.aliyuncs.com/api/v1/tasks"
         auth_type: "apikey"
+        auth_apply_url: https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key?spm=a2c4g.11186623.0.0.110f4d4dZvW4Ml
         install_raw_routes: false # also install routes without aog prefix in url path
         default_model: wanx2.1-t2i-turbo
         request_segments: 2 # request
         extra_headers: '{"X-DashScope-Async": "enable"}'
+        support_models: ["wanx2.1-t2i-turbo", "wanx2.1-t2i-plus", "wanx2.0-t2i-turbo"]
         request_to_aog:
             conversion:
                 - converter: jsonata
                   config: |
                       {
-                          "model": $model,
+                        "model": $model,
                          "input": {
                                   "prompt": prompt 
                                   },

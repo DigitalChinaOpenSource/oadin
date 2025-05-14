@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"intel.com/aog/internal/api/dto"
 	"intel.com/aog/internal/datastore"
+	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/provider"
 	"intel.com/aog/internal/schedule"
 	"intel.com/aog/internal/types"
@@ -61,15 +65,23 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 	sp.Desc = request.Desc
 	sp.Method = request.Method
 	sp.URL = request.Url
+	sp.Status = 0
 	if request.Url == "" {
 		sp.URL = providerServiceInfo.RequestUrl
+	}
+	if request.Method == "" {
+		sp.Method = "POST"
 	}
 	sp.ExtraHeaders = request.ExtraHeaders
 	if request.ExtraHeaders == "" {
 		sp.ExtraHeaders = providerServiceInfo.ExtraHeaders
 	}
-	sp.ExtraJSONBody = request.ExtraJsonBody
-	sp.Properties = request.Properties
+	if request.ExtraJsonBody == "" {
+		sp.ExtraJSONBody = "{}"
+	}
+	if request.Properties == "" {
+		sp.Properties = "{}"
+	}
 	sp.CreatedAt = time.Now()
 	sp.UpdatedAt = time.Now()
 
@@ -77,6 +89,15 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 
 	if request.ServiceSource == types.ServiceSourceLocal {
 		engineProvider := provider.GetModelEngine(request.ApiFlavor)
+		engineConfig := engineProvider.GetConfig()
+		if strings.Contains(request.Url, engineConfig.Host) {
+			parseUrl, err := url.Parse(request.Url)
+			if err != nil {
+				return nil, bcode.ErrProviderServiceUrlNotFormat
+			}
+			host := parseUrl.Host
+			engineConfig.Host = host
+		}
 		err := engineProvider.HealthCheck()
 		if err != nil {
 			return nil, err
@@ -105,47 +126,94 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 					Model:  mName,
 					Stream: &stream,
 				}
-
-				slog.Info("Pull model  start ..." + mName)
-				_, err := engineProvider.PullModel(ctx, pullReq, nil)
-				if err != nil {
-					slog.Error("Pull model error: ", err.Error())
-					return nil, bcode.ErrEnginePullModel
+				m := new(types.Model)
+				m.ModelName = strings.ToLower(mName)
+				m.ProviderName = request.ProviderName
+				err = s.Ds.Get(ctx, m)
+				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+					// todo debug log output
+					return nil, bcode.ErrServer
+				} else if errors.Is(err, datastore.ErrEntityInvalid) {
+					m.Status = "downloading"
+					err = s.Ds.Add(ctx, m)
+					if err != nil {
+						return nil, bcode.ErrAddModel
+					}
 				}
-				slog.Info("Pull model %s completed ..." + mName)
+				if m.Status == "failed" {
+					m.Status = "downloading"
+				}
+				if err != nil {
+				}
+				go AsyncPullModel(sp, m, pullReq)
 			}
 		}
-	}
+	} else if request.ServiceSource == types.ServiceSourceRemote {
+		for _, mName := range request.Models {
+			server := ChooseCheckServer(*sp, mName)
+			if server == nil {
+				// return nil, bcode.ErrProviderIsUnavailable
+				continue
+			}
+			checkRes := server.CheckServer()
+			if !checkRes {
+				// return nil, bcode.ErrProviderIsUnavailable
+				continue
+			}
 
-	for _, mName := range request.Models {
-		server := ChooseCheckServer(*sp, mName)
-		if server == nil {
-			return nil, bcode.ErrProviderIsUnavailable
+			model := &types.Model{
+				ModelName:    mName,
+				ProviderName: request.ProviderName,
+				Status:       "downloaded",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			}
+
+			err = ds.Add(ctx, model)
+			if err != nil {
+				return nil, err
+			}
 		}
-		checkRes := server.CheckServer()
-		if !checkRes {
-			return nil, bcode.ErrProviderIsUnavailable
-		}
+		sp.Status = 1
 	}
 
 	err = ds.Add(ctx, sp)
 	if err != nil {
 		return nil, err
 	}
+	if request.ServiceName == types.ServiceChat {
+		generateSp := &types.ServiceProvider{}
+		generateSp.ProviderName = request.ProviderName
 
-	for _, mName := range request.Models {
-		model := &types.Model{
-			ModelName:    mName,
-			ProviderName: request.ProviderName,
-			Status:       "downloaded",
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
-		}
-
-		err = ds.Add(ctx, model)
+		generateSpIsExist, err := ds.IsExist(ctx, generateSp)
 		if err != nil {
 			return nil, err
 		}
+		if !generateSpIsExist {
+			generateProviderServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, strings.Replace(request.ServiceName, "chat", "generate", -1))
+
+			generateSp.ServiceName = strings.Replace(request.ServiceName, "chat", "generate", -1)
+			generateSp.ServiceSource = request.ServiceSource
+			generateSp.Flavor = request.ApiFlavor
+			generateSp.AuthType = request.AuthType
+			generateSp.AuthType = request.AuthType
+			if request.AuthType != types.AuthTypeNone && request.AuthKey == "" {
+				return nil, bcode.ErrProviderAuthInfoLost
+			}
+			generateSp.AuthKey = request.AuthKey
+			generateSp.Desc = request.Desc
+			generateSp.Method = request.Method
+			generateSp.URL = generateProviderServiceInfo.RequestUrl
+			generateSp.ExtraHeaders = request.ExtraHeaders
+			if request.ExtraHeaders == "" {
+				generateSp.ExtraHeaders = providerServiceInfo.ExtraHeaders
+			}
+			generateSp.ExtraJSONBody = request.ExtraJsonBody
+			generateSp.Properties = request.Properties
+			generateSp.CreatedAt = time.Now()
+			generateSp.UpdatedAt = time.Now()
+		}
+
 	}
 
 	return &dto.CreateServiceProviderResponse{
@@ -184,19 +252,21 @@ func (s *ServiceProviderImpl) DeleteServiceProvider(ctx context.Context, request
 		for _, m := range list {
 			dsModel := m.(*types.Model)
 			tmpModel := &types.Model{
-				ModelName: dsModel.ModelName,
+				ModelName: strings.ToLower(dsModel.ModelName),
 			}
 			count, err := ds.Count(ctx, tmpModel, &datastore.FilterOptions{})
 			if err != nil || count > 1 {
 				continue
 			}
+			if dsModel.Status == "downloaded" {
+				delReq := &types.DeleteRequest{Model: dsModel.ModelName}
 
-			delReq := &types.DeleteRequest{Model: dsModel.ModelName}
-
-			err = engine.DeleteModel(ctx, delReq)
-			if err != nil {
-				return nil, err
+				err = engine.DeleteModel(ctx, delReq)
+				if err != nil {
+					return nil, err
+				}
 			}
+
 		}
 	}
 
@@ -283,19 +353,38 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 	}
 	sp.UpdatedAt = time.Now()
 
-	model := types.Model{ProviderName: sp.ProviderName}
-	err = ds.Get(ctx, &model)
-	if err != nil {
-		return nil, err
-	}
+	for _, modelName := range request.Models {
+		model := types.Model{ProviderName: sp.ProviderName, ModelName: modelName}
+		if request.ServiceSource == types.ServiceSourceLocal {
+			model = types.Model{ProviderName: sp.ProviderName, ModelName: strings.ToLower(modelName)}
+		}
 
-	server := ChooseCheckServer(*sp, model.ModelName)
-	if server == nil {
-		return nil, bcode.ErrProviderIsUnavailable
-	}
-	checkRes := server.CheckServer()
-	if !checkRes {
-		return nil, bcode.ErrProviderIsUnavailable
+		err = ds.Get(ctx, &model)
+		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+			return nil, err
+		}
+		server := ChooseCheckServer(*sp, model.ModelName)
+		if server == nil {
+			return nil, bcode.ErrProviderIsUnavailable
+		}
+		checkRes := server.CheckServer()
+		if !checkRes {
+			return nil, bcode.ErrProviderIsUnavailable
+		}
+		model.Status = "downloaded"
+		err = ds.Get(ctx, &model)
+		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+			return nil, err
+		} else if errors.Is(err, datastore.ErrEntityInvalid) {
+			err = ds.Add(ctx, &model)
+			if err != nil {
+				return nil, err
+			}
+		}
+		err = ds.Put(ctx, &model)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = ds.Put(ctx, sp)
@@ -356,6 +445,25 @@ func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *
 	respData := make([]dto.ServiceProvider, 0)
 	for _, v := range list {
 		dsProvider := v.(*types.ServiceProvider)
+		serviceProviderStatus := 0
+		if dsProvider.ServiceSource == types.ServiceSourceRemote {
+			model := types.Model{
+				ProviderName: dsProvider.ProviderName,
+			}
+			err = ds.Get(ctx, &model)
+			checkServerObj := ChooseCheckServer(*dsProvider, model.ModelName)
+			status := checkServerObj.CheckServer()
+			if status {
+				serviceProviderStatus = 1
+			}
+		} else {
+			providerEngine := provider.GetModelEngine(dsProvider.Flavor)
+			err = providerEngine.HealthCheck()
+			if err == nil {
+				serviceProviderStatus = 1
+			}
+		}
+
 		tmp := &dto.ServiceProvider{
 			ProviderName:  dsProvider.ProviderName,
 			ServiceName:   dsProvider.ServiceName,
@@ -365,7 +473,7 @@ func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *
 			AuthKey:       dsProvider.AuthKey,
 			Flavor:        dsProvider.Flavor,
 			Properties:    dsProvider.Properties,
-			Status:        dsProvider.Status,
+			Status:        serviceProviderStatus,
 			CreatedAt:     dsProvider.CreatedAt,
 			UpdatedAt:     dsProvider.UpdatedAt,
 		}
@@ -441,12 +549,12 @@ func (c *CheckChatServer) CheckServer() bool {
 	}
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
-		slog.Error("[Schedule] Failed to marshal request body", "error", err)
+		logger.LogicLogger.Error("[Schedule] Failed to marshal request body", "error", err)
 		return false
 	}
 	req, err := http.NewRequest(c.ServiceProvider.Method, c.ServiceProvider.URL, bytes.NewReader(jsonData))
 	if err != nil {
-		slog.Error("[Schedule] Failed to prepare request", "error", err)
+		logger.LogicLogger.Error("[Schedule] Failed to prepare request", "error", err)
 		return false
 	}
 
@@ -473,12 +581,12 @@ func (e *CheckEmbeddingServer) CheckServer() bool {
 	}
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
-		slog.Error("[Schedule] Failed to marshal request body", "error", err)
+		logger.LogicLogger.Error("[Schedule] Failed to marshal request body", "error", err)
 		return false
 	}
 	req, err := http.NewRequest(e.ServiceProvider.Method, e.ServiceProvider.URL, bytes.NewReader(jsonData))
 	if err != nil {
-		slog.Error("[Schedule] Failed to prepare request", "error", err)
+		logger.LogicLogger.Error("[Schedule] Failed to prepare request", "error", err)
 		return false
 	}
 
@@ -541,12 +649,12 @@ func (e *CheckTextToImageServer) CheckServer() bool {
 		jsonData, err = json.Marshal(requestBody)
 	}
 	if err != nil {
-		slog.Error("[Schedule] Failed to marshal request body", "error", err)
+		logger.LogicLogger.Error("[Schedule] Failed to marshal request body", "error", err)
 		return false
 	}
 	req, err := http.NewRequest(e.ServiceProvider.Method, e.ServiceProvider.URL, bytes.NewReader(jsonData))
 	if err != nil {
-		slog.Error("[Schedule] Failed to prepare request", "error", err)
+		logger.LogicLogger.Error("[Schedule] Failed to prepare request", "error", err)
 		return false
 	}
 
@@ -568,7 +676,7 @@ func ChooseCheckServer(sp types.ServiceProvider, modelName string) ModelServiceM
 	case types.ServiceTextToImage:
 		server = &CheckTextToImageServer{ServiceProvider: sp, ModelName: modelName}
 	default:
-		slog.Error("[Schedule] Unknown service name", "error", sp.ServiceName)
+		logger.LogicLogger.Error("[Schedule] Unknown service name", "error", sp.ServiceName)
 		return nil
 	}
 	return server
@@ -584,7 +692,7 @@ func CheckServerRequest(req *http.Request, serviceProvider types.ServiceProvider
 		var extraHeader map[string]interface{}
 		err := json.Unmarshal([]byte(serviceProvider.ExtraHeaders), &extraHeader)
 		if err != nil {
-			slog.Error("Error parsing JSON:", err.Error())
+			logger.LogicLogger.Error("Error parsing JSON:", err.Error())
 			return false
 		}
 		for k, v := range extraHeader {
@@ -611,12 +719,12 @@ func CheckServerRequest(req *http.Request, serviceProvider types.ServiceProvider
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		slog.Error("[Schedule] Failed to request", "error", err)
+		logger.LogicLogger.Error("[Schedule] Failed to request", "error", err)
 		return false
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		slog.Error("[Schedule] Failed to request", "error", resp.StatusCode)
+		logger.LogicLogger.Error("[Schedule] Failed to request", "error", resp.StatusCode)
 		return false
 	}
 	return true

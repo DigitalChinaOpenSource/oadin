@@ -2,7 +2,7 @@ version: "0.1"
 name: ollama # the name should be aligned with file name
 services:
     models:
-        url: "http://127.0.0.1:16688/api/tags"
+        url: "http://127.0.0.1:16677/api/tags"
         endpoints: ["GET /api/tags"] # request to this will use this flavor
         extra_url: ""
         auth_type: "none"
@@ -47,8 +47,8 @@ services:
                           }]
                       }
 
-    chat: # service name defined by AOG
-        url: "http://127.0.0.1:16688/api/chat"
+    chat: # service name defined by aog
+        url: "http://127.0.0.1:16677/api/chat"
         endpoints: ["POST /api/chat"] # request to this will use this flavor
         extra_url: ""
         auth_type: "none"
@@ -59,8 +59,8 @@ services:
         request_to_aog:
             conversion:
                 # NOTE it doesn't directly use input model and stream
-                # it uses $model and $stream which will be input by AOG
-                # so AOG may change it to most suitable model and
+                # it uses $model and $stream which will be input by aog
+                # so aog may change it to most suitable model and
                 - converter: jsonata
                   config: |
                       {
@@ -171,7 +171,7 @@ services:
                           Content-Type: application/x-ndjson
 
     generate:
-        url: "http://127.0.0.1:16688/api/generate"
+        url: "http://127.0.0.1:16677/api/generate"
         endpoints: ["POST /api/generate"] # request to this will use this flavor
         extra_url: ""
         auth_type: "none"
@@ -179,9 +179,119 @@ services:
         request_segments: 1 # request
         install_raw_routes: true # also install routes without aog prefix in url path
         extra_headers: '{}'
+        request_to_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "stream": $stream,
+                          "messages": messages,
+                          "seed": options.seed,
+                          "temperature": options.temperature,
+                          "template": options.template,
+                          "top_p": options.top_p,
+                          "top_k": options.top_k,
+                          "stop": options.stop,
+                          "max_tokens": options.num_predict,
+                          "keep_alive": keep_alive
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        request_from_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "stream": $stream,
+                          "prompt": prompt,
+                          "tools": tools,
+                          "keep_alive": keep_alive,
+                          "options": {
+                              "seed": seed,
+                              "temperature": temperature,
+                              "top_p": top_p,
+                              "top_k": top_k,
+                              "num_predict": max_tokens,
+                              "stop": stop
+                          }
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        # response need additional converter for responses from stream
+        response_to_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": $id,
+                          "model": model,
+                          "created_at": created_at,
+                          "response": response,
+                          "finished": done,
+                          "finish_reason": done_reason
+                      }
+
+        stream_response_to_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": $id,
+                          "model": model,
+                          "created_at": created_at,
+                          "response": response,
+                          "finished": done,
+                          "finish_reason": done_reason
+                      }
+
+                - converter: header
+                  config:
+                      del: [ "Content-Type" ]
+                      add:
+                          Content-Type: text/event-stream
+
+        response_from_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": model,
+                          "created_at": created_at,
+                          "response": response,
+                          "done": finished,
+                          "done_reason": finish_reason
+                      }
+
+        stream_response_from_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": model,
+                          "created_at": created_at,
+                          "response": response,
+                          "done": finished,
+                          "done_reason": finish_reason
+                      }
+
+                - converter: header
+                  config:
+                      del: [ "Content-Type" ]
+                      add:
+                          Content-Type: application/x-ndjson
 
     embed:
-        url: "http://127.0.0.1:16688/api/embed"
+        url: "http://127.0.0.1:16677/api/embed"
         endpoints: [ "POST /api/embed"] # request to this will use this flavor
         extra_url: ""
         auth_type: "none"
@@ -189,3 +299,52 @@ services:
         request_segments: 1 # request
         install_raw_routes: true # also install routes without aog prefix in url path
         extra_headers: '{}'
+        request_to_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "input": input,
+                          "dimensions": dimensions,
+                          "encoding_format": encoding_format
+                      }
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        request_from_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                         "model": $model,
+                         "input": input,
+                         "dimensions": dimensions,
+                         "encoding_format": encoding_format
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        response_to_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": model,
+                          "data": [$map(embeddings, function($v, $i){{"index": $i, "embedding": $v}})]
+                      }
+        response_from_aog:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                           "id": id,
+                           "model": model,
+                           "data": [$map(embeddings, function($v, $i){{"index": $i, "embedding": $v}})]
+                      }

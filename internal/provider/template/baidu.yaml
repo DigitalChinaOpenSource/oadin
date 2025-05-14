@@ -1,15 +1,17 @@
 version: "0.1"
 name: baidu # the name should be aligned with file name
 services:
-    chat: # service name defined by AOG
+    chat: # service name defined by aog
         url: "https://qianfan.baidubce.com/v2/chat/completions"
         endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
+        auth_apply_url: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps
         default_model: ernie-3.5-8k
         request_segments: 1 # request
         install_raw_routes: false  # also install routes without aog prefix in url path
         extra_headers: '{}'
+        support_models: ["ernie-3.5-8k", ]
         request_to_aog:
             conversion:
                 - converter: jsonata
@@ -124,10 +126,12 @@ services:
         endpoints: [ "POST /v1/embeddings" ] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
+        auth_apply_url: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps
         default_model: embedding-v1
         request_segments: 1 # request
         install_raw_routes: false # also install routes without aog prefix in url path# request to this will use this flavor
         extra_headers: '{}'
+        support_models: ["embedding-v1"]
         request_to_aog:
             conversion:
                 - converter: jsonata
@@ -179,7 +183,7 @@ services:
                            "data": data
                       }
     text_to_image:
-        url: "https://qianfan.baidubce.com/"
+        url: "https://qianfan.baidubce.com/v2/images/generations"
         endpoints: ["POST /v1/text-to-image"] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
@@ -187,6 +191,7 @@ services:
         default_model: irag-1.0
         request_segments: 1 # request
         extra_headers: '{}'
+        support_models: ["irag-1.0"]
         request_to_aog:
             conversion:
                 - converter: jsonata

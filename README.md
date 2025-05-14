@@ -2,12 +2,10 @@
 
 中文 | [English](README_en.md)
 
-当前为 AOG 预览版 v0.2.0，更多功能和稳定性正在不断完善过程中。欢迎就发现的缺陷提交 Issues。
+当前为 AOG 预览版 v0.3.0，更多功能和稳定性正在不断完善过程中。欢迎就发现的缺陷提交 Issues。
 
-当前版本支持 chat 和 embed 服务，下层支持 ollama。更多服务如文生图，音频相关，以及其他 AI 引擎，敬请
+当前版本支持 chat、embed、text_to_image 服务，下层支持 ollama 和 openvino model server。更多服务如视频、音频相关，以及其他 AI 引擎，敬请
 期待正在开发的后续版本。
-
-详细中文文档请参见[此处](https://intel.github.io/aog/index.html)
 
 ## AOG 的功能
 
@@ -62,7 +60,7 @@ AOG 提供以下基本功能：
 
   - 在开发过程中，开发者可以通过简单的命令如 `aog install chat` 或
     `aog pull-model deepseek-r1:1.5b for chat` ， 在他们的开发环境中本地安装 AI 服务。AOG 会自动下载
-    并安 装最合适和优化的 AI 堆栈（例如 `ollama`）和模型
+    并安 装最合适和优化的 AI 堆栈（例如 `ollama` 或 `openvino` ）和模型
 
   - 在部署过程中，开发者可以无需打包依赖的 AI 栈和模型即可发布他们的 AI 应用程序。AOG 将在需要时自动
     为部署的 PC 拉取所需的 AI 栈和模型。
@@ -115,9 +113,12 @@ aog server start
 # 后台启动AOG
 aog server start -d
 
+# Debug模式启动
+aog server start -v
+
 # 停止AOG
 aog server stop
-AOG 有两个关键概念：服务 和 服务提供商：
+
 ```
 
 AOG 有两个关键概念：**服务(Service)** 和 **服务提供商(Service Provider)**：
@@ -134,13 +135,12 @@ AOG 有两个关键概念：**服务(Service)** 和 **服务提供商(Service Pr
 
 ```sh
 # 将 AI 服务安装到本地
-# AOG 将安装必要的 AI 堆栈（如 ollama）和 AOG 推荐的模型
+# AOG 将安装必要的 AI 堆栈（如 ollama/openvino）和 AOG 推荐的模型
 aog install chat
 aog install embed
+aog install text_to_image
 
 # 除了默认的模型之外，您可以在服务中安装更多的模型
-# 当前版本暂仅支持基于 ollama 拉取模型
-# v0.3 版本将支持更多的 AI 堆栈和模型，以及其他服务
 aog pull <model_name> -for <service_name> --provider <provider_name>
 
 # 获取服务信息，可查看指定服务，未指定则输出全部服务信息
@@ -204,14 +204,15 @@ aog delete model <model_name>  --provider <provider_name>
 ## 调用 AOG API
 
 AOG API 是一个 Restful API。您可以通过与调用云 AI 服务（如 OpenAI）类似的方式调用该 API。详细的 API
-规范请参见 [AOG API 规范](https://intel.github.io/aog/index.html).
+规范请参见 AOG API 规范.
 
-值得注意的是，当前 AOG 预览提供了基本的 chat 等服务，下一版本将会提供文生图以及语音相关的更多服务。
+值得注意的是，当前 AOG 预览提供了基本的 chat 等服务，下一版本将会提供视频、音频相关的更多服务。
+当前版本的文生图服务基于 OpenVION 实现（仅支持 Windows 系统），通过 modelscope 拉取openvino转换过的 IR 格式的文生图模型提供服务。 
 
 例如，您可以使用 `curl` 在 Windows 上测试聊天服务。
 
 ```sh
-curl -X POST http://localhost:16688/aog/v0.2/services/chat  -X POST -H
+curl -X POST http://localhost:16688/aog/v0.3/services/chat  -X POST -H
 "Content-Type: application/json" -d
 "{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is
 the sky blue?\"}],\"stream\":false}"
@@ -223,13 +224,13 @@ the sky blue?\"}],\"stream\":false}"
 
 例如，如果您使用的是 OpenAI 的聊天完成服务，您只需将端点 URL 从
 `https://api.openai.com/v1/chat/completions` 替换为
-`http://localhost:16688/aog/v0.2/api_flavors/openai/v1/chat/completions`。
+`http://localhost:16688/aog/v0.3/api_flavors/openai/v1/chat/completions`。
 
 NOTE 请注意，调用 AOG 的新 URL 位于 `api_flavors/openai` ，其余 URL 与原始 OpenAI API 相同，即
 `/v1/chat/completions` 。
 
 如果您使用 ollama API，可以将端点 URL 从 `https://localhost:11434/api/chat` 替换为
-`http://localhost:16688/aog/v0.2/api_flavors/ollama/api/chat` 。同样，它位于 `api_flavors/ollama` ，
+`http://localhost:16688/aog/v0.3/api_flavors/ollama/api/chat` 。同样，它位于 `api_flavors/ollama` ，
 其余 URL 与原始 ollama API 相同，即 `/api/chat`。
 
 ## 发布您的基于 AOG 的 AI 应用
@@ -249,8 +250,8 @@ Windows 上是 `AOGChecker.dll` 。您不需要发布 AI 堆栈或模型。
     "chat": {
       "models": ["qwen2.5:0.5b", "qwen2.5:7b"]
     },
-    "text-to-image": {
-      "models": ["stable-diffusion-1.5-int4"]
+    "text_to_image": {
+      "models": ["OpenVINO/stable-diffusion-v1-5-fp16-ov"]
     }
   }
 }

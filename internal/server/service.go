@@ -2,15 +2,18 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"intel.com/aog/internal/api/dto"
 	"intel.com/aog/internal/datastore"
+	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/provider"
 	"intel.com/aog/internal/schedule"
 	"intel.com/aog/internal/types"
@@ -52,6 +55,10 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 	sp.Desc = request.Desc
 	sp.Flavor = request.ApiFlavor
 
+	if request.ApiFlavor == types.FlavorOllama && request.ServiceName == types.ServiceTextToImage {
+		return nil, fmt.Errorf("Ollama not support  text_to_image service")
+	}
+
 	m.ProviderName = request.ProviderName
 	providerServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, request.ServiceName)
 	if request.ServiceSource == types.ServiceSourceRemote {
@@ -78,86 +85,157 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 		// If it is available, proceed to the next step. Otherwise, prompt that ollama is not installed.
 		engineProvider := provider.GetModelEngine(recommendConfig.ModelEngine)
 		engineConfig := engineProvider.GetConfig()
-		if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
-			err := engineProvider.InstallEngine()
-			if err != nil {
-				slog.Error("Install model engine failed :", err.Error())
-				return nil, bcode.ErrAIGCServiceInstallEngine
+		if request.ModelName != "" {
+			recommendConfig.ModelName = request.ModelName
+		}
+		if request.ApiFlavor != recommendConfig.ModelEngine {
+			request.ApiFlavor = recommendConfig.ModelEngine
+		}
+
+		cmd := exec.Command(engineConfig.ExecFile, "-h")
+		err := cmd.Run()
+		if err != nil {
+			logger.LogicLogger.Info("Check model engine " + recommendConfig.ModelEngine + "  not exist...")
+			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
+			err = reCheckCmd.Run()
+			_, isExistErr := os.Stat(engineConfig.ExecPath + "/" + engineConfig.ExecFile)
+			if err != nil && isExistErr != nil {
+				logger.LogicLogger.Info("Model engine " + recommendConfig.ModelEngine + " not exist, start download...")
+				err := engineProvider.InstallEngine()
+				if err != nil {
+					logger.LogicLogger.Error("Install model "+recommendConfig.ModelEngine+" engine failed :", err.Error())
+					return nil, bcode.ErrAIGCServiceInstallEngine
+				}
+				logger.LogicLogger.Info("Model engine " + recommendConfig.ModelEngine + " download completed...")
 			}
 		}
 
-		slog.Info("Setting env...")
-		err := engineProvider.InitEnv()
+		logger.LogicLogger.Info("Setting env...")
+		err = engineProvider.InitEnv()
 		if err != nil {
-			slog.Error("Setting env error: ", err.Error())
+			logger.LogicLogger.Error("Setting env error: ", err.Error())
 			return nil, bcode.ErrAIGCServiceInitEnv
 		}
+
 		err = engineProvider.HealthCheck()
 		if err != nil {
-			err = engineProvider.StartEngine()
+			err = engineProvider.StartEngine(types.EngineStartModeDaemon)
 			if err != nil {
-				slog.Error("Start engine error: ", err.Error())
+				logger.LogicLogger.Error("Start engine "+recommendConfig.ModelEngine+" error: ", err.Error())
 				return nil, bcode.ErrAIGCServiceStartEngine
 			}
 
-			slog.Info("Waiting ollama engine start 60s...")
+			logger.LogicLogger.Info("Waiting " + recommendConfig.ModelEngine + " start 60s...")
 			for i := 60; i > 0; i-- {
 				time.Sleep(time.Second * 1)
 				err = engineProvider.HealthCheck()
 				if err == nil {
 					break
 				}
-				slog.Info("Waiting ollama engine start ...", strconv.Itoa(i), "s")
+				logger.LogicLogger.Info("Waiting "+recommendConfig.ModelEngine+" start ...", strconv.Itoa(i), "s")
 			}
 		}
 
 		err = engineProvider.HealthCheck()
 		if err != nil {
-			slog.Error("Ollama engine failed start...")
+			logger.LogicLogger.Error(recommendConfig.ModelEngine + "failed start...")
 			return nil, bcode.ErrAIGCServiceStartEngine
 		}
 
-		// Check whether deepseek-r1 has been pulled locally.
-		// If it has been pulled, proceed to the next step. Otherwise, call the ollama API to pull it.
-		models, err := engineProvider.ListModels(ctx)
-		if err != nil {
-			slog.Error("Get model list error: ", err.Error())
-			return nil, bcode.ErrGetEngineModelList
-		}
-		isPulled := false
-		for _, model := range models.Models {
-			if model.Name == engineConfig.RecommendModel {
-				isPulled = true
-				break
-			}
-		}
-
-		if !isPulled {
-			stream := false
-			pullReq := &types.PullModelRequest{
-				Model:  engineConfig.RecommendModel,
-				Stream: &stream,
-			}
-
-			slog.Info("Pull model  start ..." + engineConfig.RecommendModel)
-			_, err := engineProvider.PullModel(ctx, pullReq, nil)
-			if err != nil {
-				slog.Error("Pull model error: ", err.Error())
-				return nil, bcode.ErrEnginePullModel
-			}
-			slog.Info("Pull model %s completed ..." + engineConfig.RecommendModel)
-		}
-
-		sp.URL = fmt.Sprintf("%s://%s/%s", engineConfig.Scheme, engineConfig.Host, "api/chat")
+		sp.URL = providerServiceInfo.RequestUrl
 		sp.AuthType = types.AuthTypeNone
 		sp.AuthKey = ""
 		sp.ExtraJSONBody = ""
 		sp.ExtraHeaders = ""
 		sp.Properties = `{"max_input_tokens":2048,"supported_response_mode":["stream","sync"],"mode_is_changeable":true,"xpu":["GPU"]}`
-		sp.Status = 1
+		sp.Status = 0
 
-		m.ModelName = recommendConfig.ModelName
-		m.Status = "downloaded"
+		// Check whether deepseek-r1 has been pulled locally.
+		// If it has been pulled, proceed to the next step. Otherwise, call the ollama API to pull it.
+		if !request.SkipModelFlag {
+			models, err := engineProvider.ListModels(ctx)
+			if err != nil {
+				logger.LogicLogger.Error("Get "+recommendConfig.ModelEngine+" model list error: ", err.Error())
+				return nil, bcode.ErrGetEngineModelList
+			}
+			isPulled := false
+			for _, model := range models.Models {
+				if model.Name == recommendConfig.ModelName {
+					isPulled = true
+					break
+				}
+			}
+
+			if !isPulled {
+				m.ProviderName = sp.ProviderName
+				m.ModelName = recommendConfig.ModelName
+
+				err = s.Ds.Get(ctx, m)
+				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+					logger.LogicLogger.Error("Get model from db error:", err)
+					return nil, bcode.ErrServer
+				} else if errors.Is(err, datastore.ErrEntityInvalid) {
+					m.Status = "downloading"
+					err = s.Ds.Add(ctx, m)
+					if err != nil {
+						logger.LogicLogger.Error("Add model to db error:", err)
+						return nil, bcode.ErrAddModel
+					}
+				}
+				if m.Status == "failed" {
+					m.Status = "downloading"
+				}
+				stream := false
+				pullReq := &types.PullModelRequest{
+					Model:     recommendConfig.ModelName,
+					Stream:    &stream,
+					ModelType: sp.ServiceName,
+				}
+				go AsyncPullModel(sp, m, pullReq)
+			} else {
+				m.Status = "downloaded"
+				err = s.Ds.Put(ctx, m)
+				if err != nil {
+					return nil, bcode.ErrAddModel
+				}
+			}
+		}
+
+		if request.ServiceName == types.ServiceChat {
+			generateProviderServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, types.ServiceGenerate)
+			generateSp := &types.ServiceProvider{}
+			generateSp.ProviderName = strings.Replace(request.ProviderName, "chat", "generate", -1)
+			generateSp.ServiceSource = request.ServiceSource
+			generateSp.AuthType = request.AuthType
+			generateSp.Status = sp.Status
+			generateSp.Method = http.MethodPost
+			if request.Method != "" {
+				generateSp.Method = request.Method
+			}
+			generateSp.ServiceName = strings.Replace(request.ServiceName, "chat", "generate", -1)
+			generateSp.Desc = strings.Replace(request.Desc, "chat", "generate", -1)
+			generateSp.Flavor = request.ApiFlavor
+			generateSp.URL = generateProviderServiceInfo.RequestUrl
+
+			generateSpIsExist, err := s.Ds.IsExist(ctx, generateSp)
+			if err != nil {
+				generateSpIsExist = false
+			}
+
+			if !generateSpIsExist {
+				err := s.Ds.Add(ctx, generateSp)
+				if err != nil {
+					logger.LogicLogger.Error("Service Provider model already exist")
+					return nil, bcode.ErrModelIsExist
+				}
+			}
+
+			err = s.defaultProviderProcess(ctx, types.ServiceGenerate, generateSp.ServiceSource, generateSp.ProviderName)
+			if err != nil {
+				return nil, err
+			}
+
+		}
 	}
 
 	// Check whether the service provider already exists.
@@ -169,7 +247,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 	// Check whether the service provider model already exists.
 	mIsExist, err := s.Ds.IsExist(ctx, m)
 	if spIsExist && mIsExist {
-		slog.Error("Service Provider model already exist")
+		logger.LogicLogger.Error("Service Provider model already exist")
 		return nil, bcode.ErrModelIsExist
 	}
 
@@ -177,42 +255,44 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 	if !spIsExist {
 		err = s.Ds.Add(ctx, sp)
 		if err != nil {
-			slog.Error("Add service provider error: %s", err.Error())
+			logger.LogicLogger.Error("Add service provider error: %s", err.Error())
 			return nil, bcode.ErrAIGCServiceAddProvider
 		}
 
 		// Temporary logic, to be removed later.
 		// Add model service
-		modelService := &types.ServiceProvider{
-			ProviderName:  fmt.Sprintf("%s_%s_%s", "local", "ollama", "models"),
-			ServiceName:   "models",
-			ServiceSource: "local",
-			Desc:          "",
-			Method:        http.MethodGet,
-			URL:           "http://127.0.0.1:16677/api/tags",
-			AuthType:      "none",
-			AuthKey:       "",
-			Flavor:        "ollama",
-			ExtraHeaders:  "{}",
-			ExtraJSONBody: "{}",
-			Properties:    "{}",
-			Status:        1,
-		}
-		err = s.Ds.Add(ctx, modelService)
-		if err != nil {
-			slog.Error("Add model service error: %s", err.Error())
-			return nil, bcode.ErrAddModelService
-		}
-		err = s.defaultProviderProcess(ctx, "models", "local", fmt.Sprintf("%s_%s_%s", "local", "ollama", "models"))
-		if err != nil {
-			return nil, err
-		}
-	}
+		if sp.Flavor == types.FlavorOllama {
+			modelService := &types.ServiceProvider{
+				ProviderName:  fmt.Sprintf("%s_%s_%s", "local", "ollama", "models"),
+				ServiceName:   "models",
+				ServiceSource: "local",
+				Desc:          "",
+				Method:        http.MethodGet,
+				URL:           "http://127.0.0.1:16677/api/tags",
+				AuthType:      "none",
+				AuthKey:       "",
+				Flavor:        "ollama",
+				ExtraHeaders:  "{}",
+				ExtraJSONBody: "{}",
+				Properties:    "{}",
+				Status:        1,
+			}
+			modelIsExist, err := s.Ds.IsExist(ctx, modelService)
+			if !modelIsExist {
+				err = s.Ds.Add(ctx, modelService)
+				if err != nil {
+					logger.LogicLogger.Error("Add model service error: %s", err.Error())
+					return nil, bcode.ErrAddModelService
+				}
+			}
 
-	err = s.Ds.Add(ctx, m)
-	if err != nil {
-		slog.Error("Add model error: %s", err.Error())
-		return nil, bcode.ErrAddModel
+			err = s.defaultProviderProcess(ctx, types.ServiceModels, types.ServiceSourceLocal,
+				fmt.Sprintf("%s_%s_%s", types.ServiceSourceLocal, sp.Flavor, types.ServiceModels))
+			if err != nil {
+				return nil, err
+			}
+		}
+
 	}
 
 	// Default provider processing
@@ -328,10 +408,10 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			return nil, bcode.ErrUnSupportAIGCService
 		}
 
-		if len(p.Models) == 0 && p.ServiceName != types.ServiceModels {
-			return nil, bcode.ErrProviderModelEmpty
-		}
-
+		//if len(p.Models) == 0 && p.ServiceName != types.ServiceModels {
+		//	return nil, bcode.ErrProviderModelEmpty
+		//}
+		providerDefaultInfo := schedule.GetProviderServiceDefaultInfo(p.APIFlavor, p.ServiceName)
 		tmpSp := &types.ServiceProvider{}
 		tmpSp.ProviderName = providerName
 		tmpSp.AuthKey = p.AuthKey
@@ -342,53 +422,96 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 		tmpSp.ServiceName = p.ServiceName
 		tmpSp.ServiceSource = p.ServiceSource
 		tmpSp.URL = p.URL
+		if p.URL == "" {
+			tmpSp.URL = providerDefaultInfo.RequestUrl
+		}
+		tmpSp.Status = 0
+		tmpSp.ExtraHeaders = providerDefaultInfo.ExtraHeaders
+		tmpSp.ExtraJSONBody = "{}"
+		tmpSp.Properties = "{}"
+		if p.ServiceName == types.ServiceChat || p.ServiceName == types.ServiceGenerate {
+			tmpSp.Properties = `{"max_input_tokens":2048,"supported_response_mode":["stream","sync"],"mode_is_changeable":true,"xpu":["GPU"]}`
+		}
 
-		engineProvider := provider.GetModelEngine(tmpSp.Flavor)
+		// engineProvider := provider.GetModelEngine(tmpSp.Flavor)
 		for _, m := range p.Models {
 			if p.ServiceSource == types.ServiceSourceLocal && !utils.Contains(dbServices.ServiceProviders[providerName].Models, m) {
-				slog.Info(fmt.Sprintf("Pull model %s start ...", m))
+				logger.LogicLogger.Info(fmt.Sprintf("Pull model %s start ...", m))
 				stream := false
 				pullReq := &types.PullModelRequest{
-					Model:  m,
-					Stream: &stream,
+					Model:     m,
+					Stream:    &stream,
+					ModelType: p.ServiceName,
 				}
+				modelObj := new(types.Model)
+				modelObj.ProviderName = tmpSp.ProviderName
+				modelObj.ModelName = strings.ToLower(m)
 
-				_, err := engineProvider.PullModel(ctx, pullReq, nil)
-				if err != nil {
-					slog.Error(fmt.Sprintf("Pull model error: %s", err.Error()))
-					return nil, bcode.ErrEnginePullModel
+				err = s.Ds.Get(ctx, modelObj)
+				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+					// todo debug log output
+					return nil, bcode.ErrServer
+				} else if errors.Is(err, datastore.ErrEntityInvalid) {
+					modelObj.Status = "downloading"
+					err = s.Ds.Add(ctx, modelObj)
+					if err != nil {
+						return nil, bcode.ErrAddModel
+					}
 				}
+				if modelObj.Status == "failed" {
+					modelObj.Status = "downloading"
+				}
+				go AsyncPullModel(tmpSp, modelObj, pullReq)
+				//_, err := engineProvider.PullModel(ctx, pullReq, nil)
+				//if err != nil {
+				//	slog.Error(fmt.Sprintf("Pull model error: %s", err.Error()))
+				//	return nil, bcode.ErrEnginePullModel
+				//}
+				//
+				//slog.Info(fmt.Sprintf("Pull model %s completed ...", m))
+			} else if p.ServiceSource == types.ServiceSourceRemote && !utils.Contains(dbServices.ServiceProviders[providerName].Models, m) {
+				server := ChooseCheckServer(*tmpSp, m)
+				checkRes := server.CheckServer()
+				if !checkRes {
+					return nil, bcode.ErrProviderIsUnavailable
+				}
+				tmpSp.Status = 1
+				tmpModel := &types.Model{}
+				tmpModel.ModelName = m
+				tmpModel.ProviderName = tmpSp.ProviderName
+				tmpModel.Status = "downloaded"
+				tmpModel.UpdatedAt = time.Now()
 
-				slog.Info(fmt.Sprintf("Pull model %s completed ...", m))
-			}
-
-			server := ChooseCheckServer(*tmpSp, m)
-			checkRes := server.CheckServer()
-			if !checkRes {
-				return nil, bcode.ErrProviderIsUnavailable
-			}
-
-			tmpModel := &types.Model{}
-			tmpModel.ModelName = m
-			tmpModel.ProviderName = tmpSp.ProviderName
-			tmpModel.Status = "downloaded"
-			tmpModel.UpdatedAt = time.Now()
-
-			isExist, err := s.Ds.IsExist(ctx, tmpModel)
-			if err != nil || !isExist {
-				err := s.Ds.Add(ctx, tmpModel)
-				if err != nil {
-					return nil, bcode.ErrAddModel
+				isExist, err := s.Ds.IsExist(ctx, tmpModel)
+				if err != nil || !isExist {
+					err := s.Ds.Add(ctx, tmpModel)
+					if err != nil {
+						return nil, bcode.ErrAddModel
+					}
 				}
 			}
-
 		}
 
 		if _, ok := dbServices.ServiceProviders[providerName]; ok {
+			checkSp := &types.ServiceProvider{
+				ProviderName: providerName,
+			}
+			err = s.Ds.Get(ctx, checkSp)
+			if err != nil {
+				return nil, bcode.ErrProviderUpdateFailed
+			}
+			tmpSp.ID = checkSp.ID
+			tmpSp.Status = checkSp.Status
+			if tmpSp.AuthType == "none" {
+				tmpSp.AuthType = checkSp.AuthType
+				tmpSp.AuthKey = checkSp.AuthKey
+			}
+
 			err := s.Ds.Put(ctx, tmpSp)
 			if err != nil {
 				return nil, bcode.ErrProviderUpdateFailed
 			}
+
 		} else {
 			err := s.Ds.Add(ctx, tmpSp)
 			if err != nil {
@@ -396,8 +519,47 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			}
 		}
 
+		if p.ServiceSource == types.ServiceSourceLocal && p.ServiceName == types.ServiceChat {
+			generateProviderServiceInfo := schedule.GetProviderServiceDefaultInfo(tmpSp.Flavor, types.ServiceGenerate)
+			generateSp := &types.ServiceProvider{}
+			generateSp.ProviderName = strings.Replace(tmpSp.ProviderName, "chat", "generate", -1)
+			generateSp.ServiceSource = tmpSp.ServiceSource
+			generateSp.AuthType = tmpSp.AuthType
+			generateSp.Status = tmpSp.Status
+			generateSp.Method = http.MethodPost
+			generateSp.ServiceName = strings.Replace(tmpSp.ServiceName, "chat", "generate", -1)
+			generateSp.Desc = strings.Replace(tmpSp.Desc, "chat", "generate", -1)
+			generateSp.Flavor = tmpSp.Flavor
+			generateSp.URL = generateProviderServiceInfo.RequestUrl
+			generateSp.Properties = tmpSp.Properties
+			generateSp.ExtraJSONBody = tmpSp.ExtraJSONBody
+			generateSp.ExtraHeaders = tmpSp.ExtraHeaders
+
+			generateSpIsExist, err := s.Ds.IsExist(ctx, generateSp)
+			if err != nil {
+				generateSpIsExist = false
+			}
+
+			if !generateSpIsExist {
+				err := s.Ds.Add(ctx, generateSp)
+				if err != nil {
+					logger.LogicLogger.Error("Service Provider model already exist")
+					return nil, bcode.ErrModelIsExist
+				}
+			}
+
+			err = s.defaultProviderProcess(ctx, types.ServiceGenerate, generateSp.ServiceSource, generateSp.ProviderName)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		// Check whether LocalProvider and RemoteProvider exist in DBServices. If they do not exist, add them.
 		dbService.Name = p.ServiceName
+		err := s.Ds.Get(ctx, dbService)
+		if err != nil {
+			return nil, err
+		}
 		if p.ServiceSource == types.ServiceSourceLocal && dbServices.Services[p.ServiceName].ServiceProviders.Local == "" {
 			dbService.LocalProvider = tmpSp.ProviderName
 		}
@@ -406,7 +568,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 		}
 		dbService.HybridPolicy = dbServices.Services[p.ServiceName].HybridPolicy
 
-		err := s.Ds.Put(ctx, dbService)
+		err = s.Ds.Put(ctx, dbService)
 		if err != nil {
 			return nil, bcode.ErrServiceUpdateFailed
 		}
@@ -436,9 +598,48 @@ func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetA
 		dsService := v.(*types.Service)
 		tmp.ServiceName = dsService.Name
 		tmp.LocalProvider = dsService.LocalProvider
+		serviceStatus := 0
+		if dsService.LocalProvider != "" {
+			localSp := &types.ServiceProvider{
+				ProviderName: dsService.LocalProvider,
+			}
+			err = s.Ds.Get(ctx, localSp)
+			if err == nil {
+				providerEngine := provider.GetModelEngine(localSp.Flavor)
+				err = providerEngine.HealthCheck()
+				if err == nil {
+					serviceStatus = 1
+				}
+			}
+
+		}
 		tmp.RemoteProvider = dsService.RemoteProvider
+		if dsService.RemoteProvider != "" {
+			remoteSp := &types.ServiceProvider{
+				ProviderName: dsService.RemoteProvider,
+			}
+			err = s.Ds.Get(ctx, remoteSp)
+			if err != nil {
+				serviceStatus = 0
+				continue
+			}
+			remoteModel := &types.Model{
+				ProviderName: dsService.RemoteProvider,
+			}
+			err = s.Ds.Get(ctx, remoteModel)
+			if err != nil {
+				serviceStatus = 0
+				continue
+			}
+			checkServerObj := ChooseCheckServer(*remoteSp, remoteModel.ModelName)
+			status := checkServerObj.CheckServer()
+			if status {
+				serviceStatus = 1
+			}
+		}
 		tmp.HybridPolicy = dsService.HybridPolicy
-		tmp.Status = dsService.Status
+		// tmp.Status = dsService.Status
+		tmp.Status = serviceStatus
 		tmp.UpdatedAt = dsService.UpdatedAt
 		tmp.CreatedAt = dsService.CreatedAt
 
@@ -474,7 +675,7 @@ func (s *AIGCServiceImpl) defaultProviderProcess(ctx context.Context, serviceNam
 
 	err = s.Ds.Put(ctx, service)
 	if err != nil {
-		slog.Error("Service default ", serviceSource, " provider set failed")
+		logger.LogicLogger.Error("Service default ", serviceSource, " provider set failed")
 		return err
 	}
 
@@ -535,26 +736,42 @@ func getAllServices(service *types.Service, provider *types.ServiceProvider, mod
 }
 
 func getRecommendConfig(service string) types.RecommendConfig {
+	recommendModelMap, _ := RecommendModels()
+	recommendModelList := recommendModelMap[service]
 	switch service {
 	case types.ServiceChat:
+		modelName := "deepseek-r1:7b"
+		if len(recommendModelList) > 0 {
+			modelName = recommendModelList[0].Name
+		}
 		return types.RecommendConfig{
-			ModelEngine:       "ollama",
-			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-Installer-20250122.exe",
+			ModelEngine:       types.FlavorOllama,
+			ModelName:         modelName,
+			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-win.zip",
 		}
 	case types.ServiceEmbed:
 		return types.RecommendConfig{
-			ModelEngine:       "ollama",
+			ModelEngine:       types.FlavorOllama,
 			ModelName:         "bge-m3",
-			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-Installer-20250122.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-win.zip",
 		}
 	case types.ServiceModels:
 		return types.RecommendConfig{}
 	case types.ServiceGenerate:
+		modelName := "deepseek-r1:7b"
+		if len(recommendModelList) > 0 {
+			modelName = recommendModelList[0].Name
+		}
 		return types.RecommendConfig{
-			ModelEngine:       "ollama",
-			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-Installer-20250122.exe",
+			ModelEngine:       types.FlavorOllama,
+			ModelName:         modelName,
+			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-win.zip",
+		}
+	case types.ServiceTextToImage:
+		return types.RecommendConfig{
+			ModelEngine:       types.FlavorOpenvino,
+			ModelName:         "OpenVINO/stable-diffusion-v1-5-fp16-ov",
+			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ovms_windows.zip",
 		}
 	default:
 		return types.RecommendConfig{}

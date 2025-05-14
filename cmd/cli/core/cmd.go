@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,12 +19,14 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
 	"intel.com/aog/config"
 	"intel.com/aog/internal/api"
 	"intel.com/aog/internal/api/dto"
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/datastore/sqlite"
 	"intel.com/aog/internal/event"
+	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/provider"
 	"intel.com/aog/internal/schedule"
 	"intel.com/aog/internal/types"
@@ -176,6 +179,11 @@ func Run(ctx context.Context) error {
 
 	datastore.SetDefaultDatastore(ds)
 
+	logger.InitLogger(
+		logger.LogConfig{
+			LogLevel: config.GlobalAOGEnvironment.LogLevel,
+			LogPath:  config.GlobalAOGEnvironment.LogDir,
+		})
 	// Initialize core core app server
 	aogServer := api.NewAOGCoreServer()
 	aogServer.Register()
@@ -201,7 +209,7 @@ func Run(ctx context.Context) error {
 	// Inject all flavors to the router
 	// Setup flavors
 	for _, flavor := range schedule.AllAPIFlavors() {
-		flavor.InstallRoutes(aogServer.Router, config.GlobalAOGEnvironment)
+		flavor.InstallRoutes(aogServer.Router)
 		schedule.InitProviderDefaultModelTemplate(flavor)
 	}
 
@@ -220,7 +228,6 @@ func Run(ctx context.Context) error {
 	}
 
 	_, _ = color.New(color.FgHiGreen).Println("AOG Gateway starting on port", config.GlobalAOGEnvironment.ApiHost)
-
 	return nil
 }
 
@@ -368,6 +375,25 @@ func stopAogServer(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
 		}
 	}
+	if runtime.GOOS == "windows" {
+		extraProcessName := "ollama-lib.exe"
+		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+		_, err := extraCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", extraProcessName)
+			return nil
+		}
+
+		ovmsProcessName := "ovms.exe"
+		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
+		_, err = ovmsCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", ovmsProcessName)
+			return nil
+		}
+
+		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+	}
 
 	return nil
 }
@@ -375,13 +401,15 @@ func stopAogServer(cmd *cobra.Command, args []string) error {
 // NewInstallServiceCommand will install a service
 func NewInstallServiceCommand() *cobra.Command {
 	var (
-		providerName string
-		remoteFlag   bool
-		remoteURL    string
-		authType     string
-		method       string
-		authKey      string
-		flavor       string
+		providerName  string
+		remoteFlag    bool
+		remoteURL     string
+		authType      string
+		method        string
+		authKey       string
+		flavor        string
+		skipModelFlag bool
+		model         string
 	)
 
 	installServiceCmd := &cobra.Command{
@@ -401,6 +429,8 @@ func NewInstallServiceCommand() *cobra.Command {
 	installServiceCmd.Flags().StringVar(&authKey, "auth_key", "", "Authentication key json format")
 	installServiceCmd.Flags().StringVar(&flavor, "flavor", "", "Flavor (tencent/deepseek)")
 	installServiceCmd.Flags().StringP("file", "f", "", "Path to the service provider file (required for service_provider)")
+	installServiceCmd.Flags().BoolVarP(&skipModelFlag, "skip_model", "", false, "Skip the model download")
+	installServiceCmd.Flags().StringVarP(&model, "model_name", "m", "", "Pull model name")
 
 	return installServiceCmd
 }
@@ -423,12 +453,13 @@ func NewVersionCommand() *cobra.Command {
 // NewStartApiServerCommand  Create a new cobra.Command Object with default values.
 func NewStartApiServerCommand() *cobra.Command {
 	config.GlobalAOGEnvironment = config.NewAOGEnvironment()
+	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalAOGEnvironment.LogLevel, LogPath: config.GlobalAOGEnvironment.LogDir})
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "aog apiserver is a aipc open gateway",
 		Long:  "aog apiserver is a aipc open gateway",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			isDaemon, err := cmd.Flags().GetBool("d")
+			isDaemon, err := cmd.Flags().GetBool("daemon")
 			if err != nil {
 				return err
 			}
@@ -436,15 +467,33 @@ func NewStartApiServerCommand() *cobra.Command {
 				CheckAOGServer(cmd, args)
 				return nil
 			}
+
+			isDebug, err := cmd.Flags().GetBool("verbose")
+			if err != nil {
+				return err
+			}
+
+			startMode := types.EngineStartModeDaemon
+			if isDebug {
+				startMode = types.EngineStartModeStandard
+			}
+
+			err = StartModelEngine("openvino", startMode)
+			if err != nil {
+				return err
+			}
+
+			err = StartModelEngine("ollama", startMode)
+			if err != nil {
+				return err
+			}
+
 			return Run(context.Background())
 		},
 	}
-	fs := cmd.Flags()
-	namedFlagSets := config.GlobalAOGEnvironment.Flags()
-	for _, set := range namedFlagSets.FlagSets {
-		fs.AddFlagSet(set)
-	}
-	fs.BoolP("d", "d", false, "Start the server in daemon mode")
+
+	cmd.Flags().BoolP("daemon", "d", false, "Start the server in daemon mode")
+	cmd.Flags().BoolP("verbose", "v", false, "Enable debug mode")
 	return cmd
 }
 
@@ -677,8 +726,8 @@ func installServiceProviderHandler(configFile string) error {
 		return fmt.Errorf("failed to parse configuration file: %w", err)
 	}
 
-	if spConf.ServiceName == "" || spConf.ServiceSource == "" || spConf.ApiFlavor == "" || len(spConf.Models) == 0 {
-		return fmt.Errorf("service_name, service_source, flavor_name, and models are required")
+	if spConf.ServiceName == "" || spConf.ServiceSource == "" || spConf.ApiFlavor == "" {
+		return fmt.Errorf("service_name, service_source, flavor_name are required")
 	}
 
 	if spConf.AuthType != "none" && spConf.AuthKey == "" {
@@ -788,9 +837,21 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 		} else {
 			req.ServiceSource = types.ServiceSourceLocal
 			req.ApiFlavor = types.FlavorOllama
+			if serviceName == types.ServiceTextToImage {
+				req.ApiFlavor = types.FlavorOpenvino
+			}
 			req.AuthType = types.AuthTypeNone
 		}
-
+		skipModelFlag, err := cmd.Flags().GetBool("skip_model")
+		if err != nil {
+			skipModelFlag = false
+		}
+		modelName, err := cmd.Flags().GetString("model_name")
+		if err != nil {
+			modelName = ""
+		}
+		req.SkipModelFlag = skipModelFlag
+		req.ModelName = modelName
 		req.ServiceName = serviceName
 		req.ProviderName = providerName
 		if req.ProviderName == "" {
@@ -805,7 +866,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 		go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
 		c := config.NewAOGClient()
-		routerPath := fmt.Sprintf("/aog/%s/service", version.AOGVersion)
+		routerPath := fmt.Sprintf("/aog/%s/service/install", version.AOGVersion)
 
 		err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 		if err != nil {
@@ -821,9 +882,9 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		fmt.Println("Service chat install success!")
+		fmt.Printf("Service %s install success!", serviceName)
 
-		if !remote {
+		if !remote && serviceName == types.ServiceChat {
 			askRes := askEnableRemoteService()
 			if askRes {
 				fmt.Println("请前往 https://platform.deepseek.com/ 网址申请 APIKEY。")
@@ -860,7 +921,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 }
 
 func CheckAOGServer(cmd *cobra.Command, args []string) {
-	if isServerRunning() {
+	if utils.IsServerRunning() {
 		return
 	}
 
@@ -872,103 +933,89 @@ func CheckAOGServer(cmd *cobra.Command, args []string) {
 
 	time.Sleep(6 * time.Second)
 
-	if !isServerRunning() {
+	if !utils.IsServerRunning() {
 		log.Fatal("Failed to start AOG server.")
 		return
 	}
 
-	// Check if the model engine service is started
-	engineProvider := provider.GetModelEngine("ollama")
-	engineConfig := engineProvider.GetConfig()
-
-	err := engineProvider.HealthCheck()
+	err := StartModelEngine("openvino", types.EngineStartModeDaemon)
 	if err != nil {
-		cmd := exec.Command(engineConfig.ExecFile, "-h")
-		err = cmd.Run()
-		if err != nil {
-			slog.Info("Model engine not exist...")
-			if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
-				slog.Info("model engine not exist, start download...")
-				err := engineProvider.InstallEngine()
-				if err != nil {
-					slog.Error("Install model engine failed :", err.Error())
-					return
-				}
-				slog.Info("Model engine download completed...")
-			}
-		}
-
-		slog.Info("Setting env...")
-		err := engineProvider.InitEnv()
-		if err != nil {
-			slog.Error("Setting env error: ", err.Error())
-			return
-		}
-
-		slog.Info("Start model engine...")
-		err = engineProvider.StartEngine()
-		if err != nil {
-			slog.Error("Start engine error: ", err.Error())
-			return
-		}
-
-		slog.Info("Waiting ollama engine start 60s...")
-		for i := 60; i > 0; i-- {
-			time.Sleep(time.Second * 1)
-			err = engineProvider.HealthCheck()
-			if err == nil {
-				slog.Info("Start model engine completed...")
-				break
-			}
-			slog.Info("Waiting ollama engine start ...", strconv.Itoa(i), "s")
-		}
+		return
 	}
 
-	err = engineProvider.HealthCheck()
+	err = StartModelEngine("ollama", types.EngineStartModeDaemon)
 	if err != nil {
-		slog.Error("Ollama engine failed start, Please try again later...")
 		return
 	}
 
 	fmt.Println("AOG server start successfully.")
 }
 
-func isServerRunning() bool {
-	serverUrl := "http://127.0.0.1:16688/aog/" + version.AOGVersion + "/health"
-	resp, err := http.Get(serverUrl)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
+func StartModelEngine(engineName, mode string) error {
+	// Check if the model engine service is started
+	engineProvider := provider.GetModelEngine(engineName)
+	engineConfig := engineProvider.GetConfig()
 
-	return resp.StatusCode == http.StatusOK
+	err := engineProvider.HealthCheck()
+	if err != nil {
+		cmd := exec.Command(engineConfig.ExecFile, "-h")
+		err := cmd.Run()
+		if err != nil {
+			slog.Info("Check model engine " + engineName + " status")
+			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
+			err = reCheckCmd.Run()
+			_, isExistErr := os.Stat(engineConfig.ExecPath + "/" + engineConfig.ExecFile)
+			if err != nil && isExistErr != nil {
+				slog.Info("Model engine " + engineName + " status: not downloaded")
+				return nil
+			}
+		}
+
+		slog.Info("Setting env...")
+		err = engineProvider.InitEnv()
+		if err != nil {
+			slog.Error("Setting env error: ", err.Error())
+			return err
+		}
+
+		slog.Info("Start " + engineName + "...")
+		err = engineProvider.StartEngine(mode)
+		if err != nil {
+			slog.Error("Start engine "+engineName+" error: ", err.Error())
+			return err
+		}
+
+		slog.Info("Waiting model engine " + engineName + " start 60s...")
+		for i := 60; i > 0; i-- {
+			time.Sleep(time.Second * 1)
+			err = engineProvider.HealthCheck()
+			if err == nil {
+				slog.Info("Start " + engineName + " completed...")
+				break
+			}
+			slog.Info("Waiting "+engineName+" start ...", strconv.Itoa(i), "s")
+		}
+	}
+
+	err = engineProvider.HealthCheck()
+	if err != nil {
+		slog.Error(engineName + " failed start, Please try again later...")
+		return err
+	}
+
+	slog.Info(engineName + " start successfully.")
+
+	return nil
 }
 
 func startAogServer() error {
 	logPath := config.GlobalAOGEnvironment.ConsoleLog
-
-	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	rootDir := config.GlobalAOGEnvironment.RootDir
+	err := utils.StartAOGServer(logPath, rootDir)
 	if err != nil {
-		return fmt.Errorf("failed to open log file: %v", err)
+		fmt.Printf("AOG server start failed: %s", err.Error())
+		return err
 	}
-	defer logFile.Close()
-
-	cmd := exec.Command("aog.exe", "server", "start")
-	cmd.Stdout = logFile
-	cmd.Stderr = logFile
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start AOG server: %v", err)
-	}
-
-	// Save PID to file.
-	pid := cmd.Process.Pid
-	pidFile := filepath.Join(config.GlobalAOGEnvironment.RootDir, "aog.pid")
-	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
-		return fmt.Errorf("failed to save PID to file: %v", err)
-	}
-
-	fmt.Printf("\rAOG server started with PID: %d\n", cmd.Process.Pid)
 	return nil
 }
 

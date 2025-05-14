@@ -8,14 +8,15 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
+	"time"
 
-	"github.com/spf13/cobra"
+	"intel.com/aog/internal/client"
+	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
-	"intel.com/aog/internal/utils/client"
-	"intel.com/aog/internal/utils/progress"
 )
 
 type OllamaProvider struct {
@@ -32,13 +33,15 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 	AOGDir, err := utils.GetAOGDataDir()
 	if err != nil {
 		slog.Error("Get AOG data dir failed: ", err.Error())
+		logger.EngineLogger.Error("[Ollama] Get AOG data dir failed: " + err.Error())
 		return nil
 	}
 
-	downloadPath := fmt.Sprintf("%s/%s", AOGDir, "download")
+	downloadPath := fmt.Sprintf("%s/%s/%s", AOGDir, "engine", "ollama")
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		err := os.MkdirAll(downloadPath, 0o750)
 		if err != nil {
+			logger.EngineLogger.Error("[Ollama] Create download dir failed: " + err.Error())
 			return nil
 		}
 	}
@@ -68,44 +71,58 @@ func (o *OllamaProvider) GetDefaultClient() *client.Client {
 	}, http.DefaultClient)
 }
 
-func (o *OllamaProvider) StartEngine() error {
+func (o *OllamaProvider) StartEngine(mode string) error {
+	logger.EngineLogger.Info("[Ollama] Start engine mode: " + mode)
 	execFile := "ollama"
 	switch runtime.GOOS {
 	case "windows":
 		if utils.IpexOllamaSupportGPUStatus() {
-			slog.Info("start ipex-llm-ollama...")
+			logger.EngineLogger.Info("[Ollama] start ipex-llm-ollama...")
 			execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
-			slog.Info("exec file path: " + execFile)
+			logger.EngineLogger.Info("[Ollama] exec file path: " + execFile)
 		} else {
 			execFile = "ollama.exe"
 		}
 	case "darwin":
-		execFile = "ollama"
+		execFile = "/Applications/Ollama.app/Contents/Resources/ollama"
 	case "linux":
 		execFile = "ollama"
 	default:
+		logger.EngineLogger.Error("[Ollama] unsupported operating system: " + runtime.GOOS)
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 
-	cmd := exec.Command(execFile, "serve")
-	err := cmd.Start()
-	if err != nil {
-		return fmt.Errorf("failed to start ollama: %v", err)
-	}
+	if mode == types.EngineStartModeDaemon {
+		cmd := exec.Command(execFile, "serve")
+		err := cmd.Start()
+		if err != nil {
+			logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
+			return fmt.Errorf("failed to start ollama: %v", err)
+		}
 
-	rootPath, err := utils.GetAOGDataDir()
-	if err != nil {
-		return fmt.Errorf("failed get aog dir: %v", err)
-	}
-	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
-	err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
-	if err != nil {
-		return fmt.Errorf("failed to write pid file: %v", err)
-	}
+		rootPath, err := utils.GetAOGDataDir()
+		if err != nil {
+			logger.EngineLogger.Error("[Ollama] failed get aog dir: " + err.Error())
+			return fmt.Errorf("failed get aog dir: %v", err)
+		}
+		pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
+		err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
+		if err != nil {
+			logger.EngineLogger.Error("[Ollama] failed to write pid file: " + err.Error())
+			return fmt.Errorf("failed to write pid file: %v", err)
+		}
 
-	go func() {
-		cmd.Wait()
-	}()
+		go func() {
+			cmd.Wait()
+		}()
+	} else {
+		cmd := exec.Command(o.EngineConfig.ExecPath + "/ollama-serve.bat")
+		err := cmd.Start()
+		if err != nil {
+			logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
+			return fmt.Errorf("failed to start ollama: %v", err)
+		}
+	}
 
 	return nil
 }
@@ -113,30 +130,36 @@ func (o *OllamaProvider) StartEngine() error {
 func (o *OllamaProvider) StopEngine() error {
 	rootPath, err := utils.GetAOGDataDir()
 	if err != nil {
+		logger.EngineLogger.Error("[Ollama] failed get aog dir: " + err.Error())
 		return fmt.Errorf("failed get aog dir: %v", err)
 	}
 	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
 
 	pidData, err := os.ReadFile(pidFile)
 	if err != nil {
+		logger.EngineLogger.Error("[Ollama] failed to read pid file: " + err.Error())
 		return fmt.Errorf("failed to read pid file: %v", err)
 	}
 
 	pid, err := strconv.Atoi(string(pidData))
 	if err != nil {
+		logger.EngineLogger.Error("[Ollama] invalid pid format: " + err.Error())
 		return fmt.Errorf("invalid pid format: %v", err)
 	}
 
 	process, err := os.FindProcess(pid)
 	if err != nil {
+		logger.EngineLogger.Error("[Ollama] failed to find process: " + err.Error())
 		return fmt.Errorf("failed to find process: %v", err)
 	}
 
 	if err := process.Kill(); err != nil {
+		logger.EngineLogger.Error("[Ollama] failed to kill process: " + err.Error())
 		return fmt.Errorf("failed to kill process: %v", err)
 	}
 
 	if err := os.Remove(pidFile); err != nil {
+		logger.EngineLogger.Error("[Ollama] failed to remove pid file: " + err.Error())
 		return fmt.Errorf("failed to remove pid file: %v", err)
 	}
 
@@ -144,16 +167,21 @@ func (o *OllamaProvider) StopEngine() error {
 }
 
 func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
+	if o.EngineConfig != nil {
+		return o.EngineConfig
+	}
+
 	userDir, err := os.UserHomeDir()
 	if err != nil {
-		slog.Error("Get user home dir failed: ", err.Error())
+		logger.EngineLogger.Error("[Ollama] Get user home dir failed: ", err.Error())
 		return nil
 	}
 
-	downloadPath, err := utils.GetDownloadDir()
+	downloadPath, _ := utils.GetDownloadDir()
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		err := os.MkdirAll(downloadPath, 0o755)
 		if err != nil {
+			logger.EngineLogger.Error("[Ollama] Create download dir failed: ", err.Error())
 			return nil
 		}
 	}
@@ -161,16 +189,19 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	execFile := ""
 	execPath := ""
 	downloadUrl := ""
+	enginePath := ""
 	switch runtime.GOOS {
 	case "windows":
 		if utils.IpexOllamaSupportGPUStatus() {
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 			execFile = "ollama.exe"
-			downloadUrl = "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-Installer-20250122.exe"
+			downloadUrl = "http://120.232.136.73:31619/aogdev/ollama-intel-2.3.0b20250429-win.zip"
+			enginePath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 		} else {
 			execFile = "ollama.exe"
 			execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
 			downloadUrl = "http://120.232.136.73:31619/aogdev/OllamaSetup.exe"
+			enginePath = fmt.Sprintf("%s/%s", userDir, "ollama")
 		}
 	case "linux":
 		execFile = "ollama"
@@ -178,13 +209,14 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		downloadUrl = "http://120.232.136.73:31619/aogdev/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", "ollama")
 		if runtime.GOARCH == "amd64" {
 			downloadUrl = "http://120.232.136.73:31619/aogdev/Ollama-darwin.zip"
 		} else {
 			downloadUrl = "http://120.232.136.73:31619/aogdev/Ollama-arm64.zip"
 		}
 	default:
+		logger.EngineLogger.Error("[Ollama] unsupported operating system: " + runtime.GOOS)
 		return nil
 	}
 
@@ -195,6 +227,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		RecommendModel: "deepseek-r1:7b",
 		DownloadUrl:    downloadUrl,
 		DownloadPath:   downloadPath,
+		EnginePath:     enginePath,
 		ExecPath:       execPath,
 		ExecFile:       execFile,
 	}
@@ -203,24 +236,99 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 func (o *OllamaProvider) HealthCheck() error {
 	c := o.GetDefaultClient()
 	if err := c.Do(context.Background(), http.MethodHead, "/", nil, nil); err != nil {
+		logger.EngineLogger.Error("[Ollama] Health check failed: " + err.Error())
 		return err
 	}
+	logger.EngineLogger.Info("[Ollama] Ollama server health")
+
 	return nil
+}
+
+func (o *OllamaProvider) GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error) {
+	c := o.GetDefaultClient()
+	if err := c.Do(ctx, http.MethodGet, "/api/version", nil, resp); err != nil {
+		slog.Error("Get engine version : " + err.Error())
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (o *OllamaProvider) InstallEngine() error {
 	file, err := utils.DownloadFile(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath)
 	if err != nil {
-		return fmt.Errorf("failed to download ollama: %v", err)
+		return fmt.Errorf("failed to download ollama: %v, url: %v", err, o.EngineConfig.DownloadUrl)
 	}
 
 	slog.Info("[Install Engine] start install...")
-	cmd := exec.Command(file)
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("failed to install ollama: %v", err)
-	}
+	if runtime.GOOS == "darwin" {
+		files, err := os.ReadDir(o.EngineConfig.DownloadPath)
+		if err != nil {
+			slog.Error("[Install Engine] read dir failed: ", o.EngineConfig.DownloadPath)
+		}
+		for _, f := range files {
+			if f.IsDir() && f.Name() == "__MACOSX" {
+				fPath := filepath.Join(o.EngineConfig.DownloadPath, f.Name())
+				os.RemoveAll(fPath)
+			}
+		}
+		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		if _, err = os.Stat(appPath); os.IsNotExist(err) {
+			unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
+			if err := unzipCmd.Run(); err != nil {
+				return fmt.Errorf("failed to unzip file: %v", err)
+			}
+			appPath = filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		}
 
+		//cmd := exec.Command("open", appPath)
+		//if err := cmd.Run(); err != nil {
+		//	return fmt.Errorf("failed to open ollama installer: %v", err)
+		//}
+		// move it to Applications
+		applicationPath := filepath.Join("/Applications/", "Ollama.app")
+		if _, err = os.Stat(applicationPath); os.IsNotExist(err) {
+			mvCmd := exec.Command("mv", appPath, "/Applications/")
+			if err := mvCmd.Run(); err != nil {
+				return fmt.Errorf("failed to move ollama to Applications: %v", err)
+			}
+		}
+
+	} else {
+		if utils.IpexOllamaSupportGPUStatus() {
+			// 解压文件
+			userDir, err := os.UserHomeDir()
+			if err != nil {
+				slog.Error("Get user home dir failed: ", err.Error())
+				return err
+			}
+			ipexPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
+				os.MkdirAll(ipexPath, 0o755)
+				if runtime.GOOS == "windows" {
+					unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
+					if err := unzipCmd.Run(); err != nil {
+						return fmt.Errorf("failed to unzip file: %v", err)
+					}
+				}
+			}
+
+		} else { // Handle other operating systems
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, file)
+			_, err := cmd.CombinedOutput()
+			if err != nil {
+				// 如果是超时错误
+				if ctx.Err() == context.DeadlineExceeded {
+					fmt.Println("cmd execute timeout")
+					return err
+				}
+				fmt.Printf("cmd execute error: %v\n", err)
+				return err
+			}
+			return nil
+		}
+	}
 	slog.Info("[Install Engine] model engine install completed")
 	return nil
 }
@@ -228,35 +336,58 @@ func (o *OllamaProvider) InstallEngine() error {
 func (o *OllamaProvider) InitEnv() error {
 	err := os.Setenv("OLLAMA_HOST", o.EngineConfig.Host)
 	if err != nil {
+		logger.EngineLogger.Error("[Ollama] failed to set OLLAMA_HOST: " + err.Error())
 		return fmt.Errorf("failed to set OLLAMA_HOST: %w", err)
 	}
 
 	err = os.Setenv("OLLAMA_ORIGIN", o.EngineConfig.Origin)
 	if err != nil {
+		logger.EngineLogger.Error("[Ollama] failed to set OLLAMA_ORIGIN: " + err.Error())
 		return fmt.Errorf("failed to set OLLAMA_ORIGIN: %w", err)
 	}
 	return nil
 }
 
 func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequest, fn types.PullProgressFunc) (*types.ProgressResponse, error) {
+	logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name)
+
 	c := o.GetDefaultClient()
+	ctx, cancel := context.WithCancel(ctx)
+	modelArray := append(client.ModelClientMap[req.Model], cancel)
+	client.ModelClientMap[req.Model] = modelArray
 
 	var resp types.ProgressResponse
 	if err := c.Do(ctx, http.MethodPost, "/api/pull", req, &resp); err != nil {
-		slog.Error("Pull model failed : " + err.Error())
+		logger.EngineLogger.Error("[Ollama] Pull model failed : " + err.Error())
 		return &resp, err
 	}
+	logger.EngineLogger.Info("[Ollama] Pull model success: " + req.Name)
+
 	return &resp, nil
 }
 
-func (o *OllamaProvider) DeleteModel(ctx context.Context, req *types.DeleteRequest) error {
-	fmt.Printf("Ollama: Deleting model %s\n", req.Model)
-	c := o.GetDefaultClient()
+func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullModelRequest) (chan []byte, chan error) {
+	logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
 
+	c := o.GetDefaultClient()
+	ctx, cancel := context.WithCancel(ctx)
+	modelArray := append(client.ModelClientMap[req.Model], cancel)
+	client.ModelClientMap[req.Model] = modelArray
+	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req)
+	logger.EngineLogger.Info("[Ollama] Pull model success: " + req.Name + " , mode: stream")
+
+	return dataCh, errCh
+}
+
+func (o *OllamaProvider) DeleteModel(ctx context.Context, req *types.DeleteRequest) error {
+	logger.EngineLogger.Info("[Ollama] Delete model: " + req.Model)
+
+	c := o.GetDefaultClient()
 	if err := c.Do(ctx, http.MethodDelete, "/api/delete", req, nil); err != nil {
-		slog.Error("Delete model failed : " + err.Error())
+		logger.EngineLogger.Error("[Ollama] Delete model failed : " + err.Error())
 		return err
 	}
+	logger.EngineLogger.Info("[Ollama] Delete model success: " + req.Model)
 
 	return nil
 }
@@ -265,57 +396,9 @@ func (o *OllamaProvider) ListModels(ctx context.Context) (*types.ListResponse, e
 	c := o.GetDefaultClient()
 	var lr types.ListResponse
 	if err := c.Do(ctx, http.MethodGet, "/api/tags", nil, &lr); err != nil {
-		slog.Error("[Service] Get model list failed :" + err.Error())
+		logger.EngineLogger.Error("[Ollama] Get model list failed :" + err.Error())
 		return nil, err
 	}
+
 	return &lr, nil
-}
-
-func (o *OllamaProvider) PullHandler(cmd *cobra.Command, args []string) error {
-	insecure, err := cmd.Flags().GetBool("insecure")
-	if err != nil {
-		return err
-	}
-
-	p := progress.NewProgress(os.Stderr)
-	defer p.Stop()
-
-	bars := make(map[string]*progress.Bar)
-
-	var status string
-	var spinner *progress.Spinner
-
-	fn := func(resp types.ProgressResponse) error {
-		if resp.Digest != "" {
-			if spinner != nil {
-				spinner.Stop()
-			}
-
-			bar, ok := bars[resp.Digest]
-			if !ok {
-				bar = progress.NewBar(fmt.Sprintf("pulling %s...", resp.Digest[7:19]), resp.Total, resp.Completed)
-				bars[resp.Digest] = bar
-				p.Add(resp.Digest, bar)
-			}
-
-			bar.Set(resp.Completed)
-		} else if status != resp.Status {
-			if spinner != nil {
-				spinner.Stop()
-			}
-
-			status = resp.Status
-			spinner = progress.NewSpinner(status)
-			p.Add(status, spinner)
-		}
-
-		return nil
-	}
-
-	request := types.PullModelRequest{Name: args[0], Insecure: insecure}
-	if _, err := o.PullModel(context.Background(), &request, fn); err != nil {
-		return err
-	}
-
-	return nil
 }

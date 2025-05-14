@@ -1,14 +1,20 @@
-
+# Get GOOS and GOARCH
+GOOS := $(shell go env GOOS)
+GOARCH := $(shell go env GOARCH)
 
 build-all:
-ifeq ($(shell go env GOOS), windows)
+ifeq ($(GOOS),windows)
 	$(MAKE) build-cli-win build-dll-win
-else ifeq ($(shell go env GOOS), darwin)
+else ifeq ($(GOOS),darwin)
+ifeq ($(GOARCH),amd64)
 	$(MAKE) build-cli-darwin build-dll-darwin
-else ifeq ($(shell go env GOOS), linux)
+else
+	$(MAKE) build-cli-darwin-arm build-dll-darwin-arm
+endif
+else ifeq ($(GOOS),linux)
 	$(MAKE) build-cli-linux build-dll-linux
 else
-	@echo "Unsupported platform: $(shell go env GOOS)"
+	@echo "Unsupported platform: $(GOOS)"
 endif
 
 
@@ -17,6 +23,9 @@ build-cli-win:
 
 build-cli-darwin:
 	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o aog -ldflags="-s -w"  cmd/cli/main.go
+
+build-cli-darwin-arm:
+	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64  go build -o aog -ldflags="-s -w"  cmd/cli/main.go
 
 build-cli-linux:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64  go build -o aog -ldflags="-s -w"  cmd/cli/main.go

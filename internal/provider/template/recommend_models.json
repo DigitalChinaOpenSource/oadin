@@ -1,0 +1,53 @@
+{
+  "service": "chat",
+  "memory_size_models_map_list": [
+    {
+      "memory_size": 32,
+      "memory_type": ["DDR5"],
+      "models": [
+        {
+          "name": "qwen2.5:7b",
+          "size": "4.7G",
+          "params_size": 7
+        },
+        {
+          "name": "deepseek-r1:7b",
+          "size": "4.7G",
+          "params_size": 7
+        }
+      ]
+    },
+    {
+      "memory_type": ["DDR5"],
+      "memory_size": 18,
+      "models": [
+        {
+          "name": "qwen2.5:7b",
+          "size": "4.7G",
+          "params_size": 7
+        },
+        {
+          "name": "deepseek-r1:7b",
+          "size": "4.7G",
+          "params_size": 7
+        }
+      ]
+    },
+    {
+      "memory_size": 4,
+      "memory_type": ["DDR3", "DDR4", "DDR5"],
+      "models": [
+        {
+          "name": "qwen2.5:1.5b",
+          "size": "4.7G",
+          "params_size": 1.5
+        },
+        {
+          "name": "deepseek-r1:1.5b",
+          "size": "4.7G",
+          "params_size": 1.5
+        }
+      ]
+    }
+  ]
+}

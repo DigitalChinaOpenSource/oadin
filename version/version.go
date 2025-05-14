@@ -1,3 +1,3 @@
 package version
 
-const AOGVersion = "v0.2"
+const AOGVersion = "v0.3"

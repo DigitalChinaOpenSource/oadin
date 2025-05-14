@@ -1,15 +1,17 @@
-version: "0.1"
+version: "0.2"
 name: deepseek # the name should be aligned with file name
 services:
     chat: # service name defined by AOG
+        protocol: "HTTP"
         url: "https://api.lkeap.cloud.tencent.com/v1/chat/completions"
         endpoints: [ "POST /v1/chat/completions" ]  # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
-        default_model: deepseek-r1
+        default_model: deepseek-chat
         request_segments: 1 # request
         install_raw_routes: false # also install routes without aog prefix in url path
         extra_headers: '{}'
+        support_models: ["deepseek-chat", "deepseek-resoning"]
         request_to_aog:
             conversion:
                 - converter: jsonata

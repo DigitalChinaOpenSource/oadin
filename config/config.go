@@ -15,8 +15,9 @@ import (
 	"github.com/MatusOllah/slogcolor"
 	"github.com/fatih/color"
 	"github.com/spf13/pflag"
+
+	"intel.com/aog/internal/client"
 	"intel.com/aog/internal/utils"
-	"intel.com/aog/internal/utils/client"
 	"intel.com/aog/version"
 )
 
@@ -174,14 +175,7 @@ func (s *AOGEnvironment) Flags() *FlagSets {
 	fss := NewFlagSets()
 	fs := fss.GetFlagSet("generic")
 	fs.StringVar(&s.ApiHost, "app-host", s.ApiHost, "API host")
-	fs.StringVar(&s.Datastore, "datastore", s.Datastore, "Datastore path")
-	fs.StringVar(&s.DatastoreType, "datastore-type", s.DatastoreType, "Datastore type")
-	fs.StringVar(&s.LogHTTP, "log-http", s.LogHTTP, "HTTP log path")
 	fs.StringVar(&s.Verbose, "verbose", s.Verbose, "Log verbosity level")
-	fs.StringVar(&s.RootDir, "root-dir", s.RootDir, "Root directory")
-	fs.StringVar(&s.WorkDir, "work-dir", s.WorkDir, "Work directory")
-	fs.StringVar(&s.APIVersion, "app-layer-version", s.APIVersion, "API layer version")
-	fs.StringVar(&s.SpecVersion, "spec-version", s.SpecVersion, "Specification version")
 	return fss
 }
 

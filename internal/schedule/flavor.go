@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -22,6 +21,7 @@ import (
 	"intel.com/aog/config"
 	"intel.com/aog/internal/convert"
 	"intel.com/aog/internal/event"
+	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/provider/template"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
@@ -31,7 +31,7 @@ import (
 // APIFlavor mode is usually set to "default". And set to "stream" if it is using stream mode
 type APIFlavor interface {
 	Name() string
-	InstallRoutes(server *gin.Engine, options *config.AOGEnvironment)
+	InstallRoutes(server *gin.Engine)
 
 	// GetStreamResponseProlog In stream mdoe, some flavor may ask for some packets to be send first
 	// or at the end, in addition to normal contents. For example, OpenAI
@@ -81,14 +81,17 @@ type ModelSelector struct {
 	ModelInResponse string `yaml:"response"`
 }
 type FlavorServiceDef struct {
+	Protocol              string              `yaml:"protocol"`
 	Endpoints             []string            `yaml:"endpoints"`
 	InstallRawRoutes      bool                `yaml:"install_raw_routes"`
 	DefaultModel          string              `yaml:"default_model"`
 	RequestUrl            string              `yaml:"url"`
 	RequestExtraUrl       string              `yaml:"extra_url"`
 	AuthType              string              `yaml:"auth_type"`
+	AuthApplyUrl          string              `yaml:"auth_apply_url"`
 	RequestSegments       int                 `yaml:"request_segments"`
 	ExtraHeaders          string              `yaml:"extra_headers"`
+	SupportModels         []string            `yaml:"support_models"`
 	ModelSelector         ModelSelector       `yaml:"model_selector"`
 	RequestToAOG          FlavorConversionDef `yaml:"request_to_aog"`
 	RequestFromAOG        FlavorConversionDef `yaml:"request_from_aog"`
@@ -101,8 +104,6 @@ type FlavorServiceDef struct {
 type FlavorDef struct {
 	Version  string                      `yaml:"version"`
 	Name     string                      `yaml:"name"`
-	Endpoint string                      `yaml:"endpoint"`
-	AuthType string                      `yaml:"auth_type"`
 	Services map[string]FlavorServiceDef `yaml:"services"`
 }
 
@@ -170,7 +171,7 @@ func GetFlavorDef(flavor string) FlavorDef {
 	if _, exists := allFlavorDefs[flavor]; !exists {
 		def, err := LoadFlavorDef(flavor, config.GlobalAOGEnvironment.RootDir)
 		if err != nil {
-			slog.Error("[Init] Failed to load flavor config", "flavor", flavor, "error", err)
+			logger.LogicLogger.Error("[Init] Failed to load flavor config", "flavor", flavor, "error", err)
 			// This shouldn't happen unless something goes wrong
 			// Directly panic without recovering
 			panic(err)
@@ -197,7 +198,7 @@ func InitAPIFlavors() error {
 			baseName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 			flavor, err := NewConfigBasedAPIFlavor(GetFlavorDef(baseName))
 			if err != nil {
-				slog.Error("[Flavor] Failed to create API Flavor", "flavor", baseName, "error", err)
+				logger.LogicLogger.Error("[Flavor] Failed to create API Flavor", "flavor", baseName, "error", err)
 				return err
 			}
 			RegisterAPIFlavor(flavor)
@@ -260,14 +261,18 @@ func (f *ConfigBasedAPIFlavor) Name() string {
 	return f.Config.Name
 }
 
-func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine, options *config.AOGEnvironment) {
+func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine) {
 	vSpec := version.AOGVersion
 	for service, serviceDef := range f.Config.Services {
+		if serviceDef.Protocol == types.ProtocolGRPC {
+			continue
+		}
+
 		for _, endpoint := range serviceDef.Endpoints {
 			parts := strings.SplitN(endpoint, " ", 2)
 			endpoint = strings.TrimSpace(endpoint)
 			if len(parts) != 2 {
-				slog.Error("[Flavor] Invalid endpoint format", "endpoint", endpoint)
+				logger.LogicLogger.Error("[Flavor] Invalid endpoint format", "endpoint", endpoint)
 				panic("[Flavor] Invalid endpoint format: " + endpoint)
 			}
 			method := parts[0]
@@ -282,20 +287,20 @@ func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine, options *confi
 			// raw routes which doesn't have any aog prefix
 			if serviceDef.InstallRawRoutes {
 				gateway.Handle(method, path, handler)
-				slog.Debug("[Flavor] Installed raw route", "flavor", f.Name(), "service", service, "route", method+" "+path)
+				logger.LogicLogger.Debug("[Flavor] Installed raw route", "flavor", f.Name(), "service", service, "route", method+" "+path)
 			}
 			// flavor routes in api_flavors or directly under services
 			if f.Name() != "aog" {
 				aogPath := "/aog/" + vSpec + "/api_flavors/" + f.Name() + path
 				gateway.Handle(method, aogPath, handler)
-				slog.Debug("[Flavor] Installed flavor route", "flavor", f.Name(), "service", service, "route", method+" "+aogPath)
+				logger.LogicLogger.Debug("[Flavor] Installed flavor route", "flavor", f.Name(), "service", service, "route", method+" "+aogPath)
 			} else {
 				aogPath := "/aog/" + vSpec + "/services" + path
 				gateway.Handle(method, aogPath, makeServiceRequestHandler(f, service))
-				slog.Debug("[Flavor] Installed aog route", "flavor", f.Name(), "service", service, "route", method+" "+aogPath)
+				logger.LogicLogger.Debug("[Flavor] Installed aog route", "flavor", f.Name(), "service", service, "route", method+" "+aogPath)
 			}
 		}
-		slog.Info("[Flavor] Installed routes", "flavor", f.Name(), "service", service)
+		logger.LogicLogger.Info("[Flavor] Installed routes", "flavor", f.Name(), "service", service)
 	}
 }
 
@@ -309,7 +314,7 @@ func (f *ConfigBasedAPIFlavor) GetStreamResponseEpilog(service string) []string 
 
 func (f *ConfigBasedAPIFlavor) Convert(service, conversion string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
 	pipeline := f.GetConverterPipeline(service, conversion)
-	slog.Debug("[Flavor] Converting", "flavor", f.Name(), "service", service, "conversion", conversion, "content", content)
+	logger.LogicLogger.Debug("[Flavor] Converting", "flavor", f.Name(), "service", service, "conversion", conversion, "content", content)
 	return pipeline.Convert(content, ctx)
 }
 
@@ -339,21 +344,21 @@ func (f *ConfigBasedAPIFlavor) ConvertStreamResponseFromAOG(service string, cont
 
 func makeServiceRequestHandler(flavor APIFlavor, service string) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		slog.Info("[Handler] Invoking service", "flavor", flavor.Name(), "service", service)
+		logger.LogicLogger.Info("[Handler] Invoking service", "flavor", flavor.Name(), "service", service)
 		event.SysEvents.Notify("start_session", []string{flavor.Name(), service})
 
 		w := c.Writer
 
 		taskid, ch, err := InvokeService(flavor.Name(), service, c.Request)
 		if err != nil {
-			slog.Error("[Handler] Failed to invoke service", "flavor", flavor.Name(), "service", service, "error", err)
+			logger.LogicLogger.Error("[Handler] Failed to invoke service", "flavor", flavor.Name(), "service", service, "error", err)
 			http.NotFound(w, c.Request)
 			return
 		}
 
 		closenotifier, ok := w.(http.CloseNotifier)
 		if !ok {
-			slog.Error("[Handler] Not found http.CloseNotifier")
+			logger.LogicLogger.Error("[Handler] Not found http.CloseNotifier")
 			http.NotFound(w, c.Request)
 			return
 		}
@@ -369,14 +374,14 @@ func makeServiceRequestHandler(flavor APIFlavor, service string) func(c *gin.Con
 		for {
 			select {
 			case <-closenotifier.CloseNotify():
-				slog.Warn("[Handler] Client connection disconnected", "taskid", taskid)
+				logger.LogicLogger.Warn("[Handler] Client connection disconnected", "taskid", taskid)
 				isHTTPCompleted = true
 			case data, ok := <-ch:
 				if !ok {
-					slog.Debug("[Handler] Service task channel closed", "taskid", taskid)
+					logger.LogicLogger.Debug("[Handler] Service task channel closed", "taskid", taskid)
 					break outerLoop
 				}
-				slog.Debug("[Handler] Received service result", "result", data)
+				logger.LogicLogger.Debug("[Handler] Received service result", "result", data)
 				if isHTTPCompleted {
 					// skip below statements but do not quit
 					// we should exhaust the channel to allow it to be closed
@@ -405,21 +410,21 @@ func ConvertBetweenFlavors(from, to APIFlavor, service string, conv string, cont
 	secondConv := conv + "_from_aog"
 	EnsureConversionNameValid(firstConv)
 	EnsureConversionNameValid(secondConv)
-	if from.Name() != "aog" {
+	if from.Name() != types.FlavorAOG {
 		var err error
 		content, err = from.Convert(service, firstConv, content, ctx)
 		if err != nil {
 			return types.HTTPContent{}, err
 		}
 	}
-	if from.Name() != "aog" && to.Name() != "aog" {
+	if from.Name() != types.FlavorAOG && to.Name() != types.FlavorAOG {
 		if strings.HasPrefix(conv, "request") {
 			event.SysEvents.NotifyHTTPRequest("request_converted_to_aog", "<n/a>", "<n/a>", content.Header, content.Body)
 		} else {
 			event.SysEvents.NotifyHTTPResponse("response_converted_to_aog", -1, content.Header, content.Body)
 		}
 	}
-	if to.Name() != "aog" {
+	if to.Name() != types.FlavorAOG {
 		var err error
 		content, err = to.Convert(service, secondConv, content, ctx)
 		if err != nil {
@@ -430,12 +435,15 @@ func ConvertBetweenFlavors(from, to APIFlavor, service string, conv string, cont
 }
 
 type ServiceDefaultInfo struct {
-	DefaultModel    string `json:"default_model"`
-	RequestUrl      string `json:"url"`
-	RequestExtraUrl string `json:"request_extra_url"`
-	AuthType        string `json:"auth_type"`
-	RequestSegments int    `json:"request_segments"`
-	ExtraHeaders    string `json:"extra_headers"`
+	Endpoints       []string `json:"endpoints"`
+	DefaultModel    string   `json:"default_model"`
+	RequestUrl      string   `json:"url"`
+	RequestExtraUrl string   `json:"request_extra_url"`
+	AuthType        string   `json:"auth_type"`
+	RequestSegments int      `json:"request_segments"`
+	ExtraHeaders    string   `json:"extra_headers"`
+	SupportModels   []string `json:"support_models"`
+	AuthApplyUrl    string   `json:"auth_apply_url"`
 }
 
 var FlavorServiceDefaultInfoMap = make(map[string]map[string]ServiceDefaultInfo)
@@ -443,17 +451,20 @@ var FlavorServiceDefaultInfoMap = make(map[string]map[string]ServiceDefaultInfo)
 func InitProviderDefaultModelTemplate(flavor APIFlavor) {
 	def, err := LoadFlavorDef(flavor.Name(), "/")
 	if err != nil {
-		slog.Error("[Provider]Failed to load file", "provider_name", flavor, "error", err.Error())
+		logger.LogicLogger.Error("[Provider]Failed to load file", "provider_name", flavor, "error", err.Error())
 	}
 	ServiceDefaultInfoMap := make(map[string]ServiceDefaultInfo)
 	for service, serviceDef := range def.Services {
 		ServiceDefaultInfoMap[service] = ServiceDefaultInfo{
+			Endpoints:       serviceDef.Endpoints,
 			DefaultModel:    serviceDef.DefaultModel,
 			RequestUrl:      serviceDef.RequestUrl,
 			RequestExtraUrl: serviceDef.RequestExtraUrl,
 			RequestSegments: serviceDef.RequestSegments,
 			AuthType:        serviceDef.AuthType,
 			ExtraHeaders:    serviceDef.ExtraHeaders,
+			SupportModels:   serviceDef.SupportModels,
+			AuthApplyUrl:    serviceDef.AuthApplyUrl,
 		}
 	}
 	FlavorServiceDefaultInfoMap[flavor.Name()] = ServiceDefaultInfoMap
@@ -556,13 +567,18 @@ type SignAuthInfo struct {
 	SecretId  string `json:"secret_id"`
 	SecretKey string `json:"secret_key"`
 }
+
+type ApiKeyAuthInfo struct {
+	ApiKey string `json:"api_key"`
+}
+
 type Authenticator interface {
 	Authenticate() error
 }
 
 type APIKEYAuthenticator struct {
-	APIKey string
-	Req    http.Request
+	AuthInfo string `json:"auth_info"`
+	Req      http.Request
 }
 
 type TencentSignAuthenticator struct {
@@ -573,7 +589,12 @@ type TencentSignAuthenticator struct {
 }
 
 func (a *APIKEYAuthenticator) Authenticate() error {
-	a.Req.Header.Set("Authorization", "Bearer "+a.APIKey)
+	var authInfoData ApiKeyAuthInfo
+	err := json.Unmarshal([]byte(a.AuthInfo), &authInfoData)
+	if err != nil {
+		return err
+	}
+	a.Req.Header.Set("Authorization", "Bearer "+authInfoData.ApiKey)
 	return nil
 }
 
@@ -628,8 +649,8 @@ func ChooseProviderAuthenticator(p *AuthenticatorParams) Authenticator {
 		}
 	} else if p.ProviderInfo.AuthType == types.AuthTypeApiKey {
 		authenticator = &APIKEYAuthenticator{
-			APIKey: p.ProviderInfo.AuthKey,
-			Req:    *p.Request,
+			AuthInfo: p.ProviderInfo.AuthKey,
+			Req:      *p.Request,
 		}
 	}
 	return authenticator

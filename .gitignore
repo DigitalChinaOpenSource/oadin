@@ -40,3 +40,7 @@ bk.*
 .vscode/
 *.db
 aog
+
+# Demo APP files
+/example/FreeChat/obj
+/example/FreeChat/bin

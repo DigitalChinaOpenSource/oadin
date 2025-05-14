@@ -18,6 +18,7 @@ import (
 
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/event"
+	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
 )
@@ -81,7 +82,7 @@ func (ss *BasicServiceScheduler) TaskComplete(task *ServiceTask, err error) {
 }
 
 func (ss *BasicServiceScheduler) Start() {
-	slog.Info("[Init] Start basic service scheduler ...")
+	logger.LogicLogger.Info("[Init] Start basic service scheduler ...")
 	go func() {
 		for taskEvent := range ss.ChEvent {
 			task := taskEvent.Task
@@ -99,13 +100,13 @@ func (ss *BasicServiceScheduler) Start() {
 }
 
 func (ss *BasicServiceScheduler) onTaskEnqueue(task *ServiceTask) {
-	slog.Info("[Schedule] Enqueue", "task", task)
+	logger.LogicLogger.Info("[Schedule] Enqueue", "task", task)
 	ss.addToList(task, "waiting")
 	task.Schedule.TimeEnqueue = time.Now()
 }
 
 func (ss *BasicServiceScheduler) onTaskDone(task *ServiceTask) {
-	slog.Info("[Schedule] Task Done", "since queued", time.Since(task.Schedule.TimeEnqueue),
+	logger.LogicLogger.Info("[Schedule] Task Done", "since queued", time.Since(task.Schedule.TimeEnqueue),
 		"since run", time.Since(task.Schedule.TimeRun), "task", task)
 	task.Schedule.TimeComplete = time.Now()
 	close(task.Ch)
@@ -113,7 +114,7 @@ func (ss *BasicServiceScheduler) onTaskDone(task *ServiceTask) {
 }
 
 func (ss *BasicServiceScheduler) onTaskFailed(task *ServiceTask, err error) {
-	slog.Error("[Service] Task Failed", "error", err.Error(), "since queued",
+	logger.LogicLogger.Error("[Service] Task Failed", "error", err.Error(), "since queued",
 		time.Since(task.Schedule.TimeEnqueue), "since run", time.Since(task.Schedule.TimeRun), "task", task)
 	task.Error = err
 	task.Schedule.TimeComplete = time.Now()
@@ -176,17 +177,24 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	// ================
 	// TODO: so far we all dispatch to local, unless force
 
-	location := "local"
-
+	location := types.ServiceSourceLocal
+	model := task.Request.Model
 	if task.Request.HybridPolicy == "always_local" {
 		location = types.ServiceSourceLocal
 	} else if task.Request.HybridPolicy == "always_remote" {
 		location = types.ServiceSourceRemote
-	}
-	if location == types.ServiceSourceLocal {
-		cpuTotalPercent, _ := cpu.Percent(3*time.Second, false)
-		if cpuTotalPercent[0] > 80.0 {
-			location = types.ServiceSourceRemote
+	} else if task.Request.HybridPolicy == "default" {
+		if model == "" {
+			gpuUtilization, err := utils.GetGpuInfo()
+			if err != nil {
+				cpuTotalPercent, _ := cpu.Percent(15*time.Second, false)
+				if cpuTotalPercent[0] > 80.0 {
+					location = types.ServiceSourceRemote
+				}
+			}
+			if gpuUtilization >= 80.0 {
+				location = types.ServiceSourceRemote
+			}
 		}
 	}
 	ds := datastore.GetDefaultDatastore()
@@ -199,10 +207,22 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 		return nil, fmt.Errorf("service not found: %s", task.Request.Service)
 	}
 
+	if service.LocalProvider == "" && service.RemoteProvider == "" {
+		return nil, fmt.Errorf("service %s does not have local or remote provider", task.Request.Service)
+	}
+	// Provider Selection
+	// ================
 	providerName := service.LocalProvider
-	if location == types.ServiceSourceRemote && service.RemoteProvider != "" {
+	if location == types.ServiceSourceRemote {
+		if service.RemoteProvider == "" {
+			providerName = service.LocalProvider
+		} else {
+			providerName = service.RemoteProvider
+		}
+	} else if service.LocalProvider == "" {
 		providerName = service.RemoteProvider
 	}
+
 	sp := &types.ServiceProvider{
 		ProviderName: providerName,
 	}
@@ -215,7 +235,6 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal service provider properties: %v", err)
 	}
-	model := task.Request.Model
 	// Non-query model services do not require model validation
 	if task.Request.Service != types.ServiceModels {
 		if model == "" {
@@ -227,7 +246,13 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 				sortOption := []datastore.SortOption{
 					{Key: "updated_at", Order: -1},
 				}
-				ms, err := ds.List(context.Background(), m, &datastore.ListOptions{SortBy: sortOption})
+				ms, err := ds.List(context.Background(), m, &datastore.ListOptions{
+					FilterOptions: datastore.FilterOptions{
+						Queries: []datastore.FuzzyQueryOption{
+							{Key: "status", Query: "downloaded"},
+						},
+					},
+					SortBy: sortOption})
 				if err != nil {
 					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
 				}
@@ -240,18 +265,16 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 				model = defaultInfo.DefaultModel
 			}
 		} else {
-			if location == types.ServiceSourceLocal {
-				m := &types.Model{
-					ProviderName: sp.ProviderName,
-					ModelName:    task.Request.Model,
-				}
-				ms, err := ds.List(context.Background(), m, &datastore.ListOptions{})
-				if err != nil {
-					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-				}
-				if len(ms) == 0 {
-					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-				}
+			m := &types.Model{
+				ProviderName: sp.ProviderName,
+				ModelName:    task.Request.Model,
+			}
+			err := ds.Get(context.Background(), m)
+			if err != nil {
+				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+			}
+			if m.Status != "downloaded" {
+				return nil, fmt.Errorf("model installing %s of Service %s, please wait", location, task.Request.Service)
 			}
 		}
 	}
@@ -325,7 +348,7 @@ func (ss *BasicServiceScheduler) schedule() {
 		ss.addToList(task, "running")
 		task.Schedule.IsRunning = true
 		task.Schedule.TimeRun = time.Now()
-		slog.Info("[Schedule] Start to run the task", "taskid", task.Schedule.Id, "service", task.Request.Service,
+		logger.LogicLogger.Info("[Schedule] Start to run the task", "taskid", task.Schedule.Id, "service", task.Request.Service,
 			"location", task.Target.Location, "service_provider", task.Target.ServiceProvider)
 		// REALLY run the task
 		go func() {
@@ -362,7 +385,7 @@ func GetScheduler() ServiceScheduler {
 }
 
 func InvokeService(fromFlavor string, service string, request *http.Request) (uint64, chan *types.ServiceResult, error) {
-	slog.Info("[Service] Invoking Service", "fromFlavor", fromFlavor, "service", service)
+	logger.LogicLogger.Info("[Service] Invoking Service", "fromFlavor", fromFlavor, "service", service)
 
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
@@ -376,10 +399,10 @@ func InvokeService(fromFlavor string, service string, request *http.Request) (ui
 		queryParams := request.URL.Query()
 		queryParamsJSON, err := json.Marshal(queryParams)
 		if err != nil {
-			slog.Error("[Service] Failed to unmarshal GET request", "error", err, "body", string(body))
+			logger.LogicLogger.Error("[Service] Failed to unmarshal GET request", "error", err, "body", string(body))
 			return 0, nil, err
 		}
-		slog.Debug("[Service] GET Request Query Params", "params", string(queryParamsJSON))
+		logger.LogicLogger.Debug("[Service] GET Request Query Params", "params", string(queryParamsJSON))
 
 		body = queryParamsJSON
 	} // TODO: handle the case that the body is not json and not text
@@ -397,7 +420,7 @@ func InvokeService(fromFlavor string, service string, request *http.Request) (ui
 		}
 		err = ds.Get(context.Background(), sp)
 		if err != nil {
-			slog.Error("[Schedule] Failed to get service", "error", err, "service", service)
+			logger.LogicLogger.Error("[Schedule] Failed to get service", "error", err, "service", service)
 		}
 		hybridPolicy = sp.HybridPolicy
 	}
@@ -413,7 +436,7 @@ func InvokeService(fromFlavor string, service string, request *http.Request) (ui
 
 	err = json.Unmarshal(body, &serviceRequest)
 	if err != nil {
-		slog.Error("[Service] Failed to unmarshal POST request", "error", err, "body", string(body))
+		logger.LogicLogger.Error("[Service] Failed to unmarshal POST request", "error", err, "body", string(body))
 		return 0, nil, err
 	}
 

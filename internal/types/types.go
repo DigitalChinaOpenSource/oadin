@@ -9,6 +9,57 @@ import (
 	"intel.com/aog/internal/utils"
 )
 
+const (
+	ServiceSourceLocal  = "local"
+	ServiceSourceRemote = "remote"
+
+	FlavorAOG      = "aog"
+	FlavorTencent  = "tencent"
+	FlavorDeepSeek = "deepseek"
+	FlavorOpenAI   = "openai"
+	FlavorOllama   = "ollama"
+	FlavorBaidu    = "baidu"
+	FlavorAliYun   = "aliyun"
+	FlavorOpenvino = "openvino"
+
+	AuthTypeNone   = "none"
+	AuthTypeApiKey = "apikey"
+	AuthTypeToken  = "token"
+
+	ServiceChat        = "chat"
+	ServiceModels      = "models"
+	ServiceGenerate    = "generate"
+	ServiceEmbed       = "embed"
+	ServiceTextToImage = "text_to_image"
+
+	HybridPolicyDefault = "default"
+	HybridPolicyLocal   = "always_local"
+	HybridPolicyRemote  = "always_remote"
+
+	ProtocolHTTP  = "HTTP"
+	ProtocolHTTPS = "HTTPS"
+	ProtocolGRPC  = "GRPC"
+
+	LogLevelDebug = "debug"
+	LogLevelInfo  = "info"
+	LogLevelWarn  = "warn"
+	LogLevelError = "error"
+
+	EngineStartModeDaemon   = "daemon"
+	EngineStartModeStandard = "standard"
+
+	VersionRecordStatusInstalled = 1
+	VersionRecordStatusUpdated   = 2
+)
+
+var (
+	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate, ServiceTextToImage}
+	SupportHybridPolicy = []string{HybridPolicyDefault, HybridPolicyLocal, HybridPolicyRemote}
+	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeToken}
+	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorOpenvino}
+	SupportModelEngine  = []string{FlavorOpenvino, FlavorOllama}
+)
+
 type HTTPContent struct {
 	Body   []byte
 	Header http.Header
@@ -80,6 +131,10 @@ type ListModelResponse struct {
 	Details    ModelDetails `json:"details,omitempty"`
 }
 
+type EngineVersionResponse struct {
+	Version string `json:"version"`
+}
+
 // ModelDetails provides details about a model.
 type ModelDetails struct {
 	ParentModel       string   `json:"parent_model"`
@@ -92,11 +147,12 @@ type ModelDetails struct {
 
 // PullModelRequest is the request passed to [Client.Pull].
 type PullModelRequest struct {
-	Model    string `json:"model"`
-	Insecure bool   `json:"insecure,omitempty"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Stream   *bool  `json:"stream,omitempty"`
+	Model     string `json:"model"`
+	Insecure  bool   `json:"insecure,omitempty"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	Stream    *bool  `json:"stream,omitempty"`
+	ModelType string `json:"model_type,omitempty"`
 
 	// Deprecated: set the model name with Model instead
 	Name string `json:"name"`
@@ -124,6 +180,7 @@ type EngineRecommendConfig struct {
 	RecommendModel string `json:"recommend_model"`
 	DownloadUrl    string `json:"download_url"`
 	DownloadPath   string `json:"download_path"`
+	EnginePath     string `json:"engine_path"`
 	ExecPath       string `json:"exec_path"`
 	ExecFile       string `json:"exec_file"`
 }

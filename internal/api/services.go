@@ -6,11 +6,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"intel.com/aog/internal/api/dto"
+	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/utils/bcode"
 )
 
 func (t *AOGCoreServer) CreateAIGCService(c *gin.Context) {
+	logger.ApiLogger.Debug("[API] CreateAIGCService request params:", c.Request.Body)
 	request := new(dto.CreateAIGCServiceRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
@@ -29,10 +32,12 @@ func (t *AOGCoreServer) CreateAIGCService(c *gin.Context) {
 		return
 	}
 
+	logger.ApiLogger.Debug("[API] CreateAIGCService response:", resp)
 	c.JSON(http.StatusOK, resp)
 }
 
 func (t *AOGCoreServer) UpdateAIGCService(c *gin.Context) {
+	logger.ApiLogger.Debug("[API] UpdateAIGCService request params:", c.Request.Body)
 	request := new(dto.UpdateAIGCServiceRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
@@ -51,6 +56,7 @@ func (t *AOGCoreServer) UpdateAIGCService(c *gin.Context) {
 		return
 	}
 
+	logger.ApiLogger.Debug("[API] UpdateAIGCService response:", resp)
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -58,6 +64,7 @@ func (t *AOGCoreServer) GetAIGCService(c *gin.Context) {
 }
 
 func (t *AOGCoreServer) GetAIGCServices(c *gin.Context) {
+	logger.ApiLogger.Debug("[API] GetAIGCServices request params:", c.Request.Body)
 	request := new(dto.GetAIGCServicesRequest)
 	if err := c.ShouldBindJSON(request); err != nil {
 		if !errors.Is(err, io.EOF) {
@@ -78,10 +85,12 @@ func (t *AOGCoreServer) GetAIGCServices(c *gin.Context) {
 		return
 	}
 
+	logger.ApiLogger.Debug("[API] GetAIGCServices response:", resp)
 	c.JSON(http.StatusOK, resp)
 }
 
 func (t *AOGCoreServer) ExportService(c *gin.Context) {
+	logger.ApiLogger.Debug("[API] ExportService request params:", c.Request.Body)
 	request := new(dto.ExportServiceRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
@@ -100,10 +109,12 @@ func (t *AOGCoreServer) ExportService(c *gin.Context) {
 		return
 	}
 
+	logger.ApiLogger.Debug("[API] ExportService response:", resp)
 	c.JSON(http.StatusOK, resp)
 }
 
 func (t *AOGCoreServer) ImportService(c *gin.Context) {
+	logger.ApiLogger.Debug("[API] ImportService request params:", c.Request.Body)
 	request := new(dto.ImportServiceRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
@@ -122,5 +133,6 @@ func (t *AOGCoreServer) ImportService(c *gin.Context) {
 		return
 	}
 
+	logger.ApiLogger.Debug("[API] ImportService response:", resp)
 	c.JSON(http.StatusOK, resp)
 }
