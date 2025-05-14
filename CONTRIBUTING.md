@@ -1,4 +1,4 @@
-## 1. 克隆仓库：
+## 克隆仓库：
 
 ```bash
 git clone https://devops.digitalchina.com/dcg/wuhan/intel-ai-pc/framework/vanta.git
@@ -30,7 +30,6 @@ docs: update README.md
 
 ### 分支管理
 
-- 请使用英文进行分支命名
 - 分支命名应遵循以下格式：
 
 - `<type>` 是分支的类型，包括 `feat`（新增功能）、`fix`（修复问题）、`docs`（文档更新）等
