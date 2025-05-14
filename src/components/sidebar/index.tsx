@@ -54,6 +54,22 @@ const Sidebar = () => {
       ),
       label: '服务管理',
     },
+    {
+      key: 'mcp-manage',
+      activeIcon: (
+        <img
+          src={smac}
+          alt="MCP管理"
+        />
+      ),
+      inactiveIcon: (
+        <img
+          src={sm}
+          alt="MCP管理"
+        />
+      ),
+      label: 'MCP管理',
+    },
   ];
 
   const handleMenuClick = (key: string) => {
