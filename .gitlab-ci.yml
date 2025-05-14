@@ -1,40 +1,121 @@
 stages:
-  - build
-  - upload
+  - build_mac
+  - upload_mac
+  - build_win
+  - upload_win
 
 variables:
   GIT_STRATEGY: none
-  MAC_FILE_NAME: "byze-${CI_COMMIT_TAG}"
-  WIN_FILE_NAME: "byze-${CI_COMMIT_TAG}.exe"
+  MAC_FILE_NAME: "byze-installer-${CI_COMMIT_TAG}.pkg"
+  WIN_FILE_NAME: "byze-installer-${CI_COMMIT_TAG}.exe"
 
 
-# 测试环境
-build_mac_test:
-  stage: build
+build_mac:
+  stage: build_mac
+  tags:
+    - aipc-mac
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^(test|[0-9]+\.)/'
+  script:
+    - echo "========== 🔧 Mac Build Begin =========="
+    - echo "--------- 🧹 清除旧文件 准备纯净环境 ----------"
+    - cd /Users/dcone/WebstormProjects/byze/
+    - git reset --hard
+    - git clean -fd
+    - echo "--------- 🔖 拉取代码准备构建 ----------"
+    - git fetch
+    - echo $CI_COMMIT_TAG ; git checkout $CI_COMMIT_TAG
+    - echo "--------- 🛠️ 制品构建与签名 ----------"
+    - go mod tidy
+    - CGO_ENABLED=1 GOOS=darwin GOARCH=arm64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
+    - export APPLE_ID="it@digitalchina.com"
+    - export APPLE_APP_SPECIFIC_PASSWORD="yyzx-tium-divi-iors"
+    - export APPLE_TEAM_ID="US7ZG73N89"
+    - export CSC_LINK="./Developer ID Application.p12"
+    - export CSC_KEY_PASSWORD=".=ZWwByOvD|gtA-8_c#cbim@+B23(K8s"
+    - export CSC_INSTALLER_LINK="./Developer ID Installer.p12"
+    - export CSC_INSTALLER_KEY_PASSWORD="k-RyN2ggMwLYx<Hb?Lw(OVu49Z-4V1SM"
+    - |  
+      codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" byze
+    - echo "--------- 📦 安装包构建与签名 ----------"
+    - mkdir -p pkgroot/bin
+    - mv byze pkgroot/bin/byze
+    - |
+      pkgbuild \
+        --identifier com.digitalchina.byze \
+        --version "${CI_COMMIT_TAG}" \
+        --install-location /usr/local/bin \
+        --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" \
+        --root pkgroot/bin \
+        - byze.pkg
+    - echo "--------- 📬 安装包公证 ----------"
+    - |
+      xcrun notarytool store-credentials "ci-profile" \
+        --apple-id "$APPLE_ID" \
+        --team-id "$APPLE_TEAM_ID" \
+        --password "$APPLE_APP_SPECIFIC_PASSWORD"
+    - |
+      xcrun notarytool submit byze.pkg \
+        --keychain-profile "ci-profile" \
+        --wait
+    - echo "--------- 📎 附加公证票据 ----------"
+    - xcrun stapler staple byze.pkg
+    - echo "--------- 🔎️ 验签 ----------"
+    - spctl --assess --type install --verbose=4 byze.pkg
+    - echo "--------- 📁 移动到待上传文件夹 ----------"
+    - mkdir -p upload
+    - mv byze.pkg upload/${MAC_FILE_NAME}
+    - echo "========== 🔧 Mac Build End =========="
+
+upload_to_nexus_mac:
+  stage: upload_mac
   tags:
     - aipc-mac
   rules:
     - if: '$CI_COMMIT_TAG =~ /^test/'
   script:
-    - echo "🔧 Mac 构建"
-    - cd /Users/dcone/WebstormProjects/byze/
+    - echo "========== 🔧 Mac Upload Begin =========="
+    - echo "-------- 📤 上传到 Nexus 私服 --------"
+    - |
+      curl -v -u "admin:${NEXUS_PASSWORD}" \
+        --upload-file "/Users/dcone/WebstormProjects/byze/upload/${MAC_FILE_NAME}" \
+        "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/${MAC_FILE_NAME}"
+    - echo "--------- 🧹 环境清理 ----------"
+    - cd /Users/dcone/WebstormProjects/byze
     - git reset --hard
     - git clean -fd
-    - git fetch
-    - echo $CI_COMMIT_TAG
-    - git checkout $CI_COMMIT_TAG
-    - go mod tidy
-    - CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
-    - mkdir -p upload
-    - mv byze upload/${MAC_FILE_NAME}
+    - echo "--------- 🗑️ 删除本地tag ----------"
+    - git checkout main
+    - git tag -d $CI_COMMIT_TAG
+    - echo "========== 🔧 Mac Upload End =========="
 
-# 测试环境
-build_win_test:
-  stage: build
+upload_to_oss_mac:
+  stage: upload_mac
+  tags:
+    - aipc-mac
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
+  script:
+    - echo "========== 🔧 Mac Upload Begin =========="
+    - echo "-------- 📤 上传到 阿里云 OSS --------"
+    - cd /Users/dcone/WebstormProjects/byze/upload
+    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/byze/releases/macos/${MAC_FILE_NAME}" --force
+    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/byze/releases/macos/byze-latest" --force
+    - echo "--------- 🧹 环境清理 ----------"
+    - git reset --hard
+    - git clean -fd
+    - echo "--------- 🗑️ 删除本地tag ----------"
+    - git checkout main
+    - git tag -d $CI_COMMIT_TAG
+    - echo "========== 🔧 Mac Upload End =========="
+
+
+build_win:
+  stage: build_win
   tags:
     - aipc-win
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^test/'
+    - if: '$CI_COMMIT_TAG =~ /^(test|[0-9]+\.)/'
   script:
     - echo "🔧 Win 构建"
     - cd C:\Users\Administrator\WebstormProjects\byze
@@ -49,26 +130,8 @@ build_win_test:
     - New-Item -ItemType Directory -Path "upload" -Force
     - Move-Item -Path "byze.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
 
-upload_to_nexus_mac:
-  stage: upload
-  tags:
-    - aipc-mac
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^test/'
-  script:
-    - echo "📤 上传到 Nexus 仓库"
-    - |
-      curl -v -u "admin:${NEXUS_PASSWORD}" \
-        --upload-file "/Users/dcone/WebstormProjects/byze/upload/${MAC_FILE_NAME}" \
-        "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/${MAC_FILE_NAME}"
-    - cd /Users/dcone/WebstormProjects/byze
-    - git reset --hard
-    - git clean -fd
-    - git checkout main
-    - git tag -d $CI_COMMIT_TAG
-
 upload_to_nexus_win:
-  stage: upload
+  stage: upload_win
   tags:
     - aipc-win
   rules:
@@ -83,70 +146,8 @@ upload_to_nexus_win:
     - git tag -d $env:CI_COMMIT_TAG
 
 
-
-
-
-
-# 生产环境
-build_mac_prod:
-  stage: build
-  tags:
-    - aipc-mac
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
-  script:
-    - echo "🔧 Mac 构建"
-    - cd /Users/dcone/WebstormProjects/byze/
-    - git reset --hard
-    - git clean -fd
-    - git fetch
-    - echo $CI_COMMIT_TAG
-    - git checkout $CI_COMMIT_TAG
-    - go mod tidy
-    - CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
-    - mkdir -p upload
-    - mv byze upload/${MAC_FILE_NAME}
-
-# 生产环境
-build_win_prod:
-  stage: build
-  tags:
-    - aipc-win
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
-  script:
-    - echo "🔧 Win 构建"
-    - cd C:\Users\Administrator\WebstormProjects\byze
-    - git reset --hard
-    - git clean -fd
-    - git fetch
-    - echo $env:CI_COMMIT_TAG
-    - git checkout $env:CI_COMMIT_TAG
-    - go mod tidy
-    - go build -o byze.exe -ldflags="-s -w"  cmd/cli/main.go
-    - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "C:\Users\Administrator\WebstormProjects\byze\byze.exe"
-    - New-Item -ItemType Directory -Path "upload" -Force
-    - Move-Item -Path "byze.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
-
-upload_to_oss_mac:
-  stage: upload
-  tags:
-    - aipc-mac
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
-  script:
-    - echo "📤 上传到 阿里云oss"
-    - cd /Users/dcone/WebstormProjects/byze/upload
-    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/byze/releases/macos/${MAC_FILE_NAME}" --force
-    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/byze/releases/macos/byze-latest" --force
-    - echo "✅ 上传完成"
-    - git reset --hard
-    - git clean -fd
-    - git checkout main
-    - git tag -d $CI_COMMIT_TAG
-
 upload_to_oss_win:
-  stage: upload
+  stage: upload_win
   tags:
     - aipc-win
   rules:
