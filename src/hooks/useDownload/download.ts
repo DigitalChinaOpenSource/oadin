@@ -1,12 +1,13 @@
 import { baseHeaders } from '../../utils/index';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { httpRequest } from '../../utils/httpRequest';
+import { IRequestModelParams } from '../../types';
 
 /**
  * 暂停模型下载
  * @param data - 请求体参数
  */
-async function abortDownload(data: any) {
+async function abortDownload(data: { model_name: string }) {
   return await httpRequest
     .post('/model/stream/cancel', data)
     .then((res) => res)
@@ -19,7 +20,7 @@ async function abortDownload(data: any) {
 /**
  * 启动模型下载任务，处理流式数据并返回进度和状态
  */
-async function modelDownloadStream(data: any, { onmessage, onerror, onopen, onclose }: any) {
+async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerror, onopen, onclose }: any) {
   let noDataTimer: any = null;
   let totalTimeoutId: any = null;
   let hasRetried = false; // 是否已重试一次

@@ -6,16 +6,16 @@ import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
 import { SettingIcon, FailedIcon, LoadingIcon } from '../../icons';
-import { IModelSourceType } from '../types';
+import { IModelSourceType } from '@/types';
 
 export interface IModelListContent {
   modelSearchVal: string;
   modelSourceVal: IModelSourceType;
+  onModelSearch: (val: string) => void;
 }
 
 export default function ModelListContent(props: IModelListContent) {
   const vm = useViewModel(props);
-  console.log('ModelListContent-props', props);
   return (
     <div className={styles.modelListContent}>
       <div className={styles.contentContainer}>
@@ -98,9 +98,9 @@ export default function ModelListContent(props: IModelListContent) {
       {/* 配置授权弹窗 */}
       {vm.modelAuthVisible && (
         <ModelAuthorizeModal
+          modelDataItem={vm.selectModelData}
           modelAuthType={vm.modelAuthType}
           modelAuthorize={vm.modelAuthorize}
-          onSetModelAuthorize={vm.onSetModelAuthorize}
           onModelAuthVisible={vm.onModelAuthVisible}
         />
       )}

@@ -1,16 +1,17 @@
 import { useRef, useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import { Button, Tag } from 'antd';
-import { IModelAuthType, ModelDataItem } from '../../types';
-import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '../../../icons';
+import { IModelAuth } from '../../types';
+import { ModelDataItem } from '@/types';
+import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '@/components/icons';
 
 export interface IModelCardProps {
   // 是否用于详情展示
   isDetail?: boolean;
   // 模型数据
-  modelData?: ModelDataItem;
+  modelData: ModelDataItem;
   onDetailModalVisible?: (visible: boolean) => void;
-  onModelAuthVisible?: (visible: boolean, type: IModelAuthType) => void;
+  onModelAuthVisible?: (data: IModelAuth) => void;
   onDeleteConfirm?: (modelData: ModelDataItem) => void;
   onDownloadConfirm?: (modelData: ModelDataItem) => void;
 }
@@ -107,7 +108,13 @@ export default function ModelCard(props: IModelCardProps) {
                   <Button
                     type="primary"
                     size="small"
-                    onClick={() => onModelAuthVisible?.(true, 'config')}
+                    onClick={() =>
+                      onModelAuthVisible?.({
+                        visible: true,
+                        type: 'config',
+                        modelData: modelData,
+                      })
+                    }
                   >
                     配置授权
                   </Button>

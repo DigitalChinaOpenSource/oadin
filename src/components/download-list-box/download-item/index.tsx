@@ -1,7 +1,7 @@
 import { Image, Progress, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import { PauseIcon, PlayPauseIcon, CloseIcon, LoadingIcon } from '../../icons';
-import ModelPng from '../../../assets/model.png';
+import ModelPng from '@/assets/model.png';
 
 export interface IDownloadItemProps {
   downloadItem: any;

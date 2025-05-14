@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IModelSourceType } from './types';
+import { IModelSourceType } from '../../types';
 
 export function useViewModel() {
   // 模型来源
@@ -12,6 +12,7 @@ export function useViewModel() {
   };
 
   const onModelSearch = (val: string) => {
+    console.log('onModelSearch', val);
     setModelSearchVal(val);
   };
 

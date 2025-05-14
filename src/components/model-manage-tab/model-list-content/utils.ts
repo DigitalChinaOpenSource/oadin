@@ -1,0 +1,42 @@
+import { RECOMMEND_MODEL, PIORITY_MODEL } from '@/constants';
+import { SmartvisionDataItem } from '@/types';
+// 处理问学模型列表的数据
+export const dealSmartVisionModels = (data: SmartvisionDataItem[]) => {
+  function removeDuplicates(arr: any) {
+    return [...new Set(arr)];
+  }
+
+  // 发送数据给客户端
+  const recommendedSeq = JSON.parse(JSON.stringify(RECOMMEND_MODEL));
+  const pioritySeq = JSON.parse(JSON.stringify(PIORITY_MODEL));
+  const seq = recommendedSeq.concat(pioritySeq);
+
+  const map = data.reduce((acc: any, model) => {
+    acc[model.name] = model;
+    return acc;
+  }, {});
+
+  // 先用id进行排序，然后去重 返回排序的数据 并增加 isRecommended 字段
+  const wholeSeq = seq.concat(data.map((item) => item.name));
+  const dedup = removeDuplicates(wholeSeq);
+
+  // 过滤掉 null 的数据
+  return dedup
+    .map((modelname: any) => {
+      const model = map[modelname];
+      if (model) {
+        const { introduce, tags, ...rest } = model;
+        // 保留原始的字段结构，并新增 isRecommended 字段
+        const result = {
+          ...rest,
+          is_recommended: recommendedSeq.includes(modelname),
+          desc: introduce, // 使用 introduce 替换原来的 desc
+          class: tags, // 使用 tags 替换原来的 class
+          can_select: recommendedSeq.includes(modelname) ? recommendedSeq.includes(modelname) : rest.canSelect,
+        };
+        return result;
+      }
+      return null; // 如果找不到对应的 model，可以选择返回 null 或者其他处理
+    })
+    .filter(Boolean);
+};

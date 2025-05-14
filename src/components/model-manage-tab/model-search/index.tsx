@@ -1,7 +1,7 @@
 import styles from './index.module.scss';
 import { Input, Select } from 'antd';
 import { SearchIcon } from '../../icons';
-import { IModelSourceType } from '../types';
+import { IModelSourceType } from '@/types';
 
 export interface IModelTitleSearchProps {
   modelSearchVal: string;
@@ -15,7 +15,7 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
   const options = [
     { value: 'local', label: '本地模型' },
     { value: 'remote', label: '云端模型' },
-    { value: 'all', label: '全部模型' },
+    // { value: 'all', label: '全部模型' },
   ];
   return (
     <div className={styles.modelSearch}>

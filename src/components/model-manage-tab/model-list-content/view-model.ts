@@ -1,20 +1,18 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { IModelAuthorize, IModelAuthType, ModelData, ModelDataItem, IModelSourceType } from '../types';
-import { DOWNLOAD_STATUS } from '../../../constants';
-import { httpRequest } from '../../../utils/httpRequest';
-import { useDownLoad } from '../../../hooks/useDownload';
-import { Modal } from 'antd';
+import { IModelAuthorize, IModelAuthType, IModelAuth } from '../types';
+import { ModelData, ModelDataItem, IModelSourceType, IRequestModelParams, SmartvisionData } from '@/types';
+import { DOWNLOAD_STATUS } from '@/constants';
+import { httpRequest } from '@/utils/httpRequest';
+import { useDownLoad } from '@/hooks/useDownload';
+import { Modal, message } from 'antd';
+import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
+import { dealSmartVisionModels } from './utils';
 
 const { confirm } = Modal;
 
-export interface IViewModel {
-  modelSourceVal: IModelSourceType;
-  modelSearchVal: string;
-}
-
-export function useViewModel(props: IViewModel) {
-  const { modelSourceVal, modelSearchVal } = props;
+export function useViewModel(props: IModelListContent) {
+  const { modelSourceVal, modelSearchVal, onModelSearch } = props;
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
   // 接口获取
@@ -30,54 +28,103 @@ export function useViewModel(props: IViewModel) {
   const [isDetailVisible, setIsDetailVisible] = useState(false);
   // 配置 ｜ 更新授权
   const [modelAuthType, setModelAuthType] = useState<IModelAuthType>('config');
+  // 模型/问学列表全量数据
   const [modelListData, setModelListData] = useState<ModelDataItem[]>([]);
+  // 分页数据，用于展示
   const [pagenationData, setPagenationData] = useState<ModelDataItem[]>([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 6,
     total: 0,
   });
+  // 选中的模型数据，暂用于配置授权
+  const [selectModelData, setSelectModelData] = useState<ModelDataItem>({} as any);
 
   const lastPageSizeRef = useRef(pagination.pageSize);
   const { downLoadStart } = useDownLoad();
 
-  const fetchModelSupport = async (serviceSource: IModelSourceType) => {
-    const data = await httpRequest.get<ModelData>('/model/support', {
-      service_source: serviceSource,
-      flavor: 'ollama',
-    });
-    return data?.chat || [];
-  };
-
-  const { loading, run } = useRequest(fetchModelSupport, {
-    manual: true,
-    onSuccess: (data) => {
-      const dataWithSource = data.map(
-        (item, index) =>
-          ({
-            ...item,
-            source: 'local',
-            type: 0,
-            id: index + 1,
-          } as any),
-      );
-      setModelListData(dataWithSource);
-      setPagination({ ...pagination, total: dataWithSource.length });
-      console.log('获取模型列表成功:', data);
+  // 获取模型列表
+  const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
+    async (serviceSource: IModelSourceType) => {
+      const data = await httpRequest.get<ModelData>('/model/support', {
+        service_source: serviceSource,
+        flavor: 'ollama',
+      });
+      return data?.chat || [];
     },
-    onError: (error) => {
-      console.error('获取模型列表失败:', error);
+    {
+      manual: true,
+      onSuccess: (data) => {
+        // 处理一些数据格式
+        const dataWithSource = data.map(
+          (item, index) =>
+            ({
+              ...item,
+              source: 'local',
+              type: 0,
+              id: index + 1,
+            } as any),
+        );
+        setModelListData(dataWithSource);
+        setPagination({ ...pagination, total: dataWithSource.length });
+        console.log('获取模型列表成功:', data);
+      },
+      onError: (error) => {
+        console.error('获取模型列表失败:', error);
+      },
     },
-  });
+  );
 
-  const fetchModelListData = () => {
-    if (modelSourceVal === 'local' || modelSourceVal === 'all') {
-      run(modelSourceVal);
-    }
-  };
+  // 获取问学模型列表
+  const { loading: smartversionLoading, run: fetchSmartversion } = useRequest(
+    async (envType: 'dev' | 'product') => {
+      const data = await httpRequest.get<SmartvisionData>('/model/support/smartvision', { env_type: envType || 'prod' });
+      return data?.data || [];
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        const dataWithSource = dealSmartVisionModels(data);
+        setModelListData(dataWithSource);
+        setPagination({ ...pagination, total: dataWithSource.length });
+        console.log('获取模型列表成功:', data);
+      },
+      onError: (error) => {
+        console.error('获取模型列表失败:', error);
+      },
+    },
+  );
+
+  // 删除模型
+  const { loading: deleteModelLoading, run: fetchDeleteModel } = useRequest(
+    async (params: IRequestModelParams) => {
+      await httpRequest.post('/model', params);
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        message.success('模型删除成功');
+      },
+      onError: (error) => {
+        message.error('模型删除失败');
+        console.error('删除模型失败:', error);
+      },
+      onFinally: () => {
+        fetchModelSupport(modelSourceVal);
+      },
+    },
+  );
 
   useEffect(() => {
-    fetchModelListData();
+    onModelSearch('');
+    setPagination({ ...pagination, current: 1 });
+
+    if (modelSourceVal === 'local') {
+      fetchModelSupport(modelSourceVal);
+    }
+    if (modelSourceVal === 'remote') {
+      fetchSmartversion('product');
+    }
   }, [modelSourceVal]);
 
   // 根据搜索值和分页参数更新分页数据
@@ -127,18 +174,11 @@ export function useViewModel(props: IViewModel) {
     setModalPathVisible(!modalPathVisible);
   }, [modalPathVisible]);
 
-  const fetchModalPath = () => {
-    setModelPath('URL_ADDRESS.baidu.com');
-  };
-
-  const onModelAuthVisible = useCallback((visible: boolean, type: IModelAuthType) => {
-    setModelAuthVisible(visible);
-    setModelAuthType(type);
+  const onModelAuthVisible = useCallback((data: IModelAuth) => {
+    setModelAuthVisible(data.visible);
+    setModelAuthType(data.type);
+    setSelectModelData(data.modelData);
   }, []);
-
-  const onSetModelAuthorize = (authData: IModelAuthorize) => {
-    setModelAuthorize(authData);
-  };
 
   const onDownloadConfirm = (modelData: ModelDataItem) => {
     confirm({
@@ -148,7 +188,6 @@ export function useViewModel(props: IViewModel) {
       onOk() {
         downLoadStart({
           ...modelData,
-          modelName: modelData.name,
           type: modelData.type,
           status: DOWNLOAD_STATUS.IN_PROGRESS,
           modelType: 'local',
@@ -170,12 +209,27 @@ export function useViewModel(props: IViewModel) {
       },
       okText: '确认删除',
       onOk() {
+        // 清空搜索框
+        onModelSearch('');
+
+        // 组装请求参数
+        const params = {
+          model_name: modelData.name,
+          service_name: modelData.service_name || 'chat',
+          service_source: modelData.source || 'local',
+          provider_name: modelData.service_provider_name || 'local_ollama_chat',
+        };
+        fetchDeleteModel(params);
         console.log('OK');
       },
       onCancel() {
         console.log('Cancel');
       },
     });
+  };
+
+  const fetchModalPath = () => {
+    setModelPath('URL_ADDRESS.baidu.com');
   };
 
   return {
@@ -185,7 +239,6 @@ export function useViewModel(props: IViewModel) {
 
     fetchModalPath,
     modelAuthorize,
-    onSetModelAuthorize,
 
     modelAuthVisible,
     onModelAuthVisible,
@@ -197,11 +250,15 @@ export function useViewModel(props: IViewModel) {
     onDeleteConfirm,
     onDownloadConfirm,
 
-    loading,
-    pagenationData, // 分页后的数据
-    modelListData, // 完整数据
+    modelSupportLoading,
+    deleteModelLoading,
+
+    pagenationData,
+    modelListData,
     modelSearchVal,
     modelSourceVal,
+    onModelSearch,
+    selectModelData,
 
     pagination,
     onPageChange,

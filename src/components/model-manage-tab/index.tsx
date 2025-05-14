@@ -18,6 +18,7 @@ export default function ModelManageTab() {
       <ModallistContent
         modelSearchVal={vm.modelSearchVal}
         modelSourceVal={vm.modelSourceVal}
+        onModelSearch={vm.onModelSearch}
       />
     </div>
   );

@@ -1,11 +1,9 @@
-'use client';
-
 /** 模型管理 */
 import React from 'react';
 import styles from './index.module.scss';
 import { Button, Modal, Pagination } from 'antd';
 import { useViewModel } from './view-model';
-import modelPng from '../../../assets/modelLogo.png';
+import modelPng from '@/assets/modelLogo.png';
 
 interface ServiceProviderDetailProps {
   id: string;

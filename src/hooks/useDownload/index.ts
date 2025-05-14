@@ -4,6 +4,7 @@ import { modelDownloadStream, abortDownload } from './download';
 import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
 import { DOWNLOAD_STATUS } from '../../constants';
 import downLoadCompleteEventBus from '../../utils/downloadEvent';
+import { ModelDataItem } from '../../types';
 
 // 本地存储键名常量
 const LOCAL_STORAGE_KEYS = {
@@ -63,9 +64,9 @@ export const useDownLoad = () => {
   const downloadingItems = useMemo(() => downList.filter((item) => item.status === IN_PROGRESS), [downList]);
 
   // 开始下载
-  const downLoadStart = useCallback((params: any) => {
+  const downLoadStart = useCallback((params: ModelDataItem) => {
     // modelType: 模型提供商类型
-    const { id, type, modelType, source, service_provider_name, service_name } = params;
+    const { id, type, modelType, source, service_provider_name, service_name, name } = params;
 
     // 最大下载数量
     const isMaxNum = checkIsMaxDownloadCount({
@@ -79,7 +80,7 @@ export const useDownLoad = () => {
     if (id === undefined || id === null) return;
 
     const paramsTemp = {
-      model_name: params.modelName,
+      model_name: name,
       service_name: service_name || 'chat',
       service_source: source || 'local',
       provider_name: service_provider_name || 'local_ollama_chat',

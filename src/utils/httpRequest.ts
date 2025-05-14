@@ -41,13 +41,14 @@ instance.interceptors.response.use(
     console.log('response.data=====>', data);
     if (data?.data) {
       return data.data;
-    } else {
-      // 业务逻辑错误
-      notification.error({
-        message: data?.message || '请求失败',
-      });
-      return Promise.reject(data);
     }
+    // 后端接口返回数据格式不统一，暂时不管业务逻辑失败的情况
+    //  else {
+    //   notification.error({
+    //     message: data?.message || '请求失败',
+    //   });
+    //   return Promise.reject(data);
+    // }
   },
   (error) => {
     // 处理 HTTP 错误
