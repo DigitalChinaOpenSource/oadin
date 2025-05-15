@@ -869,25 +869,24 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 
 	err := engineProvider.HealthCheck()
 	if err != nil {
-		cmd := exec.Command(engineConfig.ExecFile, "-h")
+		var cmd *exec.Cmd
+		if utils.IpexOllamaSupportGPUStatus() {
+			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
+		} else {
+			cmd = exec.Command(engineConfig.ExecFile, "-h")
+		}
 		err = cmd.Run()
 		if err != nil {
 			slog.Info("Model engine not exist...")
-			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
-			err = reCheckCmd.Run()
+			slog.Info("model engine not exist, start download...")
+			err := engineProvider.InstallEngine()
 			if err != nil {
-				slog.Info("model engine not exist, start download...")
-				err := engineProvider.InstallEngine()
-				if err != nil {
-					fmt.Println("Install model engine failed :", err.Error())
-					slog.Error("Install model engine failed :", err.Error())
-					log.Fatalf("Install model engine failed err %s", err.Error())
-					return
-				}
-				slog.Info("Model engine download completed...")
+				fmt.Println("Install model engine failed :", err.Error())
+				slog.Error("Install model engine failed :", err.Error())
+				log.Fatalf("Install model engine failed err %s", err.Error())
+				return
 			}
-			//if _, err := os.Stat(engineConfig.ExecPath); os.IsNotExist(err) {
-			//}
+			slog.Info("Model engine download completed...")
 		}
 
 		slog.Info("Setting env...")
