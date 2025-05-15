@@ -44,9 +44,7 @@ docs/update-readme
 
 ### 其他
 
-- 请遵守 Git 提交规范
-- 请遵守 Git 分支管理规范
-- 请遵守 Git 提交信息规范
+工程内如需使用 icon，均从 https://phosphoricons.com 拷贝至本地使用，参考 src/components/icons，使用前请先查看是否有同名 icon，如有则使用已有 icon
 
 ## 项目结构
 

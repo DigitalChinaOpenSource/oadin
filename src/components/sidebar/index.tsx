@@ -9,7 +9,7 @@ import mmac from '../icons/mmac.svg';
 import sm from '../icons/sm.svg';
 import smac from '../icons/smac.svg';
 
-const Sidebar = () => {
+export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedKey, setSelectedKey] = useState('model-manage');
@@ -39,22 +39,6 @@ const Sidebar = () => {
       label: '模型管理',
     },
     {
-      key: 'server-manage',
-      activeIcon: (
-        <img
-          src={smac}
-          alt="服务管理"
-        />
-      ),
-      inactiveIcon: (
-        <img
-          src={sm}
-          alt="服务管理"
-        />
-      ),
-      label: '服务管理',
-    },
-    {
       key: 'mcp-manage',
       activeIcon: (
         <img
@@ -69,6 +53,22 @@ const Sidebar = () => {
         />
       ),
       label: 'MCP管理',
+    },
+    {
+      key: 'server-manage',
+      activeIcon: (
+        <img
+          src={smac}
+          alt="服务管理"
+        />
+      ),
+      inactiveIcon: (
+        <img
+          src={sm}
+          alt="服务管理"
+        />
+      ),
+      label: '服务管理',
     },
   ];
 
@@ -124,6 +124,4 @@ const Sidebar = () => {
       </div>
     </div>
   );
-};
-
-export default Sidebar;
+}

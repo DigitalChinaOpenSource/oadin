@@ -4,7 +4,7 @@ import styles from './index.module.scss';
 import ModelManageTab from '../../components/model-manage-tab';
 import ModelChangeTab from '../../components/model-exchange-tab';
 
-const ModelManage = () => {
+export default function ModelManage() {
   const items: TabsProps['items'] = [
     {
       key: 'modelManageTab',
@@ -30,6 +30,4 @@ const ModelManage = () => {
       onChange={onChange}
     />
   );
-};
-
-export default ModelManage;
+}

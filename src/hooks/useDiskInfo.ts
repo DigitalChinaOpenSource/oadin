@@ -44,7 +44,7 @@ const getDefaultRootPath = (): string => {
  * @param initialPath 初始路径，默认为系统根目录
  * @returns 包含磁盘信息、加载状态、错误信息和获取方法的对象
  */
-export const useDiskInfo = (initialPath?: string): UseDiskInfoReturn => {
+export default function useDiskInfo(initialPath?: string): UseDiskInfoReturn {
   // 如果没有提供初始路径，则使用系统默认根路径
   const defaultPath = initialPath || getDefaultRootPath();
   const [loading, setLoading] = useState<boolean>(false);
@@ -62,7 +62,7 @@ export const useDiskInfo = (initialPath?: string): UseDiskInfoReturn => {
       console.log('请求路径:', targetPath);
       const response = await axios.get(`/api/disk-info/path?path=${encodeURIComponent(targetPath)}`);
       console.log('服务器响应:', response.data);
-      
+
       if (response.data && response.data.error) {
         setError(response.data.error);
         message.error(`获取磁盘信息失败: ${response.data.error}`);
@@ -105,8 +105,6 @@ export const useDiskInfo = (initialPath?: string): UseDiskInfoReturn => {
     loading,
     error,
     fetchDiskInfo,
-    formatBytes
+    formatBytes,
   };
-};
-
-export default useDiskInfo;
+}
