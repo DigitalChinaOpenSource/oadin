@@ -166,7 +166,7 @@ export default function ModelCard(props: IModelCardProps) {
         </div>
 
         <div className={styles.tagWrapper}>
-          {tags.map((tag, index) => (
+          {(modelData?.class || []).map((tag: string, index: number) => (
             <Tag key={index}>{tag}</Tag>
           ))}
         </div>

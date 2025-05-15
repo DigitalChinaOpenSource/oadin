@@ -10,16 +10,31 @@ export default function ByzeServiceTab() {
     <div className={styles.byzeServiceTab}>
       <div className={styles.card}>
         <div className={styles.leftBlock}>
-          <img src={faviconPng} alt="logo" className={styles.logoIcon} />
+          <img
+            src={faviconPng}
+            alt="logo"
+            className={styles.logoIcon}
+          />
           <div className={styles.infoBlock}>
             <span>白泽服务状态</span>
-            <span className={styles.statusName}>
-              <div className={styles.dot}></div> 启用
-            </span>
+            <div className={styles.statusName}>
+              {vm.checkStatus ? (
+                <>
+                  <div className={styles.dot}></div>
+                  <span className={styles.used}>启用</span>
+                </>
+              ) : (
+                <>
+                  <div className={styles.noCheck}></div>
+                  <span className={styles.stopped}>停用</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <Button
-          icon={<RedoOutlined />}
+          icon={vm.checkHealthtLoading ? null : <RedoOutlined />}
+          loading={vm.checkHealthtLoading}
           className={styles.refreshBlock}
           onClick={vm.handleRefresh}
         >

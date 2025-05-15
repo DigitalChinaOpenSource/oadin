@@ -19,11 +19,6 @@ export function useViewModel(props: IModelListContent) {
   const [modelPath, setModelPath] = useState<string>('');
   // 云端模型授权弹窗是否显示
   const [modelAuthVisible, setModelAuthVisible] = useState<boolean>(false);
-  // 云端模型授权
-  const [modelAuthorize, setModelAuthorize] = useState<IModelAuthorize>({
-    apiHost: '',
-    apiKey: '',
-  });
   // 模型详情弹窗是否显示
   const [isDetailVisible, setIsDetailVisible] = useState(false);
   // 配置 ｜ 更新授权
@@ -63,6 +58,7 @@ export function useViewModel(props: IModelListContent) {
               source: 'local',
               type: 0,
               id: index + 1,
+              class: item.class.split(','),
             } as any),
         );
         setModelListData(dataWithSource);
@@ -116,7 +112,9 @@ export function useViewModel(props: IModelListContent) {
   );
 
   useEffect(() => {
-    onModelSearch('');
+    if (modelSourceVal) {
+      onModelSearch('');
+    }
     setPagination({ ...pagination, current: 1 });
 
     if (modelSourceVal === 'local') {
@@ -210,7 +208,9 @@ export function useViewModel(props: IModelListContent) {
       okText: '确认删除',
       onOk() {
         // 清空搜索框
-        onModelSearch('');
+        if (modelSourceVal) {
+          onModelSearch('');
+        }
 
         // 组装请求参数
         const params = {
@@ -232,16 +232,21 @@ export function useViewModel(props: IModelListContent) {
     setModelPath('URL_ADDRESS.baidu.com');
   };
 
+  // 授权成功刷新列表
+  const onModelAuthSuccess = () => {
+    fetchModelSupport(modelSourceVal);
+  };
+
   return {
     modelPath,
     modalPathVisible,
     onModelPathVisible,
 
     fetchModalPath,
-    modelAuthorize,
 
     modelAuthVisible,
     onModelAuthVisible,
+    onModelAuthSuccess,
 
     isDetailVisible,
     onDetailModalVisible,

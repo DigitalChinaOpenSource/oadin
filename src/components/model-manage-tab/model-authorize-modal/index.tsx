@@ -1,30 +1,92 @@
-import { useRef } from 'react';
-import { Modal, Input, Form } from 'antd';
-import styles from './index.module.scss';
+import { Modal, Input, Form, message } from 'antd';
+import { useRequest } from 'ahooks';
 import { IModelAuthorize, IModelAuthType, IModelAuth } from '../types';
 import { ModelDataItem } from '@/types';
+import { httpRequest } from '@/utils/httpRequest';
+import styles from './index.module.scss';
+
+export interface IModelAuthForm {
+  auth_type: string;
+  service_name: string;
+  service_source: string;
+  flavor_name: string;
+  provider_name: string;
+  models: string[];
+  auth_key: string;
+}
 
 export interface IModelAuthorizeModalProps {
   // 模型数据
   modelDataItem: ModelDataItem;
   modelAuthType: IModelAuthType;
-  modelAuthorize: IModelAuthorize;
   onModelAuthVisible: (data: IModelAuth) => void;
+  onModelAuthSuccess: () => void;
 }
 
 export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
   const [form] = Form.useForm();
   const { onModelAuthVisible, modelAuthType, modelDataItem } = props;
 
+  console.log('modelDataItem===>', modelDataItem);
   // TODO 还有更新授权的情况
-  const MODELTITLE = '模型授权';
+  const MODELTITLE = '配置授权';
 
   const handleSubmit = async () => {
     // TODO: 处理表单提交
     const result = await form.validateFields(); // 校验表单
+    submitForm(result);
     console.log('校验通过，提交数据:', result);
   };
 
+  // 配置模型授权
+  const { loading: submitLoading, run: fetchSubmitAuth } = useRequest(
+    async (params: IModelAuthForm) => {
+      const data = await httpRequest.put<IModelAuthForm>('/service_provider', params);
+      return data;
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        console.log('模型配置授权成功', data, submitLoading);
+        // if (!submitLoading) {
+
+        // }
+        handleCancel();
+        message.success('模型配置授权成功');
+      },
+      onError: (error) => {
+        message.error('模型配置授权失败，请重试或检查数据是否正确');
+        console.error('模型配置授权失败:', error);
+      },
+    },
+  );
+
+  const submitForm = (result: any) => {
+    // 组装提交数据
+    const changeAuthKey = {
+      [modelDataItem.name]: {
+        credentials: result,
+        env_type: 'product',
+        provider: modelDataItem.provider,
+        model_key: modelDataItem?.modelKey,
+      },
+    };
+    const changeParams = {
+      auth_type: 'credentials',
+      service_name: 'chat',
+      service_source: 'remote',
+      flavor_name: 'smartvision',
+      provider_name: 'remote_smartvision_chat',
+      models: [modelDataItem.name],
+      auth_key: JSON.stringify(changeAuthKey),
+    };
+    console.log('changeParams', changeParams);
+
+    // 调用接口
+    fetchSubmitAuth(changeParams);
+  };
+
+  // 关闭弹窗
   const handleCancel = () => {
     onModelAuthVisible?.({
       visible: false,
@@ -36,8 +98,6 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
   const selectedCredentialParams = (modelDataItem?.credentialParams || []).filter((param) => (modelDataItem?.credentialParamsId || '').split(',').includes(String(param.id)));
 
   const renderCredentialParams = () => {
-    console.log('modelDataItem', modelDataItem);
-    console.log('selectedCredentialParams', selectedCredentialParams);
     return selectedCredentialParams.map((param) => {
       const formName = param.name;
       const label = param.label;
@@ -47,7 +107,7 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
       return (
         <Form.Item
           key={formName}
-          label={label.charAt(0).toUpperCase() + label.slice(1)} // 首字母大写
+          label={label.charAt(0).toUpperCase() + label.slice(1)}
           name={formName}
           rules={[{ required: Boolean(param.required), message: placeholder }]}
         >
@@ -67,6 +127,7 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
       className={styles.ModelAuthorizeModal}
       onOk={handleSubmit}
       onCancel={handleCancel}
+      okButtonProps={{ loading: submitLoading }}
     >
       <Form
         name="basic"

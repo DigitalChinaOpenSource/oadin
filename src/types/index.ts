@@ -16,15 +16,17 @@ export interface ModelDataItem {
   status: number | string;
   avatar: string;
   can_select: boolean;
-  class: string;
+  class: any;
   ollama_id: string;
   params_size: number;
   source?: IModelSourceType;
   type?: string;
   id: number;
   modelType: string;
+  provider?: string;
   credentialParamsId?: string; // IDs 分割的字符串
   credentialParams?: CredentialParam[];
+  modelKey?: string;
 }
 // 模型列表数据类型
 export interface ModelData {

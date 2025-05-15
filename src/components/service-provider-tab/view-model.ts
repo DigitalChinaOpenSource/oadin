@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Modal } from 'antd';
+import { Modal, message } from 'antd';
+import { useRequest } from 'ahooks';
 import { httpRequest } from '../../utils/httpRequest';
 
 const { confirm } = Modal;
@@ -58,6 +59,23 @@ export function useViewModel() {
     },
   };
 
+  const { loading: deleteProviderLoading, run: fetchDeleteProvider } = useRequest(
+    async (params: { provider_name: string }) => {
+      const data = await httpRequest.get('/health', params);
+      return data;
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        // TODO
+      },
+      onError: (error) => {
+        message.error('删除服务商失败，请重试');
+        console.error('删除服务商失败:', error);
+      },
+    },
+  );
+
   const handleDeleteConfirm = (record: any) => {
     confirm({
       centered: true,
@@ -68,7 +86,7 @@ export function useViewModel() {
       },
       okText: '确认删除',
       onOk() {
-        console.log('OK');
+        fetchDeleteProvider({ provider_name: record.provider_name });
       },
       onCancel() {
         console.log('Cancel');

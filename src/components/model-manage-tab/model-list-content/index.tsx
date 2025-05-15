@@ -100,8 +100,8 @@ export default function ModelListContent(props: IModelListContent) {
         <ModelAuthorizeModal
           modelDataItem={vm.selectModelData}
           modelAuthType={vm.modelAuthType}
-          modelAuthorize={vm.modelAuthorize}
           onModelAuthVisible={vm.onModelAuthVisible}
+          onModelAuthSuccess={vm.onModelAuthSuccess}
         />
       )}
       {/* 模型详情弹窗 */}
