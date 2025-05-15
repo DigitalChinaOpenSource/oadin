@@ -171,7 +171,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	switch runtime.GOOS {
 	case "windows":
 		if utils.IpexOllamaSupportGPUStatus() {
-			execPath = fmt.Sprintf("%s/%s/%s", userDir, "ipex-llm-ollama", "ipex-llm-ollama")
+			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 			slog.Info("start ipex-llm-ollama ------------- ", execPath)
 			execFile = "ollama.exe"
 			//downloadUrl = "http://120.232.136.73:31619/byzedev/ollama-0.5.4-ipex-llm-2.2.0b20250226-win.zip"
