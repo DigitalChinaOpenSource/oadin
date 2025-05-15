@@ -73,6 +73,9 @@ upload_to_nexus_mac:
     - echo "--------- 🗑️ 删除本地tag ----------"
     - git checkout main
     - git tag -d $CI_COMMIT_TAG
+    - echo "--------- 🔗️ 制品下载地址 ----------"
+    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/${MAC_FILE_NAME}"
+    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/byze-installer-latest.pkg"
     - echo "========== 🔧 Mac Upload End =========="
 
 upload_to_oss_mac:
@@ -93,6 +96,9 @@ upload_to_oss_mac:
     - echo "--------- 🗑️ 删除本地tag ----------"
     - git checkout main
     - git tag -d $CI_COMMIT_TAG
+    - echo "--------- 🔗️ 制品下载地址 ----------"
+    - echo "https://oss-aipc.dcclouds.com/byze/releases/macos/${MAC_FILE_NAME}"
+    - echo "https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg"
     - echo "========== 🔧 Mac Upload End =========="
 
 
@@ -152,6 +158,9 @@ upload_to_nexus_win:
     - echo "--------- 🗑️ 删除本地tag ----------"
     - git checkout main
     - git tag -d $env:CI_COMMIT_TAG
+    - echo "--------- 🔗️ 制品下载地址 ----------"
+    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/$($env:WIN_FILE_NAME)"
+    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/byze-installer-latest.exe"
     - echo "========== 🔧 Win Upload End =========="
 
 
@@ -177,4 +186,7 @@ upload_to_oss_win:
     - echo "--------- 🗑️ 删除本地tag ----------"
     - git checkout main
     - git tag -d $env:CI_COMMIT_TAG
+    - echo "--------- 🔗️ 制品下载地址 ----------"
+    - echo "https://oss-aipc.dcclouds.com/byze/releases/windows/$($env:WIN_FILE_NAME)"
+    - echo "https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe"
     - echo "========== 🔧 Win Upload End =========="
