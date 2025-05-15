@@ -5,7 +5,7 @@
   padding: 24px;
   .modelCardList {
     width: 100%;
-    height: calc(100% - 82px);
+    height: calc(100% - 48px);
     overflow-y: auto;
     overflow-x: hidden;
   }
@@ -27,6 +27,10 @@
     .changePath {
       color: #5429ff;
       padding: unset;
+      &:hover {
+        background-color: unset;
+        color: #5429ff;
+      }
     }
     .changeFailed {
       margin-left: 8px;

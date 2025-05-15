@@ -29,7 +29,7 @@ export function useViewModel(props: IModelListContent) {
   const [pagenationData, setPagenationData] = useState<ModelDataItem[]>([]);
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 6,
+    pageSize: 10,
     total: 0,
   });
   // 选中的模型数据，暂用于配置授权

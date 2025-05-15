@@ -51,8 +51,9 @@ export default function ModelListContent(props: IModelListContent) {
                       xs={24}
                       sm={24}
                       md={24}
-                      lg={24}
+                      lg={12}
                       xl={12}
+                      xxl={8}
                       span={4}
                       key={index}
                     >
@@ -75,18 +76,18 @@ export default function ModelListContent(props: IModelListContent) {
               <div className={styles.noDataText}>暂无相关模型</div>
             </div>
           )}
+          {vm.pagenationData.length > 0 && (
+            <Pagination
+              className={styles.pagination}
+              align="end"
+              {...vm.pagination}
+              pageSizeOptions={[10, 30, 50]}
+              showSizeChanger
+              onChange={vm.onPageChange}
+              onShowSizeChange={vm.onShowSizeChange}
+            />
+          )}
         </div>
-        {vm.pagenationData.length > 0 && (
-          <Pagination
-            className={styles.pagination}
-            align="end"
-            {...vm.pagination}
-            pageSizeOptions={[6, 10, 30, 50]}
-            showSizeChanger
-            onChange={vm.onPageChange}
-            onShowSizeChange={vm.onShowSizeChange}
-          />
-        )}
       </div>
       {/* 模型路径弹窗 */}
       {vm.modalPathVisible && (

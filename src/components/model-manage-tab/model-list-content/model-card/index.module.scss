@@ -119,6 +119,18 @@
       background-color: unset !important;
     }
   }
+  .title,
+  .localOrCloud,
+  .recommend,
+  .providerName,
+  .contextLength,
+  .modelSize,
+  .beUsed,
+  .tagWrapper {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .modelCardStyle {

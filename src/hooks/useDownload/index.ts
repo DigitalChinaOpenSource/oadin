@@ -196,11 +196,13 @@ export const useDownLoad = () => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.REFRESH_DOWN_LIST, JSON.stringify(downloadingItems));
 
     // 更新所有下载中的项目状态为暂停
-    const data = downList.map((item) => ({
-      ...item,
-      status: item.status === IN_PROGRESS ? PAUSED : item.status,
-    }));
-    localStorage.setItem(LOCAL_STORAGE_KEYS.DOWN_LIST, JSON.stringify(data));
+    if (downListRef.current?.length > 0) {
+      const data = downListRef.current.map((item) => ({
+        ...item,
+        status: item.status === IN_PROGRESS ? PAUSED : item.status,
+      }));
+      localStorage.setItem(LOCAL_STORAGE_KEYS.DOWN_LIST, JSON.stringify(data));
+    }
   });
 
   // 单独监听下载完成事件
