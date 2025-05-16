@@ -96,6 +96,8 @@ upload_to_oss_mac:
     - echo "--------- 🗑️ 删除本地tag ----------"
     - git checkout main
     - git tag -d $CI_COMMIT_TAG
+    - echo "--------- ♻️ 刷新CND ----------"
+    - aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg" --ObjectType File
     - echo "--------- 🔗️ 制品下载地址 ----------"
     - echo "https://oss-aipc.dcclouds.com/byze/releases/macos/${MAC_FILE_NAME}"
     - echo "https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg"
@@ -186,6 +188,8 @@ upload_to_oss_win:
     - echo "--------- 🗑️ 删除本地tag ----------"
     - git checkout main
     - git tag -d $env:CI_COMMIT_TAG
+    - echo "--------- ♻️ 刷新CND ----------"
+    - aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe" --ObjectType File
     - echo "--------- 🔗️ 制品下载地址 ----------"
     - echo "https://oss-aipc.dcclouds.com/byze/releases/windows/$($env:WIN_FILE_NAME)"
     - echo "https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe"
