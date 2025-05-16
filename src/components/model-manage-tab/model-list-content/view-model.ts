@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { IModelAuthorize, IModelAuthType, IModelAuth } from '../types';
+import { IModelAuthType, IModelAuth } from '../types';
 import { ModelData, ModelDataItem, IModelSourceType, IRequestModelParams, SmartvisionData } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
@@ -65,7 +65,6 @@ export function useViewModel(props: IModelListContent) {
         );
         setModelListData(dataWithSource);
         setPagination({ ...pagination, total: dataWithSource.length });
-        console.log('获取模型列表成功:', data);
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
@@ -85,7 +84,6 @@ export function useViewModel(props: IModelListContent) {
         const dataWithSource = dealSmartVisionModels(data);
         setModelListData(dataWithSource);
         setPagination({ ...pagination, total: dataWithSource.length });
-        console.log('获取模型列表成功:', data);
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
@@ -96,7 +94,7 @@ export function useViewModel(props: IModelListContent) {
   // 删除模型
   const { loading: deleteModelLoading, run: fetchDeleteModel } = useRequest(
     async (params: IRequestModelParams) => {
-      await httpRequest.post('/model', params);
+      await httpRequest.del('/model', params);
     },
     {
       manual: true,
@@ -187,6 +185,9 @@ export function useViewModel(props: IModelListContent) {
       title: '确认下载此模型？',
       okText: '确认下载',
       centered: true,
+      okButtonProps: {
+        style: { backgroundColor: '#5429ff' },
+      },
       onOk() {
         downLoadStart({
           ...modelData,

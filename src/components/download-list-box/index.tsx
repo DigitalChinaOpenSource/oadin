@@ -13,23 +13,32 @@ export interface IDownloadListBoxProps {
 export default function DownloadListBox(props: IDownloadListBoxProps) {
   const { className = '', handleDownload } = props;
   const { downloadList } = useModelDownloadStore();
-
+  console.log('DownloadListBox======>', downloadList);
   return (
     <div className={`${className} ${styles.downloadListBox}`}>
       <div className={styles.header}>
         <div className={styles.title}>
           <div className={styles.downloadIcon}>
-            <SiderDownloadIcon width={14} height={14} />
+            <SiderDownloadIcon
+              width={14}
+              height={14}
+            />
           </div>
           <div>最近下载</div>
         </div>
-        <div className={styles.closeBtn} onClick={handleDownload}>
+        <div
+          className={styles.closeBtn}
+          onClick={handleDownload}
+        >
           <CloseIcon />
         </div>
       </div>
       <div className={styles.downloadList}>
         {downloadList.map((item) => (
-          <DownloadItem key={`${item.modelType}-${item.id}`} downloadItem={item} />
+          <DownloadItem
+            key={`${item.modelType}-${item.id}`}
+            downloadItem={item}
+          />
         ))}
       </div>
     </div>

@@ -36,7 +36,6 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response: AxiosResponse<ResponseData>) => {
     const { data } = response;
-    console.log('response.data=====>', data);
     if (data?.data) {
       return data.data;
     }
@@ -81,20 +80,20 @@ instance.interceptors.response.use(
  * @param config 请求配置
  * @returns Promise
  */
-const get = <T = any>(url: string, params?: any, config?: AxiosRequestConfig) => {
+const get = <T = any>(url: string, params?: any, config?: any) => {
   return instance.get<any, T>(url, { ...config, params });
 };
 
-const post = <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => {
+const post = <T = any>(url: string, data?: any, config?: any) => {
   return instance.post<any, T>(url, data, config);
 };
 
-const put = <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => {
+const put = <T = any>(url: string, data?: any, config?: any) => {
   return instance.put<any, T>(url, data, config);
 };
 
-const del = <T = any>(url: string, config?: AxiosRequestConfig) => {
-  return instance.delete<any, T>(url, config);
+const del = <T = any>(url: string, params?: any, config?: any) => {
+  return instance.delete<any, T>(url, { ...config, params });
 };
 
 export const httpRequest = {

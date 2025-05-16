@@ -1,6 +1,6 @@
-import { Image, Progress, Tooltip } from 'antd';
+import { Image, Progress } from 'antd';
 import styles from './index.module.scss';
-import { PauseIcon, PlayPauseIcon, CloseIcon, LoadingIcon } from '../../icons';
+import { PlayPauseIcon, CloseIcon, LoadingIcon } from '../../icons';
 import ModelPng from '@/assets/model.png';
 
 export interface IDownloadItemProps {
@@ -8,6 +8,7 @@ export interface IDownloadItemProps {
 }
 
 export default function DownloadItem(props: IDownloadItemProps) {
+  const { downloadItem } = props;
   return (
     <div className={styles.downloadItem}>
       <div className={styles.titleControlBar}>
@@ -16,13 +17,12 @@ export default function DownloadItem(props: IDownloadItemProps) {
             className={styles.modelImg}
             src={ModelPng}
           ></Image>
-          <span className={styles.title}>DeepSeek-R1-7B</span>
+          <span className={styles.title}>{downloadItem.name}</span>
         </div>
         <div className={styles.controlBar}>
           <span>
             <PlayPauseIcon />
           </span>
-          {/* <p><PauseIcon /></p> */}
           <span className={styles.cancel}>
             <CloseIcon />
           </span>
@@ -31,10 +31,10 @@ export default function DownloadItem(props: IDownloadItemProps) {
 
       <div className={styles.speedSizeStatus}>
         <div className={styles.speedSize}>
+          {/* <span>0</span>
+          B/s- */}
           <span>0</span>
-          B/s-
-          <span>0</span>
-          MB-
+          MB/
           <span>4399</span>
           MB
         </div>
@@ -47,7 +47,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
 
       <div className={styles.progress}>
         <Progress
-          percent={50}
+          percent={downloadItem?.currentDownload}
           showInfo={false}
           strokeColor="#5429ff"
           size="small"

@@ -5,7 +5,8 @@ import { DOWNLOAD_STATUS } from '../../constants';
 import downLoadCompleteEventBus from '../../utils/downloadEvent';
 import { ModelDataItem } from '../../types';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
-// import { updateDownloadStatus } from './updateDownloadStatus';
+import useModelListStore from '../../store/useModelListStore';
+import { updateDownloadStatus } from './updateDownloadStatus';
 // 本地存储键名常量
 const LOCAL_STORAGE_KEYS = {
   DOWN_LIST: 'downList',
@@ -82,13 +83,18 @@ export const useDownLoad = () => {
         ...(!downloadList.some((item) => item.type === type && item.modelType === modelType && item.id === id) ? [{ ...params, status: IN_PROGRESS }] : []),
       ]);
 
+      // 同步更新模型列表中的状态
+      const { setModelListData } = useModelListStore.getState();
+      setModelListData((draft) => draft.map((item) => (item.id === id ? { ...item, status: IN_PROGRESS, currentDownload: 0 } : item)));
+
       modelDownloadStream(paramsTemp, {
         onmessage: (parsedData: any) => {
+          console.log('parsedData---------------->', parsedData);
           const { completedsize, progress, status, totalsize, error } = parsedData;
 
           // 处理错误情况
           if (error) {
-            updateDownloadItem(setDownloadList, id, modelType, {
+            updateDownloadStatus(id, modelType, {
               status: error.includes('aborted') ? PAUSED : FAILED,
             });
             return;
@@ -103,33 +109,34 @@ export const useDownLoad = () => {
 
           // 根据状态更新下载项
           if (status === 'success') {
-            updateDownloadItem(setDownloadList, id, modelType, {
+            updateDownloadStatus(id, modelType, {
               ...baseUpdates,
               currentDownload: 100,
               status: COMPLETED,
               completedsize: totalsize,
               totalsize,
+              can_select: true,
             });
             downLoadCompleteEventBus.emit('downloadComplete');
           } else if (status === 'canceled') {
-            updateDownloadItem(setDownloadList, id, modelType, {
+            updateDownloadStatus(id, modelType, {
               ...baseUpdates,
               status: PAUSED,
             });
           } else if (status === 'error') {
-            updateDownloadItem(setDownloadList, id, modelType, {
+            updateDownloadStatus(id, modelType, {
               ...baseUpdates,
               status: FAILED,
             });
           } else {
-            updateDownloadItem(setDownloadList, id, modelType, {
+            updateDownloadStatus(id, modelType, {
               ...baseUpdates,
               status: IN_PROGRESS,
             });
           }
         },
         onerror: (error: any) => {
-          updateDownloadItem(setDownloadList, id, modelType, {
+          updateDownloadStatus(id, modelType, {
             status: FAILED,
           });
         },
@@ -139,19 +146,16 @@ export const useDownLoad = () => {
   );
 
   // 暂停下载
-  const downLoadAbort = useCallback(
-    async (data: any, { id, modelType }: any) => {
-      try {
-        await abortDownload(data);
-        updateDownloadItem(setDownloadList, id, modelType, { status: PAUSED });
-      } catch (error) {
-        console.error('Failed to abort download:', error);
-        // 增加错误处理，即使失败也尝试更新UI状态
-        updateDownloadItem(setDownloadList, id, modelType, { status: FAILED });
-      }
-    },
-    [setDownloadList],
-  );
+  const downLoadAbort = useCallback(async (data: any, { id, modelType }: any) => {
+    try {
+      await abortDownload(data);
+      updateDownloadStatus(id, modelType, { status: PAUSED });
+    } catch (error) {
+      console.error('Failed to abort download:', error);
+      // 增加错误处理，即使失败也尝试更新UI状态
+      updateDownloadStatus(id, modelType, { status: FAILED });
+    }
+  }, []);
 
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {

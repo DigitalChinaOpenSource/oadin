@@ -12,7 +12,6 @@ export function useViewModel() {
   };
 
   const onModelSearch = (val: string) => {
-    console.log('onModelSearch', val);
     setModelSearchVal(val);
   };
 

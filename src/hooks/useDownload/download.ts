@@ -24,8 +24,8 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
   let noDataTimer: any = null;
   let totalTimeoutId: any = null;
   let hasRetried = false; // 是否已重试一次
-  const NO_DATA_TIMEOUT = 5000; // 5秒无数据断开
-  const TOTAL_TIMEOUT = 10000; // 总超时时间
+  const NO_DATA_TIMEOUT = 10000;
+  const TOTAL_TIMEOUT = 20000;
 
   // 状态变量
   let lastUsefulDataObj: any = null;
@@ -43,7 +43,6 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
     clearTimers();
     noDataTimer = setTimeout(() => {
       if (!hasRetried) {
-        console.warn('首次5秒内无数据返回，开始重试...');
         hasRetried = true;
         clearTimers();
         startFetch();
@@ -114,9 +113,19 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
       openWhenHidden: true,
       signal,
       onmessage: (event) => {
+        console.log('接收到的事件流数据:', event);
         if (event.data && event.data !== '[DONE]') {
           try {
             const parsedData = JSON.parse(event.data);
+            console.log('接收到的事件流数据:', parsedData);
+            if (totalTimeoutId) {
+              clearTimeout(totalTimeoutId);
+              totalTimeoutId = null;
+            }
+            if (noDataTimer) clearTimeout(noDataTimer);
+            noDataTimer = setTimeout(() => {
+              resetNoDataTimer();
+            }, NO_DATA_TIMEOUT);
             // 处理错误
             if (parsedData?.status === 'error') {
               onmessage?.({
@@ -140,6 +149,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
             }
             // 处理进度数据
             const dataObj = processProgressData(parsedData);
+            console.log('模型下载进度:', dataObj);
             onmessage?.(dataObj);
             resetNoDataTimer();
           } catch (err) {
@@ -155,7 +165,6 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
       },
       // @ts-ignore
       onopen: () => {
-        resetNoDataTimer();
         onopen?.();
         console.log('Event source opened');
       },
@@ -167,21 +176,12 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
     });
   };
 
-  // 设置总超时定时器
   totalTimeoutId = setTimeout(() => {
-    if (!hasRetried) {
-      console.warn('10秒总超时前强制进行一次重试');
-      hasRetried = true;
-      startFetch();
-    } else {
-      console.error('总超时：10秒内未收到任何数据');
-      onerror?.(new Error('流式请求超时：10秒未收到数据'));
-    }
+    console.error('总超时：20秒内未收到任何数据');
+    onerror?.(new Error('流式请求超时：20秒未收到数据'));
   }, TOTAL_TIMEOUT);
 
-  // 首次启动请求
   startFetch();
 }
 
-// 导出独立函数
 export { abortDownload, modelDownloadStream };
