@@ -849,7 +849,8 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 	if utils.IsServerRunning() {
 		return
 	}
-
+	//userDir, _ := os.UserHomeDir()
+	//logger.NewSysLogger(logger.NewLogConfig{LogLevel: "debug", LogPath: filepath.Join(userDir, "server.log")})
 	fmt.Println("Byze server is not running. Starting the server...")
 	if err := startByzeServer(); err != nil {
 		log.Fatalf("Failed to start Byze server: %s \n", err.Error())
@@ -897,10 +898,19 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 		}
 
 		slog.Info("Start model engine...")
-		err = engineProvider.StartEngine()
-		if err != nil {
-			slog.Error("Start engine error: ", err.Error())
-			return
+		retryCount := 1
+		for {
+			if retryCount > 5 {
+				break
+			}
+			err = engineProvider.StartEngine()
+			if err != nil {
+				slog.Error("Start engine error: ", err.Error())
+				retryCount += 1
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			break
 		}
 
 		slog.Info("Waiting ollama engine start 60s...")
