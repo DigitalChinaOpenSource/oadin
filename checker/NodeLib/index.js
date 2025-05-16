@@ -176,23 +176,23 @@ class Byze {
     return new Promise((resolve) => {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS 
-        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-latest'
-        : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-latest.exe';
+        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest'
+        : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe';
       
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'Byze');
-      const destFileName = isMacOS ? 'byze' : 'byze.exe';
+      const destFileName = isMacOS ? 'byze' : 'byze-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
-  
+
       fs.mkdir(destDir, { recursive: true }, async (err) => {
         if (err) {
           console.error('❌ 创建目录失败:', err.message);
           return resolve(false);
         }
-  
+
         console.log('🔍 正在下载文件:', url);
         const file = fs.createWriteStream(dest);
-        
+
         const request = https.get(url, (res) => {
           if (res.statusCode !== 200) {
             console.error(`❌ 下载失败，HTTP 状态码: ${res.statusCode}`);
@@ -200,18 +200,18 @@ class Byze {
             fs.unlink(dest, () => {});
             return resolve(false);
           }
-  
+
           res.pipe(file);
           file.on('finish', async () => {
             file.close();
             console.log('✅ 下载完成:', dest);
-  
+
             if (isMacOS) {
               // macOS 平台：创建软链接到 /usr/local/bin
               try {
                 const symlinkPath = '/usr/local/bin/byze';
                 if (fs.existsSync(symlinkPath)) {
-                  fs.unlinkSync(symlinkPath); // 删除已有的软链接
+                    fs.unlinkSync(symlinkPath); // 删除已有的软链接
                 }
                 fs.symlinkSync(dest, symlinkPath); // 创建软链接
                 console.log(`✅ 已创建软链接: ${symlinkPath} -> ${dest}`);
@@ -220,23 +220,36 @@ class Byze {
                 return resolve(false);
               }
             } else {
-              // Windows 平台：添加到环境变量
+              // Windows 平台：运行安装包
               try {
-                const added = AddToUserPath(destDir);
-                if (!added) {
-                  console.error('❌ 添加到环境变量失败');
-                  return resolve(false);
-                }
+                console.log('🚀 正在运行安装包...');
+                const installer = spawn(dest, [], {
+                  stdio: 'inherit',
+                  windowsHide: true,
+                });
+
+                installer.on('close', (code) => {
+                  if (code === 0) {
+                      console.log('✅ 安装完成');
+                      resolve(true);
+                  } else {
+                      console.error(`❌ 安装失败，退出码: ${code}`);
+                      resolve(false);
+                  }
+                });
+
+                installer.on('error', (err) => {
+                  console.error(`❌ 启动安装包失败: ${err.message}`);
+                  resolve(false);
+                });
               } catch (err) {
-                console.error(`❌ 添加到环境变量时出错: ${err.message}`);
+                console.error(`❌ 运行安装包时出错: ${err.message}`);
                 return resolve(false);
               }
             }
-  
-            resolve(true);
           });
         });
-  
+
         request.on('error', (err) => {
           console.error('❌ 下载失败:', err.message);
           file.close();

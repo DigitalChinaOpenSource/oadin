@@ -22,6 +22,8 @@ Section "Install"
 
   # demo to add env var
   # WriteEnvStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$%PATH%;$INSTDIR"
+  WriteEnvStr HKCU "Environment" "Path" "$%Path%;$INSTDIR"
+  SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment"
 
   # Post-install
   ExecWait '"$INSTDIR\postinstall.bat"'
