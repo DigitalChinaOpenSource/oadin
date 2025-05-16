@@ -106,7 +106,12 @@ export default function ModelListContent(props: IModelListContent) {
         />
       )}
       {/* 模型详情弹窗 */}
-      {vm.isDetailVisible && <ModelDetailModal onDetailModalVisible={vm.onDetailModalVisible} />}
+      {vm.isDetailVisible && (
+        <ModelDetailModal
+          onDetailModalVisible={vm.onDetailModalVisible}
+          selectModelData={vm.selectModelData}
+        />
+      )}
     </div>
   );
 }

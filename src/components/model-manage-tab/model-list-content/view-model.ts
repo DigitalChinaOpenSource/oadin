@@ -8,6 +8,7 @@ import { Modal, message } from 'antd';
 import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
+import useModelListStore from '@/store/useModelListStore';
 
 const { confirm } = Modal;
 
@@ -24,7 +25,7 @@ export function useViewModel(props: IModelListContent) {
   // 配置 ｜ 更新授权
   const [modelAuthType, setModelAuthType] = useState<IModelAuthType>('config');
   // 模型/问学列表全量数据
-  const [modelListData, setModelListData] = useState<ModelDataItem[]>([]);
+  const { modelListData, setModelListData } = useModelListStore();
   // 分页数据，用于展示
   const [pagenationData, setPagenationData] = useState<ModelDataItem[]>([]);
   const [pagination, setPagination] = useState({
@@ -59,6 +60,7 @@ export function useViewModel(props: IModelListContent) {
               type: 0,
               id: index + 1,
               class: item.class.split(','),
+              currentDownload: 0,
             } as any),
         );
         setModelListData(dataWithSource);
@@ -163,8 +165,10 @@ export function useViewModel(props: IModelListContent) {
   };
 
   // 模型详情弹窗
-  const onDetailModalVisible = useCallback((visible: boolean) => {
+  const onDetailModalVisible = useCallback((visible: boolean, modelData?: ModelDataItem) => {
     setIsDetailVisible(visible);
+    // 弹窗关闭清空选择的模型数据
+    setSelectModelData(modelData || ({} as any));
   }, []);
 
   // 模型存储路径弹窗

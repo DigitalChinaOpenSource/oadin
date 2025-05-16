@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Badge } from 'antd';
 import styles from './index.module.scss';
 import favicon from '../../assets/favicon.png';
 import { SiderDownloadIcon } from '../icons';
@@ -108,13 +109,23 @@ export default function Sidebar() {
           </div>
         ))}
       </div>
+
       <div className={styles.downloadBtnBox}>
-        <div
-          className={styles.downloadBtn}
-          onClick={handleDownload}
+        <Badge
+          dot
+          // count={3}
+          className={styles.badge}
         >
-          <SiderDownloadIcon />
-        </div>
+          <div
+            className={styles.downloadBtn}
+            onClick={handleDownload}
+          >
+            <SiderDownloadIcon
+              width={18}
+              height={18}
+            />
+          </div>
+        </Badge>
         {isDownloadListOpen && (
           <DownloadListBox
             className={styles.downloadListWrapper}

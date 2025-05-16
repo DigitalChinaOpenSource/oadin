@@ -2,6 +2,8 @@ import React from 'react';
 import styles from './index.module.scss';
 import { SiderDownloadIcon, CloseIcon } from '../icons';
 import DownloadItem from './download-item';
+import useModelDownloadStore from '../../store/useModelDownloadStore';
+
 export interface IDownloadListBoxProps {
   // 控制列表弹窗的展示位置
   className?: string;
@@ -10,15 +12,7 @@ export interface IDownloadListBoxProps {
 
 export default function DownloadListBox(props: IDownloadListBoxProps) {
   const { className = '', handleDownload } = props;
-
-  // 模拟5条下载数据
-  const downloadItems = [
-    { id: 1, name: '模型名称1', progress: 25, status: 'downloading' },
-    { id: 2, name: '模型名称2', progress: 50, status: 'downloading' },
-    { id: 3, name: '模型名称3', progress: 100, status: 'completed' },
-    { id: 4, name: '模型名称4', progress: 0, status: 'error' },
-    { id: 5, name: '模型名称5', progress: 75, status: 'downloading' },
-  ];
+  const { downloadList } = useModelDownloadStore();
 
   return (
     <div className={`${className} ${styles.downloadListBox}`}>
@@ -34,8 +28,8 @@ export default function DownloadListBox(props: IDownloadListBoxProps) {
         </div>
       </div>
       <div className={styles.downloadList}>
-        {downloadItems.map((item) => (
-          <DownloadItem downloadItem={item} />
+        {downloadList.map((item) => (
+          <DownloadItem key={`${item.modelType}-${item.id}`} downloadItem={item} />
         ))}
       </div>
     </div>

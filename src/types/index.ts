@@ -27,6 +27,7 @@ export interface ModelDataItem {
   credentialParamsId?: string; // IDs 分割的字符串
   credentialParams?: CredentialParam[];
   modelKey?: string;
+  currentDownload?: number;
 }
 // 模型列表数据类型
 export interface ModelData {

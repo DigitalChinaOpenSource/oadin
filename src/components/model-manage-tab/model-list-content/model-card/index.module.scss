@@ -1,4 +1,6 @@
 .modelCard {
+  position: relative;
+  overflow: hidden;
   :global(.ant-card-body) {
     padding: 16px;
   }
@@ -45,6 +47,16 @@
       border-radius: 4px;
     }
   }
+  .cardDownload {
+    .downloaded {
+      color: #5429ff;
+      padding: unset;
+      &:hover {
+        color: #5429ff;
+        background-color: unset !important;
+      }
+    }
+  }
   .contentWrapper {
     position: relative;
     margin-top: 8px;
@@ -78,6 +90,7 @@
   .textContent {
     min-height: 42px;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -86,6 +99,7 @@
     max-height: calc(1.5em * 2); // 两行文字的高度
     color: #344054;
     &.expanded {
+      line-clamp: unset;
       -webkit-line-clamp: unset;
       max-height: none;
     }
@@ -112,13 +126,6 @@
     color: #5429ff;
     background-color: #f3f1f1;
   }
-  .hasLoaded {
-    color: '#344054';
-    padding: unset;
-    &:hover {
-      background-color: unset !important;
-    }
-  }
   .title,
   .localOrCloud,
   .recommend,
@@ -138,4 +145,14 @@
   border-radius: 8px;
   border: 1px solid #d9d9d9;
   padding: 16px;
+  &:hover {
+    background: #f9faff;
+    box-shadow: 0px 4px 4px 0px rgba(217, 217, 217, 0.4);
+  }
+}
+
+.progress {
+  position: absolute;
+  left: 0px;
+  bottom: -6px;
 }
