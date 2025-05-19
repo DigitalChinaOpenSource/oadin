@@ -268,13 +268,6 @@ class Byze {
   InstallByze() {
     return new Promise((resolve) => {
       const isMacOS = process.platform === 'darwin';
-      const userDir = os.homedir();
-      const byzeDir = path.join(userDir, 'Byze');
-  
-      // 确保PATH包含Byze目录（兼容跨平台）
-      if (!process.env.PATH.includes(byzeDir)) {
-        process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
-      }
   
       let stderrContent = '';
       let child;
@@ -294,11 +287,17 @@ class Byze {
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
+        if (data.toString().includes('Byze server start successfully')) {
+          resolve(true);
+        }
       });
 
       child.stderr.on('data', (data) => {
         const errorMessage = data.toString().trim();
-        stderrContent += errorMessage + '\n';
+        if (errorMessage.includes('Install model engine failed')) {
+          console.error('❌ 启动失败: 模型引擎安装失败。');
+          resolve(false);
+        }
         console.error(`stderr: ${errorMessage}`);
       });
 
@@ -315,7 +314,7 @@ class Byze {
         resolve(false);
       });
 
-      child.on('close', (code) => {
+      child.on('exit', (code) => {
         if (stderrContent.includes('Install model engine failed')){
           console.error('❌ 启动失败: 模型引擎安装失败。');
           resolve(false);
