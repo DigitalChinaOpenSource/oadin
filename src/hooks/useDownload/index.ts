@@ -2,7 +2,6 @@ import { useCallback, useRef, useEffect, useMemo } from 'react';
 import { modelDownloadStream, abortDownload } from './download';
 import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
 import { DOWNLOAD_STATUS } from '../../constants';
-import downLoadCompleteEventBus from '../../utils/downloadEvent';
 import { ModelDataItem } from '../../types';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
 import useModelListStore from '../../store/useModelListStore';
@@ -117,7 +116,6 @@ export const useDownLoad = () => {
               totalsize,
               can_select: true,
             });
-            downLoadCompleteEventBus.emit('downloadComplete');
           } else if (status === 'canceled') {
             updateDownloadStatus(id, modelType, {
               ...baseUpdates,
@@ -202,12 +200,6 @@ export const useDownLoad = () => {
     // 监听下载完成事件，立即处理已完成的项
     const handleDownloadComplete = () => {
       setDownloadList((currentList) => currentList.filter((item) => item.status !== COMPLETED));
-    };
-
-    // 订阅下载完成事件
-    downLoadCompleteEventBus.on('downloadComplete', handleDownloadComplete);
-    return () => {
-      downLoadCompleteEventBus.off('downloadComplete', handleDownloadComplete);
     };
   }, [COMPLETED, setDownloadList]);
 
