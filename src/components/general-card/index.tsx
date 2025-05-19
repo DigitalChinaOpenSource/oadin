@@ -12,14 +12,14 @@ export interface IGeneralCardProps {
   isDetail?: boolean;
   // 模型数据
   modelData: ModelDataItem;
-  onDetailModalVisible?: (visible: boolean, selectModelData: ModelDataItem) => void;
+  onCardClick?: (visible: boolean, selectModelData: ModelDataItem) => void;
   onModelAuthVisible?: (data: IModelAuth) => void;
   onDeleteConfirm?: (modelData: ModelDataItem) => void;
   onDownloadConfirm?: (modelData: ModelDataItem) => void;
 }
 
 export default function GeneralCard(props: IGeneralCardProps) {
-  const { isDetail, onDetailModalVisible, onModelAuthVisible, onDeleteConfirm, onDownloadConfirm, modelData } = props;
+  const { isDetail, onCardClick, onModelAuthVisible, onDeleteConfirm, onDownloadConfirm, modelData } = props;
 
   // modelData?.class
   const tags = useMemo(
@@ -66,7 +66,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
   return (
     <div
       className={`${isDetail ? styles.generalCardDetail : styles.generalCardHover} ${styles.generalCard}`}
-      onClick={() => onDetailModalVisible?.(true, modelData)}
+      onClick={() => onCardClick?.(true, modelData)}
     >
       {/* 推荐使用，定位右上角 */}
       {modelData?.is_recommended && <div className={styles.recommend}>推荐使用</div>}

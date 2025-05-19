@@ -63,7 +63,7 @@ export default function ModelListContent(props: IModelListContent) {
                   className: styles.pagination,
                   align: 'end',
                   ...vm.pagination,
-                  pageSizeOptions: [10, 30, 50],
+                  pageSizeOptions: [12, 24, 48, 96],
                   showSizeChanger: true,
                   onChange: vm.onPageChange,
                   onShowSizeChange: vm.onShowSizeChange,
@@ -73,7 +73,7 @@ export default function ModelListContent(props: IModelListContent) {
                 <List.Item>
                   <GeneralCard
                     modelData={item}
-                    onDetailModalVisible={vm.onDetailModalVisible}
+                    onCardClick={vm.onDetailModalVisible}
                     onModelAuthVisible={vm.onModelAuthVisible}
                     onDownloadConfirm={vm.onDownloadConfirm}
                     onDeleteConfirm={vm.onDeleteConfirm}
