@@ -28,6 +28,7 @@ export interface ModelDataItem {
   credentialParams?: CredentialParam[];
   modelKey?: string;
   currentDownload?: number;
+  update_time?: number;
 }
 // 模型列表数据类型
 export interface ModelData {

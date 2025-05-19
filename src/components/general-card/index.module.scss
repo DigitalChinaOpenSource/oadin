@@ -1,42 +1,59 @@
 .generalCard {
+  width: 100%;
   position: relative;
   overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
   :global(.ant-card-body) {
     padding: 16px;
   }
-  .cardHeader {
+  .recommend {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 64px;
     height: 24px;
+    color: #fff;
+    text-align: center;
+    border-radius: 0px 8px;
+    background: linear-gradient(90deg, #ff6d17 0%, #ffa92b 100%);
+  }
+  .cardHeader {
+    height: 40px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 8px;
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #c1c6d6;
+      border-radius: 8px;
+      padding: 8px;
+    }
     .cardTitle {
-      height: 24px;
       display: flex;
     }
+
     .title {
       font-size: 16px;
       font-weight: 600;
       margin-left: 8px;
+      line-height: 40px;
     }
     .localOrCloud {
+      height: 18px;
       font-size: 12px;
       background-color: #f0f0f0;
       color: #898ea3;
       border-radius: 999px;
-      padding: 4px 8px;
+      padding: 1px 8px;
       display: flex;
-      margin: 0 16px 0 8px;
+      margin: 11px 0px 0 8px;
       .localOrCloudText {
         margin-left: 2px;
       }
-    }
-    .recommend {
-      background-color: #fcf2d9;
-      color: #b07f08;
-      font-size: 12px;
-      padding: 4px 6px;
-      line-height: 18px;
-      border-radius: 4px;
     }
     .authorized {
       background-color: #d2f2fd;
@@ -57,37 +74,9 @@
       }
     }
   }
+
   .contentWrapper {
-    position: relative;
     margin-top: 8px;
-  }
-  .moreButton {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    background: white;
-    padding-left: 14px;
-    padding-right: 0px;
-    margin: 0;
-    height: 22px;
-    line-height: 22px;
-    z-index: 1;
-    color: #344054 !important;
-    font-weight: 600;
-    cursor: pointer;
-    &:hover {
-      background-color: #ffffff !important;
-    }
-    &::before {
-      content: '';
-      position: absolute;
-      right: 100%;
-      width: 30px;
-      height: 100%;
-      background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff);
-    }
-  }
-  .textContent {
     min-height: 42px;
     display: -webkit-box;
     line-clamp: 2;
@@ -95,33 +84,24 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.5;
-    max-height: calc(1.5em * 2); // 两行文字的高度
-    color: #344054;
-    &.expanded {
-      line-clamp: unset;
-      -webkit-line-clamp: unset;
-      max-height: none;
-    }
+    word-break: break-all;
+    color: #565966;
   }
 
   .infoWrapper {
     display: flex;
     align-items: center;
-    margin: 8px 0;
-    color: #9da3bb;
-  }
-
-  .splitLine,
-  .splitLine2 {
-    margin: 0 4px;
-  }
-
-  .beUsed {
-    .splitLine2 {
-      color: #9da3bb;
+    margin-top: 28px;
+    color: #565966;
+    transition: all 0.4s ease;
+    .dot {
+      margin: 0 16px;
+    }
+    .modelStatus {
+      margin-left: auto;
     }
   }
+
   .updateSetting {
     color: #5429ff;
     background-color: #f3f1f1;
@@ -129,25 +109,59 @@
   .title,
   .localOrCloud,
   .recommend,
-  .providerName,
-  .contextLength,
-  .modelSize,
-  .beUsed,
-  .tagWrapper {
+  .providerName {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .handlebar {
+    position: absolute;
+    bottom: -64px;
+    left: 0px;
+    width: 100%;
+    padding: 16px 20px;
+    opacity: 0;
+    transition: all 0.5s ease-in-out;
+    button {
+      width: 100%;
+    }
+    .downloadedBtn {
+      background-color: #e4e6eb;
+      color: #344054;
+      border: unset;
+      &:hover {
+        background-color: #e4e6eb;
+        color: #344054;
+        border: unset;
+      }
+    }
+  }
 }
 
-.generalCardStyle {
-  background-color: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #d9d9d9;
-  padding: 16px;
+.generalCardHover {
   &:hover {
     background: #f9faff;
     box-shadow: 0px 4px 4px 0px rgba(217, 217, 217, 0.4);
+    .infoWrapper {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .handlebar {
+      bottom: 0;
+      opacity: 1;
+    }
+  }
+}
+
+.generalCardDetail {
+  padding: unset;
+  .recommend {
+    display: none;
+  }
+  .contentWrapperDetail {
+    margin-top: 8px;
+    min-height: 42px;
+    color: #565966;
   }
 }
 

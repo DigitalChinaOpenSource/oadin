@@ -1,10 +1,11 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useMemo } from 'react';
 import styles from './index.module.scss';
-import { Button, Tag, Progress } from 'antd';
+import { Button, Progress, Tooltip } from 'antd';
 import { IModelAuth } from '../model-manage-tab/types';
 import { ModelDataItem } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '@/components/icons';
+import TagsRender from './tags-render';
 
 export interface IGeneralCardProps {
   // 是否用于详情展示
@@ -20,23 +21,11 @@ export interface IGeneralCardProps {
 export default function GeneralCard(props: IGeneralCardProps) {
   const { isDetail, onDetailModalVisible, onModelAuthVisible, onDeleteConfirm, onDownloadConfirm, modelData } = props;
 
-  const [isOverflow, setIsOverflow] = useState(false);
-  const textRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const checkOverflow = () => {
-      const element = textRef.current;
-      if (element) {
-        // 检查内容是否超过两行
-        const lineHeight = parseInt(window.getComputedStyle(element).lineHeight);
-        const maxHeight = lineHeight * 2;
-        setIsOverflow(element.scrollHeight > maxHeight);
-      }
-    };
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
-  }, [modelData]);
+  // modelData?.class
+  const tags = useMemo(
+    () => ['深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成'],
+    [modelData?.class],
+  );
 
   const statusToText = (item: ModelDataItem) => {
     const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
@@ -54,12 +43,11 @@ export default function GeneralCard(props: IGeneralCardProps) {
     if (can_select || status === COMPLETED)
       return (
         <Button
-          type="text"
-          className={styles.downloaded}
+          className={styles.downloadedBtn}
           onClick={() => onDeleteConfirm?.(modelData)}
         >
+          <DeleteIcon fill="#344054" />
           已下载
-          <DeleteIcon fill="#5429ff" />
         </Button>
       );
     if (status === PAUSED) return '暂停';
@@ -67,7 +55,6 @@ export default function GeneralCard(props: IGeneralCardProps) {
       return (
         <Button
           type="primary"
-          size="small"
           onClick={() => onDownloadConfirm?.(modelData)}
         >
           下载
@@ -77,15 +64,23 @@ export default function GeneralCard(props: IGeneralCardProps) {
   };
 
   return (
-    <div className={`${isDetail ? '' : styles.generalCardStyle} ${styles.generalCard}`}>
+    <div
+      className={`${isDetail ? styles.generalCardDetail : styles.generalCardHover} ${styles.generalCard}`}
+      onClick={() => onDetailModalVisible?.(true, modelData)}
+    >
+      {/* 推荐使用，定位右上角 */}
+      {modelData?.is_recommended && <div className={styles.recommend}>推荐使用</div>}
       <div className={styles.cardHeader}>
         <div className={styles.cardTitle}>
-          <img
-            src={modelData?.avatar}
-            width={24}
-          />
+          {/* logo */}
+          <div className={styles.avatar}>
+            <img
+              src={modelData?.avatar}
+              width={24}
+            />
+          </div>
+          {/* 名称 */}
           <div className={styles.title}>{modelData?.name}</div>
-
           {/* 本地还是云端 */}
           <div className={styles.localOrCloud}>
             {modelData?.source === 'local' ? (
@@ -100,87 +95,20 @@ export default function GeneralCard(props: IGeneralCardProps) {
               </>
             )}
           </div>
-
-          {/* 推荐使用 */}
-          {modelData?.is_recommended && <div className={styles.recommend}>🔥 推荐使用</div>}
-
-          {/* 已授权 */}
-          {/* <div className={styles.authorized}>已授权</div> */}
         </div>
-
-        {!isDetail && (
-          <div className={styles.cardDownload}>
-            {modelData?.source === 'local' ? (
-              <>
-                <>{statusToText(modelData)}</>
-              </>
-            ) : (
-              <>
-                {/* 云端下载相关内容 */}
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() =>
-                    onModelAuthVisible?.({
-                      visible: true,
-                      type: 'config',
-                      modelData: modelData,
-                    })
-                  }
-                >
-                  配置授权
-                </Button>
-                {/* <Button className={styles.updateSetting} variant="filled" size="small" onClick={() => onModelAuthorizeVisible?.('update')}>
-                    更新配置
-                  </Button> */}
-              </>
-            )}
-          </div>
-        )}
       </div>
 
-      <div className={styles.contentWrapper}>
-        <div
-          ref={textRef}
-          className={`${isDetail ? '' : styles.textContent}`}
-        >
-          {modelData?.desc}
-        </div>
-        {isOverflow && !isDetail && (
-          <Button
-            type="link"
-            size="small"
-            className={styles.moreButton}
-            onClick={() => onDetailModalVisible?.(true, modelData)}
-          >
-            更多
-          </Button>
-        )}
-      </div>
+      <TagsRender tags={tags} />
+
+      <Tooltip title={modelData?.desc}>
+        <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>{modelData?.desc}</div>
+      </Tooltip>
 
       <div className={styles.infoWrapper}>
         <div className={styles.providerName}>深度求索</div>
-        <div className={styles.contextLength}>
-          <span className={styles.splitLine}>｜</span>
-          <span>上下文长度：</span>
-          <span>测试暂无</span>
-        </div>
-        <div className={styles.modelSize}>
-          <span className={styles.splitLine}>｜</span>
-          <span>大小：</span>
-          <span>{modelData?.size}</span>
-        </div>
-        <div className={styles.beUsed}>
-          <span className={styles.splitLine2}>｜</span>
-          <span>使用中：</span>
-          <span>测试2个</span>
-        </div>
-      </div>
-
-      <div className={styles.tagWrapper}>
-        {(modelData?.class || []).map((tag: string, index: number) => (
-          <Tag key={index}>{tag}</Tag>
-        ))}
+        <div className={styles.dot}>·</div>
+        <div className={styles.updateName}>2025-05-19 更新</div>
+        {modelData?.can_select && <div className={styles.modelStatus}>已下载</div>}
       </div>
       {Boolean(modelData?.currentDownload) && (
         <Progress
@@ -192,6 +120,8 @@ export default function GeneralCard(props: IGeneralCardProps) {
           strokeLinecap="butt"
         />
       )}
+
+      <div className={styles.handlebar}>{statusToText(modelData)}</div>
     </div>
   );
 }

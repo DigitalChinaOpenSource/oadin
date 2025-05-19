@@ -1,0 +1,20 @@
+.tagWrapper {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  width: 100%;
+}
+
+.tag {
+  margin-right: 8px;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  color: #5429ff;
+  background-color: #f3f1ff;
+  border: unset;
+}
+.hiddenTag {
+  background-color: #f9faff;
+  color: #344054;
+  margin-bottom: 4px;
+}
