@@ -9,6 +9,8 @@ import mm from '../icons/mm.svg';
 import mmac from '../icons/mmac.svg';
 import sm from '../icons/sm.svg';
 import smac from '../icons/smac.svg';
+import mcp from '../icons/mcp.svg';
+import mcpac from '../icons/mcpac.svg';
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -40,20 +42,20 @@ export default function Sidebar() {
       label: '模型管理',
     },
     {
-      key: 'mcp-manage',
+      key: 'mcp-service',
       activeIcon: (
         <img
-          src={smac}
-          alt="MCP管理"
+          src={mcpac}
+          alt="MCP服务"
         />
       ),
       inactiveIcon: (
         <img
-          src={sm}
-          alt="MCP管理"
+          src={mcp}
+          alt="MCP服务"
         />
       ),
-      label: 'MCP管理',
+      label: 'MCP服务',
     },
     {
       key: 'server-manage',

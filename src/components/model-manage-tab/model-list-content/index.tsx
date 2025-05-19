@@ -1,6 +1,6 @@
 import { Button, Tooltip, Pagination, Col, Row } from 'antd';
 import styles from './index.module.scss';
-import ModelCard from './model-card';
+import GeneralCard from '@/components/general-card';
 import ModelPathModal from '../modelpath-modal';
 import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
@@ -57,7 +57,7 @@ export default function ModelListContent(props: IModelListContent) {
                       span={4}
                       key={index}
                     >
-                      <ModelCard
+                      <GeneralCard
                         modelData={item}
                         onDetailModalVisible={vm.onDetailModalVisible}
                         onModelAuthVisible={vm.onModelAuthVisible}

@@ -1,5 +1,5 @@
 import { Modal } from 'antd';
-import ModelCard from '../model-list-content/model-card';
+import GeneralCard from '../../general-card';
 import { ModelDataItem } from '@/types';
 interface IModelDetailModalProps {
   onDetailModalVisible: (visible: boolean, selectModelData?: ModelDataItem) => void;
@@ -18,7 +18,7 @@ export default function ModelDetailModal(props: IModelDetailModalProps) {
       footer={null}
       onCancel={() => onDetailModalVisible(false)}
     >
-      <ModelCard
+      <GeneralCard
         isDetail={true}
         modelData={selectModelData}
       />

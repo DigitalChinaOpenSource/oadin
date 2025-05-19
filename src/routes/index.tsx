@@ -2,7 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../components/main-layout';
 import ModelManage from '../pages/model-manage';
 import ServerManage from '../pages/server-manage';
-import McpManage from '../pages/mcp-manage';
+import McpService from '../pages/mcp-service';
 
 const router = createBrowserRouter([
   {
@@ -27,8 +27,8 @@ const router = createBrowserRouter([
         element: <ServerManage />,
       },
       {
-        path: '/mcp-manage',
-        element: <McpManage />,
+        path: '/mcp-service',
+        element: <McpService />,
       },
     ],
   },
