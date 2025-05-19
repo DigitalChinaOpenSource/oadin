@@ -2,6 +2,19 @@ package cli
 
 import (
 	"bufio"
+	"byze/config"
+	"byze/internal/api"
+	"byze/internal/api/dto"
+	"byze/internal/datastore"
+	"byze/internal/datastore/sqlite"
+	"byze/internal/event"
+	"byze/internal/provider"
+	"byze/internal/schedule"
+	"byze/internal/types"
+	"byze/internal/utils"
+	"byze/internal/utils/bcode"
+	"byze/internal/utils/progress"
+	"byze/version"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,20 +29,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"byze/config"
-	"byze/internal/api"
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/datastore/sqlite"
-	"byze/internal/event"
-	"byze/internal/provider"
-	"byze/internal/schedule"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
-	"byze/internal/utils/progress"
-	"byze/version"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -214,6 +213,8 @@ func Run(ctx context.Context) error {
 		slog.Error("[Run] Failed to write pid file", "error", err)
 		return err
 	}
+
+	go ListenModelEngineHealth()
 
 	// Run the server
 	err = byzeServer.Run(ctx, config.GlobalByzeEnvironment.ApiHost)
@@ -1247,4 +1248,49 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 		},
 	}
 	return cmd
+}
+
+func ListenModelEngineHealth() {
+	ds := datastore.GetDefaultDatastore()
+
+	sp := &types.ServiceProvider{
+		ServiceSource: types.ServiceSourceLocal,
+	}
+
+	OllamaEngine := provider.GetModelEngine(types.FlavorOllama)
+
+	for {
+		list, err := ds.List(context.Background(), sp, &datastore.ListOptions{Page: 0, PageSize: 100})
+		if err != nil {
+			continue
+		}
+
+		if len(list) == 0 {
+			continue
+		}
+
+		engineList := make([]string, 0)
+		for _, item := range list {
+			sp := item.(*types.ServiceProvider)
+			if utils.Contains(engineList, sp.Flavor) {
+				continue
+			}
+
+			engineList = append(engineList, sp.Flavor)
+		}
+
+		for _, engine := range engineList {
+			if engine == types.FlavorOllama {
+				err := OllamaEngine.HealthCheck()
+				if err != nil {
+					err := OllamaEngine.StartEngine()
+					if err != nil {
+						continue
+					}
+				}
+			}
+		}
+
+		time.Sleep(60 * time.Second)
+	}
 }
