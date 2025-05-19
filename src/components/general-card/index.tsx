@@ -57,8 +57,8 @@ export default function GeneralCard(props: IGeneralCardProps) {
           type="primary"
           onClick={() => onDownloadConfirm?.(modelData)}
         >
-          下载
           <DownloadIcon />
+          下载
         </Button>
       );
   };
