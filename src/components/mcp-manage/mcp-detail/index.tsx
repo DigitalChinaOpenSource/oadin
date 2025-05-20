@@ -2,7 +2,7 @@ import Styles from './index.module.scss';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
-export default function mcpDetail() {
+export default function McpDetail() {
   const [searchParams] = useSearchParams();
   const navicate = useNavigate();
   const serviceId = searchParams.get('serviceId');
@@ -12,7 +12,7 @@ export default function mcpDetail() {
     navicate(`/mcp-service?mcpFrom=${mcpFrom}`);
   };
   return (
-    <div className={Styles.mcpManageDetail}>
+    <div className={Styles.mcpDetail}>
       <div
         className={Styles.goBack}
         onClick={handledGoBack}

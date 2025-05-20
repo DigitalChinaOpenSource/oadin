@@ -1,4 +1,4 @@
-.mcpManageDetail {
+.mcpServiceDetail {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -18,7 +18,7 @@
     .backText {
       font-size: 14px;
       line-height: 22px;
-      color:#344054;
+      color: #344054;
     }
   }
   .detailTop {
@@ -27,20 +27,17 @@
     .card {
       display: flex;
       flex-direction: column;
-      color:red;
+      color: red;
     }
     .topRight {
       width: 400px;
       margin-left: 24px;
       text-align: right;
     }
-
   }
   .Line {
     width: 100%;
     height: 1px;
-    background-color: #C1C6D6;
+    background-color: #c1c6d6;
   }
-
 }
-
