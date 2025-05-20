@@ -16,6 +16,7 @@ Section "Install"
   File "..\byze.exe"
   File "preinstall.bat"
   File "postinstall.bat"
+  File "start-byze.bat"
 
   # Pre-install silently
   nsExec::Exec '"$INSTDIR\preinstall.bat"'
