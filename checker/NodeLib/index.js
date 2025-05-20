@@ -8,30 +8,45 @@ const axios = require('axios');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 const EventEmitter = require('events');
-const AdmZip = require('adm-zip');
-const { spawn } = require('child_process');
-const { exec } = require('child_process');
-const { execSync } = require('child_process');
+const { execFile, spawn } = require('child_process');
 const { promises: fsPromises } = require("fs");
 
 const schemas = require('./schema.js');
 
-function waitForInstallerToExit(interval = 2000) {
-  return new Promise((resolve) => {
-    const check = () => {
-      exec("pgrep -x Installer", (error, stdout) => {
-        if (stdout.trim()) {
-          // Installer still running
-          setTimeout(check, interval);
-        } else {
-          // Installer exited
+function runInstaller(installerPath, isMacOS) {
+  return new Promise((resolve, reject) => {
+    if (isMacOS) {
+      // 打开 GUI 安装器
+      const child = spawn('open', [installerPath], { stdio: 'ignore', detached: true });
+
+      child.on('error', reject);
+
+      // 等待安装目录生成（轮询）
+      const expectedPath = '/Applications/Byze.app'; // 你需要根据实际情况修改
+      const maxRetries = 30; // 最多等 60 次（大约 60 秒）
+      let retries = 0;
+
+      const interval = setInterval(() => {
+        if (fs.existsSync(expectedPath)) {
+          clearInterval(interval);
           resolve();
+        } else if (++retries >= maxRetries) {
+          clearInterval(interval);
+          reject(new Error('安装器未在超时前完成安装'));
         }
+      }, 1000);
+    } else {
+      // Windows 安装器
+      const child = spawn(installerPath, ['/S'], { stdio: 'inherit' });
+
+      child.on('error', reject);
+      child.on('close', (code) => {
+        code === 0 ? resolve() : reject(new Error(`Installer exited with code ${code}`));
       });
-    };
-    check();
+    }
   });
-};
+}
+
 class Byze {
   version = "byze/v0.2";
 
@@ -113,7 +128,7 @@ class Byze {
   }
 
   DownloadByze() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS
         ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
@@ -124,74 +139,33 @@ class Byze {
       const destFileName = isMacOS ? 'byze-installer-latest.pkg' : 'byze-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
 
-      fs.mkdir(destDir, { recursive: true }, async (err) => {
-        if (err) {
-          console.error('❌ 创建目录失败:', err.message);
-          return resolve(false);
+      // 创建目录
+      fs.mkdirSync(destDir, { recursive: true });
+
+      // 下载文件
+      const file = fs.createWriteStream(dest);
+      https.get(url, (response) => {
+        if (response.statusCode !== 200) {
+          return reject(new Error(`Download failed with status code: ${response.statusCode}`));
         }
 
-        console.log('🔍 正在下载文件:', url);
-        const file = fs.createWriteStream(dest);
+        response.pipe(file);
 
-        const request = https.get(url, (res) => {
-          if (res.statusCode !== 200) {
-            console.error(`❌ 下载失败，HTTP 状态码: ${res.statusCode}`);
-            file.close();
-            fs.unlink(dest, () => {});
-            return resolve(false);
-          }
-
-          res.pipe(file);
-          file.on('finish', async () => {
-            file.close();
-            console.log('✅ 下载完成:', dest);
-
+        file.on('finish', () => {
+          file.close(async () => {
+            // 安装执行
             try {
-              await new Promise(r => setTimeout(r, 1000)); // 稍作等待
-
-              console.log('🚀 正在运行安装包...');
-
-              if (isMacOS) {
-                spawn('open', [dest], { stdio: 'ignore', detached: true });
-                console.log('🕓 等待用户完成安装...');
-                await waitForInstallerToExit(); // 等待用户关闭 Installer.app
-                console.log('✅ 用户已完成安装');
-                setTimeout(() => resolve(true), 5000);
-              } else {
-                const installer = spawn(dest, [], {
-                  stdio: 'inherit',
-                  windowsHide: true,
-                  shell: true
-                });
-
-                installer.on('close', (code) => {
-                  if (code === 0) {
-                    console.log('✅ 安装程序已完成，延迟 5 秒...');
-                    setTimeout(() => resolve(true), 5000);
-                  } else {
-                    console.error(`❌ 安装程序执行失败，退出码: ${code}`);
-                    resolve(false);
-                  }
-                });
-
-                installer.on('error', (err) => {
-                  console.error(`❌ 启动安装程序失败: ${err.message}`);
-                  resolve(false);
-                });
-              }
+              await runInstaller(dest, isMacOS);
+              resolve(true);
             } catch (err) {
-              console.error(`❌ 运行安装程序时出错: ${err.message}`);
+              console.error('Installer execution failed:', err);
               resolve(false);
             }
           });
         });
-
-        request.on('error', (err) => {
-          console.error('❌ 下载失败:', err.message);
-          file.close();
-          fs.unlink(dest, () => {});
-          resolve(false);
-        });
+      }).on('error', (err) => {
+        fs.unlinkSync(dest);
+        reject(err);
       });
     });
   }
