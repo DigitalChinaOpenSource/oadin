@@ -174,31 +174,34 @@ class Byze {
   InstallByze() {
     return new Promise((resolve, reject) => {
       const currentPlatform = process.platform;
+      let command, args;
 
       if (currentPlatform === 'win32') {
         const batPath = path.resolve(__dirname, 'start-byze.bat');
-        execFile('cmd.exe', ['/c', batPath], { windowsHide: true }, (error, stdout, stderr) => {
-          const output = (stdout + stderr).toString().toLowerCase();
-          if (error || output.includes('error')) return resolve(false);
-          if (output.includes('byze server start successfully')) return resolve(true);
-          return resolve(false);
-        });
+        command = 'cmd.exe';
+        args = ['/c', batPath];
       } else if (currentPlatform === 'darwin') {
-        // macOS: 使用 nohup + & 启动 byze，不依赖父进程
-        const shellCommand = `nohup byze server start -d > /dev/null 2>&1 & echo "Byze launched"`;
-
-        execFile('sh', ['-c', shellCommand], (error, stdout, stderr) => {
-          const output = (stdout + stderr).toString().toLowerCase();
-          if (error || output.includes('error')) return resolve(false);
-
-          // 若需严格确认成功，可以考虑加延时检测
-          return resolve(true);
-        });
+        command = 'sh';
+        args = ['-c', 'nohup byze server start -d > /dev/null 2>&1 & echo "Byze launched"'];
       } else {
         return reject(new Error(`Unsupported platform: ${currentPlatform}`));
       }
+
+      execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
+        const output = (stdout + stderr).toString().toLowerCase();
+
+        if (error || output.includes('error')) {
+          return resolve(false);
+        }
+
+        if (output.includes('byze server start successfully')) {
+          return resolve(true);
+        }
+        const available = await this.IsByzeAvailiable();
+        resolve(available);
+      });
     });
-  }
+  };
 
 
   // 执行 byze install chat
