@@ -62,6 +62,7 @@ export default function ModelListContent(props: IModelListContent) {
                 <List.Item>
                   <GeneralCard
                     modelData={item}
+                    modelSourceVal={vm.modelSourceVal}
                     onCardClick={vm.onDetailModalVisible}
                     onModelAuthVisible={vm.onModelAuthVisible}
                     onDownloadConfirm={vm.onDownloadConfirm}

@@ -76,9 +76,22 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
           // 第一个 chunk 占据总量的 94%
           percent = Math.round((completed / part.total) * 94);
         } else {
-          // 其他 chunk 占据剩余的 6%，分 6 等份
-          const chunkProgress = 6 / 6;
-          percent = overallProgress + chunkProgress;
+          // 其他 chunk 占据剩余的 6%
+          // 检查是否是新的 digest
+          if (part.digest !== lastDigest) {
+            // 新的 chunk 开始，记录当前进度作为基础值
+            isFirstChunk = false;
+            // 不立即增加进度，等待该 chunk 的进度数据
+          }
+
+          // 计算当前 chunk 内的进度百分比（占总进度的 6%）
+          const chunkPercentage = (completed / part.total) * 6;
+          // 确保不超过总的 6%
+          const boundedChunkPercentage = Math.min(chunkPercentage, 6);
+          // 基础进度(94%) + 当前 chunk 进度(最多 6%)
+          percent = 94 + boundedChunkPercentage;
+          // 确保不超过 100%
+          percent = Math.min(Math.round(percent), 100);
         }
 
         dataObj = {
@@ -91,9 +104,6 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
         // 更新状态
         lastCompleted = completed;
         overallProgress = percent;
-        if (part.digest !== lastDigest) {
-          isFirstChunk = false;
-        }
         lastDigest = part.digest;
         lastUsefulDataObj = dataObj;
       }
@@ -113,7 +123,6 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
       openWhenHidden: true,
       signal,
       onmessage: (event) => {
-        console.log('接收到的事件流数据:', event);
         if (event.data && event.data !== '[DONE]') {
           try {
             const parsedData = JSON.parse(event.data);

@@ -24,6 +24,7 @@
       margin-right: 8px;
     }
     .controlBar {
+      display: flex;
       cursor: pointer;
     }
     .cancel {
@@ -42,5 +43,13 @@
         margin-left: 4px;
       }
     }
+  }
+  .statusError {
+    color: #e85951;
+  }
+  .statusLoading,
+  .statusPaused {
+    margin-left: 8px;
+    color: #898ea3;
   }
 }

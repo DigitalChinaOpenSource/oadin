@@ -5,6 +5,7 @@ import styles from './index.module.scss';
 import favicon from '../../assets/favicon.png';
 import { SiderDownloadIcon } from '../icons';
 import DownloadListBox from '../download-list-box';
+import useModelDownloadStore from '../../store/useModelDownloadStore';
 import mm from '../icons/mm.svg';
 import mmac from '../icons/mmac.svg';
 import sm from '../icons/sm.svg';
@@ -18,7 +19,8 @@ export default function Sidebar() {
   const [selectedKey, setSelectedKey] = useState('model-manage');
   // 是否展示下载列表弹窗
   const [isDownloadListOpen, setIsDownloadListOpen] = useState(false);
-
+  console.log('isDownloadListOpen===>', isDownloadListOpen);
+  const { downloadList } = useModelDownloadStore();
   useEffect(() => {
     const path = location.pathname.split('/')[1] || 'model-manage';
     setSelectedKey(path.includes('mcp-service') ? 'mcp-service' : path);
@@ -114,7 +116,7 @@ export default function Sidebar() {
 
       <div className={styles.downloadBtnBox}>
         <Badge
-          dot
+          dot={!!downloadList?.length}
           // count={3}
           className={styles.badge}
         >
@@ -128,7 +130,7 @@ export default function Sidebar() {
             />
           </div>
         </Badge>
-        {isDownloadListOpen && (
+        {isDownloadListOpen && downloadList.length > 0 && (
           <DownloadListBox
             className={styles.downloadListWrapper}
             handleDownload={handleDownload}

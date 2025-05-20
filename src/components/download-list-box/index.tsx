@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import styles from './index.module.scss';
 import { SiderDownloadIcon, CloseIcon } from '../icons';
 import DownloadItem from './download-item';
