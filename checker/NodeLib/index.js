@@ -15,6 +15,22 @@ const { promises: fsPromises } = require("fs");
 
 const schemas = require('./schema.js');
 
+function waitForInstallerToExit(interval = 2000) {
+  return new Promise((resolve) => {
+    const check = () => {
+      exec("pgrep -x Installer", (error, stdout) => {
+        if (stdout.trim()) {
+          // Installer still running
+          setTimeout(check, interval);
+        } else {
+          // Installer exited
+          resolve();
+        }
+      });
+    };
+    check();
+  });
+};
 class Byze {
   version = "byze/v0.2";
 
@@ -94,23 +110,6 @@ class Byze {
         resolve(fs.existsSync(dest));
     });
   }
-
-  waitForInstallerToExit(interval = 2000) {
-    return new Promise((resolve) => {
-      const check = () => {
-        exec("pgrep -x Installer", (error, stdout) => {
-          if (stdout.trim()) {
-            // Installer still running
-            setTimeout(check, interval);
-          } else {
-            // Installer exited
-            resolve();
-          }
-        });
-      };
-      check();
-    });
-  };
 
   DownloadByze() {
     return new Promise((resolve) => {
@@ -203,33 +202,50 @@ class Byze {
       const isMacOS = process.platform === 'darwin';
       const userDir = os.homedir();
       const byzeDir = path.join(userDir, 'Byze');
-      // 添加临时环境变量
+
       if (!process.env.PATH.includes(byzeDir)) {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
       }
-  
+
       console.log('当前环境变量:', process.env.PATH);
-      let stderrContent = '';
       let child;
 
       if (isMacOS) {
-          child = spawn('sh', ['-c', 'byze server start -d'], {
-            stdio: ['pipe', 'pipe', 'pipe'],
-            detached: true,
-            windowsHide: true,
+        child = spawn('sh', ['-c', 'byze server start -d'], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          detached: true,
+          windowsHide: true,
         });
       } else {
-          child = spawn('byze', ['server', 'start', '-d'], {
-              stdio: ['pipe', 'pipe', 'pipe'],
-              windowsHide: true,
-          });
+        child = spawn('byze', ['server', 'start', '-d'], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          windowsHide: true,
+        });
       }
+
       console.log('当前平台:', process.platform);
+
+      let resolved = false;
+
+      const tryResolve = (result) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(result);
+        }
+      };
+
+      const timeoutId = setTimeout(() => {
+        console.warn('⏱️ 超时未检测到服务成功启动，进行状态检测...');
+        this.IsByzeAvailiable().then((status) => {
+          tryResolve(status);
+        });
+      }, 10000); // 超时时间：10 秒
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
         if (data.toString().includes('Byze server start successfully')) {
-          resolve(true);
+          clearTimeout(timeoutId);
+          tryResolve(true);
         }
       });
 
@@ -237,12 +253,12 @@ class Byze {
         const errorMessage = data.toString().trim();
         if (errorMessage.includes('Install model engine failed')) {
           console.error('❌ 启动失败: 模型引擎安装失败。');
-          resolve(false);
+          clearTimeout(timeoutId);
+          tryResolve(false);
         }
         console.error(`stderr: ${errorMessage}`);
       });
 
-  
       child.on('error', (err) => {
         console.error(`❌ 启动失败: ${err.message}`);
         if (err.code === 'ENOENT') {
@@ -250,27 +266,16 @@ class Byze {
             '💡 可能原因:',
             `1. 未找到byze可执行文件，请检查下载是否成功`,
             `2. 环境变量未生效，请尝试重启终端`
-          ].filter(Boolean).join('\n'));
+          ].join('\n'));
         }
-        resolve(false);
+        clearTimeout(timeoutId);
+        tryResolve(false);
       });
 
-      // child.on('exit', (code) => {
-      //   if (stderrContent.includes('Install model engine failed')){
-      //     console.error('❌ 启动失败: 模型引擎安装失败。');
-      //     resolve(false);
-      //   } else if (code === 0) {
-      //     console.log('进程退出，正在检查服务状态...');
-          
-      //     this.checkServerStatus(resolve);
-      //   } else {
-      //     console.error(`❌ 启动失败，退出码: ${code}`);
-      //     resolve(false);
-      //   }
-      // });
       child.unref();
     });
   }
+
 
   // 执行 byze install chat
   InstallChat(remote = null) {
