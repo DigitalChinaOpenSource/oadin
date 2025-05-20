@@ -10,6 +10,7 @@ const addFormats = require('ajv-formats');
 const EventEmitter = require('events');
 const AdmZip = require('adm-zip');
 const { spawn } = require('child_process');
+const { exec } = require('child_process');
 const { execSync } = require('child_process');
 const { promises: fsPromises } = require("fs");
 
@@ -197,82 +198,31 @@ class Byze {
 
   // 启动 Byze 服务
   InstallByze() {
-    return new Promise((resolve) => {
-      console.log('🔍 正在启动 Byze 服务...');
-      const isMacOS = process.platform === 'darwin';
-      const userDir = os.homedir();
-      const byzeDir = path.join(userDir, 'Byze');
+    return new Promise((resolve, reject) => {
+      const currentPlatform = process.platform;
 
-      if (!process.env.PATH.includes(byzeDir)) {
-        process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
-      }
+      if (currentPlatform === 'win32') {
+        const batPath = path.resolve(__dirname, 'start-byze.bat');
+        execFile('cmd.exe', ['/c', batPath], { windowsHide: true }, (error, stdout, stderr) => {
+          const output = (stdout + stderr).toString().toLowerCase();
+          if (error || output.includes('error')) return resolve(false);
+          if (output.includes('byze server start successfully')) return resolve(true);
+          return resolve(false);
+        });
+      } else if (currentPlatform === 'darwin') {
+        // macOS: 使用 nohup + & 启动 byze，不依赖父进程
+        const shellCommand = `nohup byze server start -d > /dev/null 2>&1 & echo "Byze launched"`;
 
-      console.log('当前环境变量:', process.env.PATH);
-      let child;
+        execFile('sh', ['-c', shellCommand], (error, stdout, stderr) => {
+          const output = (stdout + stderr).toString().toLowerCase();
+          if (error || output.includes('error')) return resolve(false);
 
-      if (isMacOS) {
-        child = spawn('sh', ['-c', 'byze server start -d'], {
-          stdio: ['pipe', 'pipe', 'pipe'],
-          detached: true,
-          windowsHide: true,
+          // 若需严格确认成功，可以考虑加延时检测
+          return resolve(true);
         });
       } else {
-        child = spawn('byze', ['server', 'start', '-d'], {
-          stdio: ['pipe', 'pipe', 'pipe'],
-          windowsHide: true,
-        });
+        return reject(new Error(`Unsupported platform: ${currentPlatform}`));
       }
-
-      console.log('当前平台:', process.platform);
-
-      let resolved = false;
-
-      const tryResolve = (result) => {
-        if (!resolved) {
-          resolved = true;
-          resolve(result);
-        }
-      };
-
-      const timeoutId = setTimeout(() => {
-        console.warn('⏱️ 超时未检测到服务成功启动，进行状态检测...');
-        this.IsByzeAvailiable().then((status) => {
-          tryResolve(status);
-        });
-      }, 10000); // 超时时间：10 秒
-
-      child.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-        if (data.toString().includes('Byze server start successfully')) {
-          clearTimeout(timeoutId);
-          tryResolve(true);
-        }
-      });
-
-      child.stderr.on('data', (data) => {
-        const errorMessage = data.toString().trim();
-        if (errorMessage.includes('Install model engine failed')) {
-          console.error('❌ 启动失败: 模型引擎安装失败。');
-          clearTimeout(timeoutId);
-          tryResolve(false);
-        }
-        console.error(`stderr: ${errorMessage}`);
-      });
-
-      child.on('error', (err) => {
-        console.error(`❌ 启动失败: ${err.message}`);
-        if (err.code === 'ENOENT') {
-          console.log([
-            '💡 可能原因:',
-            `1. 未找到byze可执行文件，请检查下载是否成功`,
-            `2. 环境变量未生效，请尝试重启终端`
-          ].join('\n'));
-        }
-        clearTimeout(timeoutId);
-        tryResolve(false);
-      });
-
-      child.unref();
     });
   }
 
