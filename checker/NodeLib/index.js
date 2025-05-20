@@ -230,19 +230,19 @@ class Byze {
         resolve(false);
       });
 
-      child.on('exit', (code) => {
-        if (stderrContent.includes('Install model engine failed')){
-          console.error('❌ 启动失败: 模型引擎安装失败。');
-          resolve(false);
-        } else if (code === 0) {
-          console.log('进程退出，正在检查服务状态...');
+      // child.on('exit', (code) => {
+      //   if (stderrContent.includes('Install model engine failed')){
+      //     console.error('❌ 启动失败: 模型引擎安装失败。');
+      //     resolve(false);
+      //   } else if (code === 0) {
+      //     console.log('进程退出，正在检查服务状态...');
           
-          this.checkServerStatus(resolve);
-        } else {
-          console.error(`❌ 启动失败，退出码: ${code}`);
-          resolve(false);
-        }
-      });
+      //     this.checkServerStatus(resolve);
+      //   } else {
+      //     console.error(`❌ 启动失败，退出码: ${code}`);
+      //     resolve(false);
+      //   }
+      // });
       child.unref();
     });
   }
