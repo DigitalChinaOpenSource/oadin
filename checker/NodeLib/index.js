@@ -250,6 +250,13 @@ class Byze {
   InstallByze() {
     return new Promise((resolve) => {
       const isMacOS = process.platform === 'darwin';
+      const userDir = os.homedir();
+      const byzeDir = path.join(userDir, 'Byze');
+  
+      // 确保PATH包含Byze目录（兼容跨平台）
+      if (!process.env.PATH.includes(byzeDir)) {
+        process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
+      }
   
       let stderrContent = '';
       let child;
