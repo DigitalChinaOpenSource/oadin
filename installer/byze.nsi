@@ -22,29 +22,16 @@ Section "Install"
 
   # Add installation directory to the user's Path environment variable
   ReadRegStr $0 HKCU "Environment" "Path"
-  StrCpy $1 "$INSTDIR"
 
-  # Check if $INSTDIR is already in $0
-  StrStr $0 $1 +2
-  Goto AddPath
+  # 如果当前 Path 不为空，添加分号作为分隔符
+  StrCmp $0 "" 0 +2
+    StrCpy $0 "$0;"
 
-  # Skip adding if it already exists
-  Goto EndPath
-
-  AddPath:
-  # If $0 is not empty, check if a semicolon needs to be added
-  StrCmp $0 "" 0 +3
-  StrLen $2 $0
-  StrCpy $3 $0 -1 1
-  StrCmp $3 ";" 0 +2
-  StrCpy $0 "$0;"
-
-  # Append the installation directory path
+  # 直接追加安装目录路径
   StrCpy $0 "$0$INSTDIR"
   WriteRegStr HKCU "Environment" "Path" "$0"
   SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment"
 
-  EndPath:
   # Post-install
   ExecWait '"$INSTDIR\postinstall.bat"'
 SectionEnd
