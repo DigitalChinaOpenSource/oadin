@@ -15,81 +15,6 @@ const { promises: fsPromises } = require("fs");
 
 const schemas = require('./schema.js');
 
-function AddToUserPath(destDir) {
-  const isMacOS = process.platform === 'darwin';
-
-  if (isMacOS) {
-    try {
-      // 优先检查 .zprofile 文件
-      const zprofilePath = path.join(os.homedir(), '.zprofile');
-      const bashProfilePath = path.join(os.homedir(), '.bash_profile');
-      let shellConfigPath = '';
-
-      if (fs.existsSync(zprofilePath)) {
-        shellConfigPath = zprofilePath;
-      } else if (fs.existsSync(bashProfilePath)) {
-        shellConfigPath = bashProfilePath;
-      } else {
-        // 如果两个文件都不存在，默认创建 .zprofile
-        shellConfigPath = zprofilePath;
-        fs.writeFileSync(shellConfigPath, '');
-      }
-
-      const exportLine = `export PATH="$PATH:${destDir}"`;
-
-      // 检查是否已存在路径
-      const content = fs.readFileSync(shellConfigPath, 'utf8');
-      const pathRegex = new RegExp(`(^|\\n)export PATH=.*${destDir}.*`, 'm');
-      if (pathRegex.test(content)) {
-        console.log('✅ 环境变量已存在:', destDir);
-        return true;
-      }
-
-      // 追加路径到配置文件
-      fs.appendFileSync(shellConfigPath, `\n${exportLine}\n`);
-      console.log(`✅ 已添加到 ${path.basename(shellConfigPath)}，请执行以下命令生效：\nsource ${shellConfigPath}`);
-      return true;
-    } catch (err) {
-      console.error('❌ 添加环境变量失败:', err.message);
-      return false;
-    }
-  } else {
-    // Windows 环境变量处理
-    try {
-      const regKey = 'HKCU\\Environment';
-      let currentPath = '';
-
-      try {
-        const output = execSync(`REG QUERY "${regKey}" /v Path`, {
-          encoding: 'utf-8',
-          stdio: ['pipe', 'pipe', 'ignore']
-        });
-        const match = output.match(/Path\s+REG_(SZ|EXPAND_SZ)\s+(.*)/);
-        currentPath = match ? match[2].trim() : '';
-      } catch {}
-
-      // 检查路径是否已存在
-      const paths = currentPath.split(';').filter(p => p);
-      if (paths.includes(destDir)) {
-        console.log('✅ 环境变量已存在');
-        return true;
-      }
-
-      // 更新 Path 值
-      const newPath = currentPath ? `${currentPath};${destDir}` : destDir;
-      execSync(`REG ADD "${regKey}" /v Path /t REG_EXPAND_SZ /d "${newPath}" /f`, {
-        stdio: 'inherit'
-      });
-
-      console.log('✅ 已添加到环境变量，请重新启动应用程序使更改生效');
-      return true;
-    } catch (error) {
-      console.error('❌ 添加环境变量失败:', error.message);
-      return false;
-    }
-  }
-}
-
 class Byze {
   version = "byze/v0.2";
 
@@ -160,8 +85,7 @@ class Byze {
             dest = path.join(destDir, 'byze.exe');
         } else if (platform === 'darwin') {
             // macOS 平台路径
-            destDir = path.join(userDir, 'Byze');
-            dest = path.join(destDir, 'byze'); // 假设 macOS 的可执行文件名为 'byze'
+            dest = '/usr/local/bin/byze';
         } else {
             console.error('❌ 不支持的操作系统');
             return resolve(false);
@@ -211,15 +135,15 @@ class Byze {
 
               console.log('🚀 正在运行安装包...');
               const installer = isMacOS
-                ? spawn('open', [dest], { stdio: 'inherit', shell: true })
+                ? spawn('sudo', ['installer', '-pkg', dest, '-target', '/'], { stdio: 'inherit', shell: true })
                 : spawn(dest, [], { stdio: 'inherit', windowsHide: true, shell: true });
 
               installer.on('close', (code) => {
                 if (code === 0) {
-                  console.log('✅ 安装程序已启动/完成');
+                  console.log('✅ 安装程序已完成');
                   resolve(true);
                 } else {
-                  console.error(`❌ 安装程序退出码异常: ${code}`);
+                  console.error(`❌ 安装程序执行失败，退出码: ${code}`);
                   resolve(false);
                 }
               });
@@ -245,15 +169,13 @@ class Byze {
     });
   }
 
-
   // 启动 Byze 服务
   InstallByze() {
     return new Promise((resolve) => {
       const isMacOS = process.platform === 'darwin';
       const userDir = os.homedir();
       const byzeDir = path.join(userDir, 'Byze');
-  
-      // 确保PATH包含Byze目录（兼容跨平台）
+      // 添加临时环境变量
       if (!process.env.PATH.includes(byzeDir)) {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
       }
