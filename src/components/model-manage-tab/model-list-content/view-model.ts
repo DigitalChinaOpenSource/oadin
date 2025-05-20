@@ -13,7 +13,7 @@ import useModelListStore from '@/store/useModelListStore';
 const { confirm } = Modal;
 
 export function useViewModel(props: IModelListContent) {
-  const { modelSourceVal, modelSearchVal, onModelSearch, onModelSourceChange } = props;
+  const { modelSourceVal, modelSearchVal, onModelSearch } = props;
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
   // 接口获取
@@ -268,7 +268,6 @@ export function useViewModel(props: IModelListContent) {
     modelSearchVal,
     modelSourceVal,
     onModelSearch,
-    onModelSourceChange,
     selectModelData,
 
     pagination,

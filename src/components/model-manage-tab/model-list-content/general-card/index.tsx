@@ -55,7 +55,10 @@ export default function GeneralCard(props: IGeneralCardProps) {
       return (
         <Button
           type="primary"
-          onClick={() => onDownloadConfirm?.(modelData)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDownloadConfirm?.(modelData);
+          }}
         >
           <DownloadIcon />
           下载
@@ -110,17 +113,6 @@ export default function GeneralCard(props: IGeneralCardProps) {
         <div className={styles.updateName}>2025-05-19 更新</div>
         {modelData?.can_select && <div className={styles.modelStatus}>已下载</div>}
       </div>
-      {Boolean(modelData?.currentDownload) && (
-        <Progress
-          className={styles.progress}
-          percent={30}
-          size="small"
-          showInfo={false}
-          strokeColor="#5429ff"
-          strokeLinecap="butt"
-        />
-      )}
-
       <div className={styles.handlebar}>{statusToText(modelData)}</div>
     </div>
   );

@@ -1,5 +1,9 @@
-import Styles from './index.module.scss';
 import { useNavigate } from 'react-router-dom';
+import { List } from 'antd';
+import McpCard from '../mcp-card';
+import { useViewModel } from './view-model';
+import Styles from './index.module.scss';
+
 type cardType = {
   title: string;
   content: string;
@@ -8,37 +12,34 @@ type cardType = {
   serviceId: string;
 };
 export default function McpListTab() {
-  const testList: cardType[] = [
-    { serviceId: '1', title: '测试1', content: '测试内容1', icon: '', tags: ['标签1', '标签2'] },
-    { serviceId: '2', title: '测试2', content: '测试内容2', icon: '', tags: ['标签3', '标签4'] },
-  ];
   const navigate = useNavigate();
+  const vm = useViewModel();
   const handelClick = (serviceId: string) => {
     navigate(`/mcp-service-detail?serviceId=${serviceId}&mcpFrom=mcpList`);
   };
   return (
     <div className={Styles.mcpManageList}>
       <div className={Styles.mcpManageListContent}>
-        {testList.map((item) => (
-          <div
-            key={item.serviceId}
-            className={Styles.card}
-            onClick={() => handelClick(item.serviceId)}
-          >
-            <div className={Styles.cardTitle}>{item.title}</div>
-            <div className={Styles.cardContent}>{item.content}</div>
-            <div className={Styles.cardTags}>
-              {item.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className={Styles.tag}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+        <List
+          grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }}
+          dataSource={vm.mcpListData}
+          pagination={
+            vm.mcpListData.length > 0 && {
+              // className: styles.mcpListPagination,
+              align: 'end',
+              // ...vm.pagination,
+              pageSizeOptions: [12, 24, 48, 96],
+              showSizeChanger: true,
+              // onChange: vm.onPageChange,
+              // onShowSizeChange: vm.onShowSizeChange,
+            }
+          }
+          renderItem={(item) => (
+            <List.Item>
+              <McpCard modelData={item} />
+            </List.Item>
+          )}
+        />
       </div>
     </div>
   );
