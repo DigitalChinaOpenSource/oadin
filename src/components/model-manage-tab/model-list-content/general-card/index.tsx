@@ -1,7 +1,7 @@
 import { useRef, useMemo } from 'react';
 import styles from './index.module.scss';
 import { Button, Progress, Tooltip } from 'antd';
-import { IModelAuth } from '../model-manage-tab/types';
+import { IModelAuth } from '../../types';
 import { ModelDataItem } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '@/components/icons';

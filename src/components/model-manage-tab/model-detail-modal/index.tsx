@@ -1,5 +1,5 @@
 import { Modal } from 'antd';
-import GeneralCard from '../../general-card';
+import GeneralCard from '../model-list-content/general-card';
 import { ModelDataItem } from '@/types';
 interface IModelDetailModalProps {
   onDetailModalVisible: (visible: boolean, selectModelData?: ModelDataItem) => void;

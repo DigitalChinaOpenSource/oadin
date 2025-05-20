@@ -1,6 +1,6 @@
 import { Button, Tooltip, Select, List } from 'antd';
 import styles from './index.module.scss';
-import GeneralCard from '@/components/general-card';
+import GeneralCard from '@/components/model-manage-tab/model-list-content/general-card';
 import ModelPathModal from '../modelpath-modal';
 import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
@@ -12,27 +12,16 @@ export interface IModelListContent {
   modelSearchVal: string;
   modelSourceVal: IModelSourceType;
   onModelSearch: (val: string) => void;
-  onModelSourceChange: (val: IModelSourceType) => void;
+  // onModelSourceChange: (val: IModelSourceType) => void;
 }
 
 export default function ModelListContent(props: IModelListContent) {
   const vm = useViewModel(props);
-  const options = [
-    { value: 'local', label: '本地模型' },
-    { value: 'remote', label: '云端模型' },
-  ];
   return (
     <div className={styles.modelListContent}>
       <div className={styles.contentContainer}>
         <div className={styles.titlepath}>
-          <Select
-            className={styles.title}
-            options={options}
-            value={vm.modelSourceVal}
-            placeholder="请选择模型来源"
-            variant="borderless"
-            onChange={vm.onModelSourceChange}
-          />
+          <div className={styles.title}>模型列表</div>
           <Tooltip title="/Users/lc/Library/Application\ Support/">
             <Button
               className={styles.changePath}
