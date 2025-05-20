@@ -3,6 +3,7 @@ import MainLayout from '../components/main-layout';
 import ModelManage from '../pages/model-manage';
 import ServerManage from '../pages/server-manage';
 import McpService from '../pages/mcp-service';
+import McpManageDetail from '../components/mcp-manage/mcp-manage-detail';
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
       {
         path: '/mcp-service',
         element: <McpService />,
+      },
+      {
+        path: '/mcp-service-detail',
+        element: <McpManageDetail />,
       },
     ],
   },
