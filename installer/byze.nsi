@@ -20,18 +20,7 @@ Section "Install"
   # Pre-install
   ExecWait '"$INSTDIR\preinstall.bat"'
 
-  # Add installation directory to the user's Path environment variable
-  ReadRegStr $0 HKCU "Environment" "Path"
-
-  # If the Path variable is empty, we need to add a semicolon before the installation directory
-  StrCmp $0 "" 0 +2
-    StrCpy $0 "$0;"
-
-  # Add the installation directory to the Path variable
-  StrCpy $0 "$0$INSTDIR"
-  WriteRegStr HKCU "Environment" "Path" "$0"
-  SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment"
-
   # Post-install
-  ExecWait '"$INSTDIR\postinstall.bat"'
+  ; Pass the installation directory as an argument to postinstall.bat
+  ExecWait '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 SectionEnd
