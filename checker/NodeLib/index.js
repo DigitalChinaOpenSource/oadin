@@ -95,7 +95,23 @@ class Byze {
     });
   }
 
-  // 从服务器下载 Byze.exe
+  waitForInstallerToExit(interval = 2000) {
+    return new Promise((resolve) => {
+      const check = () => {
+        exec("pgrep -x Installer", (error, stdout) => {
+          if (stdout.trim()) {
+            // Installer still running
+            setTimeout(check, interval);
+          } else {
+            // Installer exited
+            resolve();
+          }
+        });
+      };
+      check();
+    });
+  };
+
   DownloadByze() {
     return new Promise((resolve) => {
       const isMacOS = process.platform === 'darwin';
@@ -131,29 +147,38 @@ class Byze {
             console.log('✅ 下载完成:', dest);
 
             try {
-              await new Promise(resolveDelay => setTimeout(resolveDelay, 1000)); // 稍作等待
+              await new Promise(r => setTimeout(r, 1000)); // 稍作等待
 
               console.log('🚀 正在运行安装包...');
-              const installer = isMacOS
-                ? spawn('sudo', ['installer', '-pkg', dest, '-target', '/'], { stdio: 'inherit', shell: true })
-                : spawn(dest, [], { stdio: 'inherit', windowsHide: true, shell: true });
 
-              installer.on('close', (code) => {
-                if (code === 0) {
-                  console.log('✅ 安装程序已完成');
-                  setTimeout(() => {
-                    resolve(true);
-                  }, 5000);
-                } else {
-                  console.error(`❌ 安装程序执行失败，退出码: ${code}`);
+              if (isMacOS) {
+                spawn('open', [dest], { stdio: 'ignore', detached: true });
+                console.log('🕓 等待用户完成安装...');
+                await waitForInstallerToExit(); // 等待用户关闭 Installer.app
+                console.log('✅ 用户已完成安装');
+                setTimeout(() => resolve(true), 5000);
+              } else {
+                const installer = spawn(dest, [], {
+                  stdio: 'inherit',
+                  windowsHide: true,
+                  shell: true
+                });
+
+                installer.on('close', (code) => {
+                  if (code === 0) {
+                    console.log('✅ 安装程序已完成，延迟 5 秒...');
+                    setTimeout(() => resolve(true), 5000);
+                  } else {
+                    console.error(`❌ 安装程序执行失败，退出码: ${code}`);
+                    resolve(false);
+                  }
+                });
+
+                installer.on('error', (err) => {
+                  console.error(`❌ 启动安装程序失败: ${err.message}`);
                   resolve(false);
-                }
-              });
-
-              installer.on('error', (err) => {
-                console.error(`❌ 启动安装程序失败: ${err.message}`);
-                resolve(false);
-              });
+                });
+              }
             } catch (err) {
               console.error(`❌ 运行安装程序时出错: ${err.message}`);
               resolve(false);
