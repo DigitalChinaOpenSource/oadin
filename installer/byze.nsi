@@ -3,11 +3,11 @@
 !endif
 !define APP_NAME "Byze CLI"
 !define COMPANY_NAME "Digital China"
-!define INSTALL_DIR "$APPDATA\Byze"
+!define INSTALL_DIR "$PROFILE\Byze"
 
 Outfile "..\byze-installer.exe"
 InstallDir "${INSTALL_DIR}"
-RequestExecutionLevel user ; Install to user's AppData, so no admin rights needed by default
+RequestExecutionLevel user ; Install to user's profile, so no admin rights needed by default
 SetCompress auto
 SetCompressor lzma
 
