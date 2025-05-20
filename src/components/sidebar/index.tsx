@@ -21,7 +21,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     const path = location.pathname.split('/')[1] || 'model-manage';
-    setSelectedKey(path);
+    setSelectedKey(path.includes('mcp-service') ? 'mcp-service' : path);
   }, [location]);
 
   const menuItems = [

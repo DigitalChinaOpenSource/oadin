@@ -1,0 +1,46 @@
+.mcpManageDetail {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  gap: 24px;
+  .goBack {
+    display: flex;
+    gap: 4px;
+    align-content: center;
+    cursor: pointer;
+    .backIcon {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+    }
+    .backText {
+      font-size: 14px;
+      line-height: 22px;
+      color:#344054;
+    }
+  }
+  .detailTop {
+    display: flex;
+    justify-content: space-between;
+    .card {
+      display: flex;
+      flex-direction: column;
+      color:red;
+    }
+    .topRight {
+      width: 400px;
+      margin-left: 24px;
+      text-align: right;
+    }
+
+  }
+  .Line {
+    width: 100%;
+    height: 1px;
+    background-color: #C1C6D6;
+  }
+
+}
+
