@@ -182,7 +182,7 @@ services:
                            "model": model,
                            "data": data
                       }
-    text_to_image:
+    text-to-image:
         url: "https://qianfan.baidubce.com/v2/images/generations"
         endpoints: ["POST /v1/text-to-image"] # request to this will use this flavor
         extra_url: ""
@@ -198,7 +198,11 @@ services:
                   config: |
                       {
                          "model": $model,
-                         "prompt": prompt
+                         "prompt": prompt,
+                         "refer_image": image,
+                         "image_type": image_type,
+                         "n":$exists(n) ? n : 1,
+                         "size": $exists(size) ? size : "1024x1024"
                       }
 
                 - converter: header
@@ -211,7 +215,11 @@ services:
                   config: |
                       {
                          "model": $model,
-                         "prompt": prompt
+                         "prompt": prompt,
+                         "refer_image": image,
+                         "image_type": image_type,
+                         "n":$exists(n) ? n : 1,
+                         "size": $exists(size) ? size : "1024x1024"
                       }
 
                 - converter: header
@@ -226,7 +234,7 @@ services:
                           "id": id,
                           "created": created,
                            "data": {
-                               "url": data[0].url
+                               "url": [$map(data, function($v){$v.url})]
                                    }
                       }
         response_from_aog:
@@ -237,6 +245,6 @@ services:
                            "id": id,
                            "created": created,
                            "data": {
-                               "url": data[0].url
+                               "url": [$map(data, function($v){$v})]
                                    }
                       }

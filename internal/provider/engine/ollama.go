@@ -116,11 +116,20 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 			cmd.Wait()
 		}()
 	} else {
-		cmd := exec.Command(o.EngineConfig.ExecPath + "/ollama-serve.bat")
-		err := cmd.Start()
-		if err != nil {
-			logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
-			return fmt.Errorf("failed to start ollama: %v", err)
+		if utils.IpexOllamaSupportGPUStatus() {
+			cmd := exec.Command(o.EngineConfig.ExecPath + "/ollama-serve.bat")
+			err := cmd.Start()
+			if err != nil {
+				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
+				return fmt.Errorf("failed to start ollama: %v", err)
+			}
+		} else {
+			cmd := exec.Command(execFile, "serve")
+			err := cmd.Start()
+			if err != nil {
+				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
+				return fmt.Errorf("failed to start ollama: %v", err)
+			}
 		}
 	}
 

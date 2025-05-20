@@ -1,14 +1,14 @@
 version: "0.2"
 name: openvino # the name should be aligned with file name
 services:
-    text_to_image:
+    text-to-image:
         protocol: "GRPC"
         url: "127.0.0.1:9000"
         endpoints: [""]
         extra_url: ""
         auth_type: ""
         install_raw_routes: # also install routes without aog prefix in url path
-        default_model: "stable-diffusion-v-1-5-ov-fp16"
+        default_model: "OpenVINO/stable-diffusion-v1-5-fp16-ov"
         request_segments: 1 # request
         extra_headers: ""
         request_to_aog:
@@ -17,7 +17,9 @@ services:
                   config: |
                       {
                          "model": $model,
-                         "prompt": prompt 
+                         "prompt": prompt,
+                         "batch":$exists(n) ? n : 1,
+                         "size": $exists(size) ? size : "1024x1024"
                       }
 
                 - converter: header
@@ -30,7 +32,9 @@ services:
                   config: |
                       {
                          "model": $model,
-                         "prompt": prompt 
+                         "prompt": prompt,
+                         "batch":$exists(n) ? n : 1,
+                         "size": $exists(size) ? size : "1024x1024"
                       }
 
                 - converter: header

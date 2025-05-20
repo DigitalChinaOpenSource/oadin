@@ -2,8 +2,10 @@ package utils
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -430,4 +432,39 @@ func StopAOGServer(pidFilePath string) error {
 		}
 	}
 	return nil
+}
+
+func ParseImageData(data []byte) ([][]byte, error) {
+	// Create a reader
+	r := bytes.NewReader(data)
+	var images [][]byte
+	fmt.Println(len(data))
+
+	// First, read the number of images (4 bytes)
+	var imageCount uint32
+	err := binary.Read(r, binary.LittleEndian, &imageCount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image count: %v", err)
+	}
+
+	// Read each image
+	for i := 0; i < int(imageCount); i++ {
+		// Read the image length (4 bytes)
+		var imgLen uint32
+		err := binary.Read(r, binary.LittleEndian, &imgLen)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read image length for image %d: %v", i+1, err)
+		}
+
+		// Read image data
+		imgData := make([]byte, imgLen)
+		_, err = io.ReadFull(r, imgData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read image data for image %d: %v", i+1, err)
+		}
+
+		images = append(images, imgData)
+	}
+
+	return images, nil
 }

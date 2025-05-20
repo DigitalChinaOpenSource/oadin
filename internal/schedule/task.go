@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -13,11 +15,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"google.golang.org/grpc"
-
 	"intel.com/aog/internal/client/grpc/grpc_client"
 	"intel.com/aog/internal/convert"
 	"intel.com/aog/internal/datastore"
@@ -52,7 +54,63 @@ func NewStreamMode(header http.Header) *types.StreamMode {
 	return &types.StreamMode{Mode: mode, Header: header.Clone()}
 }
 
+func HandleRequest(st *ServiceTask) error {
+
+	if st.Request.Service == types.ServiceTextToImage {
+		reqBody := st.Request.HTTP.Body
+		var body map[string]interface{}
+		err := json.Unmarshal(reqBody, &body)
+		if err != nil {
+			return err
+		}
+		imageType, typeOk := body["image_type"].(string)
+		image, imageOk := body["image"].(string)
+		if !typeOk && !imageOk {
+			return nil
+		} else if !typeOk && imageOk {
+			return errors.New("image request param lost")
+		} else if typeOk && !imageOk {
+			return errors.New("image_type request param lost")
+		}
+		if !utils.Contains(types.SupportImageType, imageType) {
+			return errors.New("unsupported image type")
+		}
+		if imageType == types.ImageTypePath && st.Target.Location == types.ServiceSourceRemote {
+			imgData, err := os.ReadFile(image)
+			if err != nil {
+				return err
+			}
+			imgDataBase64Str := base64.StdEncoding.EncodeToString(imgData)
+			body["image"] = imgDataBase64Str
+		} else if imageType == types.ImageTypeUrl && st.Target.Location == types.ServiceSourceLocal {
+			downLoadPath, err := utils.GetDownloadDir()
+			if err != nil {
+				return err
+			}
+			savePath, err := utils.DownloadFile(image, downLoadPath)
+			if err != nil {
+				return err
+			}
+			body["image"] = savePath
+			// todo() Should the original images be deleted after using the local service?
+			//os.Remove(savePath)
+		}
+		newReqBody, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		st.Request.HTTP.Body = newReqBody
+		return nil
+	}
+	return nil
+}
+
 func (st *ServiceTask) Run() error {
+	logger.LogicLogger.Debug("[Service] ServiceTask start run......")
+	err := HandleRequest(st)
+	if err != nil {
+		return err
+	}
 	if st.Target == nil || st.Target.ServiceProvider == nil {
 		panic("[Service] ServiceTask is not dispatched before it goes to Run() " + st.String())
 	}
@@ -75,7 +133,7 @@ func (st *ServiceTask) Run() error {
 		ServiceName:   st.Request.Service,
 		Status:        1,
 	}
-	err := ds.Get(context.Background(), sp)
+	err = ds.Get(context.Background(), sp)
 	if err != nil {
 		return fmt.Errorf("service Provider not found for %s of Service %s", st.Target.Location, st.Request.Service)
 	}
@@ -95,7 +153,7 @@ func (st *ServiceTask) Run() error {
 	content := st.Request.HTTP
 
 	// todo Here, the converter of grpc needs to be implemented later.
-
+	logger.LogicLogger.Debug("[Service] ServiceTask conversion......")
 	if conversionNeeded {
 		logger.LogicLogger.Info("[Service] Converting Request", "taskid", st.Schedule.Id, "from flavor", requestFlavor.Name(), "to flavor", targetFlavor.Name())
 		requestCtx := convert.ConvertContext{"stream": st.Target.Stream}
@@ -122,7 +180,9 @@ func (st *ServiceTask) Run() error {
 	} else {
 		resp, err = st.invokeHTTPServiceProvider(sp, content)
 	}
-	defer resp.Body.Close()
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		logger.LogicLogger.Error("[Service] Failed to invoke service provider", "taskid", st.Schedule.Id, "error", err.Error())
 		return fmt.Errorf("[Service] Failed to invoke service provider: %s", err.Error())
@@ -267,9 +327,9 @@ func (st *ServiceTask) Run() error {
 	return nil
 }
 
-func (st *ServiceTask) invokeGRPCServiceProvider(sp *types.ServiceProvider, content types.HTTPContent) (*http.Response, error) {
+func (st *ServiceTask) invokeGRPCServiceProvider(sp *types.ServiceProvider, content types.HTTPContent) (resp *http.Response, err error) {
 	invokeURL := sp.URL
-	resp := &http.Response{}
+	resp = &http.Response{}
 
 	if sp.ServiceName != types.ServiceTextToImage {
 		return nil, fmt.Errorf("currently only support text to image service")
@@ -296,15 +356,52 @@ func (st *ServiceTask) invokeGRPCServiceProvider(sp *types.ServiceProvider, cont
 			logger.LogicLogger.Error("[Service] Failed to get prompt from request body", "taskid", st.Schedule.Id)
 			return nil, fmt.Errorf("failed to get prompt from request body")
 		}
+		batch, ok := requestMap["batch"].(float64)
+		if !ok {
+			batch = float64(1)
+		}
+		height := 1024
+		width := 1024
+		size, ok := requestMap["size"].(string)
+		if ok {
+			sizeStr := strings.Split(size, "x")
+			num, err := strconv.Atoi(sizeStr[0])
+			if err != nil {
+				logger.LogicLogger.Error("[Service] Failed to parse size from request body", "taskid", st.Schedule.Id, "error", err)
+				return nil, err
+			}
+			height = num
+
+			num, err = strconv.Atoi(sizeStr[1])
+			if err != nil {
+				logger.LogicLogger.Error("[Service] Failed to parse size from request body", "taskid", st.Schedule.Id, "error", err)
+				return nil, err
+			}
+			width = num
+		}
+
 		promptBytes := []byte(prompt)
 		rawContents := make([][]byte, 0) // ovms 实际接收值
 		rawContents = append(rawContents, promptBytes)
+		rawContents = append(rawContents, []byte(fmt.Sprintf("%d", int(batch))))
+		rawContents = append(rawContents, []byte(strconv.Itoa(height)))
+		rawContents = append(rawContents, []byte(strconv.Itoa(width)))
 
 		inferTensorInputs := make([]*grpc_client.ModelInferRequest_InferInputTensor, 0)
 		inferTensorInputs = append(inferTensorInputs, &grpc_client.ModelInferRequest_InferInputTensor{
 			Name:     "prompt",
 			Datatype: "BYTES",
 			Shape:    []int64{1},
+		}, &grpc_client.ModelInferRequest_InferInputTensor{
+			Name:     "batch",
+			Datatype: "BYTES",
+			Shape:    []int64{1},
+		}, &grpc_client.ModelInferRequest_InferInputTensor{
+			Name:     "height",
+			Datatype: "BYTES",
+		}, &grpc_client.ModelInferRequest_InferInputTensor{
+			Name:     "width",
+			Datatype: "BYTES",
 		})
 
 		inferOutputs := []*grpc_client.ModelInferRequest_InferRequestedOutputTensor{
@@ -322,25 +419,38 @@ func (st *ServiceTask) invokeGRPCServiceProvider(sp *types.ServiceProvider, cont
 
 		inferResponse, err := client.ModelInfer(context.Background(), grpcReq)
 		if err != nil {
+			logger.LogicLogger.Error("[Service] Error processing InferRequest", "taskid", st.Schedule.Id, "error", err)
 			return nil, err
 		}
 
-		imageData := inferResponse.RawOutputContents[0]
-		now := time.Now()
-		randNum := rand.Intn(10000)
-		DownloadPath, _ := utils.GetDownloadDir()
-		imageName := fmt.Sprintf("%d%02d%02d%02d%02d%02d%04d.png", now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), randNum)
-		imagePath := fmt.Sprintf("%s/%s", DownloadPath, imageName)
-		err = os.WriteFile(imagePath, imageData, 0o644)
+		imageList, err := utils.ParseImageData(inferResponse.RawOutputContents[0])
 		if err != nil {
+			logger.LogicLogger.Error("[Service] Failed to parse image data", "taskid", st.Schedule.Id, "error", err)
 			return nil, err
 		}
 
-		resp.Header = make(http.Header)
-		resp.Header.Set("Content-Type", "application/json")
+		outputList := make([]string, 0)
+		fmt.Println("InferResponse:", len(inferResponse.RawOutputContents))
+		for i, imageData := range imageList {
+			now := time.Now()
+			randNum := rand.Intn(10000)
+			DownloadPath, _ := utils.GetDownloadDir()
+			imageName := fmt.Sprintf("%d%02d%02d%02d%02d%02d%04d%01d.png", now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), randNum, i)
+			imagePath := fmt.Sprintf("%s/%s", DownloadPath, imageName)
+			err = os.WriteFile(imagePath, imageData, 0o644)
+			if err != nil {
+				logger.LogicLogger.Error("[Service] Failed to write image file", "taskid", st.Schedule.Id, "error", err)
+				continue
+			}
+
+			outputList = append(outputList, imagePath)
+		}
+		respHeader := make(http.Header)
+		respHeader.Set("Content-Type", "application/json")
+		resp.Header = respHeader
 
 		respBody := map[string]interface{}{
-			"local_path": imagePath,
+			"local_path": outputList,
 		}
 		respBodyBytes, err := json.Marshal(respBody)
 		if err != nil {
@@ -480,11 +590,7 @@ func (st *ServiceTask) invokeHTTPServiceProvider(sp *types.ServiceProvider, cont
 		logger.LogicLogger.Warn("[Service] Service Provider returns Error", "taskid", st.Schedule.Id,
 			"status_code", resp.StatusCode, "body", sbody)
 		resp.Body.Close()
-		return nil, &types.HTTPErrorResponse{
-			StatusCode: resp.StatusCode,
-			Header:     resp.Header.Clone(),
-			Body:       b,
-		}
+		return resp, errors.New("[Service] Service Provider API returns Error err: \n" + sbody)
 	}
 	var body []byte
 	// second request

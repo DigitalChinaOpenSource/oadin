@@ -220,6 +220,8 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	go ListenModelEngineHealth()
+
 	// Run the server
 	err = aogServer.Run(ctx, config.GlobalAOGEnvironment.ApiHost)
 	if err != nil {
@@ -1105,7 +1107,8 @@ func PullHandler(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println("Pull model success!")
+	fmt.Println("The model file is being downloaded in the background ... please wait ...")
+	fmt.Println("You can check the model status with the command: aog get models")
 }
 
 func DeleteModelHandler(cmd *cobra.Command, args []string) {
@@ -1321,4 +1324,63 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 		},
 	}
 	return cmd
+}
+
+func ListenModelEngineHealth() {
+	ds := datastore.GetDefaultDatastore()
+
+	sp := &types.ServiceProvider{
+		ServiceSource: types.ServiceSourceLocal,
+	}
+
+	OpenVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
+	OllamaEngine := provider.GetModelEngine(types.FlavorOllama)
+
+	for {
+		list, err := ds.List(context.Background(), sp, &datastore.ListOptions{Page: 0, PageSize: 100})
+		if err != nil {
+			logger.EngineLogger.Error("[Engine Listen]List service provider failed: ", err.Error())
+			continue
+		}
+
+		if len(list) == 0 {
+			continue
+		}
+
+		engineList := make([]string, 0)
+		for _, item := range list {
+			sp := item.(*types.ServiceProvider)
+			if utils.Contains(engineList, sp.Flavor) {
+				continue
+			}
+
+			engineList = append(engineList, sp.Flavor)
+		}
+
+		for _, engine := range engineList {
+			if engine == types.FlavorOllama {
+				err := OllamaEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Ollama engine health check failed: ", err.Error())
+					err := OllamaEngine.StartEngine(types.EngineStartModeDaemon)
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Ollama engine start failed: ", err.Error())
+						continue
+					}
+				}
+			} else if engine == types.FlavorOpenvino {
+				err := OpenVINOEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
+					err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
+						continue
+					}
+				}
+			}
+		}
+
+		time.Sleep(60 * time.Second)
+	}
 }

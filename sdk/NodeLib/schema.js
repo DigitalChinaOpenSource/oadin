@@ -510,7 +510,7 @@ const chatResponse = {
         },
         model: { type: "string" }
     },
-    required: ["created_at", "id", "message", "model"]
+    required: ["message", "model"]
 };
 
 
@@ -550,12 +550,15 @@ const generateResponse = {
     required: ["model", "created_at", "message"]
 }
 
-// ========= text_to_image ==========
+// ========= text-to-image ==========
 const textToImageRequest = {
     type: "object",
     properties: {
         model: { type: "string" },
-        prompt: { type: "string" }
+        prompt: { type: "string" },
+        n: { type: "integer" },
+        size: { type: "string"},
+        image: { type: "string" }
     },
     required: ["prompt"]
 };
@@ -566,7 +569,12 @@ const textToImageResponse = {
         data: {
             type: "object",
             properties: {
-                url: { type: "string" }
+                url: { 
+                    type: "array",
+                    items: {
+                        type: "string"
+                    }
+                }
             },
         },
         id: { type: "string" },

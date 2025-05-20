@@ -496,8 +496,11 @@ func (o *OpenvinoProvider) generateGraphPbtxt(modelName, modelType string) error
 
 	var template string
 	switch modelType {
-	case "text_to_image":
+	case "text-to-image":
 		template = fmt.Sprintf(`input_stream: "OVMS_PY_TENSOR:prompt"
+input_stream: "OVMS_PY_TENSOR_BATCH:batch"
+input_stream: "OVMS_PY_TENSOR_HEIGHT:height"
+input_stream: "OVMS_PY_TENSOR_WIDTH:width"
 output_stream: "OVMS_PY_TENSOR:image"
 
 node {
@@ -506,6 +509,9 @@ node {
   input_side_packet: "PYTHON_NODE_RESOURCES:py"
 
   input_stream: "INPUT:prompt"
+  input_stream: "BATCH:batch"
+  input_stream: "HEIGHT:height"
+  input_stream: "WIDTH:width"
   output_stream: "OUTPUT:image"
   node_options: {
     [type.googleapis.com/mediapipe.PythonExecutorCalculatorOptions]: {

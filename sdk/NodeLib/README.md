@@ -52,7 +52,7 @@ aog.GetServices().then((result) => {
 
 // aog install service
 const data = {
-    service_name: "chat/embed/generate/text_to_image",
+    service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
     hybrid_policy: "default/always_local/always_remote",
     flavor_name: "ollama/openai/...",
@@ -67,7 +67,7 @@ aog.CreateService(data).then((result) => {
 
 // aog edit service
 const data = {
-    service_name: "chat/embed/generate/text_to_image",
+    service_name: "chat/embed/generate/text-to-image",
     hybrid_policy: "default/always_local/always_remote",
     remote_provider: "",
     local_provider: ""
@@ -85,7 +85,7 @@ aog.GetModels().then((result) => {
 // aog install model
 const data = {
     model_name: "llama2",
-    service_name: "chat/embed/generate/text_to_image",
+    service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
     provider_name: "local_ollama_chat/remote_openai_chat/...",
 }; // required: model_name, service_name, service_source
@@ -97,7 +97,7 @@ aog.InstallModel(data).then((result) => {
 // aog delete model
 const data = {
     model_name: "llama2",
-    service_name: "chat/embed/generate/text_to_image",
+    service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
     provider_name: "local_ollama_chat/remote_openai_chat/...",
 }; // required: model_name, service_name, service_source
@@ -113,7 +113,7 @@ aog.GetServiceProviders().then((result) => {
 
 // aog install serice_provider
 const data = {
-    service_name: "chat/embed/generate/text_to_image",
+    service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
     flavor_name: "ollama/openai/...",
     provider_name: "local_ollama_chat/remote_openai_chat/...",
@@ -132,7 +132,7 @@ bzye.InstallserviceProvider(data).then((result) => {
 
 // aog edit serice_provider
 const data = {
-    service_name: "chat/embed/generate/text_to_image",
+    service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
     flavor_name: "ollama/openai/...",
     provider_name: "local_ollama_chat/remote_openai_chat/...",
@@ -166,7 +166,7 @@ aog.ImportConfig("path/to/.aog").then((result) => {
 
 // aog export config
 const data = {
-    service_name: "chat/embed/generate/text_to_image"
+    service_name: "chat/embed/generate/text-to-image"
 };
 
 aog.ExportConfig(data).then((result) => {

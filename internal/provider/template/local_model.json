@@ -385,7 +385,7 @@
       "size": "563MB"
     }
   ],
-  "text_to_image": [
+  "text-to-image": [
     {
       "id": "1ef250f0",
       "name": "OpenVINO/FLUX.1-schnell-fp16-ov",

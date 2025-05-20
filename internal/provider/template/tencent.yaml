@@ -215,7 +215,7 @@ services:
                  "model": model,
                  "data": data
             }
-  text_to_image:
+  text-to-image:
     url: "https://hunyuan.tencentcloudapi.com/"
     endpoints: [ "POST /v1/text-to-image" ] # request to this will use this flavor
     extra_url: ""

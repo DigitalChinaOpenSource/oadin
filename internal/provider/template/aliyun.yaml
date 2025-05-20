@@ -215,7 +215,7 @@ services:
                            "model": model,
                            "data": data
                       }
-    text_to_image:
+    text-to-image:
         url: "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis"
         endpoints: [ "POST /v1/text-to-image" ] # request to this will use this flavor
         extra_url: "https://dashscope.aliyuncs.com/api/v1/tasks"
@@ -235,7 +235,10 @@ services:
                          "input": {
                                   "prompt": prompt 
                                   },
-                         "parameters": parameters
+                        "parameters": {
+                                  "n":$exists(n) ? n : 1,
+                                  "size": $exists(size) ? size : "1024x1024"
+                                  }
                       }
 
                 - converter: header
@@ -251,7 +254,10 @@ services:
                          "input": {
                                   "prompt": prompt 
                                   },
-                         "parameters": parameters
+                         "parameters": {
+                                  "n":$exists(n) ? n : 1,
+                                  "size": $exists(size) ? size : "1024x1024"
+                                  }
                       }
 
                 - converter: header
@@ -265,7 +271,7 @@ services:
                       {
                           "id": request_id,
                           "data": {
-                              "url": output.results[0].url
+                              "url": [$map(output.results, function($v){$v.url})]
                                   }
                       }
         response_from_aog:
@@ -275,6 +281,6 @@ services:
                       {
                            "id": request_id,
                            "data": {
-                              "url": output.results[0].url
+                              "url": [$map(output.results, function($v){$v.url})]
                                   }
                       }

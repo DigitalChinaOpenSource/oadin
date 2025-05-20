@@ -266,8 +266,7 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 			}
 		} else {
 			m := &types.Model{
-				ProviderName: sp.ProviderName,
-				ModelName:    task.Request.Model,
+				ModelName: task.Request.Model,
 			}
 			err := ds.Get(context.Background(), m)
 			if err != nil {

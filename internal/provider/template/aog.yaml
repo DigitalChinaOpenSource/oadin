@@ -11,7 +11,7 @@ services:
         endpoints: ["POST /embed"]
     text_to_speech:
         endpoints: ["POST /text-to-speech", "GET /text-to-speech"]
-    text_to_image:
-        endpoints: ["POST /text_to_image", "GET /text_to_image"]
+    text-to-image:
+        endpoints: ["POST /text-to-image", "GET /text-to-image"]
     health:
         endpoints: ["GET /health"]

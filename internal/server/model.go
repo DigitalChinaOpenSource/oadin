@@ -78,9 +78,6 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 	m := new(types.Model)
 	m.ProviderName = sp.ProviderName
 	m.ModelName = request.ModelName
-	if sp.ServiceSource == types.ServiceSourceLocal {
-		m.ModelName = strings.ToLower(request.ModelName)
-	}
 
 	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -124,9 +121,6 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	m := new(types.Model)
 	m.ProviderName = request.ProviderName
 	m.ModelName = request.ModelName
-	if request.ServiceSource == types.ServiceSourceLocal {
-		m.ModelName = strings.ToLower(request.ModelName)
-	}
 
 	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {

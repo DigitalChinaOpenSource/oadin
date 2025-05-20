@@ -9,7 +9,7 @@ const addFormats = require('ajv-formats');
 const EventEmitter = require('events');
 const AdmZip = require('adm-zip');
 const { spawn } = require('child_process');
-const { exec } = require('child_process');
+const { execSync } = require('child_process');
 const { promises: fsPromises } = require("fs");
 
 const schemas = require('./schema.js');
@@ -289,53 +289,29 @@ class Aog {
     });
   }
 
-  // run `aog install chat`
-  InstallChat(remote = null) {
-    return new Promise((resolve) => {
-      const userDir = os.homedir();
-      const aogPath = path.join(userDir, 'AOG', 'aog.exe');
-      process.env.PATH = `${process.env.PATH};${aogPath}`;
-
-      const child = spawn(aogPath, ['install', 'chat'], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
-
-      child.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-
-        if (data.toString().includes('(y/n)')) {
-          if (remote) {
-            child.stdin.write('${autoAnswer}\n');
-          } else {
-            child.stdin.write('n\n');
-          }
-        }
-      });
-
-      child.on('close', (code) => {
-        if (code === 0) {
-          console.log('安装 aog 聊天插件成功');
-          resolve(true);
-        } else {
-          console.error(`安装 aog 聊天插件失败，退出码: ${code}`);
-          resolve(false);
-        }
-      });
-
-      child.on('error', (err) => {
-        console.error(`启动 aog 安装命令失败: ${err.message}`);
-        resolve(false);
-      });
-
-      child.unref();
-    });
-  }
-
   // get services
   async GetServices() {
     try {
       const res = await this.client.get('/service');
-      return this.validateSchema(schemas.getServicesSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.getServicesSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
     } catch (error) {
-      throw new Error(`获取服务失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -344,96 +320,194 @@ class Aog {
     try {
       this.validateSchema(schemas.installServiceRequestSchema, data);
       const res = await this.client.post('/service', data);
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null
+        };
+      }
+      await this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      throw new Error(`创建服务失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
-  
-  // eidt service
+
+  // update service
   async UpdateService(data) {
     try {
+      this.validateSchema(schemas.updateServiceRequestSchema, data);
       const res = await this.client.put('/service', data);
-      return res.data;
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      throw new Error(`更新服务失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
-
   }
 
-  // 查get models
+  // get models
   async GetModels() {
     try {
       const res = await this.client.get('/model');
-      return this.validateSchema(schemas.getModelsSchema, res.data);
-    } catch (error) { 
-      throw new Error(`获取模型失败: ${error.message}`);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.getModelsSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
-  // install model
+  // 安装模型
   async InstallModel(data) {
     try {
       this.validateSchema(schemas.installModelRequestSchema, data);
       const res = await this.client.post('/model', data);
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      throw new Error(`安装模型失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
-  // install model（stream）
+  // stream install model
   async InstallModelStream(data) {
     try {
       this.validateSchema(schemas.installModelRequestSchema, data);
     } catch (error) {
-      throw new Error(`流式安装模型失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
 
     const config = { responseType: 'stream' };
-
     try {
-      const res = await this.client.post('/model/stream', data, config);
-      const eventEmitter = new EventEmitter();
+        const res = await this.client.post('/model/stream', data, config);
+        const eventEmitter = new EventEmitter();
 
-      res.data.on('data', (chunk) => {
-        try {
-          const rawData = chunk.toString().trim();
-          const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
-          const response = JSON.parse(jsonString);
+        res.data.on('data', (chunk) => {
+            try {
+              // 解析流数据
+              const rawData = chunk.toString().trim();
+              const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
+              const response = JSON.parse(jsonString);
 
-          eventEmitter.emit('data', response);
+              // 触发事件，传递解析后的数据
+              eventEmitter.emit('data', response);
 
-          if (response.status === 'success') {
-              eventEmitter.emit('end', response);
-          }
-        } catch (err) {
-            eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
-        }
-      });
+              // 如果状态为 "success"，触发完成事件
+              if (response.status === 'success') {
+                eventEmitter.emit('end', response);
+              }
 
-      res.data.on('error', (err) => {
+              if (response.status === 'canceled') {
+                eventEmitter.emit('canceled', response);
+              }
+
+              if (response.status === 'error') {
+                eventEmitter.emit('end', response);
+              }
+
+            } catch (err) {
+              eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+            }
+        });
+
+        res.data.on('error', (err) => {
           eventEmitter.emit('error', `流式响应错误: ${err.message}`);
-      });
+        });
 
-      res.data.on('end', () => {
-          eventEmitter.emit('end');
-      });
+        // res.data.on('end', () => {
+        //     eventEmitter.emit('end'); // 触发结束事件
+        // });
 
-      return eventEmitter; 
+        return eventEmitter;
     } catch (error) {
-      throw new Error(`流式安装模型失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      }
     }
-  }
+}
 
-  // cancel install model (stream)
+  // cancel install model
   async CancelInstallModel(data) {
     try {
       this.validateSchema(schemas.cancelModelStreamRequestSchema, data);
       const res = await this.client.post('/model/stream/cancel', data);
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      throw new Error(`取消安装模型失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -442,41 +516,105 @@ class Aog {
     try {
       this.validateSchema(schemas.deleteModelRequestSchema, data);
       const res = await this.client.delete('/model', { data });
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null
+      };
     } catch (error) {
-      throw new Error(`卸载模型失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
-  // get service providers
+  // 查看服务提供商
   async GetServiceProviders() {
     try {
       const res = await this.client.get('/service_provider');
-      return this.validateSchema(schemas.getServiceProvidersSchema, res.data);
-    } catch (error) {
-      throw new Error(`获取服务提供商失败: ${error.message}`);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.getServiceProvidersSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
-  // install service provider
+  // Install service provider
   async InstallServiceProvider(data) {
     try {
       this.validateSchema(schemas.installServiceProviderRequestSchema, data);
       const res = await this.client.post('/service_provider', data);
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null,
+      };
     } catch (error) {
-      throw new Error(`新增服务提供商失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
-  // edit service provider
+  // update service provider
   async UpdateServiceProvider(data) {
     try {
       this.validateSchema(schemas.updateServiceProviderRequestSchema, data);
       const res = await this.client.put('/service_provider', data);
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null,
+      };
     } catch (error) {
-      throw new Error(`更新服务提供商失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
@@ -485,29 +623,67 @@ class Aog {
     try {
       this.validateSchema(schemas.deleteServiceProviderRequestSchema, data);
       const res = await this.client.delete('/service-provider', { data });
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null,
+      };
     } catch (error) {
-      throw new Error(`删除服务提供商失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
-  // import config
+  // import .aog config
   async ImportConfig(path) {
     try {
       const data = await fsPromises.readFile(path, 'utf8');
       const res = await this.client.post('/service/import', data);
-      return this.validateSchema(schemas.ResponseSchema, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.ResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: null,
+      };
     } catch (error) {
-      throw new Error(`导入配置文件失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
     }
   }
 
-  // export config
+  // export .aog config
   async ExportConfig(data = {}) {
     try{
       this.validateSchema(schemas.exportRequestSchema, data);
       const res = await this.client.post('/service/export', data);
-
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'AOG');
       const dest = path.join(destDir, '.aog');
@@ -517,7 +693,9 @@ class Aog {
               console.error(`创建目录失败: ${err.message}`);
               return;
           }
+
           const fileContent = JSON.stringify(res.data, null, 2);
+
           fs.writeFile(dest, fileContent, (err) => {
               if (err) {
                   console.error(`写入文件失败: ${err.message}`);
@@ -527,113 +705,228 @@ class Aog {
           });
       });
 
-      return res.data;
-    } catch (error) {
-      throw new Error(`导出配置文件失败: ${error.message}`);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
-  // get models availiable
-  async GetModelsAvailiable(){
+  // get models from engine （deprecated）
+  async GetModelsAvailiable() {
     try {
       const res = await this.client.get('/services/models');
-      return this.validateSchema(schemas.modelsResponse, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || null,
+        }
+      }
+      this.validateSchema(schemas.modelsResponse, res.data);
     } catch (error) {
-      throw new Error(`获取模型列表失败: ${error.message}`);
+      return { status: 0, err_msg: `获取模型列表失败: ${error.message}`, data: null };
     }
   }
 
   // get models recommended
-  async GetModelsRecommended(){
+  async GetModelsRecommended() {
     try {
       const res = await this.client.get('/model/recommend');
-      return this.validateSchema(schemas.recommendModelsResponse, res.data);
-    } catch (error) {
-      throw new Error(`获取推荐模型列表失败: ${error.message}`);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.recommendModelsResponse, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
   // get models supported
-  async GetModelsSupported(data){
+  async GetModelsSupported(data) {
     try {
       this.validateSchema(schemas.getModelsSupported, data);
-      const res = await this.client.get('/model/support', {params: data});
-      return this.validateSchema(schemas.recommendModelsResponse, res.data);
-    } catch (error) {
-      throw new Error(`获取支持模型列表失败: ${error.message}`);
+      const res = await this.client.get('/model/support', { params: data });
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.recommendModelsResponse, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
+    }
+  }
+
+  // get models supported from smartvision
+  async GetSmartvisionModelsSupported(data) {
+    try {
+      this.validateSchema(schemas.SmartvisionModelSupportRequest, data);
+      const res = await this.client.get('/model/support/smartvision', { params: data });
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.SmartvisionModelSupport, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data.data,
+      };
+    } catch (error){    
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
   // chat
   async Chat(data) {
-    this.validateSchema(schemas.chatRequest, data);
-  
-    // wheather stream is true, set responseType to stream
-    const config = { responseType: data.stream ? 'stream' : 'json' };
-    const res = await this.client.post('/services/chat', data, config);
-  
-    if (data.stream) {
-      const eventEmitter = new EventEmitter();
-  
-      res.data.on('data', (chunk) => {
-        try {
-          const rawData = chunk.toString().trim();
-          const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
-          const response = JSON.parse(jsonString);
-          eventEmitter.emit('data', response);
-        } catch (err) {
-          eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
-        }
-      });
-  
-      res.data.on('error', (err) => {
-        eventEmitter.emit('error', `流式响应错误: ${err.message}`);
-      });
+    try {
+      this.validateSchema(schemas.chatRequest, data);
 
-      res.data.on('end', () => {
-        eventEmitter.emit('end');
-      });
-  
-      return eventEmitter;
-    } else {
-      return this.validateSchema(schemas.chatResponse, res.data);
+      // wheather to use stream
+      const config = { responseType: data.stream ? 'stream' : 'json' };
+      const res = await this.client.post('/services/chat', data, config);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      };
+
+      if (data.stream) {
+        const eventEmitter = new EventEmitter();
+
+        res.data.on('data', (chunk) => {
+          try {
+            const rawData = chunk.toString().trim();
+            const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
+            const response = JSON.parse(jsonString);
+            eventEmitter.emit('data', response); // 触发事件，实时传输数据
+          } catch (err) {
+            eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+          }
+        });
+
+        res.data.on('error', (err) => {
+          eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+        });
+
+        res.data.on('end', () => {
+          eventEmitter.emit('end'); // 触发结束事件
+        });
+
+        return eventEmitter;
+      } else {
+        // 非流式响应处理
+        await this.validateSchema(schemas.chatResponse, res.data);
+        return {
+          code: 200,
+          msg: res.data.message || null,
+          data: res.data,
+        };
+      };
+    } catch (error) {
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
 
-  // generate
+  // Generate
   async Generate(data) {
-    this.validateSchema(schemas.generateRequest, data);
-
-    const config = { responseType: data.stream ? 'stream' : 'json' };
-    const res = await this.client.post('/services/generate', data, config);
-
-    if (data.stream) {
-      const eventEmitter = new EventEmitter();
-
-      res.data.on('data', (chunk) => {
-        try {
-          const response = JSON.parse(chunk.toString());
-          if (response) {
-            this.validateSchema(schemas.generateResponse, response);
-            eventEmitter.emit('data', response.response);
+    try {
+      this.validateSchema(schemas.generateRequest, data);
+  
+      const config = { responseType: data.stream ? 'stream' : 'json' };
+      const res = await this.client.post('/services/generate', data, config);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+  
+      if (data.stream) {
+        const eventEmitter = new EventEmitter();
+  
+        res.data.on('data', (chunk) => {
+          try {
+            const response = JSON.parse(chunk.toString());
+            if (response) {
+              this.validateSchema(schemas.generateResponse, response);
+              eventEmitter.emit('data', response.response); // 逐步传输响应内容
+            }
+          } catch (err) {
+            eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
           }
-        } catch (err) {
-          eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
-        }
-      });
-
-      res.data.on('error', (err) => {
-        eventEmitter.emit('error', `流式响应错误: ${err.message}`);
-      });
-
-      res.data.on('end', () => {
-        eventEmitter.emit('end');
-      });
-
-      return eventEmitter; 
-    } else {
-      return this.validateSchema(schemas.generateResponse, res.data);
+        });
+  
+        res.data.on('error', (err) => {
+          eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+        });
+  
+        res.data.on('end', () => {
+          eventEmitter.emit('end');
+        });
+  
+        return eventEmitter;
+      } else {
+        // 非流式响应处理
+        await this.validateSchema(schemas.generateResponse, res.data);
+        return {
+          code: 200,
+          msg: res.data.message || null,
+          data: res.data,
+        };
+      }
+    } catch (error) {
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
   
@@ -641,10 +934,26 @@ class Aog {
   async TextToImage(data) {
     try {
       this.validateSchema(schemas.textToImageRequest, data);
-      const res = await this.client.post('/services/text_to_image', data);
-      return this.validateSchema(schemas.textToImageResponse, res.data);
+      const res = await this.client.post('/services/text-to-image', data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      };
+      await this.validateSchema(schemas.textToImageResponse, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data,
+      };
     } catch (error) {
-      throw new Error(`生图服务请求失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
@@ -653,13 +962,29 @@ class Aog {
     try {
       this.validateSchema(schemas.embeddingRequest, data);
       const res = await this.client.post('/services/embed', data);
-      return this.validateSchema(schemas.embeddingResponse, res.data);
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      };
+      await this.validateSchema(schemas.embeddingResponse, res.data);
+      return {
+        code: 200,
+        msg: res.data.message || null,
+        data: res.data,
+      };
     } catch (error) {
-      throw new Error(`Embed服务请求失败: ${error.message}`);
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message,
+        data: null,
+      };
     }
   }
 
-  // 
+  // 用于一键安装 AOG 和 导入配置
   async AogInit(path){
     const isAogAvailable = await this.IsAogAvailiable();
     if (isAogAvailable) {

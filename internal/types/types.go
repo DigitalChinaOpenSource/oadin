@@ -30,7 +30,11 @@ const (
 	ServiceModels      = "models"
 	ServiceGenerate    = "generate"
 	ServiceEmbed       = "embed"
-	ServiceTextToImage = "text_to_image"
+	ServiceTextToImage = "text-to-image"
+
+	ImageTypeUrl    = "url"
+	ImageTypePath   = "path"
+	ImageTypeBase64 = "base64"
 
 	HybridPolicyDefault = "default"
 	HybridPolicyLocal   = "always_local"
@@ -58,6 +62,7 @@ var (
 	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeToken}
 	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorOpenvino}
 	SupportModelEngine  = []string{FlavorOpenvino, FlavorOllama}
+	SupportImageType    = []string{ImageTypeUrl, ImageTypeBase64, ImageTypePath}
 )
 
 type HTTPContent struct {

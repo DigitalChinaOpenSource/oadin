@@ -56,7 +56,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 	sp.Flavor = request.ApiFlavor
 
 	if request.ApiFlavor == types.FlavorOllama && request.ServiceName == types.ServiceTextToImage {
-		return nil, fmt.Errorf("Ollama not support  text_to_image service")
+		return nil, fmt.Errorf("Ollama not support  text-to-image service")
 	}
 
 	m.ProviderName = request.ProviderName
@@ -166,22 +166,23 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 				}
 			}
 
-			if !isPulled {
-				m.ProviderName = sp.ProviderName
-				m.ModelName = recommendConfig.ModelName
+			m.ProviderName = sp.ProviderName
+			m.ModelName = recommendConfig.ModelName
 
-				err = s.Ds.Get(ctx, m)
-				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
-					logger.LogicLogger.Error("Get model from db error:", err)
-					return nil, bcode.ErrServer
-				} else if errors.Is(err, datastore.ErrEntityInvalid) {
-					m.Status = "downloading"
-					err = s.Ds.Add(ctx, m)
-					if err != nil {
-						logger.LogicLogger.Error("Add model to db error:", err)
-						return nil, bcode.ErrAddModel
-					}
+			err = s.Ds.Get(ctx, m)
+			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+				logger.LogicLogger.Error("Get model from db error:", err)
+				return nil, bcode.ErrServer
+			} else if errors.Is(err, datastore.ErrEntityInvalid) {
+				m.Status = "downloading"
+				err = s.Ds.Add(ctx, m)
+				if err != nil {
+					logger.LogicLogger.Error("Add model to db error:", err)
+					return nil, bcode.ErrAddModel
 				}
+			}
+
+			if !isPulled {
 				if m.Status == "failed" {
 					m.Status = "downloading"
 				}
@@ -771,7 +772,7 @@ func getRecommendConfig(service string) types.RecommendConfig {
 		return types.RecommendConfig{
 			ModelEngine:       types.FlavorOpenvino,
 			ModelName:         "OpenVINO/stable-diffusion-v1-5-fp16-ov",
-			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ovms_windows.zip",
+			EngineDownloadUrl: "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ovms_windows.zip",
 		}
 	default:
 		return types.RecommendConfig{}

@@ -156,7 +156,7 @@
       "max_output": 0
     }
   ],
-  "text_to_image":
+  "text-to-image":
   [
     {
       "name": "wanx2.1-t2i-turbo",
