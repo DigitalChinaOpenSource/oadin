@@ -1,3 +1,4 @@
+/** 标签渲染组件，包含溢出省略逻辑 */
 import { useRef, useState, useLayoutEffect } from 'react';
 import { Tag, Tooltip } from 'antd';
 import styles from './index.module.scss';

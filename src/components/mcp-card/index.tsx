@@ -1,25 +1,18 @@
-import { useRef, useMemo } from 'react';
+import { useMemo } from 'react';
 import styles from './index.module.scss';
 import { Button, Progress, Tooltip } from 'antd';
-import { IModelAuth } from '../../types';
 import { ModelDataItem } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '@/components/icons';
-import TagsRender from '../../../tags-render';
+import TagsRender from '@/components/tags-render';
 
-export interface IGeneralCardProps {
-  // 是否用于详情展示
-  isDetail?: boolean;
+export interface IMcpCardProps {
   // 模型数据
   modelData: ModelDataItem;
-  onCardClick?: (visible: boolean, selectModelData: ModelDataItem) => void;
-  onModelAuthVisible?: (data: IModelAuth) => void;
-  onDeleteConfirm?: (modelData: ModelDataItem) => void;
-  onDownloadConfirm?: (modelData: ModelDataItem) => void;
 }
 
-export default function GeneralCard(props: IGeneralCardProps) {
-  const { isDetail, onCardClick, onModelAuthVisible, onDeleteConfirm, onDownloadConfirm, modelData } = props;
+export default function McpCard(props: IMcpCardProps) {
+  const { modelData } = props;
 
   // modelData?.class
   const tags = useMemo(
@@ -27,46 +20,10 @@ export default function GeneralCard(props: IGeneralCardProps) {
     [modelData?.class],
   );
 
-  const statusToText = (item: ModelDataItem) => {
-    const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
-    const { status, can_select } = item;
-    if (status === IN_PROGRESS)
-      return (
-        <Button
-          type="text"
-          style={{ color: '#344054', padding: 'unset' }}
-        >
-          下载中
-          <LoadingIcon />
-        </Button>
-      );
-    if (can_select || status === COMPLETED)
-      return (
-        <Button
-          className={styles.downloadedBtn}
-          onClick={() => onDeleteConfirm?.(modelData)}
-        >
-          <DeleteIcon fill="#344054" />
-          已下载
-        </Button>
-      );
-    if (status === PAUSED) return '暂停';
-    else if (!can_select || status === FAILED)
-      return (
-        <Button
-          type="primary"
-          onClick={() => onDownloadConfirm?.(modelData)}
-        >
-          <DownloadIcon />
-          下载
-        </Button>
-      );
-  };
-
   return (
     <div
-      className={`${isDetail ? styles.generalCardDetail : styles.generalCardHover} ${styles.generalCard}`}
-      onClick={() => onCardClick?.(true, modelData)}
+      className={styles.mcpCard}
+      // onClick={() => onCardClick?.(true, modelData)}
     >
       {/* 推荐使用，定位右上角 */}
       {modelData?.is_recommended && <div className={styles.recommend}>推荐使用</div>}
@@ -101,7 +58,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
       <TagsRender tags={tags} />
 
       <Tooltip title={modelData?.desc}>
-        <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>{modelData?.desc}</div>
+        <div className={styles.contentWrapper}>{modelData?.desc}</div>
       </Tooltip>
 
       <div className={styles.infoWrapper}>
@@ -120,8 +77,6 @@ export default function GeneralCard(props: IGeneralCardProps) {
           strokeLinecap="butt"
         />
       )}
-
-      <div className={styles.handlebar}>{statusToText(modelData)}</div>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import MainLayout from '../components/main-layout';
 import ModelManage from '../pages/model-manage';
 import ServerManage from '../pages/server-manage';
 import McpService from '../pages/mcp-service';
-import McpManageDetail from '../components/mcp-manage/mcp-manage-detail';
+import McpManageDetail from '../components/mcp-service-tab/mcp-detail';
 
 const router = createBrowserRouter([
   {

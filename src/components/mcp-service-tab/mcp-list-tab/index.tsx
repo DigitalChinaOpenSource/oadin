@@ -7,7 +7,7 @@ type cardType = {
   tags: string[];
   serviceId: string;
 };
-const McpManageList = () => {
+export default function McpListTab() {
   const testList: cardType[] = [
     { serviceId: '1', title: '测试1', content: '测试内容1', icon: '', tags: ['标签1', '标签2'] },
     { serviceId: '2', title: '测试2', content: '测试内容2', icon: '', tags: ['标签3', '标签4'] },
@@ -42,6 +42,4 @@ const McpManageList = () => {
       </div>
     </div>
   );
-};
-
-export default McpManageList;
+}
