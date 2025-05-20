@@ -141,7 +141,9 @@ class Byze {
               installer.on('close', (code) => {
                 if (code === 0) {
                   console.log('✅ 安装程序已完成');
-                  resolve(true);
+                  setTimeout(() => {
+                    resolve(true);
+                  }, 5000);
                 } else {
                   console.error(`❌ 安装程序执行失败，退出码: ${code}`);
                   resolve(false);
