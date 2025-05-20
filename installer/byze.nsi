@@ -18,9 +18,9 @@ Section "Install"
   File "postinstall.bat"
 
   # Pre-install
-  ExecWait '"$INSTDIR\preinstall.bat"'
+  nsExec::ExecWait '"$INSTDIR\preinstall.bat"'
 
   # Post-install
   ; Pass the installation directory as an argument to postinstall.bat
-  ExecWait '"$INSTDIR\postinstall.bat" "$INSTDIR"'
+  nsExec::ExecWait '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 SectionEnd
