@@ -176,12 +176,12 @@ class Byze {
     return new Promise((resolve) => {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS
-        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest'
+        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
         : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe';
   
       const userDir = os.homedir();
-      const destDir = path.join(userDir, 'Byze');
-      const destFileName = isMacOS ? 'byze' : 'byze-installer-latest.exe';
+      const destDir = path.join(userDir, 'ByzeInstaller');
+      const destFileName = isMacOS ? 'byze-installer-latest.pkg' : 'byze-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
   
       fs.mkdir(destDir, { recursive: true }, async (err) => {

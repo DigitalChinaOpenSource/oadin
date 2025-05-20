@@ -3,11 +3,11 @@
 !endif
 !define APP_NAME "Byze CLI"
 !define COMPANY_NAME "Digital China"
-!define INSTALL_DIR "$PROGRAMFILES64\${COMPANY_NAME}\Byze"
+!define INSTALL_DIR "$APPDATA\Byze"
 
 Outfile "..\byze-installer.exe"
 InstallDir "${INSTALL_DIR}"
-RequestExecutionLevel admin
+RequestExecutionLevel user ; Install to user's AppData, so no admin rights needed by default
 SetCompress auto
 SetCompressor lzma
 
@@ -21,26 +21,25 @@ Section "Install"
   ExecWait '"$INSTDIR\preinstall.bat"'
 
   # Add installation directory to the user's Path environment variable
-  SetRegView 64
   ReadRegStr $0 HKCU "Environment" "Path"
   StrCpy $1 "$INSTDIR"
 
-  # 检查 $INSTDIR 是否已经存在于 $0 中
+  # Check if $INSTDIR is already in $0
   StrStr $0 $1 +2
   Goto AddPath
 
-  # 如果已存在，跳过追加
+  # Skip adding if it already exists
   Goto EndPath
 
   AddPath:
-  # 如果 $0 不为空，检查是否需要添加分号
+  # If $0 is not empty, check if a semicolon needs to be added
   StrCmp $0 "" 0 +3
   StrLen $2 $0
   StrCpy $3 $0 -1 1
   StrCmp $3 ";" 0 +2
   StrCpy $0 "$0;"
 
-  # 追加安装目录路径
+  # Append the installation directory path
   StrCpy $0 "$0$INSTDIR"
   WriteRegStr HKCU "Environment" "Path" "$0"
   SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment"
