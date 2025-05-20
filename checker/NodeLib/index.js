@@ -178,21 +178,21 @@ class Byze {
       const url = isMacOS
         ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
         : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe';
-  
+
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'ByzeInstaller');
       const destFileName = isMacOS ? 'byze-installer-latest.pkg' : 'byze-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
-  
+
       fs.mkdir(destDir, { recursive: true }, async (err) => {
         if (err) {
           console.error('❌ 创建目录失败:', err.message);
           return resolve(false);
         }
-  
+
         console.log('🔍 正在下载文件:', url);
         const file = fs.createWriteStream(dest);
-  
+
         const request = https.get(url, (res) => {
           if (res.statusCode !== 200) {
             console.error(`❌ 下载失败，HTTP 状态码: ${res.statusCode}`);
@@ -200,60 +200,41 @@ class Byze {
             fs.unlink(dest, () => {});
             return resolve(false);
           }
-  
+
           res.pipe(file);
           file.on('finish', async () => {
             file.close();
             console.log('✅ 下载完成:', dest);
-  
-            if (isMacOS) {
-              // macOS 平台：创建软链接到 /usr/local/bin
-              try {
-                const symlinkPath = '/usr/local/bin/byze';
-                if (fs.existsSync(symlinkPath)) {
-                  fs.unlinkSync(symlinkPath); // 删除已有的软链接
-                }
-                fs.symlinkSync(dest, symlinkPath); // 创建软链接
-                console.log(`✅ 已创建软链接: ${symlinkPath} -> ${dest}`);
-                resolve(true);
-              } catch (err) {
-                console.error(`❌ 创建软链接失败: ${err.message}`);
-                return resolve(false);
-              }
-            } else {
-              // Windows 平台：运行安装包
-              try {
-                await new Promise(resolveDelay => setTimeout(resolveDelay, 1000)); // 等待 1 秒
-  
-                console.log('🚀 正在运行安装包...');
-                const installer = spawn(dest, [], {
-                  stdio: 'inherit',
-                  windowsHide: true,
-                  shell: true, // 尝试使用 shell 执行
-                });
-  
-                installer.on('close', (code) => {
-                  if (code === 0) {
-                    console.log('✅ 安装程序已完成');
-                    resolve(true);
-                  } else {
-                    console.error(`❌ 安装程序执行失败，退出码: ${code}`);
-                    resolve(false);
-                  }
-                });
-  
-                installer.on('error', (err) => {
-                  console.error(`❌ 启动安装程序失败: ${err.message}`);
+
+            try {
+              await new Promise(resolveDelay => setTimeout(resolveDelay, 1000)); // 稍作等待
+
+              console.log('🚀 正在运行安装包...');
+              const installer = isMacOS
+                ? spawn('open', [dest], { stdio: 'inherit', shell: true })
+                : spawn(dest, [], { stdio: 'inherit', windowsHide: true, shell: true });
+
+              installer.on('close', (code) => {
+                if (code === 0) {
+                  console.log('✅ 安装程序已启动/完成');
+                  resolve(true);
+                } else {
+                  console.error(`❌ 安装程序退出码异常: ${code}`);
                   resolve(false);
-                });
-              } catch (err) {
-                console.error(`❌ 运行安装程序时出错: ${err.message}`);
-                return resolve(false);
-              }
+                }
+              });
+
+              installer.on('error', (err) => {
+                console.error(`❌ 启动安装程序失败: ${err.message}`);
+                resolve(false);
+              });
+            } catch (err) {
+              console.error(`❌ 运行安装程序时出错: ${err.message}`);
+              resolve(false);
             }
           });
         });
-  
+
         request.on('error', (err) => {
           console.error('❌ 下载失败:', err.message);
           file.close();
@@ -263,6 +244,7 @@ class Byze {
       });
     });
   }
+
 
   // 启动 Byze 服务
   InstallByze() {
