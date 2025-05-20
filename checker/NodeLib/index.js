@@ -172,6 +172,7 @@ class Byze {
   // 启动 Byze 服务
   InstallByze() {
     return new Promise((resolve) => {
+      console.log('🔍 正在启动 Byze 服务...');
       const isMacOS = process.platform === 'darwin';
       const userDir = os.homedir();
       const byzeDir = path.join(userDir, 'Byze');
@@ -180,6 +181,7 @@ class Byze {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
       }
   
+      console.log('当前环境变量:', process.env.PATH);
       let stderrContent = '';
       let child;
 
@@ -195,6 +197,7 @@ class Byze {
               windowsHide: true,
           });
       }
+      console.log('当前平台:', process.platform);
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
