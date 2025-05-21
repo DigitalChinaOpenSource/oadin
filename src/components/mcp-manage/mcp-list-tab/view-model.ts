@@ -38,7 +38,7 @@ export function useViewModel() {
   );
 
   const handelMcpCardClick = (serviceId: number) => {
-    navigate(`/mcp-service-detail?serviceId=${serviceId}&mcpFrom=mcpList`);
+    navigate(`/mcp-detail?serviceId=${serviceId}&mcpFrom=mcpList`);
   };
 
   // 搜索框搜索
