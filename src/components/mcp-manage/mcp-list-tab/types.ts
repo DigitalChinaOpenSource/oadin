@@ -16,6 +16,8 @@ export interface IMcpListRequestParams {
 
 export interface IMcpListItem {
   id: number;
+  // 0 未添加未启用；1 已添加已启用
+  status: number;
   name: {
     src: string;
     zh: string;

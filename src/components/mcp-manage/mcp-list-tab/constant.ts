@@ -9,6 +9,7 @@ export const mcpListDataMock = [
     tags: ['图像', '增强'],
     hosted: true,
     updatedAt: 1747234202,
+    status: 1,
   },
   {
     id: 2,
@@ -20,6 +21,7 @@ export const mcpListDataMock = [
     tags: ['图像', '压缩'],
     hosted: true,
     updatedAt: 1747234202,
+    status: 0,
   },
   {
     id: 3,
@@ -31,6 +33,7 @@ export const mcpListDataMock = [
     tags: ['视频', 'AI'],
     hosted: true,
     updatedAt: 1747234202,
+    status: 1,
   },
   {
     id: 4,
@@ -42,6 +45,7 @@ export const mcpListDataMock = [
     tags: ['人脸', '检测'],
     hosted: true,
     updatedAt: 1747234202,
+    status: 0,
   },
   {
     id: 5,
@@ -53,6 +57,7 @@ export const mcpListDataMock = [
     tags: ['语音', '识别'],
     hosted: true,
     updatedAt: 1747234202,
+    status: 1,
   },
   // 省略中间的数据以保持简洁
   {
@@ -65,5 +70,6 @@ export const mcpListDataMock = [
     tags: ['文档', '转换'],
     hosted: true,
     updatedAt: 1747234202,
+    status: 0,
   },
 ];

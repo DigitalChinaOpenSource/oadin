@@ -1,6 +1,6 @@
 import styles from './index.module.scss';
 import { Input, Select } from 'antd';
-import { SearchIcon } from '../../icons';
+import { SearchIcon } from '@/components/icons';
 import { IModelSourceType } from '@/types';
 
 export interface IModelTitleSearchProps {
@@ -9,6 +9,8 @@ export interface IModelTitleSearchProps {
   onModelSearch: (val: string) => void;
   onModelSourceChange: (val: IModelSourceType) => void;
 }
+
+const { Search } = Input;
 
 export default function ModelSearch(props: IModelTitleSearchProps) {
   const { onModelSearch, modelSearchVal, modelSourceVal, onModelSourceChange } = props;
@@ -19,12 +21,11 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
   return (
     <div className={styles.modelSearch}>
       <div className={styles.searchInput}>
-        <Input
-          prefix={<SearchIcon />}
+        <Search
           allowClear
           placeholder="请输入模型名称"
           value={modelSearchVal}
-          onChange={(e) => onModelSearch(e.target.value.trim())}
+          onSearch={(value) => onModelSearch(value.trim())}
           style={{ width: 380 }}
         />
       </div>

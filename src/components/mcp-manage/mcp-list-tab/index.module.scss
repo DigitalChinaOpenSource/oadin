@@ -1,14 +1,25 @@
-.mcpManageList {
+.mcpListTab {
   display: flex;
-  width: 100%;
-  height: 100%;
-  padding: 24px;
-  .mcpManageListContent {
-    display: flex;
-    .card{
-      width: 200px;
-      height: 200px;
-      cursor: pointer;
+  .mcpListContent {
+    width: 100%;
+    padding: 24px;
+    .mcpTitle {
+      display: flex;
+      margin-bottom: 24px;
+      line-height: 32px;
+      .mcpTitleText {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000115;
+      }
+      .mcpCount {
+        font-size: 14px;
+        margin-left: 16px;
+        color: #898ea3;
+      }
+      .searchInput {
+        margin-left: auto;
+      }
     }
   }
 }
