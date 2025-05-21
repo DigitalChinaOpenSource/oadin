@@ -81,15 +81,15 @@ instance.interceptors.response.use(
  * @returns Promise
  */
 const get = <T = any>(url: string, params?: any, config?: any) => {
-  return instance.get<any, T>(url, { ...config, params });
+  return instance.get<any, T>(url, { ...config, params, baseURL: config?.baseURL || instance.defaults.baseURL });
 };
 
 const post = <T = any>(url: string, data?: any, config?: any) => {
-  return instance.post<any, T>(url, data, config);
+  return instance.post<any, T>(url, data, { ...config, baseURL: config?.baseURL || instance.defaults.baseURL });
 };
 
 const put = <T = any>(url: string, data?: any, config?: any) => {
-  return instance.put<any, T>(url, data, config);
+  return instance.put<any, T>(url, data, { ...config, baseURL: config?.baseURL || instance.defaults.baseURL });
 };
 
 const del = <T = any>(url: string, params?: any, config?: any) => {

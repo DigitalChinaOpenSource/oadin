@@ -1,0 +1,1120 @@
+{
+    "id":1,
+    "name":{
+        "src":"wuying-agentbay-mcp-server",
+        "zh":"无影 AgentBay"
+    },
+    "serverName":"@aliyun/wuying-agentbay-mcp-server",
+    "supplier":"aliyun",
+    "hosted":true,
+    "category":"编程开发",
+    "tags":[],
+    "abstract":{
+        "src":"Wuying AgentBay is the cloud infrastructure for AI agents in the AI era, providing one-click configuration tools and execution environments for enterprises, developers, and AI vendors. You can quickly integrate through Wuying API or AgentBay MCP Server and call related tools to obtain serverless services.",
+        "zh":"无影AgentBay是AI 时代的Agent云基础设施， 面向企业、开发者、AI厂商，提供可一键配置的AI Agent任务执行工具和执行环境。您可以通过无影API或AgentBay MCP Server快速集成，并调用相关工具获取Serverless服务。"
+    },
+    "envSchema": {
+            "properties": {
+                "APIKEY": {
+                    "description": "必须配置的API认证密钥",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "APIKEY"
+            ],
+            "type": "object"
+        },
+    "logo":"https://resources.modelscope.cn/studio-cover-pre/studio-cover_97ce290c-1269-428f-87d0-f90f46f039a9.png",
+    "serverConfig":[
+            {
+                "mcpServers": {
+                    "wuying-agentbay-mcp-server": {
+                        "args": [
+                            "-y",
+                            "wuying-agentbay-mcp-server"
+                        ],
+                        "command": "npx",
+                        "env": {
+                            "APIKEY": "APIKEY"
+                        }
+                    }
+                }
+            }
+        ],
+    "summary":{
+        "src":"无影AgentBay是AI 时代的Agent云基础设施， 面向企业、开发者、AI厂商，提供可一键配置的AI Agent任务执行工具和执行环境。您可以通过无影API或AgentBay MCP Server快速集成，并调用相关工具获取Serverless服务。\n\n## **技术原理**\n\n![【对外】无影 for AI Agent云服务](https://help-static-aliyun-doc.aliyuncs.com/assets/img/zh-CN/6004243471/p935785.png)\n\n## **云服务规格**\n\n### **云资源**\n\n服务支持调用共用资源，公测期间限量免费服务，并发数上限为10台。服务地域按照客户接入IP自动分配。\n\n### **运行环境**\n\n服务支持内置Linux版本镜像，无影在保证向下兼容的基础上持续丰富和更新镜像能力。\n\n### **MCP工具**\n\n首期发布环境默认支持Browser工具、File工具、Terminal工具。关于更多工具更新信息，请关注官网。\n\n## **操作步骤**\n\n### 步骤1：创建API Key\n\n请创建您自己的API Key。\n\n1.  登录[AgentBay控制台](https://agentbay.console.aliyun.com/)。\n    \n2.  在左侧导航栏中单击**服务管理**。\n    \n3.  在**服务管理**页面上单击**创建API KEY**。\n    \n4.  在**创建API KEY**对话框中输入名称，并单击**确定**。\n    \n    创建好的API Key会显示在**服务管理**页面的列表中，您可以复制API Key以待后续使用。\n    \n\n### 步骤2：完成MCP服务配置\n\n确认运行环境，并获取MCP信息。\n\n1.  登录[AgentBay控制台](https://agentbay.console.aliyun.com/)。\n    \n2.  在左侧导航栏中单击**配置资源**。\n    \n3.  在**API Key**下拉列表中选择一个您创建的API Key。\n    \n4.  在**选择镜像**下拉列表中选择一个镜像。\n    \n    **说明**\n    \n    服务支持内置Linux版本镜像，无影在保证向下兼容的基础上持续丰富和更新镜像能力。\n    \n5.  在**工具能力与接口**右侧查看可用的MCP工具。单击**查看**即可查看详细信息。\n    \n6.  在**获取MCP信息**文本框右上角单击**复制代码**，并在支持MCP的工具（例如Cline、Cursor等）中添加上述代码。\n    \n    **说明**\n    \n    请将`YOUR_API_KEY`替换为[步骤1：创建API Key](#sc-step1)中创建的API Key。\n    \n    ```json\n    {\n      \"mcpServers\": {\n        \"wuying-agentbay-mcp-server\": {\n          \"command\": \"npx\",\n          \"args\": [\"-y\", \"wuying-agentbay-mcp-server\"],\n          \"env\": {\n            \"APIKEY\": \"YOUR_API_KEY\"\n          }\n        }\n      }\n    }\n    ```\n    \n\n### **（可选）步骤3：调用云电脑画面流**\n\n支持通过无影Web SDK iframe内嵌或通过浏览器拉取无影Web客户端的方式打开云电脑画面。需要调用云电脑画面流时，MCP会返回带登录参数的链接，格式为`https://wuying.aliyun.com?mcp.html?authcode=\u003cauthCode\u003e\u0026resourceId=\u003cresourceId\u003e`。\n\n## 后续步骤\n\n公测期间单账号的资源使用时长上限为100小时。如需申请延长，请填写并提交[申请表格](https://page.aliyun.com/form/act1033470910/index.htm)。\n\n## 常见问题\n\n### **Q1: 无影AgentBay是什么？是虚拟机吗？**\n\n无影AgentBay不是简单的虚拟机，而是一个完整的AI Agent云基础设施平台。具体来说：\n\n+   **定位**：它是阿里云推出的AI时代的Agent云基础设施，面向企业、开发者和AI厂商。\n    \n+   **核心功能**：\n    \n    +   标准Runtime：预集成大量面向Agent任务执行的标准工具，并以MCP封装，以便企业快速集成。\n        \n    +   用户状态持久化：通过无影自研的持久化架构，安全隔离地保存用户配置文件、Cookie等，并动态挂载，让云环境无限接近本地环境。\n        \n    +   实时端云交互：无影自研ASP协议可将云端画面实时串流到用户本地，让用户和AI可以交替控制云环境。且ASP支持网络和外设重定向通道，让云环境可以感知和控制本地设备。\n        \n+   **技术架构**：\n    \n    +   自研持久化文件系统，可动态按需保留用户状态和文件。\n        \n    +   自研ASP端云实时通信协议，让云环境可感知、模仿、控制本地环境。\n        \n    +   底层基于阿里云无影资源池，全球部署，就近接入。\n        \n    +   提供Serverless服务能力，客户可以一键调度环境会话。\n        \n    +   集成了Browser、File、Terminal等标准MCP工具集。\n        \n    +   支持通过SDK+API或者MCP Server快速接入，两者均兼容。\n        \n\n### **Q2: 市场上的AI Agent产品如何接入无影AgentBay？**\n\nAI Agent产品可以通过以下方式接入无影AgentBay：\n\n1.  **基础接入流程**：\n    \n    1.  申请API Key\n        \n    2.  完成自定义镜像制作和资源池定义配置\n        \n    3.  完成MCP服务配置（可选）\n        \n    4.  集成无影WEB SDK（可选）\n        \n    5.  客户端或服务端发起工具使用请求（会话调度）\n        \n2.  **接入方式**：\n    \n    +   通过无影服务端SDK+API接入\n        \n    +   通过MCP Server接入\n        \n3.  **访问方式**：\n    \n    +   支持客户端内嵌WebView串流云环境\n        \n    +   支持跳转浏览器使用\n        \n    +   访问格式：`https://wuying.aliyun.com?mcp.html?authcode=\u003cauthCode\u003e\u0026resourceId=\u003cresourceId\u003e`\n        \n        **说明**\n        \n        在发起工具调用时，该URL会由MCP Server返回。\n        \n\n### **Q3: 无影AgentBay支持MCP协议，和市场上的MCP Server之间是什么关系？**\n\n无影AgentBay与MCP Server的关系如下：\n\n+   **协议支持**：\n    \n    +   无影AgentBay完全支持MCP（Model Context Protocol）协议。\n        \n    +   提供标准化的MCP接口，确保与现有MCP生态兼容。\n        \n+   **工具集成**：\n    \n    提供主流的MCP工具集，包括但不限于：\n    \n    +   Browser工具：支持浏览器操作\n        \n    +   File工具：支持文件操作\n        \n    +   Terminal工具：支持终端操作\n        \n+   **生态关系**：\n    \n    +   可以与现有的MCP Server生态系统无缝集成。\n        \n    +   支持现有MCP Server的功能扩展。\n        \n    +   提供统一的接口标准，便于管理和集成。\n        \n\n### **Q4: 使用AI Agent时，我不想泄露个人隐私，无影AgentBay如何保障我的私人数据？**\n\n无影AgentBay通过以下机制保障用户隐私和数据安全：\n\n+   **隔离机制**：\n    \n    +   为每个用户提供完全隔离的VM环境。\n        \n    +   环境会话结束后即重置，不留存任何数据。\n        \n+   **访问控制**：\n    \n    +   通过API Key进行身份认证。\n        \n    +   提供安全的访问控制机制。\n        \n+   **数据处理**：\n    \n    +   本地数据不会上传到云端，云端数据不会被保留，除非用户明确授权和要求。\n        \n    +   提供安全的数据传输通道。\n        \n    +   支持数据加密存储。\n        \n\n### **Q5: Agent执行各种任务时经常消耗大量本地算力，我的电脑都不能做其他事了，无影AgentBay是否能解决这个问题？是如何解决的？**\n\n无影AgentBay可以通过以下方式有效解决本地算力消耗问题：\n\n+   **云端执行**：\n    \n    +   任务在阿里云的资源池中执行，不占用本地计算资源。\n        \n    +   提供Serverless服务，按需分配计算资源。\n        \n    +   支持弹性扩展，根据任务需求自动调整资源。\n        \n+   **资源优化**：\n    \n    +   采用云端分布式计算。\n        \n    +   支持任务并行处理。\n        \n    +   资源自动扩缩容。\n        \n+   **性能保障**：\n    \n    +   提供专业的云计算资源池。\n        \n    +   确保任务执行效率。\n        \n    +   本地设备只需要处理基础的交互操作。\n        \n\n### **Q6: 无影AgentBay目前具体提供哪些Desktop Auto的能力？是否支持自定义镜像来接入无影AgentBay？**\n\n无影AgentBay提供丰富的Desktop Auto能力：\n\n+   **基础自动化能力**：\n    \n    +   Browser工具：支持完整的浏览器自动化操作\n        \n    +   File工具：支持文件系统自动化操作\n        \n    +   Terminal工具：支持命令行自动化操作\n        \n    +   Python工具：支持环境内代码安全执行\n        \n+   **进阶自动化能力**：\n    \n    +   GUI Agent：提供实时画面理解和交互指令执行的能力\n        \n    +   自定义知识空间：支持用户知识自动化沉淀，用户状态自定义保存\n        \n    +   支持用户自定义应用接口开发\n        \n+   **镜像支持**：\n    \n    +   内置Linux基础镜像\n        \n    +   支持用户在基础镜像上制作自定义镜像",
+        "zh": "无影AgentBay是AI 时代的Agent云基础设施， 面向企业、开发者、AI厂商，提供可一键配置的AI Agent任务执行工具和执行环境。您可以通过无影API或AgentBay MCP Server快速集成，并调用相关工具获取Serverless服务。\n\n## **技术原理**\n\n![【对外】无影 for AI Agent云服务](https://help-static-aliyun-doc.aliyuncs.com/assets/img/zh-CN/6004243471/p935785.png)\n\n## **云服务规格**\n\n### **云资源**\n\n服务支持调用共用资源，公测期间限量免费服务，并发数上限为10台。服务地域按照客户接入IP自动分配。\n\n### **运行环境**\n\n服务支持内置Linux版本镜像，无影在保证向下兼容的基础上持续丰富和更新镜像能力。\n\n### **MCP工具**\n\n首期发布环境默认支持Browser工具、File工具、Terminal工具。关于更多工具更新信息，请关注官网。\n\n## **操作步骤**\n\n### 步骤1：创建API Key\n\n请创建您自己的API Key。\n\n1.  登录[AgentBay控制台](https://agentbay.console.aliyun.com/)。\n    \n2.  在左侧导航栏中单击**服务管理**。\n    \n3.  在**服务管理**页面上单击**创建API KEY**。\n    \n4.  在**创建API KEY**对话框中输入名称，并单击**确定**。\n    \n    创建好的API Key会显示在**服务管理**页面的列表中，您可以复制API Key以待后续使用。\n    \n\n### 步骤2：完成MCP服务配置\n\n确认运行环境，并获取MCP信息。\n\n1.  登录[AgentBay控制台](https://agentbay.console.aliyun.com/)。\n    \n2.  在左侧导航栏中单击**配置资源**。\n    \n3.  在**API Key**下拉列表中选择一个您创建的API Key。\n    \n4.  在**选择镜像**下拉列表中选择一个镜像。\n    \n    **说明**\n    \n    服务支持内置Linux版本镜像，无影在保证向下兼容的基础上持续丰富和更新镜像能力。\n    \n5.  在**工具能力与接口**右侧查看可用的MCP工具。单击**查看**即可查看详细信息。\n    \n6.  在**获取MCP信息**文本框右上角单击**复制代码**，并在支持MCP的工具（例如Cline、Cursor等）中添加上述代码。\n    \n    **说明**\n    \n    请将`YOUR_API_KEY`替换为[步骤1：创建API Key](#sc-step1)中创建的API Key。\n    \n    ```json\n    {\n      \"mcpServers\": {\n        \"wuying-agentbay-mcp-server\": {\n          \"command\": \"npx\",\n          \"args\": [\"-y\", \"wuying-agentbay-mcp-server\"],\n          \"env\": {\n            \"APIKEY\": \"YOUR_API_KEY\"\n          }\n        }\n      }\n    }\n    ```\n    \n\n### **（可选）步骤3：调用云电脑画面流**\n\n支持通过无影Web SDK iframe内嵌或通过浏览器拉取无影Web客户端的方式打开云电脑画面。需要调用云电脑画面流时，MCP会返回带登录参数的链接，格式为`https://wuying.aliyun.com?mcp.html?authcode=\u003cauthCode\u003e\u0026resourceId=\u003cresourceId\u003e`。\n\n## 后续步骤\n\n公测期间单账号的资源使用时长上限为100小时。如需申请延长，请填写并提交[申请表格](https://page.aliyun.com/form/act1033470910/index.htm)。\n\n## 常见问题\n\n### **Q1: 无影AgentBay是什么？是虚拟机吗？**\n\n无影AgentBay不是简单的虚拟机，而是一个完整的AI Agent云基础设施平台。具体来说：\n\n+   **定位**：它是阿里云推出的AI时代的Agent云基础设施，面向企业、开发者和AI厂商。\n    \n+   **核心功能**：\n    \n    +   标准Runtime：预集成大量面向Agent任务执行的标准工具，并以MCP封装，以便企业快速集成。\n        \n    +   用户状态持久化：通过无影自研的持久化架构，安全隔离地保存用户配置文件、Cookie等，并动态挂载，让云环境无限接近本地环境。\n        \n    +   实时端云交互：无影自研ASP协议可将云端画面实时串流到用户本地，让用户和AI可以交替控制云环境。且ASP支持网络和外设重定向通道，让云环境可以感知和控制本地设备。\n        \n+   **技术架构**：\n    \n    +   自研持久化文件系统，可动态按需保留用户状态和文件。\n        \n    +   自研ASP端云实时通信协议，让云环境可感知、模仿、控制本地环境。\n        \n    +   底层基于阿里云无影资源池，全球部署，就近接入。\n        \n    +   提供Serverless服务能力，客户可以一键调度环境会话。\n        \n    +   集成了Browser、File、Terminal等标准MCP工具集。\n        \n    +   支持通过SDK+API或者MCP Server快速接入，两者均兼容。\n        \n\n### **Q2: 市场上的AI Agent产品如何接入无影AgentBay？**\n\nAI Agent产品可以通过以下方式接入无影AgentBay：\n\n1.  **基础接入流程**：\n    \n    1.  申请API Key\n        \n    2.  完成自定义镜像制作和资源池定义配置\n        \n    3.  完成MCP服务配置（可选）\n        \n    4.  集成无影WEB SDK（可选）\n        \n    5.  客户端或服务端发起工具使用请求（会话调度）\n        \n2.  **接入方式**：\n    \n    +   通过无影服务端SDK+API接入\n        \n    +   通过MCP Server接入\n        \n3.  **访问方式**：\n    \n    +   支持客户端内嵌WebView串流云环境\n        \n    +   支持跳转浏览器使用\n        \n    +   访问格式：`https://wuying.aliyun.com?mcp.html?authcode=\u003cauthCode\u003e\u0026resourceId=\u003cresourceId\u003e`\n        \n        **说明**\n        \n        在发起工具调用时，该URL会由MCP Server返回。\n        \n\n### **Q3: 无影AgentBay支持MCP协议，和市场上的MCP Server之间是什么关系？**\n\n无影AgentBay与MCP Server的关系如下：\n\n+   **协议支持**：\n    \n    +   无影AgentBay完全支持MCP（Model Context Protocol）协议。\n        \n    +   提供标准化的MCP接口，确保与现有MCP生态兼容。\n        \n+   **工具集成**：\n    \n    提供主流的MCP工具集，包括但不限于：\n    \n    +   Browser工具：支持浏览器操作\n        \n    +   File工具：支持文件操作\n        \n    +   Terminal工具：支持终端操作\n        \n+   **生态关系**：\n    \n    +   可以与现有的MCP Server生态系统无缝集成。\n        \n    +   支持现有MCP Server的功能扩展。\n        \n    +   提供统一的接口标准，便于管理和集成。\n        \n\n### **Q4: 使用AI Agent时，我不想泄露个人隐私，无影AgentBay如何保障我的私人数据？**\n\n无影AgentBay通过以下机制保障用户隐私和数据安全：\n\n+   **隔离机制**：\n    \n    +   为每个用户提供完全隔离的VM环境。\n        \n    +   环境会话结束后即重置，不留存任何数据。\n        \n+   **访问控制**：\n    \n    +   通过API Key进行身份认证。\n        \n    +   提供安全的访问控制机制。\n        \n+   **数据处理**：\n    \n    +   本地数据不会上传到云端，云端数据不会被保留，除非用户明确授权和要求。\n        \n    +   提供安全的数据传输通道。\n        \n    +   支持数据加密存储。\n        \n\n### **Q5: Agent执行各种任务时经常消耗大量本地算力，我的电脑都不能做其他事了，无影AgentBay是否能解决这个问题？是如何解决的？**\n\n无影AgentBay可以通过以下方式有效解决本地算力消耗问题：\n\n+   **云端执行**：\n    \n    +   任务在阿里云的资源池中执行，不占用本地计算资源。\n        \n    +   提供Serverless服务，按需分配计算资源。\n        \n    +   支持弹性扩展，根据任务需求自动调整资源。\n        \n+   **资源优化**：\n    \n    +   采用云端分布式计算。\n        \n    +   支持任务并行处理。\n        \n    +   资源自动扩缩容。\n        \n+   **性能保障**：\n    \n    +   提供专业的云计算资源池。\n        \n    +   确保任务执行效率。\n        \n    +   本地设备只需要处理基础的交互操作。\n        \n\n### **Q6: 无影AgentBay目前具体提供哪些Desktop Auto的能力？是否支持自定义镜像来接入无影AgentBay？**\n\n无影AgentBay提供丰富的Desktop Auto能力：\n\n+   **基础自动化能力**：\n    \n    +   Browser工具：支持完整的浏览器自动化操作\n        \n    +   File工具：支持文件系统自动化操作\n        \n    +   Terminal工具：支持命令行自动化操作\n        \n    +   Python工具：支持环境内代码安全执行\n        \n+   **进阶自动化能力**：\n    \n    +   GUI Agent：提供实时画面理解和交互指令执行的能力\n        \n    +   自定义知识空间：支持用户知识自动化沉淀，用户状态自定义保存\n        \n    +   支持用户自定义应用接口开发\n        \n+   **镜像支持**：\n    \n    +   内置Linux基础镜像\n        \n    +   支持用户在基础镜像上制作自定义镜像"
+    },
+    "tools": [
+            {
+                "description": "Execute a terminal command with timeout. Command will continue running in background if it doesn't complete within timeout.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "command": {
+                            "type": "string"
+                        },
+                        "timeout_ms": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "command"
+                    ],
+                    "type": "object"
+                },
+                "name": "execute_command",
+                "server": "filesystem",
+                "tool": "execute_command"
+            },
+            {
+                "description": "Read new output from a running terminal session.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "pid": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "pid"
+                    ],
+                    "type": "object"
+                },
+                "name": "read_output",
+                "server": "filesystem",
+                "tool": "read_output"
+            },
+            {
+                "description": "Force terminate a running terminal session.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "pid": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "pid"
+                    ],
+                    "type": "object"
+                },
+                "name": "force_terminate",
+                "server": "filesystem",
+                "tool": "force_terminate"
+            },
+            {
+                "description": "List all active terminal sessions.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {},
+                    "type": "object"
+                },
+                "name": "list_sessions",
+                "server": "filesystem",
+                "tool": "list_sessions"
+            },
+            {
+                "description": "List all running processes. Returns process information including PID, command name, CPU usage, and memory usage.",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "list_processes",
+                "server": "filesystem",
+                "tool": "list_processes"
+            },
+            {
+                "description": "Terminate a running process by PID. Use with caution as this will forcefully terminate the specified process.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "pid": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "pid"
+                    ],
+                    "type": "object"
+                },
+                "name": "kill_process",
+                "server": "filesystem",
+                "tool": "kill_process"
+            },
+            {
+                "description": "Add a command to the blacklist. Once blocked, the command cannot be executed until unblocked.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "command": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "command"
+                    ],
+                    "type": "object"
+                },
+                "name": "block_command",
+                "server": "filesystem",
+                "tool": "block_command"
+            },
+            {
+                "description": "Remove a command from the blacklist. Once unblocked, the command can be executed normally.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "command": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "command"
+                    ],
+                    "type": "object"
+                },
+                "name": "unblock_command",
+                "server": "filesystem",
+                "tool": "unblock_command"
+            },
+            {
+                "description": "List all currently blocked commands.",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "list_blocked_commands",
+                "server": "filesystem",
+                "tool": "list_blocked_commands"
+            },
+            {
+                "description": "Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. Only works within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "type": "object"
+                },
+                "name": "read_file",
+                "server": "filesystem",
+                "tool": "read_file"
+            },
+            {
+                "description": "Read the contents of multiple files simultaneously. Each file's content is returned with its path as a reference. Failed reads for individual files won't stop the entire operation. Only works within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "paths": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "paths"
+                    ],
+                    "type": "object"
+                },
+                "name": "read_multiple_files",
+                "server": "filesystem",
+                "tool": "read_multiple_files"
+            },
+            {
+                "description": "Completely replace file contents. Best for large changes (\u003e20% of file) or when edit_block fails. Use with caution as it will overwrite existing files. Only works within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "content": {
+                            "type": "string"
+                        },
+                        "path": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "path",
+                        "content"
+                    ],
+                    "type": "object"
+                },
+                "name": "write_file",
+                "server": "filesystem",
+                "tool": "write_file"
+            },
+            {
+                "description": "Create a new directory or ensure a directory exists. Can create multiple nested directories in one operation. Only works within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "type": "object"
+                },
+                "name": "create_directory",
+                "server": "filesystem",
+                "tool": "create_directory"
+            },
+            {
+                "description": "Get a detailed listing of all files and directories in a specified path. Results distinguish between files and directories with [FILE] and [DIR] prefixes. Only works within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "type": "object"
+                },
+                "name": "list_directory",
+                "server": "filesystem",
+                "tool": "list_directory"
+            },
+            {
+                "description": "Move or rename files and directories. Can move files between directories and rename them in a single operation. Both source and destination must be within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "destination": {
+                            "type": "string"
+                        },
+                        "source": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "source",
+                        "destination"
+                    ],
+                    "type": "object"
+                },
+                "name": "move_file",
+                "server": "filesystem",
+                "tool": "move_file"
+            },
+            {
+                "description": "Recursively search for files and directories matching a pattern. Searches through all subdirectories from the starting path. Only searches within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        },
+                        "pattern": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "path",
+                        "pattern"
+                    ],
+                    "type": "object"
+                },
+                "name": "search_files",
+                "server": "filesystem",
+                "tool": "search_files"
+            },
+            {
+                "description": "Search for text/code patterns within file contents using ripgrep. Fast and powerful search similar to VS Code search functionality. Supports regular expressions, file pattern filtering, and context lines. Only searches within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "contextLines": {
+                            "type": "number"
+                        },
+                        "filePattern": {
+                            "type": "string"
+                        },
+                        "ignoreCase": {
+                            "type": "boolean"
+                        },
+                        "includeHidden": {
+                            "type": "boolean"
+                        },
+                        "maxResults": {
+                            "type": "number"
+                        },
+                        "path": {
+                            "type": "string"
+                        },
+                        "pattern": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "path",
+                        "pattern"
+                    ],
+                    "type": "object"
+                },
+                "name": "search_code",
+                "server": "filesystem",
+                "tool": "search_code"
+            },
+            {
+                "description": "Retrieve detailed metadata about a file or directory including size, creation time, last modified time, permissions, and type. Only works within allowed directories.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "type": "object"
+                },
+                "name": "get_file_info",
+                "server": "filesystem",
+                "tool": "get_file_info"
+            },
+            {
+                "description": "Returns the list of directories that this server is allowed to access.",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "list_allowed_directories",
+                "server": "filesystem",
+                "tool": "list_allowed_directories"
+            },
+            {
+                "description": "Apply surgical text replacements to files. Best for small changes (\u003c20% of file size). Multiple blocks can be used for separate changes. Will verify changes after application. Format: filepath, then \u003c\u003c\u003c\u003c\u003c\u003c\u003c SEARCH, content to find, =======, new content, \u003e\u003e\u003e\u003e\u003e\u003e\u003e REPLACE.",
+                "inputSchema": {
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "additionalProperties": false,
+                    "properties": {
+                        "blockContent": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "blockContent"
+                    ],
+                    "type": "object"
+                },
+                "name": "edit_block",
+                "server": "filesystem",
+                "tool": "edit_block"
+            },
+            {
+                "description": "Start a new code generation session to record Playwright actions",
+                "inputSchema": {
+                    "properties": {
+                        "options": {
+                            "description": "Code generation options",
+                            "properties": {
+                                "includeComments": {
+                                    "description": "Whether to include descriptive comments in generated tests",
+                                    "type": "boolean"
+                                },
+                                "outputPath": {
+                                    "description": "Directory path where generated tests will be saved (use absolute path)",
+                                    "type": "string"
+                                },
+                                "testNamePrefix": {
+                                    "description": "Prefix to use for generated test names (default: 'GeneratedTest')",
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "outputPath"
+                            ],
+                            "type": "object"
+                        }
+                    },
+                    "required": [
+                        "options"
+                    ],
+                    "type": "object"
+                },
+                "name": "start_codegen_session",
+                "server": "playwrite-mcp-server",
+                "tool": "start_codegen_session"
+            },
+            {
+                "description": "End a code generation session and generate the test file",
+                "inputSchema": {
+                    "properties": {
+                        "sessionId": {
+                            "description": "ID of the session to end",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "sessionId"
+                    ],
+                    "type": "object"
+                },
+                "name": "end_codegen_session",
+                "server": "playwrite-mcp-server",
+                "tool": "end_codegen_session"
+            },
+            {
+                "description": "Get information about a code generation session",
+                "inputSchema": {
+                    "properties": {
+                        "sessionId": {
+                            "description": "ID of the session to retrieve",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "sessionId"
+                    ],
+                    "type": "object"
+                },
+                "name": "get_codegen_session",
+                "server": "playwrite-mcp-server",
+                "tool": "get_codegen_session"
+            },
+            {
+                "description": "Clear a code generation session without generating a test",
+                "inputSchema": {
+                    "properties": {
+                        "sessionId": {
+                            "description": "ID of the session to clear",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "sessionId"
+                    ],
+                    "type": "object"
+                },
+                "name": "clear_codegen_session",
+                "server": "playwrite-mcp-server",
+                "tool": "clear_codegen_session"
+            },
+            {
+                "description": "Navigate to a URL",
+                "inputSchema": {
+                    "properties": {
+                        "browserType": {
+                            "description": "Browser type to use (chromium, firefox, webkit). Defaults to chromium",
+                            "enum": [
+                                "chromium",
+                                "firefox",
+                                "webkit"
+                            ],
+                            "type": "string"
+                        },
+                        "headless": {
+                            "description": "Run browser in headless mode (default: false)",
+                            "type": "boolean"
+                        },
+                        "height": {
+                            "description": "Viewport height in pixels (default: 720)",
+                            "type": "number"
+                        },
+                        "timeout": {
+                            "description": "Navigation timeout in milliseconds",
+                            "type": "number"
+                        },
+                        "url": {
+                            "description": "URL to navigate to the website specified",
+                            "type": "string"
+                        },
+                        "waitUntil": {
+                            "description": "Navigation wait condition",
+                            "type": "string"
+                        },
+                        "width": {
+                            "description": "Viewport width in pixels (default: 1280)",
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "url"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_navigate",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_navigate"
+            },
+            {
+                "description": "Take a screenshot of the current page or a specific element",
+                "inputSchema": {
+                    "properties": {
+                        "downloadsDir": {
+                            "description": "Custom downloads directory path (default: user's Downloads folder)",
+                            "type": "string"
+                        },
+                        "fullPage": {
+                            "description": "Store screenshot of the entire page (default: false)",
+                            "type": "boolean"
+                        },
+                        "height": {
+                            "description": "Height in pixels (default: 600)",
+                            "type": "number"
+                        },
+                        "name": {
+                            "description": "Name for the screenshot",
+                            "type": "string"
+                        },
+                        "savePng": {
+                            "description": "Save screenshot as PNG file (default: false)",
+                            "type": "boolean"
+                        },
+                        "selector": {
+                            "description": "CSS selector for element to screenshot",
+                            "type": "string"
+                        },
+                        "storeBase64": {
+                            "description": "Store screenshot in base64 format (default: true)",
+                            "type": "boolean"
+                        },
+                        "width": {
+                            "description": "Width in pixels (default: 800)",
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_screenshot",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_screenshot"
+            },
+            {
+                "description": "Click an element on the page",
+                "inputSchema": {
+                    "properties": {
+                        "selector": {
+                            "description": "CSS selector for the element to click",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "selector"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_click",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_click"
+            },
+            {
+                "description": "Click an element in an iframe on the page",
+                "inputSchema": {
+                    "properties": {
+                        "iframeSelector": {
+                            "description": "CSS selector for the iframe containing the element to click",
+                            "type": "string"
+                        },
+                        "selector": {
+                            "description": "CSS selector for the element to click",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "iframeSelector",
+                        "selector"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_iframe_click",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_iframe_click"
+            },
+            {
+                "description": "fill out an input field",
+                "inputSchema": {
+                    "properties": {
+                        "selector": {
+                            "description": "CSS selector for input field",
+                            "type": "string"
+                        },
+                        "value": {
+                            "description": "Value to fill",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "selector",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_fill",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_fill"
+            },
+            {
+                "description": "Select an element on the page with Select tag",
+                "inputSchema": {
+                    "properties": {
+                        "selector": {
+                            "description": "CSS selector for element to select",
+                            "type": "string"
+                        },
+                        "value": {
+                            "description": "Value to select",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "selector",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_select",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_select"
+            },
+            {
+                "description": "Hover an element on the page",
+                "inputSchema": {
+                    "properties": {
+                        "selector": {
+                            "description": "CSS selector for element to hover",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "selector"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_hover",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_hover"
+            },
+            {
+                "description": "Execute JavaScript in the browser console",
+                "inputSchema": {
+                    "properties": {
+                        "script": {
+                            "description": "JavaScript code to execute",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "script"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_evaluate",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_evaluate"
+            },
+            {
+                "description": "Retrieve console logs from the browser with filtering options",
+                "inputSchema": {
+                    "properties": {
+                        "clear": {
+                            "description": "Whether to clear logs after retrieval (default: false)",
+                            "type": "boolean"
+                        },
+                        "limit": {
+                            "description": "Maximum number of logs to return",
+                            "type": "number"
+                        },
+                        "search": {
+                            "description": "Text to search for in logs (handles text with square brackets)",
+                            "type": "string"
+                        },
+                        "type": {
+                            "description": "Type of logs to retrieve (all, error, warning, log, info, debug)",
+                            "enum": [
+                                "all",
+                                "error",
+                                "warning",
+                                "log",
+                                "info",
+                                "debug"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "playwright_console_logs",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_console_logs"
+            },
+            {
+                "description": "Close the browser and release all resources",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "playwright_close",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_close"
+            },
+            {
+                "description": "Perform an HTTP GET request",
+                "inputSchema": {
+                    "properties": {
+                        "url": {
+                            "description": "URL to perform GET operation",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "url"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_get",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_get"
+            },
+            {
+                "description": "Perform an HTTP POST request",
+                "inputSchema": {
+                    "properties": {
+                        "headers": {
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "description": "Additional headers to include in the request",
+                            "type": "object"
+                        },
+                        "token": {
+                            "description": "Bearer token for authorization",
+                            "type": "string"
+                        },
+                        "url": {
+                            "description": "URL to perform POST operation",
+                            "type": "string"
+                        },
+                        "value": {
+                            "description": "Data to post in the body",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "url",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_post",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_post"
+            },
+            {
+                "description": "Perform an HTTP PUT request",
+                "inputSchema": {
+                    "properties": {
+                        "url": {
+                            "description": "URL to perform PUT operation",
+                            "type": "string"
+                        },
+                        "value": {
+                            "description": "Data to PUT in the body",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "url",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_put",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_put"
+            },
+            {
+                "description": "Perform an HTTP PATCH request",
+                "inputSchema": {
+                    "properties": {
+                        "url": {
+                            "description": "URL to perform PUT operation",
+                            "type": "string"
+                        },
+                        "value": {
+                            "description": "Data to PATCH in the body",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "url",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_patch",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_patch"
+            },
+            {
+                "description": "Perform an HTTP DELETE request",
+                "inputSchema": {
+                    "properties": {
+                        "url": {
+                            "description": "URL to perform DELETE operation",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "url"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_delete",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_delete"
+            },
+            {
+                "description": "Ask Playwright to start waiting for a HTTP response. This tool initiates the wait operation but does not wait for its completion.",
+                "inputSchema": {
+                    "properties": {
+                        "id": {
+                            "description": "Unique \u0026 arbitrary identifier to be used for retrieving this response later with `Playwright_assert_response`.",
+                            "type": "string"
+                        },
+                        "url": {
+                            "description": "URL pattern to match in the response.",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "url"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_expect_response",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_expect_response"
+            },
+            {
+                "description": "Wait for and validate a previously initiated HTTP response wait operation.",
+                "inputSchema": {
+                    "properties": {
+                        "id": {
+                            "description": "Identifier of the HTTP response initially expected using `Playwright_expect_response`.",
+                            "type": "string"
+                        },
+                        "value": {
+                            "description": "Data to expect in the body of the HTTP response. If provided, the assertion will fail if this value is not found in the response body.",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "id"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_assert_response",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_assert_response"
+            },
+            {
+                "description": "Set a custom User Agent for the browser",
+                "inputSchema": {
+                    "properties": {
+                        "userAgent": {
+                            "description": "Custom User Agent for the Playwright browser instance",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "userAgent"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_custom_user_agent",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_custom_user_agent"
+            },
+            {
+                "description": "Get the visible text content of the current page",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "playwright_get_visible_text",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_get_visible_text"
+            },
+            {
+                "description": "Get the HTML content of the current page",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "playwright_get_visible_html",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_get_visible_html"
+            },
+            {
+                "description": "Navigate back in browser history",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "playwright_go_back",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_go_back"
+            },
+            {
+                "description": "Navigate forward in browser history",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "playwright_go_forward",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_go_forward"
+            },
+            {
+                "description": "Drag an element to a target location",
+                "inputSchema": {
+                    "properties": {
+                        "sourceSelector": {
+                            "description": "CSS selector for the element to drag",
+                            "type": "string"
+                        },
+                        "targetSelector": {
+                            "description": "CSS selector for the target location",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "sourceSelector",
+                        "targetSelector"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_drag",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_drag"
+            },
+            {
+                "description": "Press a keyboard key",
+                "inputSchema": {
+                    "properties": {
+                        "key": {
+                            "description": "Key to press (e.g. 'Enter', 'ArrowDown', 'a')",
+                            "type": "string"
+                        },
+                        "selector": {
+                            "description": "Optional CSS selector to focus before pressing key",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "key"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_press_key",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_press_key"
+            },
+            {
+                "description": "Save the current page as a PDF file",
+                "inputSchema": {
+                    "properties": {
+                        "filename": {
+                            "description": "Name of the PDF file (default: page.pdf)",
+                            "type": "string"
+                        },
+                        "format": {
+                            "description": "Page format (e.g. 'A4', 'Letter')",
+                            "type": "string"
+                        },
+                        "margin": {
+                            "description": "Page margins",
+                            "properties": {
+                                "bottom": {
+                                    "type": "string"
+                                },
+                                "left": {
+                                    "type": "string"
+                                },
+                                "right": {
+                                    "type": "string"
+                                },
+                                "top": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "outputPath": {
+                            "description": "Directory path where PDF will be saved",
+                            "type": "string"
+                        },
+                        "printBackground": {
+                            "description": "Whether to print background graphics",
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "outputPath"
+                    ],
+                    "type": "object"
+                },
+                "name": "playwright_save_as_pdf",
+                "server": "playwrite-mcp-server",
+                "tool": "playwright_save_as_pdf"
+            },
+            {
+                "description": "release resource when task finished",
+                "inputSchema": {
+                    "properties": {},
+                    "required": [],
+                    "type": "object"
+                },
+                "name": "release_resource",
+                "server": "mcp-server",
+                "tool": "release_resource"
+            }
+        ],
+    "presetCommands":[],
+    "popularity":8615,
+    "createdAt":1744566069,
+    "updatedAt":1747234202
+}

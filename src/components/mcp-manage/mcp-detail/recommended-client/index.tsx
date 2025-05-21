@@ -16,7 +16,7 @@ const CardItem = (props: CardItemProps) => {
       <div className={Styles.clientIcon}>
         <img
           src={logo}
-          alt={title}
+          alt=""
         />
       </div>
       <div className={Styles.clientContent}>
