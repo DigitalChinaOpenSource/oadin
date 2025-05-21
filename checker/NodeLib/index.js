@@ -176,41 +176,70 @@ class Byze {
   InstallByze() {
     return new Promise((resolve, reject) => {
       const currentPlatform = process.platform;
+
+      const logPath = path.join(os.tmpdir(), 'byze-start.log');
+      const cleanLog = () => {
+        try { fs.unlinkSync(logPath); } catch (e) { /* 忽略不存在 */ }
+      };
+      cleanLog();
+
       let command, args;
 
       if (currentPlatform === 'win32') {
         command = 'cmd.exe';
-        args = ['/c', 'start-byze.bat']; // 依赖 PATH
+        args = ['/c', `start-byze.bat > "${logPath}" 2>&1`]; // 脚本已在 PATH
       } else if (currentPlatform === 'darwin') {
         command = 'sh';
-        args = ['-c', 'nohup byze server start -d > /dev/null 2>&1 & echo "Byze launched"'];
+        args = ['-c', `nohup byze server start -d > "${logPath}" 2>&1 & echo "Byze launched"`];
       } else {
         return reject(new Error(`Unsupported platform: ${currentPlatform}`));
       }
 
-      console.log(`正在运行命令: ${command} ${args.join(' ')}`);
+      console.log(`[InstallByze] 执行命令: ${command} ${args.join(' ')}`);
 
-      execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
-        if (error) console.error(`byze server start:error`, error); 
-        if (stdout) console.log(`byze server start:stdout:`, stdout.toString()); 
-        if (stderr) console.error(`byze server start:stderr:`, stderr.toString());
+      execFile(command, args, { windowsHide: true }, async (error) => {
+        // 等待最多 15 秒，轮询日志判断状态
+        const maxWait = 15000;
+        const interval = 1000;
+        let elapsed = 0;
 
-        const output = (stdout + stderr).toString().toLowerCase();
+        const checkLog = async () => {
+          let content = '';
+          try {
+            content = fs.readFileSync(logPath, 'utf-8').toLowerCase();
+            console.log(`[InstallByze] 当前日志内容:\n${content}`);
+          } catch (e) {
+            // 文件尚未创建
+          }
 
-        if (error || output.includes('error')) {
-          return resolve(false);
-        }
+          if (content.includes('byze server start successfully')) {
+            return resolve(true);
+          }
 
-        if (output.includes('byze server start successfully')) {
-          return resolve(true);
-        }
+          if (
+            content.includes('error') ||
+            content.includes('install model engine failed') ||
+            content.includes('exit status 5')
+          ) {
+            return resolve(false);
+          }
 
-        const available = await this.IsByzeAvailiable();
-        console.log(`Byze及ollama端口: ${available}`);
-        resolve(available);
+          // 没有输出，可能已经启动了
+          if (elapsed >= maxWait) {
+            const available = await this.IsByzeAvailiable();
+            return resolve(available);
+          }
+
+          // 继续等待
+          elapsed += interval;
+          setTimeout(checkLog, interval);
+        };
+
+        checkLog();
       });
     });
   }
+
 
   // 执行 byze install chat
   InstallChat(remote = null) {
