@@ -1,8 +1,9 @@
 import { PrismLight, SyntaxHighlighterProps } from 'react-syntax-highlighter';
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
-import { xonokai } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Button } from 'antd';
 import React from 'react';
+import Styles from './index.module.scss';
+import { coy } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import copyIcon from '@/components/icons/copy.svg';
 // 注册需要的语言（性能优化）
 PrismLight.registerLanguage('json', json);
 const SyntaxHighlighter = PrismLight as unknown as React.ComponentType<SyntaxHighlighterProps>;
@@ -13,7 +14,7 @@ interface McpServiceConfigProps {
 export default function McpServiceConfig({ code = '' }: McpServiceConfigProps) {
   const handleClick = async () => {
     try {
-      await navigator.clipboard.writeText(code);
+      await navigator.clipboard.writeText(code || defaultCode);
     } catch (err) {
       console.error('复制失败:', err);
     }
@@ -22,25 +23,60 @@ export default function McpServiceConfig({ code = '' }: McpServiceConfigProps) {
   const defaultCode = `{
     "model": { 
       "name": "mcp",
-      "version": "1.0.0"
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
     }
   }`;
 
   return (
-    <div>
-      <SyntaxHighlighter
-        language="json"
-        style={xonokai}
-        customStyle={{
-          width: '400px',
-          height: '400px',
-          fontSize: '12px',
-          backgroundColor: '#fff',
-        }}
-      >
-        {code || defaultCode}
-      </SyntaxHighlighter>
-      <Button onClick={handleClick}>复制</Button>
+    <div className={Styles.mcpServiceConfig}>
+      <div className={Styles.configHeader}>服务器配置</div>
+      <div className={Styles.configContent}>
+        <div
+          className={Styles.copyIcon}
+          onClick={handleClick}
+        >
+          <img
+            src={copyIcon}
+            alt="复制"
+          />
+        </div>
+        {/*<Button onClick={handleClick}>复制</Button>*/}
+        <SyntaxHighlighter
+          language="json"
+          style={coy}
+          customStyle={{
+            // width: '400px',
+            maxHeight: '300px',
+            fontSize: '12px',
+            backgroundColor: 'transparent',
+            border: 'none',
+          }}
+        >
+          {code || defaultCode}
+        </SyntaxHighlighter>
+      </div>
     </div>
   );
 }

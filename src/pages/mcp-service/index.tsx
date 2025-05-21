@@ -1,8 +1,8 @@
 import styles from './index.module.scss';
 import { Tabs } from 'antd';
 import type { TabsProps } from 'antd';
-import McpListTab from 'src/components/mcp-service-tab/mcp-list-tab';
-import MyMcpTab from 'src/components/mcp-service-tab/my-mcp-tab';
+import McpListTab from '@/components/mcp-service-tab/mcp-list-tab';
+import MyMcpTab from '@/components/mcp-service-tab/my-mcp-tab';
 import { useSearchParams } from 'react-router-dom';
 
 export default function McpManage() {
@@ -34,6 +34,5 @@ export default function McpManage() {
       tabBarStyle={{ borderBottom: 'none' }}
       // onChange={onChange}
     />
-    // <div>MCPg</div>
   );
 }
