@@ -1,0 +1,23 @@
+import React from 'react';
+
+interface ArrowClockwiseIconProps {
+  width?: number;
+  height?: number;
+  fill?: string;
+}
+
+const ArrowClockwiseIcon: React.FC<ArrowClockwiseIconProps> = ({ width = 16, height = 16, fill = '#9daabb' }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={width}
+      height={height}
+      fill={fill}
+      viewBox="0 0 256 256"
+    >
+      <path d="M240,56v48a8,8,0,0,1-8,8H184a8,8,0,0,1-5.66-13.66l17-17-10.55-9.65-.25-.24a80,80,0,1,0-1.67,114.78,8,8,0,1,1,11,11.63A95.44,95.44,0,0,1,128,224h-1.32A96,96,0,1,1,195.75,60l10.93,10L226.34,50.3A8,8,0,0,1,240,56Z"></path>
+    </svg>
+  );
+};
+
+export default ArrowClockwiseIcon;

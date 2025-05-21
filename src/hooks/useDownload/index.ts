@@ -1,36 +1,12 @@
 import { useCallback, useRef, useEffect, useMemo } from 'react';
 import { modelDownloadStream, abortDownload } from './download';
 import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
-import { DOWNLOAD_STATUS } from '../../constants';
+import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '../../constants';
 import { ModelDataItem } from '../../types';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
 import useModelListStore from '../../store/useModelListStore';
 import { updateDownloadStatus } from './updateDownloadStatus';
-// 本地存储键名常量
-const LOCAL_STORAGE_KEYS = {
-  DOWN_LIST: 'downList',
-  REFRESH_DOWN_LIST: 'refreshDownList',
-};
-
-function getLocalStorageDownList(key: string) {
-  try {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error(`Failed to parse ${key} from localStorage:`, error);
-    return [];
-  }
-}
-
-function updateDownloadItem(setList: any, id: number, modelType: string, updates: any) {
-  setList((draft: any) => {
-    const item = draft.find((item: any) => item.modelType === modelType && item.id === id);
-    if (item) {
-      Object.assign(item, updates);
-    }
-    return draft;
-  });
-}
+import { getLocalStorageDownList } from '@/utils';
 
 /**
  * 下载操作
@@ -116,6 +92,7 @@ export const useDownLoad = () => {
               totalsize,
               can_select: true,
             });
+            setDownloadList((currentList) => currentList.filter((item) => item.status !== COMPLETED));
           } else if (status === 'canceled') {
             updateDownloadStatus(id, modelType, {
               ...baseUpdates,
@@ -159,31 +136,25 @@ export const useDownLoad = () => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.DOWN_LIST);
-      if (downListLocal.length > 0) setDownloadList(downListLocal);
-
-      // 将刷新之前正在下载的列表继续下载
-      const refreshDownListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.REFRESH_DOWN_LIST);
-      if (refreshDownListLocal.length > 0) {
-        refreshDownListLocal.forEach((item: any) => {
-          downLoadStart({
-            ...item,
-            modelName: item.name,
-            type: item.type,
-            status: IN_PROGRESS,
-            modelType: item.modelType,
-          });
-        });
+      if (downListLocal.length > 0) {
+        // 将所有 IN_PROGRESS 状态的项目更新为 PAUSED
+        const updatedList = downListLocal.map((item: any) => ({
+          ...item,
+          status: item.status === IN_PROGRESS ? PAUSED : item.status,
+        }));
+        setDownloadList(updatedList);
       }
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.REFRESH_DOWN_LIST);
+
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.DOWN_LIST);
     }, 150);
 
     return () => clearTimeout(timeout);
-  }, [downLoadStart, setDownloadList]);
+  }, []);
 
   // 监听浏览器刷新 暂停所有模型下载 并且缓存下载列表
   usePageRefreshListener(() => {
     // 存储正在下载的列表
-    localStorage.setItem(LOCAL_STORAGE_KEYS.REFRESH_DOWN_LIST, JSON.stringify(downloadingItems));
+    localStorage.setItem(LOCAL_STORAGE_KEYS.DOWN_LIST, JSON.stringify(downloadingItems));
 
     // 更新所有下载中的项目状态为暂停
     if (downListRef.current?.length > 0) {
@@ -195,22 +166,19 @@ export const useDownLoad = () => {
     }
   });
 
-  // 单独监听下载完成事件
-  useEffect(() => {
-    // 监听下载完成事件，立即处理已完成的项
-    const handleDownloadComplete = () => {
-      setDownloadList((currentList) => currentList.filter((item) => item.status !== COMPLETED));
-    };
-  }, [COMPLETED, setDownloadList]);
-
   const intervalRef = useRef<any>(null);
   // 监听下载列表，处理已完成的下载项，作为兜底处理
   useEffect(() => {
-    if (intervalRef.current) return;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     if (downloadList.length === 0) return;
-
+    const hasCompletedItems = downloadList.some((item) => item.status === COMPLETED);
+    if (!hasCompletedItems) return;
     // 创建定时器，定期检查并清理已完成的下载项
     intervalRef.current = setInterval(() => {
+      console.log('2 秒执行定时器，处理已完成的下载项');
       setDownloadList((currentList) => {
         const hasCompletedItems = currentList.some((item) => item.status === COMPLETED);
         // 如果所有项目都已完成，清空列表并停止定时器
@@ -233,7 +201,7 @@ export const useDownLoad = () => {
         intervalRef.current = null;
       }
     };
-  }, [downloadList, setDownloadList]);
+  }, [downloadList]);
 
-  return { downList: downloadList, setDownList: setDownloadList, downLoadStart, downLoadAbort };
+  return { downLoadStart, downLoadAbort };
 };

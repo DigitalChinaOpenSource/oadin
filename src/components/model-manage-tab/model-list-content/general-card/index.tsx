@@ -1,17 +1,18 @@
-import { useRef, useMemo } from 'react';
+import { useMemo } from 'react';
 import styles from './index.module.scss';
-import { Button, Progress, Tooltip } from 'antd';
+import { Button, Tooltip } from 'antd';
 import { IModelAuth } from '../../types';
-import { ModelDataItem } from '@/types';
+import { ModelDataItem, IModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
-import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '@/components/icons';
-import TagsRender from '../../../tags-render';
+import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon, SettingIcon, ArrowClockwiseIcon } from '@/components/icons';
+import TagsRender from '@/components/tags-render';
 
 export interface IGeneralCardProps {
   // 是否用于详情展示
   isDetail?: boolean;
   // 模型数据
   modelData: ModelDataItem;
+  modelSourceVal: IModelSourceType;
   onCardClick?: (visible: boolean, selectModelData: ModelDataItem) => void;
   onModelAuthVisible?: (data: IModelAuth) => void;
   onDeleteConfirm?: (modelData: ModelDataItem) => void;
@@ -19,7 +20,7 @@ export interface IGeneralCardProps {
 }
 
 export default function GeneralCard(props: IGeneralCardProps) {
-  const { isDetail, onCardClick, onModelAuthVisible, onDeleteConfirm, onDownloadConfirm, modelData } = props;
+  const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData } = props;
 
   // modelData?.class
   const tags = useMemo(
@@ -35,19 +36,22 @@ export default function GeneralCard(props: IGeneralCardProps) {
         <Button
           type="text"
           style={{ color: '#344054', padding: 'unset' }}
+          icon={<LoadingIcon />}
         >
           下载中
-          <LoadingIcon />
         </Button>
       );
     if (can_select || status === COMPLETED)
       return (
         <Button
           className={styles.downloadedBtn}
-          onClick={() => onDeleteConfirm?.(modelData)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteConfirm?.(modelData);
+          }}
+          icon={<DeleteIcon fill="#344054" />}
         >
-          <DeleteIcon fill="#344054" />
-          已下载
+          删除模型
         </Button>
       );
     if (status === PAUSED) return '暂停';
@@ -55,17 +59,63 @@ export default function GeneralCard(props: IGeneralCardProps) {
       return (
         <Button
           type="primary"
-          onClick={() => onDownloadConfirm?.(modelData)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDownloadConfirm?.(modelData);
+          }}
+          icon={<DownloadIcon />}
         >
-          <DownloadIcon />
           下载
         </Button>
       );
   };
 
+  const remoteStatusToText = (item: ModelDataItem) => {
+    const { can_select } = item;
+    if (can_select) {
+      return (
+        <Button
+          className={styles.updateSetting}
+          variant="filled"
+          icon={<SettingIcon fill="#344054" />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onModelAuthVisible?.({
+              visible: true,
+              type: 'update',
+              modelData: modelData,
+            });
+          }}
+        >
+          更新授权
+        </Button>
+      );
+    }
+    return (
+      <>
+        <Button
+          type="primary"
+          onClick={(e) => {
+            {
+              e.stopPropagation();
+              onModelAuthVisible?.({
+                visible: true,
+                type: 'config',
+                modelData: modelData,
+              });
+            }
+          }}
+          icon={<ArrowClockwiseIcon fill="#ffffff" />}
+        >
+          配置授权
+        </Button>
+      </>
+    );
+  };
+
   return (
     <div
-      className={`${isDetail ? styles.generalCardDetail : styles.generalCardHover} ${styles.generalCard}`}
+      className={`${styles.generalCard} ${!isDetail ? styles.generalCardHover : styles.generalCardDetail} `}
       onClick={() => onCardClick?.(true, modelData)}
     >
       {/* 推荐使用，定位右上角 */}
@@ -83,7 +133,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           <div className={styles.title}>{modelData?.name}</div>
           {/* 本地还是云端 */}
           <div className={styles.localOrCloud}>
-            {modelData?.source === 'local' ? (
+            {modelSourceVal === 'local' ? (
               <>
                 <LocalIcon />
                 <div className={styles.localOrCloudText}>本地</div>
@@ -108,20 +158,11 @@ export default function GeneralCard(props: IGeneralCardProps) {
         <div className={styles.providerName}>深度求索</div>
         <div className={styles.dot}>·</div>
         <div className={styles.updateName}>2025-05-19 更新</div>
-        {modelData?.can_select && <div className={styles.modelStatus}>已下载</div>}
+        {modelData?.can_select && modelSourceVal === 'local' && <div className={styles.modelStatus}>已下载</div>}
+        {modelData?.can_select && modelSourceVal === 'remote' && <div className={styles.modelStatus}>已授权</div>}
       </div>
-      {Boolean(modelData?.currentDownload) && (
-        <Progress
-          className={styles.progress}
-          percent={30}
-          size="small"
-          showInfo={false}
-          strokeColor="#5429ff"
-          strokeLinecap="butt"
-        />
-      )}
-
-      <div className={styles.handlebar}>{statusToText(modelData)}</div>
+      {!isDetail && modelSourceVal === 'local' && <div className={styles.handlebar}>{statusToText(modelData)}</div>}
+      {!isDetail && modelSourceVal === 'remote' && <div className={styles.handlebar}>{remoteStatusToText(modelData)}</div>}
     </div>
   );
 }

@@ -12,7 +12,10 @@ export function updateDownloadStatus(id: number, modelType: string, updates: any
   const { setDownloadList } = useModelDownloadStore.getState();
   const { setModelListData } = useModelListStore.getState();
   // 更新下载列表
-  setDownloadList((draft: any[]) => {
+  setDownloadList((draft: any[]): any[] => {
+    if (!draft || !Array.isArray(draft) || draft?.length === 0) {
+      return [];
+    }
     return draft.map((item) => {
       if (item.modelType === modelType && item.id === id) {
         return { ...item, ...updates };
@@ -22,7 +25,10 @@ export function updateDownloadStatus(id: number, modelType: string, updates: any
   });
 
   // 更新模型列表
-  setModelListData((draft: any[]) => {
+  setModelListData((draft: any[]): any[] => {
+    if (!Array.isArray(draft) || draft.length === 0) {
+      return [];
+    }
     return draft.map((item) => {
       if (item.id === id) {
         return { ...item, ...updates };

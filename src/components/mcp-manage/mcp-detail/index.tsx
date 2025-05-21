@@ -38,7 +38,7 @@ export default function McpDetail() {
     navigate(`/mcp-service?mcpFrom=${mcpFrom}`);
   };
   return (
-    <div className={Styles.mcpManageDetail}>
+    <div className={Styles.mcpDetail}>
       <div
         className={Styles.goBack}
         onClick={handledGoBack}

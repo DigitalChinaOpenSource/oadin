@@ -10,3 +10,5 @@ export { default as SiderDownloadIcon } from './sider-download-icon';
 export { default as CloseIcon } from './close-icon';
 export { default as PauseIcon } from './pause-icon';
 export { default as PlayPauseIcon } from './play-pause-icon';
+export { default as FillCloseIcon } from './fill-close-icon';
+export { default as ArrowClockwiseIcon } from './arrow-clockwise-icon';
