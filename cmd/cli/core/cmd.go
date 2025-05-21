@@ -1284,6 +1284,11 @@ func ListenModelEngineHealth() {
 			if engine == types.FlavorOllama {
 				err := OllamaEngine.HealthCheck()
 				if err != nil {
+					err = OllamaEngine.InitEnv()
+					if err != nil {
+						slog.Error("[Engine health]Setting env error: ", err.Error())
+						continue
+					}
 					err := OllamaEngine.StartEngine()
 					if err != nil {
 						continue
