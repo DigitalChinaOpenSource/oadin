@@ -1,10 +1,12 @@
 import { List } from 'antd';
 import McpCard from '../mcp-card';
-import { Input } from 'antd';
+import { Input, Button } from 'antd';
 import { useViewModel } from './view-model';
 import { SearchIcon } from '@/components/icons';
 import McpAdvanceFilter from '../mcp-advance-filter';
 import styles from './index.module.scss';
+
+const { Search } = Input;
 
 export default function McpListTab() {
   const vm = useViewModel();
@@ -19,12 +21,11 @@ export default function McpListTab() {
             <span className={styles.mcpCount}>共 {vm.mcpListData.length} 个</span>
           </div>
           <div className={styles.searchInput}>
-            <Input
-              prefix={<SearchIcon />}
+            <Search
               allowClear
-              placeholder="请输入模型名称"
+              placeholder="请输入 MCP 服务名称"
               value={vm.mcpSearchVal.keyword}
-              onChange={(e) => vm.onMcpInputSearch(e.target.value.trim())}
+              onSearch={(value) => vm.onMcpInputSearch(value.trim())}
               style={{ width: 380 }}
             />
           </div>
