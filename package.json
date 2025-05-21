@@ -19,6 +19,7 @@
     "immer": "^10.1.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.5.2",
     "react-syntax-highlighter": "^15.6.1",
     "sass": "^1.87.0",
