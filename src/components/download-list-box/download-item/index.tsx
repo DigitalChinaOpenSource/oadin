@@ -20,7 +20,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
           <Image
             className={styles.modelImg}
             src={ModelPng}
-          ></Image>
+          />
           <span className={styles.title}>{downloadItem.name}</span>
         </div>
         <div className={styles.controlBar}>
