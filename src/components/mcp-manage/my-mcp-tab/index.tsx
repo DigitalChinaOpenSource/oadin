@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 const MyMcpTab = () => {
   const navigate = useNavigate();
   const handleClick = () => {
-    navigate(`/mcp-service-detail?serviceId=3&mcpFrom=myMcp`);
+    navigate(`/mcp-detail?serviceId=3&mcpFrom=myMcp`);
   };
   return <div onClick={handleClick}>{`我的mcp${Math.random()}`}</div>;
 };

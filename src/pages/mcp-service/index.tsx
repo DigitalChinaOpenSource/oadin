@@ -34,6 +34,5 @@ export default function McpManage() {
       tabBarStyle={{ borderBottom: 'none' }}
       // onChange={onChange}
     />
-    // <div>MCPg</div>
   );
 }
