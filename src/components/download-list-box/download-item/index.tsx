@@ -11,9 +11,8 @@ export interface IDownloadItemProps {
 
 export default function DownloadItem(props: IDownloadItemProps) {
   const { downloadItem } = props;
-  const { fetchCancelModel, fetchDownloadModel, fetchRemoveModel } = useViewModel();
+  const { fetchCancelModel, fetchRemoveModel, fetchDownloadStart } = useViewModel();
   const { COMPLETED, FAILED, IN_PROGRESS, PAUSED } = DOWNLOAD_STATUS;
-  console.log('downloadItem===>', downloadItem);
   return (
     <div className={styles.downloadItem}>
       <div className={styles.titleControlBar}>
@@ -21,28 +20,28 @@ export default function DownloadItem(props: IDownloadItemProps) {
           <Image
             className={styles.modelImg}
             src={ModelPng}
-          ></Image>
+          />
           <span className={styles.title}>{downloadItem.name}</span>
         </div>
         <div className={styles.controlBar}>
           {downloadItem.status === IN_PROGRESS && (
-            <div onClick={() => fetchCancelModel(downloadItem.name)}>
+            <div onClick={() => fetchCancelModel(downloadItem)}>
               <PauseIcon />
             </div>
           )}
           {downloadItem.status === PAUSED && (
-            <div onClick={() => fetchDownloadModel(downloadItem)}>
+            <div onClick={() => fetchDownloadStart(downloadItem)}>
               <PlayPauseIcon />
             </div>
           )}
           {downloadItem.status === FAILED && (
-            <div onClick={() => fetchDownloadModel(downloadItem)}>
+            <div onClick={() => fetchDownloadStart(downloadItem)}>
               <ArrowClockwiseIcon />
             </div>
           )}
           <div
             className={styles.cancel}
-            onClick={() => fetchRemoveModel(downloadItem.name)}
+            onClick={() => fetchRemoveModel(downloadItem)}
           >
             <CloseIcon />
           </div>
@@ -51,8 +50,12 @@ export default function DownloadItem(props: IDownloadItemProps) {
 
       <div className={styles.speedSizeStatus}>
         <div className={styles.speedSize}>
-          <span>{downloadItem.completedsize} MB/</span>
-          <span>{downloadItem.totalsize} MB</span>
+          {downloadItem.completedsize && downloadItem.totalsize && (
+            <>
+              <span>{downloadItem.completedsize} MB/</span>
+              <span>{downloadItem.totalsize} MB</span>
+            </>
+          )}
         </div>
         <div className={styles.status}>
           {downloadItem.status === FAILED && (

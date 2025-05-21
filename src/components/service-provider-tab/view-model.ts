@@ -6,8 +6,6 @@ import { httpRequest } from '../../utils/httpRequest';
 const { confirm } = Modal;
 
 export function useViewModel() {
-  // 移除了mock数据
-
   const { get } = httpRequest;
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -61,13 +59,14 @@ export function useViewModel() {
 
   const { loading: deleteProviderLoading, run: fetchDeleteProvider } = useRequest(
     async (params: { provider_name: string }) => {
-      const data = await httpRequest.get('/health', params);
+      const data = await httpRequest.del('/service_provider', params);
       return data;
     },
     {
       manual: true,
       onSuccess: (data) => {
-        // TODO
+        message.success('删除服务商成功');
+        fetchServiceProviders();
       },
       onError: (error) => {
         message.error('删除服务商失败，请重试');
@@ -83,6 +82,7 @@ export function useViewModel() {
       content: '删除后，将同步卸载该服务提供商关联的所有模型，这可能会影响您的业务使用，确认继续吗？',
       okButtonProps: {
         style: { backgroundColor: '#e85951' },
+        loading: deleteProviderLoading,
       },
       okText: '确认删除',
       onOk() {

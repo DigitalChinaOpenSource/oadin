@@ -6,6 +6,8 @@ import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
 import { SettingIcon, FailedIcon, LoadingIcon } from '../../icons';
+import realLoadingSvg from '@/components/icons/real-loading.svg';
+import noDataSvg from '@/components/icons/no-data.svg';
 import { IModelSourceType } from '@/types';
 
 export interface IModelListContent {
@@ -18,92 +20,106 @@ export interface IModelListContent {
 export default function ModelListContent(props: IModelListContent) {
   const vm = useViewModel(props);
   return (
-    <div className={styles.modelListContent}>
-      <div className={styles.contentContainer}>
-        <div className={styles.titlepath}>
-          <div className={styles.title}>模型列表</div>
-          <Tooltip title="/Users/lc/Library/Application\ Support/">
-            <Button
-              className={styles.changePath}
-              type="text"
-              onClick={vm.onModelPathVisible}
-            >
-              <SettingIcon />
-              修改存储路径
-            </Button>
-            {/* 修改路径失败提示 */}
-            {/* <span className={styles.changeFailed}>
+    <>
+      {vm.modelSupportLoading || vm.smartversionLoading ? (
+        <div className="loading">
+          <img
+            src={realLoadingSvg}
+            alt="loading"
+          />
+        </div>
+      ) : (
+        <div className={styles.modelListContent}>
+          <div className={styles.contentContainer}>
+            <div className={styles.titlepath}>
+              <div className={styles.title}>模型列表</div>
+              <Tooltip title="/Users/lc/Library/Application\ Support/">
+                <Button
+                  className={styles.changePath}
+                  type="text"
+                  onClick={vm.onModelPathVisible}
+                >
+                  <SettingIcon />
+                  修改存储路径
+                </Button>
+                {/* 修改路径失败提示 */}
+                {/* <span className={styles.changeFailed}>
               <FailedIcon fill='#ff6e38'/>
             </span> */}
-            {/* <Button className={styles.changePath} type="text">
+                {/* <Button className={styles.changePath} type="text">
               <LoadingIcon />
               <span className={styles.isChangingText}>正在修改至新的存储路径</span>
             </Button> */}
-          </Tooltip>
-        </div>
-
-        <div className={styles.modelCardList}>
-          {vm.pagenationData.length > 0 ? (
-            <List
-              grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }}
-              dataSource={vm.pagenationData}
-              pagination={
-                vm.pagenationData.length > 0 && {
-                  className: styles.pagination,
-                  align: 'end',
-                  ...vm.pagination,
-                  pageSizeOptions: [12, 24, 48, 96],
-                  showSizeChanger: true,
-                  onChange: vm.onPageChange,
-                  onShowSizeChange: vm.onShowSizeChange,
-                }
-              }
-              renderItem={(item) => (
-                <List.Item>
-                  <GeneralCard
-                    modelData={item}
-                    modelSourceVal={vm.modelSourceVal}
-                    onCardClick={vm.onDetailModalVisible}
-                    onModelAuthVisible={vm.onModelAuthVisible}
-                    onDownloadConfirm={vm.onDownloadConfirm}
-                    onDeleteConfirm={vm.onDeleteConfirm}
-                  />
-                </List.Item>
-              )}
-            />
-          ) : (
-            <div className={styles.noData}>
-              {/* <div className={styles.noDataIcon}>
-                  
-                </div> */}
-              <div className={styles.noDataText}>暂无相关模型</div>
+              </Tooltip>
             </div>
+
+            <div className={styles.modelCardList}>
+              {vm.pagenationData.length > 0 ? (
+                <List
+                  grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }}
+                  dataSource={vm.pagenationData}
+                  pagination={
+                    vm.pagenationData.length > 0 && {
+                      className: styles.pagination,
+                      align: 'end',
+                      ...vm.pagination,
+                      pageSizeOptions: [12, 24, 48, 96],
+                      showSizeChanger: true,
+                      onChange: vm.onPageChange,
+                      onShowSizeChange: vm.onShowSizeChange,
+                    }
+                  }
+                  renderItem={(item) => (
+                    <List.Item>
+                      <GeneralCard
+                        modelData={item}
+                        modelSourceVal={vm.modelSourceVal}
+                        onCardClick={vm.onDetailModalVisible}
+                        onModelAuthVisible={vm.onModelAuthVisible}
+                        onDownloadConfirm={vm.onDownloadConfirm}
+                        onDeleteConfirm={vm.onDeleteConfirm}
+                      />
+                    </List.Item>
+                  )}
+                />
+              ) : (
+                <div className={styles.noData}>
+                  <div className={styles.noDataIcon}>
+                    <img
+                      src={noDataSvg}
+                      alt="no-data"
+                    />
+                  </div>
+                  <div className={styles.noDataText}>暂无匹配的模型</div>
+                </div>
+              )}
+            </div>
+          </div>
+          {/* 模型路径弹窗 */}
+          {vm.modalPathVisible && (
+            <ModelPathModal
+              modalPath={vm.modelPath}
+              onModalPathClose={vm.onModelPathVisible}
+            />
+          )}
+          {/* 配置授权弹窗 */}
+          {vm.modelAuthVisible && (
+            <ModelAuthorizeModal
+              modelDataItem={vm.selectModelData}
+              modelAuthType={vm.modelAuthType}
+              onModelAuthVisible={vm.onModelAuthVisible}
+              onModelAuthSuccess={vm.onModelAuthSuccess}
+            />
+          )}
+          {/* 模型详情弹窗 */}
+          {vm.isDetailVisible && (
+            <ModelDetailModal
+              onDetailModalVisible={vm.onDetailModalVisible}
+              selectModelData={vm.selectModelData}
+            />
           )}
         </div>
-      </div>
-      {/* 模型路径弹窗 */}
-      {vm.modalPathVisible && (
-        <ModelPathModal
-          modalPath={vm.modelPath}
-          onModalPathClose={vm.onModelPathVisible}
-        />
       )}
-      {/* 配置授权弹窗 */}
-      {vm.modelAuthVisible && (
-        <ModelAuthorizeModal
-          modelDataItem={vm.selectModelData}
-          modelAuthType={vm.modelAuthType}
-          onModelAuthVisible={vm.onModelAuthVisible}
-          onModelAuthSuccess={vm.onModelAuthSuccess}
-        />
-      )}
-      {/* 模型详情弹窗 */}
-      {vm.isDetailVisible && (
-        <ModelDetailModal
-          onDetailModalVisible={vm.onDetailModalVisible}
-          selectModelData={vm.selectModelData}
-        />
-      )}
-    </div>
+    </>
   );
 }

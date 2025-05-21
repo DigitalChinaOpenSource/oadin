@@ -13,7 +13,6 @@ export interface IDownloadListBoxProps {
 export default function DownloadListBox(props: IDownloadListBoxProps) {
   const { className = '', handleDownload } = props;
   const { downloadList } = useModelDownloadStore();
-  console.log('DownloadListBox======>', downloadList);
   return (
     <div className={`${className} ${styles.downloadListBox}`}>
       <div className={styles.header}>

@@ -8,7 +8,8 @@ import { IRequestModelParams } from '../../types';
  * @param data - 请求体参数
  */
 async function abortDownload(data: { model_name: string }) {
-  return await httpRequest
+  console.log('abortDownload', data);
+  await httpRequest
     .post('/model/stream/cancel', data)
     .then((res) => res)
     .catch((e) => {

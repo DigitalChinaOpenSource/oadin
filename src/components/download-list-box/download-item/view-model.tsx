@@ -1,30 +1,28 @@
-import { useRequest } from 'ahooks';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import { LOCAL_STORAGE_KEYS } from '@/constants';
 import { useDownLoad } from '@/hooks/useDownload';
+import { message } from 'antd';
 import { ModelDataItem } from '@/types';
 export function useViewModel() {
-  const { downLoadAbort, downLoadStart } = useDownLoad();
+  const { fetchDownLoadAbort, fetchDownloadStart } = useDownLoad();
   const { downloadList, setDownloadList } = useModelDownloadStore();
-  const { run: fetchCancelModelStream } = useRequest(downLoadAbort, {
-    manual: true,
-  });
 
   const fetchCancelModel = async (data: ModelDataItem) => {
-    await fetchCancelModelStream(data.name, { id: data.id, modelType: data.modelType });
-  };
-
-  const fetchDownloadModel = async (data: ModelDataItem) => {
-    await downLoadStart(data);
+    await fetchDownLoadAbort({ model_name: data.name }, { id: data.id, modelType: data.modelType });
   };
 
   const fetchRemoveModel = async (data: ModelDataItem) => {
+    console.log('fetchRemoveModel', data, downloadList);
+    if (!downloadList.some((item) => item.name === data.name)) {
+      message.warning('未找到匹配的模型进行移除');
+      return;
+    }
     const result = downloadList.filter((item) => item.name !== data.name);
-    if (result.length === 0) return;
     setDownloadList(result);
     localStorage.setItem(LOCAL_STORAGE_KEYS.DOWN_LIST, JSON.stringify(result));
 
     await fetchCancelModel(data);
   };
-  return { fetchCancelModel, fetchDownloadModel, fetchRemoveModel };
+
+  return { fetchCancelModel, fetchDownloadStart, fetchRemoveModel };
 }

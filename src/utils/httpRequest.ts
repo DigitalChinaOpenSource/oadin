@@ -84,7 +84,7 @@ const get = <T = any>(url: string, params?: any, config?: any) => {
   return instance.get<any, T>(url, { ...config, params, baseURL: config?.baseURL || instance.defaults.baseURL });
 };
 
-const post = <T = any>(url: string, data?: any, config?: any) => {
+const post = <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig, 'data'>) => {
   return instance.post<any, T>(url, data, { ...config, baseURL: config?.baseURL || instance.defaults.baseURL });
 };
 
@@ -92,8 +92,8 @@ const put = <T = any>(url: string, data?: any, config?: any) => {
   return instance.put<any, T>(url, data, { ...config, baseURL: config?.baseURL || instance.defaults.baseURL });
 };
 
-const del = <T = any>(url: string, params?: any, config?: any) => {
-  return instance.delete<any, T>(url, { ...config, params });
+const del = <T = any>(url: string, data?: any, config?: any) => {
+  return instance.delete<any, T>(url, { data });
 };
 
 export const httpRequest = {

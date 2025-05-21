@@ -4,8 +4,15 @@
   padding: 8px;
   border-radius: 8px;
   margin-bottom: 8px;
+  .controlBar {
+    display: none;
+  }
   &:hover {
     background-color: #f9faff;
+    .controlBar {
+      display: flex;
+      cursor: pointer;
+    }
   }
   .titleControlBar {
     display: flex;
@@ -22,10 +29,6 @@
       height: 24px;
       padding: 2px;
       margin-right: 8px;
-    }
-    .controlBar {
-      display: flex;
-      cursor: pointer;
     }
     .cancel {
       margin-left: 12px;

@@ -3,6 +3,7 @@ import { Table } from 'antd';
 import { useViewModel } from './view-model';
 import ServiceProviderDetail from './service-provider-detail';
 import { useTableColumns } from './table-columns';
+import noDataSvg from '@/components/icons/no-data.svg';
 
 export default function ServiceProviderManageTab() {
   const vm = useViewModel();
@@ -26,6 +27,21 @@ export default function ServiceProviderManageTab() {
           columns={columns}
           dataSource={vm.dataList}
           pagination={pagination}
+          locale={{
+            emptyText: () => {
+              return (
+                <div className={styles.noData}>
+                  <div className={styles.noDataIcon}>
+                    <img
+                      src={noDataSvg}
+                      alt="no-data"
+                    />
+                  </div>
+                  <div className={styles.noDataText}>暂无匹配的模型</div>
+                </div>
+              );
+            },
+          }}
         />
       </div>
       {vm.detailVisible && (

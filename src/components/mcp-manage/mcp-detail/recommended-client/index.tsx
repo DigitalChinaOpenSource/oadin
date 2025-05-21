@@ -1,4 +1,4 @@
-import Styles from './index.module.scss';
+import styles from './index.module.scss';
 type CardItemType = {
   logo: string;
   title: string;
@@ -12,16 +12,16 @@ type CardItemProps = {
 const CardItem = (props: CardItemProps) => {
   const { logo, title, description } = props.clientData;
   return (
-    <div className={Styles.clientItem}>
-      <div className={Styles.clientIcon}>
+    <div className={styles.clientItem}>
+      <div className={styles.clientIcon}>
         <img
           src={logo}
           alt=""
         />
       </div>
-      <div className={Styles.clientContent}>
-        <div className={Styles.clientName}>{title}</div>
-        <div className={Styles.clientDesc}>{description}</div>
+      <div className={styles.clientContent}>
+        <div className={styles.clientName}>{title}</div>
+        <div className={styles.clientDesc}>{description}</div>
       </div>
     </div>
   );
@@ -36,8 +36,8 @@ export default function RecommendedClient() {
     { id: '5', logo: '2', title: '测试2', description: '测试内容2' },
   ];
   return (
-    <div className={Styles.recommendedClient}>
-      <div className={Styles.recommendedHeader}>推荐客户端</div>
+    <div className={styles.recommendedClient}>
+      <div className={styles.recommendedHeader}>推荐客户端</div>
       {testList.map((item) => {
         return (
           <CardItem

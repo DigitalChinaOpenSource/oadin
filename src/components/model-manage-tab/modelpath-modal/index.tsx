@@ -11,14 +11,18 @@ export default function ModelPathModal(props: IModelPathModalProps) {
   const { modalPath, onModalPathClose } = props;
   // 模型存储路径
   const [saveModelPath, setSaveModalPath] = useState<string>(modalPath || '');
-
+  const [pathValid, setPathValid] = useState<boolean>(false);
   const onModelPathChange = (val: string) => {
     setSaveModalPath(val);
+    setPathValid(!!val.trim());
   };
 
   const handleToSavePath = () => {
-    // 如果没有修改, 则直接关闭
-    if (modalPath === saveModelPath) {
+    if (!saveModelPath) {
+      setPathValid(false);
+      return;
+    }
+    if (modalPath === saveModelPath && saveModelPath) {
       onModalPathClose?.();
       return;
     }
@@ -27,7 +31,16 @@ export default function ModelPathModal(props: IModelPathModalProps) {
   };
 
   return (
-    <Modal centered title="修改模型存储路径" width={480} open onOk={handleToSavePath} onCancel={onModalPathClose} className={styles.modelPathModal} okText="确认">
+    <Modal
+      centered
+      title="修改模型存储路径"
+      width={480}
+      open
+      onOk={handleToSavePath}
+      onCancel={onModalPathClose}
+      className={styles.modelPathModal}
+      okText="确认"
+    >
       <div className={styles.modelPathModal}>
         <div className={styles.tips}>
           <p>若本地模型正在工作中，该操作可能会造成业务的中断。</p>
@@ -42,10 +55,16 @@ export default function ModelPathModal(props: IModelPathModalProps) {
             <span className={styles.label}>模型存储路径：</span>
           </div>
 
-          <Input className={styles.pathInput} allowClear value={saveModelPath} onChange={(e) => onModelPathChange(e.target.value)} />
+          <Input
+            className={styles.pathInput}
+            allowClear
+            value={saveModelPath}
+            onChange={(e) => onModelPathChange(e.target.value)}
+          />
           <div className={styles.diskSpace}>
+            {!pathValid && <div className={styles.pathValid}>请输入模型存储路径</div>}
             <span>
-              （<span>100GB</span>/<span>948GB</span>，<span className={styles.diskCanUse}>666GB可用</span>）
+              <span>100GB</span>/<span>948GB</span>，<span className={styles.diskCanUse}>666GB可用</span>
             </span>
           </div>
         </div>

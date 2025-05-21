@@ -1,4 +1,4 @@
-import Styles from './index.module.scss';
+import styles from './index.module.scss';
 import { Collapse, CollapseProps, List } from 'antd';
 // type CollapseItemType = {;
 
@@ -9,7 +9,7 @@ export default function McpTools() {
     { id: '3', key: '3', label: '测试3', description: '测试内容3' },
   ];
   return (
-    <div className={Styles.mcpTools}>
+    <div className={styles.mcpTools}>
       <List
         // className={}
         itemLayout="horizontal"
