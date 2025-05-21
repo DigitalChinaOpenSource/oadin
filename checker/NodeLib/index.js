@@ -131,9 +131,6 @@ class Byze {
   DownloadByze() {
     return new Promise((resolve, reject) => {
       const isMacOS = process.platform === 'darwin';
-      // const url = isMacOS
-      //   ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
-      //   : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe';
       const url = isMacOS
         ? 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/byze-installer-latest.pkg'
         : 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/byze-installer-latest.exe';
@@ -154,7 +151,7 @@ class Byze {
         },
       };
 
-      https.get(url, options, (response) => {
+      http.get(url, options, (response) => {
         if (response.statusCode !== 200) {
           return reject(new Error(`Download failed with status code: ${response.statusCode}`));
         }
