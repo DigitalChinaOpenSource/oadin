@@ -176,6 +176,14 @@ class Byze {
   InstallByze() {
     return new Promise((resolve, reject) => {
       const currentPlatform = process.platform;
+      const userDir = os.homedir();
+      const byzeDir = path.join(userDir, 'Byze');
+  
+      // 确保PATH包含Byze目录（兼容跨平台）
+      if (!process.env.PATH.includes(byzeDir)) {
+        process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
+        console.log("添加到临时环境变量")
+      }
 
       const logPath = path.join(os.tmpdir(), 'byze-start.log');
       const cleanLog = () => {
