@@ -23,7 +23,7 @@ export default function Sidebar() {
   const { downloadList } = useModelDownloadStore();
   useEffect(() => {
     const path = location.pathname.split('/')[1] || 'model-manage';
-    setSelectedKey(path.includes('mcp-service') ? 'mcp-service' : path);
+    setSelectedKey(path.includes('mcp-service') || path.includes('mcp-detail') ? 'mcp-service' : path);
   }, [location]);
 
   const menuItems = [

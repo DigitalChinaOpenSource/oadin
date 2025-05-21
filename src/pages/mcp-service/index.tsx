@@ -1,8 +1,8 @@
 import styles from './index.module.scss';
 import { Tabs } from 'antd';
 import type { TabsProps } from 'antd';
-import McpListTab from '@/components/mcp-service-tab/mcp-list-tab';
-import MyMcpTab from '@/components/mcp-service-tab/my-mcp-tab';
+import McpListTab from '@/components/mcp-manage/mcp-list-tab';
+import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import { useSearchParams } from 'react-router-dom';
 
 export default function McpManage() {
