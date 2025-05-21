@@ -188,7 +188,13 @@ class Byze {
         return reject(new Error(`Unsupported platform: ${currentPlatform}`));
       }
 
+      console.log(`正在运行命令: ${command} ${args.join(' ')}`);
+
       execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
+        if (error) console.error(`byze server start:error`, error); 
+        if (stdout) console.log(`byze server start:stdout:`, stdout.toString()); 
+        if (stderr) console.error(`byze server start:stderr:`, stderr.toString());
+
         const output = (stdout + stderr).toString().toLowerCase();
 
         if (error || output.includes('error')) {
@@ -200,6 +206,7 @@ class Byze {
         }
 
         const available = await this.IsByzeAvailiable();
+        console.log(`Byze及ollama端口: ${available}`);
         resolve(available);
       });
     });
