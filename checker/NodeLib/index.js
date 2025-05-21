@@ -177,9 +177,8 @@ class Byze {
       let command, args;
 
       if (currentPlatform === 'win32') {
-        const batPath = path.resolve(__dirname, 'start-byze.bat');
         command = 'cmd.exe';
-        args = ['/c', batPath];
+        args = ['/c', 'start-byze.bat']; // 依赖 PATH
       } else if (currentPlatform === 'darwin') {
         command = 'sh';
         args = ['-c', 'nohup byze server start -d > /dev/null 2>&1 & echo "Byze launched"'];
@@ -197,12 +196,12 @@ class Byze {
         if (output.includes('byze server start successfully')) {
           return resolve(true);
         }
+
         const available = await this.IsByzeAvailiable();
         resolve(available);
       });
     });
-  };
-
+  }
 
   // 执行 byze install chat
   InstallChat(remote = null) {
