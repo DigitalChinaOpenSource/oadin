@@ -9,12 +9,17 @@
   margin-right: 8px;
   flex-shrink: 0;
   padding: 2px 8px;
-  color: #5429ff;
-  background-color: #f3f1ff;
+  background-color: #f5f6f8;
+  color: #344054;
   border: unset;
 }
 .hiddenTag {
   background-color: #f9faff;
   color: #344054;
   margin-bottom: 4px;
+}
+
+.highlightTag {
+  background-color: #f3f1ff;
+  color: #5429ff;
 }

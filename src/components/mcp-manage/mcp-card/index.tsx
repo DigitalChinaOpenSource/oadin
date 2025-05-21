@@ -1,45 +1,49 @@
 import { useMemo } from 'react';
 import styles from './index.module.scss';
-import { Button, Progress, Tooltip } from 'antd';
+import { Button, Tooltip } from 'antd';
 import { IMcpListItem } from '../mcp-list-tab/types';
-import { DOWNLOAD_STATUS } from '@/constants';
-import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '@/components/icons';
+import { LoadingIcon, LocalIcon, CloudIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
+import ModelPng from '@/assets/model.png';
+import dayjs from 'dayjs';
 
 export interface IMcpCardProps {
   // 模型数据
   mcpData: IMcpListItem;
+  handelMcpCardClick: (mcpId: number) => void;
 }
 
 export default function McpCard(props: IMcpCardProps) {
-  const { mcpData } = props;
+  const { mcpData, handelMcpCardClick } = props;
 
   const tags = useMemo(
     () => ['深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成'],
     [mcpData?.tags],
   );
 
+  const formateUnixTime = (unixTime: number) => {
+    const date = dayjs.unix(unixTime);
+    return date.format('YYYY-MM-DD');
+  };
   return (
     <div
       className={styles.mcpCard}
-      // onClick={() => onCardClick?.(true, modelData)}
+      onClick={() => handelMcpCardClick(mcpData.id)}
     >
-      {/* 推荐使用，定位右上角 */}
-      {modelData?.is_recommended && <div className={styles.recommend}>推荐使用</div>}
       <div className={styles.cardHeader}>
         <div className={styles.cardTitle}>
           {/* logo */}
           <div className={styles.avatar}>
             <img
-              src={modelData?.avatar}
+              src={ModelPng}
               width={24}
             />
           </div>
           {/* 名称 */}
-          <div className={styles.title}>{modelData?.name}</div>
+          <div className={styles.title}>{mcpData.name.zh}</div>
           {/* 本地还是云端 */}
           <div className={styles.localOrCloud}>
-            {modelData?.source === 'local' ? (
+            {mcpData?.hosted ? (
               <>
                 <LocalIcon />
                 <div className={styles.localOrCloudText}>本地</div>
@@ -54,28 +58,20 @@ export default function McpCard(props: IMcpCardProps) {
         </div>
       </div>
 
-      <TagsRender tags={tags} />
+      <TagsRender tags={mcpData?.tags} />
 
-      <Tooltip title={modelData?.desc}>
-        <div className={styles.contentWrapper}>{modelData?.desc}</div>
+      <Tooltip title={'asdad'}>
+        <div className={styles.contentWrapper}>
+          这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述
+        </div>
       </Tooltip>
 
       <div className={styles.infoWrapper}>
         <div className={styles.providerName}>深度求索</div>
         <div className={styles.dot}>·</div>
-        <div className={styles.updateName}>2025-05-19 更新</div>
-        {modelData?.can_select && <div className={styles.modelStatus}>已下载</div>}
+        <div className={styles.updateName}>{formateUnixTime(mcpData.updatedAt)} 更新</div>
+        {!!mcpData.status && <div className={styles.mcpStatus}>已授权</div>}
       </div>
-      {Boolean(modelData?.currentDownload) && (
-        <Progress
-          className={styles.progress}
-          percent={30}
-          size="small"
-          showInfo={false}
-          strokeColor="#5429ff"
-          strokeLinecap="butt"
-        />
-      )}
     </div>
   );
 }

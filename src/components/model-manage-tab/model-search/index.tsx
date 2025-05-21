@@ -1,6 +1,6 @@
 import styles from './index.module.scss';
 import { Input, Select } from 'antd';
-import { SearchIcon } from '../../icons';
+import { SearchIcon } from '@/components/icons';
 import { IModelSourceType } from '@/types';
 
 export interface IModelTitleSearchProps {

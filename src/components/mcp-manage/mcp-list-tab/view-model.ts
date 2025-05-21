@@ -3,16 +3,21 @@ import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import { IMcpListRequestParams, IMcpListData } from './types';
 import { mcpListDataMock } from './constant';
+import { useNavigate } from 'react-router-dom';
+
 export function useViewModel() {
+  const navigate = useNavigate();
+
   const [mcpListData, setMcpListData] = useState([]);
   const [mcpSearchVal, setMcpSearchVal] = useState({} as IMcpListRequestParams);
-  useEffect(() => {
-    fetchMcpList({
-      deployment: 'hosted',
-      page: 1,
-      size: 10,
-    });
-  });
+
+  // useEffect(() => {
+  //   fetchMcpList({
+  //     deployment: 'hosted',
+  //     page: 1,
+  //     size: 10,
+  //   });
+  // }, []);
 
   // 获取 mcp 列表
   const { loading: mcpListLoading, run: fetchMcpList } = useRequest(
@@ -32,9 +37,25 @@ export function useViewModel() {
     },
   );
 
+  const handelMcpCardClick = (serviceId: number) => {
+    navigate(`/mcp-service-detail?serviceId=${serviceId}&mcpFrom=mcpList`);
+  };
+
+  // 搜索框搜索
+  const onMcpInputSearch = (inputSearchVal: string) => {
+    setMcpSearchVal({
+      ...mcpSearchVal,
+      keyword: inputSearchVal,
+    });
+  };
+
   return {
     mcpListLoading,
     mcpListData,
     mcpListDataMock,
+    mcpSearchVal,
+
+    handelMcpCardClick,
+    onMcpInputSearch,
   };
 }

@@ -1,0 +1,95 @@
+.mcpCard {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  :global(.ant-card-body) {
+    padding: 16px;
+  }
+  .cardHeader {
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #c1c6d6;
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .cardTitle {
+      display: flex;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-left: 8px;
+      line-height: 40px;
+    }
+    .localOrCloud {
+      height: 18px;
+      font-size: 12px;
+      background-color: #f0f0f0;
+      color: #898ea3;
+      border-radius: 999px;
+      padding: 1px 8px;
+      display: flex;
+      margin: 11px 0px 0 8px;
+      .localOrCloudText {
+        margin-left: 2px;
+      }
+    }
+    .authorized {
+      background-color: #d2f2fd;
+      color: #448a96;
+      font-size: 12px;
+      padding: 4px 6px;
+      line-height: 18px;
+      border-radius: 4px;
+    }
+  }
+  .contentWrapper {
+    margin-top: 8px;
+    min-height: 42px;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
+    color: #565966;
+  }
+
+  .infoWrapper {
+    display: flex;
+    align-items: center;
+    margin-top: 28px;
+    color: #565966;
+    transition: all 0.4s ease;
+    .dot {
+      margin: 0 16px;
+    }
+    .mcpStatus {
+      margin-left: auto;
+    }
+  }
+
+  .updateSetting {
+    color: #5429ff;
+    background-color: #f3f1f1;
+  }
+  .title,
+  .localOrCloud,
+  .recommend,
+  .providerName {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
