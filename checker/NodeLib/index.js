@@ -15,6 +15,7 @@ const schemas = require('./schema.js');
 
 function runInstaller(installerPath, isMacOS) {
   return new Promise((resolve, reject) => {
+    console.log(`installer 正在安装 Byze...`);
     if (isMacOS) {
       // 打开 GUI 安装器
       const child = spawn('open', [installerPath], { stdio: 'ignore', detached: true });
@@ -22,7 +23,7 @@ function runInstaller(installerPath, isMacOS) {
       child.on('error', reject);
 
       // 等待安装目录生成（轮询）
-      const expectedPath = '/Applications/Byze.app'; // 你需要根据实际情况修改
+      const expectedPath = '/usr/local/bin/byze';
       const maxRetries = 30; // 最多等 60 次（大约 60 秒）
       let retries = 0;
 
@@ -138,6 +139,7 @@ class Byze {
       const destDir = path.join(userDir, 'ByzeInstaller');
       const destFileName = isMacOS ? 'byze-installer-latest.pkg' : 'byze-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
+      console.log(`正在下载 Byze installer...`);
 
       // 创建目录
       fs.mkdirSync(destDir, { recursive: true });
