@@ -1,4 +1,4 @@
-import Styles from './index.module.scss';
+import styles from './index.module.scss';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { Button, Tabs } from 'antd';
@@ -38,34 +38,34 @@ export default function McpDetail() {
     navigate(`/mcp-service?mcpFrom=${mcpFrom}`);
   };
   return (
-    <div className={Styles.mcpManageDetail}>
+    <div className={styles.mcpManageDetail}>
       <div
-        className={Styles.goBack}
+        className={styles.goBack}
         onClick={handledGoBack}
       >
-        <ArrowLeftOutlined className={Styles.backIcon} />
-        <span className={Styles.backText}>返回</span>
+        <ArrowLeftOutlined className={styles.backIcon} />
+        <span className={styles.backText}>返回</span>
       </div>
-      <div className={Styles.detailTop}>
-        <div className={Styles.topLeft}>
+      <div className={styles.detailTop}>
+        <div className={styles.topLeft}>
           <DetailDesc />
         </div>
-        <div className={Styles.topRight}>
+        <div className={styles.topRight}>
           <Button type="primary">添加</Button>
         </div>
       </div>
       {/*分割线*/}
-      <div className={Styles.Line}></div>
-      <div className={Styles.detailContent}>
-        <div className={Styles.contentLeft}>
+      <div className={styles.Line}></div>
+      <div className={styles.detailContent}>
+        <div className={styles.contentLeft}>
           <Tabs
-            className={Styles.tabs}
+            className={styles.tabs}
             defaultActiveKey="overView"
             items={items}
             // onChange={onChange}
           />
         </div>
-        <div className={Styles.contentRight}>
+        <div className={styles.contentRight}>
           <McpServiceConfig />
           <RecommendedClient />
         </div>

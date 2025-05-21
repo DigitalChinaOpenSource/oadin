@@ -1,23 +1,22 @@
 import { useMemo } from 'react';
 import styles from './index.module.scss';
 import { Button, Progress, Tooltip } from 'antd';
-import { ModelDataItem } from '@/types';
+import { IMcpListItem } from '../mcp-list-tab/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
 
 export interface IMcpCardProps {
   // 模型数据
-  modelData: ModelDataItem;
+  mcpData: IMcpListItem;
 }
 
 export default function McpCard(props: IMcpCardProps) {
-  const { modelData } = props;
+  const { mcpData } = props;
 
-  // modelData?.class
   const tags = useMemo(
     () => ['深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成'],
-    [modelData?.class],
+    [mcpData?.tags],
   );
 
   return (

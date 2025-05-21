@@ -1,8 +1,8 @@
-import Styles from './index.module.scss';
+import styles from './index.module.scss';
 
 export default function McpOverview() {
   return (
-    <div className={Styles.mcpOverview}>
+    <div className={styles.mcpOverview}>
       <h1>MCP Overview</h1>
       <p>Overview of the MCP service.</p>
       <h1>MCP Overview</h1>
