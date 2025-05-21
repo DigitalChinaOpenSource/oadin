@@ -28,11 +28,11 @@ export default function McpDetail() {
       label: '工具',
       children: <McpTools />,
     },
-    {
-      key: 'presetInstructions',
-      label: '预设指令',
-      children: <McpInstructions />,
-    },
+    // {
+    //   key: 'presetInstructions',
+    //   label: '预设指令',
+    //   children: <McpInstructions />,
+    // },
   ];
   const handledGoBack = (): void => {
     navigate(`/mcp-service?mcpFrom=${mcpFrom}`);

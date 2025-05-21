@@ -12,12 +12,12 @@ export function useViewModel() {
       page: 1,
       size: 10,
     });
-  });
+  }, []);
 
   // 获取 mcp 列表
   const { loading: mcpListLoading, run: fetchMcpList } = useRequest(
     async (params: IMcpListRequestParams) => {
-      const data = await httpRequest.post<IMcpListData>('/api/mcp/search', params);
+      const data = await httpRequest.post<IMcpListData>('/mcp/search', params, { baseURL: '/api' });
       return data?.data || [];
     },
     {
