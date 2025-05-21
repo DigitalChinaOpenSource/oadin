@@ -177,7 +177,12 @@ class Byze {
   }
 
   // 启动 Byze 服务
-  InstallByze() {
+  async InstallByze() {
+    const alreadyRunning = await this.IsByzeAvailiable();
+    if (alreadyRunning) {
+      console.log('Byze 在运行中');
+      return true;
+    }
     return new Promise((resolve, reject) => {
       const currentPlatform = process.platform;
       const userDir = os.homedir();
