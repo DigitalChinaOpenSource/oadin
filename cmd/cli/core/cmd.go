@@ -848,6 +848,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 
 func CheckByzeServer(cmd *cobra.Command, args []string) {
 	if utils.IsServerRunning() {
+		fmt.Println("Byze server start successfully.")
 		return
 	}
 	//userDir, _ := os.UserHomeDir()
