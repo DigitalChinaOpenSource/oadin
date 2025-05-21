@@ -34,8 +34,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
     if (status === IN_PROGRESS)
       return (
         <Button
-          type="text"
-          style={{ color: '#344054', padding: 'unset' }}
+          className={styles.downloadedBtn}
           icon={<LoadingIcon />}
         >
           下载中

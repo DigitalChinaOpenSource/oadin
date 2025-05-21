@@ -19,7 +19,6 @@ export default function Sidebar() {
   const [selectedKey, setSelectedKey] = useState('model-manage');
   // 是否展示下载列表弹窗
   const [isDownloadListOpen, setIsDownloadListOpen] = useState(false);
-  console.log('isDownloadListOpen===>', isDownloadListOpen);
   const { downloadList } = useModelDownloadStore();
   useEffect(() => {
     const path = location.pathname.split('/')[1] || 'model-manage';
@@ -82,8 +81,8 @@ export default function Sidebar() {
     setSelectedKey(key);
   };
 
-  const handleDownload = () => {
-    setIsDownloadListOpen(!isDownloadListOpen);
+  const handleDownload = (visible: boolean) => {
+    setIsDownloadListOpen(visible);
   };
 
   return (
@@ -114,29 +113,30 @@ export default function Sidebar() {
         ))}
       </div>
 
-      <div className={styles.downloadBtnBox}>
-        <Badge
-          dot={!!downloadList?.length}
-          // count={3}
-          className={styles.badge}
-        >
-          <div
-            className={styles.downloadBtn}
-            onClick={handleDownload}
+      {!!downloadList?.length && (
+        <div className={styles.downloadBtnBox}>
+          <Badge
+            dot={!!downloadList?.length}
+            className={styles.badge}
           >
-            <SiderDownloadIcon
-              width={18}
-              height={18}
+            <div
+              className={styles.downloadBtn}
+              onClick={() => handleDownload(true)}
+            >
+              <SiderDownloadIcon
+                width={18}
+                height={18}
+              />
+            </div>
+          </Badge>
+          {isDownloadListOpen && downloadList.length > 0 && (
+            <DownloadListBox
+              className={styles.downloadListWrapper}
+              handleDownload={() => handleDownload(false)}
             />
-          </div>
-        </Badge>
-        {isDownloadListOpen && downloadList.length > 0 && (
-          <DownloadListBox
-            className={styles.downloadListWrapper}
-            handleDownload={handleDownload}
-          />
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

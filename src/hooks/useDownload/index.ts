@@ -28,7 +28,7 @@ export const useDownLoad = () => {
   const downloadingItems = useMemo(() => downloadList.filter((item) => item.status === IN_PROGRESS), [downloadList]);
 
   // 开始下载
-  const downLoadStart = useCallback(
+  const fetchDownloadStart = useCallback(
     (params: ModelDataItem) => {
       // modelType: 模型提供商类型
       const { id, type, modelType, source, service_provider_name, service_name, name } = params;
@@ -121,12 +121,12 @@ export const useDownLoad = () => {
   );
 
   // 暂停下载
-  const downLoadAbort = useCallback(async (data: any, { id, modelType }: any) => {
+  const fetchDownLoadAbort = useCallback(async (data: { model_name: string }, { id, modelType }: any) => {
     try {
       await abortDownload(data);
       updateDownloadStatus(id, modelType, { status: PAUSED });
     } catch (error) {
-      console.error('Failed to abort download:', error);
+      console.error('取消或暂停下载失败:', error);
       // 增加错误处理，即使失败也尝试更新UI状态
       updateDownloadStatus(id, modelType, { status: FAILED });
     }
@@ -203,5 +203,5 @@ export const useDownLoad = () => {
     };
   }, [downloadList]);
 
-  return { downLoadStart, downLoadAbort };
+  return { fetchDownloadStart, fetchDownLoadAbort };
 };

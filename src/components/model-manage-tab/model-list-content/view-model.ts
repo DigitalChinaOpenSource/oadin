@@ -37,7 +37,7 @@ export function useViewModel(props: IModelListContent) {
   const [selectModelData, setSelectModelData] = useState<ModelDataItem>({} as any);
 
   const lastPageSizeRef = useRef(pagination.pageSize);
-  const { downLoadStart } = useDownLoad();
+  const { fetchDownloadStart } = useDownLoad();
 
   // 获取模型列表
   const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
@@ -189,7 +189,7 @@ export function useViewModel(props: IModelListContent) {
         style: { backgroundColor: '#5429ff' },
       },
       onOk() {
-        downLoadStart({
+        fetchDownloadStart({
           ...modelData,
           type: modelData.type,
           status: DOWNLOAD_STATUS.IN_PROGRESS,
@@ -261,6 +261,7 @@ export function useViewModel(props: IModelListContent) {
     onDownloadConfirm,
 
     modelSupportLoading,
+    smartversionLoading,
     deleteModelLoading,
 
     pagenationData,
