@@ -139,14 +139,19 @@ class Byze {
       const destDir = path.join(userDir, 'ByzeInstaller');
       const destFileName = isMacOS ? 'byze-installer-latest.pkg' : 'byze-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
-      console.log(`正在下载 Byze installer...`);
 
-      // 创建目录
+      // 创建目标目录
       fs.mkdirSync(destDir, { recursive: true });
 
-      // 下载文件
       const file = fs.createWriteStream(dest);
-      https.get(url, (response) => {
+
+      const options = {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
+      };
+
+      https.get(url, options, (response) => {
         if (response.statusCode !== 200) {
           return reject(new Error(`Download failed with status code: ${response.statusCode}`));
         }
@@ -155,7 +160,6 @@ class Byze {
 
         file.on('finish', () => {
           file.close(async () => {
-            // 安装执行
             try {
               await runInstaller(dest, isMacOS);
               resolve(true);
@@ -178,36 +182,48 @@ class Byze {
       const currentPlatform = process.platform;
       const userDir = os.homedir();
       const byzeDir = path.join(userDir, 'Byze');
-  
-      // 确保PATH包含Byze目录（兼容跨平台）
+      console.log(`byzeDir: ${byzeDir}`);
       if (!process.env.PATH.includes(byzeDir)) {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
         console.log("添加到临时环境变量")
       }
 
-      const logPath = path.join(os.tmpdir(), 'byze-start.log');
-      const cleanLog = () => {
-        try { fs.unlinkSync(logPath); } catch (e) { /* 忽略不存在 */ }
-      };
-      cleanLog();
-
       let command, args;
 
       if (currentPlatform === 'win32') {
         command = 'cmd.exe';
-        args = ['/c', `start-byze.bat > "${logPath}" 2>&1`]; // 脚本已在 PATH
+        args = ['/c', 'start-byze.bat'];
       } else if (currentPlatform === 'darwin') {
+        const logPath = path.join(os.tmpdir(), 'byze-start.log');
+        try { fs.unlinkSync(logPath); } catch (e) {}
+
         command = 'sh';
         args = ['-c', `nohup byze server start -d > "${logPath}" 2>&1 & echo "Byze launched"`];
       } else {
         return reject(new Error(`Unsupported platform: ${currentPlatform}`));
       }
 
-      console.log(`[InstallByze] 执行命令: ${command} ${args.join(' ')}`);
+      console.log(`[InstallByze] 正在运行命令: ${command} ${args.join(' ')}`);
 
-      execFile(command, args, { windowsHide: true }, async (error) => {
-        // 等待最多 15 秒，轮询日志判断状态
-        const maxWait = 15000;
+      execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
+        if (currentPlatform === 'win32') {
+          if (error) console.error(`byze server start:error`, error); 
+          if (stdout) console.log(`byze server start:stdout:`, stdout.toString()); 
+          if (stderr) console.error(`byze server start:stderr:`, stderr.toString());
+          const output = (stdout + stderr).toString().toLowerCase();
+          if (error || output.includes('error')) {
+            return resolve(false);
+          };
+          if (output.includes('byze server start successfully')) {
+            return resolve(true);
+          };
+
+          // 仍尝试通过 IsByzeAvailiable 确认
+          const available = await this.IsByzeAvailiable();
+          return resolve(available);
+        }
+        const logPath = path.join(os.tmpdir(), 'byze-start.log');
+        const maxWait = 150000;
         const interval = 1000;
         let elapsed = 0;
 
@@ -215,9 +231,8 @@ class Byze {
           let content = '';
           try {
             content = fs.readFileSync(logPath, 'utf-8').toLowerCase();
-            console.log(`[InstallByze] 当前日志内容:\n${content}`);
+            console.log(`[InstallByze] Mac 日志输出:\n${content}`);
           } catch (e) {
-            // 文件尚未创建
           }
 
           if (content.includes('byze server start successfully')) {
@@ -225,20 +240,18 @@ class Byze {
           }
 
           if (
-            content.includes('error') ||
             content.includes('install model engine failed') ||
+            content.includes('error') ||
             content.includes('exit status 5')
           ) {
             return resolve(false);
           }
 
-          // 没有输出，可能已经启动了
           if (elapsed >= maxWait) {
             const available = await this.IsByzeAvailiable();
             return resolve(available);
           }
 
-          // 继续等待
           elapsed += interval;
           setTimeout(checkLog, interval);
         };
@@ -247,7 +260,6 @@ class Byze {
       });
     });
   }
-
 
   // 执行 byze install chat
   InstallChat(remote = null) {
