@@ -42,6 +42,8 @@ build_mac:
     - mv byze pkgroot/bin/byze
     - mkdir -p scripts
     - echo '#!/bin/bash' > scripts/postinstall
+    - echo 'exec > /usr/local/bin/byze-install.log 2>&1' >> scripts/postinstall
+    - echo 'set -x' >> scripts/postinstall
     - echo 'ln -sf /usr/local/bin/byze /bin/byze' >> scripts/postinstall
     - echo '/usr/local/bin/byze server start -d' >> scripts/postinstall
     - chmod +x scripts/postinstall
