@@ -23,4 +23,7 @@ Section "Install"
 
   # Post-install silently with argument
   nsExec::Exec '"$INSTDIR\postinstall.bat" "$INSTDIR"'
+
+  # start byze server
+  nsExec::Exec '"$INSTDIR\start-byze.bat"'
 SectionEnd
