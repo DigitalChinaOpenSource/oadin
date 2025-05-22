@@ -38,7 +38,7 @@ build_mac:
     - |  
       codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" byze
     - echo "--------- 📦 安装包构建与签名 ----------"
-        - mkdir -p pkgroot/Byze
+    - mkdir -p pkgroot/Byze
     - mv byze pkgroot/Byze/byze
     - mkdir -p scripts
     - echo '#!/bin/bash' > scripts/postinstall
