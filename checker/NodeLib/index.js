@@ -209,15 +209,14 @@ class Byze {
       const currentPlatform = process.platform;
       const userDir = os.homedir();
       const byzeDir = path.join(userDir, 'Byze');
-      const logpath = path.join(destDir, 'byze-installer.log');
 
       console.log(`byzeDir: ${byzeDir}`);
-      if (!process.env.PATH.includes(byzeDir)) {
-        process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
-        console.log("添加到临时环境变量");
-      }
 
       if (currentPlatform === 'win32') {
+        if (!process.env.PATH.includes(byzeDir)) {
+          process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
+          console.log("添加到临时环境变量");
+        }
         const command = 'cmd.exe';
         const args = ['/c', 'start-byze.bat'];
 
@@ -239,6 +238,11 @@ class Byze {
           return resolve(available);
         });
       } else if (currentPlatform === 'darwin') {
+
+        if (!process.env.PATH.split(':').includes('/usr/local/bin')) {
+          process.env.PATH = `/usr/local/bin:${process.env.PATH}`;
+          console.log('已将 /usr/local/bin 添加到 PATH');
+        };
 
         let child;
         let stderrContent = '';
