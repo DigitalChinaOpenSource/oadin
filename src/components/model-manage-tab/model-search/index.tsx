@@ -10,8 +10,6 @@ export interface IModelTitleSearchProps {
   onModelSourceChange: (val: IModelSourceType) => void;
 }
 
-const { Search } = Input;
-
 export default function ModelSearch(props: IModelTitleSearchProps) {
   const { onModelSearch, modelSearchVal, modelSourceVal, onModelSourceChange } = props;
   const options = [
@@ -21,11 +19,12 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
   return (
     <div className={styles.modelSearch}>
       <div className={styles.searchInput}>
-        <Search
+        <Input
           allowClear
           placeholder="请输入模型名称"
           value={modelSearchVal}
-          onSearch={(value) => onModelSearch(value.trim())}
+          suffix={<SearchIcon />}
+          onChange={(e) => onModelSearch(e.target.value.trim())}
           style={{ width: 380 }}
         />
       </div>

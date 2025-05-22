@@ -10,6 +10,8 @@ export function useViewModel() {
 
   const [mcpListData, setMcpListData] = useState([]);
   const [mcpSearchVal, setMcpSearchVal] = useState({} as IMcpListRequestParams);
+  // 过滤器是否折叠了
+  const [collapsed, setCollapsed] = useState(false);
 
   // useEffect(() => {
   //   fetchMcpList({
@@ -57,5 +59,7 @@ export function useViewModel() {
 
     handelMcpCardClick,
     onMcpInputSearch,
+    collapsed,
+    setCollapsed,
   };
 }

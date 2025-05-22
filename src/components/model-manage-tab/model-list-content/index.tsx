@@ -1,4 +1,4 @@
-import { Button, Tooltip, Select, List } from 'antd';
+import { Button, Tooltip, List } from 'antd';
 import styles from './index.module.scss';
 import GeneralCard from '@/components/model-manage-tab/model-list-content/general-card';
 import ModelPathModal from '../modelpath-modal';
@@ -33,24 +33,26 @@ export default function ModelListContent(props: IModelListContent) {
           <div className={styles.contentContainer}>
             <div className={styles.titlepath}>
               <div className={styles.title}>模型列表</div>
-              <Tooltip title={vm.modelPath}>
-                <Button
-                  className={styles.changePath}
-                  type="text"
-                  onClick={vm.onModelPathVisible}
-                >
-                  <SettingIcon />
-                  修改存储路径
-                </Button>
-                {/* 修改路径失败提示 */}
-                {/* <span className={styles.changeFailed}>
+              {vm.modelSourceVal === 'local' && (
+                <Tooltip title={vm.modelPath}>
+                  <Button
+                    className={styles.changePath}
+                    type="text"
+                    onClick={vm.onModelPathVisible}
+                  >
+                    <SettingIcon />
+                    修改存储路径
+                  </Button>
+                  {/* 修改路径失败提示 */}
+                  {/* <span className={styles.changeFailed}>
               <FailedIcon fill='#ff6e38'/>
             </span> */}
-                {/* <Button className={styles.changePath} type="text">
+                  {/* <Button className={styles.changePath} type="text">
               <LoadingIcon />
               <span className={styles.isChangingText}>正在修改至新的存储路径</span>
             </Button> */}
-              </Tooltip>
+                </Tooltip>
+              )}
             </div>
 
             <div className={styles.modelCardList}>

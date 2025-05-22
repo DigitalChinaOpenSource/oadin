@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Input, Form } from 'antd';
-import { useRequest } from 'ahooks';
+import { useRequest, useDebounce } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import styles from './index.module.scss';
 
@@ -10,25 +10,33 @@ interface IModelPathModalProps {
 }
 
 interface IModelPathSpaceRes {
-  data: {
-    free_size: number;
-    total_size: number;
-    usage_size: number;
-  };
+  free_size: number;
+  total_size: number;
+  usage_size: number;
 }
 
 export default function ModelPathModal(props: IModelPathModalProps) {
   const [form] = Form.useForm();
   const formValues = Form.useWatch([], form);
-
+  const modelPathValue = Form.useWatch('modelPath', form);
+  const debouncedModelPath = useDebounce(modelPathValue, { wait: 1000 });
   const { modalPath, onModalPathClose } = props;
-  const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes['data']>({} as IModelPathSpaceRes['data']);
+  const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes>({} as IModelPathSpaceRes);
   const [isFormValid, setIsFormValid] = useState(false);
 
   useEffect(() => {
     if (!modalPath) return;
     form.setFieldsValue({ modelPath: modalPath });
+    onCheckPathSpace(modalPath);
   }, [modalPath]);
+
+  useEffect(() => {
+    if (!debouncedModelPath) {
+      setCurrentPathSpace({} as IModelPathSpaceRes);
+      return;
+    }
+    onCheckPathSpace(debouncedModelPath);
+  }, [debouncedModelPath]);
 
   useEffect(() => {
     form
@@ -37,10 +45,10 @@ export default function ModelPathModal(props: IModelPathModalProps) {
       .catch(() => setIsFormValid(false));
   }, [formValues, form]);
 
-  const { run: onChechPathSpace } = useRequest(
+  const { run: onCheckPathSpace } = useRequest(
     async (path: string) => {
       const res = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
-      return res?.data || {};
+      return res || {};
     },
     {
       manual: true,

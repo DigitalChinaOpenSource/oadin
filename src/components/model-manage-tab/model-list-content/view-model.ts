@@ -95,7 +95,7 @@ export function useViewModel(props: IModelListContent) {
   const { run: fetchModelPath } = useRequest(
     async () => {
       const res = await httpRequest.get<IModelPathRes>('/control_panel/model/filepath');
-      return res?.data || {};
+      return res || {};
     },
     {
       manual: true,

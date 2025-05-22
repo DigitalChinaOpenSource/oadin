@@ -67,9 +67,7 @@ export interface ISmartvisionDataRes {
 }
 
 export interface IModelPathRes {
-  data: {
-    path: string;
-  };
+  path: string;
 }
 
 export interface IRequestModelParams {
