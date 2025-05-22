@@ -40,6 +40,10 @@ build_mac:
     - echo "--------- 📦 安装包构建与签名 ----------"
     - mkdir -p pkgroot/bin
     - mv byze pkgroot/bin/byze
+    - mkdir -p scripts
+    - echo '#!/bin/bash' > scripts/postinstall
+    - echo 'ln -sf /usr/local/bin/byze /bin/byze' >> scripts/postinstall
+    - chmod +x scripts/postinstall
     - |
       pkgbuild --identifier com.digitalchina.byze --version "${CI_COMMIT_TAG}" --install-location /usr/local/bin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/bin --scripts ./scripts byze.pkg
     - echo "--------- 📬 安装包公证 ----------"
