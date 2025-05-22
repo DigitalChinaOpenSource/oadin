@@ -236,55 +236,56 @@ class Byze {
           const available = await this.IsByzeAvailiable();
           return resolve(available);
         });
-
       } else if (currentPlatform === 'darwin') {
-        const logPath = path.join(os.tmpdir(), 'byze-start.log');
-        try { fs.unlinkSync(logPath); } catch (e) {}
+        const logPath = path.join(byzeDir, 'byze-install.log');
+        const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
-        const out = fs.openSync(logPath, 'a');
-        const err = fs.openSync(logPath, 'a');
-
-        const child = spawn('byze', ['server', 'start', '-d'], {
-          detached: true,
-          stdio: ['ignore', out, err]
+        child = spawn('byze', ['server', 'start', '-d'], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          windowsHide: true,
+        });
+      
+        // 将输出都写入byze-install.log
+        child.stdout.on('data', (data) => {
+          console.log(`stdout: ${data}`);
+          const output = data.toString().trim();
+          logStream.write(`stdout: ${output}\n`);
         });
 
+        child.stderr.on('data', (data) => {
+          const errorMessage = data.toString().trim();
+          stderrContent += errorMessage + '\n';
+          console.error(`stderr: ${errorMessage}`);
+          logStream.write(`stderr: ${errorMessage}\n`);
+        });
+
+    
+        child.on('error', (err) => {
+          console.error(`❌ 启动失败: ${err.message}`);
+          if (err.code === 'ENOENT') {
+            console.log([
+              '💡 可能原因:',
+              `1. 未找到byze可执行文件，请检查下载是否成功`,
+              `2. 环境变量未生效，请尝试重启终端`
+            ].filter(Boolean).join('\n'));
+          }
+          resolve(false);
+        });
+
+        child.on('close', (code) => {
+          if (stderrContent.includes('Install model engine failed')){
+            console.error('❌ 启动失败: 模型引擎安装失败。');
+            resolve(false);
+          } else if (code === 0) {
+            console.log('进程退出，正在检查服务状态...');
+            
+            this.checkServerStatus(resolve);
+          } else {
+            console.error(`❌ 启动失败，退出码: ${code}`);
+            resolve(false);
+          }
+        });
         child.unref();
-        console.log('[InstallByze] Mac 下通过 spawn 启动 byze');
-
-        const maxWait = 150000;
-        const interval = 1000;
-        let elapsed = 0;
-
-        const checkLog = async () => {
-          let content = '';
-          try {
-            content = fs.readFileSync(logPath, 'utf-8').toLowerCase();
-            console.log(`[InstallByze] Mac 日志输出:\n${content}`);
-          } catch (e) {}
-
-          if (content.includes('byze server start successfully')) {
-            return resolve(true);
-          }
-
-          if (
-            content.includes('install model engine failed') ||
-            content.includes('error') ||
-            content.includes('exit status 5')
-          ) {
-            return resolve(false);
-          }
-
-          if (elapsed >= maxWait) {
-            const available = await this.IsByzeAvailiable();
-            return resolve(available);
-          }
-
-          elapsed += interval;
-          setTimeout(checkLog, interval);
-        };
-
-        checkLog();
 
       } else {
         return reject(new Error(`Unsupported platform: ${currentPlatform}`));
