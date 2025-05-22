@@ -231,7 +231,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 				}
 			}
 
-			err = s.defaultProviderProcess(ctx, types.ServiceGenerate, generateSp.ServiceSource, generateSp.ProviderName)
+			err = DefaultProviderProcess(ctx, types.ServiceGenerate, generateSp.ServiceSource, generateSp.ProviderName)
 			if err != nil {
 				return nil, err
 			}
@@ -287,7 +287,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 				}
 			}
 
-			err = s.defaultProviderProcess(ctx, types.ServiceModels, types.ServiceSourceLocal,
+			err = DefaultProviderProcess(ctx, types.ServiceModels, types.ServiceSourceLocal,
 				fmt.Sprintf("%s_%s_%s", types.ServiceSourceLocal, sp.Flavor, types.ServiceModels))
 			if err != nil {
 				return nil, err
@@ -297,7 +297,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 	}
 
 	// Default provider processing
-	err = s.defaultProviderProcess(ctx, sp.ServiceName, sp.ServiceSource, sp.ProviderName)
+	err = DefaultProviderProcess(ctx, sp.ServiceName, sp.ServiceSource, sp.ProviderName)
 	if err != nil {
 		return nil, err
 	}
@@ -549,7 +549,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 				}
 			}
 
-			err = s.defaultProviderProcess(ctx, types.ServiceGenerate, generateSp.ServiceSource, generateSp.ProviderName)
+			err = DefaultProviderProcess(ctx, types.ServiceGenerate, generateSp.ServiceSource, generateSp.ProviderName)
 			if err != nil {
 				return nil, err
 			}
@@ -632,6 +632,9 @@ func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetA
 				serviceStatus = 0
 				continue
 			}
+			if dsService.Name == types.ServiceTextToImage {
+				continue
+			}
 			checkServerObj := ChooseCheckServer(*remoteSp, remoteModel.ModelName)
 			status := checkServerObj.CheckServer()
 			if status {
@@ -653,11 +656,12 @@ func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetA
 	}, nil
 }
 
-func (s *AIGCServiceImpl) defaultProviderProcess(ctx context.Context, serviceName, serviceSource, providerName string) error {
+func DefaultProviderProcess(ctx context.Context, serviceName, serviceSource, providerName string) error {
+	ds := datastore.GetDefaultDatastore()
 	service := &types.Service{
 		Name: serviceName,
 	}
-	err := s.Ds.Get(ctx, service)
+	err := ds.Get(ctx, service)
 	if err != nil {
 		return err
 	}
@@ -674,7 +678,7 @@ func (s *AIGCServiceImpl) defaultProviderProcess(ctx context.Context, serviceNam
 		service.RemoteProvider = providerName
 	}
 
-	err = s.Ds.Put(ctx, service)
+	err = ds.Put(ctx, service)
 	if err != nil {
 		logger.LogicLogger.Error("Service default ", serviceSource, " provider set failed")
 		return err

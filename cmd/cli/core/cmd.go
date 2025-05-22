@@ -1362,7 +1362,12 @@ func ListenModelEngineHealth() {
 				err := OllamaEngine.HealthCheck()
 				if err != nil {
 					logger.EngineLogger.Error("[Engine Listen]Ollama engine health check failed: ", err.Error())
-					err := OllamaEngine.StartEngine(types.EngineStartModeDaemon)
+					err := OllamaEngine.InitEnv()
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Ollama engine init env failed: ", err.Error())
+						return
+					}
+					err = OllamaEngine.StartEngine(types.EngineStartModeDaemon)
 					if err != nil {
 						logger.EngineLogger.Error("[Engine Listen]Ollama engine start failed: ", err.Error())
 						continue

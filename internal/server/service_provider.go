@@ -216,6 +216,11 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 
 	}
 
+	err = DefaultProviderProcess(ctx, sp.ServiceName, sp.ServiceSource, sp.ProviderName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &dto.CreateServiceProviderResponse{
 		Bcode: *bcode.ServiceProviderCode,
 	}, nil

@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/cpu"
-
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/event"
 	"intel.com/aog/internal/logger"
@@ -210,26 +209,46 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	if service.LocalProvider == "" && service.RemoteProvider == "" {
 		return nil, fmt.Errorf("service %s does not have local or remote provider", task.Request.Service)
 	}
+
+	m := &types.Model{
+		ModelName: task.Request.Model,
+	}
+
 	// Provider Selection
 	// ================
 	providerName := service.LocalProvider
-	if location == types.ServiceSourceRemote {
-		if service.RemoteProvider == "" {
-			providerName = service.LocalProvider
-		} else {
+	if model == "" {
+		if location == types.ServiceSourceRemote {
+			if service.RemoteProvider == "" {
+				providerName = service.LocalProvider
+			} else {
+				providerName = service.RemoteProvider
+			}
+		} else if service.LocalProvider == "" {
 			providerName = service.RemoteProvider
 		}
-	} else if service.LocalProvider == "" {
-		providerName = service.RemoteProvider
+	} else {
+		err := ds.Get(context.Background(), m)
+		if err != nil {
+			return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+		}
+		if m.Status != "downloaded" {
+			return nil, fmt.Errorf("model installing %s of Service %s, please wait", location, task.Request.Service)
+		}
+
+		providerName = m.ProviderName
 	}
 
 	sp := &types.ServiceProvider{
 		ProviderName: providerName,
+		
 	}
 	err = ds.Get(context.Background(), sp)
 	if err != nil {
 		return nil, fmt.Errorf("service provider not found for %s of Service %s", location, task.Request.Service)
 	}
+
+	location = sp.ServiceSource
 	providerProperties := &types.ServiceProviderProperties{}
 	err = json.Unmarshal([]byte(sp.Properties), providerProperties)
 	if err != nil {
@@ -252,7 +271,8 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 							{Key: "status", Query: "downloaded"},
 						},
 					},
-					SortBy: sortOption})
+					SortBy: sortOption,
+				})
 				if err != nil {
 					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
 				}
@@ -263,17 +283,6 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 			case types.ServiceSourceRemote:
 				defaultInfo := GetProviderServiceDefaultInfo(sp.Flavor, task.Request.Service)
 				model = defaultInfo.DefaultModel
-			}
-		} else {
-			m := &types.Model{
-				ModelName: task.Request.Model,
-			}
-			err := ds.Get(context.Background(), m)
-			if err != nil {
-				return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-			}
-			if m.Status != "downloaded" {
-				return nil, fmt.Errorf("model installing %s of Service %s, please wait", location, task.Request.Service)
 			}
 		}
 	}

@@ -4,8 +4,8 @@
 
 当前为 AOG 预览版 v0.3.0，更多功能和稳定性正在不断完善过程中。欢迎就发现的缺陷提交 Issues。
 
-当前版本支持 chat、embed、text_to_image 服务，下层支持 ollama 和 openvino model server。更多服务如视
-频、音频相关，以及其他 AI 引擎，敬请期待正在开发的后续版本。
+当前版本支持 chat、embed、text-to-image 服务，下层支持 ollama 和 openvino model server。更多服务如视频、音频相关，以及其他 AI 引擎，敬请
+期待正在开发的后续版本。
 
 详细中文文档请参见[此处](https://intel.github.io/aog/index.html)
 
@@ -90,6 +90,8 @@ AOG 提供以下基本功能：
 
 如果您的开发环境是 Windows，您可能需要安装 [MSYS2](https://www.msys2.org) ，以获得 Make 等命令。
 
+由于 AOG 需要开启 CGO 依赖，所以您可能需要安装[MinGW-W64](https://github.com/niXman/mingw-builds-binaries/releases)，以便开启CGO支持。
+
 接着，将此项目下载或克隆到如 `/path_to_aog` 的目录中。
 
 然后运行以下命令：
@@ -97,7 +99,12 @@ AOG 提供以下基本功能：
 ```sh
 cd /path_to_aog
 
-make build-all
+# Set GOPROXY as appropriate
+go env -w GOPROXY=https://goproxy.cn,direct
+
+# win 
+set CGO_ENABLED=1 && go build -o aog.exe -ldflags="-s -w"  cmd/cli/main.go
+
 ```
 
 这将生成一个名为 aog 的可执行文件，它是 AOG 的命令行。
@@ -140,7 +147,7 @@ AOG 有两个关键概念：**服务(Service)** 和 **服务提供商(Service Pr
 # AOG 将安装必要的 AI 堆栈（如 ollama/openvino）和 AOG 推荐的模型
 aog install chat
 aog install embed
-aog install text_to_image
+aog install text-to-image
 
 # 除了默认的模型之外，您可以在服务中安装更多的模型
 aog pull <model_name> -for <service_name> --provider <provider_name>
@@ -206,11 +213,10 @@ aog delete model <model_name>  --provider <provider_name>
 ## 调用 AOG API
 
 AOG API 是一个 Restful API。您可以通过与调用云 AI 服务（如 OpenAI）类似的方式调用该 API。详细的 API
-规范请参见 AOG API 规范.
+规范请参见 [AOG API 规范](https://intel.github.io/aog/index.html).
 
-值得注意的是，当前 AOG 预览提供了基本的 chat 等服务，下一版本将会提供视频、音频相关的更多服务。当前
-版本的文生图服务基于 OpenVION 实现（仅支持 Windows 系统），通过 modelscope 拉取 openvino 转换过的 IR
-格式的文生图模型提供服务。
+值得注意的是，当前 AOG 预览提供了基本的 chat 等服务，下一版本将会提供视频、音频相关的更多服务。
+当前版本的文生图服务基于 OpenVINO 实现（仅支持 Windows 系统），通过 modelscope 拉取openvino转换过的 IR 格式的文生图模型提供服务。 
 
 例如，您可以使用 `curl` 在 Windows 上测试聊天服务。
 
@@ -253,7 +259,7 @@ Windows 上是 `AOGChecker.dll` 。您不需要发布 AI 堆栈或模型。
     "chat": {
       "models": ["qwen2.5:0.5b", "qwen2.5:7b"]
     },
-    "text_to_image": {
+    "text-to-image": {
       "models": ["OpenVINO/stable-diffusion-v1-5-fp16-ov"]
     }
   }

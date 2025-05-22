@@ -94,6 +94,9 @@ As a developer, to build AOG, you need to install [golang](https://go.dev/) on y
 If your development environment is Windows, you may need to install [MSYS2](https://www.msys2.org)
 to get commands like Make.
 
+Since AOG needs to enable the CGO dependency, you may need to install [MinGW-W64](https://github.com/niXman/mingw-builds-binaries/releases) 
+to enable CGO support.
+
 Next, download or clone this project to a directory such as `/path_to_aog`.
 
 Then run the following commands:
@@ -101,7 +104,11 @@ Then run the following commands:
 ```bash
 cd /path_to_aog
 
-make build-all
+# Set GOPROXY as appropriate
+go env -w GOPROXY=https://goproxy.cn,direct
+
+# win 
+set CGO_ENABLED=1 && go build -o aog.exe -ldflags="-s -w"  cmd/cli/main.go
 ```
 
 This will generate an executable file named aog, which is the AOG command line.
@@ -212,7 +219,7 @@ The AOG API is a Restful API. You can call this API in a way similar to calling 
 (such as OpenAI). For detailed API specifications, please refer to the AOG API specifications.
 
 It is worth noting that the current AOG preview provides basic chat and other services, and the next
-version will provide more services related to text_to_image and voice.
+version will provide more services related to text-to-image and voice.
 
 For example, you can use `curl` to test the chat service on Windows.
 
@@ -260,7 +267,7 @@ application.
     "chat": {
       "models": ["qwen2.5:0.5b", "qwen2.5:7b"]
     },
-    "text_to_image": {
+    "text-to-image": {
       "models": ["stable-diffusion-1.5-int4"]
     }
   }

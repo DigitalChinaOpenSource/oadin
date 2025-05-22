@@ -87,7 +87,7 @@ func (ds *SQLite) insertInitialData() error {
 			Status:       1,
 		}, &types.Service{
 			Name:         "text-to-image",
-			HybridPolicy: "always_remote",
+			HybridPolicy: "default",
 			Status:       1,
 		})
 
