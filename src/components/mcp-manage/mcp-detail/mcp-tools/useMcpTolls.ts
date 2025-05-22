@@ -12,14 +12,16 @@ export const useMcpTools = () => {
   const [searchParams] = useSearchParams();
   const serviceId = searchParams.get('serviceId');
   const [mcpTolls, setMcpTolls] = useState<Record<string, any>[]>([]);
-  const [toolsTotal, setToolsTotal] = useState<number>(0);
+  // const [toolsTotal, setToolsTotal] = useState<number>(0);
   const [postParams, setPostParams] = useState<PostParamsType>({ keyword: '', page: 1, size: 10 });
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 12,
+    pageSize: 1,
     total: 0,
-    pageSizeOptions: [5, 10, 20, 50],
+    pageSizeOptions: [1, 10, 20, 50],
+    showSizeChanger: true,
   });
+  const [keyword, setKeyword] = useState<string>('');
 
   // 获取工具列表
   const { loading: toolsLoading, run: getTolls } = useRequest(
@@ -34,7 +36,8 @@ export const useMcpTools = () => {
       onSuccess: (data) => {
         console.log('工具函数列表===>', data);
         setMcpTolls(data.list);
-        setToolsTotal(data.total);
+        // setToolsTotal(data.total);
+        setPagination({ ...pagination, total: data.total });
       },
       onError: (error) => {
         console.error('获取工具函数列表失败:', error);
@@ -79,11 +82,13 @@ export const useMcpTools = () => {
           ],
         };
         setMcpTolls(testData.list);
-        setToolsTotal(testData.total);
+        // setToolsTotal(testData.total);
+        setPagination({ ...pagination, total: testData.total });
       },
     },
   );
 
+  // 处理开启关闭工具时的Loading
   const handleToolLoading = (tool: Record<string, any>, checked: boolean, loading: boolean) => {
     setMcpTolls((prev) => {
       return prev.map((item) => {
@@ -103,8 +108,8 @@ export const useMcpTools = () => {
   const { params, run: changeTollStatus } = useRequest(
     async (tool, checked) => {
       handleToolLoading(tool, tool.enabled, true);
-      const data = await httpRequest.post(`/mcp/${serviceId}/clients`, { checked }, { baseURL: '/api' });
-      if (!data) throw new Error('获取工具函数列表失败');
+      const data = await httpRequest.put(`/mcp/tool/${serviceId}/enabled`, { checked }, { baseURL: '/api' });
+      // if (!data) throw new Error('获取工具函数列表失败');
       return data;
     },
     {
@@ -122,6 +127,8 @@ export const useMcpTools = () => {
 
   // 改变分页相关
   const handlePageChange = (page: number, pageSize: number) => {
+    console.log('page', page);
+    console.log('pageSize', pageSize);
     setPagination({
       ...pagination,
       current: page,
@@ -131,6 +138,18 @@ export const useMcpTools = () => {
       ...postParams,
       page,
       size: pageSize,
+    });
+  };
+
+  // 搜索框输入变化
+  const handleSearchChange = (keyword: string) => {
+    console.log('keyword', keyword);
+    if (keyword === postParams.keyword) return;
+    setPagination({ ...pagination, current: 1 });
+    setPostParams({
+      page: 1,
+      size: postParams.size,
+      keyword,
     });
   };
 
@@ -144,10 +163,11 @@ export const useMcpTools = () => {
 
   return {
     toolsLoading,
-    toolsTotal,
+    // toolsTotal,
     mcpTolls,
     pagination,
     handlePageChange,
     changeTollStatus,
+    handleSearchChange,
   };
 };

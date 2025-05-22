@@ -20,18 +20,16 @@ const CollapseItemHeader = (props: { name: string; desc: string; tags: string[] 
 // const
 
 export default function McpTools() {
-  const { handlePageChange, mcpTolls, pagination, changeTollStatus } = useMcpTools();
+  const { handlePageChange, mcpTolls, pagination, changeTollStatus, handleSearchChange } = useMcpTools();
 
   return (
     <div className={styles.mcpTools}>
       <div className={styles.searchInput}>
-        <Input
-          suffix={<SearchIcon />}
+        <Input.Search
           allowClear
           placeholder="请输入搜索工具名称"
-          // value={modelSearchVal}
-          // onChange={(e) => {}}
           style={{ width: 380 }}
+          onSearch={(value) => handleSearchChange(value)}
         />
       </div>
       <List
@@ -64,7 +62,7 @@ export default function McpTools() {
                         checkedChildren="ON"
                         unCheckedChildren="OFF"
                         checked={item.enabled}
-                        loading={item.changTollLoading}
+                        loading={item.loading}
                         onClick={(checked, e) => {
                           e.stopPropagation();
                           changeTollStatus(item, checked);
