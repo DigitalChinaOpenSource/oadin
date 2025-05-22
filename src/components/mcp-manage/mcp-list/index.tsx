@@ -1,6 +1,6 @@
 import { List } from 'antd';
 import McpCard from '../mcp-card';
-import { IMcpListItem } from '../mcp-list-tab/types';
+import { IMcpListItem } from '../mcp-square-tab/types';
 import styles from './index.module.scss';
 import { useNavigate } from 'react-router-dom';
 

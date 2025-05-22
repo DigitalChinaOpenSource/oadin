@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
-import { IMcpListRequestParams, IMcpListData } from '../mcp-list-tab/types';
-import { mcpListDataMock } from '../mcp-list-tab/constant';
+import { IMcpListRequestParams, IMcpListData } from '../mcp-square-tab/types';
+import { mcpListDataMock } from '../mcp-square-tab/constant';
 import { useNavigate } from 'react-router-dom';
 
 export function useViewModel() {

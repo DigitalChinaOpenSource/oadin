@@ -8,13 +8,13 @@ import McpList from '../mcp-list';
 import { mcpListDataMock } from './constant';
 import styles from './index.module.scss';
 
-export default function McpListTab() {
+export default function McpSquareTab() {
   const vm = useViewModel();
 
   return (
-    <div className={styles.mcpListTab}>
+    <div className={styles.mcpSquareTab}>
       {/* 列表区域 */}
-      <div className={styles.mcpListContent}>
+      <div className={styles.mcpSquareContent}>
         <div className={styles.mcpTitle}>
           <div className={styles.mcpTitleText}>
             <span>MCP服务</span>

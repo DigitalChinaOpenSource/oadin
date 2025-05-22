@@ -2,7 +2,7 @@ import { Input, Tooltip } from 'antd';
 import { SearchIcon } from '@/components/icons';
 import { useViewModel } from './view-model';
 import McpList from '../mcp-list';
-import { mcpListDataMock } from '../mcp-list-tab/constant';
+import { mcpListDataMock } from '../mcp-square-tab/constant';
 
 import styles from './index.module.scss';
 
