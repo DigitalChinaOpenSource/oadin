@@ -107,7 +107,7 @@ set CGO_ENABLED=1 && go build -o aog.exe -ldflags="-s -w"  cmd/cli/main.go
 
 ```
 
-这将生成一个名为 aog 的可执行文件，它是 AOG 的命令行。
+这将生成一个名为 aog 的可执行文件，它是 AOG 的命令行工具，请将它加入到您的环境变量 PATH 中，否则它会影响运行。
 
 ## 使用 AOG 命令行工具
 
@@ -254,7 +254,7 @@ Windows 上是 `AOGChecker.dll` 。您不需要发布 AI 堆栈或模型。
 
 ```json
 {
-  "version": "0.2",
+  "version": "0.3",
   "service": {
     "chat": {
       "models": ["qwen2.5:0.5b", "qwen2.5:7b"]

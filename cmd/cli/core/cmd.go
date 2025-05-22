@@ -78,10 +78,11 @@ func NewEditProviderCommand() *cobra.Command {
 	var filePath string
 
 	editProviderCmd := &cobra.Command{
-		Use:   "provider <provider_name>",
-		Short: "Edit service data",
-		Long:  "Edit service status and scheduler policy",
-		Args:  cobra.ExactArgs(1),
+		Use:    "provider <provider_name>",
+		Short:  "Edit service data",
+		Long:   "Edit service status and scheduler policy",
+		Args:   cobra.ExactArgs(1),
+		PreRun: CheckAOGServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			filePath, err := cmd.Flags().GetString("file")
 			if err != nil {
@@ -111,10 +112,11 @@ func NewEditServiceCommand() *cobra.Command {
 	var localProvider string
 
 	updateServiceCmd := &cobra.Command{
-		Use:   "service <service_name>",
-		Short: "Edit service data",
-		Long:  "Edit service status and scheduler policy",
-		Args:  cobra.ExactArgs(1),
+		Use:    "service <service_name>",
+		Short:  "Edit service data",
+		Long:   "Edit service status and scheduler policy",
+		Args:   cobra.ExactArgs(1),
+		PreRun: CheckAOGServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceName := args[0]
 			hybridPolicy, err := cmd.Flags().GetString("hybrid_policy")
@@ -382,7 +384,7 @@ func stopAogServer(cmd *cobra.Command, args []string) error {
 		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
 		_, err := extraCmd.CombinedOutput()
 		if err != nil {
-			fmt.Printf("failed to kill process: %s", extraProcessName)
+			//fmt.Printf("failed to kill process: %s", extraProcessName)
 			return nil
 		}
 
@@ -390,7 +392,7 @@ func stopAogServer(cmd *cobra.Command, args []string) error {
 		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
 		_, err = ovmsCmd.CombinedOutput()
 		if err != nil {
-			fmt.Printf("failed to kill process: %s", ovmsProcessName)
+			//fmt.Printf("failed to kill process: %s", ovmsProcessName)
 			return nil
 		}
 
@@ -419,7 +421,7 @@ func NewInstallServiceCommand() *cobra.Command {
 		Short:  "Install a service or service provider",
 		Long:   `Install a service by name or a service provider from a file.`,
 		Args:   cobra.ExactArgs(1),
-		PreRun: CheckAOGServer,
+		PreRun: StartAOGServer,
 		Run:    InstallServiceHandler,
 	}
 
@@ -440,9 +442,10 @@ func NewInstallServiceCommand() *cobra.Command {
 // NewVersionCommand print client version
 func NewVersionCommand() *cobra.Command {
 	ver := &cobra.Command{
-		Use:   "version",
-		Short: "Prints aog build version information.",
-		Long:  "Prints aog build version information.",
+		Use:    "version",
+		Short:  "Prints aog build version information.",
+		Long:   "Prints aog build version information.",
+		PreRun: CheckAOGServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Printf(`AOG Version: %s`,
 				version.AOGVersion)
@@ -466,7 +469,7 @@ func NewStartApiServerCommand() *cobra.Command {
 				return err
 			}
 			if isDaemon {
-				CheckAOGServer(cmd, args)
+				StartAOGServer(cmd, args)
 				return nil
 			}
 
@@ -507,11 +510,12 @@ func NewInstallModelCommand() *cobra.Command {
 	)
 
 	pullModelCmd := &cobra.Command{
-		Use:   "pull <model_name>",
-		Short: "Pull a model for a specific service",
-		Long:  `Pull a model for a specific service with optional remote flag.`,
-		Args:  cobra.ExactArgs(1),
-		Run:   PullHandler,
+		Use:    "pull <model_name>",
+		Short:  "Pull a model for a specific service",
+		Long:   `Pull a model for a specific service with optional remote flag.`,
+		Args:   cobra.ExactArgs(1),
+		PreRun: CheckAOGServer,
+		Run:    PullHandler,
 	}
 
 	pullModelCmd.Flags().StringVarP(&serviceName, "for", "f", "", "Name of the service to pull the model for, e.g: chat/embed (required)")
@@ -533,11 +537,12 @@ func NewDeleteModelCommand() *cobra.Command {
 	)
 
 	deleteModelCmd := &cobra.Command{
-		Use:   "model <model_name>",
-		Short: "Remove a model for a specific service",
-		Long:  `Remove a model for a specific service with optional remote flag.`,
-		Args:  cobra.ExactArgs(1),
-		Run:   DeleteModelHandler,
+		Use:    "model <model_name>",
+		Short:  "Remove a model for a specific service",
+		Long:   `Remove a model for a specific service with optional remote flag.`,
+		Args:   cobra.ExactArgs(1),
+		PreRun: CheckAOGServer,
+		Run:    DeleteModelHandler,
 	}
 
 	deleteModelCmd.Flags().StringVarP(&serviceName, "for", "f", "", "Name of the service to delete the model for, e.g: chat/embed (required)")
@@ -553,11 +558,12 @@ func NewDeleteModelCommand() *cobra.Command {
 
 func NewDeleteProviderCommand() *cobra.Command {
 	deleteProviderCmd := &cobra.Command{
-		Use:   "service_provider <provider_name>",
-		Short: "Remove a provider for a specific service",
-		Long:  `Remove a provider for a specific service with optional remote flag.`,
-		Args:  cobra.ExactArgs(1),
-		Run:   DeleteProviderHandler,
+		Use:    "service_provider <provider_name>",
+		Short:  "Remove a provider for a specific service",
+		Long:   `Remove a provider for a specific service with optional remote flag.`,
+		Args:   cobra.ExactArgs(1),
+		PreRun: CheckAOGServer,
+		Run:    DeleteProviderHandler,
 	}
 
 	return deleteProviderCmd
@@ -565,10 +571,11 @@ func NewDeleteProviderCommand() *cobra.Command {
 
 func NewListServicesCommand() *cobra.Command {
 	listModelCmd := &cobra.Command{
-		Use:   "services <service_name>",
-		Short: "Display all available service information.",
-		Long:  `Display all available service information.`,
-		Args:  cobra.MaximumNArgs(1),
+		Use:    "services <service_name>",
+		Short:  "Display all available service information.",
+		Long:   `Display all available service information.`,
+		Args:   cobra.MaximumNArgs(1),
+		PreRun: CheckAOGServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := dto.GetAIGCServicesRequest{}
 			resp := dto.GetAIGCServicesResponse{}
@@ -614,9 +621,10 @@ func NewListModelsCommand() *cobra.Command {
 	var providerName string
 
 	listModelCmd := &cobra.Command{
-		Use:   "models",
-		Short: "List models for a specific service",
-		Long:  `List models for a specific service.`,
+		Use:    "models",
+		Short:  "List models for a specific service",
+		Long:   `List models for a specific service.`,
+		PreRun: CheckAOGServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := dto.GetModelsRequest{}
 			resp := dto.GetModelsResponse{}
@@ -658,9 +666,10 @@ func NewListProvidersCommand() *cobra.Command {
 	var remote string
 
 	listModelCmd := &cobra.Command{
-		Use:   "service_providers",
-		Short: "List models for a specific service",
-		Long:  `List models for a specific service.`,
+		Use:    "service_providers",
+		Short:  "List models for a specific service",
+		Long:   `List models for a specific service.`,
+		PreRun: CheckAOGServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := dto.GetServiceProvidersRequest{}
 			resp := dto.GetServiceProvidersResponse{}
@@ -725,7 +734,7 @@ func installServiceProviderHandler(configFile string) error {
 	var spConf dto.CreateServiceProviderRequest
 	err = json.Unmarshal(data, &spConf)
 	if err != nil {
-		return fmt.Errorf("failed to parse configuration file: %w", err)
+		return fmt.Errorf("please check your json format: %w", err)
 	}
 
 	if spConf.ServiceName == "" || spConf.ServiceSource == "" || spConf.ApiFlavor == "" {
@@ -923,6 +932,14 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 }
 
 func CheckAOGServer(cmd *cobra.Command, args []string) {
+	if !utils.IsServerRunning() {
+		fmt.Println("AOG server is not running, Please run 'aog server start' first")
+		os.Exit(1)
+		return
+	}
+}
+
+func StartAOGServer(cmd *cobra.Command, args []string) {
 	if utils.IsServerRunning() {
 		return
 	}
@@ -1083,13 +1100,6 @@ func PullHandler(cmd *cobra.Command, args []string) {
 	req.ServiceName = serviceName
 	req.ProviderName = providerName
 
-	var wg sync.WaitGroup
-	stopChan := make(chan struct{})
-
-	wg.Add(1)
-	msg := "Pulling model"
-	go progress.ShowLoadingAnimation(stopChan, &wg, msg)
-
 	c := config.NewAOGClient()
 	routerPath := fmt.Sprintf("/aog/%s/model", version.AOGVersion)
 
@@ -1099,16 +1109,13 @@ func PullHandler(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	close(stopChan)
-	wg.Wait()
-
 	if resp.HTTPCode > 200 {
 		fmt.Printf("\rPull model  failed: %s", resp.Message)
 		return
 	}
 
-	fmt.Println("The model file is being downloaded in the background ... please wait ...")
-	fmt.Println("You can check the model status with the command: aog get models")
+	fmt.Println("You can use the command `aog get models` to check if the model is downloaded successfully.")
+	fmt.Println("Model is downloading in the background, please wait...")
 }
 
 func DeleteModelHandler(cmd *cobra.Command, args []string) {
@@ -1184,9 +1191,10 @@ func DeleteProviderHandler(cmd *cobra.Command, args []string) {
 
 func NewImportServiceCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "import <file_path>",
-		Short: "Import service configuration from a file",
-		Long:  "Import service configuration from a file and send it to the API.",
+		Use:    "import <file_path>",
+		Short:  "Import service configuration from a file",
+		Long:   "Import service configuration from a file and send it to the API.",
+		PreRun: CheckAOGServer,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("please provide a .aog file path")
@@ -1203,7 +1211,7 @@ func NewImportServiceCommand() *cobra.Command {
 
 			err = json.Unmarshal(data, &req)
 			if err != nil {
-				return fmt.Errorf("failed to parse file content: %w", err)
+				return fmt.Errorf("please check your json format: %w", err)
 			}
 
 			var wg sync.WaitGroup
@@ -1253,9 +1261,10 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 	var filePath string
 
 	cmd := &cobra.Command{
-		Use:   "to-file",
-		Short: "Export service to file",
-		Long:  "Export service to file",
+		Use:    "to-file",
+		Short:  "Export service to file",
+		Long:   "Export service to file",
+		PreRun: CheckAOGServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
@@ -1295,9 +1304,10 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 
 func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "to-stdout",
-		Short: "Export service to stdout",
-		Long:  "Export service to stdout",
+		Use:    "to-stdout",
+		Short:  "Export service to stdout",
+		Long:   "Export service to stdout",
+		PreRun: CheckAOGServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
