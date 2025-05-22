@@ -43,9 +43,18 @@
     position: relative;
     top: 200px;
     width: 100%;
-    height: 100%;
     text-align: center;
     font-size: 14px;
     color: #344054;
+  }
+}
+
+.loading {
+  position: relative;
+  top: 300px;
+  width: 100%;
+  text-align: center;
+  img {
+    width: 60px;
   }
 }

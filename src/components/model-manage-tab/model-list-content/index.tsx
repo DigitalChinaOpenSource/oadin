@@ -22,7 +22,7 @@ export default function ModelListContent(props: IModelListContent) {
   return (
     <>
       {vm.modelSupportLoading || vm.smartversionLoading ? (
-        <div className="loading">
+        <div className={styles.loading}>
           <img
             src={realLoadingSvg}
             alt="loading"
