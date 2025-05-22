@@ -128,51 +128,72 @@ class Byze {
     });
   }
 
-  DownloadByze() {
+  DownloadByze(retries = 3) {
     return new Promise((resolve, reject) => {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS
-        ? 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/byze-installer-latest.pkg'
-        : 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/byze-installer-latest.exe';
+        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
+        : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe';
 
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'ByzeInstaller');
       const destFileName = isMacOS ? 'byze-installer-latest.pkg' : 'byze-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
 
-      // 创建目标目录
       fs.mkdirSync(destDir, { recursive: true });
-
-      const file = fs.createWriteStream(dest);
 
       const options = {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          'User-Agent': isMacOS
+            ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'
+            : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         },
       };
 
-      http.get(url, options, (response) => {
-        if (response.statusCode !== 200) {
-          return reject(new Error(`Download failed with status code: ${response.statusCode}`));
-        }
+      function tryDownload(attempt) {
+        const file = fs.createWriteStream(dest);
 
-        response.pipe(file);
-
-        file.on('finish', () => {
-          file.close(async () => {
-            try {
-              await runInstaller(dest, isMacOS);
-              resolve(true);
-            } catch (err) {
-              console.error('Installer execution failed:', err);
-              resolve(false);
+        const request = https.get(url, options, (response) => {
+          if (response.statusCode !== 200) {
+            file.close();
+            fs.unlink(dest, () => {}); // 删除半成品
+            if (attempt < retries) {
+              console.warn(`Retry ${attempt}/${retries} - Status code ${response.statusCode}`);
+              return tryDownload(attempt + 1);
             }
+            return reject(new Error(`Download failed with status code: ${response.statusCode}`));
+          }
+
+          response.pipe(file);
+          file.on('finish', () => {
+            file.close(async () => {
+              try {
+                await runInstaller(dest, isMacOS);
+                resolve(true);
+              } catch (err) {
+                console.error('Installer execution failed:', err);
+                resolve(false);
+              }
+            });
           });
         });
-      }).on('error', (err) => {
-        fs.unlinkSync(dest);
-        reject(err);
-      });
+
+        request.setTimeout(15000, () => {
+          request.destroy(new Error('Request timeout'));
+        });
+
+        request.on('error', (err) => {
+          file.close();
+          fs.unlink(dest, () => {}); // 删除半成品
+          if (attempt < retries) {
+            console.warn(`Retry ${attempt}/${retries} - Error: ${err.message}`);
+            return tryDownload(attempt + 1);
+          }
+          reject(err);
+        });
+      }
+
+      tryDownload(1);
     });
   }
 
