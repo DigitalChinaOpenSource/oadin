@@ -51,7 +51,7 @@ build_mac:
     - echo '"$USER_HOME/Byze/byze" server start -d' >> scripts/postinstall
     - chmod +x scripts/postinstall
     - |
-      pkgbuild --identifier com.digitalchina.byze --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Byze --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Byze --scripts ./scripts byze.pkg
+      pkgbuild --identifier com.digitalchina.byze --version "${CI_COMMIT_TAG}" --install-location $USER_HOME/Byze/byze --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Byze --scripts ./scripts byze.pkg
     - echo "--------- 📬 安装包公证 ----------"
     - xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
     - xcrun notarytool submit byze.pkg --keychain-profile "ci-profile" --wait
