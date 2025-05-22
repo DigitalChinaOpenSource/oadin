@@ -62,8 +62,12 @@ export interface SmartvisionDataItem {
 }
 
 // 问学列表数据类型
-export interface SmartvisionData {
+export interface ISmartvisionDataRes {
   data: SmartvisionDataItem[];
+}
+
+export interface IModelPathRes {
+  path: string;
 }
 
 export interface IRequestModelParams {

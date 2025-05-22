@@ -1,4 +1,29 @@
 .mcpAdvanceFilter {
-  width: 200px;
-  padding-right: 24px;
+  position: relative;
+  height: 100%;
+  transition: transform 0.3s ease-in-out;
+  will-change: transform; // 提升动画性能
+
+  .filterTitle {
+    display: flex;
+    width: 200px;
+    height: 20px;
+    margin-bottom: 16px;
+    .titleOperate {
+      display: flex;
+      color: #344054;
+    }
+    .clean {
+      padding: 2px;
+      margin-left: auto;
+    }
+    .foldIcon {
+      cursor: pointer;
+      margin-right: 4px;
+    }
+  }
+
+  .filterContent {
+    width: 200px;
+  }
 }

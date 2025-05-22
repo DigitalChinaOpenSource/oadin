@@ -1,7 +1,7 @@
 import styles from './index.module.scss';
 import { Tabs } from 'antd';
 import type { TabsProps } from 'antd';
-import McpListTab from '@/components/mcp-manage/mcp-list-tab';
+import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import { useSearchParams } from 'react-router-dom';
 
@@ -10,7 +10,7 @@ export default function McpManage() {
     {
       key: 'mcpList',
       label: 'MCP广场',
-      children: <McpListTab />,
+      children: <McpSquareTab />,
     },
     {
       key: 'myMcp',

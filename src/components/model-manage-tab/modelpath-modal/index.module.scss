@@ -6,8 +6,6 @@
     font-weight: 600;
   }
   .modelPathInput {
-    position: relative;
-    display: flex;
     margin-top: 16px;
     margin-bottom: 48px;
     .pathTitle {
@@ -23,11 +21,8 @@
     color: #ff4d4f;
   }
   .diskSpace {
-    position: absolute;
-    left: 106px;
-    top: 40px;
+    margin-left: 108px;
     color: #9da3bb;
-
     .diskCanUse {
       color: #5429ff;
     }

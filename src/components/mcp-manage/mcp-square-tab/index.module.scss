@@ -1,11 +1,11 @@
-.mcpListTab {
+.mcpSquareTab {
   display: flex;
-  .mcpListContent {
+  .mcpSquareContent {
     width: 100%;
     padding: 24px;
     .mcpTitle {
       display: flex;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
       line-height: 32px;
       .mcpTitleText {
         font-size: 16px;
@@ -20,6 +20,11 @@
       .searchInput {
         margin-left: auto;
       }
+    }
+    .expandIcon {
+      cursor: pointer;
+      margin-left: 16px;
+      padding: 2px;
     }
   }
 }

@@ -1,26 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
-import { IMcpListRequestParams, IMcpListData } from './types';
-import { mcpListDataMock } from './constant';
+import { IMcpListRequestParams, IMcpListData } from '../mcp-square-tab/types';
+import { mcpListDataMock } from '../mcp-square-tab/constant';
 import { useNavigate } from 'react-router-dom';
 
 export function useViewModel() {
   const navigate = useNavigate();
 
-  const [mcpListData, setMcpListData] = useState([]);
+  const [myMcpListData, setMyMcpListData] = useState([]);
   const [mcpSearchVal, setMcpSearchVal] = useState({} as IMcpListRequestParams);
 
   // useEffect(() => {
-  //   fetchMcpList({
+  //   fetchMyMcpList({
   //     deployment: 'hosted',
   //     page: 1,
   //     size: 10,
   //   });
   // }, []);
 
-  // 获取 mcp 列表
-  const { loading: mcpListLoading, run: fetchMcpList } = useRequest(
+  // 获取我的 mcp 列表
+  const { loading: myMcpListLoading, run: fetchMyMcpList } = useRequest(
     async (params: IMcpListRequestParams) => {
       const data = await httpRequest.post<IMcpListData>('/api/mcp/search', params);
       return data?.data || [];
@@ -29,7 +29,7 @@ export function useViewModel() {
       manual: true,
       onSuccess: (data) => {
         console.log('fetchMcpList===>', data);
-        setMcpListData(mcpListData);
+        setMyMcpListData(myMcpListData);
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
@@ -38,7 +38,7 @@ export function useViewModel() {
   );
 
   const handelMcpCardClick = (serviceId: number) => {
-    navigate(`/mcp-detail?serviceId=${serviceId}&mcpFrom=mcpList`);
+    navigate(`/mcp-detail?serviceId=${serviceId}&mcpFrom=myMcpList`);
   };
 
   // 搜索框搜索
@@ -50,8 +50,8 @@ export function useViewModel() {
   };
 
   return {
-    mcpListLoading,
-    mcpListData,
+    myMcpListLoading,
+    myMcpListData,
     mcpListDataMock,
     mcpSearchVal,
 

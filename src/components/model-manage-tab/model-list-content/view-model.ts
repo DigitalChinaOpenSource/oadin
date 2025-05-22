@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { IModelAuthType, IModelAuth } from '../types';
-import { ModelData, ModelDataItem, IModelSourceType, IRequestModelParams, SmartvisionData } from '@/types';
+import { ModelData, ModelDataItem, IModelSourceType, IRequestModelParams, ISmartvisionDataRes, IModelPathRes } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
@@ -75,8 +75,8 @@ export function useViewModel(props: IModelListContent) {
   // 获取问学模型列表
   const { loading: smartversionLoading, run: fetchSmartversion } = useRequest(
     async (envType: 'dev' | 'product') => {
-      const data = await httpRequest.get<SmartvisionData>('/model/support/smartvision', { env_type: envType || 'prod' });
-      return data?.data || [];
+      const res = await httpRequest.get<ISmartvisionDataRes>('/model/support/smartvision', { env_type: envType || 'prod' });
+      return res?.data || [];
     },
     {
       manual: true,
@@ -91,25 +91,26 @@ export function useViewModel(props: IModelListContent) {
     },
   );
 
-  // 删除模型
-  const { loading: deleteModelLoading, run: fetchDeleteModel } = useRequest(
-    async (params: IRequestModelParams) => {
-      await httpRequest.del('/model', params);
+  // 获取模型存储路径
+  const { run: fetchModelPath } = useRequest(
+    async () => {
+      const res = await httpRequest.get<IModelPathRes>('/control_panel/model/filepath');
+      return res || {};
     },
     {
       manual: true,
       onSuccess: (data) => {
-        message.success('模型删除成功');
+        setModelPath(data?.path || '');
       },
       onError: (error) => {
-        message.error('模型删除失败');
-        console.error('删除模型失败:', error);
-      },
-      onFinally: () => {
-        fetchModelSupport(modelSourceVal);
+        console.error('获取模型存储路径失败:', error);
       },
     },
   );
+
+  useEffect(() => {
+    fetchModelPath();
+  }, []);
 
   useEffect(() => {
     if (modelSourceVal) {
@@ -131,6 +132,26 @@ export function useViewModel(props: IModelListContent) {
     setPagination((prev) => ({ ...prev, total: filteredData.length }));
     setPagenationData(paginatedData(pagination, filteredData));
   }, [modelListData, modelSearchVal, pagination.current, pagination.pageSize]);
+
+  // 删除模型
+  const { loading: deleteModelLoading, run: fetchDeleteModel } = useRequest(
+    async (params: IRequestModelParams) => {
+      await httpRequest.del('/model', params);
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        message.success('模型删除成功');
+      },
+      onError: (error) => {
+        message.error('模型删除失败');
+        console.error('删除模型失败:', error);
+      },
+      onFinally: () => {
+        fetchModelSupport(modelSourceVal);
+      },
+    },
+  );
 
   // 获取过滤后的数据
   const getFilteredData = () => {
