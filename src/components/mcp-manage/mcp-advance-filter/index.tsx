@@ -20,8 +20,7 @@ export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
       className={styles.mcpAdvanceFilter}
       style={{
         visibility: collapsed ? 'hidden' : 'visible',
-        width: collapsed ? '0' : '200px',
-        overflow: 'hidden',
+        width: collapsed ? '0' : '224px',
         transition: 'width 0.3s ease-in-out',
         padding: collapsed ? '0' : '28px 24px 24px 0',
       }}

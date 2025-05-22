@@ -6,19 +6,24 @@
 
   .filterTitle {
     display: flex;
+    width: 200px;
     height: 20px;
     margin-bottom: 16px;
+    .titleOperate {
+      display: flex;
+      color: #344054;
+    }
+    .clean {
+      padding: 2px;
+      margin-left: auto;
+    }
+    .foldIcon {
+      cursor: pointer;
+      margin-right: 4px;
+    }
   }
-  .titleOperate {
-    display: flex;
-    color: #344054;
-  }
-  .clean {
-    padding: 2px;
-    margin-left: auto;
-  }
-  .foldIcon {
-    cursor: pointer;
-    margin-right: 4px;
+
+  .filterContent {
+    width: 200px;
   }
 }
