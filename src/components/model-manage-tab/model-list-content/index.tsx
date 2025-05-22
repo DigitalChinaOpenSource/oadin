@@ -33,7 +33,7 @@ export default function ModelListContent(props: IModelListContent) {
           <div className={styles.contentContainer}>
             <div className={styles.titlepath}>
               <div className={styles.title}>模型列表</div>
-              <Tooltip title="/Users/lc/Library/Application\ Support/">
+              <Tooltip title={vm.modelPath}>
                 <Button
                   className={styles.changePath}
                   type="text"
