@@ -204,6 +204,7 @@ class Byze {
       console.log('Byze 在运行中');
       return true;
     }
+
     return new Promise((resolve, reject) => {
       const currentPlatform = process.platform;
       const userDir = os.homedir();
@@ -211,30 +212,18 @@ class Byze {
       console.log(`byzeDir: ${byzeDir}`);
       if (!process.env.PATH.includes(byzeDir)) {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
-        console.log("添加到临时环境变量")
+        console.log("添加到临时环境变量");
       }
-
-      let command, args;
 
       if (currentPlatform === 'win32') {
-        command = 'cmd.exe';
-        args = ['/c', 'start-byze.bat'];
-      } else if (currentPlatform === 'darwin') {
-        const logPath = path.join(os.tmpdir(), 'byze-start.log');
-        try { fs.unlinkSync(logPath); } catch (e) {}
+        const command = 'cmd.exe';
+        const args = ['/c', 'start-byze.bat'];
 
-        command = 'sh';
-        args = ['-c', `nohup byze server start -d > "${logPath}" 2>&1 & echo "Byze launched"`];
-      } else {
-        return reject(new Error(`Unsupported platform: ${currentPlatform}`));
-      }
+        console.log(`[InstallByze] 正在运行命令: ${command} ${args.join(' ')}`);
 
-      console.log(`[InstallByze] 正在运行命令: ${command} ${args.join(' ')}`);
-
-      execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
-        if (currentPlatform === 'win32') {
-          if (error) console.error(`byze server start:error`, error); 
-          if (stdout) console.log(`byze server start:stdout:`, stdout.toString()); 
+        execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
+          if (error) console.error(`byze server start:error`, error);
+          if (stdout) console.log(`byze server start:stdout:`, stdout.toString());
           if (stderr) console.error(`byze server start:stderr:`, stderr.toString());
           const output = (stdout + stderr).toString().toLowerCase();
           if (error || output.includes('error')) {
@@ -244,11 +233,25 @@ class Byze {
             return resolve(true);
           };
 
-          // 仍尝试通过 IsByzeAvailiable 确认
           const available = await this.IsByzeAvailiable();
           return resolve(available);
-        }
+        });
+
+      } else if (currentPlatform === 'darwin') {
         const logPath = path.join(os.tmpdir(), 'byze-start.log');
+        try { fs.unlinkSync(logPath); } catch (e) {}
+
+        const out = fs.openSync(logPath, 'a');
+        const err = fs.openSync(logPath, 'a');
+
+        const child = spawn('byze', ['server', 'start', '-d'], {
+          detached: true,
+          stdio: ['ignore', out, err]
+        });
+
+        child.unref();
+        console.log('[InstallByze] Mac 下通过 spawn 启动 byze');
+
         const maxWait = 150000;
         const interval = 1000;
         let elapsed = 0;
@@ -258,8 +261,7 @@ class Byze {
           try {
             content = fs.readFileSync(logPath, 'utf-8').toLowerCase();
             console.log(`[InstallByze] Mac 日志输出:\n${content}`);
-          } catch (e) {
-          }
+          } catch (e) {}
 
           if (content.includes('byze server start successfully')) {
             return resolve(true);
@@ -283,7 +285,10 @@ class Byze {
         };
 
         checkLog();
-      });
+
+      } else {
+        return reject(new Error(`Unsupported platform: ${currentPlatform}`));
+      }
     });
   }
 
