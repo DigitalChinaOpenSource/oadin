@@ -18,8 +18,6 @@ import (
 	"byze/internal/event"
 	"byze/internal/types"
 	"byze/internal/utils"
-
-	"github.com/shirou/gopsutil/cpu"
 )
 
 type ServiceTaskEventType int
@@ -184,13 +182,14 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 		location = types.ServiceSourceRemote
 	} else if task.Request.HybridPolicy == "default" {
 		if model == "" {
-			gpuUtilization, err := utils.GetGpuInfo()
-			if err != nil {
-				cpuTotalPercent, _ := cpu.Percent(15*time.Second, false)
-				if cpuTotalPercent[0] > 80.0 {
-					location = types.ServiceSourceRemote
-				}
-			}
+			gpuUtilization, _ := utils.GetGpuInfo()
+			//if err != nil {
+			//	fmt.Println()
+			//	//cpuTotalPercent, _ := cpu.Percent(15*time.Second, false)
+			//	//if cpuTotalPercent[0] > 80.0 {
+			//	//	location = types.ServiceSourceRemote
+			//	//}
+			//}
 			if gpuUtilization >= 80.0 {
 				location = types.ServiceSourceRemote
 			}
