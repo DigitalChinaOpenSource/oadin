@@ -1,10 +1,11 @@
-import { List, Tooltip } from 'antd';
-import McpCard from '../mcp-card';
+import { Tooltip } from 'antd';
 import { Input } from 'antd';
 import { useViewModel } from './view-model';
 import expandSvg from '@/components/icons/expand.svg';
 import { SearchIcon } from '@/components/icons';
 import McpAdvanceFilter from '../mcp-advance-filter';
+import McpList from '../mcp-list';
+import { mcpListDataMock } from './constant';
 import styles from './index.module.scss';
 
 export default function McpListTab() {
@@ -43,31 +44,8 @@ export default function McpListTab() {
             </Tooltip>
           )}
         </div>
-        <div className={styles.mcpCardList}>
-          <List
-            grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }}
-            dataSource={vm.mcpListDataMock}
-            pagination={
-              vm.mcpListData.length > 0 && {
-                // className: styles.mcpListPagination,
-                align: 'end',
-                // ...vm.pagination,
-                pageSizeOptions: [12, 24, 48, 96],
-                showSizeChanger: true,
-                // onChange: vm.onPageChange,
-                // onShowSizeChange: vm.onShowSizeChange,
-              }
-            }
-            renderItem={(item) => (
-              <List.Item>
-                <McpCard
-                  mcpData={item}
-                  handelMcpCardClick={vm.handelMcpCardClick}
-                />
-              </List.Item>
-            )}
-          />
-        </div>
+        {/* vm.mcpListData ||  */}
+        <McpList mcpListData={mcpListDataMock} />
       </div>
       {/* 过滤器 */}
       <McpAdvanceFilter
