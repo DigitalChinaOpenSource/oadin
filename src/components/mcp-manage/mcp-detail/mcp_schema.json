@@ -17,7 +17,13 @@
             "properties": {
                 "APIKEY": {
                     "description": "必须配置的API认证密钥",
-                    "type": "string"
+                    "type": "string",
+                    "required": true
+                },
+                "CS": {
+                    "description": "测试",
+                    "type": "string",
+                    "required": false
                 }
             },
             "required": [

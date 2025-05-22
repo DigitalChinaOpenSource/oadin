@@ -2,6 +2,7 @@ import styles from './index.module.scss';
 import { Collapse, CollapseProps, Input, List, Switch, Tooltip } from 'antd';
 import { SearchIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
+import { useMcpTools } from '@/components/mcp-manage/mcp-detail/mcp-tools/useMcpTolls.ts';
 
 const CollapseItemHeader = (props: { name: string; desc: string; tags: string[] }) => {
   const { name, desc, tags = [] } = props;
@@ -19,16 +20,7 @@ const CollapseItemHeader = (props: { name: string; desc: string; tags: string[] 
 // const
 
 export default function McpTools() {
-  const mcpTollData = [
-    { id: '1', key: '1', label: '测试1', description: '测试内容1', tags: ['测试1', '测算出'], enabled: true },
-    { id: '2', key: '2', label: '测试2', description: '测试内容2', tags: [], enabled: true },
-    { id: '3', key: '3', label: '测试3', description: '测试内容3', tags: [], enabled: true },
-    { id: '3', key: '3', label: '测试3', description: '测试内容3', tags: [], enabled: true },
-    { id: '3', key: '3', label: '测试3', description: '测试内容3', tags: [], enabled: true },
-    { id: '3', key: '3', label: '测试3', description: '测试内容3', tags: [], enabled: true },
-    { id: '3', key: '3', label: '测试3', description: '测试内容3', tags: [], enabled: true },
-    { id: '3', key: '3', label: '测试3', description: '测试内容3', tags: [], enabled: true },
-  ];
+  const { handlePageChange, mcpTolls, pagination, changeTollStatus } = useMcpTools();
 
   return (
     <div className={styles.mcpTools}>
@@ -45,15 +37,13 @@ export default function McpTools() {
       <List
         className={styles.tollsContent}
         itemLayout="horizontal"
-        dataSource={mcpTollData}
-        // pagination={{
-        //   onChange: (page) => {
-        //     console.log(page);
-        //   },
-        //   pageSize: 10,
-        //   align: 'end',
-        //   position: 'top',
-        // }}
+        dataSource={mcpTolls}
+        pagination={{
+          onChange: handlePageChange,
+          ...pagination,
+          align: 'end',
+          position: 'bottom',
+        }}
         renderItem={(item) => (
           <List.Item>
             <Collapse
@@ -63,19 +53,21 @@ export default function McpTools() {
                   ...item,
                   label: (
                     <CollapseItemHeader
-                      name={item.label}
+                      name={item.name}
                       desc={item.description}
                       tags={item.tags || []}
                     />
                   ),
                   extra: (
-                    <Tooltip title={true ? '关闭后，大模型将不会调度已关闭函数' : '未启用'}>
+                    <Tooltip title={item.enabled ? '关闭后，大模型将不会调度已关闭函数' : ''}>
                       <Switch
                         checkedChildren="ON"
                         unCheckedChildren="OFF"
-                        defaultChecked={item.enabled}
+                        checked={item.enabled}
+                        loading={item.changTollLoading}
                         onClick={(checked, e) => {
                           e.stopPropagation();
+                          changeTollStatus(item, checked);
                         }}
                       />
                     </Tooltip>

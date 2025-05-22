@@ -7,11 +7,8 @@ import copyIcon from '@/components/icons/copy.svg';
 // 注册需要的语言（性能优化）
 PrismLight.registerLanguage('json', json);
 const SyntaxHighlighter = PrismLight as unknown as React.ComponentType<SyntaxHighlighterProps>;
-interface McpServiceConfigProps {
-  code?: string;
-}
 
-export default function McpServiceConfig({ code = '' }: McpServiceConfigProps) {
+export default function McpServiceConfig({ code = '' }: { code?: string }) {
   const handleClick = async () => {
     try {
       await navigator.clipboard.writeText(code || defaultCode);
@@ -22,30 +19,8 @@ export default function McpServiceConfig({ code = '' }: McpServiceConfigProps) {
 
   const defaultCode = `{
     "model": { 
-      "name": "mcp",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
-      "version": "1.0.0,2sadasdaggggsfsddgfhgjhkhgggggggaadsa,afsd",
+      "name": "测试",
+      "version": "1.0.0",
     }
   }`;
 

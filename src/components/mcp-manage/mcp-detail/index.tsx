@@ -10,18 +10,17 @@ import McpInstructions from '@/components/mcp-manage/mcp-detail/mcp-instructions
 import DetailDesc from '@/components/mcp-manage/mcp-detail/detail-desc';
 import McpServiceConfig from '@/components/mcp-manage/mcp-detail/mcp-service-config';
 import RecommendedClient from '@/components/mcp-manage/mcp-detail/recommended-client';
+import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts';
+import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 
 export default function McpDetail() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const serviceId = searchParams.get('serviceId');
-  const mcpFrom = searchParams.get('mcpFrom');
-  const [loading, setLoading] = useState<boolean>(false);
+  const { handleGoBack, mcpDetail, handleAddMcp, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail();
+
   const items: TabsProps['items'] = [
     {
       key: 'overView',
       label: '概览',
-      children: <McpOverview />,
+      children: <McpOverview markDownData={mcpDetail?.summary} />,
     },
     {
       key: 'tools',
@@ -34,42 +33,54 @@ export default function McpDetail() {
     //   children: <McpInstructions />,
     // },
   ];
-  const handledGoBack = (): void => {
-    navigate(`/mcp-service?mcpFrom=${mcpFrom}`);
-  };
+
   return (
-    <div className={styles.mcpManageDetail}>
-      <div
-        className={styles.goBack}
-        onClick={handledGoBack}
-      >
-        <ArrowLeftOutlined className={styles.backIcon} />
-        <span className={styles.backText}>返回</span>
+    mcpDetail && (
+      <div className={styles.mcpManageDetail}>
+        <div
+          className={styles.goBack}
+          onClick={handleGoBack}
+        >
+          <ArrowLeftOutlined className={styles.backIcon} />
+          <span className={styles.backText}>返回</span>
+        </div>
+        <div className={styles.detailTop}>
+          <div className={styles.topLeft}>
+            <DetailDesc mcpDetail={mcpDetail} />
+          </div>
+          <div className={styles.topRight}>
+            <Button
+              type="primary"
+              onClick={handleAddMcp}
+              loading={downMcpLoading || authMcpLoading}
+            >
+              {mcpDetail.status || '添加'}
+            </Button>
+          </div>
+        </div>
+        {/*分割线*/}
+        <div className={styles.Line}></div>
+        <div className={styles.detailContent}>
+          <div className={styles.contentLeft}>
+            <Tabs
+              className={styles.tabs}
+              defaultActiveKey="overView"
+              items={items}
+              // onChange={onChange}
+            />
+          </div>
+          <div className={styles.contentRight}>
+            <McpServiceConfig code={JSON.stringify(mcpDetail.serverConfig || '暂无配置数据', null, 2)} />
+            <RecommendedClient />
+          </div>
+        </div>
+        <McpAuthModal
+          mcpDetail={mcpDetail}
+          handleAuthMcp={handleAuthMcp}
+          setShowMcpModal={setShowMcpModal}
+          showMcpModal={showMcpModal}
+        />
       </div>
-      <div className={styles.detailTop}>
-        <div className={styles.topLeft}>
-          <DetailDesc />
-        </div>
-        <div className={styles.topRight}>
-          <Button type="primary">添加</Button>
-        </div>
-      </div>
-      {/*分割线*/}
-      <div className={styles.Line}></div>
-      <div className={styles.detailContent}>
-        <div className={styles.contentLeft}>
-          <Tabs
-            className={styles.tabs}
-            defaultActiveKey="overView"
-            items={items}
-            // onChange={onChange}
-          />
-        </div>
-        <div className={styles.contentRight}>
-          <McpServiceConfig />
-          <RecommendedClient />
-        </div>
-      </div>
-    </div>
+    )
   );
 }
