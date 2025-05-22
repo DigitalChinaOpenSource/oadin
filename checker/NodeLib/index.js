@@ -209,6 +209,8 @@ class Byze {
       const currentPlatform = process.platform;
       const userDir = os.homedir();
       const byzeDir = path.join(userDir, 'Byze');
+      const logpath = path.join(destDir, 'byze-installer.log');
+
       console.log(`byzeDir: ${byzeDir}`);
       if (!process.env.PATH.includes(byzeDir)) {
         process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
@@ -237,30 +239,38 @@ class Byze {
           return resolve(available);
         });
       } else if (currentPlatform === 'darwin') {
-        const logPath = path.join(byzeDir, 'byze-install.log');
-        const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 
-        child = spawn('byze', ['server', 'start', '-d'], {
-          stdio: ['pipe', 'pipe', 'pipe'],
+        let child;
+        let stderrContent = '';
+
+        // 日志文件路径
+        const logDir = path.join(os.homedir(), 'Byze');
+        const logFile = path.join(logDir, 'byze-server.log');
+        fs.mkdirSync(logDir, { recursive: true });
+        const logStream = fs.createWriteStream(logFile, { flags: 'a' });
+
+        child = spawn('/usr/local/bin/byze', ['server', 'start', '-d'], {
+          stdio: ['ignore', 'pipe', 'pipe'],
           windowsHide: true,
         });
-      
-        // 将输出都写入byze-install.log
+
         child.stdout.on('data', (data) => {
+          logStream.write(`[STDOUT] ${data}`);
+          if (data.toString().includes('server start successfully')) {
+            resolve(true);
+          }
           console.log(`stdout: ${data}`);
-          const output = data.toString().trim();
-          logStream.write(`stdout: ${output}\n`);
         });
 
         child.stderr.on('data', (data) => {
           const errorMessage = data.toString().trim();
           stderrContent += errorMessage + '\n';
+          logStream.write(`[STDERR] ${errorMessage}\n`);
           console.error(`stderr: ${errorMessage}`);
-          logStream.write(`stderr: ${errorMessage}\n`);
         });
 
-    
         child.on('error', (err) => {
+          logStream.write(`[ERROR] ${err.message}\n`);
           console.error(`❌ 启动失败: ${err.message}`);
           if (err.code === 'ENOENT') {
             console.log([
@@ -269,16 +279,18 @@ class Byze {
               `2. 环境变量未生效，请尝试重启终端`
             ].filter(Boolean).join('\n'));
           }
+          logStream.end();
           resolve(false);
         });
 
         child.on('close', (code) => {
+          logStream.write(`[CLOSE] code: ${code}\n`);
+          logStream.end();
           if (stderrContent.includes('Install model engine failed')){
             console.error('❌ 启动失败: 模型引擎安装失败。');
             resolve(false);
           } else if (code === 0) {
             console.log('进程退出，正在检查服务状态...');
-            
             this.checkServerStatus(resolve);
           } else {
             console.error(`❌ 启动失败，退出码: ${code}`);
