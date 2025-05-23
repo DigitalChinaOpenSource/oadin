@@ -30,15 +30,19 @@ export default function ServiceProviderManageTab() {
           locale={{
             emptyText: () => {
               return (
-                <div className={styles.noData}>
-                  <div className={styles.noDataIcon}>
-                    <img
-                      src={noDataSvg}
-                      alt="no-data"
-                    />
-                  </div>
-                  <div className={styles.noDataText}>暂无匹配的模型</div>
-                </div>
+                <>
+                  {!vm.loading && (
+                    <div className={styles.noData}>
+                      <div className={styles.noDataIcon}>
+                        <img
+                          src={noDataSvg}
+                          alt="no-data"
+                        />
+                      </div>
+                      <div className={styles.noDataText}>暂无匹配的模型</div>
+                    </div>
+                  )}
+                </>
               );
             },
           }}
