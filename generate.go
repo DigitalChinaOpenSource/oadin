@@ -12,4 +12,4 @@ func GenerateSchema(obj interface{}) *jsonschema.Schema {
 }
 
 // 生成UserRequest的Schema
-userReqSchema := GenerateSchema(UserRequest{})
+userReqSchema := GenerateSchema(UserRequest{}) 
