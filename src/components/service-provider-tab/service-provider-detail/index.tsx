@@ -26,25 +26,25 @@ export default function ServiceProviderDetail({ selectedRow, onCancel }: Service
       <div className={styles.infoBlock}>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务提供商名称:</span>
-          {baseInfo.name}
+          {selectedRow.provider_name}
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务提供商厂商名称:</span>
-          {baseInfo.name}
+          {selectedRow.flavor}
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务来源:</span>
-          {baseInfo.name}
+          {selectedRow.service_source === 'remote' ? '云端' : '本地'}
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务名称:</span>
-          {baseInfo.name}
+          {selectedRow.service_name}
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务提供商状态:</span>
-          <div className={baseInfo.statusCode === '1' ? styles.readyStatus : styles.disabledStatus}>
+          <div className={selectedRow.status === 1 ? styles.readyStatus : styles.disabledStatus}>
             <div className={styles.dot}></div>
-            {baseInfo.statusCode === '1' ? '可用' : '禁用'}
+            {selectedRow.status === 1 ? '可用' : '禁用'}
           </div>
         </div>
         <div className={styles.infoRow}>
