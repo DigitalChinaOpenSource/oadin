@@ -6,6 +6,7 @@ import styles from './index.module.scss';
 
 export default function MyMcpTab() {
   const vm = useViewModel();
+
   return (
     <div className={styles.myMcpListTab}>
       {/* 列表区域 */}
@@ -35,6 +36,7 @@ export default function MyMcpTab() {
         </div>
         <McpList
           mcpListData={vm.myMcpListData}
+          pagination={vm.pagination}
           onPageChange={vm.onPageChange}
           onShowSizeChange={vm.onShowSizeChange}
         />

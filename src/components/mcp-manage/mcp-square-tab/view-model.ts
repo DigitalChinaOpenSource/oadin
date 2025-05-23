@@ -149,5 +149,8 @@ export function useViewModel() {
     checkedValues,
     searchVal,
     setSearchVal,
+    pagination,
+    onPageChange,
+    onShowSizeChange,
   };
 }
