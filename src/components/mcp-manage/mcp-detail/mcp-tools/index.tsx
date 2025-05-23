@@ -39,6 +39,8 @@ export default function McpTools() {
         pagination={{
           onChange: handlePageChange,
           ...pagination,
+          pageSizeOptions: [1, 10, 20, 50],
+          showSizeChanger: true,
           align: 'end',
           position: 'bottom',
         }}

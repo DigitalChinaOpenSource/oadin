@@ -21,12 +21,12 @@ export default function McpSquareTab() {
             <span className={styles.mcpCount}>共 {vm.mcpListData.length} 个</span>
           </div>
           <div className={styles.searchInput}>
-            <Input
+            <Input.Search
               allowClear
               placeholder="请输入 MCP 服务名称"
-              suffix={<SearchIcon />}
-              value={vm.mcpSearchVal.keyword}
-              onChange={(e) => vm.onMcpInputSearch(e.target.value.trim())}
+              // suffix={<SearchIcon />}
+              // value={vm.mcpSearchVal.keyword}
+              onSearch={(value) => vm.onMcpInputSearch(value)}
               style={{ width: 380 }}
             />
           </div>
