@@ -26,13 +26,14 @@ export default function McpSquareTab() {
               suffix={
                 <div
                   className={styles.searchIcon}
-                  onClick={() => vm.onMcpInputSearch()}
+                  onClick={() => vm.onMcpInputSearch(vm.searchVal)}
                 >
                   <SearchIcon />
                 </div>
               }
-              value={vm.mcpSearchVal.keyword}
-              onChange={(e) => vm.onMcpInputChange(e.target.value)}
+              value={vm.searchVal}
+              onChange={(e) => vm.setSearchVal(e.target.value)}
+              // onSearch={(value) => vm.onMcpInputSearch(value)}
               style={{ width: 380 }}
             />
           </div>

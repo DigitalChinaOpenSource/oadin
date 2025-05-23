@@ -127,6 +127,8 @@ export function useViewModel() {
     setPostParams(updatedPostParams);
   };
 
+  const [searchVal, setSearchVal] = useState('');
+
   useEffect(() => {
     fetchMcpList();
   }, [postParams]);
@@ -145,5 +147,7 @@ export function useViewModel() {
     handleTagsChange,
     tagsData,
     checkedValues,
+    searchVal,
+    setSearchVal,
   };
 }
