@@ -59,7 +59,7 @@ export function useViewModel(props: IModelListContent) {
               source: 'local',
               type: 0,
               id: index + 1,
-              class: item.class.split(','),
+              class: item.class,
               currentDownload: 0,
             } as any),
         );

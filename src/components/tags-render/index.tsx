@@ -5,10 +5,14 @@ import styles from './index.module.scss';
 
 interface TagsRenderProps {
   tags: string[];
+  highlightNums?: number;
   className?: string;
 }
 
-export default function TagsRender({ tags, className }: TagsRenderProps) {
+export default function TagsRender(props: TagsRenderProps) {
+  const { tags, className } = props;
+  const highlightNums = props.highlightNums || 0;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleTags, setVisibleTags] = useState<string[]>([]);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
@@ -16,6 +20,7 @@ export default function TagsRender({ tags, className }: TagsRenderProps) {
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    const filteredTags = tags.filter((tag) => tag != null && tag.trim() !== '');
     // 重置标签状态
     setVisibleTags([]);
     setHiddenTags([]);
@@ -42,13 +47,13 @@ export default function TagsRender({ tags, className }: TagsRenderProps) {
       const visible: string[] = [];
       const hidden: string[] = [];
       // 计算每个标签的宽度并决定是否显示
-      for (let i = 0; i < tags.length; i++) {
-        const tagWidth = measureTag(tags[i]);
+      for (let i = 0; i < filteredTags.length; i++) {
+        const tagWidth = measureTag(filteredTags[i]);
         if (totalWidth + tagWidth <= availableWidth) {
           totalWidth += tagWidth;
-          visible.push(tags[i]);
+          visible.push(filteredTags[i]);
         } else {
-          hidden.push(tags[i]);
+          hidden.push(filteredTags[i]);
         }
       }
 
@@ -95,7 +100,7 @@ export default function TagsRender({ tags, className }: TagsRenderProps) {
       {visibleTags.map((tag, index) => (
         <Tag
           key={index}
-          className={styles.tag}
+          className={`${styles.tag} ${index < (highlightNums || 0) ? styles.highlightTag : ''}`}
           style={{
             marginRight: 8,
             flexShrink: 0,

@@ -54,10 +54,10 @@ export function useViewModel() {
   };
 
   // 搜索框搜索
-  const onMcpInputSearch = (inputSearchVal: string) => {
+  const onMcpInputSearch = () => {
     setMcpSearchVal({
       ...mcpSearchVal,
-      keyword: inputSearchVal,
+      keyword: mcpSearchVal.keyword,
     });
   };
 
@@ -75,10 +75,14 @@ export function useViewModel() {
     setPagination({ ...pagination, current: 1, pageSize });
   };
 
+  const onMcpInputChange = (value: string) => {
+    setMcpSearchVal({ ...mcpSearchVal, keyword: value.trim() });
+  };
   return {
     myMcpListLoading,
     myMcpListData: mcpListDataMock,
     mcpSearchVal,
+    onMcpInputChange,
 
     handelMcpCardClick,
     onMcpInputSearch,
