@@ -6,10 +6,17 @@ import { useNavigate } from 'react-router-dom';
 
 interface IMcpListProps {
   mcpListData: IMcpListItem[];
+  pagination?: {
+    current: number;
+    pageSize: number;
+    total: number;
+  };
+  onPageChange?: (page: number) => void;
+  onShowSizeChange?: (current: number, pageSize: number) => void;
 }
 export default function McpList(props: IMcpListProps) {
   const navigate = useNavigate();
-  const { mcpListData } = props;
+  const { mcpListData, pagination, onPageChange, onShowSizeChange } = props;
 
   const handelMcpCardClick = (serviceId: number) => {
     navigate(`/mcp-detail?serviceId=${serviceId}&mcpFrom=mcpList`);
@@ -22,13 +29,13 @@ export default function McpList(props: IMcpListProps) {
         dataSource={mcpListData}
         pagination={
           mcpListData.length > 0 && {
-            // className: styles.mcpListPagination,
+            className: styles.mcpListPagination,
             align: 'end',
-            // ...vm.pagination,
+            ...pagination,
             pageSizeOptions: [12, 24, 48, 96],
             showSizeChanger: true,
-            // onChange: vm.onPageChange,
-            // onShowSizeChange: vm.onShowSizeChange,
+            onChange: onPageChange,
+            onShowSizeChange: onShowSizeChange,
           }
         }
         renderItem={(item) => (

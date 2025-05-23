@@ -16,7 +16,7 @@ export interface ModelDataItem {
   status: number | string;
   avatar: string;
   can_select: boolean;
-  class: any;
+  class: string[];
   ollama_id: string;
   params_size: number;
   source?: IModelSourceType;

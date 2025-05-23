@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import { IMcpListRequestParams, IMcpListData } from './types';
@@ -12,14 +12,26 @@ export function useViewModel() {
   const [mcpSearchVal, setMcpSearchVal] = useState({} as IMcpListRequestParams);
   // 过滤器是否折叠了
   const [collapsed, setCollapsed] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 12,
+    total: 0,
+  });
+
+  const lastPageSizeRef = useRef(pagination.pageSize);
 
   // useEffect(() => {
   //   fetchMcpList({
   //     deployment: 'hosted',
   //     page: 1,
-  //     size: 10,
+  //     size: 12,
   //   });
   // }, []);
+
+  useEffect(() => {
+    // TODO 调列表接口，将pagination, mcpSearchVal合并发送
+    // fetchMcpList();
+  }, [pagination, mcpSearchVal]);
 
   // 获取 mcp 列表
   const { loading: mcpListLoading, run: fetchMcpList } = useRequest(
@@ -45,21 +57,38 @@ export function useViewModel() {
 
   // 搜索框搜索
   const onMcpInputSearch = (inputSearchVal: string) => {
+    console.log('inputSearchVal===>', inputSearchVal);
     setMcpSearchVal({
       ...mcpSearchVal,
       keyword: inputSearchVal,
     });
   };
 
+  const onPageChange = (current: number) => {
+    // 如果 pageSize 刚刚被改变，则不执行页码变更逻辑
+    if (lastPageSizeRef.current !== pagination.pageSize) {
+      lastPageSizeRef.current = pagination.pageSize;
+      return;
+    }
+    setPagination({ ...pagination, current });
+  };
+
+  const onShowSizeChange = (current: number, pageSize: number) => {
+    lastPageSizeRef.current = pageSize;
+    setPagination({ ...pagination, current: 1, pageSize });
+  };
+
   return {
     mcpListLoading,
-    mcpListData,
-    mcpListDataMock,
+    mcpListData: mcpListDataMock,
     mcpSearchVal,
 
     handelMcpCardClick,
     onMcpInputSearch,
     collapsed,
     setCollapsed,
+
+    onPageChange,
+    onShowSizeChange,
   };
 }
