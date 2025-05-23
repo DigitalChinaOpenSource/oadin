@@ -1,7 +1,6 @@
 package vega
 
 import (
-	"byze/internal/utils/bcode"
 	"time"
 )
 
@@ -58,6 +57,7 @@ type SupplierAuth struct {
 }
 
 type QueryCloudModelJsonRespond struct {
-	bcode.Bcode
-	Data []Model `json:"data"`
+	Code    int     `json:"code"`
+	Message string  `json:"message"`
+	Data    []Model `json:"data"`
 }
