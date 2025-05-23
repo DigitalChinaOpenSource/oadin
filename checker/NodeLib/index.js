@@ -132,31 +132,35 @@ class Byze {
   async downloadFile(url, dest, options, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        await new Promise((resolve, reject) => {
-          const file = fs.createWriteStream(dest);
-          const request = https.get(url, options, (response) => {
-            if (response.statusCode !== 200) {
-              file.close();
-              fs.unlink(dest, () => {});
-              return reject(new Error(`Download failed with status code: ${response.statusCode}`));
-            }
-            response.pipe(file);
-            file.on('finish', () => file.close(resolve));
-          });
-          request.setTimeout(15000, () => {
-            request.destroy(new Error('Request timeout'));
-          });
-          request.on('error', (err) => {
-            file.close();
-            fs.unlink(dest, () => {});
-            reject(err);
-          });
+        console.log(`axios downloading... attempt ${attempt}`);
+        const response = await axios.get(url, {
+          ...options,
+          responseType: 'stream',
+          timeout: 15000,
+          validateStatus: status => status === 200,
         });
-        // 下载成功
+
+        // 确保目录存在
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+
+        const writer = fs.createWriteStream(dest);
+
+        // 用 Promise 包装写入流
+        await new Promise((resolve, reject) => {
+          response.data.pipe(writer);
+          writer.on('finish', resolve);
+          writer.on('error', reject);
+        });
+
+        console.log('axios download success');
         return true;
       } catch (err) {
+        // 删除未完成的文件
+        try { fs.unlinkSync(dest); } catch {}
         console.warn(`下载失败（第${attempt}次）：${err.message}`);
-        if (attempt === retries) throw err;
+        if (attempt === retries) {
+          return false;
+        }
       }
     }
     return false;
@@ -173,8 +177,8 @@ class Byze {
     }
   }
 
-  DownloadByze(retries = 3) {
-    return new Promise(async (resolve, reject) => {
+  async DownloadByze(retries = 3) {
+   try {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS
         ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
@@ -195,19 +199,32 @@ class Byze {
         },
       };
 
-      try {
-        const downloadSuccess = await this.downloadFile(url, dest, options, retries);
-        if (!downloadSuccess) {
-          console.error('三次下载均失败，放弃安装。');
-          return resolve(false);
+      
+        let downloadSuccess = false;
+        try {
+          downloadSuccess = await this.downloadFile(url, dest, options, retries);
+        } catch (e) {
+          console.error('downloadFile 异常:', e);
+          downloadSuccess = false;
         }
-        const installResult = await this.runByzeInstaller(dest, isMacOS);
-        resolve(installResult);
+
+        if (downloadSuccess) {
+          let installResult = false;
+          try {
+            installResult = await this.runByzeInstaller(dest, isMacOS);
+          } catch (e) {
+            console.error('runByzeInstaller 异常:', e);
+            installResult = false;
+          }
+          return installResult;
+        } else {
+          console.error('三次下载均失败，放弃安装。');
+          return false;
+        }
       } catch (err) {
         console.error('下载或安装 Byze 失败:', err);
-        reject(err);
+        return false;
       }
-    });
   }
 
   // 启动 Byze 服务
