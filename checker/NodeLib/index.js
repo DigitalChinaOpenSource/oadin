@@ -201,7 +201,7 @@ class Byze {
         resolve(installResult);
       } catch (err) {
         console.error('下载或安装 Byze 失败:', err);
-        resolve(false);
+        reject(err);
       }
     });
   }
