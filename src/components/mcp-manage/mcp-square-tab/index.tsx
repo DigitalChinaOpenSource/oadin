@@ -43,14 +43,16 @@ export default function McpSquareTab() {
         </div>
         <McpList
           mcpListData={vm.mcpListData}
-          onPageChange={vm.onPageChange}
-          onShowSizeChange={vm.onShowSizeChange}
+          onPageChange={vm.handlePageChange}
+          handelMcpCardClick={vm.handelMcpCardClick}
+          pagination={vm.pagination}
         />
       </div>
       {/* 过滤器 */}
       <McpAdvanceFilter
         collapsed={vm.collapsed}
         setCollapsed={vm.setCollapsed}
+        vm={vm}
       />
     </div>
   );

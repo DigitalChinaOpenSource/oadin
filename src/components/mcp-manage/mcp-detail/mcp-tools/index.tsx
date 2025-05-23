@@ -39,7 +39,8 @@ export default function McpTools() {
         pagination={{
           onChange: handlePageChange,
           ...pagination,
-          pageSizeOptions: [10, 20, 50],
+          // defaultPageSize: 5,
+          pageSizeOptions: [5, 10, 20, 50],
           showSizeChanger: true,
           align: 'end',
           position: 'bottom',

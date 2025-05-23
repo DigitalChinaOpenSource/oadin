@@ -16,10 +16,9 @@ export const useMcpTools = () => {
   const [postParams, setPostParams] = useState<PostParamsType>({ keyword: '', page: 1, size: 10 });
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 1,
+    pageSize: 5,
     total: 0,
   });
-  const [keyword, setKeyword] = useState<string>('');
 
   // 获取工具列表
   const { loading: toolsLoading, run: getTolls } = useRequest(
@@ -145,8 +144,8 @@ export const useMcpTools = () => {
     if (keyword === postParams.keyword) return;
     setPagination({ ...pagination, current: 1 });
     setPostParams({
+      ...postParams,
       page: 1,
-      size: postParams.size,
       keyword,
     });
   };

@@ -11,16 +11,11 @@ interface IMcpListProps {
     pageSize: number;
     total: number;
   };
-  onPageChange?: (page: number) => void;
-  onShowSizeChange?: (current: number, pageSize: number) => void;
+  onPageChange?: (current: number, pageSize: number) => void;
+  handelMcpCardClick: (serviceId: string | number) => void;
 }
 export default function McpList(props: IMcpListProps) {
-  const navigate = useNavigate();
-  const { mcpListData, pagination, onPageChange, onShowSizeChange } = props;
-
-  const handelMcpCardClick = (serviceId: number) => {
-    navigate(`/mcp-detail?serviceId=${serviceId}&mcpFrom=mcpList`);
-  };
+  const { mcpListData, pagination, onPageChange, handelMcpCardClick } = props;
 
   return (
     <div className={styles.mcpCardList}>
@@ -32,10 +27,10 @@ export default function McpList(props: IMcpListProps) {
             className: styles.mcpListPagination,
             align: 'end',
             ...pagination,
+            // defaultPageSize: 4,
             pageSizeOptions: [12, 24, 48, 96],
             showSizeChanger: true,
             onChange: onPageChange,
-            onShowSizeChange: onShowSizeChange,
           }
         }
         renderItem={(item) => (

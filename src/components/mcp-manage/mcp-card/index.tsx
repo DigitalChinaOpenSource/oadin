@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 export interface IMcpCardProps {
   // 模型数据
   mcpData: IMcpListItem;
-  handelMcpCardClick: (mcpId: number) => void;
+  handelMcpCardClick: (mcpId: string | number) => void;
 }
 
 export default function McpCard(props: IMcpCardProps) {

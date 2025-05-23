@@ -11,10 +11,11 @@ interface IMcpAdvanceFilter {
   collapsed?: boolean;
   // 折叠通知外部
   setCollapsed?: (isCollapsed: boolean) => void;
+  vm: any;
 }
 
 export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
-  const { collapsed, setCollapsed } = props;
+  const { collapsed, setCollapsed, vm } = props;
 
   return (
     <div
@@ -56,7 +57,7 @@ export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
 
       <div className={styles.filterContent}>
         {/* 筛选表单等内容放这里 */}
-        <McpTagsCheck />
+        <McpTagsCheck vm={vm} />
       </div>
     </div>
   );
