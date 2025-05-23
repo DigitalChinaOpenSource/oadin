@@ -8,7 +8,7 @@
     display: flex;
     width: 200px;
     height: 20px;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
     .titleOperate {
       display: flex;
       color: #344054;
@@ -16,6 +16,7 @@
     .clean {
       padding: 2px;
       margin-left: auto;
+      cursor: pointer;
     }
     .foldIcon {
       cursor: pointer;

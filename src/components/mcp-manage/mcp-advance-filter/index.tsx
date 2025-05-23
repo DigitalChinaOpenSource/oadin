@@ -4,6 +4,7 @@ import { Tooltip } from 'antd';
 import styles from './index.module.scss';
 import foldSvg from '@/components/icons/fold.svg';
 import cleanSvg from '@/components/icons/clean.svg';
+import McpTagsCheck from '@/components/mcp-manage/mcp-advance-filter/mcp-tags-check';
 
 interface IMcpAdvanceFilter {
   // 是否折叠
@@ -40,7 +41,10 @@ export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
           </Tooltip>
           MCP 服务筛选
         </div>
-        <div className={styles.clean}>
+        <div
+          className={styles.clean}
+          // onClick={}
+        >
           <Tooltip title="清除筛选条件">
             <img
               src={cleanSvg}
@@ -52,7 +56,7 @@ export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
 
       <div className={styles.filterContent}>
         {/* 筛选表单等内容放这里 */}
-        <p>这里是筛选项</p>
+        <McpTagsCheck />
       </div>
     </div>
   );
