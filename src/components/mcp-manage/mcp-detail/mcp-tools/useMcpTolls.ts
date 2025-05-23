@@ -18,8 +18,6 @@ export const useMcpTools = () => {
     current: 1,
     pageSize: 1,
     total: 0,
-    pageSizeOptions: [1, 10, 20, 50],
-    showSizeChanger: true,
   });
   const [keyword, setKeyword] = useState<string>('');
 

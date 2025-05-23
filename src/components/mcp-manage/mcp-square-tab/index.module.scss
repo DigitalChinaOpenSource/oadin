@@ -3,6 +3,7 @@
   .mcpSquareContent {
     width: 100%;
     padding: 24px;
+    height: calc(100vh - 48px);
     .mcpTitle {
       display: flex;
       margin-bottom: 16px;

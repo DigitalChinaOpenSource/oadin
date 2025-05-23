@@ -1,5 +1,7 @@
 .mcpManage {
   height: 100%;
+  width: 100%;
+  overflow: hidden;
   :global(.ant-tabs-nav) {
     background-color: #FFFFFF;
     margin: unset;

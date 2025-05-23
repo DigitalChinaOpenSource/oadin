@@ -14,7 +14,7 @@ import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 
 export default function McpDetail() {
-  const { handleGoBack, mcpDetail, handleAddMcp, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail();
+  const { handleGoBack, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail();
 
   const items: TabsProps['items'] = [
     {
@@ -49,13 +49,43 @@ export default function McpDetail() {
             <DetailDesc mcpDetail={mcpDetail} />
           </div>
           <div className={styles.topRight}>
-            <Button
-              type="primary"
-              onClick={handleAddMcp}
-              loading={downMcpLoading || authMcpLoading}
-            >
-              {mcpDetail.status || '添加'}
-            </Button>
+            {mcpDetail?.envRequired === 0 && (
+              <Button
+                type="primary"
+                onClick={handleAddMcp}
+                loading={downMcpLoading || authMcpLoading}
+                disabled={mcpDetail.status === 1}
+              >
+                {mcpDetail.status === 0 ? '添加' : '已添加'}
+              </Button>
+            )}
+            {mcpDetail.envRequired === 1 &&
+              (mcpDetail.status === 0 ? (
+                <Button
+                  type="primary"
+                  onClick={handleAddMcp}
+                  loading={downMcpLoading || authMcpLoading}
+                >
+                  添加
+                </Button>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <Button
+                    type="primary"
+                    onClick={handleAddMcp}
+                    loading={downMcpLoading || authMcpLoading}
+                  >
+                    重新添加
+                  </Button>
+                  <Button
+                    type="default"
+                    loading={cancelMcpLoading}
+                    onClick={handleCancelMcp}
+                  >
+                    取消添加
+                  </Button>
+                </div>
+              ))}
           </div>
         </div>
         {/*分割线*/}
