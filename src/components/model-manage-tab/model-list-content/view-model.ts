@@ -10,6 +10,11 @@ import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
 
+interface IPagenation {
+  current: number;
+  pageSize: number;
+  total: number;
+}
 const { confirm } = Modal;
 
 export function useViewModel(props: IModelListContent) {
@@ -28,7 +33,7 @@ export function useViewModel(props: IModelListContent) {
   const { modelListData, setModelListData } = useModelListStore();
   // 分页数据，用于展示
   const [pagenationData, setPagenationData] = useState<ModelDataItem[]>([]);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<IPagenation>({
     current: 1,
     pageSize: 12,
     total: 0,
@@ -162,7 +167,7 @@ export function useViewModel(props: IModelListContent) {
   };
 
   // 添加分页数据计算逻辑
-  const paginatedData = (pagination: any, data = getFilteredData()) => {
+  const paginatedData = (pagination: IPagenation, data = getFilteredData()) => {
     const { current, pageSize } = pagination;
     const startIndex = (current - 1) * pageSize;
     const endIndex = current * pageSize;

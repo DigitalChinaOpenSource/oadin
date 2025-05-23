@@ -3,6 +3,13 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { httpRequest } from '../../utils/httpRequest';
 import { IRequestModelParams } from '../../types';
 
+interface IDownParseData {
+  progress: number;
+  status: string;
+  completedsize: number;
+  totalsize: number;
+  message?: string;
+}
 /**
  * 暂停模型下载
  * @param data - 请求体参数
@@ -126,8 +133,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
       onmessage: (event) => {
         if (event.data && event.data !== '[DONE]') {
           try {
-            const parsedData = JSON.parse(event.data);
-            console.log('接收到的事件流数据:', parsedData);
+            const parsedData = JSON.parse(event.data) as IDownParseData;
             if (totalTimeoutId) {
               clearTimeout(totalTimeoutId);
               totalTimeoutId = null;
@@ -140,7 +146,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
             if (parsedData?.status === 'error') {
               onmessage?.({
                 status: 'error',
-                message: parsedData.message || '模型下载失败',
+                message: parsedData?.message || '模型下载失败',
               });
               return;
             }
@@ -158,8 +164,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
               return;
             }
             // 处理进度数据
-            const dataObj = processProgressData(parsedData);
-            console.log('模型下载进度:', dataObj);
+            const dataObj = processProgressData(parsedData) as IDownParseData;
             onmessage?.(dataObj);
             resetNoDataTimer();
           } catch (err) {

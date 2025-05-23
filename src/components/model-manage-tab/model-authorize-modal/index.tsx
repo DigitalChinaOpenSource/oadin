@@ -62,6 +62,7 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
   );
 
   const submitForm = (result: any) => {
+    console.log('submitForm result===>', result);
     // 组装提交数据
     const changeAuthKey = {
       [modelDataItem.name]: {

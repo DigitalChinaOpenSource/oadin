@@ -1,13 +1,13 @@
-import styles from './index.module.scss';
 import { Table } from 'antd';
 import { useViewModel } from './view-model';
 import ServiceProviderDetail from './service-provider-detail';
 import { useTableColumns } from './table-columns';
 import noDataSvg from '@/components/icons/no-data.svg';
+import styles from './index.module.scss';
 
 export default function ServiceProviderManageTab() {
   const vm = useViewModel();
-  const columns = useTableColumns({ handleDetail: vm.handleDetail, handleDeleteConfirm: vm.handleDeleteConfirm });
+  const columns = useTableColumns({ handleDetail: vm.handleDetail });
 
   return (
     <div className={styles.serviceProviderTab}>
@@ -45,7 +45,7 @@ export default function ServiceProviderManageTab() {
       </div>
       {vm.detailVisible && (
         <ServiceProviderDetail
-          id={vm.selectId}
+          selectedRow={vm.selectedRow}
           onCancel={() => vm.setDetailVisible(false)}
         />
       )}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal, message } from 'antd';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '../../utils/httpRequest';
+import { IServiceProviderDataItem } from './types';
 
 const { confirm } = Modal;
 
@@ -9,7 +10,7 @@ export function useViewModel() {
   const { get } = httpRequest;
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRow, setSelectedRow] = useState<IServiceProviderDataItem>({} as IServiceProviderDataItem);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
   const [selectId, setSelectId] = useState<string>('');
@@ -44,17 +45,10 @@ export function useViewModel() {
     setPagination({ ...pagination, current });
   };
 
-  const handleDetail = (id: string) => {
-    console.log('查看详情', id);
-    setSelectId(id);
+  const handleDetail = (rowData: IServiceProviderDataItem) => {
+    console.log('---record', rowData);
+    setSelectedRow(rowData);
     setDetailVisible(true);
-  };
-
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (keys: React.Key[]) => {
-      setSelectedRowKeys(keys);
-    },
   };
 
   const { loading: deleteProviderLoading, run: fetchDeleteProvider } = useRequest(
@@ -76,6 +70,7 @@ export function useViewModel() {
   );
 
   const handleDeleteConfirm = (record: any) => {
+    console.log('---record', record);
     confirm({
       centered: true,
       title: '删除此服务提供商',
@@ -94,5 +89,5 @@ export function useViewModel() {
     });
   };
 
-  return { selectId, editVisible, dataList, detailVisible, pagination, rowSelection, loading, setEditVisible, setDetailVisible, handlePageChange, handleDetail, handleDeleteConfirm };
+  return { selectId, editVisible, dataList, detailVisible, pagination, loading, setEditVisible, setDetailVisible, handlePageChange, handleDetail, handleDeleteConfirm, selectedRow };
 }

@@ -1,13 +1,14 @@
 import { create } from 'zustand';
+import { ModelDataItem } from '@/types';
 
 interface IModelDownloadStore {
-  modelListData: any[];
-  setModelListData: (list: any[] | ((currentList: any[]) => any[])) => void;
+  modelListData: ModelDataItem[];
+  setModelListData: (list: ModelDataItem[] | ((currentList: ModelDataItem[]) => ModelDataItem[])) => void;
 }
 
 const useModelListStore = create<IModelDownloadStore>((set, get) => ({
   modelListData: [],
-  setModelListData: (list: any[] | ((currentList: any[]) => any[])) => {
+  setModelListData: (list: ModelDataItem[] | ((currentList: ModelDataItem[]) => ModelDataItem[])) => {
     if (typeof list === 'function') {
       // 函数式更新，传入当前状态获取新状态
       set((state) => ({ modelListData: list(state.modelListData) }));

@@ -1,16 +1,15 @@
-/** 模型管理 */
-import React from 'react';
 import styles from './index.module.scss';
-import { Button, Modal, Pagination } from 'antd';
+import { Modal, Pagination } from 'antd';
 import { useViewModel } from './view-model';
 import modelPng from '@/assets/modelLogo.png';
+import { IServiceProviderDataItem } from '../types';
 
 interface ServiceProviderDetailProps {
-  id: string;
+  selectedRow: IServiceProviderDataItem;
   onCancel: () => void;
 }
 
-export default function ServiceProviderDetail({ id, onCancel }: ServiceProviderDetailProps) {
+export default function ServiceProviderDetail({ selectedRow, onCancel }: ServiceProviderDetailProps) {
   const vm = useViewModel();
   const { baseInfo, modelList, pagination, handlePagChange } = vm;
 
