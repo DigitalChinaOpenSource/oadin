@@ -136,8 +136,6 @@ export function useViewModel() {
   return {
     mcpListLoading,
     mcpListData: mcpListDataMock,
-    // mcpSearchVal,
-
     handelMcpCardClick,
     onMcpInputSearch,
     collapsed,

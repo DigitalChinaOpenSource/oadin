@@ -23,13 +23,13 @@ export default function MyMcpTab() {
               suffix={
                 <div
                   className={styles.searchIcon}
-                  onClick={() => vm.onMcpInputSearch()}
+                  onClick={() => vm.onMcpInputSearch(vm.searchVal)}
                 >
                   <SearchIcon />
                 </div>
               }
-              value={vm.mcpSearchVal.keyword}
-              onChange={(e) => vm.onMcpInputChange(e.target.value)}
+              value={vm.searchVal}
+              onChange={(e) => vm.setSearchVal(e.target.value)}
               style={{ width: 380 }}
             />
           </div>
@@ -37,8 +37,8 @@ export default function MyMcpTab() {
         <McpList
           mcpListData={vm.myMcpListData}
           pagination={vm.pagination}
-          onPageChange={vm.onPageChange}
-          onShowSizeChange={vm.onShowSizeChange}
+          onPageChange={vm.handlePageChange}
+          handelMcpCardClick={vm.handelMcpCardClick}
         />
       </div>
     </div>
