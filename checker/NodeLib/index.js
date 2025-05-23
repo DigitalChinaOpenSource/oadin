@@ -196,7 +196,11 @@ class Byze {
       };
 
       try {
-        await this.downloadFile(url, dest, options, retries);
+        const downloadSuccess = await this.downloadFile(url, dest, options, retries);
+        if (!downloadSuccess) {
+          console.error('三次下载均失败，放弃安装。');
+          return resolve(false);
+        }
         const installResult = await this.runByzeInstaller(dest, isMacOS);
         resolve(installResult);
       } catch (err) {
@@ -205,7 +209,6 @@ class Byze {
       }
     });
   }
-
 
   // 启动 Byze 服务
   async InstallByze() {
