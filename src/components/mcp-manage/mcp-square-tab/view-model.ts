@@ -91,7 +91,7 @@ export function useViewModel() {
     onMcpInputSearch,
     collapsed,
     setCollapsed,
-
+    pagination,
     onPageChange,
     onShowSizeChange,
   };

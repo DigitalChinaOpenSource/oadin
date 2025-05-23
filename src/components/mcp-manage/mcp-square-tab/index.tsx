@@ -52,6 +52,7 @@ export default function McpSquareTab() {
         </div>
         <McpList
           mcpListData={vm.mcpListData}
+          pagination={vm.pagination}
           onPageChange={vm.onPageChange}
           onShowSizeChange={vm.onShowSizeChange}
         />

@@ -15,20 +15,30 @@ export function useViewModel() {
     pageSize: 12,
     total: 0,
   });
-
+  const isInitialMount = useRef(true);
   const lastPageSizeRef = useRef(pagination.pageSize);
 
-  // useEffect(() => {
-  //   fetchMyMcpList({
-  //     deployment: 'hosted',
-  //     page: 1,
-  //     size: 10,
-  //   });
-  // }, []);
+  useEffect(() => {
+    fetchMyMcpList({
+      page: 1,
+      size: 12,
+    });
+  }, []);
 
   useEffect(() => {
-    // TODO 调列表接口，将pagination, mcpSearchVal合并发送
-    // fetchMcpList();
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const params = {
+      page: pagination.current,
+      size: pagination.pageSize,
+    } as IMcpListRequestParams;
+    if (mcpSearchVal.keyword) {
+      params.keyword = mcpSearchVal.keyword;
+    }
+    fetchMyMcpList(params);
   }, [pagination, mcpSearchVal]);
 
   // 获取我的 mcp 列表
@@ -55,6 +65,7 @@ export function useViewModel() {
 
   // 搜索框搜索
   const onMcpInputSearch = () => {
+    console.log('onMcpInputSearch', mcpSearchVal);
     setMcpSearchVal({
       ...mcpSearchVal,
       keyword: mcpSearchVal.keyword,
@@ -67,10 +78,12 @@ export function useViewModel() {
       lastPageSizeRef.current = pagination.pageSize;
       return;
     }
+    console.log('onPageChange', { ...pagination, current });
     setPagination({ ...pagination, current });
   };
 
   const onShowSizeChange = (current: number, pageSize: number) => {
+    console.log('onShowSizeChange', current, pageSize);
     lastPageSizeRef.current = pageSize;
     setPagination({ ...pagination, current: 1, pageSize });
   };
@@ -87,6 +100,7 @@ export function useViewModel() {
     handelMcpCardClick,
     onMcpInputSearch,
 
+    pagination,
     onPageChange,
     onShowSizeChange,
   };
