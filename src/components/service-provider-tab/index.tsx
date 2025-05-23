@@ -9,14 +9,6 @@ export default function ServiceProviderManageTab() {
   const vm = useViewModel();
   const columns = useTableColumns({ handleDetail: vm.handleDetail, handleDeleteConfirm: vm.handleDeleteConfirm });
 
-  const pagination =
-    vm.dataList.length > 10
-      ? {
-          ...vm.pagination,
-          onChange: vm.handlePageChange,
-        }
-      : undefined;
-
   return (
     <div className={styles.serviceProviderTab}>
       <div className={styles.container}>
@@ -26,19 +18,26 @@ export default function ServiceProviderManageTab() {
           loading={vm.loading}
           columns={columns}
           dataSource={vm.dataList}
-          pagination={pagination}
+          pagination={{
+            ...vm.pagination,
+            onChange: vm.handlePageChange,
+          }}
           locale={{
             emptyText: () => {
               return (
-                <div className={styles.noData}>
-                  <div className={styles.noDataIcon}>
-                    <img
-                      src={noDataSvg}
-                      alt="no-data"
-                    />
-                  </div>
-                  <div className={styles.noDataText}>暂无匹配的模型</div>
-                </div>
+                <>
+                  {!vm.loading && (
+                    <div className={styles.noData}>
+                      <div className={styles.noDataIcon}>
+                        <img
+                          src={noDataSvg}
+                          alt="no-data"
+                        />
+                      </div>
+                      <div className={styles.noDataText}>暂无匹配的模型</div>
+                    </div>
+                  )}
+                </>
               );
             },
           }}

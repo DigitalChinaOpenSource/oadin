@@ -2,7 +2,7 @@ import styles from './index.module.scss';
 import { Collapse, CollapseProps, Input, List, Switch, Tooltip } from 'antd';
 import { SearchIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
-import { useMcpTools } from '@/components/mcp-manage/mcp-detail/mcp-tools/useMcpTolls.ts';
+import { useMcpTools } from '@/components/mcp-manage/mcp-detail/mcp-tools/useMcpTools';
 
 const CollapseItemHeader = (props: { name: string; desc: string; tags: string[] }) => {
   const { name, desc, tags = [] } = props;
@@ -39,7 +39,7 @@ export default function McpTools() {
         pagination={{
           onChange: handlePageChange,
           ...pagination,
-          pageSizeOptions: [1, 10, 20, 50],
+          pageSizeOptions: [10, 20, 50],
           showSizeChanger: true,
           align: 'end',
           position: 'bottom',

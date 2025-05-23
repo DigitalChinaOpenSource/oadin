@@ -40,12 +40,12 @@ export function useTableColumns(props: ITableColumns) {
           >
             查看详情
           </a>
-          <a
+          {/* <a
             className={styles.linkA}
             onClick={() => handleDeleteConfirm(record)}
           >
             删除
-          </a>
+          </a> */}
         </Space>
       ),
     },

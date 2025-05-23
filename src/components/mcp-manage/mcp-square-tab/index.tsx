@@ -5,7 +5,6 @@ import expandSvg from '@/components/icons/expand.svg';
 import { SearchIcon } from '@/components/icons';
 import McpAdvanceFilter from '../mcp-advance-filter';
 import McpList from '../mcp-list';
-import { mcpListDataMock } from './constant';
 import styles from './index.module.scss';
 
 export default function McpSquareTab() {
@@ -24,9 +23,7 @@ export default function McpSquareTab() {
             <Input.Search
               allowClear
               placeholder="请输入 MCP 服务名称"
-              // suffix={<SearchIcon />}
-              // value={vm.mcpSearchVal.keyword}
-              onSearch={(value) => vm.onMcpInputSearch(value)}
+              onSearch={(value) => vm.onMcpInputSearch(value.trim())}
               style={{ width: 380 }}
             />
           </div>
@@ -44,8 +41,11 @@ export default function McpSquareTab() {
             </Tooltip>
           )}
         </div>
-        {/* vm.mcpListData ||  */}
-        <McpList mcpListData={mcpListDataMock} />
+        <McpList
+          mcpListData={vm.mcpListData}
+          onPageChange={vm.onPageChange}
+          onShowSizeChange={vm.onShowSizeChange}
+        />
       </div>
       {/* 过滤器 */}
       <McpAdvanceFilter

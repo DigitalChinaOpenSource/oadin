@@ -24,7 +24,6 @@ export default function ServiceProviderDetail({ id, onCancel }: ServiceProviderD
       onCancel={onCancel}
       okText="确认"
     >
-      <div className={styles.infoName}>基础信息</div>
       <div className={styles.infoBlock}>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务提供商名称:</span>
@@ -48,29 +47,6 @@ export default function ServiceProviderDetail({ id, onCancel }: ServiceProviderD
             <div className={styles.dot}></div>
             {baseInfo.statusCode === '1' ? '可用' : '禁用'}
           </div>
-        </div>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>模型上下问长度:</span>
-          {baseInfo.name}
-        </div>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>描述:</span>
-          {baseInfo.name}
-        </div>
-      </div>
-      <div className={styles.infoName}>鉴权信息</div>
-      <div className={styles.infoBlock}>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>请求方法:</span>
-          {baseInfo.name}
-        </div>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>请求URL:</span>
-          {baseInfo.name}
-        </div>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>鉴权类型:</span>
-          {baseInfo.name}
         </div>
         <div className={styles.infoRow}>
           <span className={styles.infoLabel}>鉴权信息:</span>
