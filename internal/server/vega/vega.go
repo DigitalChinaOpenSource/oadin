@@ -1,7 +1,6 @@
 package vega
 
 import (
-	"byze/internal/utils/bcode"
 	"byze/internal/utils/client"
 	"context"
 	"fmt"
@@ -26,14 +25,6 @@ func NewVegaClient() *VegaClient {
 			Host:   host,
 		}, http.DefaultClient),
 	}
-}
-
-type QueryCloudModelJsonRequest struct {
-	HybridPolicy string
-}
-
-type QueryCloudModelJsonRespond struct {
-	bcode.Bcode
 }
 
 func QueryCloudModelJson(hybridPolicy string) error {
