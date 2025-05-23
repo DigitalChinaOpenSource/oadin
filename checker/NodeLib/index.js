@@ -128,8 +128,53 @@ class Byze {
     });
   }
 
+  // 仅下载
+  async downloadFile(url, dest, options, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        await new Promise((resolve, reject) => {
+          const file = fs.createWriteStream(dest);
+          const request = https.get(url, options, (response) => {
+            if (response.statusCode !== 200) {
+              file.close();
+              fs.unlink(dest, () => {});
+              return reject(new Error(`Download failed with status code: ${response.statusCode}`));
+            }
+            response.pipe(file);
+            file.on('finish', () => file.close(resolve));
+          });
+          request.setTimeout(15000, () => {
+            request.destroy(new Error('Request timeout'));
+          });
+          request.on('error', (err) => {
+            file.close();
+            fs.unlink(dest, () => {});
+            reject(err);
+          });
+        });
+        // 下载成功
+        return true;
+      } catch (err) {
+        console.warn(`下载失败（第${attempt}次）：${err.message}`);
+        if (attempt === retries) throw err;
+      }
+    }
+    return false;
+  }
+
+  // 运行安装包
+  async runByzeInstaller(installerPath, isMacOS) {
+    try {
+      await runInstaller(installerPath, isMacOS);
+      return true;
+    } catch (err) {
+      console.error('Installer execution failed:', err);
+      return false;
+    }
+  }
+
   DownloadByze(retries = 3) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS
         ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
@@ -150,52 +195,17 @@ class Byze {
         },
       };
 
-      function tryDownload(attempt) {
-        const file = fs.createWriteStream(dest);
-
-        const request = https.get(url, options, (response) => {
-          if (response.statusCode !== 200) {
-            file.close();
-            fs.unlink(dest, () => {}); // 删除半成品
-            if (attempt < retries) {
-              console.warn(`Retry ${attempt}/${retries} - Status code ${response.statusCode}`);
-              return tryDownload(attempt + 1);
-            }
-            return reject(new Error(`Download failed with status code: ${response.statusCode}`));
-          }
-
-          response.pipe(file);
-          file.on('finish', () => {
-            file.close(async () => {
-              try {
-                await runInstaller(dest, isMacOS);
-                resolve(true);
-              } catch (err) {
-                console.error('Installer execution failed:', err);
-                resolve(false);
-              }
-            });
-          });
-        });
-
-        request.setTimeout(15000, () => {
-          request.destroy(new Error('Request timeout'));
-        });
-
-        request.on('error', (err) => {
-          file.close();
-          fs.unlink(dest, () => {}); // 删除半成品
-          if (attempt < retries) {
-            console.warn(`Retry ${attempt}/${retries} - Error: ${err.message}`);
-            return tryDownload(attempt + 1);
-          }
-          reject(err);
-        });
+      try {
+        await this.downloadFile(url, dest, options, retries);
+        const installResult = await this.runByzeInstaller(dest, isMacOS);
+        resolve(installResult);
+      } catch (err) {
+        console.error('下载或安装 Byze 失败:', err);
+        resolve(false);
       }
-
-      tryDownload(1);
     });
   }
+
 
   // 启动 Byze 服务
   async InstallByze() {
