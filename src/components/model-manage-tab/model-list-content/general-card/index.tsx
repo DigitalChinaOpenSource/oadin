@@ -22,12 +22,6 @@ export interface IGeneralCardProps {
 export default function GeneralCard(props: IGeneralCardProps) {
   const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData } = props;
 
-  // modelData?.class
-  const tags = useMemo(
-    () => ['深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成', '999MB', '7B', '128K', '深度思考', '文本生成'],
-    [modelData?.class],
-  );
-
   const statusToText = (item: ModelDataItem) => {
     const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
     const { status, can_select } = item;
@@ -147,16 +141,18 @@ export default function GeneralCard(props: IGeneralCardProps) {
         </div>
       </div>
 
-      <TagsRender tags={tags} />
+      <TagsRender
+        tags={modelData?.class.concat([modelData?.size])}
+        highlightNums={modelData?.class.length}
+      />
 
       <Tooltip title={modelData?.desc}>
         <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>{modelData?.desc}</div>
       </Tooltip>
 
       <div className={styles.infoWrapper}>
-        <div className={styles.providerName}>深度求索</div>
-        <div className={styles.dot}>·</div>
-        <div className={styles.updateName}>2025-05-19 更新</div>
+        <div className={styles.providerName}>{modelData.api_flavor}</div>
+
         {modelData?.can_select && modelSourceVal === 'local' && <div className={styles.modelStatus}>已下载</div>}
         {modelData?.can_select && modelSourceVal === 'remote' && <div className={styles.modelStatus}>已授权</div>}
       </div>
