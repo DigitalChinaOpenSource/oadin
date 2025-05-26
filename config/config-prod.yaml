@@ -1,0 +1,5 @@
+vega:
+  host: http://8.136.116.36:31251/
+
+oss:
+  endpoint: https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com
