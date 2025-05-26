@@ -47,15 +47,16 @@ func (M *MCPServerImpl) GetMCPList(ctx context.Context, request *rpc.MCPListRequ
 	// 需要加载本地配置数据
 	configs, err := M.Ds.List(ctx, &types.McpUserConfig{}, &datastore.ListOptions{})
 	if err != nil {
-		for mcp := range res.Data.List {
-			for _, config := range configs {
-				if res.Data.List[mcp].ID == config.(*types.McpUserConfig).MCPID {
-					res.Data.List[mcp].Status = config.(*types.McpUserConfig).Status
-					break
-				}
+		return nil, err
+	}
+	for mcp := range res.Data.List {
+		for _, config := range configs {
+			if res.Data.List[mcp].ID == config.(*types.McpUserConfig).MCPID {
+				res.Data.List[mcp].Status = config.(*types.McpUserConfig).Status
+				break
 			}
-
 		}
+
 	}
 	return res, err
 }

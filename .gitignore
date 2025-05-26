@@ -44,3 +44,5 @@ byze
 # Demo APP files
 /example/FreeChat/obj
 /example/FreeChat/bin
+
+*-local.yaml
