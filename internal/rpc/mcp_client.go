@@ -62,7 +62,7 @@ func GetMCPList(client *resty.Client, req MCPListRequest) (*MCPListResponse, err
 type MCPDetailResponse struct {
 	Code int `json:"code"`
 	Data struct {
-		ID   int `json:"id"`
+		ID   string `json:"id"`
 		Name struct {
 			Src string `json:"src"`
 			Zh  string `json:"zh"`
@@ -73,7 +73,11 @@ type MCPDetailResponse struct {
 		Status      int    `json:"status"`
 		Authorized  int    `json:"authorized"`
 		EnvRequired int    `json:"envRequired"`
-		EnvSchema   struct {
+		Summary     struct {
+			Src string `json:"src"`
+			Zh  string `json:"zh"`
+		} `json:"summary"`
+		EnvSchema struct {
 			Type       string                 `json:"type"`
 			Required   []string               `json:"required"`
 			Properties map[string]interface{} `json:"properties"`
@@ -168,11 +172,11 @@ type ClientItem struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
 	Icon        string   `json:"icon"`
-	LinkCommand string   `json:"link_command"`
-	RelatedTags []string `json:"related_tags"`
-	SortWeight  int      `json:"sort_weight"`
-	CreateBy    string   `json:"create_by"`
-	UpdateBy    string   `json:"update_by"`
+	LinkCommand string   `json:"linkCommand"`
+	RelatedTags []string `json:"relatedTags"`
+	SortWeight  int      `json:"sortWeight"`
+	CreateBy    string   `json:"createBy"`
+	UpdateBy    string   `json:"updateBy"`
 }
 
 type ClientListResponse struct {
@@ -222,7 +226,7 @@ func GetCategories(client *resty.Client) (*CategoryListResponse, error) {
 }
 
 type SetupFunToolRequest struct {
-	MCPId   string `json:"mcp_id"`
+	MCPId   string `json:"mcpId"`
 	Enabled int    `json:"enabled"`
-	ToolId  string `json:"tool_id"`
+	ToolId  string `json:"toolId"`
 }
