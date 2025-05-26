@@ -260,9 +260,9 @@ class Byze {
           if (error || output.includes('error')) {
             return resolve(false);
           };
-          if (output.includes('byze server start successfully')) {
-            return resolve(true);
-          };
+          // if (output.includes('byze server start successfully')) {
+          //   return resolve(true);
+          // };
 
           const available = await this.IsByzeAvailiable();
           return resolve(available);
