@@ -264,7 +264,7 @@ class Byze {
           //   return resolve(true);
           // };
 
-          const available = await this.IsByzeAvailiable();
+          const available = await this.checkServerStatus();
           return resolve(available);
         });
       } else if (currentPlatform === 'darwin') {
