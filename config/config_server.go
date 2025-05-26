@@ -14,8 +14,8 @@ type OssConfig struct {
 }
 
 func GetVegaConfig() VegaConfig {
-	vegaConfig := &VegaConfig{}
-	err := ViperInstance.Unmarshal(vegaConfig)
+	vegaConfig := new(VegaConfig)
+	err := GetViperInstance().Unmarshal(&vegaConfig)
 	if err != nil {
 		panic("failed to unmarshal VegaConfig: " + err.Error())
 	}
@@ -24,8 +24,8 @@ func GetVegaConfig() VegaConfig {
 
 func GetOssConfig() OssConfig {
 
-	ossConfig := &OssConfig{}
-	err := ViperInstance.Unmarshal(ossConfig)
+	ossConfig := new(OssConfig)
+	err := GetViperInstance().Unmarshal(&ossConfig)
 	if err != nil {
 		panic("failed to unmarshal OssConfig: " + err.Error())
 	}
