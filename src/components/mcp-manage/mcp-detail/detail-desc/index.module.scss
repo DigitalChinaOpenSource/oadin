@@ -24,6 +24,18 @@
         color: #344054;
         margin-right: 16px;
       }
+      .localOrCloud {
+        height: 18px;
+        font-size: 12px;
+        background-color: #f0f0f0;
+        color: #898ea3;
+        border-radius: 999px;
+        padding: 1px 8px;
+        display: flex;
+        .localOrCloudText {
+          margin-left: 2px;
+        }
+      }
       .tags {
         flex: 1;
       }

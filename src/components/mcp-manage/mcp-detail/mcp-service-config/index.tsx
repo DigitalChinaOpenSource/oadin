@@ -1,19 +1,26 @@
 import { PrismLight, SyntaxHighlighterProps } from 'react-syntax-highlighter';
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './index.module.scss';
 import { coy } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import copyIcon from '@/components/icons/copy.svg';
+import CopyIcon from '@/components/icons/copy.tsx';
+import CopySuccess from '@/components/icons/copy-success.tsx';
 // 注册需要的语言（性能优化）
 PrismLight.registerLanguage('json', json);
 const SyntaxHighlighter = PrismLight as unknown as React.ComponentType<SyntaxHighlighterProps>;
 
 export default function McpServiceConfig({ code = '' }: { code?: string }) {
+  const [showDefaultIcon, setShowDefaultIcon] = useState<boolean>(true);
   const handleClick = async () => {
     try {
+      setShowDefaultIcon(false);
       await navigator.clipboard.writeText(code || defaultCode);
     } catch (err) {
       console.error('复制失败:', err);
+    } finally {
+      setTimeout(() => {
+        setShowDefaultIcon(true);
+      }, 3000);
     }
   };
 
@@ -32,10 +39,14 @@ export default function McpServiceConfig({ code = '' }: { code?: string }) {
           className={styles.copyIcon}
           onClick={handleClick}
         >
-          <img
-            src={copyIcon}
-            alt="复制"
-          />
+          {showDefaultIcon ? (
+            <CopyIcon
+              fill={'#C1C6D6'}
+              hoverFill={'blue'}
+            />
+          ) : (
+            <CopySuccess />
+          )}
         </div>
         {/*<Button onClick={handleClick}>复制</Button>*/}
         <SyntaxHighlighter

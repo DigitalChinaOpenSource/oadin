@@ -27,6 +27,10 @@ export default defineConfig({
           });
         },
       },
+      '/api': {
+        target: 'http://10.3.74.111:16688', // 朱灿本地环境
+        changeOrigin: true,
+      },
     },
   },
 });

@@ -4,9 +4,11 @@ import { httpRequest } from '@/utils/httpRequest';
 import { IMcpListRequestParams, IMcpListData } from '../mcp-square-tab/types';
 import { mcpListDataMock } from '../mcp-square-tab/constant';
 import { useNavigate } from 'react-router-dom';
+import usePageParamsStore from '@/store/usePageParamsStore.ts';
 
 export function useViewModel() {
   const navigate = useNavigate();
+  const { setPageParams, getPageParams } = usePageParamsStore();
 
   const [myMcpListData, setMyMcpListData] = useState([]);
   // const [mcpSearchVal, setMcpSearchVal] = useState({} as IMcpListRequestParams);
@@ -70,6 +72,16 @@ export function useViewModel() {
   );
 
   const handelMcpCardClick = (serviceId: string | number) => {
+    // 将当前页面所有参数存入store
+    setPageParams({
+      fromDetail: true,
+      allParams: {
+        pagination,
+        checkedValues,
+        postParams,
+        searchVal,
+      },
+    });
     navigate(`/mcp-detail?serviceId=${serviceId}&mcpFrom=myMcp`);
   };
 
@@ -130,6 +142,15 @@ export function useViewModel() {
   const [searchVal, setSearchVal] = useState('');
 
   useEffect(() => {
+    const pageParams = getPageParams();
+    if (pageParams.fromDetail) {
+      setPostParams(pageParams.allParams.postParams);
+      setPagination(pageParams.allParams.pagination);
+      setCheckedValues(pageParams.allParams.checkedValues);
+      setSearchVal(pageParams.allParams.searchVal || '');
+      setPageParams({ fromDetail: false, allParams: {} });
+      return;
+    }
     fetchMcpList();
   }, [postParams]);
 

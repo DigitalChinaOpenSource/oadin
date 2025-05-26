@@ -4,10 +4,11 @@ import { httpRequest } from '@/utils/httpRequest';
 import { IMcpListRequestParams, IMcpListData } from './types';
 import { mcpListDataMock } from './constant';
 import { useNavigate } from 'react-router-dom';
+import usePageParamsStore from '@/store/usePageParamsStore.ts';
 
 export function useViewModel() {
   const navigate = useNavigate();
-
+  const { setPageParams, getPageParams } = usePageParamsStore();
   const [mcpListData, setMcpListData] = useState([]);
   // const [mcpSearchVal, setMcpSearchVal] = useState({} as IMcpListRequestParams);
   // 过滤器是否折叠了
@@ -70,6 +71,17 @@ export function useViewModel() {
   );
 
   const handelMcpCardClick = (serviceId: string | number) => {
+    // 将当前页面所有参数存入store
+    setPageParams({
+      fromDetail: true,
+      allParams: {
+        pagination,
+        checkedValues,
+        postParams,
+        searchVal,
+      },
+    });
+    // 执行跳转
     navigate(`/mcp-detail?serviceId=${serviceId}&mcpFrom=mcpList`);
   };
 
@@ -130,6 +142,16 @@ export function useViewModel() {
   const [searchVal, setSearchVal] = useState('');
 
   useEffect(() => {
+    const pageParams = getPageParams();
+    if (pageParams.fromDetail) {
+      setPostParams(pageParams.allParams.postParams);
+      setPagination(pageParams.allParams.pagination);
+      setCheckedValues(pageParams.allParams.checkedValues);
+      setSearchVal(pageParams.allParams.searchVal || '');
+      setPageParams({ fromDetail: false, allParams: {} });
+      return;
+    }
+
     fetchMcpList();
   }, [postParams]);
 
