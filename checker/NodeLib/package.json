@@ -1,6 +1,6 @@
 {
   "name": "byze-lib",
-  "version": "1.2.61",
+  "version": "1.2.62",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -98,6 +98,7 @@ class Byze {
 
       // 同时检查 16688 和 16677 两个端口
       Promise.all([checkPort(16688), checkPort(16677)]).then((results) => {
+        console.log(`16688 端口: ${results[0] ? '可用' : '不可用'}, 16677 端口: ${results[1] ? '可用' : '不可用'}`);
         resolve(results.every((status) => status)); // 两个端口都可用时返回 true
       });
     });
