@@ -14,13 +14,13 @@ func setup() {
 	configEnv := os.Getenv("GO_ENV")
 	switch configEnv {
 	case "local":
-		configFile = "config-local.yaml"
+		configFile = "config-local"
 	case "dev":
-		configFile = "config-dev.yaml"
+		configFile = "config-dev"
 	case "prod":
-		configFile = "config-prod.yaml"
+		configFile = "config-prod"
 	default:
-		configFile = "config.yaml"
+		configFile = "config-prod"
 	}
 
 	//使用 viper
