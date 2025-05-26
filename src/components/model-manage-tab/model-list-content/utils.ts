@@ -6,7 +6,6 @@ export const dealSmartVisionModels = (data: SmartvisionDataItem[]) => {
     return [...new Set(arr)];
   }
 
-  // 发送数据给客户端
   const recommendedSeq = JSON.parse(JSON.stringify(RECOMMEND_MODEL));
   const pioritySeq = JSON.parse(JSON.stringify(PIORITY_MODEL));
   const seq = recommendedSeq.concat(pioritySeq);

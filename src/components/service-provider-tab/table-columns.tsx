@@ -1,14 +1,12 @@
-import react from 'react';
 import { Table, Space } from 'antd';
 import styles from './index.module.scss';
-
+import { IServiceProviderDataItem } from './types';
 export interface ITableColumns {
-  handleDetail: (id: string) => void;
-  handleDeleteConfirm: (record: any) => void;
+  handleDetail: (rowData: IServiceProviderDataItem) => void;
 }
 
 export function useTableColumns(props: ITableColumns) {
-  const { handleDetail, handleDeleteConfirm } = props;
+  const { handleDetail } = props;
 
   const serviceSourceEnum = {
     remote: '云端模型',
@@ -40,12 +38,6 @@ export function useTableColumns(props: ITableColumns) {
           >
             查看详情
           </a>
-          {/* <a
-            className={styles.linkA}
-            onClick={() => handleDeleteConfirm(record)}
-          >
-            删除
-          </a> */}
         </Space>
       ),
     },

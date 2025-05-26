@@ -20,6 +20,7 @@ export default function TagsRender(props: TagsRenderProps) {
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    if (!Array.isArray(tags)) return;
     const filteredTags = tags.filter((tag) => tag != null && tag.trim() !== '');
     // 重置标签状态
     setVisibleTags([]);

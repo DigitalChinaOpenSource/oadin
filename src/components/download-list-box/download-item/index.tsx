@@ -3,6 +3,7 @@ import styles from './index.module.scss';
 import { PlayPauseIcon, CloseIcon, LoadingIcon, FillCloseIcon, PauseIcon, ArrowClockwiseIcon } from '../../icons';
 import ModelPng from '@/assets/model.png';
 import { DOWNLOAD_STATUS } from '@/constants';
+import { ModelDataItem } from '@/types';
 import { useViewModel } from './view-model';
 
 export interface IDownloadItemProps {
@@ -11,6 +12,7 @@ export interface IDownloadItemProps {
 
 export default function DownloadItem(props: IDownloadItemProps) {
   const { downloadItem } = props;
+  console.log('downloadItem===>', downloadItem);
   const { fetchCancelModel, fetchRemoveModel, fetchDownloadStart } = useViewModel();
   const { COMPLETED, FAILED, IN_PROGRESS, PAUSED } = DOWNLOAD_STATUS;
   return (

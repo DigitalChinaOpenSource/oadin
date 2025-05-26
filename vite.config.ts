@@ -31,6 +31,18 @@ export default defineConfig({
         target: 'http://10.3.74.111:16688', // 朱灿本地环境
         changeOrigin: true,
       },
+      '/health': {
+        target: 'http://127.0.0.1:16688',
+        changeOrigin: true,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('代理请求:', req.url, '到', options.target);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('收到代理响应:', proxyRes.statusCode);
+          });
+        },
+      },
     },
   },
 });

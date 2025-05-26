@@ -38,6 +38,8 @@ instance.interceptors.response.use(
     const { data } = response;
     if (data?.data) {
       return data.data;
+    } else {
+      return data;
     }
     // 后端接口返回数据格式不统一，暂时不管业务逻辑失败的情况
     //  else {
@@ -81,7 +83,7 @@ instance.interceptors.response.use(
  * @returns Promise
  */
 const get = <T = any>(url: string, params?: any, config?: any) => {
-  return instance.get<any, T>(url, { ...config, params, baseURL: config?.baseURL || instance.defaults.baseURL });
+  return instance.get<any, T>(url, { ...config, params, baseURL: config?.baseURL ?? instance.defaults.baseURL });
 };
 
 const post = <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig, 'data'>) => {

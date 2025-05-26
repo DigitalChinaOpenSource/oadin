@@ -1,16 +1,15 @@
-/** 模型管理 */
-import React from 'react';
 import styles from './index.module.scss';
-import { Button, Modal, Pagination } from 'antd';
+import { Modal, Pagination } from 'antd';
 import { useViewModel } from './view-model';
 import modelPng from '@/assets/modelLogo.png';
+import { IServiceProviderDataItem } from '../types';
 
 interface ServiceProviderDetailProps {
-  id: string;
+  selectedRow: IServiceProviderDataItem;
   onCancel: () => void;
 }
 
-export default function ServiceProviderDetail({ id, onCancel }: ServiceProviderDetailProps) {
+export default function ServiceProviderDetail({ selectedRow, onCancel }: ServiceProviderDetailProps) {
   const vm = useViewModel();
   const { baseInfo, modelList, pagination, handlePagChange } = vm;
 
@@ -27,25 +26,25 @@ export default function ServiceProviderDetail({ id, onCancel }: ServiceProviderD
       <div className={styles.infoBlock}>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务提供商名称:</span>
-          {baseInfo.name}
+          {selectedRow.provider_name}
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务提供商厂商名称:</span>
-          {baseInfo.name}
+          {selectedRow.flavor}
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务来源:</span>
-          {baseInfo.name}
+          {selectedRow.service_source === 'remote' ? '云端' : '本地'}
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务名称:</span>
-          {baseInfo.name}
+          {selectedRow.service_name}
         </div>
         <div className={styles.infoItem}>
           <span className={styles.infoLabel}>服务提供商状态:</span>
-          <div className={baseInfo.statusCode === '1' ? styles.readyStatus : styles.disabledStatus}>
+          <div className={selectedRow.status === 1 ? styles.readyStatus : styles.disabledStatus}>
             <div className={styles.dot}></div>
-            {baseInfo.statusCode === '1' ? '可用' : '禁用'}
+            {selectedRow.status === 1 ? '可用' : '禁用'}
           </div>
         </div>
         <div className={styles.infoRow}>
