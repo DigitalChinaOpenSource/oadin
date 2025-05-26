@@ -8,7 +8,7 @@ import (
 
 var ViperInstance *viper.Viper
 
-func init() {
+func setup() {
 	var configFile string
 	// 根据环境变量选择配置文件
 	configEnv := os.Getenv("GO_ENV")
