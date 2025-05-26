@@ -6,21 +6,19 @@ import (
 	"os"
 )
 
-var ViperInstance *viper.Viper
-
-func setup() {
+func GetViperInstance() *viper.Viper {
 	var configFile string
 	// 根据环境变量选择配置文件
 	configEnv := os.Getenv("GO_ENV")
 	switch configEnv {
 	case "local":
-		configFile = "config-local.yaml"
+		configFile = "./config/config-local.yaml"
 	case "dev":
 		configFile = "config-dev.yaml"
 	case "prod":
 		configFile = "config-prod.yaml"
 	default:
-		configFile = "config.yaml"
+		configFile = "config-prod.yaml"
 	}
 
 	//使用 viper
@@ -31,5 +29,6 @@ func setup() {
 	if err := ViperInstance.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("read config failed: %s \n", err))
 	}
+	return ViperInstance
 
 }
