@@ -2,13 +2,14 @@ package vega
 
 import (
 	"byze/internal/api/dto"
+	"context"
 	"reflect"
 	"testing"
 	"time"
 )
 
 func TestQueryCloudModelJson(t *testing.T) {
-	data, err := QueryCloudModelJson("")
+	data, err := QueryCloudModelJson(context.Background(), "")
 	if err != nil {
 		t.Errorf("QueryCloudModelJson() error = %v", err)
 		return

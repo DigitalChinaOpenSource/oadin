@@ -29,7 +29,7 @@ func NewVegaClient() *VegaClient {
 	}
 }
 
-func QueryCloudModelJson(hybridPolicy string) ([]Model, error) {
+func QueryCloudModelJson(ctx context.Context, hybridPolicy string) ([]Model, error) {
 	c := NewVegaClient()
 	routerPath := fmt.Sprintf("/vega/%s/service", "0.1")
 
@@ -38,11 +38,11 @@ func QueryCloudModelJson(hybridPolicy string) ([]Model, error) {
 	}
 	resp := QueryCloudModelJsonRespond{}
 
-	err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
+	err := c.Client.Do(ctx, http.MethodPost, routerPath, req, &resp)
 	if err != nil {
 		return nil, err
 	}
-	if resp.HTTPCode > 200 {
+	if resp.Code > 200 {
 		fmt.Println(resp.Message)
 		return nil, fmt.Errorf(resp.Message)
 	}
