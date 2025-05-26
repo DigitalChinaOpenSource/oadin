@@ -5,7 +5,7 @@ import { httpRequest } from '@/utils/httpRequest.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import testDta from './mcp_schema.json';
 
-export const useMcpDetail = (id?: string | null | number) => {
+export const useMcpDetail = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const serviceId = searchParams.get('serviceId');
@@ -16,8 +16,8 @@ export const useMcpDetail = (id?: string | null | number) => {
 
   // 获取 mcp 详情
   const { loading: mcpDetailLoading, run: fetchMcpDetail } = useRequest(
-    async (serviceId) => {
-      const data = await httpRequest.get<McpDetailType>(`/mcp/${serviceId}`, {}, { baseURL: '/api' });
+    async () => {
+      const data = await httpRequest.get<McpDetailType>(`/mcp/${serviceId}`);
       // if (!data) throw new Error('获取mcp详情失败');
       return data || testDta;
     },
@@ -36,15 +36,13 @@ export const useMcpDetail = (id?: string | null | number) => {
   // 下载mcp
   const { loading: downMcpLoading, run: downMcp } = useRequest(
     async () => {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      const data = await httpRequest.get<McpDetailType>(`/mcp/${serviceId}/download`, {}, { baseURL: '/api' });
-      if (!data) throw new Error('下载mcp失败');
-      return data;
+      return await httpRequest.get<McpDetailType>(`/mcp/${serviceId}/download`);
     },
     {
       manual: true,
       onSuccess: (data) => {
         console.log('下载mcp===>', data);
+        // 下载成功修改 下载状态值为1   1为已授权（若需授权）已下载 --- 一切就绪
         setMcpDetail({
           ...(mcpDetail as McpDetailType),
           status: 1,
@@ -59,34 +57,35 @@ export const useMcpDetail = (id?: string | null | number) => {
   // 远端mcp授权
   const { loading: authMcpLoading, runAsync: authMcp } = useRequest(
     async (authParams) => {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      const data = await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/auth`, authParams, { baseURL: '/api' });
-      // if (!data) throw new Error('授权mcp失败');
-      return data;
+      return await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/auth`, authParams);
     },
     {
       manual: true,
       onSuccess: (data) => {
         console.log('授权mcp===>', data);
-        // setMcpDetail({
-        //   ...(mcpDetail as McpDetailType),
-        // });
+        setMcpDetail({
+          ...(mcpDetail as McpDetailType),
+          authorized: 1, // 1为已授权
+        });
+        // 授权成功 开始下载
+        downMcp();
       },
       onError: (error) => {
         console.error('授权mcp失败:', error);
-        return false;
       },
     },
   );
 
   //添加mcp点击
   const handleAddMcp = async () => {
-    const { hosted, status, envRequired } = mcpDetail || {};
     try {
-      if (hosted) {
-        setShowMcpModal(true);
-      } else {
+      const { hosted, status, envRequired } = mcpDetail || {};
+      if (envRequired === 0) {
+        // 不需要授权
         downMcp();
+      } else {
+        // 显示授权弹窗
+        setShowMcpModal(true);
       }
     } catch (error) {
       console.error('添加mcp失败:', error);
@@ -94,13 +93,10 @@ export const useMcpDetail = (id?: string | null | number) => {
   };
 
   // 取消mcp
-  // 远端mcp授权
   const { loading: cancelMcpLoading, run: handleCancelMcp } = useRequest(
     async () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      const data = await httpRequest.del(`/mcp/${serviceId}/auth/cancel`, {}, { baseURL: '/api' });
-      // if (!data) throw new Error('授权mcp失败');
-      return data;
+      return await httpRequest.del(`/mcp/${serviceId}/auth/cancel`, {}, { baseURL: '/api' });
     },
     {
       manual: true,
@@ -140,8 +136,7 @@ export const useMcpDetail = (id?: string | null | number) => {
   };
 
   useEffect(() => {
-    if (id === serviceId) return;
-    fetchMcpDetail(serviceId);
+    fetchMcpDetail();
   }, [serviceId]);
 
   return {

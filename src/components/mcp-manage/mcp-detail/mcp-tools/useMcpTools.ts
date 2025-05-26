@@ -23,8 +23,7 @@ export const useMcpTools = () => {
   // 获取工具列表
   const { loading: toolsLoading, run: getTolls } = useRequest(
     async () => {
-      // await new Promise((resolve) => setTimeout(resolve, 2000));
-      const data = await httpRequest.post(`/mcp/${serviceId}/clients`, postParams, { baseURL: '/api' });
+      const data = await httpRequest.post(`/mcp/${serviceId}/tools/search`, postParams);
       if (!data) throw new Error('获取工具函数列表失败');
       return data;
     },
@@ -33,54 +32,10 @@ export const useMcpTools = () => {
       onSuccess: (data) => {
         console.log('工具函数列表===>', data);
         setMcpTolls(data.list);
-        // setToolsTotal(data.total);
         setPagination({ ...pagination, total: data.total });
       },
       onError: (error) => {
         console.error('获取工具函数列表失败:', error);
-        const testData = {
-          total: 2,
-          list: [
-            {
-              description: "Execute a terminal command with timeout. Command will continue running in background if it doesn't complete within timeout.",
-              inputSchema: {
-                $schema: 'http://json-schema.org/draft-07/schema#',
-                additionalProperties: false,
-                properties: {
-                  command: {
-                    type: 'string',
-                    required: true,
-                  },
-                  timeout_ms: {
-                    type: 'number',
-                    required: false,
-                  },
-                },
-                type: 'object',
-              },
-              name: 'execute_command',
-              server: 'filesystem',
-              tool: 'execute_command',
-              tags: ['123', '456'],
-              enabled: true,
-            },
-            {
-              description: 'List all currently blocked commands.',
-              inputSchema: {
-                properties: {},
-                type: 'object',
-              },
-              name: 'list_blocked_commands',
-              server: 'filesystem',
-              tool: 'list_blocked_commands',
-              tags: [],
-              enabled: false,
-            },
-          ],
-        };
-        setMcpTolls(testData.list);
-        // setToolsTotal(testData.total);
-        setPagination({ ...pagination, total: testData.total });
       },
     },
   );
@@ -105,9 +60,11 @@ export const useMcpTools = () => {
   const { params, run: changeTollStatus } = useRequest(
     async (tool, checked) => {
       handleToolLoading(tool, tool.enabled, true);
-      const data = await httpRequest.put(`/mcp/tool/${serviceId}/enabled`, { checked }, { baseURL: '/api' });
-      // if (!data) throw new Error('获取工具函数列表失败');
-      return data;
+      return await httpRequest.put(`/mcp/setup`, {
+        mcp_id: serviceId,
+        enabled: checked,
+        tool_id: tool.id,
+      });
     },
     {
       manual: true,

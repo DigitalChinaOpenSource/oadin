@@ -1,16 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
-import { IMcpListRequestParams, IMcpListData } from './types';
-import { mcpListDataMock } from './constant';
+import { IMcpListRequestParams, IMcpListData, IMcpListItem } from './types';
 import { useNavigate } from 'react-router-dom';
 import usePageParamsStore from '@/store/usePageParamsStore.ts';
 
 export function useViewModel() {
   const navigate = useNavigate();
-  const { setPageParams, getPageParams } = usePageParamsStore();
-  const [mcpListData, setMcpListData] = useState([]);
+  const { setPageParams, getPageParams, setTagsDataStore, tagsDataStore } = usePageParamsStore();
+  const [mcpListData, setMcpListData] = useState<IMcpListItem[]>([]);
   // const [mcpSearchVal, setMcpSearchVal] = useState({} as IMcpListRequestParams);
+  // 所有的mcp服务筛选条件tags
+  const [tagsData, setTagsData] = useState<{ category: string; tags: any }[]>([{ category: '', tags: [] }]);
   // 过滤器是否折叠了
   const [collapsed, setCollapsed] = useState(false);
   const [pagination, setPagination] = useState({
@@ -19,26 +20,9 @@ export function useViewModel() {
     total: 20,
   });
 
-  // 标签测试数据
-  const tagsData = [
-    {
-      category: '图像处理',
-      tags: ['增强', '压缩', '分割'],
-    },
-    {
-      category: '文本分析',
-      tags: ['情感分析', '关键词提取'],
-    },
-  ];
-
-  // 初始化标签数据
-  const initData = tagsData.reduce((acc: Record<string, any>, item) => {
-    acc[item.category] = [];
-    return acc;
-  }, {});
-
   // 标签选中结果
-  const [checkedValues, setCheckedValues] = useState(initData);
+  const [checkedValues, setCheckedValues] = useState<Record<string, any>>({});
+
   // 查询列表所需的参数
   const [postParams, setPostParams] = useState<IMcpListRequestParams>({
     keyword: '',
@@ -51,19 +35,43 @@ export function useViewModel() {
   // 获取 mcp 列表
   const { loading: mcpListLoading, run: fetchMcpList } = useRequest(
     async () => {
-      const data = await httpRequest.post<IMcpListData>('/mcp/search', postParams, { baseURL: '/api' });
-      return data?.data;
+      return await httpRequest.post<IMcpListData>('/mcp/search', postParams);
     },
     {
       manual: true,
       onSuccess: (data) => {
         console.log('fetchMcpList===>', data);
-        // setMcpListData(data?.list);
-        // setPagination(
-        //   ...pagination,
-        //   total: data?.total,
-        // )
+        setMcpListData(data?.list || []);
+        setPagination({
+          ...pagination,
+          total: data?.total || 0,
+        });
       },
+      onError: (error) => {
+        console.error('获取模型列表失败:', error);
+      },
+    },
+  );
+
+  // 获取所有mcp服务的筛选tags
+  const { loading: tagsLoading, run: getTagsData } = useRequest(
+    async () => {
+      return await httpRequest.get('/mcp/categories');
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        console.log('tagsData===>', data);
+        setTagsData(data || []);
+        // 初始化标签数据
+        const initData = data.reduce((acc: Record<string, any>, item: any) => {
+          acc[item.category] = [];
+          return acc;
+        }, {});
+        setCheckedValues(initData);
+        setTagsDataStore(data);
+      },
+
       onError: (error) => {
         console.error('获取模型列表失败:', error);
       },
@@ -116,6 +124,7 @@ export function useViewModel() {
 
   // 标签选择改变
   const handleTagsChange = (category: string, list: any) => {
+    console.log('handleTagsChange===>', category, list);
     const updatedCheckedValues = {
       ...checkedValues,
       [category]: list,
@@ -141,6 +150,29 @@ export function useViewModel() {
 
   const [searchVal, setSearchVal] = useState('');
 
+  // 清空筛选器筛选条件
+  const handleClearTags = () => {
+    setPagination({
+      ...pagination,
+      current: 1,
+    });
+    setCheckedValues([]);
+    const updatedPostParams = {
+      ...postParams,
+      page: 1,
+      category: [],
+      tags: [],
+    };
+    setPostParams(updatedPostParams);
+  };
+
+  useEffect(() => {
+    if (tagsDataStore && tagsDataStore.length) {
+      return setTagsData(tagsDataStore);
+    }
+    getTagsData();
+  }, []);
+
   useEffect(() => {
     const pageParams = getPageParams();
     if (pageParams.fromDetail) {
@@ -157,7 +189,7 @@ export function useViewModel() {
 
   return {
     mcpListLoading,
-    mcpListData: mcpListDataMock,
+    mcpListData,
     handelMcpCardClick,
     onMcpInputSearch,
     collapsed,
@@ -169,5 +201,6 @@ export function useViewModel() {
     checkedValues,
     searchVal,
     setSearchVal,
+    handleClearTags,
   };
 }

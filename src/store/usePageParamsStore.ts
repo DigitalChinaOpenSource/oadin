@@ -9,10 +9,17 @@ const usePageParamsStore = create<{
   pageParams: PageParams;
   setPageParams: (params: Partial<PageParams>) => void;
   getPageParams: () => PageParams; // 新增方法
+  tagsDataStore: any[]; // 服务标签数据
+  setTagsDataStore: (params: any[]) => void;
 }>((set, get) => ({
   pageParams: {
     fromDetail: false,
     allParams: {},
+  },
+  // 服务标签
+  tagsDataStore: [],
+  setTagsDataStore: (params: any[]) => {
+    set({ tagsDataStore: params || [] });
   },
   setPageParams: (params: Partial<PageParams>) => {
     set((state) => ({

@@ -24,16 +24,22 @@ export default function McpAuthModal(props: McpAddModalProps) {
       footer={null}
       centered
       destroyOnClose={true}
+      // width={600}
+      styles={{
+        header: {
+          marginBottom: 16,
+        },
+      }}
     >
-      <div style={{ margin: '16px 0' }}>这里是描述</div>
+      {/*<div style={{ margin: '16px 0' }}>这里是描述</div>*/}
       <Form
         form={form}
         onFinish={onFinish}
-        labelAlign="right"
-        labelCol={{ span: 4 }}
+        layout="vertical"
+        labelAlign="right" // 设置 label 右对齐
         clearOnDestroy={true}
       >
-        {Object.entries(properties).map(([key, config]) => (
+        {Object.entries(properties || {}).map(([key, config]) => (
           <Form.Item
             key={key}
             name={key}

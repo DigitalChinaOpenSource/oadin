@@ -1,5 +1,4 @@
 // mcp右侧过滤器
-import { useState } from 'react';
 import { Tooltip } from 'antd';
 import styles from './index.module.scss';
 import foldSvg from '@/components/icons/fold.svg';
@@ -44,7 +43,7 @@ export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
         </div>
         <div
           className={styles.clean}
-          // onClick={}
+          onClick={vm.handleClearTags}
         >
           <Tooltip title="清除筛选条件">
             <img
