@@ -101,7 +101,7 @@ func Var(key string) string {
 func NewByzeEnvironment() *ByzeEnvironment {
 	once.Do(func() {
 		env := ByzeEnvironment{
-			ApiHost:           "127.0.0.1:16688",
+			ApiHost:           "0.0.0.0:16688",
 			Datastore:         "byze.db",
 			DatastoreType:     "sqlite",
 			LogDir:            "logs",
