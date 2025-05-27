@@ -76,12 +76,12 @@ func (t *ByzeCoreServer) GetClients(c *gin.Context) {
 
 func (t *ByzeCoreServer) DownloadMCP(c *gin.Context) {
 	id := c.Param("id")
-	resp, err := t.MCP.DownloadMCP(c, id)
+	err := t.MCP.DownloadMCP(c, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, resp.Data)
+	c.JSON(http.StatusOK, nil)
 
 }
 
@@ -94,12 +94,12 @@ func (t *ByzeCoreServer) AuthorizeMCP(c *gin.Context) {
 	err := c.BindJSON(&auth)
 	authStr, err := json.Marshal(auth)
 
-	resp, err := t.MCP.AuthorizeMCP(c, id, string(authStr))
+	err = t.MCP.AuthorizeMCP(c, id, string(authStr))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
 		return
 	}
-	c.JSON(http.StatusOK, resp.Data)
+	c.JSON(http.StatusOK, nil)
 }
 
 func (t *ByzeCoreServer) GetCategories(c *gin.Context) {

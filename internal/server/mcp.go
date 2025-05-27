@@ -6,9 +6,11 @@ import (
 	"byze/internal/rpc"
 	"byze/internal/types"
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"strings"
+	"time"
 )
 
 type MCPServer interface {
@@ -18,8 +20,8 @@ type MCPServer interface {
 	GetClients(ctx context.Context, id string) (*rpc.ClientListResponse, error)
 	GetCategories(ctx context.Context) (*rpc.CategoryListResponse, error)
 	GetMyMCPList(ctx context.Context, request *rpc.MCPListRequest) (*rpc.MCPListResponse, error)
-	DownloadMCP(ctx context.Context, id string) (*rpc.MCPListResponse, error)
-	AuthorizeMCP(ctx context.Context, id string, auth string) (*rpc.MCPListResponse, error)
+	DownloadMCP(ctx context.Context, id string) error
+	AuthorizeMCP(ctx context.Context, id string, auth string) error
 	ReverseStatus(c *gin.Context, id string) error
 	SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest) error
 }
@@ -157,13 +159,13 @@ func (M *MCPServerImpl) GetMyMCPList(ctx context.Context, request *rpc.MCPListRe
 
 }
 
-func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) (*rpc.MCPListResponse, error) {
+func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 	mcp, err := rpc.GetMCPDetail(M.Client, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if mcp == nil || mcp.Code != 200 || mcp.Data.ID == "" {
-		return nil, err
+		return err
 	}
 
 	// 初始化个人配置
@@ -177,68 +179,77 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) (*rpc.MCPLis
 	if err != nil || config == nil || config.ID == 0 {
 		err := M.Ds.Add(ctx, config)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	//安装 npx
 	err = hardware.InstallNpxEnvironment()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	//安装 uv
+	/*//安装 uv
 	envMgr := hardware.NewEnvManager()
 	err = envMgr.InstallUVWithPython()
 	if err != nil {
 		return nil, err
 	}
-
+	*/
 	// 执行mcp安装命令
 	installCMD := mcp.Data.ServerConfig
 
 	for _, item := range installCMD {
 		for _, y := range item.McpServers {
 			// 传递args
-			hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
+			commandBuilder := hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
 			// 加入动态环境变量
 			if len(y.Env) > 0 {
 				for key, value := range y.Env {
-					hardware.NewCommandBuilder(y.Command).WithEnv(key, value)
+					commandBuilder.WithEnv(key, value)
 				}
 			}
 			// 执行安装命令
-			_, _, err = hardware.NewCommandBuilder(y.Command).Execute()
+			output, errOut, err := commandBuilder.WithTimeout(time.Minute).Execute()
 			if err != nil {
-				return nil, err
+				return err
 			}
+			fmt.Printf("output of command execution: %s", output)
+			fmt.Printf("error output of command execution: %s", errOut)
+
 		}
 	}
 
-	return nil, nil
+	return nil
 
 }
 
-func (M *MCPServerImpl) AuthorizeMCP(ctx context.Context, id string, auth string) (*rpc.MCPListResponse, error) {
+func (M *MCPServerImpl) AuthorizeMCP(ctx context.Context, id string, auth string) error {
 	con := new(types.McpUserConfig)
 	con.MCPID = id
 	err := M.Ds.Get(ctx, con)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
+	// 如果没得配置数据则初始化一条
 	if con == nil || con.ID == 0 {
-		return nil, err
+		// 初始化个人配置
+		con.MCPID = id
+		con.Status = 0
+		con.Auth = auth
+		con.Kits = ""
+		M.Ds.Add(ctx, con)
 	}
 
 	// 保存授权配置项
 	con.Auth = auth
 	err = M.Ds.Put(ctx, con)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (M *MCPServerImpl) ReverseStatus(c *gin.Context, id string) error {
