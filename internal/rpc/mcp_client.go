@@ -67,12 +67,14 @@ type MCPDetailResponse struct {
 			Src string `json:"src"`
 			Zh  string `json:"zh"`
 		} `json:"name"`
-		ServerName  string `json:"serverName"`
-		Supplier    string `json:"supplier"`
-		Hosted      bool   `json:"hosted"`
-		Status      int    `json:"status"`
-		Authorized  int    `json:"authorized"`
-		EnvRequired int    `json:"envRequired"`
+		ServerName  string   `json:"serverName"`
+		Supplier    string   `json:"supplier"`
+		Authorized  int      `json:"authorized"`
+		EnvRequired int      `json:"envRequired"`
+		Tags        []string `json:"tags"`
+		Hosted      bool     `json:"hosted"`
+		Status      int      `json:"status"`
+		UpdatedAt   int64    `json:"updatedAt"`
 		Summary     struct {
 			Src string `json:"src"`
 			Zh  string `json:"zh"`
@@ -183,6 +185,7 @@ type ClientItem struct {
 	Name        string   `json:"name"`
 	Icon        string   `json:"icon"`
 	LinkCommand string   `json:"linkCommand"`
+	Description string   `json:"description"`
 	RelatedTags []string `json:"relatedTags"`
 	SortWeight  int      `json:"sortWeight"`
 	CreateBy    string   `json:"createBy"`
