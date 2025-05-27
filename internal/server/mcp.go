@@ -184,7 +184,11 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 	}
 
 	//安装 npx
-	err = hardware.InstallNpxEnvironment()
+	//err = hardware.InstallNpxEnvironment()
+	err = hardware.SetupNpxEnvironment(func(stage string, percent int) {
+		// 更新UI进度
+		fmt.Printf("the stage of npx installation: %s, the process of installation is: %d\n", stage, percent)
+	})
 	if err != nil {
 		return err
 	}
