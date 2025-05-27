@@ -4,7 +4,6 @@ import { Tooltip } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
 import { LocalIcon, CloudIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
-import ModelPng from '@/assets/model.png';
 import dayjs from 'dayjs';
 
 export interface IMcpCardProps {
@@ -28,19 +27,19 @@ export default function McpCard(props: IMcpCardProps) {
   return (
     <div
       className={styles.mcpCard}
-      onClick={() => handelMcpCardClick(mcpData.id)}
+      onClick={() => handelMcpCardClick(mcpData?.id)}
     >
       <div className={styles.cardHeader}>
         <div className={styles.cardTitle}>
           {/* logo */}
           <div className={styles.avatar}>
             <img
-              src={ModelPng}
+              src={mcpData?.logo}
               width={24}
             />
           </div>
           {/* 名称 */}
-          <div className={styles.title}>{mcpData.name.zh}</div>
+          <div className={styles.title}>{mcpData?.name?.zh}</div>
           {/* 本地还是云端 */}
           <div className={styles.localOrCloud}>
             {mcpData?.hosted ? (
@@ -57,20 +56,19 @@ export default function McpCard(props: IMcpCardProps) {
           </div>
         </div>
       </div>
+      <div style={{ height: '24px' }}>
+        <TagsRender tags={mcpData?.tags || []} />
+      </div>
 
-      <TagsRender tags={mcpData?.tags} />
-
-      <Tooltip title={'asdad'}>
-        <div className={styles.contentWrapper}>
-          这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述
-        </div>
+      <Tooltip title={mcpData?.abstract?.zh}>
+        <div className={styles.contentWrapper}>{mcpData?.abstract?.zh}</div>
       </Tooltip>
 
       <div className={styles.infoWrapper}>
-        <div className={styles.providerName}>深度求索</div>
+        <div className={styles.providerName}>{mcpData?.supplier}</div>
         <div className={styles.dot}>·</div>
-        <div className={styles.updateName}>{formateUnixTime(mcpData.updatedAt)} 更新</div>
-        {!!mcpData.status && <div className={styles.mcpStatus}>已授权</div>}
+        <div className={styles.updateName}>{mcpData?.updatedAt && formateUnixTime(mcpData?.updatedAt) + '更新'}</div>
+        {!!mcpData.status && <div className={styles.mcpStatus}>已添加</div>}
       </div>
     </div>
   );

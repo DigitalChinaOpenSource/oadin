@@ -13,7 +13,10 @@ type CardItemProps = {
 const CardItem = (props: CardItemProps) => {
   const { icon, name, description } = props.clientData;
   return (
-    <div className={styles.clientItem}>
+    <div
+      className={styles.clientItem}
+      // onClick={() => window.open('test-app://')}
+    >
       <div className={styles.clientIcon}>
         <img
           src={icon}

@@ -17,7 +17,7 @@ export function useViewModel() {
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 12,
-    total: 20,
+    total: 0,
   });
 
   // 标签选中结果

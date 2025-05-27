@@ -37,7 +37,10 @@ export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
             )}
           </div>
           <div className={styles.tags}>
-            <TagsRender tags={tags || []} />
+            <TagsRender
+              tags={tags || []}
+              // className={'descTag'}
+            />
           </div>
         </div>
 
@@ -47,8 +50,8 @@ export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
 
         <div className={styles.infoWrapper}>
           <div className={styles.providerName}>{supplier}</div>
-          <div className={styles.dot}>·</div>
-          <div className={styles.updateName}>{formateUnixTime(updatedAt as number)} 更新</div>
+          <div className={styles.dot}>{updatedAt && '·'}</div>
+          <div className={styles.updateName}>{updatedAt && formateUnixTime(updatedAt as number) + '更新'} </div>
         </div>
       </div>
     </div>

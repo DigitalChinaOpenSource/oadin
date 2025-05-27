@@ -36,7 +36,7 @@ export const useMcpDetail = () => {
   // 下载mcp
   const { loading: downMcpLoading, run: downMcp } = useRequest(
     async () => {
-      return await httpRequest.get<McpDetailType>(`/mcp/${serviceId}/download`);
+      return await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/download`);
     },
     {
       manual: true,
@@ -95,8 +95,7 @@ export const useMcpDetail = () => {
   // 取消mcp
   const { loading: cancelMcpLoading, run: handleCancelMcp } = useRequest(
     async () => {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      return await httpRequest.del(`/mcp/${serviceId}/auth/cancel`, {}, { baseURL: '/api' });
+      return await httpRequest.put(`/mcp/${serviceId}/auth/reverse`);
     },
     {
       manual: true,
