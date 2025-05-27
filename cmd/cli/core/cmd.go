@@ -7,6 +7,7 @@ import (
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
 	"byze/internal/datastore/jsonds"
+	jsondsTemplate "byze/internal/datastore/jsonds/data"
 	"byze/internal/datastore/sqlite"
 	"byze/internal/event"
 	"byze/internal/provider"
@@ -177,8 +178,7 @@ func Run(ctx context.Context) error {
 	}
 
 	datastore.SetDefaultDatastore(ds)
-
-	jds := jsonds.NewJSONDatastore(filepath.Join(config.GlobalByzeEnvironment.WorkDir, "internal", "datastore", "jsonds", "data"))
+	jds := jsonds.NewJSONDatastore(jsondsTemplate.JsonDataStoreFS)
 
 	err = jds.Init()
 	if err != nil {
