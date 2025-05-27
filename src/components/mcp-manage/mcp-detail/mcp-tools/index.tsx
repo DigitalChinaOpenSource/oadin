@@ -75,6 +75,7 @@ export default function McpTools() {
                   ),
                   children: <div>345</div>,
                   collapsible: 'disabled',
+                  showArrow: false,
                 },
               ]}
             />

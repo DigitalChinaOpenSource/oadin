@@ -37,7 +37,7 @@ export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
             )}
           </div>
           <div className={styles.tags}>
-            <TagsRender tags={tags} />
+            <TagsRender tags={tags || []} />
           </div>
         </div>
 
