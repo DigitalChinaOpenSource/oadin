@@ -2,6 +2,7 @@ package api
 
 import (
 	"byze/internal/rpc"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -88,9 +89,12 @@ func (t *ByzeCoreServer) AuthorizeMCP(c *gin.Context) {
 
 	id := c.Param("id")
 
-	auth := ""
-	err := c.BindJSON("auth")
-	resp, err := t.MCP.AuthorizeMCP(c, id, auth)
+	auth := map[string]string{}
+
+	err := c.BindJSON(&auth)
+	authStr, err := json.Marshal(auth)
+
+	resp, err := t.MCP.AuthorizeMCP(c, id, string(authStr))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
 		return
