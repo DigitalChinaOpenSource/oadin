@@ -10,7 +10,7 @@ var GlobalClient *resty.Client
 
 func init() {
 	GlobalClient = resty.New().
-		SetBaseURL(config.GetVegaConfig().Url).
+		SetBaseURL(config.ConfigRootInstance.Vega.Url).
 		SetTimeout(20*time.Second).
 		SetRetryCount(3).
 		SetRetryWaitTime(10*time.Second).
