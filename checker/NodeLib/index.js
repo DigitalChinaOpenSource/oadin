@@ -33,7 +33,7 @@ function runInstaller(installerPath, isMacOS) {
           // 检查服务是否可用
           const Byze = require('./index.js'); // 防止循环依赖可单独提取IsByzeAvailiable
           const byze = new Byze();
-          const available = await byze.IsByzeAvailiable(retries = 2, interval = 1000);
+          const available = await byze.IsByzeAvailiable(2, 1000);
           if (available) {
             clearInterval(interval);
             resolve();
@@ -246,7 +246,7 @@ class Byze {
 
   // 启动 Byze 服务
   async InstallByze() {
-    const alreadyRunning = await this.IsByzeAvailiable(retries = 2, interval = 1000);
+    const alreadyRunning = await this.IsByzeAvailiable(2, 1000);
     if (alreadyRunning) {
       console.log('[Install] Byze 在运行中');
       return true;
@@ -281,7 +281,7 @@ class Byze {
           //   return resolve(true);
           // };
 
-          const available = await this.IsByzeAvailiable(maxRetries = 5, interval = 1500);
+          const available = await this.IsByzeAvailiable(5, 1500);
           return resolve(available);
         });
       } else if (currentPlatform === 'darwin') {
