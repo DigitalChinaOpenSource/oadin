@@ -73,7 +73,7 @@ class Byze {
   }
 
   // 检查 Byze 服务是否启动
-  IsByzeAvailiable() {
+  IsByzeAvailiable(retries = 3, interval = 1000) {
     return new Promise((resolve) => {
       const checkPort = (port) => {
         return new Promise((resolvePort) => {
@@ -96,11 +96,20 @@ class Byze {
         });
       };
 
-      // 同时检查 16688 和 16677 两个端口
-      Promise.all([checkPort(16688), checkPort(16677)]).then((results) => {
-        console.log(`16688 端口: ${results[0] ? '可用' : '不可用'}, 16677 端口: ${results[1] ? '可用' : '不可用'}`);
-        resolve(results.every((status) => status)); // 两个端口都可用时返回 true
-      });
+      let attempt = 0;
+      const tryCheck = () => {
+        Promise.all([checkPort(16688), checkPort(16677)]).then((results) => {
+          console.log(`16688 端口: ${results[0] ? '可用' : '不可用'}, 16677 端口: ${results[1] ? '可用' : '不可用'}`);
+          if (results.every((status) => status)) {
+            resolve(true);
+          } else if (++attempt < retries) {
+            setTimeout(tryCheck, interval);
+          } else {
+            resolve(false);
+          }
+        });
+      };
+      tryCheck();
     });
   }
 
@@ -265,7 +274,7 @@ class Byze {
           //   return resolve(true);
           // };
 
-          const available = await this.checkServerStatus();
+          const available = await this.IsByzeAvailiable();
           return resolve(available);
         });
       } else if (currentPlatform === 'darwin') {
