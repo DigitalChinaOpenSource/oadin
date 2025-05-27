@@ -42,7 +42,7 @@ func SamePartitionStatus(srcPath string, targetPath string) (bool, error) {
 	return stat1.Dev == stat2.Dev, nil
 }
 
-func ModifySystemUserVariables(envInfo EnvVariables) error {
+func ModifySystemUserVariables(envInfo *EnvVariables) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		return err
