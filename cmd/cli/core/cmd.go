@@ -6,6 +6,7 @@ import (
 	"byze/internal/api"
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
+	"byze/internal/datastore/jsonds"
 	"byze/internal/datastore/sqlite"
 	"byze/internal/event"
 	"byze/internal/provider"
@@ -176,6 +177,14 @@ func Run(ctx context.Context) error {
 	}
 
 	datastore.SetDefaultDatastore(ds)
+
+	jds := jsonds.NewJSONDatastore(filepath.Join(config.GlobalByzeEnvironment.WorkDir, "internal", "datastore", "jsonds", "data"))
+
+	err = jds.Init()
+	if err != nil {
+		fmt.Printf("Failed to initialize json file store: %v\n", err)
+	}
+	datastore.SetDefaultJsonDatastore(jds)
 
 	//version.StartCheckUpdate(ctx)
 	// Initialize core core app server

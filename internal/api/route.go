@@ -25,7 +25,7 @@ import (
 func InjectRouter(e *ByzeCoreServer) {
 	e.Router.Handle(http.MethodGet, "/", rootHandler)
 	e.Router.Handle(http.MethodGet, "/health", healthHeader)
-	e.Router.Handle(http.MethodGet, "engine/health", engineHealthHandler)
+	e.Router.Handle(http.MethodGet, "/engine/health", engineHealthHandler)
 	e.Router.Handle(http.MethodGet, "/version", getVersion)
 	e.Router.Handle(http.MethodGet, "/engine/version", getEngineVersion)
 	e.Router.Handle(http.MethodGet, "/update/status", updateAvailableHandler)
@@ -43,6 +43,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	r.Handle(http.MethodGet, "/service", e.GetAIGCServices)
 
 	r.Handle(http.MethodGet, "/service_provider", e.GetServiceProviders)
+	r.Handle(http.MethodGet, "/service_provider/detail", e.GetServiceProvider)
 	r.Handle(http.MethodPost, "/service_provider", e.CreateServiceProvider)
 	r.Handle(http.MethodPut, "/service_provider", e.UpdateServiceProvider)
 	r.Handle(http.MethodDelete, "/service_provider", e.DeleteServiceProvider)
@@ -54,7 +55,13 @@ func InjectRouter(e *ByzeCoreServer) {
 	r.Handle(http.MethodPost, "/model/stream/cancel", e.CancelModelStream)
 	r.Handle(http.MethodGet, "/model/recommend", e.GetRecommendModels)
 	r.Handle(http.MethodGet, "/model/support", e.GetModelList)
+
 	r.Handle(http.MethodGet, "/model/support/smartvision", e.GetSmartVisionSupportModelList)
+
+	r.Handle(http.MethodGet, "/control_panel/model/filepath", e.GetModelFilePathHandler)
+	r.Handle(http.MethodPost, "/control_panel/model/filepath", e.ModifyModelFilePathHandler)
+	r.Handle(http.MethodGet, "/control_panel/path/space", e.GetPathDiskSizeHandler)
+	r.Handle(http.MethodGet, "/control_panel/model/square", e.GetSupportModelListCombine)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }
@@ -79,7 +86,7 @@ func engineHealthHandler(c *gin.Context) {
 }
 
 func getVersion(c *gin.Context) {
-	c.JSON(http.StatusOK, map[string]string{"version": version.ByzeVersion + "." + version.ByzeSubVersion})
+	c.JSON(http.StatusOK, map[string]string{"version": version.ByzeVersion + "-" + version.ByzeSubVersion})
 }
 
 func getEngineVersion(c *gin.Context) {

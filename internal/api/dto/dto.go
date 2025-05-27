@@ -1,8 +1,10 @@
 package dto
 
 import (
+	"byze/internal/types"
 	"time"
 
+	"byze/internal/utils"
 	"byze/internal/utils/bcode"
 )
 
@@ -135,7 +137,9 @@ type GetModelsRequest struct {
 
 type GetModelListRequest struct {
 	ServiceSource string `form:"service_source" validate:"required"`
-	Flavor        string `form:"flavor" validate:"required"`
+	Flavor        string `form:"flavor"`
+	PageSize      int    `form:"page_size"`
+	Page          int    `form:"page_index"`
 }
 
 type ModelStreamCancelRequest struct {
@@ -144,6 +148,27 @@ type ModelStreamCancelRequest struct {
 
 type SmartVisionSupportModelRequest struct {
 	EnvType string `form:"env_type" validate:"required"`
+}
+
+type GetSupportModelRequest struct {
+	Flavor        string `form:"flavor"`
+	EnvType       string `form:"env_type"`
+	ServiceSource string `form:"service_source" validate:"required"`
+	PageSize      int    `form:"page_size"`
+	Page          int    `form:"page"`
+}
+
+type GetSupportModelResponseData struct {
+	Data      []RecommendModelData `json:"data"`
+	Page      int                  `json:"page"`
+	PageSize  int                  `json:"page_size"`
+	Total     int                  `json:"total"`
+	TotalPage int                  `json:"total_page"`
+}
+
+type GetSupportModelResponse struct {
+	bcode.Bcode
+	Data GetSupportModelResponseData `json:"data"`
 }
 
 type SmartVisionSupportModelResponse struct {
@@ -217,35 +242,53 @@ type Model struct {
 }
 
 type LocalSupportModelData struct {
-	OllamaId    string  `json:"id"`
-	Name        string  `json:"name"`
-	Avatar      string  `json:"avatar"`
-	Description string  `json:"description"`
-	Class       string  `json:"class"`
-	Flavor      string  `json:"provider"`
-	Size        string  `json:"size"`
-	ParamsSize  float32 `json:"params_size"`
+	OllamaId    string   `json:"id"`
+	Name        string   `json:"name"`
+	Avatar      string   `json:"avatar"`
+	Description string   `json:"description"`
+	Class       []string `json:"class"`
+	Flavor      string   `json:"provider"`
+	Size        string   `json:"size"`
+	ParamsSize  float32  `json:"params_size"`
 }
 
 type RecommendModelData struct {
-	Service         string   `json:"service_name"`
-	Flavor          string   `json:"api_flavor"`
-	Method          string   `json:"method" default:"POST"`
-	Desc            string   `json:"desc"`
-	Url             string   `json:"url"`
-	AuthType        string   `json:"auth_type"`
-	AuthApplyUrl    string   `json:"auth_apply_url"`
-	AuthFields      []string `json:"auth_fields"`
-	Name            string   `json:"name"`
-	ServiceProvider string   `json:"service_provider_name"`
-	Size            string   `json:"size"`
-	IsRecommended   bool     `json:"is_recommended" default:"false"`
-	Status          string   `json:"status"`
-	Avatar          string   `json:"avatar"`
-	CanSelect       bool     `json:"can_select" default:"false"`
-	Class           string   `json:"class"`
-	OllamaId        string   `json:"ollama_id"`
-	ParamsSize      float32  `json:"params_size"`
+	Id                  string   `json:"id"`
+	Service             string   `json:"service_name"`
+	ApiFlavor           string   `json:"api_flavor"`
+	Flavor              string   `json:"flavor"`
+	Method              string   `json:"method" default:"POST"`
+	Desc                string   `json:"desc"`
+	Url                 string   `json:"url"`
+	AuthType            string   `json:"auth_type"`
+	AuthApplyUrl        string   `json:"auth_apply_url"`
+	AuthFields          []string `json:"auth_fields"`
+	Name                string   `json:"name"`
+	ServiceProvider     string   `json:"service_provider_name"`
+	Size                string   `json:"size"`
+	IsRecommended       bool     `json:"is_recommended" default:"false"`
+	Status              string   `json:"status"`
+	Avatar              string   `json:"avatar"`
+	CanSelect           bool     `json:"can_select" default:"false"`
+	Class               []string `json:"class"`
+	OllamaId            string   `json:"ollama_id"`
+	ParamsSize          float32  `json:"params_size"`
+	InputLength         int      `json:"input_length"`
+	OutputLength        int      `json:"output_length"`
+	Source              string   `json:"source"`
+	SmartVisionProvider string   `json:"smartvision_provider"`
+	SmartVisionModelKey string   `json:"smartvision_model_key"`
+}
+
+type ProviderSupportModelData struct {
+	Name         string   `json:"name"`
+	ParamsSize   float32  `json:"params_size"`
+	Class        []string `json:"class"`
+	Flavor       string   `json:"flavor"`
+	ApiFlavor    string   `json:"api_flavor"`
+	InputLength  int      `json:"input_length"`
+	OutputLength int      `json:"output_length"`
+	IsDownloaded bool     `json:"is_downloaded"`
 }
 
 type CreateServiceProviderRequest struct {
@@ -284,7 +327,12 @@ type DeleteServiceProviderRequest struct {
 	ProviderName string `json:"provider_name" validate:"required"`
 }
 
-type GetServiceProviderRequest struct{}
+type GetServiceProviderRequest struct {
+	ProviderName string `form:"provider_name" validate:"required"`
+	Page         int    `form:"page"`
+	PageSize     int    `form:"page_size"`
+	EnvType      string `form:"env_type"`
+}
 
 type GetServiceProvidersRequest struct {
 	ServiceName   string `json:"service_name,omitempty"`
@@ -305,7 +353,19 @@ type DeleteServiceProviderResponse struct {
 	bcode.Bcode
 }
 
-type GetServiceProviderResponse struct{}
+type GetServiceProviderResponseData struct {
+	*types.ServiceProvider
+	SupportModelList []ProviderSupportModelData `json:"support_model_list"`
+	Page             int                        `json:"page"`
+	PageSize         int                        `json:"page_size"`
+	TotalCount       int                        `json:"total_count"`
+	TotalPage        int                        `json:"total_page"`
+}
+
+type GetServiceProviderResponse struct {
+	bcode.Bcode
+	Data GetServiceProviderResponseData `json:"data"`
+}
 
 type GetServiceProvidersResponse struct {
 	bcode.Bcode
@@ -325,4 +385,32 @@ type ServiceProvider struct {
 	Status        int       `json:"status"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+type GetPathDiskSizeInfoRequest struct {
+	Path string `form:"path" validate:"required"`
+}
+
+type GetPathDiskSizeInfoResponse struct {
+	bcode.Bcode
+	Data *utils.PathDiskSizeInfo `json:"data"`
+}
+
+type GetModelFilePathResponse struct {
+	bcode.Bcode
+	Data *GetModelFilePathData `json:"data"`
+}
+
+type GetModelFilePathData struct {
+	Path string `json:"path"`
+}
+
+type ModifyModelFilePathRequest struct {
+	SourcePath string `json:"source_path" validate:"required"`
+	TargetPath string `json:"target_path" validate:"required"`
+}
+
+type ModifyModelFilePathResponse struct {
+	bcode.Bcode
+	Data struct{}
 }
