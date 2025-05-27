@@ -5,6 +5,9 @@ package utils
 import (
 	"fmt"
 	"github.com/shirou/gopsutil/mem"
+	"os"
+	"os/user"
+	"strings"
 )
 
 func GetMemoryInfo() (*MemoryInfo, error) {
