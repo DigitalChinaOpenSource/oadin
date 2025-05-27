@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
 import styles from './index.module.scss';
 import { Button, Tooltip } from 'antd';
 import { IModelAuth } from '../../types';
-import { ModelDataItem, IModelSourceType } from '@/types';
+import { IModelDataItem, IModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon, SettingIcon, ArrowClockwiseIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
@@ -11,18 +11,18 @@ export interface IGeneralCardProps {
   // 是否用于详情展示
   isDetail?: boolean;
   // 模型数据
-  modelData: ModelDataItem;
-  modelSourceVal: IModelSourceType;
-  onCardClick?: (visible: boolean, selectModelData: ModelDataItem) => void;
+  modelData: IModelDataItem;
+  modelSourceVal?: IModelSourceType;
+  onCardClick?: (visible: boolean, selectModelData: IModelDataItem) => void;
   onModelAuthVisible?: (data: IModelAuth) => void;
-  onDeleteConfirm?: (modelData: ModelDataItem) => void;
-  onDownloadConfirm?: (modelData: ModelDataItem) => void;
+  onDeleteConfirm?: (modelData: IModelDataItem) => void;
+  onDownloadConfirm?: (modelData: IModelDataItem) => void;
 }
 
 export default function GeneralCard(props: IGeneralCardProps) {
   const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData } = props;
 
-  const statusToText = (item: ModelDataItem) => {
+  const statusToText = (item: IModelDataItem) => {
     const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
     const { status, can_select } = item;
     if (status === IN_PROGRESS)
@@ -63,7 +63,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
       );
   };
 
-  const remoteStatusToText = (item: ModelDataItem) => {
+  const remoteStatusToText = (item: IModelDataItem) => {
     const { can_select } = item;
     if (can_select) {
       return (
@@ -142,13 +142,11 @@ export default function GeneralCard(props: IGeneralCardProps) {
       </div>
 
       <TagsRender
-        tags={modelData?.class.concat([modelData?.size])}
-        highlightNums={modelData?.class.length}
+        tags={(modelData?.class || []).concat([modelData?.size])}
+        highlightNums={(modelData?.class || []).length}
       />
 
-      <Tooltip title={modelData?.desc}>
-        <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>{modelData?.desc}</div>
-      </Tooltip>
+      <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>{isDetail ? <ReactMarkdown>{modelData?.desc}</ReactMarkdown> : <>{modelData?.desc}</>}</div>
 
       <div className={styles.infoWrapper}>
         <div className={styles.providerName}>{modelData.api_flavor}</div>

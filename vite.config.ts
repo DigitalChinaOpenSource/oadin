@@ -33,7 +33,8 @@ export default defineConfig({
       //   changeOrigin: true,
       // },
       '/health': {
-        target: 'http://127.0.0.1:16688',
+        // target: 'http://127.0.0.1:16688',
+        target: 'http://10.3.73.109:16688', // 雨浩的动态ip
         changeOrigin: true,
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {

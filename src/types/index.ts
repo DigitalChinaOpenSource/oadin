@@ -1,6 +1,6 @@
 export type IModelSourceType = 'local' | 'remote';
 
-export interface ModelDataItem {
+export interface IModelDataItem {
   service_name: string;
   api_flavor: string;
   method: string;
@@ -32,7 +32,11 @@ export interface ModelDataItem {
 }
 // 模型列表数据类型
 export interface ModelData {
-  chat: ModelDataItem[];
+  data: IModelDataItem[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_page: number;
 }
 
 export interface CredentialParam {

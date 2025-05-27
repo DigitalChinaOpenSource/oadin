@@ -1,17 +1,57 @@
-import { useState } from "react";
-export function useViewModel() {
-   const [baseInfo, setBaseInfo] = useState({
-        name: '白泽服务提供商',
-        status: '启用',
-        createTime: '2023-10-01 12:00:00',
-        updateTime: '2023-10-01 12:00:00',
-        statusCode: '1'
-    })
-    const [modelList, setModelList] = useState([{name: '模型1', tags: ['深度思考', '文本模型'], size: 32, status: 1, text: '深度求索'}, {name: '模型1', tags: ['深度思考', '文本模型'], size: 32, status: 1, text: '深度求索'}])
-    const [pagination, setPagination] = useState({current: 1, pageSize: 10, total: 20})
-    const handlePagChange = (page: number) => {
-        console.log(page)
-        setPagination({ ...pagination, current: page })
-    }
-    return { baseInfo, modelList, pagination, handlePagChange }
+import { useState, useEffect } from 'react';
+import { useRequest } from 'ahooks';
+import { httpRequest } from '@/utils/httpRequest';
+import { IProviderDetailData, IProviderDetailParams } from '../types';
+import { IServiceProviderDetailProps } from './index';
+import dayjs from 'dayjs';
+export function useViewModel(props: IServiceProviderDetailProps) {
+  const { selectedRow, onCancel } = props;
+  const [providerDetail, setProviderDetail] = useState<IProviderDetailData>({} as IProviderDetailData);
+
+  useEffect(() => {
+    fetchProviderDetail({ provider_name: selectedRow.provider_name });
+  }, [selectedRow]);
+  const { loading: providerDetailLoading, run: fetchProviderDetail } = useRequest(
+    async (params: IProviderDetailParams) => {
+      const paramsTemp = {
+        provider_name: selectedRow.provider_name,
+        page: params.page || 1,
+        page_size: params.page_size || 5,
+      } as IProviderDetailParams;
+      if (params.provider_name.includes('smartvision')) {
+        paramsTemp.env_type = import.meta.env.VITE_ENV_TYPE;
+      }
+      const data = await httpRequest.get<IProviderDetailData>('/service_provider/detail', { ...paramsTemp });
+      return data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        if (!data) {
+          setProviderDetail(selectedRow as any);
+          return;
+        }
+        setProviderDetail(data);
+      },
+      onError: (error) => {
+        setProviderDetail(selectedRow as any);
+        console.error('获取服务提供商数据失败:', error);
+      },
+    },
+  );
+
+  const handlePageChange = (page: number, page_size: number) => {
+    fetchProviderDetail({
+      provider_name: selectedRow.provider_name,
+      page,
+      page_size: 5,
+    });
+  };
+
+  const formateIsoTime = (isoTime: string) => {
+    if (!isoTime) return null;
+    return dayjs(isoTime).format('YYYY-MM-DD');
+  };
+
+  return { providerDetailLoading, providerDetail, selectedRow, onCancel, formateIsoTime, handlePageChange };
 }

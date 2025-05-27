@@ -21,7 +21,7 @@ export default function ModelListContent(props: IModelListContent) {
   const vm = useViewModel(props);
   return (
     <>
-      {vm.modelSupportLoading || vm.smartversionLoading ? (
+      {vm.modelSupportLoading ? (
         <div className={styles.loading}>
           <img
             src={realLoadingSvg}

@@ -1,7 +1,7 @@
 import { RECOMMEND_MODEL, PIORITY_MODEL } from '@/constants';
-import { SmartvisionDataItem } from '@/types';
+import { IModelDataItem } from '@/types';
 // 处理问学模型列表的数据
-export const dealSmartVisionModels = (data: SmartvisionDataItem[]) => {
+export const dealSmartVisionModels = (data: IModelDataItem[]) => {
   function removeDuplicates(arr: any) {
     return [...new Set(arr)];
   }
@@ -25,17 +25,13 @@ export const dealSmartVisionModels = (data: SmartvisionDataItem[]) => {
       const model = map[modelname];
       if (model) {
         const { introduce, tags, ...rest } = model;
-        // 保留原始的字段结构，并新增 isRecommended 字段
         const result = {
           ...rest,
           is_recommended: recommendedSeq.includes(modelname),
-          desc: introduce, // 使用 introduce 替换原来的 desc
-          class: tags, // 使用 tags 替换原来的 class
-          can_select: recommendedSeq.includes(modelname) ? recommendedSeq.includes(modelname) : rest.canSelect,
         };
         return result;
       }
-      return null; // 如果找不到对应的 model，可以选择返回 null 或者其他处理
+      return null;
     })
     .filter(Boolean);
 };

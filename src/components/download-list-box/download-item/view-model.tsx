@@ -2,16 +2,16 @@ import useModelDownloadStore from '@/store/useModelDownloadStore';
 import { LOCAL_STORAGE_KEYS } from '@/constants';
 import { useDownLoad } from '@/hooks/useDownload';
 import { message } from 'antd';
-import { ModelDataItem } from '@/types';
+import { IModelDataItem } from '@/types';
 export function useViewModel() {
   const { fetchDownLoadAbort, fetchDownloadStart } = useDownLoad();
   const { downloadList, setDownloadList } = useModelDownloadStore();
 
-  const fetchCancelModel = async (data: ModelDataItem) => {
+  const fetchCancelModel = async (data: IModelDataItem) => {
     await fetchDownLoadAbort({ model_name: data.name }, { id: data.id, modelType: data.modelType });
   };
 
-  const fetchRemoveModel = async (data: ModelDataItem) => {
+  const fetchRemoveModel = async (data: IModelDataItem) => {
     console.log('fetchRemoveModel', data, downloadList);
     if (!downloadList.some((item) => item.name === data.name)) {
       message.warning('未找到匹配的模型进行移除');

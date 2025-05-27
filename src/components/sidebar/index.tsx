@@ -116,7 +116,9 @@ export default function Sidebar() {
       {!!downloadList?.length && (
         <div className={styles.downloadBtnBox}>
           <Badge
-            dot={!!downloadList?.length}
+            // dot={!!downloadList?.length}
+            count={downloadList?.length}
+            showZero={false}
             className={styles.badge}
           >
             <div

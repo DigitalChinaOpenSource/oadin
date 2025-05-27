@@ -15,18 +15,20 @@ export default function ServiceProviderManageTab() {
         <div className={styles.titleBlock}>服务提供商管理</div>
 
         <Table
-          loading={vm.loading}
+          loading={vm.serviceProviderLoading}
           columns={columns}
           dataSource={vm.dataList}
-          pagination={{
-            ...vm.pagination,
-            onChange: vm.handlePageChange,
-          }}
+          pagination={
+            vm.pagination.total > 10 && {
+              ...vm.pagination,
+              onChange: vm.handlePageChange,
+            }
+          }
           locale={{
             emptyText: () => {
               return (
                 <>
-                  {!vm.loading && (
+                  {!vm.serviceProviderLoading && (
                     <div className={styles.noData}>
                       <div className={styles.noDataIcon}>
                         <img
