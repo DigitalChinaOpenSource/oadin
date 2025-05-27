@@ -158,8 +158,31 @@ func (M *MCPServerImpl) GetMyMCPList(ctx context.Context, request *rpc.MCPListRe
 }
 
 func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) (*rpc.MCPListResponse, error) {
+	mcp, err := rpc.GetMCPDetail(M.Client, id)
+	if err != nil {
+		return nil, err
+	}
+	if mcp == nil || mcp.Code != 200 || mcp.Data.ID == "" {
+		return nil, err
+	}
+
+	// 初始化个人配置
+	config := new(types.McpUserConfig)
+	config.MCPID = id
+	config.Status = 0
+	config.Auth = ""
+	config.Kits = ""
+	// 数据库不存在则初始化一条
+	err = M.Ds.Get(ctx, config)
+	if err != nil || config == nil || config.ID == 0 {
+		err := M.Ds.Add(ctx, config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	//安装 npx
-	err := hardware.InstallNpxEnvironment()
+	err = hardware.InstallNpxEnvironment()
 	if err != nil {
 		return nil, err
 	}
@@ -172,12 +195,25 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) (*rpc.MCPLis
 	}
 
 	// 执行mcp安装命令
-	_, err = rpc.GetMCPDetail(M.Client, id)
-	if err != nil {
-		return nil, err
-	}
+	installCMD := mcp.Data.ServerConfig
 
-	hardware.NewCommandBuilder("").Execute()
+	for _, item := range installCMD {
+		for _, y := range item.McpServers {
+			// 传递args
+			hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
+			// 加入动态环境变量
+			if len(y.Env) > 0 {
+				for key, value := range y.Env {
+					hardware.NewCommandBuilder(y.Command).WithEnv(key, value)
+				}
+			}
+			// 执行安装命令
+			_, _, err = hardware.NewCommandBuilder(y.Command).Execute()
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	return nil, nil
 
