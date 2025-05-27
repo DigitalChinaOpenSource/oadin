@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func GetViperInstance() *viper.Viper {
+func init() {
 	var configFile string
 	// 根据环境变量选择配置文件
 	configEnv := os.Getenv("GO_ENV")
@@ -28,6 +28,9 @@ func GetViperInstance() *viper.Viper {
 	if err := ViperInstance.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("read config failed: %s \n", err))
 	}
-	return ViperInstance
+	ConfigRootInstance = new(ConfigRoot)
+	if err := ViperInstance.Unmarshal(&ConfigRootInstance); err != nil {
+		panic(fmt.Errorf("unmarshal config failed: %s \n", err))
+	}
 
 }

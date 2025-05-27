@@ -77,6 +77,12 @@ type MCPDetailResponse struct {
 			Src string `json:"src"`
 			Zh  string `json:"zh"`
 		} `json:"summary"`
+
+		Abstract struct {
+			Src string `json:"src"`
+			Zh  string `json:"zh"`
+		} `json:"abstract"`
+
 		EnvSchema struct {
 			Type       string                 `json:"type"`
 			Required   []string               `json:"required"`
@@ -227,6 +233,6 @@ func GetCategories(client *resty.Client) (*CategoryListResponse, error) {
 
 type SetupFunToolRequest struct {
 	MCPId   string `json:"mcpId"`
-	Enabled int    `json:"enabled"`
+	Enabled bool   `json:"enabled"`
 	ToolId  string `json:"toolId"`
 }
