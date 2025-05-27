@@ -90,7 +90,11 @@ type MCPDetailResponse struct {
 		} `json:"envSchema"`
 		Logo         string `json:"logo"`
 		ServerConfig []struct {
-			MCPConfig map[string]interface{} `json:"mcpServers"`
+			McpServers map[string]struct {
+				Args    []string          `json:"args"`
+				Command string            `json:"command"`
+				Env     map[string]string `json:"env"` // 使用map存储动态环境变量
+			} `json:"mcpServers"`
 		} `json:"serverConfig"`
 	} `json:"data"`
 }
