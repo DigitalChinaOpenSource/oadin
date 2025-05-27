@@ -149,4 +149,15 @@
   font-weight: 400;
   color: #898ea3;
   margin-top: 16px;
+  span {
+    margin-right: 16px;
+  }
+}
+
+.loading {
+  width: 100%;
+  text-align: center;
+  img {
+    width: 40px;
+  }
 }

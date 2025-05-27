@@ -7,13 +7,10 @@ import { IServiceProviderDataItem } from './types';
 const { confirm } = Modal;
 
 export function useViewModel() {
-  const { get } = httpRequest;
-  const [dataList, setDataList] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [dataList, setDataList] = useState<IServiceProviderDataItem[]>([]);
   const [selectedRow, setSelectedRow] = useState<IServiceProviderDataItem>({} as IServiceProviderDataItem);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
-  const [selectId, setSelectId] = useState<string>('');
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -24,29 +21,29 @@ export function useViewModel() {
     fetchServiceProviders();
   }, []);
 
-  // 获取服务提供商数据
-  const fetchServiceProviders = async () => {
-    setLoading(true);
-    try {
-      const data = await get('/service_provider');
-      if (data) {
+  const { loading: serviceProviderLoading, run: fetchServiceProviders } = useRequest(
+    async () => {
+      const data = await httpRequest.get<IServiceProviderDataItem[]>('/service_provider');
+      return data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        if (!data) return;
         setDataList(data);
         setPagination({ ...pagination, total: data.length });
-      }
-      setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      console.error('获取服务提供商数据失败:', error);
-    }
-  };
+      },
+      onError: (error) => {
+        console.error('获取服务提供商数据失败:', error);
+      },
+    },
+  );
 
   const handlePageChange = (current: any) => {
-    console.log('---page', current);
     setPagination({ ...pagination, current });
   };
 
   const handleDetail = (rowData: IServiceProviderDataItem) => {
-    console.log('---record', rowData);
     setSelectedRow(rowData);
     setDetailVisible(true);
   };
@@ -89,5 +86,5 @@ export function useViewModel() {
     });
   };
 
-  return { selectId, editVisible, dataList, detailVisible, pagination, loading, setEditVisible, setDetailVisible, handlePageChange, handleDetail, handleDeleteConfirm, selectedRow };
+  return { editVisible, dataList, detailVisible, pagination, serviceProviderLoading, setEditVisible, setDetailVisible, handlePageChange, handleDetail, handleDeleteConfirm, selectedRow };
 }

@@ -24,6 +24,7 @@ export interface IModelAuthorizeModalProps {
 }
 
 export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
+  const ENV_TYPE = import.meta.env.VITE_ENV_TYPE;
   const [form] = Form.useForm();
   const { onModelAuthVisible, modelAuthType, modelDataItem } = props;
 
@@ -67,7 +68,7 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
     const changeAuthKey = {
       [modelDataItem.name]: {
         credentials: result,
-        env_type: 'product',
+        env_type: ENV_TYPE || 'product',
         provider: modelDataItem.provider,
         model_key: modelDataItem?.modelKey,
       },

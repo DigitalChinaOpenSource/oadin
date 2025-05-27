@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, Input, Form } from 'antd';
+import { Modal, Input, Form, message } from 'antd';
 import { useRequest, useDebounce } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import styles from './index.module.scss';
@@ -47,13 +47,36 @@ export default function ModelPathModal(props: IModelPathModalProps) {
 
   const { run: onCheckPathSpace } = useRequest(
     async (path: string) => {
-      const res = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
-      return res || {};
+      const data = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
+      return data || {};
     },
     {
       manual: true,
       onSuccess: (data) => {
         setCurrentPathSpace(data);
+      },
+      onError: (error) => {
+        setCurrentPathSpace({} as IModelPathSpaceRes);
+      },
+    },
+  );
+
+  const { loading: changeModelPathLoading, run: onChangeModelPath } = useRequest(
+    async (params: { source_path: string; target_path: string }) => {
+      const data = await httpRequest.post('/control_panel/model/filepath', params);
+      return data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        if (data) {
+          message.success('模型存储路径修改成功');
+        }
+        setCurrentPathSpace(data);
+        onModalPathClose();
+      },
+      onError: (error) => {
+        message.error(error?.message || '模型存储路径修改失败');
       },
     },
   );
@@ -63,9 +86,10 @@ export default function ModelPathModal(props: IModelPathModalProps) {
   };
 
   const onFinish = (values: { modelPath: string }) => {
-    console.log('Success:', values);
-    // TODO 提交接口
-    onModalPathClose();
+    onChangeModelPath({
+      source_path: modalPath || '',
+      target_path: values.modelPath,
+    });
   };
 
   return (
@@ -76,6 +100,7 @@ export default function ModelPathModal(props: IModelPathModalProps) {
       open
       okButtonProps={{
         disabled: !isFormValid,
+        loading: changeModelPathLoading,
       }}
       onOk={handleToSavePath}
       onCancel={onModalPathClose}
@@ -111,7 +136,8 @@ export default function ModelPathModal(props: IModelPathModalProps) {
 
           {Object.keys(currentPathSpace).length > 0 && (
             <div className={styles.diskSpace}>
-              <span>{currentPathSpace?.usage_size}GB</span> / <span>{currentPathSpace?.total_size}GB</span>，<span className={styles.diskCanUse}>{currentPathSpace?.free_size}GB 可用</span>
+              <span>总容量 {currentPathSpace?.total_size}GB</span> ｜ 已使用 <span>{currentPathSpace?.usage_size}GB</span>，
+              <span className={styles.diskCanUse}>剩余 {currentPathSpace?.free_size}GB</span>
             </div>
           )}
         </div>

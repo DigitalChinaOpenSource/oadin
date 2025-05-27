@@ -32,7 +32,11 @@ export interface ModelDataItem {
 }
 // 模型列表数据类型
 export interface ModelData {
-  chat: ModelDataItem[];
+  data: ModelDataItem[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_page: number;
 }
 
 export interface CredentialParam {

@@ -22,7 +22,7 @@ export function useTableColumns(props: ITableColumns) {
 
   return [
     { title: '服务提供商名称', dataIndex: 'provider_name', key: 'provider_name' },
-    { title: '服务名称', dataIndex: 'service_name', key: 'service_name', render: (name: string) => <>{serviceNameEnum[name]}</> },
+    { title: '服务名称', dataIndex: 'service_name', key: 'service_name', render: (name: string) => <>{serviceNameEnum[name] || '-'}</> },
     { title: '服务来源', dataIndex: 'service_source', key: 'service_source', render: (source: string) => <>{serviceSourceEnum[source]}</> },
     { title: '模型数量', dataIndex: 'models', key: 'models', render: (models: string[]) => <>{models?.length || 0}</> },
     {

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
 import styles from './index.module.scss';
 import { Button, Tooltip } from 'antd';
 import { IModelAuth } from '../../types';
@@ -12,7 +12,7 @@ export interface IGeneralCardProps {
   isDetail?: boolean;
   // 模型数据
   modelData: ModelDataItem;
-  modelSourceVal: IModelSourceType;
+  modelSourceVal?: IModelSourceType;
   onCardClick?: (visible: boolean, selectModelData: ModelDataItem) => void;
   onModelAuthVisible?: (data: IModelAuth) => void;
   onDeleteConfirm?: (modelData: ModelDataItem) => void;
@@ -142,13 +142,11 @@ export default function GeneralCard(props: IGeneralCardProps) {
       </div>
 
       <TagsRender
-        tags={modelData?.class.concat([modelData?.size])}
-        highlightNums={modelData?.class.length}
+        tags={(modelData?.class || []).concat([modelData?.size])}
+        highlightNums={(modelData?.class || []).length}
       />
 
-      <Tooltip title={modelData?.desc}>
-        <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>{modelData?.desc}</div>
-      </Tooltip>
+      <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>{isDetail ? <ReactMarkdown>{modelData?.desc}</ReactMarkdown> : <>{modelData?.desc}</>}</div>
 
       <div className={styles.infoWrapper}>
         <div className={styles.providerName}>{modelData.api_flavor}</div>

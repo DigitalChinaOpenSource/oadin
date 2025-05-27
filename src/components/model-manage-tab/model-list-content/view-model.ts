@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { IModelAuthType, IModelAuth } from '../types';
-import { ModelData, ModelDataItem, IModelSourceType, IRequestModelParams, ISmartvisionDataRes, IModelPathRes } from '@/types';
+import { ModelData, ModelDataItem, IRequestModelParams, IModelPathRes } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
@@ -15,6 +15,16 @@ interface IPagenation {
   pageSize: number;
   total: number;
 }
+interface IModelSquareParams {
+  flavor?: string;
+  // remote时需要传
+  // 'dev' | 'product'
+  env_type?: string;
+  service_source: 'local' | 'remote';
+  page_size?: number;
+  page?: number;
+}
+
 const { confirm } = Modal;
 
 export function useViewModel(props: IModelListContent) {
@@ -44,49 +54,37 @@ export function useViewModel(props: IModelListContent) {
   const lastPageSizeRef = useRef(pagination.pageSize);
   const { fetchDownloadStart } = useDownLoad();
 
-  // 获取模型列表
+  // 获取模型列表 （本地和云端）
   const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
-    async (serviceSource: IModelSourceType) => {
-      const data = await httpRequest.get<ModelData>('/model/support', {
-        service_source: serviceSource,
-        flavor: 'ollama',
-      });
-      return data?.chat || [];
+    async (params: IModelSquareParams) => {
+      const paramsTemp = {
+        ...params,
+        page_size: 999,
+      };
+      if (params?.service_source === 'remote') {
+        paramsTemp.env_type = import.meta.env.MODE || 'product';
+      }
+      const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
+      if (paramsTemp.service_source === 'remote') {
+        // 处理问学模型列表的数据, 把推荐的模型放在前面
+        const remoteData = dealSmartVisionModels(data?.data || []);
+        return remoteData;
+      }
+      return data?.data || [];
     },
     {
       manual: true,
       onSuccess: (data) => {
         // 处理一些数据格式
-        const dataWithSource = data.map(
+        const dataWithSource = (data || []).map(
           (item, index) =>
             ({
               ...item,
-              source: 'local',
               type: 0,
               id: index + 1,
-              class: item.class,
               currentDownload: 0,
             } as any),
         );
-        setModelListData(dataWithSource);
-        setPagination({ ...pagination, total: dataWithSource.length });
-      },
-      onError: (error) => {
-        console.error('获取模型列表失败:', error);
-      },
-    },
-  );
-
-  // 获取问学模型列表
-  const { loading: smartversionLoading, run: fetchSmartversion } = useRequest(
-    async (envType: 'dev' | 'product') => {
-      const res = await httpRequest.get<ISmartvisionDataRes>('/model/support/smartvision', { env_type: envType || 'prod' });
-      return res?.data || [];
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        const dataWithSource = dealSmartVisionModels(data);
         setModelListData(dataWithSource);
         setPagination({ ...pagination, total: dataWithSource.length });
       },
@@ -123,12 +121,7 @@ export function useViewModel(props: IModelListContent) {
     }
     setPagination({ ...pagination, current: 1 });
 
-    if (modelSourceVal === 'local') {
-      fetchModelSupport(modelSourceVal);
-    }
-    if (modelSourceVal === 'remote') {
-      fetchSmartversion('product');
-    }
+    fetchModelSupport({ service_source: modelSourceVal });
   }, [modelSourceVal]);
 
   // 根据搜索值和分页参数更新分页数据
@@ -153,7 +146,7 @@ export function useViewModel(props: IModelListContent) {
         console.error('删除模型失败:', error);
       },
       onFinally: () => {
-        fetchModelSupport(modelSourceVal);
+        fetchModelSupport({ service_source: modelSourceVal });
       },
     },
   );
@@ -265,7 +258,7 @@ export function useViewModel(props: IModelListContent) {
 
   // 授权成功刷新列表
   const onModelAuthSuccess = () => {
-    fetchModelSupport(modelSourceVal);
+    fetchModelSupport({ service_source: modelSourceVal });
   };
 
   return {
@@ -287,7 +280,6 @@ export function useViewModel(props: IModelListContent) {
     onDownloadConfirm,
 
     modelSupportLoading,
-    smartversionLoading,
     deleteModelLoading,
 
     pagenationData,
