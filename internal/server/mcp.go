@@ -244,7 +244,7 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	}
 
 	// 保存授权配置项
-	if req.Enabled == 0 {
+	if req.Enabled {
 		con.Kits += "," + req.ToolId
 	} else {
 		con.Kits = strings.Replace(con.Kits, ","+req.ToolId, "", -1)
