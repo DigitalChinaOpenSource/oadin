@@ -84,7 +84,7 @@ func (o *OllamaProvider) StartEngine() error {
 			execFile = "ollama.exe"
 		}
 	case "darwin":
-		execFile = "/Applications/Ollama.app/Contents/Resources/ollama"
+		execFile = "ollama"
 	case "linux":
 		execFile = "ollama"
 	default:

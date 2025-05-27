@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+
 	"io"
 	"math/rand"
 	"net/http"
@@ -20,14 +21,10 @@ import (
 	"time"
 
 	"github.com/jaypipes/ghw"
+	"github.com/shirou/gopsutil/disk"
 )
 
 var textContentTypes = []string{"text/", "application/json", "application/xml", "application/javascript", "application/x-ndjson"}
-
-type MemoryInfo struct {
-	Size       int
-	MemoryType string
-}
 
 func IsHTTPText(header http.Header) bool {
 	if contentType := header.Get("Content-Type"); contentType != "" {
@@ -412,4 +409,79 @@ func StopByzeServer(pidFilePath string) error {
 		}
 	}
 	return nil
+}
+
+func SystemDiskSize(path string) (*PathDiskSizeInfo, error) {
+	volume := filepath.VolumeName(path)
+	usage, err := disk.Usage(volume)
+	if err != nil {
+		return &PathDiskSizeInfo{}, err
+	}
+	res := &PathDiskSizeInfo{}
+	res.TotalSize = int(usage.Total / 1024 / 1024 / 1024)
+	res.FreeSize = int(usage.Free / 1024 / 1024 / 1024)
+	res.UsageSize = int(usage.Used / 1024 / 1024 / 1024)
+	return res, nil
+
+}
+
+func CopyDir(src, dest string) error {
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		// 创建目录
+		err := os.MkdirAll(dest, info.Mode())
+		if err != nil {
+			return err
+		}
+		// 遍历源目录并递归拷贝
+		entries, err := os.ReadDir(src)
+		if err != nil {
+			return err
+		}
+		for _, entry := range entries {
+			srcPath := filepath.Join(src, entry.Name())
+			destPath := filepath.Join(dest, entry.Name())
+			err := CopyDir(srcPath, destPath)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		// 拷贝文件
+		srcFile, err := os.Open(src)
+		if err != nil {
+			return err
+		}
+		defer srcFile.Close()
+		destFile, err := os.Create(dest)
+		if err != nil {
+			return err
+		}
+		defer destFile.Close()
+		_, err = io.Copy(destFile, srcFile)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetFilePathTotalSize(path string) (int64, error) {
+	var totalSize int64 = 0
+
+	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			totalSize += info.Size()
+		}
+		return nil
+	})
+
+	return totalSize, err
 }

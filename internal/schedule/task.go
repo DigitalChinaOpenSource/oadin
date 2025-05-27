@@ -223,7 +223,7 @@ func (st *ServiceTask) Run() error {
 		resp.Body = reader
 		resp.Header.Set("Content-Encoding", "application/json")
 	}
-	if sp.Flavor == "smartvision" && resp.Header.Get("Content-Type") == "application/json" {
+	if sp.Flavor == types.FlavorSmartVision && resp.Header.Get("Content-Type") == "application/json" {
 		bodyData, _ := io.ReadAll(resp.Body)
 		var respData map[string]interface{}
 		err = json.Unmarshal(bodyData, &respData)
