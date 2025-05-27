@@ -24,13 +24,20 @@ function runInstaller(installerPath, isMacOS) {
 
       // 等待安装目录生成（轮询）
       const expectedPath = '/usr/local/bin/byze';
-      const maxRetries = 30; // 轮询30次
+      const maxRetries = 100;
       let retries = 0;
 
-      const interval = setInterval(() => {
+      const interval = setInterval(async () => {
         if (fs.existsSync(expectedPath)) {
-          clearInterval(interval);
-          resolve();
+          console.log("byze 以添加到 /usr/local/bin ");
+          // 检查服务是否可用
+          const Byze = require('./index.js'); // 防止循环依赖可单独提取IsByzeAvailiable
+          const byze = new Byze();
+          const available = await byze.IsByzeAvailiable();
+          if (available) {
+            clearInterval(interval);
+            resolve();
+          }
         } else if (++retries >= maxRetries) {
           clearInterval(interval);
           reject(new Error('安装器未在超时前完成安装'));
