@@ -6,14 +6,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"byze/internal/datastore"
+	"embed"
 )
 
 // generateRandomID generates a random 16-byte ID and returns it as a 32-character hex string
@@ -29,16 +28,16 @@ func generateRandomID() string {
 
 // JSONDatastore implements datastore.Datastore interface using JSON files
 type JSONDatastore struct {
-	dataDir     string                       // directory containing JSON files
 	memoryStore map[string]map[string][]byte // in-memory storage: tableName -> primaryKey -> jsonData
 	mutex       sync.RWMutex                 // mutex for thread-safe operations
+	fs          embed.FS                     // embedded filesystem
 }
 
 // NewJSONDatastore creates a new JSON datastore instance
-func NewJSONDatastore(dataDir string) *JSONDatastore {
+func NewJSONDatastore(fs embed.FS) *JSONDatastore {
 	return &JSONDatastore{
-		dataDir:     dataDir,
 		memoryStore: make(map[string]map[string][]byte),
+		fs:          fs,
 	}
 }
 
@@ -47,36 +46,28 @@ func (j *JSONDatastore) Init() error {
 	j.mutex.Lock()
 	defer j.mutex.Unlock()
 
-	// Create data directory if it doesn't exist
-	if err := os.MkdirAll(j.dataDir, 0755); err != nil {
-		return fmt.Errorf("failed to create data directory: %w", err)
-	}
-
-	// Print the data directory path for debugging
-	absPath, _ := filepath.Abs(j.dataDir)
-	fmt.Printf("Loading JSON files from directory: %s\n", absPath)
-
-	// Load all JSON files from the data directory
-	files, err := ioutil.ReadDir(j.dataDir)
+	// List all JSON files from the embedded filesystem
+	entries, err := j.fs.ReadDir(".")
 	if err != nil {
-		return fmt.Errorf("failed to read data directory: %w", err)
+		return fmt.Errorf("failed to read embedded directory: %w", err)
 	}
 
-	fmt.Printf("Found %d JSON files\n", len(files))
-	for _, file := range files {
-		if file.IsDir() {
+	fmt.Printf("Found %d embedded files\n", len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
 			continue
 		}
-		if !strings.HasSuffix(file.Name(), ".json") {
+		if !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
-		fmt.Printf("Processing file: %s\n", file)
-		filePath := filepath.Join(j.dataDir, file.Name())
-		tableName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name())) // remove .json extension
-		data, err := ioutil.ReadFile(filepath.Join(filePath))
+
+		fmt.Printf("Processing embedded file: %s\n", entry.Name())
+		data, err := j.fs.ReadFile(entry.Name())
 		if err != nil {
-			return fmt.Errorf("failed to read file %s: %w", file, err)
+			return fmt.Errorf("failed to read embedded file %s: %w", entry.Name(), err)
 		}
+
+		tableName := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name())) // remove .json extension
 
 		// Initialize table in memory store if not exists
 		if _, exists := j.memoryStore[tableName]; !exists {
@@ -86,18 +77,15 @@ func (j *JSONDatastore) Init() error {
 		// Parse JSON array and store items in memory
 		var items []map[string]interface{}
 		if err := json.Unmarshal(data, &items); err != nil {
-			return fmt.Errorf("failed to parse JSON file %s: %w", file, err)
+			return fmt.Errorf("failed to parse JSON file %s: %w", entry.Name(), err)
 		}
 
-		needsUpdate := false
 		fmt.Printf("Loaded %d items from %s\n", len(items), tableName)
 		for i := range items {
 			// Check if id exists
 			if _, hasID := items[i]["id"]; !hasID {
 				// Generate new random ID
-				newID := generateRandomID()
-				items[i]["id"] = newID
-				needsUpdate = true
+				items[i]["id"] = generateRandomID()
 			}
 
 			primaryKey := items[i]["id"].(string)
@@ -106,18 +94,6 @@ func (j *JSONDatastore) Init() error {
 				continue
 			}
 			j.memoryStore[tableName][primaryKey] = itemData
-		}
-
-		// If any items were updated with new IDs, write back to file
-		if needsUpdate {
-			updatedData, err := json.MarshalIndent(items, "", "  ")
-			if err != nil {
-				return fmt.Errorf("failed to marshal updated data for %s: %w", file.Name(), err)
-			}
-			if err := ioutil.WriteFile(filePath, updatedData, 0644); err != nil {
-				return fmt.Errorf("failed to write updated data to %s: %w", file.Name(), err)
-			}
-			fmt.Printf("Updated file %s with new IDs\n", file.Name())
 		}
 	}
 
@@ -309,19 +285,8 @@ func (j *JSONDatastore) Count(ctx context.Context, entity datastore.Entity, opti
 
 // Helper function to save table data to file
 func (j *JSONDatastore) saveTable(tableName string) error {
-	table := j.memoryStore[tableName]
-	var items []json.RawMessage
-	for _, data := range table {
-		items = append(items, json.RawMessage(data))
-	}
-
-	data, err := json.MarshalIndent(items, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal table data: %w", err)
-	}
-
-	filename := filepath.Join(j.dataDir, tableName+".json")
-	return ioutil.WriteFile(filename, data, 0644)
+	// Since we can't write to embedded FS, we only maintain the in-memory state
+	return nil
 }
 
 // Helper function to check if entity matches filter options
