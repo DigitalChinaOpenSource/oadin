@@ -15,7 +15,7 @@ export interface IMcpListRequestParams {
 }
 
 export interface IMcpListItem {
-  id: number;
+  id: string | number;
   // 0 未添加未启用；1 已添加已启用
   status: number;
   name: {
@@ -35,10 +35,8 @@ export interface IMcpListItem {
 }
 
 export interface IMcpListData {
-  data: {
-    total: number;
-    list: IMcpListItem[];
-  };
+  total: number;
+  list: IMcpListItem[];
 }
 
 export type cardType = {

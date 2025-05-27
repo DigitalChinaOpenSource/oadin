@@ -14,7 +14,7 @@ export default function MyMcpTab() {
         <div className={styles.mcpTitle}>
           <div className={styles.mcpTitleText}>
             <span>MCP服务</span>
-            <span className={styles.mcpCount}>共 {vm.myMcpListData.length} 个</span>
+            <span className={styles.mcpCount}>共 {vm.pagination.total} 个</span>
           </div>
           <div className={styles.searchInput}>
             <Input
@@ -35,7 +35,7 @@ export default function MyMcpTab() {
           </div>
         </div>
         <McpList
-          mcpListData={vm.myMcpListData}
+          mcpListData={vm.mcpListData}
           pagination={vm.pagination}
           onPageChange={vm.handlePageChange}
           handelMcpCardClick={vm.handelMcpCardClick}

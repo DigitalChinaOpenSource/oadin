@@ -26,5 +26,9 @@
 
   .filterContent {
     width: 200px;
+    height: calc(100vh - 142px);
+    overflow-y: auto;
+    overflow-x: hidden;
+
   }
 }
