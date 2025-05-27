@@ -2,7 +2,13 @@
 
 package utils
 
-import "github.com/shirou/gopsutil/mem"
+import (
+	"fmt"
+	"github.com/shirou/gopsutil/mem"
+	"os"
+	"os/user"
+	"strings"
+)
 
 func GetMemoryInfo() (*MemoryInfo, error) {
 	v, _ := mem.VirtualMemory()
