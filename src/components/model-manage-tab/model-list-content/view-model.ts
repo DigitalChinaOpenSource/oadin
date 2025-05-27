@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { IModelAuthType, IModelAuth } from '../types';
-import { ModelData, ModelDataItem, IRequestModelParams, IModelPathRes } from '@/types';
+import { ModelData, IModelDataItem, IRequestModelParams, IModelPathRes } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
@@ -42,14 +42,14 @@ export function useViewModel(props: IModelListContent) {
   // 模型/问学列表全量数据
   const { modelListData, setModelListData } = useModelListStore();
   // 分页数据，用于展示
-  const [pagenationData, setPagenationData] = useState<ModelDataItem[]>([]);
+  const [pagenationData, setPagenationData] = useState<IModelDataItem[]>([]);
   const [pagination, setPagination] = useState<IPagenation>({
     current: 1,
     pageSize: 12,
     total: 0,
   });
   // 选中的模型数据，暂用于配置授权
-  const [selectModelData, setSelectModelData] = useState<ModelDataItem>({} as any);
+  const [selectModelData, setSelectModelData] = useState<IModelDataItem>({} as any);
 
   const lastPageSizeRef = useRef(pagination.pageSize);
   const { fetchDownloadStart } = useDownLoad();
@@ -182,7 +182,7 @@ export function useViewModel(props: IModelListContent) {
   };
 
   // 模型详情弹窗
-  const onDetailModalVisible = useCallback((visible: boolean, modelData?: ModelDataItem) => {
+  const onDetailModalVisible = useCallback((visible: boolean, modelData?: IModelDataItem) => {
     setIsDetailVisible(visible);
     // 弹窗关闭清空选择的模型数据
     setSelectModelData(modelData || ({} as any));
@@ -199,7 +199,7 @@ export function useViewModel(props: IModelListContent) {
     setSelectModelData(data.modelData);
   }, []);
 
-  const onDownloadConfirm = (modelData: ModelDataItem) => {
+  const onDownloadConfirm = (modelData: IModelDataItem) => {
     confirm({
       title: '确认下载此模型？',
       okText: '确认下载',
@@ -221,7 +221,7 @@ export function useViewModel(props: IModelListContent) {
     });
   };
 
-  const onDeleteConfirm = (modelData: ModelDataItem) => {
+  const onDeleteConfirm = (modelData: IModelDataItem) => {
     confirm({
       title: '是否确认删除此模型',
       content: '此操作将删除您与该模型的所有对话记录、文件信息，并终止相关进程。',

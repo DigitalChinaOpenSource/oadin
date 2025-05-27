@@ -1,7 +1,7 @@
 import { Modal, Input, Form, message } from 'antd';
 import { useRequest } from 'ahooks';
 import { IModelAuthorize, IModelAuthType, IModelAuth } from '../types';
-import { ModelDataItem } from '@/types';
+import { IModelDataItem } from '@/types';
 import { httpRequest } from '@/utils/httpRequest';
 import styles from './index.module.scss';
 
@@ -17,7 +17,7 @@ export interface IModelAuthForm {
 
 export interface IModelAuthorizeModalProps {
   // 模型数据
-  modelDataItem: ModelDataItem;
+  modelDataItem: IModelDataItem;
   modelAuthType: IModelAuthType;
   onModelAuthVisible: (data: IModelAuth) => void;
   onModelAuthSuccess: () => void;

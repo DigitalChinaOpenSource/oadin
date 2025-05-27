@@ -1,10 +1,10 @@
 import { Modal } from 'antd';
 import GeneralCard from '../model-list-content/general-card';
-import { ModelDataItem } from '@/types';
+import { IModelDataItem } from '@/types';
 interface IModelDetailModalProps {
-  onDetailModalVisible: (visible: boolean, selectModelData?: ModelDataItem) => void;
+  onDetailModalVisible: (visible: boolean, selectModelData?: IModelDataItem) => void;
   // 模型数据
-  selectModelData: ModelDataItem;
+  selectModelData: IModelDataItem;
 }
 
 export default function ModelDetailModal(props: IModelDetailModalProps) {

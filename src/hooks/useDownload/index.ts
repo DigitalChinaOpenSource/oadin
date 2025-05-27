@@ -2,7 +2,7 @@ import { useCallback, useRef, useEffect, useMemo } from 'react';
 import { modelDownloadStream, abortDownload } from './download';
 import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
 import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '../../constants';
-import { ModelDataItem } from '../../types';
+import { IModelDataItem } from '../../types';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
 import useModelListStore from '../../store/useModelListStore';
 import { updateDownloadStatus } from './updateDownloadStatus';
@@ -29,7 +29,7 @@ export const useDownLoad = () => {
 
   // 开始下载
   const fetchDownloadStart = useCallback(
-    (params: ModelDataItem) => {
+    (params: IModelDataItem) => {
       // modelType: 模型提供商类型
       const { id, type, modelType, source, service_provider_name, service_name, name } = params;
 

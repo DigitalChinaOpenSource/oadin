@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import styles from './index.module.scss';
-import { Button, Tooltip } from 'antd';
+import { Tooltip } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
-import { LoadingIcon, LocalIcon, CloudIcon } from '@/components/icons';
+import { LocalIcon, CloudIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
 import ModelPng from '@/assets/model.png';
 import dayjs from 'dayjs';

@@ -1,7 +1,7 @@
 import { RECOMMEND_MODEL, PIORITY_MODEL } from '@/constants';
-import { ModelDataItem } from '@/types';
+import { IModelDataItem } from '@/types';
 // 处理问学模型列表的数据
-export const dealSmartVisionModels = (data: ModelDataItem[]) => {
+export const dealSmartVisionModels = (data: IModelDataItem[]) => {
   function removeDuplicates(arr: any) {
     return [...new Set(arr)];
   }

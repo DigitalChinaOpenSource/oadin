@@ -1,9 +1,9 @@
 import { Image, Progress } from 'antd';
 import styles from './index.module.scss';
-import { PlayPauseIcon, CloseIcon, LoadingIcon, FillCloseIcon, PauseIcon, ArrowClockwiseIcon } from '../../icons';
+import { PlayPauseIcon, CloseIcon, FillCloseIcon, PauseIcon, ArrowClockwiseIcon } from '../../icons';
+import greySpinner from '@/components/icons/greySpinner.svg';
 import ModelPng from '@/assets/model.png';
 import { DOWNLOAD_STATUS } from '@/constants';
-import { ModelDataItem } from '@/types';
 import { useViewModel } from './view-model';
 
 export interface IDownloadItemProps {
@@ -69,7 +69,10 @@ export default function DownloadItem(props: IDownloadItemProps) {
           {downloadItem.status === COMPLETED && <span>下载完成</span>}
           {downloadItem.status === IN_PROGRESS && (
             <>
-              <LoadingIcon />
+              <img
+                src={greySpinner}
+                style={{ width: '16px' }}
+              />
               <span className={styles.statusLoading}>正在下载</span>
             </>
           )}
