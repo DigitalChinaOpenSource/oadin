@@ -15,7 +15,7 @@ const schemas = require('./schema.js');
 
 function runInstaller(installerPath, isMacOS) {
   return new Promise((resolve, reject) => {
-    console.log(`installer 正在安装 Byze...`);
+    console.log(`[download]installer 正在安装 Byze...`);
     if (isMacOS) {
       // 打开 GUI 安装器
       const child = spawn('open', [installerPath], { stdio: 'ignore', detached: true });
@@ -29,11 +29,11 @@ function runInstaller(installerPath, isMacOS) {
 
       const interval = setInterval(async () => {
         if (fs.existsSync(expectedPath)) {
-          console.log("byze 以添加到 /usr/local/bin ");
+          console.log("byze 已添加到 /usr/local/bin ");
           // 检查服务是否可用
           const Byze = require('./index.js'); // 防止循环依赖可单独提取IsByzeAvailiable
           const byze = new Byze();
-          const available = await byze.IsByzeAvailiable();
+          const available = await byze.IsByzeAvailiable(retries = 2, interval = 1000);
           if (available) {
             clearInterval(interval);
             resolve();
@@ -80,7 +80,7 @@ class Byze {
   }
 
   // 检查 Byze 服务是否启动
-  IsByzeAvailiable(retries = 3, interval = 1000) {
+  IsByzeAvailiable(retries = 5, interval = 1000) {
     return new Promise((resolve) => {
       const checkPort = (port) => {
         return new Promise((resolvePort) => {
@@ -246,9 +246,9 @@ class Byze {
 
   // 启动 Byze 服务
   async InstallByze() {
-    const alreadyRunning = await this.IsByzeAvailiable();
+    const alreadyRunning = await this.IsByzeAvailiable(retries = 2, interval = 1000);
     if (alreadyRunning) {
-      console.log('Byze 在运行中');
+      console.log('[Install] Byze 在运行中');
       return true;
     }
 
@@ -267,7 +267,7 @@ class Byze {
         const command = 'cmd.exe';
         const args = ['/c', 'start-byze.bat'];
 
-        console.log(`[InstallByze] 正在运行命令: ${command} ${args.join(' ')}`);
+        console.log(`[Install] 正在运行命令: ${command} ${args.join(' ')}`);
 
         execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
           if (error) console.error(`byze server start:error`, error);
@@ -281,7 +281,7 @@ class Byze {
           //   return resolve(true);
           // };
 
-          const available = await this.IsByzeAvailiable();
+          const available = await this.IsByzeAvailiable(maxRetries = 5, interval = 1500);
           return resolve(available);
         });
       } else if (currentPlatform === 'darwin') {
