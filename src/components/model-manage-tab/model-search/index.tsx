@@ -35,6 +35,8 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
           }
           value={searchVal}
           onChange={(e) => setSearchVal(e.target.value.trim())}
+          onPressEnter={() => onModelSearch(searchVal)}
+          onClear={() => onModelSearch('')}
           style={{ width: 380 }}
         />
       </div>
