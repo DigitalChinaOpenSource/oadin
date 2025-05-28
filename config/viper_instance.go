@@ -18,7 +18,7 @@ func init() {
 	case "prod":
 		configFile = "./config/config-prod.yaml"
 	default:
-		configFile = "./config/config-prod.yaml"
+		configFile = "./config/config-dev.yaml"
 	}
 
 	//使用 viper
