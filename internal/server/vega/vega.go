@@ -16,7 +16,7 @@ type VegaClient struct {
 
 func NewVegaClient() *VegaClient {
 	// default host
-	host := "127.0.0.1:16677"
+	host := "127.0.0.1:3000"
 
 	// default scheme
 	scheme := "http"
@@ -29,12 +29,14 @@ func NewVegaClient() *VegaClient {
 	}
 }
 
-func QueryCloudModelJson(ctx context.Context, hybridPolicy string) ([]Model, error) {
+func QueryCloudModelJson(ctx context.Context, hybridPolicy string, page, pageSize int) ([]Model, error) {
 	c := NewVegaClient()
-	routerPath := fmt.Sprintf("/vega/%s/service", "0.1")
+	routerPath := "/api/llm/model/search/"
 
 	req := QueryCloudModelJsonRequest{
 		HybridPolicy: hybridPolicy,
+		Page:         page,
+		PageSize:     pageSize,
 	}
 	resp := QueryCloudModelJsonRespond{}
 
@@ -46,18 +48,28 @@ func QueryCloudModelJson(ctx context.Context, hybridPolicy string) ([]Model, err
 		fmt.Println(resp.Message)
 		return nil, fmt.Errorf(resp.Message)
 	}
-	return resp.Data, nil
+	return resp.Data.List, nil
 }
 
-type LocalSupportModelData struct {
-	OllamaId    string  `json:"id"`
-	Name        string  `json:"name"`
-	Avatar      string  `json:"avatar"`
-	Description string  `json:"description"`
-	Class       string  `json:"class"`
-	Flavor      string  `json:"provider"`
-	Size        string  `json:"size"`
-	ParamsSize  float32 `json:"params_size"`
+func QueryCloudSupplierJson(ctx context.Context, page, pageSize int) ([]Supplier, error) {
+	c := NewVegaClient()
+	routerPath := "/api/llm/supplier/search/"
+
+	req := QueryCloudSupplierJsonRequest{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	resp := QueryCloudSupplierJsonRespond{}
+
+	err := c.Client.Do(ctx, http.MethodPost, routerPath, req, &resp)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Code > 200 {
+		fmt.Println(resp.Message)
+		return nil, fmt.Errorf(resp.Message)
+	}
+	return resp.Data.List, nil
 }
 
 var typeMapClass = map[string]string{
@@ -69,12 +81,15 @@ var typeMapClass = map[string]string{
 func GetRemoteModels(models []Model) (map[string][]dto.LocalSupportModelData, error) {
 	RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
 	for _, model := range models {
-		size := strconv.Itoa(model.FileSize)
+		parameterScale, err := strconv.Atoi(model.ParameterScale)
+		if err != nil {
+			parameterScale = 0
+		}
 		class, ok := typeMapClass[model.Type]
 		if !ok {
 			class = "未知"
 		}
-		flavor := model.SupplierName
+		flavor := model.Flavor
 		LocalSupportModel := dto.LocalSupportModelData{
 			OllamaId:    model.Id,
 			Name:        model.Name,
@@ -82,8 +97,8 @@ func GetRemoteModels(models []Model) (map[string][]dto.LocalSupportModelData, er
 			Description: model.Description,
 			Class:       class,
 			Flavor:      flavor,
-			Size:        size,
-			ParamsSize:  model.ParameterScale,
+			Size:        model.FileSize,
+			ParamsSize:  float32(parameterScale),
 		}
 		if _, ok := RemoteServiceMap[model.Type]; !ok {
 			RemoteServiceMap[model.Type] = []dto.LocalSupportModelData{
