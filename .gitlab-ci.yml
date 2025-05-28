@@ -38,10 +38,19 @@ build_mac:
     - |  
       codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" byze
     - echo "--------- 📦 安装包构建与签名 ----------"
-    - mkdir -p pkgroot/bin
-    - mv byze pkgroot/bin/byze
+    - mkdir -p pkgroot/Byze
+    - mv byze pkgroot/Byze/byze
+    - mkdir -p scripts
+    - echo '#!/bin/bash' > scripts/postinstall
+    - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
+    - echo 'mkdir -p "$USER_HOME/Byze"' >> scripts/postinstall
+    - echo 'set -x' >> scripts/postinstall
+    - echo 'cp -f /Users/Shared/Byze/byze "$USER_HOME/Byze/byze"' >> scripts/postinstall
+    - echo 'ln -sf "$USER_HOME/Byze/byze" /usr/local/bin/byze' >> scripts/postinstall
+    - echo 'su - "$USER" -c "byze server start -d"' >> scripts/postinstall
+    - chmod +x scripts/postinstall
     - |
-      pkgbuild --identifier com.digitalchina.byze --version "${CI_COMMIT_TAG}" --install-location /usr/local/bin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/bin byze.pkg
+      pkgbuild --identifier com.digitalchina.byze --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Byze --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Byze --scripts ./scripts byze.pkg
     - echo "--------- 📬 安装包公证 ----------"
     - xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
     - xcrun notarytool submit byze.pkg --keychain-profile "ci-profile" --wait

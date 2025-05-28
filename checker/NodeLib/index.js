@@ -8,86 +8,51 @@ const axios = require('axios');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 const EventEmitter = require('events');
-const AdmZip = require('adm-zip');
-const { spawn } = require('child_process');
-const { execSync } = require('child_process');
+const { execFile, spawn } = require('child_process');
 const { promises: fsPromises } = require("fs");
 
 const schemas = require('./schema.js');
 
-function AddToUserPath(destDir) {
-  const isMacOS = process.platform === 'darwin';
+function runInstaller(installerPath, isMacOS) {
+  return new Promise((resolve, reject) => {
+    console.log(`[download]installer 正在安装 Byze...`);
+    if (isMacOS) {
+      // 打开 GUI 安装器
+      const child = spawn('open', [installerPath], { stdio: 'ignore', detached: true });
 
-  if (isMacOS) {
-    try {
-      // 优先检查 .zprofile 文件
-      const zprofilePath = path.join(os.homedir(), '.zprofile');
-      const bashProfilePath = path.join(os.homedir(), '.bash_profile');
-      let shellConfigPath = '';
+      child.on('error', reject);
 
-      if (fs.existsSync(zprofilePath)) {
-        shellConfigPath = zprofilePath;
-      } else if (fs.existsSync(bashProfilePath)) {
-        shellConfigPath = bashProfilePath;
-      } else {
-        // 如果两个文件都不存在，默认创建 .zprofile
-        shellConfigPath = zprofilePath;
-        fs.writeFileSync(shellConfigPath, '');
-      }
+      // 等待安装目录生成（轮询）
+      const expectedPath = '/usr/local/bin/byze';
+      const maxRetries = 100;
+      let retries = 0;
 
-      const exportLine = `export PATH="$PATH:${destDir}"`;
+      const interval = setInterval(async () => {
+        if (fs.existsSync(expectedPath)) {
+          console.log("byze 已添加到 /usr/local/bin ");
+          // 检查服务是否可用
+          const Byze = require('./index.js'); // 防止循环依赖可单独提取IsByzeAvailiable
+          const byze = new Byze();
+          const available = await byze.IsByzeAvailiable(2, 1000);
+          if (available) {
+            clearInterval(interval);
+            resolve();
+          }
+        } else if (++retries >= maxRetries) {
+          clearInterval(interval);
+          reject(new Error('安装器未在超时前完成安装'));
+        }
+      }, 1000);
+    } else {
+      // Windows 安装器
+      const child = spawn(installerPath, ['/S'], { stdio: 'inherit' });
 
-      // 检查是否已存在路径
-      const content = fs.readFileSync(shellConfigPath, 'utf8');
-      const pathRegex = new RegExp(`(^|\\n)export PATH=.*${destDir}.*`, 'm');
-      if (pathRegex.test(content)) {
-        console.log('✅ 环境变量已存在:', destDir);
-        return true;
-      }
-
-      // 追加路径到配置文件
-      fs.appendFileSync(shellConfigPath, `\n${exportLine}\n`);
-      console.log(`✅ 已添加到 ${path.basename(shellConfigPath)}，请执行以下命令生效：\nsource ${shellConfigPath}`);
-      return true;
-    } catch (err) {
-      console.error('❌ 添加环境变量失败:', err.message);
-      return false;
-    }
-  } else {
-    // Windows 环境变量处理
-    try {
-      const regKey = 'HKCU\\Environment';
-      let currentPath = '';
-
-      try {
-        const output = execSync(`REG QUERY "${regKey}" /v Path`, {
-          encoding: 'utf-8',
-          stdio: ['pipe', 'pipe', 'ignore']
-        });
-        const match = output.match(/Path\s+REG_(SZ|EXPAND_SZ)\s+(.*)/);
-        currentPath = match ? match[2].trim() : '';
-      } catch {}
-
-      // 检查路径是否已存在
-      const paths = currentPath.split(';').filter(p => p);
-      if (paths.includes(destDir)) {
-        console.log('✅ 环境变量已存在');
-        return true;
-      }
-
-      // 更新 Path 值
-      const newPath = currentPath ? `${currentPath};${destDir}` : destDir;
-      execSync(`REG ADD "${regKey}" /v Path /t REG_EXPAND_SZ /d "${newPath}" /f`, {
-        stdio: 'inherit'
+      child.on('error', reject);
+      child.on('close', (code) => {
+        code === 0 ? resolve() : reject(new Error(`Installer exited with code ${code}`));
       });
-
-      console.log('✅ 已添加到环境变量，请重新启动应用程序使更改生效');
-      return true;
-    } catch (error) {
-      console.error('❌ 添加环境变量失败:', error.message);
-      return false;
     }
-  }
+  });
 }
 
 class Byze {
@@ -115,7 +80,7 @@ class Byze {
   }
 
   // 检查 Byze 服务是否启动
-  IsByzeAvailiable() {
+  IsByzeAvailiable(retries = 5, interval = 1000) {
     return new Promise((resolve) => {
       const checkPort = (port) => {
         return new Promise((resolvePort) => {
@@ -138,10 +103,20 @@ class Byze {
         });
       };
 
-      // 同时检查 16688 和 16677 两个端口
-      Promise.all([checkPort(16688), checkPort(16677)]).then((results) => {
-        resolve(results.every((status) => status)); // 两个端口都可用时返回 true
-      });
+      let attempt = 0;
+      const tryCheck = () => {
+        Promise.all([checkPort(16688), checkPort(16677)]).then((results) => {
+          console.log(`16688 端口: ${results[0] ? '可用' : '不可用'}, 16677 端口: ${results[1] ? '可用' : '不可用'}`);
+          if (results.every((status) => status)) {
+            resolve(true);
+          } else if (++attempt < retries) {
+            setTimeout(tryCheck, interval);
+          } else {
+            resolve(false);
+          }
+        });
+      };
+      tryCheck();
     });
   }
 
@@ -160,8 +135,7 @@ class Byze {
             dest = path.join(destDir, 'byze.exe');
         } else if (platform === 'darwin') {
             // macOS 平台路径
-            destDir = path.join(userDir, 'Byze');
-            dest = path.join(destDir, 'byze'); // 假设 macOS 的可执行文件名为 'byze'
+            dest = '/usr/local/bin/byze';
         } else {
             console.error('❌ 不支持的操作系统');
             return resolve(false);
@@ -171,164 +145,218 @@ class Byze {
     });
   }
 
-  // 从服务器下载 Byze.exe
-  DownloadByze() {
-    return new Promise((resolve) => {
+  // 仅下载
+  async downloadFile(url, dest, options, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`axios downloading... attempt ${attempt}`);
+        const response = await axios.get(url, {
+          ...options,
+          responseType: 'stream',
+          timeout: 15000,
+          validateStatus: status => status === 200,
+        });
+
+        // 确保目录存在
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+
+        const writer = fs.createWriteStream(dest);
+
+        // 用 Promise 包装写入流
+        await new Promise((resolve, reject) => {
+          response.data.pipe(writer);
+          writer.on('finish', resolve);
+          writer.on('error', reject);
+        });
+
+        console.log('axios download success');
+        return true;
+      } catch (err) {
+        // 删除未完成的文件
+        try { fs.unlinkSync(dest); } catch {}
+        console.warn(`下载失败（第${attempt}次）：${err.message}`);
+        if (attempt === retries) {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
+  // 运行安装包
+  async runByzeInstaller(installerPath, isMacOS) {
+    try {
+      await runInstaller(installerPath, isMacOS);
+      return true;
+    } catch (err) {
+      console.error('Installer execution failed:', err);
+      return false;
+    }
+  }
+
+  async DownloadByze(retries = 3) {
+   try {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS
-        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest'
+        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
         : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe';
-  
+
       const userDir = os.homedir();
-      const destDir = path.join(userDir, 'Byze');
-      const destFileName = isMacOS ? 'byze' : 'byze-installer-latest.exe';
+      const destDir = path.join(userDir, 'ByzeInstaller');
+      const destFileName = isMacOS ? 'byze-installer-latest.pkg' : 'byze-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
-  
-      fs.mkdir(destDir, { recursive: true }, async (err) => {
-        if (err) {
-          console.error('❌ 创建目录失败:', err.message);
-          return resolve(false);
+
+      fs.mkdirSync(destDir, { recursive: true });
+
+      const options = {
+        headers: {
+          'User-Agent': isMacOS
+            ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'
+            : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
+      };
+
+      
+        let downloadSuccess = false;
+        try {
+          downloadSuccess = await this.downloadFile(url, dest, options, retries);
+        } catch (e) {
+          console.error('downloadFile 异常:', e);
+          downloadSuccess = false;
         }
-  
-        console.log('🔍 正在下载文件:', url);
-        const file = fs.createWriteStream(dest);
-  
-        const request = https.get(url, (res) => {
-          if (res.statusCode !== 200) {
-            console.error(`❌ 下载失败，HTTP 状态码: ${res.statusCode}`);
-            file.close();
-            fs.unlink(dest, () => {});
-            return resolve(false);
+
+        if (downloadSuccess) {
+          let installResult = false;
+          try {
+            installResult = await this.runByzeInstaller(dest, isMacOS);
+          } catch (e) {
+            console.error('runByzeInstaller 异常:', e);
+            installResult = false;
           }
-  
-          res.pipe(file);
-          file.on('finish', async () => {
-            file.close();
-            console.log('✅ 下载完成:', dest);
-  
-            if (isMacOS) {
-              // macOS 平台：创建软链接到 /usr/local/bin
-              try {
-                const symlinkPath = '/usr/local/bin/byze';
-                if (fs.existsSync(symlinkPath)) {
-                  fs.unlinkSync(symlinkPath); // 删除已有的软链接
-                }
-                fs.symlinkSync(dest, symlinkPath); // 创建软链接
-                console.log(`✅ 已创建软链接: ${symlinkPath} -> ${dest}`);
-                resolve(true);
-              } catch (err) {
-                console.error(`❌ 创建软链接失败: ${err.message}`);
-                return resolve(false);
-              }
-            } else {
-              // Windows 平台：运行安装包
-              try {
-                await new Promise(resolveDelay => setTimeout(resolveDelay, 1000)); // 等待 1 秒
-  
-                console.log('🚀 正在运行安装包...');
-                const installer = spawn(dest, [], {
-                  stdio: 'inherit',
-                  windowsHide: true,
-                  shell: true, // 尝试使用 shell 执行
-                });
-  
-                installer.on('close', (code) => {
-                  if (code === 0) {
-                    console.log('✅ 安装程序已完成');
-                    resolve(true);
-                  } else {
-                    console.error(`❌ 安装程序执行失败，退出码: ${code}`);
-                    resolve(false);
-                  }
-                });
-  
-                installer.on('error', (err) => {
-                  console.error(`❌ 启动安装程序失败: ${err.message}`);
-                  resolve(false);
-                });
-              } catch (err) {
-                console.error(`❌ 运行安装程序时出错: ${err.message}`);
-                return resolve(false);
-              }
-            }
-          });
-        });
-  
-        request.on('error', (err) => {
-          console.error('❌ 下载失败:', err.message);
-          file.close();
-          fs.unlink(dest, () => {});
-          resolve(false);
-        });
-      });
-    });
+          return installResult;
+        } else {
+          console.error('三次下载均失败，放弃安装。');
+          return false;
+        }
+      } catch (err) {
+        console.error('下载或安装 Byze 失败:', err);
+        return false;
+      }
   }
 
   // 启动 Byze 服务
-  InstallByze() {
-    return new Promise((resolve) => {
-      const isMacOS = process.platform === 'darwin';
+  async InstallByze() {
+    const alreadyRunning = await this.IsByzeAvailiable(2, 1000);
+    if (alreadyRunning) {
+      console.log('[Install] Byze 在运行中');
+      return true;
+    }
+
+    return new Promise((resolve, reject) => {
+      const currentPlatform = process.platform;
       const userDir = os.homedir();
       const byzeDir = path.join(userDir, 'Byze');
-  
-      // 确保PATH包含Byze目录（兼容跨平台）
-      if (!process.env.PATH.includes(byzeDir)) {
-        process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
-      }
-  
-      let stderrContent = '';
-      let child;
 
-      if (isMacOS) {
-          child = spawn('sh', ['-c', 'byze server start -d'], {
-            stdio: ['pipe', 'pipe', 'pipe'],
-            detached: true,
-            windowsHide: true,
+      console.log(`byzeDir: ${byzeDir}`);
+
+      if (currentPlatform === 'win32') {
+        if (!process.env.PATH.includes(byzeDir)) {
+          process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
+          console.log("添加到临时环境变量");
+        }
+        const command = 'cmd.exe';
+        const args = ['/c', 'start-byze.bat'];
+
+        console.log(`[Install] 正在运行命令: ${command} ${args.join(' ')}`);
+
+        execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
+          if (error) console.error(`byze server start:error`, error);
+          if (stdout) console.log(`byze server start:stdout:`, stdout.toString());
+          if (stderr) console.error(`byze server start:stderr:`, stderr.toString());
+          const output = (stdout + stderr).toString().toLowerCase();
+          if (error || output.includes('error')) {
+            return resolve(false);
+          };
+          // if (output.includes('byze server start successfully')) {
+          //   return resolve(true);
+          // };
+
+          const available = await this.IsByzeAvailiable(5, 1500);
+          return resolve(available);
         });
-      } else {
-          child = spawn('byze', ['server', 'start', '-d'], {
-              stdio: ['pipe', 'pipe', 'pipe'],
-              windowsHide: true,
+      } else if (currentPlatform === 'darwin') {
+        try{
+
+          if (!process.env.PATH.split(':').includes('/usr/local/bin')) {
+            process.env.PATH = `/usr/local/bin:${process.env.PATH}`;
+            console.log('已将 /usr/local/bin 添加到 PATH');
+          };
+
+          let child;
+          let stderrContent = '';
+
+          // 日志文件路径
+          // const logDir = path.join(os.homedir(), 'Byze');
+          // const logFile = path.join(logDir, 'byze-server.log');
+          // fs.mkdirSync(logDir, { recursive: true });
+          // const logStream = fs.createWriteStream(logFile, { flags: 'a' });
+
+          child = spawn('/usr/local/bin/byze', ['server', 'start', '-d'], {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            windowsHide: true,
           });
+
+          child.stdout.on('data', (data) => {
+            // logStream.write(`[STDOUT] ${data}`);
+            if (data.toString().includes('server start successfully')) {
+              resolve(true);
+            }
+            console.log(`stdout: ${data}`);
+          });
+
+          child.stderr.on('data', (data) => {
+            const errorMessage = data.toString().trim();
+            stderrContent += errorMessage + '\n';
+            // logStream.write(`[STDERR] ${errorMessage}\n`);
+            console.error(`stderr: ${errorMessage}`);
+          });
+
+          child.on('error', (err) => {
+            // logStream.write(`[ERROR] ${err.message}\n`);
+            console.error(`❌ 启动失败: ${err.message}`);
+            if (err.code === 'ENOENT') {
+              console.log([
+                '💡 可能原因:',
+                `1. 未找到byze可执行文件，请检查下载是否成功`,
+                `2. 环境变量未生效，请尝试重启终端`
+              ].filter(Boolean).join('\n'));
+            }
+            // logStream.end();
+            resolve(false);
+          });
+
+          child.on('close', (code) => {
+            // logStream.write(`[CLOSE] code: ${code}\n`);
+            // logStream.end();
+            if (stderrContent.includes('Install model engine failed')){
+              console.error('❌ 启动失败: 模型引擎安装失败。');
+              resolve(false);
+            } else if (code === 0) {
+              console.log('进程退出，正在检查服务状态...');
+              this.checkServerStatus(resolve);
+            } else {
+              console.error(`❌ 启动失败，退出码: ${code}`);
+              resolve(false);
+            }
+          });
+          child.unref();
+        } catch (error) {
+          resolve(false);
+        }
+
+      } else {
+        return reject(new Error(`Unsupported platform: ${currentPlatform}`));
       }
-
-      child.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-      });
-
-      child.stderr.on('data', (data) => {
-        const errorMessage = data.toString().trim();
-        stderrContent += errorMessage + '\n';
-        console.error(`stderr: ${errorMessage}`);
-      });
-
-  
-      child.on('error', (err) => {
-        console.error(`❌ 启动失败: ${err.message}`);
-        if (err.code === 'ENOENT') {
-          console.log([
-            '💡 可能原因:',
-            `1. 未找到byze可执行文件，请检查下载是否成功`,
-            `2. 环境变量未生效，请尝试重启终端`
-          ].filter(Boolean).join('\n'));
-        }
-        resolve(false);
-      });
-
-      child.on('close', (code) => {
-        if (stderrContent.includes('Install model engine failed')){
-          console.error('❌ 启动失败: 模型引擎安装失败。');
-          resolve(false);
-        } else if (code === 0) {
-          console.log('进程退出，正在检查服务状态...');
-          
-          this.checkServerStatus(resolve);
-        } else {
-          console.error(`❌ 启动失败，退出码: ${code}`);
-          resolve(false);
-        }
-      });
-      child.unref();
     });
   }
 
