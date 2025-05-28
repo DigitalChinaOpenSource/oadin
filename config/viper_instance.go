@@ -1,12 +1,17 @@
 package config
 
 import (
+	"embed"
+	_ "embed"
 	"fmt"
 	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
 	"runtime"
 )
+
+//go:embed *
+var configFs embed.FS
 
 func init() {
 	var configFile string
@@ -25,12 +30,17 @@ func init() {
 
 	//使用 viper
 	ViperInstance := viper.New()
-	ViperInstance.AddConfigPath("./config")
-	ViperInstance.SetConfigFile(filepath.Join(getProjectRoot(), "config", configFile))
 	ViperInstance.SetConfigType("yaml")
-	if err := ViperInstance.ReadInConfig(); err != nil {
+
+	file, err := configFs.Open(configFile)
+	if err != nil {
+		panic(fmt.Errorf("open config file failed: %s \n", err))
+	}
+
+	if err := ViperInstance.ReadConfig(file); err != nil {
 		panic(fmt.Errorf("read config failed: %s \n", err))
 	}
+
 	ConfigRootInstance = new(ConfigRoot)
 	if err := ViperInstance.Unmarshal(&ConfigRootInstance); err != nil {
 		panic(fmt.Errorf("unmarshal config failed: %s \n", err))
