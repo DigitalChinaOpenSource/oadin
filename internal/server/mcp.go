@@ -105,8 +105,8 @@ func (M *MCPServerImpl) GetKits(ctx context.Context, id string, request *rpc.Too
 
 	_ = M.Ds.Get(ctx, con)
 	if con == nil || con.ID == 0 || con.Kits == "" {
-		for _, item := range res.Data.List {
-			item.Enabled = true
+		for i, _ := range res.Data.List {
+			res.Data.List[i].Enabled = true
 		}
 	} else {
 		// 配置数据组合
@@ -211,6 +211,10 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 		}
 	}
 
+	// 下载完毕后, 则添加成功
+	config.Status = 1
+	M.Ds.Put(ctx, config)
+
 	return nil
 
 }
@@ -220,11 +224,7 @@ func (M *MCPServerImpl) AuthorizeMCP(ctx context.Context, id string, auth string
 	con.MCPID = id
 	err := M.Ds.Get(ctx, con)
 
-	if err != nil {
-		return err
-	}
-	// 如果没得配置数据则初始化一条
-	if con == nil || con.ID == 0 {
+	if err != nil || con == nil || con.ID == 0 {
 		// 初始化个人配置
 		con.MCPID = id
 		con.Status = 0
@@ -282,7 +282,8 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	}
 
 	// 保存授权配置项
-	if req.Enabled {
+	// 注意这里是反向逻辑
+	if !req.Enabled {
 		con.Kits += "," + req.ToolId
 	} else {
 		con.Kits = strings.Replace(con.Kits, ","+req.ToolId, "", -1)
