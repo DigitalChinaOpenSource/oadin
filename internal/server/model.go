@@ -17,6 +17,7 @@ import (
 	"byze/internal/provider"
 	"byze/internal/provider/template"
 	"byze/internal/schedule"
+	"byze/internal/server/vega"
 	"byze/internal/types"
 	"byze/internal/utils"
 	"byze/internal/utils/bcode"
@@ -565,16 +566,9 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 	serviceModelList := make(map[string][]dto.RecommendModelData)
 	if request.ServiceSource == types.ServiceSourceLocal {
 		localOllamaModelMap := make(map[string]dto.LocalSupportModelData)
-		localOllamaServiceMap := make(map[string][]dto.LocalSupportModelData)
-		fileContent, err := template.FlavorTemplateFs.ReadFile("local_model.json")
+		localOllamaServiceMap, err := vega.GetModels(ctx, "local")
 		if err != nil {
-			fmt.Printf("Read file failed: %v\n", err)
-			return nil, err
-		}
-		// parse struct
-		err = json.Unmarshal(fileContent, &localOllamaServiceMap)
-		if err != nil {
-			fmt.Printf("Parse JSON failed: %v\n", err)
+			fmt.Printf("GetModels failed: %v\n", err)
 			return nil, err
 		}
 		for _, serviceInfo := range localOllamaServiceMap {
@@ -667,16 +661,9 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 		}
 
 	} else {
-		RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
-		fileContent, err := template.FlavorTemplateFs.ReadFile("remote_model.json")
+		RemoteServiceMap, err := vega.GetModels(ctx, "remote")
 		if err != nil {
-			fmt.Printf("Read file failed: %v\n", err)
-			return nil, err
-		}
-		// parse struct
-		err = json.Unmarshal(fileContent, &RemoteServiceMap)
-		if err != nil {
-			fmt.Printf("Parse JSON failed: %v\n", err)
+			fmt.Printf("GetModels failed: %v\n", err)
 			return nil, err
 		}
 		for _, service := range types.SupportService {
