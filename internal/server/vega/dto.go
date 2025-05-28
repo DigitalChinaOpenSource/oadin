@@ -6,27 +6,35 @@ import (
 
 type QueryCloudModelJsonRequest struct {
 	HybridPolicy string
+	Page         int
+	PageSize     int
 }
 
 type Model struct {
-	Id             string    `json:"id"`
-	SupplierId     string    `json:"supplier_id"`
-	SupplierName   string    `json:"supplier_name"`
-	Name           string    `json:"name"`
-	Avatar         string    `json:"avatar"`
-	Description    string    `json:"description"`
-	Type           string    `json:"type"`
-	Tags           []string  `json:"tags"`
-	DeployMode     int       `json:"deploy_mode"`
-	ParameterScale float32   `json:"parameter_scale"`
-	FileSize       int       `json:"file_size"`
-	MaxInput       int       `json:"max_input"`
-	MaxOutput      int       `json:"max_output"`
-	Popularity     int       `json:"popularity"`
-	CreateAt       time.Time `json:"create_at"`
-	UpdateAt       time.Time `json:"update_at"`
-	CreateBy       string    `json:"create_by"`
-	UpdateBy       string    `json:"update_by"`
+	Id             string   `json:"id"`
+	Flavor         string   `json:"flavor"`
+	Name           string   `json:"name"`
+	Avatar         string   `json:"avatar"`
+	Description    string   `json:"description"`
+	Type           string   `json:"type"`
+	Tags           []string `json:"tags"`
+	DeployMode     string   `json:"deployMode"`
+	OllamaId       string   `json:"ollamaId"`
+	ParameterScale string   `json:"parameter_scale"`
+	FileSize       string   `json:"fileSize"`
+	MaxInput       string   `json:"maxInput"`
+	MaxOutput      string   `json:"maxOutput"`
+	// Popularity     int       `json:"popularity"`
+	// CreateAt       time.Time `json:"create_at"`
+	// UpdateAt       time.Time `json:"update_at"`
+	// CreateBy       string    `json:"create_by"`
+	// UpdateBy       string    `json:"update_by"`
+	// 本地
+}
+
+type QueryCloudSupplierJsonRequest struct {
+	Page     int
+	PageSize int
 }
 
 type Supplier struct {
@@ -57,7 +65,17 @@ type SupplierAuth struct {
 }
 
 type QueryCloudModelJsonRespond struct {
-	Code    int     `json:"code"`
-	Message string  `json:"message"`
-	Data    []Model `json:"data"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		List []Model `json:"list"`
+	} `json:"data"`
+}
+
+type QueryCloudSupplierJsonRespond struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		List []Supplier `json:"list"`
+	} `json:"data"`
 }
