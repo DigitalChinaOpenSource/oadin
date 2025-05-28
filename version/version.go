@@ -6,4 +6,4 @@ import (
 
 const ByzeVersion = "v0.2"
 
-var ByzeSubVersion = time.Now().Format("20060102")
+var ByzeSubVersion = "20250528-16"
