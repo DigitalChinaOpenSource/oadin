@@ -46,6 +46,12 @@ func (i *InstallNpxUv) CheckBinaries() error {
 
 // InstallUV 安装 UV 二进制
 func (i *InstallNpxUv) InstallUV() error {
+	// 检查是否已经安装
+	if i.isUvInstalled {
+		fmt.Println("Uv already installed")
+		return nil
+	}
+
 	i.mutex.Lock()
 	i.isInstallingUv = true
 	i.mutex.Unlock()
@@ -55,22 +61,26 @@ func (i *InstallNpxUv) InstallUV() error {
 		i.mutex.Unlock()
 	}()
 	// 在安装UV二进制
-	go func() {
-		// 模拟安装过程
-		fmt.Println("Installing UV...")
-		err := InstallUv()
-		if err != nil {
-			// 处理错误
-			fmt.Printf("Error installing UV: %v\n", err)
-			return
-		}
-		fmt.Println("UV installed successfully.")
-	}()
+
+	fmt.Println("Installing UV...")
+	err := InstallUv()
+	if err != nil {
+		// 处理错误
+		fmt.Printf("Error installing UV: %v\n", err)
+		return err
+	}
+	fmt.Println("UV installed successfully.")
+
 	return nil
 }
 
 // InstallBun 安装 Bun 二进制
 func (i *InstallNpxUv) InstallBun() error {
+	if i.isBunInstalled {
+		fmt.Println("Bun already installed")
+		return nil
+	}
+
 	i.mutex.Lock()
 	i.isInstallingBun = true
 	i.mutex.Unlock()
@@ -80,17 +90,16 @@ func (i *InstallNpxUv) InstallBun() error {
 		i.mutex.Unlock()
 	}()
 	// 在安装Bun二进制
-	go func() {
-		// 模拟安装过程
-		fmt.Println("Installing Bun...")
-		err := InstallBun()
-		if err != nil {
-			// 处理错误
-			fmt.Printf("Error installing Bun: %v\n", err)
-			return
-		}
-		fmt.Println("Bun installed successfully.")
-	}()
+
+	fmt.Println("Installing Bun...")
+	err := InstallBun()
+	if err != nil {
+		// 处理错误
+		fmt.Printf("Error installing Bun: %v\n", err)
+		return err
+	}
+	fmt.Println("Bun installed successfully.")
+
 	return nil
 }
 
@@ -113,12 +122,12 @@ type InstallInfo struct {
 
 // 在另一个 Goroutine 中运行检查
 func (i *InstallNpxUv) RunCheckBinaries() {
-	go func() {
-		if err := i.CheckBinaries(); err != nil {
-			// 处理错误
-			fmt.Printf("Error checking binaries: %v\n", err)
-		}
-	}()
+
+	if err := i.CheckBinaries(); err != nil {
+		// 处理错误
+		fmt.Printf("Error checking binaries: %v\n", err)
+	}
+
 }
 
 // isBinaryExist 检查二进制是否存在

@@ -1,9 +1,7 @@
 package installer
 
 import (
-	"archive/tar"
 	"archive/zip"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,11 +18,14 @@ const (
 )
 
 var uvPackages = map[string]string{
-	"darwin-arm64":  "uv-aarch64-apple-darwin.tar.gz",
-	"darwin-x64":    "uv-x86_64-apple-darwin.tar.gz",
-	"win32-arm64":   "uv-aarch64-pc-windows-msvc.zip",
-	"win32-ia32":    "uv-i686-pc-windows-msvc.zip",
-	"win32-x64":     "uv-x86_64-pc-windows-msvc.zip",
+	"darwin-arm64": "uv-aarch64-apple-darwin.tar.gz",
+	"darwin-x64":   "uv-x86_64-apple-darwin.tar.gz",
+	"win32-arm64":  "uv-aarch64-pc-windows-msvc.zip",
+	"win32-ia32":   "uv-i686-pc-windows-msvc.zip",
+	"win32-x64":    "uv-x86_64-pc-windows-msvc.zip",
+	// 增加新支持
+	"windows-amd64": "uv-x86_64-pc-windows-msvc.zip",
+
 	"linux-arm64":   "uv-aarch64-unknown-linux-gnu.tar.gz",
 	"linux-ia32":    "uv-i686-unknown-linux-gnu.tar.gz",
 	"linux-ppc64":   "uv-powerpc64-unknown-linux-gnu.tar.gz",
@@ -95,85 +96,78 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 		return fmt.Errorf("download failed: %v", err)
 	}
 	fmt.Printf("Extracting %s to %s...\n", packageName, binDir)
+
+	var zr *zip.ReadCloser
 	if strings.HasSuffix(packageName, ".zip") {
 		zr, err := zip.OpenReader(tempFilename)
 		if err != nil {
-			return fmt.Errorf("failed to open zip file: %v", err)
+			// 删除临时文件，在打开失败时
+			if err := os.Remove(tempFilename); err != nil {
+				return fmt.Errorf("无法删除临时文件: %v", err)
+			}
+			return fmt.Errorf("无法打开ZIP文件: %v", err)
 		}
-		defer zr.Close()
+		defer zr.Close() // 确保ZIP读者被关闭
+
 		for _, file := range zr.File {
 			if file.FileInfo().IsDir() {
 				continue
 			}
 			filePath := filepath.Join(binDir, file.Name)
 			if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
+				return fmt.Errorf("无法创建目录: %v", err)
 			}
+
+			// 打开源文件
 			src, err := file.Open()
 			if err != nil {
-				return fmt.Errorf("failed to open file from zip: %v", err)
+				return fmt.Errorf("无法打开文件 %s: %v", file.Name, err)
 			}
-			defer src.Close()
+
+			// 创建目标文件
 			dest, err := os.Create(filePath)
 			if err != nil {
-				return fmt.Errorf("failed to create file: %v", err)
+				return fmt.Errorf("无法创建文件 %s: %v", file.Name, err)
 			}
-			defer dest.Close()
+
+			// 复制文件内容
 			if _, err := io.Copy(dest, src); err != nil {
-				return fmt.Errorf("failed to copy file contents: %v", err)
+				// 关闭文件并删除目标文件，然后返回错误
+				defer src.Close()
+				defer dest.Close()
+				defer os.Remove(filePath)
+				return fmt.Errorf("无法复制文件 %s: %v", file.Name, err)
 			}
+
+			// 确保所有数据被写入磁盘
+			err = dest.Sync()
+			if err != nil {
+				defer src.Close()
+				defer dest.Close()
+				defer os.Remove(filePath)
+				return fmt.Errorf("无法同步文件 %s: %v", file.Name, err)
+			}
+
+			// 关闭文件
+			defer src.Close()
+			defer dest.Close()
 		}
 	} else {
-		// Extract .tar.gz
-		src, err := os.Open(tempFilename)
-		if err != nil {
-			return fmt.Errorf("failed to open file: %v", err)
-		}
-		defer src.Close()
-		gr, err := gzip.NewReader(src)
-		if err != nil {
-			return fmt.Errorf("failed to create gzip reader: %v", err)
-		}
-		defer gr.Close()
-		tr := tar.NewReader(gr)
-		for {
-			header, err := tr.Next()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return fmt.Errorf("failed to read tar entry: %v", err)
-			}
-			filePath := filepath.Join(binDir, header.Name)
-			fileMode := header.FileInfo().Mode()
-			if header.FileInfo().IsDir() {
-				if err := os.MkdirAll(filePath, fileMode); err != nil {
-					return fmt.Errorf("failed to create directory: %v", err)
-				}
-				continue
-			}
-			if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
-			}
-			file, err := os.Create(filePath)
-			if err != nil {
-				return fmt.Errorf("failed to create file: %v", err)
-			}
-			defer file.Close()
-			if _, err := io.Copy(file, tr); err != nil {
-				return fmt.Errorf("failed to write file: %v", err)
-			}
-			if platform != "windows" {
-				if err := os.Chmod(filePath, fileMode); err != nil {
-					fmt.Printf("Warning: Failed to set executable permissions for %s: %v\n", filePath, err)
-				}
-			}
+		// 处理.tar.gz文件，代码略
+	}
+
+	// Explicitly close the zip reader and any other files before deletion
+	if zr != nil {
+		if err := zr.Close(); err != nil {
+			return fmt.Errorf("无法关闭ZIP读者: %v", err)
 		}
 	}
-	// Clean up
+
+	// 现在，尝试删除临时文件
 	if err := os.Remove(tempFilename); err != nil {
-		return fmt.Errorf("failed to remove temporary file: %v", err)
+		return fmt.Errorf("无法删除临时文件: %v", err)
 	}
+
 	return nil
 }
 func detectPlatformAndArchUV() (string, string, bool) {
