@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"os"
+	"path/filepath"
 )
 
 func init() {
@@ -12,18 +13,19 @@ func init() {
 	configEnv := os.Getenv("GO_ENV")
 	switch configEnv {
 	case "local":
-		configFile = "./config/config-local.yaml"
+		configFile = "config-local.yaml"
 	case "dev":
-		configFile = "./config/config-dev.yaml"
+		configFile = "config-dev.yaml"
 	case "prod":
-		configFile = "./config/config-prod.yaml"
+		configFile = "config-prod.yaml"
 	default:
-		configFile = "./config/config-dev.yaml"
+		configFile = "config-dev.yaml"
 	}
 
 	//使用 viper
 	ViperInstance := viper.New()
-	ViperInstance.SetConfigFile(configFile)
+	ViperInstance.AddConfigPath("./config")
+	ViperInstance.SetConfigFile(filepath.Join("./config", configFile))
 	ViperInstance.SetConfigType("yaml")
 	if err := ViperInstance.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("read config failed: %s \n", err))
