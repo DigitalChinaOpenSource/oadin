@@ -61,9 +61,9 @@ export const useMcpTools = () => {
     async (tool, checked) => {
       handleToolLoading(tool, tool.enabled, true);
       return await httpRequest.put(`/mcp/setup`, {
-        mcp_id: serviceId,
+        mcpId: serviceId,
         enabled: checked,
-        tool_id: tool.id,
+        toolId: tool.id,
       });
     },
     {

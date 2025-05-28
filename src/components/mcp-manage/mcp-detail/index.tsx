@@ -25,7 +25,7 @@ export default function McpDetail() {
     {
       key: 'tools',
       label: '工具',
-      children: <McpTools />,
+      children: <McpTools status={mcpDetail?.status} />,
     },
     // {
     //   key: 'presetInstructions',
@@ -81,6 +81,7 @@ export default function McpDetail() {
                     type="default"
                     loading={cancelMcpLoading}
                     onClick={handleCancelMcp}
+                    disabled={downMcpLoading || authMcpLoading}
                   >
                     取消添加
                   </Button>

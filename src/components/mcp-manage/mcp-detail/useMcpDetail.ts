@@ -36,7 +36,7 @@ export const useMcpDetail = () => {
   // 下载mcp
   const { loading: downMcpLoading, run: downMcp } = useRequest(
     async () => {
-      return await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/download`);
+      return await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/download`, null, { timeout: 60000 });
     },
     {
       manual: true,
@@ -95,7 +95,7 @@ export const useMcpDetail = () => {
   // 取消mcp
   const { loading: cancelMcpLoading, run: handleCancelMcp } = useRequest(
     async () => {
-      return await httpRequest.put(`/mcp/${serviceId}/auth/reverse`);
+      return await httpRequest.put(`/mcp/${serviceId}/reverse`);
     },
     {
       manual: true,
@@ -117,13 +117,7 @@ export const useMcpDetail = () => {
   const handleAuthMcp = async (authParams: any) => {
     setShowMcpModal(false);
     try {
-      const res = await authMcp(authParams);
-      console.log('授权mcp===>res', res);
-      if (res) {
-        downMcp();
-      } else {
-        console.error('授权mcp失败:', res);
-      }
+      await authMcp(authParams);
     } catch (error) {
       console.error('授权mcp失败:', error);
     }

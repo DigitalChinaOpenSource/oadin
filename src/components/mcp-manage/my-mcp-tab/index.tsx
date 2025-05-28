@@ -30,6 +30,11 @@ export default function MyMcpTab() {
               }
               value={vm.searchVal}
               onChange={(e) => vm.setSearchVal(e.target.value)}
+              onClear={() => {
+                vm.setSearchVal('');
+                vm.onMcpInputSearch('');
+              }}
+              onPressEnter={(e) => vm.onMcpInputSearch(vm.searchVal)}
               style={{ width: 380 }}
             />
           </div>

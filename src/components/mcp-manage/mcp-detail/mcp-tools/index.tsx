@@ -17,9 +17,7 @@ const CollapseItemHeader = (props: { name: string; desc: string; tags: string[] 
   );
 };
 
-// const
-
-export default function McpTools() {
+export default function McpTools({ status }: { status: number | undefined }) {
   const { handlePageChange, mcpTolls, pagination, changeTollStatus, handleSearchChange } = useMcpTools();
 
   return (
@@ -59,7 +57,7 @@ export default function McpTools() {
                       tags={item.tags || []}
                     />
                   ),
-                  extra: (
+                  extra: status ? (
                     <Tooltip title={item.enabled ? '关闭后，大模型将不会调度已关闭函数' : ''}>
                       <Switch
                         checkedChildren="ON"
@@ -72,7 +70,7 @@ export default function McpTools() {
                         }}
                       />
                     </Tooltip>
-                  ),
+                  ) : null,
                   children: <div>345</div>,
                   collapsible: 'disabled',
                   showArrow: false,
