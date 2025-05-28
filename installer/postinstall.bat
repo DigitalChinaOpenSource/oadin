@@ -41,10 +41,12 @@ if %errorlevel% equ 0 (
     REM Prepend with a semicolon if CURRENT_PATH is not empty and doesn't already end with a semicolon
     if not "%CURRENT_PATH%"=="" (
         if not "%CURRENT_PATH:~-1%"==";" (
-            set "CURRENT_PATH=%CURRENT_PATH%;"
+            setx Path "%CURRENT_PATH%;%INSTALL_PATH%;"
+        ) else (
+            setx Path "%CURRENT_PATH%%INSTALL_PATH%;"
         )
     )
-    setx Path "%CURRENT_PATH%%INSTALL_PATH%"
+
     echo Byze CLI path added to user's Path environment variable.
 )
 
