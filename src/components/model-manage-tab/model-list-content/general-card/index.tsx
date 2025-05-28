@@ -12,7 +12,7 @@ export interface IGeneralCardProps {
   isDetail?: boolean;
   // 模型数据
   modelData: IModelDataItem;
-  modelSourceVal?: IModelSourceType;
+  modelSourceVal: IModelSourceType;
   onCardClick?: (visible: boolean, selectModelData: IModelDataItem) => void;
   onModelAuthVisible?: (data: IModelAuth) => void;
   onDeleteConfirm?: (modelData: IModelDataItem) => void;
@@ -47,8 +47,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           删除模型
         </Button>
       );
-    if (status === PAUSED) return '暂停';
-    else if (!can_select || status === FAILED)
+    else if (!can_select || status === FAILED || status === PAUSED)
       return (
         <Button
           type="primary"
@@ -70,7 +69,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
         <Button
           className={styles.updateSetting}
           variant="filled"
-          icon={<SettingIcon fill="#344054" />}
+          icon={<ArrowClockwiseIcon fill="#ffffff" />}
           onClick={(e) => {
             e.stopPropagation();
             onModelAuthVisible?.({
@@ -98,7 +97,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
               });
             }
           }}
-          icon={<ArrowClockwiseIcon fill="#ffffff" />}
+          icon={<SettingIcon fill="#344054" />}
         >
           配置授权
         </Button>

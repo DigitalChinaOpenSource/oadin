@@ -12,7 +12,6 @@ export interface IDownloadItemProps {
 
 export default function DownloadItem(props: IDownloadItemProps) {
   const { downloadItem } = props;
-  console.log('downloadItem===>', downloadItem);
   const { fetchCancelModel, fetchRemoveModel, fetchDownloadStart } = useViewModel();
   const { COMPLETED, FAILED, IN_PROGRESS, PAUSED } = DOWNLOAD_STATUS;
   return (
@@ -21,7 +20,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
         <div>
           <Image
             className={styles.modelImg}
-            src={ModelPng}
+            src={downloadItem.avatar}
           />
           <span className={styles.title}>{downloadItem.name}</span>
         </div>
@@ -71,7 +70,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
             <>
               <img
                 src={greySpinner}
-                style={{ width: '16px' }}
+                style={{ width: '18px' }}
               />
               <span className={styles.statusLoading}>正在下载</span>
             </>

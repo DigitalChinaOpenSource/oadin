@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { IModelAuthType, IModelAuth } from '../types';
 import { ModelData, IModelDataItem, IRequestModelParams, IModelPathRes } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
@@ -41,8 +41,6 @@ export function useViewModel(props: IModelListContent) {
   const [modelAuthType, setModelAuthType] = useState<IModelAuthType>('config');
   // 模型/问学列表全量数据
   const { modelListData, setModelListData } = useModelListStore();
-  // 分页数据，用于展示
-  const [pagenationData, setPagenationData] = useState<IModelDataItem[]>([]);
   const [pagination, setPagination] = useState<IPagenation>({
     current: 1,
     pageSize: 12,
@@ -86,13 +84,21 @@ export function useViewModel(props: IModelListContent) {
             } as any),
         );
         setModelListData(dataWithSource);
-        setPagination({ ...pagination, total: dataWithSource.length });
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
       },
     },
   );
+  useEffect(() => {
+    fetchModelPath();
+  }, []);
+
+  useEffect(() => {
+    onModelSearch('');
+    setPagination({ ...pagination, current: 1 });
+    fetchModelSupport({ service_source: modelSourceVal });
+  }, [modelSourceVal]);
 
   // 获取模型存储路径
   const { run: fetchModelPath } = useRequest(
@@ -111,25 +117,15 @@ export function useViewModel(props: IModelListContent) {
     },
   );
 
-  useEffect(() => {
-    fetchModelPath();
-  }, []);
-
-  useEffect(() => {
-    if (modelSourceVal) {
-      onModelSearch('');
-    }
-    setPagination({ ...pagination, current: 1 });
-
-    fetchModelSupport({ service_source: modelSourceVal });
-  }, [modelSourceVal]);
-
   // 根据搜索值和分页参数更新分页数据
   useEffect(() => {
     const filteredData = getFilteredData();
-    setPagination((prev) => ({ ...prev, total: filteredData.length }));
-    setPagenationData(paginatedData(pagination, filteredData));
-  }, [modelListData, modelSearchVal, pagination.current, pagination.pageSize]);
+    setPagination({
+      current: 1,
+      pageSize: pagination.pageSize,
+      total: filteredData.length,
+    });
+  }, [modelSearchVal]);
 
   // 删除模型
   const { loading: deleteModelLoading, run: fetchDeleteModel } = useRequest(
@@ -145,8 +141,19 @@ export function useViewModel(props: IModelListContent) {
         message.error('模型删除失败');
         console.error('删除模型失败:', error);
       },
-      onFinally: () => {
-        fetchModelSupport({ service_source: modelSourceVal });
+      onFinally: async () => {
+        // 保留当前页码，重新获取数据
+        const currentPage = pagination.current;
+        await fetchModelSupport({ service_source: modelSourceVal });
+
+        const filteredData = getFilteredData();
+        const totalPages = Math.ceil(filteredData.length / pagination.pageSize);
+        const newPage = currentPage > totalPages ? totalPages || 1 : currentPage;
+        setPagination({
+          ...pagination,
+          current: newPage,
+          total: filteredData.length,
+        });
       },
     },
   );
@@ -166,6 +173,12 @@ export function useViewModel(props: IModelListContent) {
     const endIndex = current * pageSize;
     return data.slice(startIndex, endIndex);
   };
+
+  // 计算分页数据，过滤后的，用于渲染
+  const pagenationData = useMemo(() => {
+    const filteredData = getFilteredData();
+    return paginatedData(pagination, filteredData);
+  }, [modelListData, modelSearchVal, pagination]);
 
   const onPageChange = (current: number) => {
     // 如果 pageSize 刚刚被改变，则不执行页码变更逻辑
@@ -231,11 +244,6 @@ export function useViewModel(props: IModelListContent) {
       },
       okText: '确认删除',
       onOk() {
-        // 清空搜索框
-        if (modelSourceVal) {
-          onModelSearch('');
-        }
-
         // 组装请求参数
         const params = {
           model_name: modelData.name,
@@ -244,10 +252,6 @@ export function useViewModel(props: IModelListContent) {
           provider_name: modelData.service_provider_name || 'local_ollama_chat',
         };
         fetchDeleteModel(params);
-        console.log('OK');
-      },
-      onCancel() {
-        console.log('Cancel');
       },
     });
   };
@@ -257,8 +261,13 @@ export function useViewModel(props: IModelListContent) {
   };
 
   // 授权成功刷新列表
-  const onModelAuthSuccess = () => {
-    fetchModelSupport({ service_source: modelSourceVal });
+  const onModelAuthSuccess = async () => {
+    await fetchModelSupport({ service_source: modelSourceVal });
+    const filteredData = getFilteredData();
+    setPagination({
+      ...pagination,
+      total: filteredData.length,
+    });
   };
 
   return {

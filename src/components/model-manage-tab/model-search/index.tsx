@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Input, Select } from 'antd';
 import { SearchIcon } from '@/components/icons';
 import { IModelSourceType } from '@/types';
@@ -13,12 +13,20 @@ export interface IModelTitleSearchProps {
 
 export default function ModelSearch(props: IModelTitleSearchProps) {
   const { onModelSearch, modelSearchVal, modelSourceVal, onModelSourceChange } = props;
-  const [searchVal, setSearchVal] = useState<string>(modelSearchVal);
+  const [searchVal, setSearchVal] = useState<string>('');
 
   const options = [
     { value: 'local', label: '本地模型' },
     { value: 'remote', label: '云端模型' },
   ];
+  useEffect(() => {
+    setSearchVal('');
+  }, [modelSourceVal]);
+
+  useEffect(() => {
+    setSearchVal(modelSearchVal || '');
+  }, [modelSearchVal]);
+
   return (
     <div className={styles.modelSearch}>
       <div className={styles.searchInput}>

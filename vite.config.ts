@@ -15,15 +15,14 @@ export default defineConfig({
   },
   plugins: [react()],
   server: {
-    host: '0.0.0.0',
-    // host: '127.0.0.1', // 指定主机地址
+    // host: '0.0.0.0',
+    host: '127.0.0.1', // 指定主机地址
     port: 16699, // 指定端口号
     strictPort: true, // 如果端口已被占用，则会直接退出而不是尝试下一个可用端口
     proxy: {
       '/byze/v0.2': {
-        // target: 'http://127.0.0.1:16688',
-        // target: 'http://10.3.73.109:16688', // 雨浩的动态ip
-        target: 'http://10.3.73.180:16688', // 朱灿的本地ip
+        target: 'http://127.0.0.1:16688',
+        // target: 'http://10.3.73.180:16688', // 朱灿的本地ip
         changeOrigin: true,
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
@@ -34,13 +33,8 @@ export default defineConfig({
           });
         },
       },
-      // '/api': {
-      //   target: 'http://10.3.74.111:16688', // 朱灿本地环境
-      //   changeOrigin: true,
-      // },
       '/health': {
         target: 'http://127.0.0.1:16688',
-        // target: 'http://10.3.73.109:16688', // 雨浩的动态ip
         changeOrigin: true,
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {

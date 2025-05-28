@@ -64,7 +64,6 @@ export const useDownLoad = () => {
 
       modelDownloadStream(paramsTemp, {
         onmessage: (parsedData: any) => {
-          console.log('parsedData---------------->', parsedData);
           const { completedsize, progress, status, totalsize, error } = parsedData;
 
           // 处理错误情况

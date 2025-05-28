@@ -9,6 +9,7 @@ export function useViewModel() {
 
   const onModelSourceChange = (val: IModelSourceType) => {
     setModelSourceVal(val);
+    setModelSearchVal('');
   };
 
   const onModelSearch = (val: string) => {

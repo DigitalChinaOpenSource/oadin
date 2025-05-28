@@ -116,6 +116,7 @@ export default function ModelListContent(props: IModelListContent) {
           {/* 模型详情弹窗 */}
           {vm.isDetailVisible && (
             <ModelDetailModal
+              modelSourceVal={vm.modelSourceVal}
               onDetailModalVisible={vm.onDetailModalVisible}
               selectModelData={vm.selectModelData}
             />

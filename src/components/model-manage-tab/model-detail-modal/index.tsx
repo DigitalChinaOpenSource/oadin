@@ -1,14 +1,15 @@
 import { Modal } from 'antd';
 import GeneralCard from '../model-list-content/general-card';
-import { IModelDataItem } from '@/types';
+import { IModelDataItem, IModelSourceType } from '@/types';
 interface IModelDetailModalProps {
   onDetailModalVisible: (visible: boolean, selectModelData?: IModelDataItem) => void;
   // 模型数据
   selectModelData: IModelDataItem;
+  modelSourceVal: IModelSourceType;
 }
 
 export default function ModelDetailModal(props: IModelDetailModalProps) {
-  const { onDetailModalVisible, selectModelData } = props;
+  const { onDetailModalVisible, selectModelData, modelSourceVal } = props;
   return (
     <Modal
       centered
@@ -20,6 +21,7 @@ export default function ModelDetailModal(props: IModelDetailModalProps) {
     >
       <GeneralCard
         isDetail={true}
+        modelSourceVal={modelSourceVal}
         modelData={selectModelData}
       />
     </Modal>
