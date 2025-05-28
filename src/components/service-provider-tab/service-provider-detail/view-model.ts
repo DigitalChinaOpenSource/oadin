@@ -19,7 +19,7 @@ export function useViewModel(props: IServiceProviderDetailProps) {
         page_size: params.page_size || 5,
       } as IProviderDetailParams;
       if (params.provider_name.includes('smartvision')) {
-        paramsTemp.env_type = import.meta.env.VITE_ENV_TYPE;
+        paramsTemp.env_type = 'product';
       }
       const data = await httpRequest.get<IProviderDetailData>('/service_provider/detail', { ...paramsTemp });
       return data || {};

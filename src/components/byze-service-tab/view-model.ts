@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { httpRequest } from '@/utils/httpRequest';
+import { healthRequest } from '@/utils/httpRequest';
 import { message } from 'antd';
 import { useRequest } from 'ahooks';
 export function useViewModel() {
   const [checkStatus, setCheckStatus] = useState<boolean>(false);
   const { loading: checkHealthtLoading, run: fetchCheckHealth } = useRequest(
     async () => {
-      const data = await httpRequest.get('/health', {}, { baseURL: '' });
+      const data = await healthRequest.get('/health');
       return data;
     },
     {

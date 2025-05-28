@@ -6,7 +6,6 @@ export default defineConfig({
   base: './',
   build: {
     outDir: 'dist',
-    sourcemap: true,
   },
   resolve: {
     alias: {
@@ -24,6 +23,7 @@ export default defineConfig({
         target: 'http://127.0.0.1:16688',
         // target: 'http://10.3.73.180:16688', // 朱灿的本地ip
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/byze\/v0\.2/, '/byze/v0.2'),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
             console.log('代理请求:', req.url, '到', options.target);
@@ -36,6 +36,7 @@ export default defineConfig({
       '/health': {
         target: 'http://127.0.0.1:16688',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/health/, '/health'),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
             console.log('代理请求:', req.url, '到', options.target);
