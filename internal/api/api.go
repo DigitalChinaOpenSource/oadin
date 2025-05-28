@@ -14,6 +14,7 @@ type ByzeCoreServer struct {
 	AIGCService     server.AIGCService
 	Model           server.Model
 	ServiceProvider server.ServiceProvider
+	MCP             server.MCPServer
 }
 
 // NewByzeCoreServer is the constructor of the server structure
@@ -38,4 +39,5 @@ func (t *ByzeCoreServer) Register() {
 	t.AIGCService = server.NewAIGCService()
 	t.ServiceProvider = server.NewServiceProvider()
 	t.Model = server.NewModel()
+	t.MCP = server.NewMCPServer()
 }
