@@ -3,11 +3,11 @@
 !endif
 !define APP_NAME "Byze CLI"
 !define COMPANY_NAME "Digital China"
-!define INSTALL_DIR "$PROGRAMFILES64\${COMPANY_NAME}\Byze"
+!define INSTALL_DIR "$PROFILE\Byze"
 
 Outfile "..\byze-installer.exe"
 InstallDir "${INSTALL_DIR}"
-RequestExecutionLevel admin
+RequestExecutionLevel user ; Install to user's profile, so no admin rights needed by default
 SetCompress auto
 SetCompressor lzma
 
@@ -16,19 +16,14 @@ Section "Install"
   File "..\byze.exe"
   File "preinstall.bat"
   File "postinstall.bat"
+  File "start-byze.bat"
 
-  # Pre-install
-  ExecWait '"$INSTDIR\preinstall.bat"'
+  # Pre-install silently
+  nsExec::Exec '"$INSTDIR\preinstall.bat"'
 
-  # Add installation directory to the user's Path environment variable
-  SetRegView 64
-  ReadRegStr $0 HKCU "Environment" "Path"
-  StrCmp $0 "" 0 +2
-  StrCpy $0 "$0;"
-  StrCpy $0 "$0$INSTDIR"
-  WriteRegStr HKCU "Environment" "Path" "$0"
-  SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment"
+  # Post-install silently with argument
+  nsExec::Exec '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
-  # Post-install
-  ExecWait '"$INSTDIR\postinstall.bat"'
+  # start byze server
+  nsExec::Exec '"$INSTDIR\start-byze.bat"'
 SectionEnd

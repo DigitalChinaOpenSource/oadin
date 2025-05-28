@@ -848,6 +848,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 
 func CheckByzeServer(cmd *cobra.Command, args []string) {
 	if utils.IsServerRunning() {
+		fmt.Println("Byze server start successfully.")
 		return
 	}
 	//userDir, _ := os.UserHomeDir()
@@ -1283,6 +1284,11 @@ func ListenModelEngineHealth() {
 			if engine == types.FlavorOllama {
 				err := OllamaEngine.HealthCheck()
 				if err != nil {
+					err = OllamaEngine.InitEnv()
+					if err != nil {
+						slog.Error("[Engine health]Setting env error: ", err.Error())
+						continue
+					}
 					err := OllamaEngine.StartEngine()
 					if err != nil {
 						continue
