@@ -212,7 +212,7 @@ func (t *VersionUpdateRecord) Index() map[string]interface{} {
 type McpUserConfig struct {
 	ID        int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`
 	MCPID     string    `json:"mcp_id" gorm:"column:mcp_id;not null;"`                         // 关联的MCP主键
-	Kits      string    `json:"kits" gorm:"column:kits;"`                                      // 启用的工具集合（JSON数组存储）
+	Kits      string    `json:"kits" gorm:"column:kits;"`                                      // 禁用的工具集合（JSON数组存储）
 	UserID    string    `json:"user_id" gorm:"column:user_id;"`                                // 关联用户
 	Status    int       `json:"status" gorm:"column:status;default:1"`                         // 启用状态：0-禁用，1-启用
 	Auth      string    `json:"auth" gorm:"column:auth;"`                                      // 认证授权码
