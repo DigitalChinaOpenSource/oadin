@@ -3,6 +3,7 @@ package server
 import (
 	"byze/internal/datastore"
 	"byze/internal/hardware"
+	"byze/internal/hardware/installer"
 	"byze/internal/rpc"
 	"byze/internal/types"
 	"context"
@@ -183,23 +184,9 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 		}
 	}
 
-	//安装 npx
-	//err = hardware.InstallNpxEnvironment()
-	err = hardware.SetupNpxEnvironment(func(stage string, percent int) {
-		// 更新UI进度
-		fmt.Printf("the stage of npx installation: %s, the process of installation is: %d\n", stage, percent)
-	})
-	if err != nil {
-		return err
-	}
+	// bun和uv环境检测与下载安装逻辑
+	installer.SetupBunAndUv()
 
-	/*//安装 uv
-	envMgr := hardware.NewEnvManager()
-	err = envMgr.InstallUVWithPython()
-	if err != nil {
-		return nil, err
-	}
-	*/
 	// 执行mcp安装命令
 	installCMD := mcp.Data.ServerConfig
 
