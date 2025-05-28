@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 func init() {
@@ -22,15 +23,10 @@ func init() {
 		configFile = "config-dev.yaml"
 	}
 
-	// 2. 动态获取配置文件路径（相对于项目根目录）
-	configDir, err := filepath.Abs("./config") // 转为绝对路径（适用于 Windows/Linux）
-	if err != nil {
-		panic(fmt.Errorf("无法解析 config 目录: %v", err))
-	}
 	//使用 viper
 	ViperInstance := viper.New()
 	ViperInstance.AddConfigPath("./config")
-	ViperInstance.SetConfigFile(filepath.Join(configDir, configFile))
+	ViperInstance.SetConfigFile(filepath.Join(getProjectRoot(), "config", configFile))
 	ViperInstance.SetConfigType("yaml")
 	if err := ViperInstance.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("read config failed: %s \n", err))
@@ -40,4 +36,11 @@ func init() {
 		panic(fmt.Errorf("unmarshal config failed: %s \n", err))
 	}
 
+}
+
+// 获取项目根目录（跨平台）
+func getProjectRoot() string {
+	_, currentFile, _, _ := runtime.Caller(0)              // 获取当前文件路径
+	projectRoot := filepath.Dir(filepath.Dir(currentFile)) // 上溯到项目根目录
+	return projectRoot
 }
