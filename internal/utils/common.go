@@ -412,8 +412,10 @@ func StopByzeServer(pidFilePath string) error {
 }
 
 func SystemDiskSize(path string) (*PathDiskSizeInfo, error) {
-	volume := filepath.VolumeName(path)
-	usage, err := disk.Usage(volume)
+	if runtime.GOOS == "windows" {
+		path = filepath.VolumeName(path)
+	}
+	usage, err := disk.Usage(path)
 	if err != nil {
 		return &PathDiskSizeInfo{}, err
 	}
