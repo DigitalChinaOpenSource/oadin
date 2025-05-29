@@ -1,5 +1,7 @@
 import styles from './index.module.scss';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { Options } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 type markDownDataType =
   | {
       src?: string;
@@ -8,10 +10,26 @@ type markDownDataType =
     }
   | undefined;
 
-export default function McpOverview({ markDownData }: { markDownData: markDownDataType }) {
+export default function McpOverview({ markDownData, showToolTipDesc }: { markDownData: markDownDataType; showToolTipDesc: boolean }) {
+  // 类型断言解决方案
+  // const markdownOptions: Options = {
+  //   children: markDownData?.zh || markDownData?.src || '',
+  //   remarkPlugins: [remarkGfm],
+  //   rehypePlugins: [rehypeRaw],
+  // };
+
   return (
-    <div className={styles.mcpOverview}>
-      <ReactMarkdown>{markDownData?.zh || markDownData?.src}</ReactMarkdown>
+    <div
+      className={styles.mcpOverview}
+      style={{ height: `calc(100vh - ${showToolTipDesc ? '295px' : '275px'})` }}
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+      >
+        {markDownData?.zh || markDownData?.src}
+      </ReactMarkdown>
+      {/*<ReactMarkdown {...markdownOptions} />*/}
     </div>
   );
 }

@@ -4,20 +4,35 @@ import { Tooltip } from 'antd';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import { CloudIcon, LocalIcon } from '@/components/icons';
 import dayjs from 'dayjs';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import defaultPng from '@/assets/favicon.png';
 
-export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
-  const { logo, tags, name, abstract, updatedAt, supplier, hosted } = props.mcpDetail;
-  const formateUnixTime = (unixTime: number) => {
+export default forwardRef(function DetailDesc(props: { mcpDetail: McpDetailType }, ref) {
+  let { logo, tags, name, abstract, updatedAt, supplier, hosted } = props.mcpDetail;
+  const formatUnixTime = (unixTime: number) => {
     if (!unixTime) return unixTime;
     const date = dayjs.unix(unixTime);
     return date.format('YYYY-MM-DD');
   };
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const isOverflowing = contentRef.current.scrollHeight > contentRef.current.offsetHeight;
+      console.log('isOverflowing', isOverflowing);
+      setShowTooltip(isOverflowing);
+    }
+  }, [abstract?.zh]);
+
+  useImperativeHandle(ref, () => showTooltip);
+
   return (
     <div className={styles.detailDescMain}>
       <div className={styles.detailIcon}>
         <img
-          src={logo}
-          alt="logo"
+          src={logo || defaultPng}
+          alt=""
         />
       </div>
       <div className={styles.detailContent}>
@@ -44,16 +59,21 @@ export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
           </div>
         </div>
 
-        <Tooltip title={abstract?.zh}>
-          <div className={styles.detailDesc}>{abstract?.zh || '暂无描述'}</div>
+        <Tooltip title={showTooltip && abstract?.zh}>
+          <div
+            ref={contentRef}
+            className={styles.detailDesc}
+          >
+            {abstract?.zh || '暂无描述'}
+          </div>
         </Tooltip>
 
         <div className={styles.infoWrapper}>
           <div className={styles.providerName}>{supplier}</div>
           <div className={styles.dot}>{updatedAt && '·'}</div>
-          <div className={styles.updateName}>{updatedAt && formateUnixTime(updatedAt as number) + '更新'} </div>
+          <div className={styles.updateName}>{updatedAt && formatUnixTime(updatedAt as number) + '更新'} </div>
         </div>
       </div>
     </div>
   );
-}
+});
