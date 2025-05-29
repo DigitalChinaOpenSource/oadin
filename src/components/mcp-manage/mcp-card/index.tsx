@@ -5,6 +5,7 @@ import { IMcpListItem } from '../mcp-square-tab/types';
 import { LocalIcon, CloudIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
 import dayjs from 'dayjs';
+import defaultPng from '@/assets/favicon.png';
 
 export interface IMcpCardProps {
   // 模型数据
@@ -45,7 +46,7 @@ export default function McpCard(props: IMcpCardProps) {
           {/* logo */}
           <div className={styles.avatar}>
             <img
-              src={mcpData?.logo}
+              src={mcpData?.logo || defaultPng}
               width={24}
             />
           </div>

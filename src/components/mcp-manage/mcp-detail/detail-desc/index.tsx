@@ -5,6 +5,7 @@ import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import { CloudIcon, LocalIcon } from '@/components/icons';
 import dayjs from 'dayjs';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import defaultPng from '@/assets/favicon.png';
 
 export default forwardRef(function DetailDesc(props: { mcpDetail: McpDetailType }, ref) {
   let { logo, tags, name, abstract, updatedAt, supplier, hosted } = props.mcpDetail;
@@ -30,7 +31,7 @@ export default forwardRef(function DetailDesc(props: { mcpDetail: McpDetailType 
     <div className={styles.detailDescMain}>
       <div className={styles.detailIcon}>
         <img
-          src={logo}
+          src={logo || defaultPng}
           alt=""
         />
       </div>
