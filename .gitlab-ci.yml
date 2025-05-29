@@ -125,7 +125,13 @@ build_win:
   tags:
     - aipc-win
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^(test|[0-9]+\.)/'
+    - if: '$CI_COMMIT_TAG =~ /^test/'
+      variables:
+        ENV: "development"
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
+      variables:
+        ENV: "production"
+    - when: never
   script:
     - chcp 65001 > $null
     - $OutputEncoding = [System.Text.Encoding]::UTF8
