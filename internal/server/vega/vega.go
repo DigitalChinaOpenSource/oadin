@@ -1,7 +1,6 @@
 package vega
 
 import (
-	"byze/config"
 	"byze/internal/api/dto"
 	"byze/internal/provider/template"
 	"byze/internal/utils/client"
@@ -18,7 +17,8 @@ type VegaClient struct {
 
 func NewVegaClient() *VegaClient {
 	// default host
-	host := config.ConfigRootInstance.Vega.Url
+	// host := config.ConfigRootInstance.Vega.Url
+	host := "127.0.0.1:3000"
 
 	// default scheme
 	scheme := "http"
@@ -50,7 +50,7 @@ func QueryCloudModelJson(ctx context.Context, deployMode string) ([]Model, error
 	return resp.Data.List, nil
 }
 
-func QueryCloudSupplierJson(ctx context.Context, page, pageSize int) ([]Supplier, error) {
+func QueryCloudSupplierJson(ctx context.Context, page, pageSize int) (*QueryCloudSupplierJsonRespond, error) {
 	c := NewVegaClient()
 	routerPath := "/api/llm/supplier/search/"
 
@@ -67,7 +67,40 @@ func QueryCloudSupplierJson(ctx context.Context, page, pageSize int) ([]Supplier
 	if resp.Code > 200 {
 		return nil, fmt.Errorf(resp.Message)
 	}
-	return resp.Data.List, nil
+	return &resp, nil
+}
+
+func GetSuppliers(ctx context.Context, resp *QueryCloudSupplierJsonRespond) (*dto.ImportServiceRequest, error) {
+	requestModel := &dto.ImportServiceRequest{
+		Services:         make(map[string]dto.ServiceEntry),
+		ServiceProviders: make(map[string]dto.ServiceProviderEntry),
+		Version:          resp.Data.Version,
+	}
+	services := resp.Data.Service
+	ServiceProviders := resp.Data.ServiceProvider
+
+	for _, service := range services {
+		requestModel.Services[service.Name] = dto.ServiceEntry{
+			HybridPolicy: service.HybridPolicy,
+			ServiceProviders: dto.ServiceProviderInfo{
+				Remote: service.RemoteProvider,
+				Local:  service.LocalProvider,
+			},
+		}
+	}
+	for _, serviceProvider := range ServiceProviders {
+		requestModel.ServiceProviders[serviceProvider.ProviderName] = dto.ServiceProviderEntry{
+			ServiceName:   serviceProvider.ServiceName,
+			ServiceSource: serviceProvider.ServiceSource,
+			Desc:          serviceProvider.Desc,
+			APIFlavor:     serviceProvider.ApiFlavor,
+			Method:        serviceProvider.Method,
+			AuthType:      serviceProvider.AuthType,
+			AuthKey:       serviceProvider.AuthKey,
+			Models:        serviceProvider.Models,
+		}
+	}
+	return requestModel, nil
 }
 
 func GetModels(ctx context.Context, deployMode string) (map[string][]dto.LocalSupportModelData, error) {
