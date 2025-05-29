@@ -17,12 +17,18 @@ export default function McpDetail() {
   const { handleGoBack, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail();
 
   const detailDescRef = useRef<HTMLDivElement>(null);
+  const [descHeight, setDescHeight] = useState(0);
 
   const items: TabsProps['items'] = [
     {
       key: 'overView',
       label: '概览',
-      children: <McpOverview markDownData={mcpDetail?.summary} />,
+      children: (
+        <McpOverview
+          markDownData={mcpDetail?.summary}
+          offHeight={descHeight}
+        />
+      ),
     },
     {
       key: 'tools',
@@ -36,9 +42,13 @@ export default function McpDetail() {
     // },
   ];
 
-  // useEffect(() => {
-  //   console.log('detailDescRef.current?.showTooltip', detailDescRef.current);
-  // }, [mcpDetail]);
+  useEffect(() => {
+    console.log('detailDescRef.current?.showTooltip', detailDescRef.current?.offsetHeight);
+    if (detailDescRef.current) {
+      const height = detailDescRef.current.offsetHeight;
+      setDescHeight(height);
+    }
+  }, [mcpDetail]);
 
   return (
     mcpDetail && (
@@ -52,10 +62,9 @@ export default function McpDetail() {
         </div>
         <div className={styles.detailTop}>
           <div className={styles.topLeft}>
-            <DetailDesc
-              // ref={detailDescRef}
-              mcpDetail={mcpDetail}
-            />
+            <div ref={detailDescRef}>
+              <DetailDesc mcpDetail={mcpDetail} />
+            </div>
           </div>
           <div className={styles.topRight}>
             {mcpDetail?.envRequired === 0 && (
@@ -102,7 +111,7 @@ export default function McpDetail() {
         <div className={styles.Line}></div>
         <div
           className={styles.detailContent}
-          // style={{ height: `calc(100vh - ${detailDescRef.current ? '255px' : '235px'})` }}
+          style={{ height: `calc(100vh - ${descHeight + 147}px)` }}
         >
           <div className={styles.contentLeft}>
             <Tabs
