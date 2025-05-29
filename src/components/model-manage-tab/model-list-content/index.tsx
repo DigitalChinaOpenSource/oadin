@@ -101,7 +101,8 @@ export default function ModelListContent(props: IModelListContent) {
           {vm.modalPathVisible && (
             <ModelPathModal
               modalPath={vm.modelPath}
-              onModalPathClose={vm.onModelPathVisible}
+              onModelPathVisible={vm.onModelPathVisible}
+              onModalPathChangeSuccess={vm.onModalPathChangeSuccess}
             />
           )}
           {/* 配置授权弹窗 */}
