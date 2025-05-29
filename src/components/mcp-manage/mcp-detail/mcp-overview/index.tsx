@@ -10,7 +10,7 @@ type markDownDataType =
     }
   | undefined;
 
-export default function McpOverview({ markDownData, showToolTipDesc }: { markDownData: markDownDataType; showToolTipDesc: boolean }) {
+export default function McpOverview({ markDownData }: { markDownData: markDownDataType }) {
   // 类型断言解决方案
   // const markdownOptions: Options = {
   //   children: markDownData?.zh || markDownData?.src || '',
@@ -21,7 +21,7 @@ export default function McpOverview({ markDownData, showToolTipDesc }: { markDow
   return (
     <div
       className={styles.mcpOverview}
-      style={{ height: `calc(100vh - ${showToolTipDesc ? '295px' : '275px'})` }}
+      // style={{ height: `calc(100vh - ${showToolTipDesc ? '295px' : '275px'})` }}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}

@@ -23,7 +23,7 @@ export default function McpList(props: IMcpListProps) {
         grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }}
         dataSource={mcpListData}
         pagination={
-          mcpListData.length > 0 && {
+          mcpListData.length >= 12 && {
             className: styles.mcpListPagination,
             align: 'end',
             ...pagination,

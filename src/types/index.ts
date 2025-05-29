@@ -27,6 +27,8 @@ export interface IModelDataItem {
   modelKey?: string;
   currentDownload?: number;
   update_time?: number;
+  smartvision_provider?: string;
+  smartvision_model_key?: string;
 }
 // 模型列表数据类型
 export interface ModelData {

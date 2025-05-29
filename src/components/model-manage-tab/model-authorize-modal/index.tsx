@@ -26,7 +26,7 @@ export interface IModelAuthorizeModalProps {
 
 export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
   const [form] = Form.useForm();
-  const { onModelAuthVisible, modelAuthType, modelDataItem } = props;
+  const { onModelAuthVisible, modelAuthType, modelDataItem, onModelAuthSuccess } = props;
 
   // TODO 还有更新授权的情况
   const MODELTITLE = '配置授权';
@@ -48,6 +48,7 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
       manual: true,
       onSuccess: (data) => {
         handleCancel();
+        onModelAuthSuccess();
         message.success('模型配置授权成功');
       },
       onError: (error) => {
@@ -58,14 +59,13 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
   );
 
   const submitForm = (result: any) => {
-    console.log('submitForm result===>', result);
     // 组装提交数据
     const changeAuthKey = {
       [modelDataItem.name]: {
         credentials: result,
         env_type: 'product',
-        provider: modelDataItem.provider,
-        model_key: modelDataItem?.modelKey,
+        provider: modelDataItem.smartvision_provider,
+        model_key: modelDataItem?.smartvision_model_key,
       },
     };
     const changeParams = {
@@ -77,9 +77,7 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
       models: [modelDataItem.name],
       auth_key: JSON.stringify(changeAuthKey),
     };
-    console.log('changeParams', changeParams);
 
-    // 调用接口
     fetchSubmitAuth(changeParams);
   };
 
@@ -101,7 +99,7 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
           name={field}
           rules={[{ required: true, message: `请输入${toHttpHeaderFormat(field)}` }]}
         >
-          <Input allowClear />
+          {field === 'api_key' ? <Input.Password allowClear /> : <Input allowClear />}
         </Form.Item>
       );
     });
