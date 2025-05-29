@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import defaultPng from '@/assets/favicon.png';
 
-export default forwardRef(function DetailDesc(props: { mcpDetail: McpDetailType }, ref) {
+export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
   let { logo, tags, name, abstract, updatedAt, supplier, hosted } = props.mcpDetail;
   const formatUnixTime = (unixTime: number) => {
     if (!unixTime) return unixTime;
@@ -24,8 +24,6 @@ export default forwardRef(function DetailDesc(props: { mcpDetail: McpDetailType 
       setShowTooltip(isOverflowing);
     }
   }, [abstract?.zh]);
-
-  useImperativeHandle(ref, () => showTooltip);
 
   return (
     <div className={styles.detailDescMain}>
@@ -76,4 +74,4 @@ export default forwardRef(function DetailDesc(props: { mcpDetail: McpDetailType 
       </div>
     </div>
   );
-});
+}
