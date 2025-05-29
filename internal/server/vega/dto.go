@@ -1,9 +1,5 @@
 package vega
 
-import (
-	"time"
-)
-
 type QueryCloudModelJsonRequest struct {
 	DeployMode string `json:"deployMode"`
 }
@@ -32,26 +28,6 @@ type QueryCloudSupplierJsonRequest struct {
 	Page     int
 	PageSize int
 }
-
-type Supplier struct {
-	Id            string    `json:"id"`
-	Name          string    `json:"name"`
-	Flavor        string    `json:"flavor"`
-	ServiceSource string    `json:"serviceSource"`
-	ServerName    string    `json:"serverName"`
-	Status        int       `json:"status"`
-	ContextScale  string    `json:"contextScale"`
-	Description   string    `json:"description"`
-	RequestMethod string    `json:"requestMethod"`
-	RequestUrl    string    `json:"requestUrl"`
-	AuthType      string    `json:"authType"`
-	AuthKey       string    `json:"authKey"`
-	CreateBy      string    `json:"createBy"`
-	UpdateBy      string    `json:"updateBy"`
-	CreateAt      time.Time `json:"createAt"`
-	UpdateAt      time.Time `json:"updateAt"`
-}
-
 type QueryCloudModelJsonRespond struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -60,12 +36,43 @@ type QueryCloudModelJsonRespond struct {
 		Total int     `json:"total"`
 	} `json:"data"`
 }
+type Service struct {
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	HybridPolicy   string `json:"hybridPolicy"`
+	RemoteProvider string `json:"remoteProvider"`
+	LocalProvider  string `json:"localProvider"`
+	Status         int    `json:"status"`
+	CreateBy       string `json:"createBy"`
+	UpdateBy       string `json:"updateBy"`
+	CreateAt       int    `json:"createAt"`
+	UpdateAt       int    `json:"updateAt"`
+}
+
+type ServiceProvider struct {
+	Id            string   `json:"id"`
+	ProviderName  string   `json:"providerName"`
+	ServiceName   string   `json:"serviceName"`
+	ServiceSource string   `json:"serviceSource"`
+	Desc          string   `json:"desc"`
+	ApiFlavor     string   `json:"apiFlavor"`
+	Method        string   `json:"method"`
+	AuthType      string   `json:"authType"`
+	AuthKey       string   `json:"authKey"`
+	Models        []string `json:"models"`
+	Status        int      `json:"status"`
+	CreateBy      string   `json:"createBy"`
+	UpdateBy      string   `json:"updateBy"`
+	CreateAt      int      `json:"createAt"`
+	UpdateAt      int      `json:"updateAt"`
+}
 
 type QueryCloudSupplierJsonRespond struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 	Data    struct {
-		List  []Supplier `json:"list"`
-		Total int        `json:"total"`
+		Service         []Service         `json:"service"`
+		ServiceProvider []ServiceProvider `json:"serviceProvider"`
+		Version         string            `json:"version"`
 	} `json:"data"`
 }

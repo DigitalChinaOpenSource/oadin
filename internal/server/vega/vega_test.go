@@ -114,3 +114,17 @@ func TestQueryCloudModelJsonRemote(t *testing.T) {
 		t.Errorf("TestQueryCloudModelJson() failed")
 	}
 }
+
+func TestQueryCloudSupplierJsonAll(t *testing.T) {
+	res, err := QueryCloudSupplierJson(context.Background(), 1, 1000)
+	if err != nil {
+		t.Errorf("GetModels() error = %v", err)
+		return
+	}
+	s, err := GetSuppliers(context.Background(), res)
+	if err != nil {
+		t.Errorf("GetModels() error = %v", err)
+		return
+	}
+	t.Logf("QueryCloudSupplierJson() success: %v", s)
+}
