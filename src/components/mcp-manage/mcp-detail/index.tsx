@@ -2,7 +2,7 @@ import styles from './index.module.scss';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { Button, Tabs } from 'antd';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TabsProps } from 'antd';
 import McpOverview from '@/components/mcp-manage/mcp-detail/mcp-overview';
 import McpTools from '@/components/mcp-manage/mcp-detail/mcp-tools';
@@ -16,11 +16,18 @@ import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 export default function McpDetail() {
   const { handleGoBack, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail();
 
+  const detailDescRef = useRef<any>(null);
+
   const items: TabsProps['items'] = [
     {
       key: 'overView',
       label: '概览',
-      children: <McpOverview markDownData={mcpDetail?.summary} />,
+      children: (
+        <McpOverview
+          markDownData={mcpDetail?.summary}
+          showToolTipDesc={detailDescRef.current}
+        />
+      ),
     },
     {
       key: 'tools',
@@ -34,6 +41,10 @@ export default function McpDetail() {
     // },
   ];
 
+  useEffect(() => {
+    console.log('detailDescRef.current?.showTooltip', detailDescRef.current);
+  }, [mcpDetail]);
+
   return (
     mcpDetail && (
       <div className={styles.mcpManageDetail}>
@@ -46,7 +57,16 @@ export default function McpDetail() {
         </div>
         <div className={styles.detailTop}>
           <div className={styles.topLeft}>
-            <DetailDesc mcpDetail={mcpDetail} />
+            <DetailDesc
+              ref={detailDescRef}
+              mcpDetail={{
+                ...mcpDetail,
+                // abstract: {
+                //   zh: 'MCP Advisor 是一个发现和推荐服务，帮助 AI 助手使用自然语言查询探索 Model Context Protocol (MCP) 服务器。它让用户更容易找到并利用适合特定任务的 MCP 工具。\nMCP Advisor 是一个发现和推荐服务，帮助 AI 助手使用自然语言查询探索 Model Context Protocol (MCP) 服务器。它让用户更容易找到并利用适合特定任务的 MCP 工具。\nMCP Advisor 是一个发现和推荐服务，帮助 AI 助手使用自然语言查询探索 Model Context Protocol (MCP) 服务器。它让用户更容易找到并利用适合特定任务的 MCP 工具。\nMCP Advisor 是一个发现和推荐服务，帮助 AI 助手使用自然语言查询探索 Model Context Protocol (MCP) 服务器。它让用户更容易找到并利用适合特定任务的 MCP 工具。\nMCP Advisor 是一个发现和推荐服务，帮助 AI 助手使用自然语言查询探索 Model Context Protocol (MCP) 服务器。它让用户更容易找到并利用适合特定任务的 MCP 工具。\nMCP Advisor 是一个发现和推荐服务，帮助 AI 助手使用自然语言查询探索 Model Context Protocol (MCP) 服务器。它让用户更容易找到并利用适合特定任务的 MCP 工具。\n',
+                //   src: '',
+                // },
+              }}
+            />
           </div>
           <div className={styles.topRight}>
             {mcpDetail?.envRequired === 0 && (
@@ -91,7 +111,11 @@ export default function McpDetail() {
         </div>
         {/*分割线*/}
         <div className={styles.Line}></div>
-        <div className={styles.detailContent}>
+        <div
+          className={styles.detailContent}
+          // style={{ height: `calc(100vh - ${detailDescRef.current ? '255px' : '235px'})` }}
+        >
+          {/*{JSON.stringify(detailDescRef.current)}*/}
           <div className={styles.contentLeft}>
             <Tabs
               className={styles.tabs}
