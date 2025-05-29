@@ -49,7 +49,7 @@ export function useViewModel(props: IModelListContent) {
   // 选中的模型数据，暂用于配置授权
   const [selectModelData, setSelectModelData] = useState<IModelDataItem>({} as any);
 
-  const lastPageSizeRef = useRef(pagination.pageSize);
+  const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
 
   // 获取模型列表 （本地和云端）
@@ -181,21 +181,21 @@ export function useViewModel(props: IModelListContent) {
   // 计算分页数据，过滤后的，用于渲染
   const pagenationData = useMemo(() => {
     const filteredData = getFilteredData();
-    console.log('pagination===>', pagination);
     return paginatedData(pagination, filteredData);
   }, [modelListData, modelSearchVal, pagination]);
 
   const onPageChange = (current: number) => {
+    console.log('current===>', current, pagination);
     // 如果 pageSize 刚刚被改变，则不执行页码变更逻辑
-    if (lastPageSizeRef.current !== pagination.pageSize) {
-      lastPageSizeRef.current = pagination.pageSize;
+    if (isPageSizeChangingRef.current) {
+      isPageSizeChangingRef.current = false;
       return;
     }
     setPagination({ ...pagination, current });
   };
 
   const onShowSizeChange = (current: number, pageSize: number) => {
-    lastPageSizeRef.current = pageSize;
+    isPageSizeChangingRef.current = true;
     setPagination({ ...pagination, current: 1, pageSize });
   };
 
