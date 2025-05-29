@@ -28,3 +28,17 @@ export function getLocalStorageDownList(key: string) {
     return [];
   }
 }
+
+/**
+ * 将 snake_case 字符串转换为 HTTP Header 格式（如 API-Host）
+ * @param {string} str - 输入字符串，如 'api_host'
+ * @returns {string} 转换后的字符串，如 'API-Host'
+ */
+export function toHttpHeaderFormat(str: string) {
+  if (typeof str !== 'string' || str.length === 0) return '';
+
+  return str
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('-');
+}

@@ -36,6 +36,7 @@
     }
     .cardTitle {
       display: flex;
+      overflow: hidden;
     }
 
     .title {
@@ -43,6 +44,7 @@
       font-weight: 600;
       margin-left: 8px;
       line-height: 40px;
+      max-width: 80%;
     }
     .localOrCloud {
       height: 18px;

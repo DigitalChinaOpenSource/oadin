@@ -60,7 +60,7 @@ export function useViewModel(props: IModelListContent) {
         page_size: 999,
       };
       if (params?.service_source === 'remote') {
-        paramsTemp.env_type = import.meta.env.MODE || 'product';
+        paramsTemp.env_type = 'product';
       }
       const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
       if (paramsTemp.service_source === 'remote') {
@@ -84,6 +84,10 @@ export function useViewModel(props: IModelListContent) {
             } as any),
         );
         setModelListData(dataWithSource);
+        setPagination({
+          ...pagination,
+          total: dataWithSource.length,
+        });
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
@@ -177,6 +181,7 @@ export function useViewModel(props: IModelListContent) {
   // 计算分页数据，过滤后的，用于渲染
   const pagenationData = useMemo(() => {
     const filteredData = getFilteredData();
+    console.log('pagination===>', pagination);
     return paginatedData(pagination, filteredData);
   }, [modelListData, modelSearchVal, pagination]);
 

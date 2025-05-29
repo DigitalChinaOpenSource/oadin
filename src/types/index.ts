@@ -8,7 +8,7 @@ export interface IModelDataItem {
   url: string;
   auth_type: string;
   auth_apply_url: string;
-  auth_fields: null | any;
+  auth_fields?: string[];
   name: string;
   service_provider_name: string;
   size: string;
@@ -24,8 +24,6 @@ export interface IModelDataItem {
   id: number;
   modelType: string;
   provider?: string;
-  credentialParamsId?: string; // IDs 分割的字符串
-  credentialParams?: CredentialParam[];
   modelKey?: string;
   currentDownload?: number;
   update_time?: number;

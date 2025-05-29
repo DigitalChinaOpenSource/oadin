@@ -1,8 +1,9 @@
 import { Modal, Input, Form, message } from 'antd';
 import { useRequest } from 'ahooks';
-import { IModelAuthorize, IModelAuthType, IModelAuth } from '../types';
+import { IModelAuthType, IModelAuth } from '../types';
 import { IModelDataItem } from '@/types';
 import { httpRequest } from '@/utils/httpRequest';
+import { toHttpHeaderFormat } from '@/utils';
 import styles from './index.module.scss';
 
 export interface IModelAuthForm {
@@ -27,7 +28,6 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
   const [form] = Form.useForm();
   const { onModelAuthVisible, modelAuthType, modelDataItem } = props;
 
-  console.log('modelDataItem===>', modelDataItem);
   // TODO 还有更新授权的情况
   const MODELTITLE = '配置授权';
 
@@ -47,10 +47,6 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
     {
       manual: true,
       onSuccess: (data) => {
-        console.log('模型配置授权成功', data, submitLoading);
-        // if (!submitLoading) {
-
-        // }
         handleCancel();
         message.success('模型配置授权成功');
       },
@@ -96,23 +92,16 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
     });
   };
 
-  const selectedCredentialParams = (modelDataItem?.credentialParams || []).filter((param) => (modelDataItem?.credentialParamsId || '').split(',').includes(String(param.id)));
-
   const renderCredentialParams = () => {
-    return selectedCredentialParams.map((param) => {
-      const formName = param.name;
-      const label = param.label;
-      const placeholder = param.placeholder;
-      const isPassword = param.type === 'password';
-
+    return (modelDataItem?.auth_fields || []).map((field) => {
       return (
         <Form.Item
-          key={formName}
-          label={label.charAt(0).toUpperCase() + label.slice(1)}
-          name={formName}
-          rules={[{ required: Boolean(param.required), message: placeholder }]}
+          key={field}
+          label={toHttpHeaderFormat(field)}
+          name={field}
+          rules={[{ required: true, message: `请输入${toHttpHeaderFormat(field)}` }]}
         >
-          {isPassword ? <Input.Password allowClear /> : <Input allowClear />}
+          <Input allowClear />
         </Form.Item>
       );
     });
@@ -133,8 +122,8 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
       <Form
         name="basic"
         form={form}
-        labelCol={{ span: 5 }}
-        wrapperCol={{ span: 19 }}
+        labelCol={{ span: 6 }}
+        wrapperCol={{ span: 18 }}
         style={{ maxWidth: 600 }}
         initialValues={{ remember: true }}
         autoComplete="off"
