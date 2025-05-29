@@ -145,7 +145,9 @@ export default function GeneralCard(props: IGeneralCardProps) {
         highlightNums={(modelData?.class || []).length}
       />
 
-      <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>{isDetail ? <ReactMarkdown>{modelData?.desc}</ReactMarkdown> : <>{modelData?.desc}</>}</div>
+      <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>
+        {isDetail ? <ReactMarkdown>{modelData?.desc}</ReactMarkdown> : <Tooltip title={<div style={{ maxHeight: '100px', overflow: 'auto' }}>{modelData?.desc}</div>}>{modelData?.desc}</Tooltip>}
+      </div>
 
       <div className={styles.infoWrapper}>
         <div className={styles.providerName}>{modelData.api_flavor}</div>
