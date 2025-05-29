@@ -34,15 +34,17 @@ export default function McpTools({ status }: { status: number | undefined }) {
         className={styles.tollsContent}
         itemLayout="horizontal"
         dataSource={mcpTolls}
-        pagination={{
-          onChange: handlePageChange,
-          ...pagination,
-          // defaultPageSize: 5,
-          pageSizeOptions: [5, 10, 20, 50],
-          showSizeChanger: true,
-          align: 'end',
-          position: 'bottom',
-        }}
+        pagination={
+          pagination.total >= 5 && {
+            onChange: handlePageChange,
+            ...pagination,
+            // defaultPageSize: 5,
+            pageSizeOptions: [5, 10, 20, 50],
+            showSizeChanger: true,
+            align: 'end',
+            position: 'bottom',
+          }
+        }
         renderItem={(item) => (
           <List.Item>
             <Collapse
