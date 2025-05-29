@@ -58,7 +58,7 @@ export default function ModelListContent(props: IModelListContent) {
             <div className={styles.modelCardList}>
               {vm.pagenationData.length > 0 ? (
                 <List
-                  grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }}
+                  grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
                   dataSource={vm.pagenationData}
                   pagination={
                     vm.pagenationData.length > 0 && {
@@ -101,7 +101,8 @@ export default function ModelListContent(props: IModelListContent) {
           {vm.modalPathVisible && (
             <ModelPathModal
               modalPath={vm.modelPath}
-              onModalPathClose={vm.onModelPathVisible}
+              onModelPathVisible={vm.onModelPathVisible}
+              onModalPathChangeSuccess={vm.onModalPathChangeSuccess}
             />
           )}
           {/* 配置授权弹窗 */}

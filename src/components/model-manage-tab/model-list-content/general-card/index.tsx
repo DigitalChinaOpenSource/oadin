@@ -69,7 +69,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
         <Button
           className={styles.updateSetting}
           variant="filled"
-          icon={<ArrowClockwiseIcon fill="#ffffff" />}
+          icon={<ArrowClockwiseIcon fill="#344054" />}
           onClick={(e) => {
             e.stopPropagation();
             onModelAuthVisible?.({
@@ -97,7 +97,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
               });
             }
           }}
-          icon={<SettingIcon fill="#344054" />}
+          icon={<SettingIcon fill="#ffffff" />}
         >
           配置授权
         </Button>

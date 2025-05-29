@@ -49,7 +49,7 @@ export function useViewModel(props: IModelListContent) {
   // 选中的模型数据，暂用于配置授权
   const [selectModelData, setSelectModelData] = useState<IModelDataItem>({} as any);
 
-  const lastPageSizeRef = useRef(pagination.pageSize);
+  const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
 
   // 获取模型列表 （本地和云端）
@@ -60,7 +60,7 @@ export function useViewModel(props: IModelListContent) {
         page_size: 999,
       };
       if (params?.service_source === 'remote') {
-        paramsTemp.env_type = import.meta.env.MODE || 'product';
+        paramsTemp.env_type = 'product';
       }
       const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
       if (paramsTemp.service_source === 'remote') {
@@ -84,6 +84,10 @@ export function useViewModel(props: IModelListContent) {
             } as any),
         );
         setModelListData(dataWithSource);
+        setPagination({
+          ...pagination,
+          total: dataWithSource.length,
+        });
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
@@ -181,16 +185,15 @@ export function useViewModel(props: IModelListContent) {
   }, [modelListData, modelSearchVal, pagination]);
 
   const onPageChange = (current: number) => {
-    // 如果 pageSize 刚刚被改变，则不执行页码变更逻辑
-    if (lastPageSizeRef.current !== pagination.pageSize) {
-      lastPageSizeRef.current = pagination.pageSize;
+    if (isPageSizeChangingRef.current) {
+      isPageSizeChangingRef.current = false;
       return;
     }
     setPagination({ ...pagination, current });
   };
 
   const onShowSizeChange = (current: number, pageSize: number) => {
-    lastPageSizeRef.current = pageSize;
+    isPageSizeChangingRef.current = true;
     setPagination({ ...pagination, current: 1, pageSize });
   };
 
@@ -205,6 +208,10 @@ export function useViewModel(props: IModelListContent) {
   const onModelPathVisible = useCallback(() => {
     setModalPathVisible(!modalPathVisible);
   }, [modalPathVisible]);
+
+  const onModalPathChangeSuccess = useCallback(() => {
+    fetchModelPath();
+  }, []);
 
   const onModelAuthVisible = useCallback((data: IModelAuth) => {
     setModelAuthVisible(data.visible);
@@ -256,10 +263,6 @@ export function useViewModel(props: IModelListContent) {
     });
   };
 
-  const fetchModalPath = () => {
-    setModelPath('URL_ADDRESS.baidu.com');
-  };
-
   // 授权成功刷新列表
   const onModelAuthSuccess = async () => {
     await fetchModelSupport({ service_source: modelSourceVal });
@@ -274,8 +277,7 @@ export function useViewModel(props: IModelListContent) {
     modelPath,
     modalPathVisible,
     onModelPathVisible,
-
-    fetchModalPath,
+    onModalPathChangeSuccess,
 
     modelAuthVisible,
     onModelAuthVisible,
