@@ -27,7 +27,6 @@ export default function ModelPathModal(props: IModelPathModalProps) {
   useEffect(() => {
     if (!modalPath) return;
     form.setFieldsValue({ modelPath: modalPath });
-    onCheckPathSpace(modalPath);
   }, [modalPath]);
 
   useEffect(() => {
