@@ -6,7 +6,8 @@ import styles from './index.module.scss';
 
 interface IModelPathModalProps {
   modalPath?: string;
-  onModalPathClose: () => void;
+  onModelPathVisible: () => void;
+  onModalPathChangeSuccess: () => void;
 }
 
 interface IModelPathSpaceRes {
@@ -16,11 +17,11 @@ interface IModelPathSpaceRes {
 }
 
 export default function ModelPathModal(props: IModelPathModalProps) {
+  const { modalPath, onModelPathVisible, onModalPathChangeSuccess } = props;
   const [form] = Form.useForm();
   const formValues = Form.useWatch([], form);
   const modelPathValue = Form.useWatch('modelPath', form);
   const debouncedModelPath = useDebounce(modelPathValue, { wait: 1000 });
-  const { modalPath, onModalPathClose } = props;
   const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes>({} as IModelPathSpaceRes);
   const [isFormValid, setIsFormValid] = useState(false);
 
@@ -72,7 +73,7 @@ export default function ModelPathModal(props: IModelPathModalProps) {
           message.success('模型存储路径修改成功');
         }
         setCurrentPathSpace(data);
-        onModalPathClose();
+        onModalPathChangeSuccess();
       },
       onError: (error) => {
         message.error(error?.message || '模型存储路径修改失败');
@@ -102,7 +103,7 @@ export default function ModelPathModal(props: IModelPathModalProps) {
         loading: changeModelPathLoading,
       }}
       onOk={handleToSavePath}
-      onCancel={onModalPathClose}
+      onCancel={onModelPathVisible}
       className={styles.modelPathModal}
       okText="确认"
     >

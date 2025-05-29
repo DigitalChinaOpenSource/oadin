@@ -185,8 +185,6 @@ export function useViewModel(props: IModelListContent) {
   }, [modelListData, modelSearchVal, pagination]);
 
   const onPageChange = (current: number) => {
-    console.log('current===>', current, pagination);
-    // 如果 pageSize 刚刚被改变，则不执行页码变更逻辑
     if (isPageSizeChangingRef.current) {
       isPageSizeChangingRef.current = false;
       return;
@@ -210,6 +208,10 @@ export function useViewModel(props: IModelListContent) {
   const onModelPathVisible = useCallback(() => {
     setModalPathVisible(!modalPathVisible);
   }, [modalPathVisible]);
+
+  const onModalPathChangeSuccess = useCallback(() => {
+    fetchModelPath();
+  }, []);
 
   const onModelAuthVisible = useCallback((data: IModelAuth) => {
     setModelAuthVisible(data.visible);
@@ -261,10 +263,6 @@ export function useViewModel(props: IModelListContent) {
     });
   };
 
-  const fetchModalPath = () => {
-    setModelPath('URL_ADDRESS.baidu.com');
-  };
-
   // 授权成功刷新列表
   const onModelAuthSuccess = async () => {
     await fetchModelSupport({ service_source: modelSourceVal });
@@ -279,8 +277,7 @@ export function useViewModel(props: IModelListContent) {
     modelPath,
     modalPathVisible,
     onModelPathVisible,
-
-    fetchModalPath,
+    onModalPathChangeSuccess,
 
     modelAuthVisible,
     onModelAuthVisible,
