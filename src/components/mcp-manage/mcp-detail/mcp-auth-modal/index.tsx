@@ -23,7 +23,7 @@ export default function McpAuthModal(props: McpAddModalProps) {
       onCancel={() => setShowMcpModal(false)}
       footer={null}
       centered
-      destroyOnClose={true}
+      destroyOnHidden={true}
       // width={600}
       styles={{
         header: {

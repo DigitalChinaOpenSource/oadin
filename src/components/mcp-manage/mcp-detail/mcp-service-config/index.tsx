@@ -5,14 +5,18 @@ import styles from './index.module.scss';
 import { coy } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import CopyIcon from '@/components/icons/copy.tsx';
 import CopySuccess from '@/components/icons/copy-success.tsx';
+import { message } from 'antd';
 // 注册需要的语言（性能优化）
 PrismLight.registerLanguage('json', json);
 const SyntaxHighlighter = PrismLight as unknown as React.ComponentType<SyntaxHighlighterProps>;
 
 export default function McpServiceConfig({ code = '' }: { code?: string }) {
   const [showDefaultIcon, setShowDefaultIcon] = useState<boolean>(true);
+
   const handleClick = async () => {
     try {
+      if (!showDefaultIcon) return;
+      message.success('复制成功');
       setShowDefaultIcon(false);
       await navigator.clipboard.writeText(code || defaultCode);
     } catch (err) {

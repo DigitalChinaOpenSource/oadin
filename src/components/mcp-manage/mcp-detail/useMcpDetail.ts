@@ -4,6 +4,7 @@ import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import testDta from './mcp_schema.json';
+import { Modal } from 'antd';
 
 export const useMcpDetail = () => {
   const [searchParams] = useSearchParams();
@@ -36,7 +37,7 @@ export const useMcpDetail = () => {
   // 下载mcp
   const { loading: downMcpLoading, run: downMcp } = useRequest(
     async () => {
-      return await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/download`, null, { timeout: 60000 });
+      return await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/download`, null, { timeout: 2 * 60 * 1000 });
     },
     {
       manual: true,
@@ -82,7 +83,20 @@ export const useMcpDetail = () => {
       const { hosted, status, envRequired } = mcpDetail || {};
       if (envRequired === 0) {
         // 不需要授权
-        downMcp();
+        Modal.confirm({
+          title: '确认添加吗？',
+          okText: '确认',
+          centered: true,
+          okButtonProps: {
+            style: { backgroundColor: '#5429ff' },
+          },
+          onOk() {
+            downMcp(); // 直接下载mcp
+          },
+          onCancel() {
+            console.log('Cancel');
+          },
+        });
       } else {
         // 显示授权弹窗
         setShowMcpModal(true);
