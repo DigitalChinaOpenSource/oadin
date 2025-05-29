@@ -8,10 +8,11 @@ import (
 	"byze/internal/types"
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
 )
 
 type MCPServer interface {
@@ -194,8 +195,11 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 		for _, y := range item.McpServers {
 			// 传递args
 			commandBuilder := hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
-			// 加入动态环境变量
-			if len(y.Env) > 0 {
+			// 从用户配置的auth字段获取环境变量
+			if config.Auth != "" {
+				commandBuilder.WithEnv("AUTH_TOKEN", config.Auth)
+			} else if len(y.Env) > 0 {
+				// 如果auth为空，则回退到使用y.Env
 				for key, value := range y.Env {
 					commandBuilder.WithEnv(key, value)
 				}
