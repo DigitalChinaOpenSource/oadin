@@ -86,7 +86,7 @@ func downloadBunBinary(platform, arch, version string, isMusl, isBaseline bool) 
 		}
 		// 创建文件路径
 		// ps:这里制定固定的名字,防止解压到子级文件夹下面
-		destPath := filepath.Join(binDir, "bun.exe")
+		destPath := filepath.Join(binDir, filepath.Base(file.Name))
 		destDir := filepath.Dir(destPath)
 		// 创建目标目录
 		if err := os.MkdirAll(destDir, 0755); err != nil {
