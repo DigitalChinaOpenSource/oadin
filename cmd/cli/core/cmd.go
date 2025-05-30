@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"byze/config"
+	"byze/console"
 	"byze/internal/api"
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
@@ -16,6 +17,7 @@ import (
 	"byze/internal/utils"
 	"byze/internal/utils/bcode"
 	"byze/internal/utils/progress"
+	"byze/tray"
 	"byze/version"
 	"context"
 	"encoding/json"
@@ -25,16 +27,66 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
+
+// ServerManager 用于管理服务器实例
+type ServerManager struct {
+	byzeServer    *http.Server
+	consoleServer *http.Server
+	cancel        context.CancelFunc
+	trayManager   *tray.Manager
+}
+
+var globalServerManager *ServerManager
+
+// StopServer 停止指定的服务器
+func (sm *ServerManager) StopServer(serverType string) error {
+	var srv *http.Server
+	switch serverType {
+	case "byze":
+		srv = sm.byzeServer
+	case "console":
+		srv = sm.consoleServer
+	default:
+		return fmt.Errorf("unknown server type: %s", serverType)
+	}
+
+	if srv == nil {
+		return fmt.Errorf("server %s is not running", serverType)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		return fmt.Errorf("failed to stop %s server: %v", serverType, err)
+	}
+
+	switch serverType {
+	case "byze":
+		sm.byzeServer = nil
+	case "console":
+		sm.consoleServer = nil
+	}
+
+	// 如果两个服务器都已停止，则取消主context
+	if sm.byzeServer == nil && sm.consoleServer == nil && sm.cancel != nil {
+		sm.cancel()
+	}
+
+	return nil
+}
 
 // NewCommand will contain all commands
 func NewCommand() *cobra.Command {
@@ -225,16 +277,101 @@ func Run(ctx context.Context) error {
 
 	go ListenModelEngineHealth()
 
-	// Run the server
-	err = byzeServer.Run(ctx, config.GlobalByzeEnvironment.ApiHost)
-	if err != nil {
-		slog.Error("[Run] Failed to run server", "error", err)
-		return err
+	// 创建一个带取消的 context
+	ctx, cancel := context.WithCancel(ctx)
+
+	// 创建错误通道
+	errChan := make(chan error, 2)
+
+	// 创建服务器管理器
+	globalServerManager = &ServerManager{
+		cancel: cancel,
 	}
 
-	_, _ = color.New(color.FgHiGreen).Println("Byze Gateway starting on port", config.GlobalByzeEnvironment.ApiHost)
+	// 启动 byze server
+	byzeSrv := &http.Server{
+		Addr:    config.GlobalByzeEnvironment.ApiHost,
+		Handler: byzeServer.Router,
+	}
+	globalServerManager.byzeServer = byzeSrv
 
-	return nil
+	go func() {
+		if err := byzeSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errChan <- fmt.Errorf("byze server error: %v", err)
+		}
+	}()
+
+	// 启动 console server
+	consoleSrv, err := console.StartConsoleServer(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start console server: %v", err)
+	}
+	globalServerManager.consoleServer = consoleSrv
+
+	_, _ = color.New(color.FgHiGreen).Println("Byze Gateway starting on port", config.GlobalByzeEnvironment.ApiHost)
+	_, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
+
+	// 创建系统托盘管理器
+	trayManager := tray.NewManager(
+		func() error {
+			// 启动服务器的回调
+			if globalServerManager.byzeServer != nil {
+				return fmt.Errorf("server is already running")
+			}
+			return Run(context.Background())
+		},
+		func() error {
+			// 停止服务器的回调
+			if globalServerManager.byzeServer == nil {
+				return fmt.Errorf("server is not running")
+			}
+			return globalServerManager.StopServer("byze")
+		},
+		func() error {
+			// 停止所有服务器的回调
+			var errs []error
+			if globalServerManager.byzeServer != nil {
+				if err := globalServerManager.StopServer("byze"); err != nil {
+					errs = append(errs, fmt.Errorf("failed to stop byze server: %v", err))
+				}
+			}
+			if globalServerManager.consoleServer != nil {
+				if err := globalServerManager.StopServer("console"); err != nil {
+					errs = append(errs, fmt.Errorf("failed to stop console server: %v", err))
+				}
+			}
+			if len(errs) > 0 {
+				return fmt.Errorf("errors stopping servers: %v", errs)
+			}
+			return nil
+		},
+		func() error {
+			return utils.StopByzeServer(pidFile)
+		},
+		true,
+	)
+	globalServerManager.trayManager = trayManager
+
+	// 在新的 goroutine 中启动系统托盘
+	go trayManager.Start()
+
+	// 等待错误或中断信号
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case err := <-errChan:
+		return err
+	case <-sigChan:
+		cancel()
+		// 等待最多5秒钟让服务器优雅关闭
+		select {
+		case err := <-errChan:
+			return err
+		case <-time.After(5 * time.Second):
+			return nil
+		}
+	}
 }
 
 func updateServiceProviderHandler(providerName, configFile string) error {
@@ -319,6 +456,7 @@ func NewApiserverCommand() *cobra.Command {
 	cmd.AddCommand(
 		NewStartApiServerCommand(),
 		NewStopApiServerCommand(),
+		NewStopServerCommand(),
 	)
 
 	return cmd
@@ -1308,4 +1446,32 @@ func ListenModelEngineHealth() {
 
 		time.Sleep(60 * time.Second)
 	}
+}
+
+// NewStopServerCommand 创建停止指定服务器的命令
+func NewStopServerCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "stop [byze|console]",
+		Short: "Stop a specific server",
+		Long:  "Stop either the byze server or the console server",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			serverType := args[0]
+			if serverType != "byze" && serverType != "console" {
+				return fmt.Errorf("invalid server type: %s. Must be either 'byze' or 'console'", serverType)
+			}
+
+			if globalServerManager == nil {
+				return fmt.Errorf("server manager is not initialized")
+			}
+
+			if err := globalServerManager.StopServer(serverType); err != nil {
+				return err
+			}
+
+			fmt.Printf("%s server stopped successfully\n", serverType)
+			return nil
+		},
+	}
+	return cmd
 }

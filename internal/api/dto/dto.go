@@ -283,6 +283,7 @@ type RecommendModelData struct {
 type ProviderSupportModelData struct {
 	Name         string   `json:"name"`
 	ParamsSize   float32  `json:"params_size"`
+	Avatar       string   `json:"avatar"`
 	Class        []string `json:"class"`
 	Flavor       string   `json:"flavor"`
 	ApiFlavor    string   `json:"api_flavor"`

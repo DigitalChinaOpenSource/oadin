@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -220,6 +222,70 @@ func (j *JSONDatastore) List(ctx context.Context, query datastore.Entity, option
 		}
 
 		result = append(result, entity)
+	}
+
+	// Apply sorting if options are provided
+	if options != nil && len(options.SortBy) > 0 {
+		sort.Slice(result, func(i, j int) bool {
+			for _, order := range options.SortBy {
+				// Get field values using reflection
+				iValue := reflect.ValueOf(result[i]).Elem()
+				jValue := reflect.ValueOf(result[j]).Elem()
+
+				// Find the field
+				iField := iValue.FieldByName(order.Key)
+				jField := jValue.FieldByName(order.Key)
+
+				// If field doesn't exist, skip this ordering
+				if !iField.IsValid() || !jField.IsValid() {
+					continue
+				}
+
+				// Compare based on field type
+				switch iField.Kind() {
+				case reflect.String:
+					iStr := iField.String()
+					jStr := jField.String()
+					if iStr != jStr {
+						if order.Order == datastore.SortOrderAscending {
+							return iStr < jStr
+						}
+						return iStr > jStr
+					}
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					iInt := iField.Int()
+					jInt := jField.Int()
+					if iInt != jInt {
+						if order.Order == datastore.SortOrderAscending {
+							return iInt < jInt
+						}
+						return iInt > jInt
+					}
+				case reflect.Float32, reflect.Float64:
+					iFloat := iField.Float()
+					jFloat := jField.Float()
+					if iFloat != jFloat {
+						if order.Order == datastore.SortOrderAscending {
+							return iFloat < jFloat
+						}
+						return iFloat > jFloat
+					}
+				case reflect.Struct:
+					// Special handling for time.Time
+					if iField.Type() == reflect.TypeOf(time.Time{}) {
+						iTime := iField.Interface().(time.Time)
+						jTime := jField.Interface().(time.Time)
+						if !iTime.Equal(jTime) {
+							if order.Order == datastore.SortOrderAscending {
+								return iTime.Before(jTime)
+							}
+							return jTime.Before(iTime)
+						}
+					}
+				}
+			}
+			return false
+		})
 	}
 
 	// Apply pagination if options are provided
