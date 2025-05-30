@@ -1,6 +1,7 @@
 package vega
 
 import (
+	"byze/config"
 	"byze/internal/api/dto"
 	"byze/internal/provider/template"
 	"byze/internal/utils/client"
@@ -17,8 +18,7 @@ type VegaClient struct {
 
 func NewVegaClient() *VegaClient {
 	// default host
-	// host := config.ConfigRootInstance.Vega.Url
-	host := "127.0.0.1:3000"
+	host := config.ConfigRootInstance.Vega.Url
 
 	// default scheme
 	scheme := "http"
