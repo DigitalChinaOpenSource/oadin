@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     // host: '127.0.0.1', // 指定主机地址
-    port: 16699, // 指定端口号
+    port: 16698, // 指定端口号
     strictPort: true, // 如果端口已被占用，则会直接退出而不是尝试下一个可用端口
     proxy: {
       '/byze/v0.2': {
