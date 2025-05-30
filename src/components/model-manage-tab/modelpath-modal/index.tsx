@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Modal, Input, Form, message } from 'antd';
 import { useRequest, useDebounce } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
+import useModelDownloadStore from '@/store/useModelDownloadStore';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import styles from './index.module.scss';
 
 interface IModelPathModalProps {
@@ -18,6 +20,8 @@ interface IModelPathSpaceRes {
 
 export default function ModelPathModal(props: IModelPathModalProps) {
   const { modalPath, onModelPathVisible, onModalPathChangeSuccess } = props;
+  const { downloadList } = useModelDownloadStore();
+  const { setMigratingStatus } = useModelPathChangeStore();
   const [form] = Form.useForm();
   const formValues = Form.useWatch([], form);
   const modelPathValue = Form.useWatch('modelPath', form);
@@ -73,10 +77,14 @@ export default function ModelPathModal(props: IModelPathModalProps) {
           message.success('模型存储路径修改成功');
         }
         setCurrentPathSpace(data);
+        onCheckPathSpace(data?.path || '');
         onModalPathChangeSuccess();
       },
       onError: (error) => {
         message.error(error?.message || '模型存储路径修改失败');
+      },
+      onFinally: () => {
+        setMigratingStatus(false);
       },
     },
   );
@@ -86,6 +94,12 @@ export default function ModelPathModal(props: IModelPathModalProps) {
   };
 
   const onFinish = (values: { modelPath: string }) => {
+    if (downloadList.length > 0) {
+      message.error('请等待模型下载完成后再进行操作');
+      return;
+    }
+    // 修改全局状态，标识模型存储路径正在迁移中
+    setMigratingStatus(true);
     onChangeModelPath({
       source_path: modalPath || '',
       target_path: values.modelPath,
