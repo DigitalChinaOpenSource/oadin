@@ -14,6 +14,14 @@ func TestDownloadBunBinary(t *testing.T) {
 	downloadBunBinary(platform, arch, version, isMusl, isBaseline)
 }
 
+func TestDownloadUvBinary(t *testing.T) {
+	platform := "darwin"
+	arch := "arm64"
+	version := "0.6.14"
+	isMusl := false
+	downloadUvBinary(platform, arch, version, isMusl)
+}
+
 func TestFileName(t *testing.T) {
 	var name = "bun-darwin-aarch64/bun"
 	res := filepath.Base(name)
