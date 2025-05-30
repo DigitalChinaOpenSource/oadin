@@ -824,7 +824,10 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 		})
 	}
 	sm := &types.SupportModel{}
-	options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}}
+	sortOption := []datastore.SortOption{
+		{Key: "name", Order: 1},
+	}
+	options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}, SortBy: sortOption}
 	if request.ServiceSource == types.ServiceSourceLocal {
 		if request.Flavor != "" && request.Flavor != types.FlavorOllama {
 			return nil, errors.New(fmt.Sprintf("%s flavor is not local flavor", request.Flavor))
@@ -958,7 +961,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				resultList = append(resultList, modelData)
 			}
 			resData.Total = len(smartvisionModelData)
-			resData.TotalPage = (len(smartvisionModelData) + len(resultList)) / pageSize
+			resData.TotalPage = len(smartvisionModelData) / pageSize
 			if resData.TotalPage == 0 {
 				resData.TotalPage = 1
 			}

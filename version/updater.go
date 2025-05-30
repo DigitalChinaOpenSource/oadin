@@ -51,15 +51,19 @@ type UpdateAuthRequest struct {
 	Sign       string `json:"sign"`
 	ClientType string `json:"clientType"`
 }
-
 type UpdateAuthResponse struct {
+	Code    string                 `json:"code"`
+	Message string                 `json:"message"`
+	Data    UpdateAuthResponseData `json:"data"`
+}
+type UpdateAuthResponseData struct {
 	Code      string `json:"code"`
 	ExpireIn  int    `json:"expireIn"`
 	IssuedAt  int    `json:"issuedAt"`
 	TokenType string `json:"tokenType"`
 }
 
-func UpdaterAuth() (UpdateAuthResponse, error) {
+func UpdaterAuth() (UpdateAuthResponseData, error) {
 	awaitSignMap := make(map[string]string)
 	nonceStr := utils.GenerateNonceString(8)
 	timeStamp := time.Now().Unix()
@@ -102,7 +106,7 @@ func UpdaterAuth() (UpdateAuthResponse, error) {
 	req, err := http.NewRequest("POST", authUrl, bytes.NewBuffer(reqData))
 
 	if err != nil {
-		return UpdateAuthResponse{}, err
+		return UpdateAuthResponseData{}, err
 	}
 
 	transport := &http.Transport{
@@ -114,19 +118,22 @@ func UpdaterAuth() (UpdateAuthResponse, error) {
 	client := &http.Client{Transport: transport}
 	resp, err := client.Do(req)
 	if err != nil {
-		return UpdateAuthResponse{}, err
+		return UpdateAuthResponseData{}, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return UpdateAuthResponse{}, fmt.Errorf(resp.Status)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return UpdateAuthResponseData{}, fmt.Errorf(resp.Status)
 	}
 	respBody, err := io.ReadAll(resp.Body)
 
 	err = json.Unmarshal(respBody, &res)
 	if err != nil {
-		return UpdateAuthResponse{}, err
+		return UpdateAuthResponseData{}, err
 	}
-	return res, nil
+	if res.Code != "200" {
+		return UpdateAuthResponseData{}, fmt.Errorf(res.Message)
+	}
+	return res.Data, nil
 
 }
 
