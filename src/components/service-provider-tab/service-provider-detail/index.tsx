@@ -79,7 +79,7 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
                   >
                     <div className={styles.modelLeft}>
                       <img
-                        src={modelPng}
+                        src={model.avatar || modelPng}
                         alt="modelLogo"
                       />
                       <span className={styles.modelBaseInfo}>

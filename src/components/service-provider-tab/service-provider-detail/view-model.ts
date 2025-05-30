@@ -11,6 +11,7 @@ export function useViewModel(props: IServiceProviderDetailProps) {
   useEffect(() => {
     fetchProviderDetail({ provider_name: selectedRow.provider_name });
   }, [selectedRow]);
+
   const { loading: providerDetailLoading, run: fetchProviderDetail } = useRequest(
     async (params: IProviderDetailParams) => {
       const paramsTemp = {

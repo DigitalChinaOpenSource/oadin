@@ -44,6 +44,7 @@ export interface IProviderDetailParams {
 }
 
 export interface ISupportModel {
+  avatar: string;
   name: string;
   params_size: number;
   class: string[];
