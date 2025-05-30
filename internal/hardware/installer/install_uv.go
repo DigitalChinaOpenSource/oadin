@@ -1,7 +1,9 @@
 package installer
 
 import (
+	"archive/tar"
 	"archive/zip"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"net/http"
@@ -113,7 +115,7 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 			if file.FileInfo().IsDir() {
 				continue
 			}
-			filePath := filepath.Join(binDir, file.Name)
+			filePath := filepath.Join(binDir, filepath.Base(file.Name))
 			if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
 				return fmt.Errorf("无法创建目录: %v", err)
 			}
@@ -152,8 +154,76 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 			defer src.Close()
 			defer dest.Close()
 		}
+	} else if strings.HasSuffix(packageName, ".tar.gz") {
+		file, err := os.Open(tempFilename)
+		if err != nil {
+			if err := os.Remove(tempFilename); err != nil {
+				return fmt.Errorf("无法删除临时文件: %v", err)
+			}
+			return fmt.Errorf("无法打开 .tar.gz 文件: %v", err)
+		}
+		defer file.Close()
+
+		gzr, err := gzip.NewReader(file)
+		if err != nil {
+			if err := os.Remove(tempFilename); err != nil {
+				return fmt.Errorf("无法删除临时文件: %v", err)
+			}
+			return fmt.Errorf("无法解压 .tar.gz 文件: %v", err)
+		}
+		defer gzr.Close()
+
+		tr := tar.NewReader(gzr)
+
+		for {
+			header, err := tr.Next()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				if err := os.Remove(tempFilename); err != nil {
+					return fmt.Errorf("无法删除临时文件: %v", err)
+				}
+				return fmt.Errorf("读取 .tar.gz 文件错误: %v", err)
+			}
+
+			target := filepath.Join(binDir, header.Name)
+
+			switch header.Typeflag {
+			case tar.TypeDir:
+				if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
+					return fmt.Errorf("无法创建目录 %s: %v", target, err)
+				}
+			case tar.TypeReg:
+				if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+					return fmt.Errorf("无法创建目录: %v", err)
+				}
+				file, err := os.Create(target)
+				if err != nil {
+					return fmt.Errorf("无法创建文件 %s: %v", target, err)
+				}
+				if _, err := io.Copy(file, tr); err != nil {
+					file.Close()
+					os.Remove(target)
+					return fmt.Errorf("无法复制文件 %s: %v", target, err)
+				}
+				if err := file.Sync(); err != nil {
+					file.Close()
+					os.Remove(target)
+					return fmt.Errorf("无法同步文件 %s: %v", target, err)
+				}
+				if err := file.Close(); err != nil {
+					return fmt.Errorf("无法关闭文件 %s: %v", target, err)
+				}
+				if err := os.Chmod(target, os.FileMode(header.Mode)); err != nil {
+					return fmt.Errorf("无法设置文件权限 %s: %v", target, err)
+				}
+			default:
+				return fmt.Errorf("不支持的文件类型 %c in %s", header.Typeflag, header.Name)
+			}
+		}
 	} else {
-		// 处理.tar.gz文件，代码略
+		return fmt.Errorf("不支持的文件格式: %s", packageName)
 	}
 
 	// Explicitly close the zip reader and any other files before deletion
