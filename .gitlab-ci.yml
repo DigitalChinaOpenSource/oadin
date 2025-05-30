@@ -6,6 +6,7 @@ stages:
 
 variables:
   GIT_STRATEGY: none
+  ENV: "production"
   MAC_FILE_NAME: "byze-installer-${CI_COMMIT_TAG}.pkg"
   WIN_FILE_NAME: "byze-installer-${CI_COMMIT_TAG}.exe"
 
@@ -15,7 +16,13 @@ build_mac:
   tags:
     - aipc-mac
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^(test|[0-9]+\.)/'
+    - if: '$CI_COMMIT_TAG =~ /^test/'
+      variables:
+        ENV: "development"
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
+      variables:
+        ENV: "production"
+    - when: never
   script:
     - echo "========== 🔧 Mac Build Begin =========="
     - echo "--------- 🧹 清除旧文件 准备纯净环境 ----------"
@@ -27,7 +34,8 @@ build_mac:
     - echo $CI_COMMIT_TAG ; git checkout $CI_COMMIT_TAG
     - echo "--------- 🛠️ 制品构建与签名 ----------"
     - go mod tidy
-    - CGO_ENABLED=1 GOOS=darwin GOARCH=arm64  go build -o byze -ldflags="-s -w"  cmd/cli/main.go
+    - echo "$ENV active"
+    - CGO_ENABLED=1 GOOS=darwin GOARCH=arm64  go build -o byze -tags "$ENV" -ldflags="-s -w"  cmd/cli/main.go
     - export APPLE_ID="it@digitalchina.com"
     - export APPLE_APP_SPECIFIC_PASSWORD="yyzx-tium-divi-iors"
     - export APPLE_TEAM_ID="US7ZG73N89"
@@ -118,7 +126,13 @@ build_win:
   tags:
     - aipc-win
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^(test|[0-9]+\.)/'
+    - if: '$CI_COMMIT_TAG =~ /^test/'
+      variables:
+        ENV: "development"
+    - if: '$CI_COMMIT_TAG =~ /^[0-9]+\./'
+      variables:
+        ENV: "production"
+    - when: never
   script:
     - chcp 65001 > $null
     - $OutputEncoding = [System.Text.Encoding]::UTF8
@@ -137,7 +151,8 @@ build_win:
     - $env:CGO_ENABLED= 1
     - $env:GOOS= "windows"
     - $env:GOARCH= "amd64"
-    - go build -o byze.exe -ldflags="-s -w"  cmd/cli/main.go
+    - echo "$env:ENV active"
+    - go build -o byze.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
     - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "byze.exe"
     - echo "--------- 📦 安装包构建与签名 ----------"
     - cd installer ; makensis.exe -DVERSION=$env:CI_COMMIT_TAG byze.nsi
