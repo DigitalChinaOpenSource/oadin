@@ -61,7 +61,7 @@ export default function ModelListContent(props: IModelListContent) {
                   grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
                   dataSource={vm.pagenationData}
                   pagination={
-                    vm.pagenationData.length > 12 && {
+                    vm.modelListData.length > 12 && {
                       className: styles.pagination,
                       align: 'end',
                       ...vm.pagination,

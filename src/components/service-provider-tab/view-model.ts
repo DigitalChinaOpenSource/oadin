@@ -39,7 +39,7 @@ export function useViewModel() {
     },
   );
 
-  const handlePageChange = (current: any) => {
+  const handlePageChange = (current: number) => {
     setPagination({ ...pagination, current });
   };
 
@@ -66,7 +66,7 @@ export function useViewModel() {
     },
   );
 
-  const handleDeleteConfirm = (record: any) => {
+  const handleDeleteConfirm = (record: IServiceProviderDataItem) => {
     console.log('---record', record);
     confirm({
       centered: true,

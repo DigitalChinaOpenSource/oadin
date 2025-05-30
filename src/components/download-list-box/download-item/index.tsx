@@ -5,9 +5,10 @@ import greySpinner from '@/components/icons/greySpinner.svg';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { useViewModel } from './view-model';
+import { IModelDataItem } from '@/types';
 
 export interface IDownloadItemProps {
-  downloadItem: any;
+  downloadItem: IModelDataItem;
 }
 
 export default function DownloadItem(props: IDownloadItemProps) {
