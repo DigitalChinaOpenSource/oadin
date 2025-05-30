@@ -7,6 +7,7 @@ import (
 	"byze/internal/rpc"
 	"byze/internal/types"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -197,7 +198,16 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 			commandBuilder := hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
 			// 从用户配置的auth字段获取环境变量
 			if config.Auth != "" {
-				commandBuilder.WithEnv("AUTH_TOKEN", config.Auth)
+				var authMap map[string]string
+				err := json.Unmarshal([]byte(config.Auth), &authMap)
+				if err == nil {
+					for key, value := range authMap {
+						commandBuilder.WithEnv(key, value)
+					}
+				} else {
+					// 如果解析失败，则回退到使用AUTH_TOKEN
+					commandBuilder.WithEnv("AUTH_TOKEN", config.Auth)
+				}
 			} else if len(y.Env) > 0 {
 				// 如果auth为空，则回退到使用y.Env
 				for key, value := range y.Env {
