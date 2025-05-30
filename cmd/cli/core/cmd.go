@@ -2,19 +2,6 @@ package cli
 
 import (
 	"bufio"
-	"byze/config"
-	"byze/internal/api"
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/datastore/sqlite"
-	"byze/internal/event"
-	"byze/internal/provider"
-	"byze/internal/schedule"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
-	"byze/internal/utils/progress"
-	"byze/version"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -29,6 +16,20 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"byze/config"
+	"byze/internal/api"
+	"byze/internal/api/dto"
+	"byze/internal/datastore"
+	"byze/internal/datastore/sqlite"
+	"byze/internal/event"
+	"byze/internal/provider"
+	"byze/internal/schedule"
+	"byze/internal/types"
+	"byze/internal/utils"
+	"byze/internal/utils/bcode"
+	"byze/internal/utils/progress"
+	"byze/version"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -177,7 +178,7 @@ func Run(ctx context.Context) error {
 
 	datastore.SetDefaultDatastore(ds)
 
-	//version.StartCheckUpdate(ctx)
+	// version.StartCheckUpdate(ctx)
 	// Initialize core core app server
 	byzeServer := api.NewByzeCoreServer()
 	byzeServer.Register()
@@ -851,8 +852,7 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 		fmt.Println("Byze server start successfully.")
 		return
 	}
-	//userDir, _ := os.UserHomeDir()
-	//logger.NewSysLogger(logger.NewLogConfig{LogLevel: "debug", LogPath: filepath.Join(userDir, "server.log")})
+
 	fmt.Println("Byze server is not running. Starting the server...")
 	if err := startByzeServer(); err != nil {
 		log.Fatalf("Failed to start Byze server: %s \n", err.Error())
@@ -873,7 +873,7 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 	err := engineProvider.HealthCheck()
 	if err != nil {
 		var cmd *exec.Cmd
-		if utils.IpexOllamaSupportGPUStatus() {
+		if runtime.GOOS == "windows" {
 			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 		} else {
 			cmd = exec.Command(engineConfig.ExecFile, "-h")

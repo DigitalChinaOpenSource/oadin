@@ -9,6 +9,14 @@ import (
 	"byze/internal/utils"
 )
 
+const (
+	GPUTypeNvidia    = "Nvidia"
+	GPUTypeAmd       = "AMD"
+	GPUTypeIntelArc  = "Intel Arc"
+	GPUTypeIntelCore = "Intel Core"
+	GPUTypeNone      = "None"
+)
+
 type HTTPContent struct {
 	Body   []byte
 	Header http.Header
