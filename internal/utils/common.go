@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/jaypipes/ghw"
+
+	"byze/internal/types"
 )
 
 var textContentTypes = []string{"text/", "application/json", "application/xml", "application/javascript", "application/x-ndjson"}
@@ -186,7 +188,7 @@ const (
 )
 
 func GenerateNonceString(n int) string {
-	var src = rand.NewSource(time.Now().UnixNano())
+	src := rand.NewSource(time.Now().UnixNano())
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
@@ -244,6 +246,42 @@ func IpexOllamaSupportGPUStatus() bool {
 		}
 	}
 	return false
+}
+
+// 检测GPU型号
+func DetectGpuModel() string {
+	gpu, err := ghw.GPU()
+	if err != nil {
+		return types.GPUTypeNone
+	}
+
+	hasNvidia := false
+	hasAMD := false
+	hasIntel := false
+
+	for _, card := range gpu.GraphicsCards {
+		// 转为小写
+		productName := strings.ToLower(card.DeviceInfo.Product.Name)
+		if strings.Contains(productName, "nvidia") {
+			hasNvidia = true
+		} else if strings.Contains(productName, "amd") {
+			hasAMD = true
+		} else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
+			hasIntel = true
+		}
+	}
+
+	if hasNvidia && hasAMD {
+		return types.GPUTypeNvidia + "," + types.GPUTypeAmd
+	} else if hasNvidia {
+		return types.GPUTypeNvidia
+	} else if hasAMD {
+		return types.GPUTypeAmd
+	} else if hasIntel {
+		return types.GPUTypeIntelArc
+	} else {
+		return types.GPUTypeNone
+	}
 }
 
 // +-----------------------------+--------------------------------------------------------------------+
