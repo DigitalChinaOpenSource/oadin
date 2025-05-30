@@ -44,6 +44,13 @@ const createApiInstance = (baseURL: string) => {
         if (error.response?.data?.business_code === 20003) {
           return Promise.reject(error);
         }
+        if (error.response?.data?.error) {
+          notification.error({
+            message: `${error.response?.data.error}`,
+          });
+          return Promise.reject(error);
+        }
+
         const { status, statusText } = error.response;
         notification.error({
           message: `请求错误: ${status} ${statusText}`,
