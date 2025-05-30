@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"byze/internal/utils"
 )
 
 type ServiceResultType int
@@ -81,7 +79,7 @@ func (sr *ServiceResult) String() string {
 		stype = "ServiceResultChunk"
 	}
 	return fmt.Sprintf("ServiceResult{Type: %s, TaskId: %d, StatusCode: %d, Error: %v, HTTP {Header: %+v, Body: %s}}",
-		stype, sr.StatusCode, sr.TaskId, sr.Error, sr.HTTP.Header, utils.BodyToString(sr.HTTP.Header, sr.HTTP.Body))
+		stype, sr.StatusCode, sr.TaskId, sr.Error, sr.HTTP.Header, string(sr.HTTP.Body))
 }
 
 // ServiceRequest The body of the OriginalRequest has been read out so need to placed here
