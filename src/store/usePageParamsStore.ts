@@ -1,40 +1,56 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, PersistOptions } from 'zustand/middleware';
+import { IMcpListRequestParams, IPagination, ITagsDataItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 
-interface PageParams {
-  fromDetail: boolean; // 是否从详情页跳转
-  allParams?: any; // 用于存储跳转时的参数
+interface IPageParams {
+  fromDetail: boolean;
+  allParams: {
+    pagination?: IPagination;
+    checkedValues?: Record<string, any[]>;
+    postParams?: IMcpListRequestParams;
+    searchVal?: string;
+  };
 }
 
-const usePageParamsStore = create(
+interface IPageParamsState {
+  pageParams: IPageParams;
+  tagsDataStore?: ITagsDataItem[];
+  setTagsDataStore: (params: ITagsDataItem[]) => void;
+  setPageParams: (params: Partial<IPageParams>) => void;
+  getPageParams: () => IPageParams;
+}
+
+// 定义持久化配置的类型
+type PageParamsPersistOptions = PersistOptions<IPageParamsState, unknown>;
+
+const usePageParamsStore = create<IPageParamsState>()(
   persist(
     (set, get) => ({
       pageParams: {
         fromDetail: false,
         allParams: {},
       },
-      // 服务标签
       tagsDataStore: [],
-      setTagsDataStore: (params: any[]) => {
+      setTagsDataStore: (params) => {
         set({ tagsDataStore: params || [] });
       },
-      setPageParams: (params: Partial<PageParams>) => {
-        set((state: any) => ({
+      setPageParams: (params) => {
+        set((state) => ({
           pageParams: {
             ...state.pageParams,
             ...params,
           },
         }));
       },
-      getPageParams: () => get().pageParams, // 新增方法实现
+      getPageParams: () => get().pageParams,
     }),
     {
-      name: 'page-params-store', // 存储在 localStorage 的 key
-      partialize: (state: any) => ({
+      name: 'page-params-store',
+      partialize: (state) => ({
         pageParams: state.pageParams,
         tagsDataStore: state.tagsDataStore,
-      }), // 仅持久化部分状态
-    },
+      }),
+    } as PageParamsPersistOptions,
   ),
 );
 

@@ -1,8 +1,13 @@
 import { Checkbox } from 'antd';
+import { ITagsDataItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
+interface ITagsCheck {
+  tagsData?: ITagsDataItem[];
+  checkedValues?: Record<string, any>;
+  handleTagsChange?: (category: string, list: any[]) => void;
+}
 
-export default function McpTagsCheck(props: any) {
-  const { vm } = props;
-  const { tagsData, checkedValues, handleTagsChange } = vm;
+export default function McpTagsCheck(props: ITagsCheck) {
+  const { tagsData = [], checkedValues = {}, handleTagsChange } = props;
   return (
     <>
       {tagsData.map((item: Record<string, any>) => {
@@ -16,7 +21,7 @@ export default function McpTagsCheck(props: any) {
               options={item.tags.map((tag: Record<string, any>) => ({ ...tag, label: tag?.name, value: tag?.name }))}
               style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}
               value={checkedValues[item.category]}
-              onChange={(list) => handleTagsChange(item.category, list)} // 修复拼写错误
+              onChange={(list) => handleTagsChange?.(item.category, list)} // 修复拼写错误
             />
           </div>
         );
