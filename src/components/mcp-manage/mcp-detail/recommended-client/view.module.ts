@@ -66,7 +66,7 @@ export function useRecommendedClient() {
       } else {
         if (data?.linkCommand) {
           Modal.confirm({
-            title: '未检测到应用，即将前往官网，是否确认？',
+            title: `即将前往${data?.name}官网，是否确认？`,
             okText: '确认',
             centered: true,
             okButtonProps: {
