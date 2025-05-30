@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
-import { IMcpListRequestParams, IMcpListData, IMcpListItem } from './types';
+import { IMcpListRequestParams, IMcpListData, IMcpListItem, IPagination, ITagsDataItem } from './types';
 import { useNavigate } from 'react-router-dom';
 import usePageParamsStore from '@/store/usePageParamsStore.ts';
 
@@ -11,10 +11,10 @@ export function useViewModel() {
   const [mcpListData, setMcpListData] = useState<IMcpListItem[]>([]);
   // const [mcpSearchVal, setMcpSearchVal] = useState({} as IMcpListRequestParams);
   // 所有的mcp服务筛选条件tags
-  const [tagsData, setTagsData] = useState<{ category: string; tags: any }[]>([{ category: '', tags: [] }]);
+  const [tagsData, setTagsData] = useState<ITagsDataItem[]>([{ category: '', tags: [] }]);
   // 过滤器是否折叠了
   const [collapsed, setCollapsed] = useState(false);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<IPagination>({
     current: 1,
     pageSize: 12,
     total: 0,
@@ -176,9 +176,9 @@ export function useViewModel() {
   useEffect(() => {
     const pageParams = getPageParams();
     if (pageParams.fromDetail) {
-      setPostParams(pageParams.allParams.postParams);
-      setPagination(pageParams.allParams.pagination);
-      setCheckedValues(pageParams.allParams.checkedValues);
+      setPostParams(pageParams.allParams.postParams as IMcpListRequestParams);
+      setPagination(pageParams.allParams.pagination as IPagination);
+      setCheckedValues(pageParams.allParams.checkedValues as Record<string, any>);
       setSearchVal(pageParams.allParams.searchVal || '');
       setPageParams({ fromDetail: false, allParams: {} });
       return;

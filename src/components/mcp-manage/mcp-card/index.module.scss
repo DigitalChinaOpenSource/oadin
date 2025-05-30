@@ -31,8 +31,13 @@
       font-weight: 600;
       margin-left: 8px;
       line-height: 40px;
+      height: 40px;
+      overflow: hidden;
+      white-space: pre-wrap;
     }
     .localOrCloud {
+      width: 58px;
+      min-width: 58px;
       height: 18px;
       font-size: 12px;
       background-color: #f0f0f0;
@@ -40,7 +45,7 @@
       border-radius: 999px;
       padding: 1px 8px;
       display: flex;
-      margin: 11px 0px 0 8px;
+      margin: 11px 0 0 8px;
       .localOrCloudText {
         margin-left: 2px;
       }

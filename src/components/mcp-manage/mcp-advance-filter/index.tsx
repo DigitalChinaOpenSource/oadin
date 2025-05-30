@@ -4,17 +4,21 @@ import styles from './index.module.scss';
 import foldSvg from '@/components/icons/fold.svg';
 import cleanSvg from '@/components/icons/clean.svg';
 import McpTagsCheck from '@/components/mcp-manage/mcp-advance-filter/mcp-tags-check';
+import { ITagsDataItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 
 interface IMcpAdvanceFilter {
   // 是否折叠
   collapsed?: boolean;
   // 折叠通知外部
   setCollapsed?: (isCollapsed: boolean) => void;
-  vm: any;
+  handleClearTags?: () => void;
+  tagsData?: ITagsDataItem[];
+  checkedValues?: Record<string, any>;
+  handleTagsChange?: (category: string, list: any[]) => void;
 }
 
 export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
-  const { collapsed, setCollapsed, vm } = props;
+  const { collapsed, setCollapsed, handleClearTags, tagsData, checkedValues, handleTagsChange } = props;
 
   return (
     <div
@@ -43,7 +47,7 @@ export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
         </div>
         <div
           className={styles.clean}
-          onClick={vm.handleClearTags}
+          onClick={handleClearTags}
         >
           <Tooltip title="清除筛选条件">
             <img
@@ -56,7 +60,11 @@ export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
 
       <div className={styles.filterContent}>
         {/* 筛选表单等内容放这里 */}
-        <McpTagsCheck vm={vm} />
+        <McpTagsCheck
+          tagsData={tagsData}
+          checkedValues={checkedValues}
+          handleTagsChange={handleTagsChange}
+        />
       </div>
     </div>
   );

@@ -46,3 +46,14 @@ export type cardType = {
   tags: string[];
   serviceId: string;
 };
+
+export interface ITagsDataItem {
+  category: string;
+  tags: Record<string, any>[];
+}
+
+export interface IPagination {
+  current: number;
+  pageSize: number;
+  total: number;
+}

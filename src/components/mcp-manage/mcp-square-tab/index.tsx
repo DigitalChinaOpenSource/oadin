@@ -6,6 +6,7 @@ import { SearchIcon } from '@/components/icons';
 import McpAdvanceFilter from '../mcp-advance-filter';
 import McpList from '../mcp-list';
 import styles from './index.module.scss';
+import { ITagsDataItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 
 export default function McpSquareTab() {
   const vm = useViewModel();
@@ -67,7 +68,10 @@ export default function McpSquareTab() {
       <McpAdvanceFilter
         collapsed={vm.collapsed}
         setCollapsed={vm.setCollapsed}
-        vm={vm}
+        handleClearTags={vm.handleClearTags}
+        tagsData={vm.tagsData}
+        checkedValues={vm.checkedValues}
+        handleTagsChange={vm.handleTagsChange}
       />
     </div>
   );
