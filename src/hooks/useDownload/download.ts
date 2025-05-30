@@ -2,14 +2,8 @@ import { baseHeaders } from '../../utils/index';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { httpRequest } from '../../utils/httpRequest';
 import { IRequestModelParams } from '../../types';
+import { IDownParseData, IDownloadCallbacks, IProgressData } from './types';
 
-interface IDownParseData {
-  progress: number;
-  status: string;
-  completedsize: number;
-  totalsize: number;
-  message?: string;
-}
 /**
  * 暂停模型下载
  * @param data - 请求体参数
@@ -28,18 +22,18 @@ async function abortDownload(data: { model_name: string }) {
 /**
  * 启动模型下载任务，处理流式数据并返回进度和状态
  */
-async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerror, onopen, onclose }: any) {
-  let noDataTimer: any = null;
-  let totalTimeoutId: any = null;
+async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerror, onopen, onclose }: IDownloadCallbacks) {
+  let noDataTimer: NodeJS.Timeout | null = null;
+  let totalTimeoutId: NodeJS.Timeout | null = null;
   let hasRetried = false; // 是否已重试一次
   const NO_DATA_TIMEOUT = 10000;
   const TOTAL_TIMEOUT = 20000;
 
   // 状态变量
-  let lastUsefulDataObj: any = null;
+  let lastUsefulDataObj: IDownParseData | null = null;
   let lastCompleted = 0;
   let overallProgress = 0;
-  let lastDigest: any = null;
+  let lastDigest: string | null = null;
   let isFirstChunk = true;
 
   const clearTimers = () => {
@@ -61,7 +55,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
     }, NO_DATA_TIMEOUT);
   };
 
-  const sendCompletionMessage = (lastUsefulDataObj: any) => {
+  const sendCompletionMessage = (lastUsefulDataObj: IDownParseData) => {
     const finalDataObj = {
       progress: 100,
       status: 'success',
@@ -72,8 +66,8 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
     console.log('模型下载完成:', finalDataObj);
   };
 
-  const processProgressData = (part: any) => {
-    let dataObj = { status: part.status };
+  const processProgressData = (part: IProgressData) => {
+    let dataObj = { status: part.status } as IDownParseData;
 
     if (part?.digest) {
       let percent = 0;
@@ -107,7 +101,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
           status: part.status,
           completedsize: Math.floor(completed / 1000000),
           totalsize: Math.floor(part.total / 1000000),
-        } as any;
+        } as IDownParseData;
 
         // 更新状态
         lastCompleted = completed;
@@ -160,7 +154,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
             }
             // 处理成功
             if (parsedData?.status === 'success') {
-              sendCompletionMessage(lastUsefulDataObj);
+              sendCompletionMessage(lastUsefulDataObj as IDownParseData);
               return;
             }
             // 处理进度数据
