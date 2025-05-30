@@ -58,7 +58,6 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 	sp.ServiceSource = request.ServiceSource
 	sp.Flavor = request.ApiFlavor
 	sp.AuthType = request.AuthType
-	sp.AuthType = request.AuthType
 	if request.AuthType != types.AuthTypeNone && request.AuthKey == "" {
 		return nil, bcode.ErrProviderAuthInfoLost
 	}
@@ -472,11 +471,12 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			if err != nil {
 				isDownloaded = false
 			}
-			if modelQuery.Status != "downloaded" {
+			if modelQuery.Status == "downloaded" {
 				isDownloaded = true
 			}
 			resModel := dto.ProviderSupportModelData{
 				Name:         model.Name,
+				Avatar:       model.Avatar,
 				Class:        model.Tags,
 				Flavor:       model.Provider,
 				ApiFlavor:    sp.Flavor,
@@ -529,6 +529,7 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 				Name:         modelInfo.Name,
 				Class:        modelInfo.Class,
 				Flavor:       modelInfo.Flavor,
+				Avatar:       modelInfo.Avatar,
 				ApiFlavor:    modelInfo.ApiFlavor,
 				InputLength:  modelInfo.InputLength,
 				OutputLength: modelInfo.OutputLength,

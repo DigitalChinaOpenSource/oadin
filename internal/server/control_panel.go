@@ -25,25 +25,6 @@ func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error
 	}
 	defaultPath = filepath.Join(userDir, ".ollama")
 	res := &dto.GetModelFilePathData{}
-	//switch systemName {
-	//case "darwin":
-	//	cmd = exec.Command("echo", "$OLLAMA_MODELS")
-	//case "linux":
-	//	cmd = exec.Command("echo", "$OLLAMA_MODELS")
-	//case "windows":
-	//	cmd = exec.Command("cmd", "/C", "echo", "%OLLAMA_MODELS%")
-	//}
-	//cmdRes, err := cmd.Output()
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//if string(cmdRes) == "" {
-	//	res.Path = defaultPath
-	//} else {
-	//	res.Path = string(cmdRes)
-	//}
-
 	value := os.Getenv("OLLAMA_MODELS")
 	if value != "" {
 		res.Path = value
@@ -69,6 +50,13 @@ func GetFilePathSize(ctx context.Context, req *dto.GetPathDiskSizeInfoRequest) (
 }
 
 func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathRequest) (*dto.ModifyModelFilePathResponse, error) {
+	if req.TargetPath == req.SourcePath {
+		return &dto.ModifyModelFilePathResponse{}, errors.New("target path is the same as the source path")
+	}
+	isTargetDirEmpty := utils.IsDirEmpty(req.TargetPath)
+	if !isTargetDirEmpty {
+		return &dto.ModifyModelFilePathResponse{}, errors.New("target path is not empty")
+	}
 	status, err := utils.SamePartitionStatus(req.SourcePath, req.TargetPath)
 	if err != nil {
 		return nil, err
@@ -107,6 +95,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		}
 		return nil, err
 	}
+	os.Setenv("OLLAMA_MODELS", req.TargetPath)
 	err = os.RemoveAll(req.SourcePath)
 	if err != nil {
 		return nil, err
