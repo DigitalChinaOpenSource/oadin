@@ -6,6 +6,7 @@ import { IModelDataItem, IModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon, SettingIcon, ArrowClockwiseIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 
 export interface IGeneralCardProps {
   // 是否用于详情展示
@@ -21,7 +22,7 @@ export interface IGeneralCardProps {
 
 export default function GeneralCard(props: IGeneralCardProps) {
   const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData } = props;
-
+  const { isPathMigrating } = useModelPathChangeStore();
   const statusToText = (item: IModelDataItem) => {
     const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
     const { status, can_select } = item;
@@ -38,6 +39,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
       return (
         <Button
           className={styles.downloadedBtn}
+          disabled={isPathMigrating}
           onClick={(e) => {
             e.stopPropagation();
             onDeleteConfirm?.(modelData);
@@ -51,6 +53,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
       return (
         <Button
           type="primary"
+          disabled={isPathMigrating}
           onClick={(e) => {
             e.stopPropagation();
             onDownloadConfirm?.(modelData);
@@ -70,6 +73,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           className={styles.updateSetting}
           variant="filled"
           icon={<ArrowClockwiseIcon fill="#344054" />}
+          disabled={isPathMigrating}
           onClick={(e) => {
             e.stopPropagation();
             onModelAuthVisible?.({
@@ -87,6 +91,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
       <>
         <Button
           type="primary"
+          disabled={isPathMigrating}
           onClick={(e) => {
             {
               e.stopPropagation();

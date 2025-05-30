@@ -2,7 +2,7 @@ import { Image, Progress } from 'antd';
 import styles from './index.module.scss';
 import { PlayPauseIcon, CloseIcon, FillCloseIcon, PauseIcon, ArrowClockwiseIcon } from '../../icons';
 import greySpinner from '@/components/icons/greySpinner.svg';
-import ModelPng from '@/assets/model.png';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { useViewModel } from './view-model';
 
@@ -12,6 +12,7 @@ export interface IDownloadItemProps {
 
 export default function DownloadItem(props: IDownloadItemProps) {
   const { downloadItem } = props;
+  const { isPathMigrating } = useModelPathChangeStore();
   const { fetchCancelModel, fetchRemoveModel, fetchDownloadStart } = useViewModel();
   const { COMPLETED, FAILED, IN_PROGRESS, PAUSED } = DOWNLOAD_STATUS;
   return (
@@ -26,23 +27,41 @@ export default function DownloadItem(props: IDownloadItemProps) {
         </div>
         <div className={styles.controlBar}>
           {downloadItem.status === IN_PROGRESS && (
-            <div onClick={() => fetchCancelModel(downloadItem)}>
+            <div
+              onClick={() => {
+                if (isPathMigrating) return;
+                fetchCancelModel(downloadItem);
+              }}
+            >
               <PauseIcon />
             </div>
           )}
           {downloadItem.status === PAUSED && (
-            <div onClick={() => fetchDownloadStart(downloadItem)}>
+            <div
+              onClick={() => {
+                if (isPathMigrating) return;
+                fetchDownloadStart(downloadItem);
+              }}
+            >
               <PlayPauseIcon />
             </div>
           )}
           {downloadItem.status === FAILED && (
-            <div onClick={() => fetchDownloadStart(downloadItem)}>
+            <div
+              onClick={() => {
+                if (isPathMigrating) return;
+                fetchDownloadStart(downloadItem);
+              }}
+            >
               <ArrowClockwiseIcon />
             </div>
           )}
           <div
             className={styles.cancel}
-            onClick={() => fetchRemoveModel(downloadItem)}
+            onClick={() => {
+              if (isPathMigrating) return;
+              fetchRemoveModel(downloadItem);
+            }}
           >
             <CloseIcon />
           </div>
