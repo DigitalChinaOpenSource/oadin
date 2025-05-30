@@ -14,6 +14,15 @@ func TestDownloadBunBinary(t *testing.T) {
 	downloadBunBinary(platform, arch, version, isMusl, isBaseline)
 }
 
+func TestDownloadBunBinaryWindows(t *testing.T) {
+	platform := "windows"
+	arch := "x86"
+	version := "1.2.9"
+	isMusl := false
+	isBaseline := false
+	downloadBunBinary(platform, arch, version, isMusl, isBaseline)
+}
+
 func TestDownloadUvBinary(t *testing.T) {
 	platform := "darwin"
 	arch := "arm64"

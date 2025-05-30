@@ -112,6 +112,10 @@ func downloadBunBinary(platform, arch, version string, isMusl, isBaseline bool) 
 		if err := dest.Sync(); err != nil {
 			return fmt.Errorf("failed to sync file: %v", err)
 		}
+		// 设置文件执行权限
+		if err := os.Chmod(destPath, 0755); err != nil {
+			return fmt.Errorf("无法设置文件 %s 执行权限: %v", destPath, err)
+		}
 		fmt.Printf("Extracted %s\n", destPath)
 	}
 	// 删除临时文件
