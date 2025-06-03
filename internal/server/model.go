@@ -136,7 +136,7 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 		return nil, bcode.ErrModelRecordNotFound
 	}
 
-	//Call engin to delete model.
+	// Call engin to delete model.
 	if m.Status == "downloaded" {
 		modelEngine := provider.GetModelEngine(sp.Flavor)
 		deleteReq := &types.DeleteRequest{
@@ -277,7 +277,6 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 	newDataCh := make(chan []byte, 100)
 	newErrorCh := make(chan error, 1)
 	go func() {
-
 		defer close(newDataCh)
 		defer close(newErrorCh)
 		for {
@@ -285,9 +284,9 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 			case data, ok := <-dataChan:
 				if !ok {
 					// 数据通道关闭，发送结束标记
-					//fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
+					// fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
 					// fmt.Fprintf(w, "\n[DONE]\n\n")
-					//flusher.Flush()
+					// flusher.Flush()
 					if data == nil {
 						client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
 						return
@@ -374,7 +373,6 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 			case <-ctx.Done():
 				newErrorCh <- ctx.Err()
 			}
-
 		}
 	}()
 	return newDataCh, newErrorCh
@@ -499,7 +497,7 @@ type MemoryModelsInfo struct {
 }
 
 func RecommendModels() (map[string][]dto.RecommendModelData, error) {
-	var recommendModelDataMap = make(map[string][]dto.RecommendModelData)
+	recommendModelDataMap := make(map[string][]dto.RecommendModelData)
 	memoryInfo, err := utils.GetMemoryInfo()
 	if err != nil {
 		return nil, err
@@ -589,7 +587,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			return &dto.RecommendModelResponse{Data: nil}, err
 		}
 		flavor = "ollama"
-		//service := "chat"
+		// service := "chat"
 		var resModelNameList []string
 
 		for modelService, modelInfo := range recommendModel {
@@ -922,7 +920,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				dataEnd = len(smartvisionModelData) - 1
 			}
 			pageData := smartvisionModelData[dataStart:dataEnd]
-			//dataList := []dto.RecommendModelData{}
+			// dataList := []dto.RecommendModelData{}
 			for _, d := range pageData {
 				providerName := fmt.Sprintf("%s_%s_%s", request.ServiceSource, request.Flavor, "chat")
 				modelQuery := new(types.Model)
@@ -1063,7 +1061,6 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				resData.TotalPage = 1
 			}
 		}
-
 	}
 	resData.Data = resultList
 	return &dto.GetSupportModelResponse{

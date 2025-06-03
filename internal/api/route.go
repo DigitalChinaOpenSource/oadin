@@ -110,7 +110,6 @@ func updateAvailableHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, map[string]string{"message": ""})
 	}
-
 }
 
 func updateHandler(c *gin.Context) {

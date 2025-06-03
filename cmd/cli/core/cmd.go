@@ -2,6 +2,23 @@ package cli
 
 import (
 	"bufio"
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+
 	"byze/config"
 	"byze/console"
 	"byze/internal/api"
@@ -19,22 +36,6 @@ import (
 	"byze/internal/utils/progress"
 	"byze/tray"
 	"byze/version"
-	"context"
-	"encoding/json"
-	"fmt"
-	"log"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/exec"
-	"os/signal"
-	"path/filepath"
-	"runtime"
-	"strconv"
-	"strings"
-	"sync"
-	"syscall"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -238,7 +239,7 @@ func Run(ctx context.Context) error {
 	}
 	datastore.SetDefaultJsonDatastore(jds)
 
-	//version.StartCheckUpdate(ctx)
+	// version.StartCheckUpdate(ctx)
 	// Initialize core core app server
 	byzeServer := api.NewByzeCoreServer()
 	byzeServer.Register()
@@ -998,8 +999,8 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 		fmt.Println("Byze server start successfully.")
 		return
 	}
-	//userDir, _ := os.UserHomeDir()
-	//logger.NewSysLogger(logger.NewLogConfig{LogLevel: "debug", LogPath: filepath.Join(userDir, "server.log")})
+	// userDir, _ := os.UserHomeDir()
+	// logger.NewSysLogger(logger.NewLogConfig{LogLevel: "debug", LogPath: filepath.Join(userDir, "server.log")})
 	fmt.Println("Byze server is not running. Starting the server...")
 	if err := startByzeServer(); err != nil {
 		log.Fatalf("Failed to start Byze server: %s \n", err.Error())

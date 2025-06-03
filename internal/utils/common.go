@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-
 	"io"
 	"math/rand"
 	"net/http"
@@ -183,7 +182,7 @@ const (
 )
 
 func GenerateNonceString(n int) string {
-	var src = rand.NewSource(time.Now().UnixNano())
+	src := rand.NewSource(time.Now().UnixNano())
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
@@ -424,7 +423,6 @@ func SystemDiskSize(path string) (*PathDiskSizeInfo, error) {
 	res.FreeSize = int(usage.Free / 1024 / 1024 / 1024)
 	res.UsageSize = int(usage.Used / 1024 / 1024 / 1024)
 	return res, nil
-
 }
 
 func IsDirEmpty(path string) bool {
