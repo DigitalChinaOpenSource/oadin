@@ -1,6 +1,15 @@
 package server
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
 	"byze/internal/provider"
@@ -9,13 +18,6 @@ import (
 	"byze/internal/types"
 	"byze/internal/utils"
 	"byze/internal/utils/bcode"
-	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error) {
@@ -26,7 +28,7 @@ func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error
 	}
 	defaultPath = filepath.Join(userDir, ".ollama")
 	res := &dto.GetModelFilePathData{}
-	value := os.Getenv("OLLAMA_MODELS")
+	value := os.Getenv("BYZE_OLLAMA_MODELS")
 	if value != "" {
 		res.Path = value
 	} else {
@@ -58,37 +60,42 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if !isTargetDirEmpty {
 		return &dto.ModifyModelFilePathResponse{}, errors.New("target path is not empty")
 	}
-	status, err := utils.SamePartitionStatus(req.SourcePath, req.TargetPath)
-	if err != nil {
-		return nil, err
+
+	isSourceDirEmpty := utils.IsDirEmpty(req.SourcePath)
+	if !isSourceDirEmpty {
+		status, err := utils.SamePartitionStatus(req.SourcePath, req.TargetPath)
+		if err != nil {
+			return nil, err
+		}
+		if status {
+			err = utils.CopyDir(req.SourcePath, req.TargetPath)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			sourcePathSize, err := utils.GetFilePathTotalSize(req.SourcePath)
+			if err != nil {
+				return nil, err
+			}
+			targetDiskSizeInfo, err := utils.SystemDiskSize(req.TargetPath)
+			if err != nil {
+				return nil, err
+			}
+			if int(sourcePathSize) > targetDiskSizeInfo.FreeSize {
+				return nil, errors.New("Target file path size is not enough")
+			}
+			err = utils.CopyDir(req.SourcePath, req.TargetPath)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
-	if status {
-		err = utils.CopyDir(req.SourcePath, req.TargetPath)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		sourcePathSize, err := utils.GetFilePathTotalSize(req.SourcePath)
-		if err != nil {
-			return nil, err
-		}
-		targetDiskSizeInfo, err := utils.SystemDiskSize(req.TargetPath)
-		if err != nil {
-			return nil, err
-		}
-		if int(sourcePathSize) > targetDiskSizeInfo.FreeSize {
-			return nil, errors.New("Target file path size is not enough")
-		}
-		err = utils.CopyDir(req.SourcePath, req.TargetPath)
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	envInfo := &utils.EnvVariables{
 		Name:  "BYZE_OLLAMA_MODELS",
 		Value: req.TargetPath,
 	}
-	err = utils.ModifySystemUserVariables(envInfo)
+	err := utils.ModifySystemUserVariables(envInfo)
 	if err != nil {
 		err = os.RemoveAll(req.TargetPath)
 		if err != nil {
@@ -97,14 +104,14 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		return nil, err
 	}
 	os.Setenv("BYZE_OLLAMA_MODELS", req.TargetPath)
-	err = os.RemoveAll(req.SourcePath)
-	if err != nil {
-		return nil, err
-	}
 
-	// restart model engine
+	// 在删除源路径前先停止引擎，避免进程仍在使用文件导致错误
 	engine := provider.GetModelEngine("ollama")
-	err = engine.StopEngine()
+	_ = engine.StopEngine()
+
+	time.Sleep(1 * time.Second)
+
+	err = os.RemoveAll(req.SourcePath)
 	if err != nil {
 		return nil, err
 	}
