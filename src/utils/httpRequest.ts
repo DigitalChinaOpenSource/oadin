@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { notification } from 'antd';
+import { message } from 'antd';
 
 export interface ResponseData<T = any> {
   business_code: number;
@@ -45,24 +45,16 @@ const createApiInstance = (baseURL: string) => {
           return Promise.reject(error);
         }
         if (error.response?.data?.error) {
-          notification.error({
-            message: `${error.response?.data.error}`,
-          });
+          message.error(`${error.response?.data.error}`);
           return Promise.reject(error);
         }
 
         const { status, statusText } = error.response;
-        notification.error({
-          message: `请求错误: ${status} ${statusText}`,
-        });
+        message.error(`请求错误: ${status} ${statusText}`);
       } else if (error?.request) {
-        notification.error({
-          message: '网络异常，请检查您的网络连接',
-        });
+        message.error('网络异常，请检查您的网络连接');
       } else {
-        notification.error({
-          message: `请求错误: ${error?.message}`,
-        });
+        message.error(`请求错误: ${error?.message}`);
       }
 
       return Promise.reject(error);

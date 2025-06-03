@@ -51,7 +51,7 @@ export function useViewModel(props: IServiceProviderDetailProps) {
 
   const formateIsoTime = (isoTime: string) => {
     if (!isoTime) return null;
-    return dayjs(isoTime).format('YYYY-MM-DD');
+    return dayjs(isoTime).format('YYYY-MM-DD HH:mm:ss');
   };
 
   return { providerDetailLoading, providerDetail, selectedRow, onCancel, formateIsoTime, handlePageChange };
