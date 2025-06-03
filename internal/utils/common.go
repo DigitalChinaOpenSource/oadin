@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"byze/internal/types"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -20,8 +21,6 @@ import (
 	"time"
 
 	"github.com/jaypipes/ghw"
-
-	"byze/internal/types"
 )
 
 var textContentTypes = []string{"text/", "application/json", "application/xml", "application/javascript", "application/x-ndjson"}
@@ -248,7 +247,6 @@ func IpexOllamaSupportGPUStatus() bool {
 	return false
 }
 
-// 检测GPU型号
 func DetectGpuModel() string {
 	gpu, err := ghw.GPU()
 	if err != nil {

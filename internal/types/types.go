@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"byze/internal/utils"
 )
 
 const (
@@ -23,7 +21,7 @@ type HTTPContent struct {
 }
 
 func (hc HTTPContent) String() string {
-	return fmt.Sprintf("HTTPContent{Header: %+v, Body: %s}", hc.Header, utils.BodyToString(hc.Header, hc.Body))
+	return fmt.Sprintf("HTTPContent{Header: %+v, Body: %s}", hc.Header, string(hc.Body))
 }
 
 type HTTPErrorResponse struct {
@@ -33,7 +31,7 @@ type HTTPErrorResponse struct {
 }
 
 func (hc *HTTPErrorResponse) Error() string {
-	return fmt.Sprintf("HTTPErrorResponse{StatusCode: %d, Header: %+v, Body: %s}", hc.StatusCode, hc.Header, utils.BodyToString(hc.Header, hc.Body))
+	return fmt.Sprintf("HTTPErrorResponse{StatusCode: %d, Header: %+v, Body: %s}", hc.StatusCode, hc.Header, string(hc.Body))
 }
 
 // ConversionStepDef NOTE: we use YAML instead of JSON here because it's easier to read and write
