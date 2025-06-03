@@ -94,7 +94,7 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 	tempFilename := filepath.Join(tempDir, packageName)
 	fmt.Printf("Downloading uv %s for %s...\n", version, platformKey)
 	fmt.Printf("URL: %s\n", downloadURL)
-	if err := downloadWithRedirects(downloadURL, tempFilename); err != nil {
+	if err := DownloadWithRedirects(downloadURL, tempFilename, nil); err != nil {
 		return fmt.Errorf("download failed: %v", err)
 	}
 	fmt.Printf("Extracting %s to %s...\n", packageName, binDir)
