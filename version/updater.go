@@ -2,14 +2,10 @@ package version
 
 import (
 	"bytes"
-	"byze/internal/datastore"
-	"byze/internal/types"
-	"byze/internal/utils"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"io"
 	"log/slog"
 	"net/http"
@@ -21,12 +17,18 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"byze/internal/datastore"
+	"byze/internal/types"
+	"byze/internal/utils"
+
+	"gorm.io/gorm"
 )
 
 var (
 	// awawit provide
 	UpdateCheckUrlBase = "https://api-aipc-test.dcclouds.com"
-	//UpdateCheckUrlBase  = "http://10.3.74.123:3000"
+	// UpdateCheckUrlBase  = "http://10.3.74.123:3000"
 	UpdateCheckInterval = 60 * 60 * time.Second
 
 	AppKey    = "byze"
@@ -104,7 +106,6 @@ func UpdaterAuth() (UpdateAuthResponseData, error) {
 	res := UpdateAuthResponse{}
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequest("POST", authUrl, bytes.NewBuffer(reqData))
-
 	if err != nil {
 		return UpdateAuthResponseData{}, err
 	}
@@ -134,7 +135,6 @@ func UpdaterAuth() (UpdateAuthResponseData, error) {
 		return UpdateAuthResponseData{}, fmt.Errorf(res.Message)
 	}
 	return res.Data, nil
-
 }
 
 func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
@@ -156,7 +156,6 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 	}
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), bytes.NewBuffer(reqData))
-
 	if err != nil {
 		slog.Warn(fmt.Sprintf("failed to check for update: %s", err))
 		return false, updateResp

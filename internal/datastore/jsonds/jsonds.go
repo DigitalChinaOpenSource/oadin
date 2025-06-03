@@ -3,6 +3,7 @@ package jsonds
 import (
 	"context"
 	"crypto/rand"
+	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"byze/internal/datastore"
-	"embed"
 )
 
 // generateRandomID generates a random 16-byte ID and returns it as a 32-character hex string

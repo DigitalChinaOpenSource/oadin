@@ -4,10 +4,11 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io/fs"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 //go:embed dist/*

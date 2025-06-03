@@ -4,11 +4,12 @@ package utils
 
 import (
 	"fmt"
-	"github.com/shirou/gopsutil/mem"
 	"os"
 	"os/user"
 	"strings"
 	"syscall"
+
+	"github.com/shirou/gopsutil/mem"
 )
 
 func GetMemoryInfo() (*MemoryInfo, error) {
@@ -73,7 +74,7 @@ func ModifySystemUserVariables(envInfo *EnvVariables) error {
 	}
 
 	// append
-	f, err := os.OpenFile(fullPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(fullPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		return err
 	}
