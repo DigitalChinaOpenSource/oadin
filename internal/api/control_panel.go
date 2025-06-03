@@ -1,13 +1,15 @@
 package api
 
 import (
+	"errors"
+	"io"
+	"net/http"
+
 	"byze/internal/api/dto"
 	"byze/internal/server"
 	"byze/internal/utils/bcode"
-	"errors"
+
 	"github.com/gin-gonic/gin"
-	"io"
-	"net/http"
 )
 
 func (t *ByzeCoreServer) GetModelFilePathHandler(c *gin.Context) {
@@ -70,6 +72,6 @@ func (t *ByzeCoreServer) ModifyModelFilePathHandler(c *gin.Context) {
 }
 
 func (t *ByzeCoreServer) GetAllModels(c *gin.Context) {
-	//ctx := c.Request.Context()
+	// ctx := c.Request.Context()
 
 }

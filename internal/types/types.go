@@ -126,6 +126,7 @@ type EngineRecommendConfig struct {
 	Origin         string `json:"origin"`
 	Scheme         string `json:"scheme"`
 	RecommendModel string `json:"recommend_model"`
+	EnginePath     string `json:"engine_path"`
 	DownloadUrl    string `json:"download_url"`
 	DownloadPath   string `json:"download_path"`
 	ExecPath       string `json:"exec_path"`

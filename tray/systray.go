@@ -1,17 +1,19 @@
 package tray
 
 import (
-	trayTemplate "byze/tray/icon"
-	tray "byze/tray/utils"
-	"byze/version"
 	"context"
 	"fmt"
-	"github.com/getlantern/systray/example/icon"
-	"github.com/pkg/browser"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+
+	trayTemplate "byze/tray/icon"
+	tray "byze/tray/utils"
+	"byze/version"
+
+	"github.com/getlantern/systray/example/icon"
+	"github.com/pkg/browser"
 
 	"github.com/getlantern/systray"
 	"github.com/sqweek/dialog"

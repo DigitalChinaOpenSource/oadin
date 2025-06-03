@@ -1,8 +1,9 @@
 package dto
 
 import (
-	"byze/internal/types"
 	"time"
+
+	"byze/internal/types"
 
 	"byze/internal/utils"
 	"byze/internal/utils/bcode"
