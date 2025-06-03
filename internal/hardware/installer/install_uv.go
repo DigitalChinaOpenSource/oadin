@@ -153,6 +153,11 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 			// 关闭文件
 			defer src.Close()
 			defer dest.Close()
+
+			// 设置文件执行权限
+			if err := os.Chmod(filePath, 0755); err != nil {
+				return fmt.Errorf("无法设置文件 %s 执行权限: %v", filePath, err)
+			}
 		}
 	} else if strings.HasSuffix(packageName, ".tar.gz") {
 		file, err := os.Open(tempFilename)
@@ -187,39 +192,40 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 				return fmt.Errorf("读取 .tar.gz 文件错误: %v", err)
 			}
 
-			target := filepath.Join(binDir, header.Name)
+			// 只处理普通文件
+			if header.Typeflag != tar.TypeReg {
+				continue
+			}
 
-			switch header.Typeflag {
-			case tar.TypeDir:
-				if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
-					return fmt.Errorf("无法创建目录 %s: %v", target, err)
-				}
-			case tar.TypeReg:
-				if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
-					return fmt.Errorf("无法创建目录: %v", err)
-				}
-				file, err := os.Create(target)
-				if err != nil {
-					return fmt.Errorf("无法创建文件 %s: %v", target, err)
-				}
-				if _, err := io.Copy(file, tr); err != nil {
-					file.Close()
-					os.Remove(target)
-					return fmt.Errorf("无法复制文件 %s: %v", target, err)
-				}
-				if err := file.Sync(); err != nil {
-					file.Close()
-					os.Remove(target)
-					return fmt.Errorf("无法同步文件 %s: %v", target, err)
-				}
-				if err := file.Close(); err != nil {
-					return fmt.Errorf("无法关闭文件 %s: %v", target, err)
-				}
-				if err := os.Chmod(target, os.FileMode(header.Mode)); err != nil {
-					return fmt.Errorf("无法设置文件权限 %s: %v", target, err)
-				}
-			default:
-				return fmt.Errorf("不支持的文件类型 %c in %s", header.Typeflag, header.Name)
+			target := filepath.Join(binDir, filepath.Base(header.Name))
+
+			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+				return fmt.Errorf("无法创建目录: %v", err)
+			}
+			file, err := os.Create(target)
+			if err != nil {
+				return fmt.Errorf("无法创建文件 %s: %v", target, err)
+			}
+			if _, err := io.Copy(file, tr); err != nil {
+				file.Close()
+				os.Remove(target)
+				return fmt.Errorf("无法复制文件 %s: %v", target, err)
+			}
+			if err := file.Sync(); err != nil {
+				file.Close()
+				os.Remove(target)
+				return fmt.Errorf("无法同步文件 %s: %v", target, err)
+			}
+			if err := file.Close(); err != nil {
+				return fmt.Errorf("无法关闭文件 %s: %v", target, err)
+			}
+			if err := os.Chmod(target, os.FileMode(header.Mode)); err != nil {
+				return fmt.Errorf("无法设置文件权限 %s: %v", target, err)
+			}
+
+			// 设置文件执行权限
+			if err := os.Chmod(target, 0755); err != nil {
+				return fmt.Errorf("无法设置文件 %s 执行权限: %v", target, err)
 			}
 		}
 	} else {
