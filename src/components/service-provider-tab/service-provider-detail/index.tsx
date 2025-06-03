@@ -32,6 +32,7 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
         </div>
       ) : (
         <>
+          <div className={styles.infoName}>基础信息</div>
           <div className={styles.infoBlock}>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>服务提供商名称:</span>

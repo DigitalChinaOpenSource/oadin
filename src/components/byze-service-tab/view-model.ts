@@ -15,7 +15,7 @@ export function useViewModel() {
         if (data?.status === 'UP') setCheckStatus(true);
       },
       onError: (error) => {
-        message.error('检查服务健康状态失败，请重试');
+        message.error('白泽服务不可用，请检查服务状态');
         console.error('检查服务健康状态失败:', error);
       },
     },
