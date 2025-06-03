@@ -3,6 +3,7 @@ package server
 import (
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
+	"byze/internal/provider"
 	"byze/internal/provider/template"
 	"byze/internal/schedule"
 	"byze/internal/types"
@@ -84,7 +85,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		}
 	}
 	envInfo := &utils.EnvVariables{
-		Name:  "OLLAMA_MODELS",
+		Name:  "BYZE_OLLAMA_MODELS",
 		Value: req.TargetPath,
 	}
 	err = utils.ModifySystemUserVariables(envInfo)
@@ -95,8 +96,25 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		}
 		return nil, err
 	}
-	os.Setenv("OLLAMA_MODELS", req.TargetPath)
+	os.Setenv("BYZE_OLLAMA_MODELS", req.TargetPath)
 	err = os.RemoveAll(req.SourcePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// restart model engine
+	engine := provider.GetModelEngine("ollama")
+	err = engine.StopEngine()
+	if err != nil {
+		return nil, err
+	}
+
+	err = engine.InitEnv()
+	if err != nil {
+		return nil, err
+	}
+
+	err = engine.StartEngine()
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +123,6 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	res.Bcode = *bcode.ControlPanelCode
 	res.Data = struct{}{}
 	return res, nil
-
 }
 
 func GetModelList(ctx context.Context, request dto.GetModelListRequest) (*dto.RecommendModelResponse, error) {
@@ -139,7 +156,7 @@ func GetModelList(ctx context.Context, request dto.GetModelListRequest) (*dto.Re
 			return &dto.RecommendModelResponse{Data: nil}, err
 		}
 		flavor = "ollama"
-		//service := "chat"
+		// service := "chat"
 		var resModelNameList []string
 
 		for modelService, modelInfo := range recommendModel {
@@ -168,7 +185,7 @@ func GetModelList(ctx context.Context, request dto.GetModelListRequest) (*dto.Re
 				model.CanSelect = canSelect
 				model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
 				model.Avatar = localModelInfo.Avatar
-				//model.Class = localModelInfo.Class
+				// model.Class = localModelInfo.Class
 				model.OllamaId = localModelInfo.OllamaId
 				serviceModelList[modelService] = append(serviceModelList[modelService], model)
 				resModelNameList = append(resModelNameList, model.Name)
@@ -206,7 +223,7 @@ func GetModelList(ctx context.Context, request dto.GetModelListRequest) (*dto.Re
 					model.CanSelect = canSelect
 					model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
 					model.Avatar = localModel.Avatar
-					//model.Class = localModel.Class
+					// model.Class = localModel.Class
 					model.Size = localModel.Size
 					model.OllamaId = localModel.OllamaId
 					serviceModelList[modelService] = append(serviceModelList[modelService], *model)

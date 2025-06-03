@@ -1,19 +1,21 @@
 package api
 
 import (
-	"byze/internal/api/dto"
-	"byze/internal/server"
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io"
 	"log"
 	"log/slog"
 	"net/http"
 	"strings"
+
+	"byze/internal/api/dto"
+	"byze/internal/server"
+	"byze/internal/types"
+	"byze/internal/utils/bcode"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (t *ByzeCoreServer) CreateModel(c *gin.Context) {
@@ -104,7 +106,7 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 				// 数据通道关闭，发送结束标记
 
 				// fmt.Fprintf(w, "\n[DONE]\n\n")
-				//flusher.Flush()
+				// flusher.Flush()
 				// 通道中没有数据，再结束推送
 				if data == nil {
 					fmt.Fprintf(w, "data: {\"status\": \"success\"}\n\n")

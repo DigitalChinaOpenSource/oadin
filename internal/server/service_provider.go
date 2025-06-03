@@ -355,11 +355,9 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 			} else {
 				sp.AuthKey = request.AuthKey
 			}
-
 		} else {
 			sp.AuthKey = request.AuthKey
 		}
-
 	}
 	if request.Desc != "" {
 		sp.Desc = request.Desc

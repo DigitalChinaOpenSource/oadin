@@ -3,15 +3,15 @@
 package tray
 
 import (
-	"byze/config"
 	"fmt"
 	"log/slog"
 	"os/exec"
 	"syscall"
+
+	"byze/config"
 )
 
 func ShowLogs() error {
-
 	// Windows implementation (your existing code)
 	cmd_path := "c:\\Windows\\system32\\cmd.exe"
 	cmd := exec.Command(cmd_path, "/c", "start", config.GlobalByzeEnvironment.LogDir)

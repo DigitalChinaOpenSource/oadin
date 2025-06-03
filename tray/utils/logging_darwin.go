@@ -3,10 +3,11 @@
 package tray
 
 import (
-	"byze/config"
 	"fmt"
 	"log/slog"
 	"os/exec"
+
+	"byze/config"
 )
 
 func ShowLogs() error {
