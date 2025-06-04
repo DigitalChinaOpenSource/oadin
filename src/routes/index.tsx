@@ -7,6 +7,8 @@ import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import McpDetail from '../components/mcp-manage/mcp-detail';
 import ModelChat from '../pages/model-chat'; // 新增对话页面
+import ServiceProviderManage from '@/components/service-provider-tab';
+import ByzeServiceTab from '@/components/byze-service-tab';
 
 const router = createBrowserRouter([
   {
@@ -22,6 +24,7 @@ const router = createBrowserRouter([
           />
         ),
       },
+      // 模型管理
       {
         path: '/model-manage',
         children: [
@@ -39,10 +42,22 @@ const router = createBrowserRouter([
           },
         ],
       },
+      // 设置
       {
-        path: '/server-manage',
-        element: <ServerManage />,
+        path: '/settings',
+        // element: <ServerManage />,
+        children: [
+          {
+            path: 'service-provider-manage',
+            element: <ServiceProviderManage />, // 服务提供商管理
+          },
+          {
+            path: 'about-us',
+            element: <ByzeServiceTab />, // 关于我们
+          },
+        ],
       },
+      // MCP服务
       {
         path: '/mcp-service',
         children: [
@@ -56,6 +71,7 @@ const router = createBrowserRouter([
           },
         ],
       },
+      //MCP详情
       {
         path: '/mcp-detail',
         element: <McpDetail />,
