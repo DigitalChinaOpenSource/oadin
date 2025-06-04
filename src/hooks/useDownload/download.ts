@@ -123,8 +123,9 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
   const startFetch = () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
+    const API_BASE_URL = import.meta.env.VITE_HEALTH_API_URL || '';
 
-    fetchEventSource(`/byze/v0.2/model/stream`, {
+    fetchEventSource(`${API_BASE_URL}/byze/v0.2/model/stream`, {
       method: 'POST',
       headers: baseHeaders(),
       body: JSON.stringify(data),
