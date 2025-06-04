@@ -319,7 +319,21 @@ func Run(ctx context.Context) error {
 			if globalServerManager.byzeServer != nil {
 				return fmt.Errorf("server is already running")
 			}
-			return Run(context.Background())
+			byzeSrv = &http.Server{
+				Addr:    config.GlobalByzeEnvironment.ApiHost,
+				Handler: byzeServer.Router,
+			}
+			go func() {
+				if err := byzeSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					errChan <- fmt.Errorf("byze server error: %v", err)
+				}
+			}()
+			err = <-errChan
+			if err != nil {
+				return err
+			}
+			globalServerManager.byzeServer = byzeSrv
+			return nil
 		},
 		func() error {
 			// 停止服务器的回调

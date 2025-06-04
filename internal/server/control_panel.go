@@ -21,12 +21,10 @@ import (
 )
 
 func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error) {
-	var defaultPath string
-	userDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	defaultPath = filepath.Join(userDir, ".ollama")
+	engineName := types.FlavorOllama
+	engine := provider.GetModelEngine(engineName)
+	engineConfig := engine.GetConfig()
+	defaultPath := filepath.Join(engineConfig.EnginePath, "models")
 	res := &dto.GetModelFilePathData{}
 	value := os.Getenv("BYZE_OLLAMA_MODELS")
 	if value != "" {
@@ -60,6 +58,10 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if !isTargetDirEmpty {
 		return &dto.ModifyModelFilePathResponse{}, errors.New("target path is not empty")
 	}
+
+	// 迁移之前需停止引擎，避免进程仍在使用文件导致错误
+	engine := provider.GetModelEngine("ollama")
+	_ = engine.StopEngine()
 
 	isSourceDirEmpty := utils.IsDirEmpty(req.SourcePath)
 	if !isSourceDirEmpty {
@@ -104,10 +106,6 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		return nil, err
 	}
 	os.Setenv("BYZE_OLLAMA_MODELS", req.TargetPath)
-
-	// 在删除源路径前先停止引擎，避免进程仍在使用文件导致错误
-	engine := provider.GetModelEngine("ollama")
-	_ = engine.StopEngine()
 
 	time.Sleep(1 * time.Second)
 
