@@ -164,9 +164,16 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		}
 	}
 
+	dataDir, err := utils.GetByzeDataDir()
+	if err != nil {
+		slog.Error("Get Byze data dir failed: " + err.Error())
+		return nil
+	}
+
 	execFile := ""
 	execPath := ""
 	downloadUrl := ""
+	enginePath := fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 	switch runtime.GOOS {
 	case "windows":
 		execFile = "ollama.exe"
@@ -181,6 +188,8 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-rocm.zip"
 		case types.GPUTypeIntelArc:
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			slog.Info("start ipex-llm-ollama ------------- ", execPath)
+			execFile = "ollama.exe"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama.zip"
 		default:
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-base.zip"
@@ -188,16 +197,13 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	case "linux":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-		// downloadUrl = "http://120.232.136.73:31619/byzedev/OllamaSetup.exe"
 		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", "ollama")
 		if runtime.GOARCH == "amd64" {
-			// downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-darwin.zip"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
 		} else {
-			// downloadUrl = "http://120.232.136.73:31619/byzedev/Ollama-arm64.zip"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
 		}
 	default:
@@ -208,6 +214,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		Host:           "127.0.0.1:16677",
 		Origin:         "127.0.0.1",
 		Scheme:         "http",
+		EnginePath:     enginePath,
 		RecommendModel: "deepseek-r1:7b",
 		DownloadUrl:    downloadUrl,
 		DownloadPath:   downloadPath,
@@ -260,6 +267,10 @@ func (o *OllamaProvider) InstallEngine() error {
 			appPath = filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
 		}
 
+		//cmd := exec.Command("open", appPath)
+		//if err := cmd.Run(); err != nil {
+		//	return fmt.Errorf("failed to open ollama installer: %v", err)
+		//}
 		// move it to Applications
 		applicationPath := filepath.Join("/Applications/", "Ollama.app")
 		if _, err = os.Stat(applicationPath); os.IsNotExist(err) {
@@ -295,6 +306,17 @@ func (o *OllamaProvider) InitEnv() error {
 	if err != nil {
 		return fmt.Errorf("failed to set OLLAMA_ORIGIN: %w", err)
 	}
+
+	modelPath := fmt.Sprintf("%s/%s", o.EngineConfig.EnginePath, "models")
+	currModelPath := os.Getenv("BYZE_OLLAMA_MODELS")
+	if currModelPath != "" {
+		modelPath = currModelPath
+	}
+	err = os.Setenv("OLLAMA_MODELS", modelPath)
+	if err != nil {
+		return fmt.Errorf("failed to set OLLAMA_MODELS: %w", err)
+	}
+
 	return nil
 }
 
