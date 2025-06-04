@@ -295,12 +295,36 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 		return err
 	}
 
-	// 保存授权配置项
-	// 注意这里是反向逻辑
+	// 将逗号分隔的字符串转换为map，便于处理
+	toolMap := make(map[string]bool)
+	if con.Kits != "" {
+		for _, id := range strings.Split(con.Kits, ",") {
+			if id != "" { // 忽略空字符串
+				toolMap[id] = true
+			}
+		}
+	}
+
+	// 更新工具状态
 	if !req.Enabled {
-		con.Kits += "," + req.ToolId
+		// 要禁用工具：添加到禁用列表
+		toolMap[req.ToolId] = true
 	} else {
-		con.Kits = strings.Replace(con.Kits, ","+req.ToolId, "", -1)
+		// 要启用工具：从禁用列表中移除
+		delete(toolMap, req.ToolId)
+	}
+
+	// 将map转回逗号分隔的字符串
+	var toolIds []string
+	for id := range toolMap {
+		toolIds = append(toolIds, id)
+	}
+
+	// 重置为新的字符串
+	if len(toolIds) > 0 {
+		con.Kits = strings.Join(toolIds, ",")
+	} else {
+		con.Kits = "" // 如果没有禁用的工具，设为空字符串
 	}
 
 	err = M.Ds.Put(c.Request.Context(), con)
