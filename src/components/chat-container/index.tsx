@@ -1,7 +1,8 @@
-import { Button } from 'antd';
+import { Button, Col, Row } from 'antd';
 import createChat from '@/components/icons/createChat.svg';
 import chatHistory from '@/components/icons/chatHistory.svg';
 import ChatModelManage from './chat-model-manage';
+import ChatHistoryDrawer from './chat-history-drawer';
 import styles from './index.module.scss';
 export default function ChatContainer() {
   return (
@@ -35,10 +36,18 @@ export default function ChatContainer() {
           </Button>
         </div>
       </div>
+      <Row>
+        <Col
+          offset={5}
+          md={14}
+        >
+          <div className={styles.chatContent}>
+            <ChatModelManage />
+          </div>
+        </Col>
+      </Row>
 
-      <div className={styles.chatContent}>
-        <ChatModelManage />
-      </div>
+      {/* <ChatHistoryDrawer /> */}
     </div>
   );
 }

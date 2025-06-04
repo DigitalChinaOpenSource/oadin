@@ -4,7 +4,7 @@ interface LocalIconProps {
   width?: number;
   height?: number;
   fill?: string;
-  hoverFill?: string; // 新增 hoverFill 属性
+  hoverFill?: string;
 }
 
 const LocalIcon: React.FC<LocalIconProps> = ({
