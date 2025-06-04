@@ -69,19 +69,19 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
       ],
     },
     {
-      key: 'server-manage',
+      key: 'settings',
       label: '设置',
       icon: (
         <img
-          src={location.pathname.startsWith('/server-manage') ? smac : sm}
+          src={location.pathname.startsWith('/settings') ? smac : sm}
           alt="设置"
         />
       ),
       children: [
         { key: 'mcp-service6', label: '模型设置' },
         { key: 'mcp-service7', label: '代理设置' },
-        { key: 'mcp-service8', label: '服务提供商管理' },
-        { key: 'mcp-service9', label: '关于我们' },
+        { key: '/settings/service-provider-manage', label: '服务提供商管理' },
+        { key: '/settings/about-us', label: '关于我们' },
       ],
     },
     {
