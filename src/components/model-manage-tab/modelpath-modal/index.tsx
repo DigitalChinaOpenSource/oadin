@@ -23,7 +23,7 @@ export default function ModelPathModal(props: IModelPathModalProps) {
   const loadingHideRef = useRef<() => void>();
 
   const { downloadList } = useModelDownloadStore();
-  const { setMigratingStatus } = useModelPathChangeStore();
+  const { setIsPathMigrating, setMigratingStatus } = useModelPathChangeStore();
   const [form] = Form.useForm();
   const formValues = Form.useWatch([], form);
   const modelPathValue = Form.useWatch('modelPath', form);
@@ -82,13 +82,15 @@ export default function ModelPathModal(props: IModelPathModalProps) {
         setCurrentPathSpace(data);
         onCheckPathSpace(formValues.modelPath);
         onModalPathChangeSuccess();
+        setMigratingStatus('init');
       },
       onError: (error) => {
         loadingHideRef.current?.();
         message.error(error?.message || '模型存储路径修改失败');
+        setMigratingStatus('failed');
       },
       onFinally: () => {
-        setMigratingStatus(false);
+        setIsPathMigrating(false);
       },
     },
   );
@@ -104,7 +106,8 @@ export default function ModelPathModal(props: IModelPathModalProps) {
       return;
     }
     // 修改全局状态，标识模型存储路径正在迁移中
-    setMigratingStatus(true);
+    setIsPathMigrating(true);
+    setMigratingStatus('pending');
     onChangeModelPath({
       source_path: modalPath || '',
       target_path: values.modelPath,
