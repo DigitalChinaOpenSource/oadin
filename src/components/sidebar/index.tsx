@@ -84,16 +84,10 @@ export default function Sidebar() {
       ],
     },
     {
-      key: 'model-chat',
-      activeIcon: (
+      key: '/model-chat',
+      icon: (
         <img
-          src={mmac}
-          alt="模型对话"
-        />
-      ),
-      inactiveIcon: (
-        <img
-          src={mm}
+          src={location.pathname.startsWith('/model-chat') ? mmac : mm}
           alt="模型对话"
         />
       ),
