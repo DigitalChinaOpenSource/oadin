@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal, Input, Form, message } from 'antd';
 import { useRequest, useDebounce } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
@@ -20,6 +20,8 @@ interface IModelPathSpaceRes {
 
 export default function ModelPathModal(props: IModelPathModalProps) {
   const { modalPath, onModelPathVisible, onModalPathChangeSuccess } = props;
+  const loadingHideRef = useRef<() => void>();
+
   const { downloadList } = useModelDownloadStore();
   const { setMigratingStatus } = useModelPathChangeStore();
   const [form] = Form.useForm();
@@ -74,13 +76,15 @@ export default function ModelPathModal(props: IModelPathModalProps) {
       manual: true,
       onSuccess: (data) => {
         if (data) {
+          loadingHideRef.current?.();
           message.success('模型存储路径修改成功');
         }
         setCurrentPathSpace(data);
-        onCheckPathSpace(data?.path || '');
+        onCheckPathSpace(formValues.modelPath);
         onModalPathChangeSuccess();
       },
       onError: (error) => {
+        loadingHideRef.current?.();
         message.error(error?.message || '模型存储路径修改失败');
       },
       onFinally: () => {
@@ -90,6 +94,7 @@ export default function ModelPathModal(props: IModelPathModalProps) {
   );
 
   const handleToSavePath = () => {
+    loadingHideRef.current = message.loading('正在迁移模型存储路径，请稍候...', 0);
     form.submit();
   };
 
