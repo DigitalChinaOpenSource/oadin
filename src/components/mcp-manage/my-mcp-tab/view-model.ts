@@ -89,7 +89,7 @@ export function useViewModel() {
       },
     });
     // 执行跳转
-    navigate(`/mcp-detail?serviceId=${serviceId}&mcpFrom=myMcp`);
+    navigate(`/mcp-detail?serviceId=${serviceId}`);
   };
 
   // 搜索框搜索

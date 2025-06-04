@@ -10,7 +10,6 @@ export const useMcpDetail = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const serviceId = searchParams.get('serviceId');
-  const mcpFrom = searchParams.get('mcpFrom');
   const [mcpDetail, setMcpDetail] = useState<McpDetailType>();
   const [showMcpModal, setShowMcpModal] = useState(false);
   // const [authMcpParams,setAuthMcpParams] = useState<any>();
@@ -139,7 +138,7 @@ export const useMcpDetail = () => {
 
   // 页面返回
   const handleGoBack = (): void => {
-    navigate(`/mcp-service?mcpFrom=${mcpFrom}`);
+    navigate(-1);
   };
 
   useEffect(() => {

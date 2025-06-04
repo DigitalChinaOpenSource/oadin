@@ -13,7 +13,7 @@ export default function MyMcpTab() {
       <div className={styles.myMcpListContent}>
         <div className={styles.mcpTitle}>
           <div className={styles.mcpTitleText}>
-            <span>MCP服务</span>
+            <span>我的MCP</span>
             <span className={styles.mcpCount}>共 {vm.pagination.total} 个</span>
           </div>
           <div className={styles.searchInput}>

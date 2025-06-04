@@ -17,7 +17,7 @@ export default function McpSquareTab() {
       <div className={styles.mcpSquareContent}>
         <div className={styles.mcpTitle}>
           <div className={styles.mcpTitleText}>
-            <span>MCP服务</span>
+            <span>MCP广场</span>
             <span className={styles.mcpCount}>共 {vm.pagination.total} 个</span>
           </div>
           <div className={styles.searchInput}>

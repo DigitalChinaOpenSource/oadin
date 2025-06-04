@@ -30,15 +30,13 @@ export default function MainLayout() {
           theme={'light'}
           collapsible={true}
         >
-          {/*<div className={styles.layout}>*/}
           <Sidebar />
         </Sider>
         <Layout>
-          <div className={styles.content}>
+          <Content className={styles.content}>
             <Outlet />
-          </div>
+          </Content>
         </Layout>
-        {/*</div>*/}
       </Layout>
     </Layout>
   );

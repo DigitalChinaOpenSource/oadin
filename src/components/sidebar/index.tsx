@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Badge } from 'antd';
+import { Badge, Menu } from 'antd';
 import styles from './index.module.scss';
 import favicon from '../../assets/favicon.png';
 import { SiderDownloadIcon } from '../icons';
@@ -12,73 +12,82 @@ import sm from '../icons/sm.svg';
 import smac from '../icons/smac.svg';
 import mcp from '../icons/mcp.svg';
 import mcpac from '../icons/mcpac.svg';
+import type { MenuProps, MenuTheme } from 'antd';
+
+type MenuItem = Required<MenuProps>['items'][number];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedKey, setSelectedKey] = useState('model-manage');
   // 是否展示下载列表弹窗
   const [isDownloadListOpen, setIsDownloadListOpen] = useState(false);
   const { downloadList } = useModelDownloadStore();
-  useEffect(() => {
-    const path = location.pathname.split('/')[1] || 'model-manage';
-    setSelectedKey(path.includes('mcp-service') || path.includes('mcp-detail') ? 'mcp-service' : path);
-  }, [location]);
 
-  const menuItems = [
+  // 当前选中的菜单项和展开的菜单项
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [openKeys, setOpenKeys] = useState<string[]>([]);
+
+  useEffect(() => {
+    // 根据当前路由设置选中菜单项和展开的菜单项
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    if (location.pathname.startsWith('/mcp-detail')) return;
+    if (pathSegments.length > 0) {
+      setSelectedKeys([location.pathname]);
+      setOpenKeys([pathSegments[0]]);
+    }
+  }, [location.pathname]);
+
+  const menuItems: MenuItem[] = [
     {
       key: 'model-manage',
-      activeIcon: (
-        <img
-          src={mmac}
-          alt="模型管理"
-        />
-      ),
-      inactiveIcon: (
-        <img
-          src={mm}
-          alt="模型管理"
-        />
-      ),
       label: '模型管理',
+      icon: (
+        <img
+          src={location.pathname.startsWith('/model-manage') ? mmac : mm}
+          alt="模型管理"
+        />
+      ),
+      children: [
+        { key: '/model-manage/model-list', label: '模型广场' },
+        { key: '/model-manage/my-model-list', label: '我的模型' },
+        { key: '/model-manage/model-experience', label: '模型体验' },
+      ],
     },
     {
       key: 'mcp-service',
-      activeIcon: (
-        <img
-          src={mcpac}
-          alt="MCP服务"
-        />
-      ),
-      inactiveIcon: (
-        <img
-          src={mcp}
-          alt="MCP服务"
-        />
-      ),
       label: 'MCP服务',
+      icon: (
+        <img
+          src={location.pathname.startsWith('/mcp-service') || location.pathname.startsWith('/mcp-detail') ? mcpac : mcp}
+          alt="MCP服务"
+        />
+      ),
+      children: [
+        { key: '/mcp-service/mcp-list', label: 'MCP广场' },
+        { key: '/mcp-service/my-mcp-list', label: '我的MCP' },
+      ],
     },
     {
       key: 'server-manage',
-      activeIcon: (
+      label: '设置',
+      icon: (
         <img
-          src={smac}
-          alt="服务管理"
+          src={location.pathname.startsWith('/server-manage') ? smac : sm}
+          alt="设置"
         />
       ),
-      inactiveIcon: (
-        <img
-          src={sm}
-          alt="服务管理"
-        />
-      ),
-      label: '服务管理',
+      children: [
+        { key: 'mcp-service6', label: '模型设置' },
+        { key: 'mcp-service7', label: '代理设置' },
+        { key: 'mcp-service8', label: '服务提供商管理' },
+        { key: 'mcp-service9', label: '关于我们' },
+      ],
     },
   ];
 
-  const handleMenuClick = (key: string) => {
-    navigate(`/${key}`);
-    setSelectedKey(key);
+  const handleMenuClick = ({ key }: { key: string }) => {
+    console.log('key------', key);
+    navigate(`${key}`);
   };
 
   const handleDownload = (visible: boolean) => {
@@ -87,30 +96,16 @@ export default function Sidebar() {
 
   return (
     <div className={styles.sidebar}>
-      {/*<div className={styles.logo}>*/}
-      {/*  <img*/}
-      {/*    src={favicon}*/}
-      {/*    alt="Logo"*/}
-      {/*  />*/}
-      {/*</div>*/}
       <div className={styles.menuContainer}>
-        {menuItems.map((item) => (
-          <div
-            key={item.key}
-            className={`${styles.menuItem} ${selectedKey === item.key ? styles.selected : ''}`}
-            onClick={() => handleMenuClick(item.key)}
-          >
-            <div className={styles.icon}>{selectedKey === item.key ? item.activeIcon : item.inactiveIcon}</div>
-            <div
-              className={styles.label}
-              style={{
-                color: selectedKey === item.key ? '#000115' : '#344054',
-              }}
-            >
-              {item.label}
-            </div>
-          </div>
-        ))}
+        <Menu
+          selectedKeys={selectedKeys} // 动态设置选中项
+          openKeys={openKeys} // 动态设置展开项
+          mode="inline"
+          theme="light"
+          items={menuItems}
+          onClick={handleMenuClick}
+          onOpenChange={(keys) => setOpenKeys(keys)} // 更新展开项
+        />
       </div>
 
       {!!downloadList?.length && (
