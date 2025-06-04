@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge, Menu } from 'antd';
 import styles from './index.module.scss';
-import favicon from '../../assets/favicon.png';
 import { SiderDownloadIcon } from '../icons';
 import DownloadListBox from '../download-list-box';
 import useModelDownloadStore from '../../store/useModelDownloadStore';

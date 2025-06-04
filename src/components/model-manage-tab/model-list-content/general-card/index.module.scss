@@ -6,7 +6,7 @@
   background-color: #ffffff;
   border-radius: 8px;
   padding: 20px;
-  overflow: hidden;
+  border: 1px solid var(--border-color-border-weak, #e4e6eb);
   :global(.ant-card-body) {
     padding: 16px;
   }
@@ -18,7 +18,7 @@
     height: 24px;
     color: #fff;
     text-align: center;
-    border-radius: 0px 8px;
+    border-radius: 0 8px;
     background: linear-gradient(90deg, #ff6d17 0%, #ffa92b 100%);
   }
   .cardHeader {
@@ -54,7 +54,7 @@
       border-radius: 999px;
       padding: 1px 8px;
       display: flex;
-      margin: 11px 0px 0 8px;
+      margin: 11px 0 0 8px;
       .localOrCloudText {
         margin-left: 2px;
       }
@@ -121,7 +121,7 @@
   .handlebar {
     position: absolute;
     bottom: -64px;
-    left: 0px;
+    left: 0;
     width: 100%;
     padding: 16px 20px;
     opacity: 0;
@@ -146,7 +146,7 @@
 .generalCardHover {
   &:hover {
     background: #f9faff;
-    box-shadow: 0px 4px 4px 0px rgba(217, 217, 217, 0.4);
+    box-shadow: 0 4px 4px 0 rgba(217, 217, 217, 0.4);
     .infoWrapper {
       opacity: 0;
       transform: translateY(20px);
@@ -173,6 +173,6 @@
 
 .progress {
   position: absolute;
-  left: 0px;
+  left: 0;
   bottom: -6px;
 }
