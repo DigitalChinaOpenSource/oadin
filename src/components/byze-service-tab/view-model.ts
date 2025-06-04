@@ -2,30 +2,12 @@ import { useState, useEffect } from 'react';
 import { healthRequest } from '@/utils/httpRequest';
 import { message } from 'antd';
 import { useRequest } from 'ahooks';
+import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
 export function useViewModel() {
-  const [checkStatus, setCheckStatus] = useState<boolean>(false);
-  const { loading: checkHealthtLoading, run: fetchCheckHealth } = useRequest(
-    async () => {
-      const data = await healthRequest.get('/health');
-      return data;
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        if (data?.status === 'UP') setCheckStatus(true);
-      },
-      onError: (error) => {
-        message.error('白泽服务不可用，请检查服务状态');
-        console.error('检查服务健康状态失败:', error);
-      },
-    },
-  );
+  const { checkByzeStatus, checkByzeServerLoading, fetchByzeServerStatus } = useByzeServerCheckStore();
 
-  useEffect(() => {
-    fetchCheckHealth();
-  }, []);
   const handleRefresh = () => {
-    fetchCheckHealth();
+    fetchByzeServerStatus();
   };
-  return { handleRefresh, checkHealthtLoading, checkStatus };
+  return { handleRefresh, checkByzeServerLoading, checkByzeStatus };
 }

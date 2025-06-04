@@ -18,7 +18,7 @@ export default function ByzeServiceTab() {
           <div className={styles.infoBlock}>
             <span>白泽服务状态</span>
             <div className={styles.statusName}>
-              {vm.checkStatus ? (
+              {vm.checkByzeStatus ? (
                 <>
                   <div className={styles.dot}></div>
                   <span className={styles.used}>启用</span>
@@ -33,8 +33,8 @@ export default function ByzeServiceTab() {
           </div>
         </div>
         <Button
-          icon={vm.checkHealthtLoading ? null : <RedoOutlined />}
-          loading={vm.checkHealthtLoading}
+          icon={vm.checkByzeServerLoading ? null : <RedoOutlined />}
+          loading={vm.checkByzeServerLoading}
           className={styles.refreshBlock}
           onClick={vm.handleRefresh}
         >
