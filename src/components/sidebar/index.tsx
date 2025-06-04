@@ -74,6 +74,22 @@ export default function Sidebar() {
       ),
       label: '服务管理',
     },
+    {
+      key: 'model-chat',
+      activeIcon: (
+        <img
+          src={mmac}
+          alt="模型对话"
+        />
+      ),
+      inactiveIcon: (
+        <img
+          src={mm}
+          alt="模型对话"
+        />
+      ),
+      label: '模型对话',
+    },
   ];
 
   const handleMenuClick = (key: string) => {

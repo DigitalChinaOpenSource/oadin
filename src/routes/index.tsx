@@ -4,6 +4,7 @@ import ModelManage from '../pages/model-manage';
 import ServerManage from '../pages/server-manage';
 import McpService from '../pages/mcp-service';
 import McpDetail from '../components/mcp-manage/mcp-detail';
+import ModelChat from '../pages/model-chat'; // 新增对话页面
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
       {
         path: '/mcp-detail',
         element: <McpDetail />,
+      },
+      {
+        path: '/model-chat',
+        element: <ModelChat />, // 新增对话页面
       },
     ],
   },
