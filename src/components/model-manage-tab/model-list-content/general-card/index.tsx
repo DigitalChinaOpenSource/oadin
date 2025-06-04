@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import styles from './index.module.scss';
-import { Button, Tooltip } from 'antd';
+import { Button, Tooltip, message } from 'antd';
 import { IModelAuth } from '../../types';
 import { IModelDataItem, IModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
@@ -39,9 +39,12 @@ export default function GeneralCard(props: IGeneralCardProps) {
       return (
         <Button
           className={styles.downloadedBtn}
-          disabled={isPathMigrating}
           onClick={(e) => {
             e.stopPropagation();
+            if (isPathMigrating) {
+              message.warning('模型存储路径正在变更中，请稍后操作');
+              return;
+            }
             onDeleteConfirm?.(modelData);
           }}
           icon={<DeleteIcon fill="#344054" />}
@@ -53,9 +56,12 @@ export default function GeneralCard(props: IGeneralCardProps) {
       return (
         <Button
           type="primary"
-          disabled={isPathMigrating}
           onClick={(e) => {
             e.stopPropagation();
+            if (isPathMigrating) {
+              message.warning('模型存储路径正在变更中，请稍后操作');
+              return;
+            }
             onDownloadConfirm?.(modelData);
           }}
           icon={<DownloadIcon />}
@@ -73,9 +79,12 @@ export default function GeneralCard(props: IGeneralCardProps) {
           className={styles.updateSetting}
           variant="filled"
           icon={<ArrowClockwiseIcon fill="#344054" />}
-          disabled={isPathMigrating}
           onClick={(e) => {
             e.stopPropagation();
+            if (isPathMigrating) {
+              message.warning('模型存储路径正在变更中，请稍后操作');
+              return;
+            }
             onModelAuthVisible?.({
               visible: true,
               type: 'update',
@@ -91,10 +100,13 @@ export default function GeneralCard(props: IGeneralCardProps) {
       <>
         <Button
           type="primary"
-          disabled={isPathMigrating}
           onClick={(e) => {
             {
               e.stopPropagation();
+              if (isPathMigrating) {
+                message.warning('模型存储路径正在变更中，请稍后操作');
+                return;
+              }
               onModelAuthVisible?.({
                 visible: true,
                 type: 'config',
