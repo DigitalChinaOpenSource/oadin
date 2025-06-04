@@ -23,6 +23,10 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+
     :global(.ant-menu-inline-collapsed) {
       width: 100% !important;
     }

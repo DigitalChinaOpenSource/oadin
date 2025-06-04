@@ -12,11 +12,11 @@ import sm from '../icons/sm.svg';
 import smac from '../icons/smac.svg';
 import mcp from '../icons/mcp.svg';
 import mcpac from '../icons/mcpac.svg';
-import type { MenuProps, MenuTheme } from 'antd';
+import type { MenuProps } from 'antd';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
   // 是否展示下载列表弹窗
@@ -28,6 +28,7 @@ export default function Sidebar() {
   const [openKeys, setOpenKeys] = useState<string[]>([]);
 
   useEffect(() => {
+    if (collapsed) return;
     // 根据当前路由设置选中菜单项和展开的菜单项
     const pathSegments = location.pathname.split('/').filter(Boolean);
     if (location.pathname.startsWith('/mcp-detail')) return;
@@ -35,7 +36,7 @@ export default function Sidebar() {
       setSelectedKeys([location.pathname]);
       setOpenKeys([pathSegments[0]]);
     }
-  }, [location.pathname]);
+  }, [location.pathname, collapsed]);
 
   const menuItems: MenuItem[] = [
     {
