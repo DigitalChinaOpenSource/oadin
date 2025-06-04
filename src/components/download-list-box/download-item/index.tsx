@@ -1,4 +1,4 @@
-import { Image, Progress } from 'antd';
+import { Image, message, Progress } from 'antd';
 import styles from './index.module.scss';
 import { PlayPauseIcon, CloseIcon, FillCloseIcon, PauseIcon, ArrowClockwiseIcon } from '../../icons';
 import greySpinner from '@/components/icons/greySpinner.svg';
@@ -30,7 +30,10 @@ export default function DownloadItem(props: IDownloadItemProps) {
           {downloadItem.status === IN_PROGRESS && (
             <div
               onClick={() => {
-                if (isPathMigrating) return;
+                if (isPathMigrating) {
+                  message.warning('模型存储路径正在变更中，请稍后操作');
+                  return;
+                }
                 fetchCancelModel(downloadItem);
               }}
             >
@@ -40,7 +43,10 @@ export default function DownloadItem(props: IDownloadItemProps) {
           {downloadItem.status === PAUSED && (
             <div
               onClick={() => {
-                if (isPathMigrating) return;
+                if (isPathMigrating) {
+                  message.warning('模型存储路径正在变更中，请稍后操作');
+                  return;
+                }
                 fetchDownloadStart(downloadItem);
               }}
             >
@@ -50,7 +56,10 @@ export default function DownloadItem(props: IDownloadItemProps) {
           {downloadItem.status === FAILED && (
             <div
               onClick={() => {
-                if (isPathMigrating) return;
+                if (isPathMigrating) {
+                  message.warning('模型存储路径正在变更中，请稍后操作');
+                  return;
+                }
                 fetchDownloadStart(downloadItem);
               }}
             >
@@ -60,7 +69,10 @@ export default function DownloadItem(props: IDownloadItemProps) {
           <div
             className={styles.cancel}
             onClick={() => {
-              if (isPathMigrating) return;
+              if (isPathMigrating) {
+                message.warning('模型存储路径正在变更中，请稍后操作');
+                return;
+              }
               fetchRemoveModel(downloadItem);
             }}
           >
