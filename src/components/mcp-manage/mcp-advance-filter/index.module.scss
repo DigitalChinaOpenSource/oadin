@@ -3,6 +3,8 @@
   height: 100%;
   transition: transform 0.3s ease-in-out;
   will-change: transform; // 提升动画性能
+  display: flex;
+  flex-direction: column;
 
   .filterTitle {
     display: flex;
@@ -29,6 +31,5 @@
     height: calc(100vh - 142px);
     overflow-y: auto;
     overflow-x: hidden;
-
   }
 }

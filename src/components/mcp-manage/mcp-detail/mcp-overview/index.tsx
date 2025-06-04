@@ -21,7 +21,7 @@ export default function McpOverview({ markDownData, offHeight }: { markDownData:
   return (
     <div
       className={styles.mcpOverview}
-      style={{ height: `calc(100vh - ${offHeight + 187}px)` }}
+      // style={{ height: `calc(100vh - ${offHeight + 187}px)` }}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}

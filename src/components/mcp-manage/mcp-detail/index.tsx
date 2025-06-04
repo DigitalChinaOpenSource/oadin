@@ -42,76 +42,78 @@ export default function McpDetail() {
     // },
   ];
 
-  useEffect(() => {
-    console.log('detailDescRef.current?.showTooltip', detailDescRef.current?.offsetHeight);
-    if (detailDescRef.current) {
-      const height = detailDescRef.current.offsetHeight;
-      setDescHeight(height);
-    }
-  }, [mcpDetail]);
+  // useEffect(() => {
+  //   console.log('detailDescRef.current?.showTooltip', detailDescRef.current?.offsetHeight);
+  //   if (detailDescRef.current) {
+  //     const height = detailDescRef.current.offsetHeight;
+  //     setDescHeight(height);
+  //   }
+  // }, [mcpDetail]);
 
   return (
     mcpDetail && (
       <div className={styles.mcpManageDetail}>
-        <div
-          className={styles.goBack}
-          onClick={handleGoBack}
-        >
-          <ArrowLeftOutlined className={styles.backIcon} />
-          <span className={styles.backText}>返回</span>
-        </div>
-        <div className={styles.detailTop}>
-          <div className={styles.topLeft}>
-            <div ref={detailDescRef}>
-              <DetailDesc mcpDetail={mcpDetail} />
-            </div>
+        <div className={styles.top}>
+          <div
+            className={styles.goBack}
+            onClick={handleGoBack}
+          >
+            <ArrowLeftOutlined className={styles.backIcon} />
+            <span className={styles.backText}>返回</span>
           </div>
-          <div className={styles.topRight}>
-            {mcpDetail?.envRequired === 0 && (
-              <Button
-                type="primary"
-                onClick={handleAddMcp}
-                loading={downMcpLoading || authMcpLoading}
-                disabled={mcpDetail.status === 1}
-              >
-                {mcpDetail.status === 0 ? '添加' : '已添加'}
-              </Button>
-            )}
-            {mcpDetail.envRequired === 1 &&
-              (mcpDetail.status === 0 ? (
+          <div className={styles.detailTop}>
+            <div className={styles.topLeft}>
+              <div ref={detailDescRef}>
+                <DetailDesc mcpDetail={mcpDetail} />
+              </div>
+            </div>
+            <div className={styles.topRight}>
+              {mcpDetail?.envRequired === 0 && (
                 <Button
                   type="primary"
                   onClick={handleAddMcp}
                   loading={downMcpLoading || authMcpLoading}
+                  disabled={mcpDetail.status === 1}
                 >
-                  添加
+                  {mcpDetail.status === 0 ? '添加' : '已添加'}
                 </Button>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
+              )}
+              {mcpDetail.envRequired === 1 &&
+                (mcpDetail.status === 0 ? (
                   <Button
                     type="primary"
                     onClick={handleAddMcp}
                     loading={downMcpLoading || authMcpLoading}
                   >
-                    重新添加
+                    添加
                   </Button>
-                  <Button
-                    type="default"
-                    loading={cancelMcpLoading}
-                    onClick={handleCancelMcp}
-                    disabled={downMcpLoading || authMcpLoading}
-                  >
-                    取消添加
-                  </Button>
-                </div>
-              ))}
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <Button
+                      type="primary"
+                      onClick={handleAddMcp}
+                      loading={downMcpLoading || authMcpLoading}
+                    >
+                      重新添加
+                    </Button>
+                    <Button
+                      type="default"
+                      loading={cancelMcpLoading}
+                      onClick={handleCancelMcp}
+                      disabled={downMcpLoading || authMcpLoading}
+                    >
+                      取消添加
+                    </Button>
+                  </div>
+                ))}
+            </div>
           </div>
+          {/*分割线*/}
+          <div className={styles.Line}></div>
         </div>
-        {/*分割线*/}
-        <div className={styles.Line}></div>
         <div
           className={styles.detailContent}
-          style={{ height: `calc(100vh - ${descHeight + 147}px)` }}
+          // style={{ height: `calc(100vh - ${descHeight + 147}px)` }}
         >
           <div className={styles.contentLeft}>
             <Tabs

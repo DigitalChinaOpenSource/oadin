@@ -87,12 +87,12 @@ export default function Sidebar() {
 
   return (
     <div className={styles.sidebar}>
-      <div className={styles.logo}>
-        <img
-          src={favicon}
-          alt="Logo"
-        />
-      </div>
+      {/*<div className={styles.logo}>*/}
+      {/*  <img*/}
+      {/*    src={favicon}*/}
+      {/*    alt="Logo"*/}
+      {/*  />*/}
+      {/*</div>*/}
       <div className={styles.menuContainer}>
         {menuItems.map((item) => (
           <div

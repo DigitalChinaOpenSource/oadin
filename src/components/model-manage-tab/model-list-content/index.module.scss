@@ -1,6 +1,7 @@
 .modelListContent {
   border-radius: 8px;
-  height: calc(100vh - 198px);
+  //height: calc(100vh - 198px);
+  flex: 1;
   .modelCardList {
     width: 100%;
     height: calc(100% - 48px);

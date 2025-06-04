@@ -1,6 +1,7 @@
 .mcpOverview {
   width: 100%;
-  height: calc(100vh - 295px);
+  //height: calc(100vh - 295px);
+  height: 100%;
   overflow: auto;
   background-color: #fff;
   padding: 24px;
@@ -13,6 +14,9 @@
   line-height: 30px;
   img {
     max-width: 100%;
+  }
+  .test {
+    height: 100%;
   }
   //pre, code {
   //  white-space: pre-wrap; /* 保留空白符但允许换行 */
@@ -37,7 +41,8 @@
     margin: 1rem 0;
   }
 
-  th, td {
+  th,
+  td {
     border: 1px solid #ddd;
     padding: 0.5rem;
     text-align: left;
@@ -50,7 +55,8 @@
   tr:nth-child(even) {
     background-color: #f9f9f9;
   }
-  ul,ol {
+  ul,
+  ol {
     display: block;
     list-style-type: disc;
     margin-block-start: 1em;

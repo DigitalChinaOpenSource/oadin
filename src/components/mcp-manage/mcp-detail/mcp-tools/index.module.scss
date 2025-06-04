@@ -1,6 +1,8 @@
 .mcpTools {
   width: 100%;
-  height: calc(100vh - 295px);
+  //height: calc(100vh - 295px);
+  height: 100%;
+  overflow: auto;
   background-color: #fff;
   padding: 24px;
   border-radius: 16px;
@@ -11,7 +13,7 @@
   :global(.ant-list-item) {
     border-block-end: none;
   }
-  :global(.ant-list-item:last-child){
+  :global(.ant-list-item:last-child) {
     border-block-end: none !important;
   }
   .searchInput {
@@ -26,7 +28,7 @@
   .collapseItemHeader {
     display: flex;
     flex-direction: column;
-    color:#000000;
+    color: #000000;
     flex: 1;
     .collapseItemTitle {
       font-size: 14px;
@@ -41,9 +43,9 @@
       }
     }
     .collapseItemDesc {
-      font-size:12px;
+      font-size: 12px;
       line-height: 20px;
-      color: #898EA3;
+      color: #898ea3;
     }
   }
 }
