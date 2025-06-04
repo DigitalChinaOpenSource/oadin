@@ -1,15 +1,16 @@
-import { Button, Tooltip, List } from 'antd';
+import { Button, Tooltip, List, message } from 'antd';
 import styles from './index.module.scss';
 import GeneralCard from '@/components/model-manage-tab/model-list-content/general-card';
 import ModelPathModal from '../modelpath-modal';
 import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
-import { SettingIcon, FailedIcon, LoadingIcon } from '../../icons';
+import { SettingIcon, FailedIcon } from '../../icons';
 import realLoadingSvg from '@/components/icons/real-loading.svg';
 import noDataSvg from '@/components/icons/no-data.svg';
 import { IModelSourceType } from '@/types';
-
+import useModelDownloadStore from '@/store/useModelDownloadStore';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 export interface IModelListContent {
   modelSearchVal: string;
   modelSourceVal: IModelSourceType;
@@ -19,6 +20,8 @@ export interface IModelListContent {
 
 export default function ModelListContent(props: IModelListContent) {
   const vm = useViewModel(props);
+  const { downloadList } = useModelDownloadStore();
+  const { migratingStatus } = useModelPathChangeStore();
   return (
     <>
       {vm.modelSupportLoading ? (
@@ -35,22 +38,34 @@ export default function ModelListContent(props: IModelListContent) {
               <div className={styles.title}>模型列表</div>
               {vm.modelSourceVal === 'local' && (
                 <Tooltip title={vm.modelPath}>
-                  <Button
-                    className={styles.changePath}
-                    type="text"
-                    onClick={vm.onModelPathVisible}
-                  >
-                    <SettingIcon />
-                    修改存储路径
-                  </Button>
-                  {/* 修改路径失败提示 */}
-                  {/* <span className={styles.changeFailed}>
-              <FailedIcon fill='#ff6e38'/>
-            </span> */}
-                  {/* <Button className={styles.changePath} type="text">
-              <LoadingIcon />
-              <span className={styles.isChangingText}>正在修改至新的存储路径</span>
-            </Button> */}
+                  {(migratingStatus === 'init' || migratingStatus === 'failed') && (
+                    <Button
+                      className={styles.changePath}
+                      type="text"
+                      onClick={vm.onModelPathVisible}
+                    >
+                      <SettingIcon />
+                      修改存储路径
+                    </Button>
+                  )}
+                  {migratingStatus === 'pending' && (
+                    <Button
+                      className={styles.changePath}
+                      type="text"
+                    >
+                      <img
+                        src={realLoadingSvg}
+                        alt="loading"
+                        width={20}
+                      />
+                      <span className={styles.isChangingText}>正在修改至新的存储路径</span>
+                    </Button>
+                  )}
+                  {migratingStatus === 'failed' && (
+                    <span className={styles.changeFailed}>
+                      <FailedIcon fill="#ff6e38" />
+                    </span>
+                  )}
                 </Tooltip>
               )}
             </div>
