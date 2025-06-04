@@ -1,0 +1,33 @@
+.deepThinkChat {
+  padding: 12px 16px;
+  background-color: #ebf0ff;
+  border-radius: 8px;
+  overflow: hidden;
+  .header {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    .chatStatus {
+      display: flex;
+      align-items: center;
+      .thinkingText {
+        margin-left: 8px;
+        background: linear-gradient(270deg, #9747ff 0%, #4f4dff 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .statusText {
+        margin-left: 8px;
+      }
+    }
+    .collapse {
+      margin-left: auto;
+    }
+  }
+  .content {
+    max-height: 180px;
+    overflow-y: auto;
+  }
+}
