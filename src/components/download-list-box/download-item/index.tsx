@@ -115,7 +115,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
         <Progress
           percent={downloadItem?.currentDownload}
           showInfo={false}
-          strokeColor="#5429ff"
+          strokeColor="#4f4dff"
           size="small"
         />
       </div>

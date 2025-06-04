@@ -88,7 +88,7 @@ export const useMcpDetail = () => {
           okText: '确认',
           centered: true,
           okButtonProps: {
-            style: { backgroundColor: '#5429ff' },
+            style: { backgroundColor: '#4f4dff' },
           },
           onOk() {
             downMcp(); // 直接下载mcp

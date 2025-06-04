@@ -8,7 +8,7 @@ function App() {
   return (
     <ConfigProvider
       locale={zhCN}
-      theme={{ token: { colorPrimary: '#5429ff' } }}
+      theme={{ token: { colorPrimary: '#4f4dff' } }}
     >
       <RouterProvider router={router} />
     </ConfigProvider>

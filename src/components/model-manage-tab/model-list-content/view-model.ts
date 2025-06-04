@@ -225,7 +225,7 @@ export function useViewModel(props: IModelListContent) {
       okText: '确认下载',
       centered: true,
       okButtonProps: {
-        style: { backgroundColor: '#5429ff' },
+        style: { backgroundColor: '#4f4dff' },
       },
       onOk() {
         fetchDownloadStart({
