@@ -1,4 +1,4 @@
-//go:build !local && !prodcution
+//go:build !(local || production)
 
 package condition_build
 
