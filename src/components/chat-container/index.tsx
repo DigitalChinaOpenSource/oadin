@@ -1,8 +1,9 @@
 import { Button, Col, Row } from 'antd';
-import createChat from '@/components/icons/createChat.svg';
-import chatHistory from '@/components/icons/chatHistory.svg';
+import createChat from '@/components/icons/create-chat.svg';
+import chatHistory from '@/components/icons/chat-history.svg';
 import ChatModelManage from './chat-model-manage';
 import ChatHistoryDrawer from './chat-history-drawer';
+import DeepThinkChat from './chat-components/deep-think-chat';
 import styles from './index.module.scss';
 export default function ChatContainer() {
   return (
@@ -44,9 +45,10 @@ export default function ChatContainer() {
           <div className={styles.chatContent}>
             <ChatModelManage />
           </div>
+
+          <DeepThinkChat />
         </Col>
       </Row>
-
       {/* <ChatHistoryDrawer /> */}
     </div>
   );
