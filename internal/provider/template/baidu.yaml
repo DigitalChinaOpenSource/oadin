@@ -198,7 +198,9 @@ services:
                   config: |
                       {
                          "model": $model,
-                         "prompt": prompt
+                         "prompt": prompt,
+                         "refer_image":refer_image,
+                         "n":n
                       }
 
                 - converter: header

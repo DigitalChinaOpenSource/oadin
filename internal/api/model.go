@@ -1,18 +1,21 @@
 package api
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"log/slog"
+	"net/http"
+	"strings"
+
 	"byze/internal/api/dto"
 	"byze/internal/server"
 	"byze/internal/types"
 	"byze/internal/utils/bcode"
-	"encoding/json"
-	"errors"
-	"fmt"
+
 	"github.com/gin-gonic/gin"
-	"io"
-	"log"
-	"net/http"
-	"strings"
 )
 
 func (t *ByzeCoreServer) CreateModel(c *gin.Context) {
@@ -95,17 +98,18 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 				select {
 				case err, _ := <-errCh:
 					if err != nil {
-						fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
+						fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
 						flusher.Flush()
 						return
 					}
 				}
 				// 数据通道关闭，发送结束标记
-				//fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
+
 				// fmt.Fprintf(w, "\n[DONE]\n\n")
-				//flusher.Flush()
+				// flusher.Flush()
 				// 通道中没有数据，再结束推送
 				if data == nil {
+					fmt.Fprintf(w, "data: {\"status\": \"success\"}\n\n")
 					return
 				}
 			}
@@ -121,8 +125,12 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 			// 使用SSE格式发送到前端
 			// fmt.Fprintf(w, "data: %s\n\n", response)
 			if resp.Completed > 0 || resp.Status == "success" {
-				fmt.Fprintf(w, "%s\n\n", string(data))
+				if resp.Status == "success" {
+					fmt.Println(2)
+				}
+				fmt.Fprintf(w, "data: %s\n\n", string(data))
 				flusher.Flush()
+				slog.Info("流式下载推送成功++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 			}
 
 		case err, _ := <-errCh:
@@ -130,9 +138,9 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 				log.Printf("Error: %v", err)
 				// 发送错误信息到前端
 				if strings.Contains(err.Error(), "context cancel") {
-					fmt.Fprintf(w, "{\"status\": \"canceled\", \"data\":\"%v\"}\n\n", err)
+					fmt.Fprintf(w, "data: {\"status\": \"canceled\", \"data\":\"%v\"}\n\n", err)
 				} else {
-					fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
+					fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
 				}
 
 				flusher.Flush()
@@ -140,7 +148,7 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 			}
 
 		case <-ctx.Done():
-			fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"timeout\"}\n\n")
+			fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"timeout\"}\n\n")
 			flusher.Flush()
 			return
 		}
@@ -211,6 +219,27 @@ func (t *ByzeCoreServer) GetModelList(c *gin.Context) {
 	}
 	ctx := c.Request.Context()
 	data, err := server.GetSupportModelList(ctx, *request)
+	if err != nil {
+		bcode.ReturnError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, data)
+}
+
+func (t *ByzeCoreServer) GetSupportModelListCombine(c *gin.Context) {
+	request := new(dto.GetSupportModelRequest)
+	if err := c.Bind(request); err != nil {
+		bcode.ReturnError(c, bcode.ErrModelBadRequest)
+		return
+	}
+
+	if err := validate.Struct(request); err != nil {
+		bcode.ReturnError(c, err)
+		return
+	}
+
+	ctx := c.Request.Context()
+	data, err := server.GetSupportModelListCombine(ctx, request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
