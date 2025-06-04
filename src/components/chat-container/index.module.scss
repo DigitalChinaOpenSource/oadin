@@ -43,7 +43,7 @@
     }
   }
   .chatContent {
-    padding: 16px 200px;
+    min-width: 450px;
     height: calc(100% - 56px);
   }
 }
