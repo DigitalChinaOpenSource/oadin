@@ -1,0 +1,61 @@
+.chatModelManage {
+  width: 100%;
+  height: 78px;
+  display: flex;
+  padding: 16px 24px;
+  border-radius: 8px;
+  background: #fff;
+  justify-content: space-between;
+  .left {
+    display: flex;
+    .modelIcon {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      margin-right: 16px;
+    }
+    .name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #344054;
+      margin-bottom: 6px;
+    }
+    .modelTag {
+      height: 18px;
+      line-height: 18px;
+      background-color: #dee7ff;
+      color: #4f4dff;
+      border-radius: 4px;
+      font-size: 12px;
+      padding: 2px 6px;
+      margin-right: 8px;
+    }
+  }
+  .right {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .think {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 12px;
+      border-radius: 4px;
+      border: 1px solid #edf2ff;
+      background: #e6e6ff;
+      color: #4f4dff;
+      span {
+        margin-left: 8px;
+      }
+    }
+    .fill {
+      width: 1px;
+      height: 24px;
+      margin: 0 16px;
+      border-left: 1px solid #c9c9c9;
+    }
+    .changeModel {
+      cursor: pointer;
+    }
+  }
+}

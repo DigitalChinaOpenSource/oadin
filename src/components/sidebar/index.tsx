@@ -83,6 +83,22 @@ export default function Sidebar() {
         { key: 'mcp-service9', label: '关于我们' },
       ],
     },
+    {
+      key: 'model-chat',
+      activeIcon: (
+        <img
+          src={mmac}
+          alt="模型对话"
+        />
+      ),
+      inactiveIcon: (
+        <img
+          src={mm}
+          alt="模型对话"
+        />
+      ),
+      label: '模型对话',
+    },
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => {

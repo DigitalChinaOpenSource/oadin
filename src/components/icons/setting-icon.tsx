@@ -6,11 +6,7 @@ interface SettingIconProps {
   fill?: string;
 }
 
-const SettingIcon: React.FC<SettingIconProps> = ({ 
-  width = 16, 
-  height = 16, 
-  fill = "#5429ff" 
-}) => {
+const SettingIcon: React.FC<SettingIconProps> = ({ width = 16, height = 16, fill = '#4f4dff' }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

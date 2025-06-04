@@ -70,7 +70,7 @@ export function useRecommendedClient() {
             okText: '确认',
             centered: true,
             okButtonProps: {
-              style: { backgroundColor: '#5429ff' },
+              style: { backgroundColor: '#4f4dff' },
             },
             onOk() {
               window.open(data?.linkCommand, '_blank');
