@@ -21,14 +21,10 @@ import (
 	"time"
 
 	"github.com/jaypipes/ghw"
+	"github.com/shirou/gopsutil/disk"
 )
 
 var textContentTypes = []string{"text/", "application/json", "application/xml", "application/javascript", "application/x-ndjson"}
-
-type MemoryInfo struct {
-	Size       int
-	MemoryType string
-}
 
 func IsHTTPText(header http.Header) bool {
 	if contentType := header.Get("Content-Type"); contentType != "" {
@@ -448,4 +444,160 @@ func StopByzeServer(pidFilePath string) error {
 		}
 	}
 	return nil
+}
+
+func SystemDiskSize(path string) (*PathDiskSizeInfo, error) {
+	if runtime.GOOS == "windows" {
+		path = filepath.VolumeName(path)
+	}
+	usage, err := disk.Usage(path)
+	if err != nil {
+		return &PathDiskSizeInfo{}, err
+	}
+	res := &PathDiskSizeInfo{}
+	res.TotalSize = int(usage.Total / 1024 / 1024 / 1024)
+	res.FreeSize = int(usage.Free / 1024 / 1024 / 1024)
+	res.UsageSize = int(usage.Used / 1024 / 1024 / 1024)
+	return res, nil
+}
+
+func IsDirEmpty(path string) bool {
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	// Read just one entry from the directory
+	_, err = f.Readdir(1)
+
+	// If we got an EOF error, the directory is empty
+	return err == io.EOF
+}
+
+// CopyDir 复制源目录到目标位置，保持文件属性和结构
+// src: 源目录路径
+// dest: 目标目录路径
+func CopyDir(src, dest string) error {
+	// 获取源路径的详细信息
+	srcInfo, err := os.Lstat(src)
+	if err != nil {
+		return fmt.Errorf("获取源文件信息失败: %v", err)
+	}
+
+	// 处理软链接
+	if srcInfo.Mode()&os.ModeSymlink != 0 {
+		linkTarget, err := os.Readlink(src)
+		if err != nil {
+			return fmt.Errorf("读取软链接 %s 失败: %v", src, err)
+		}
+		return os.Symlink(linkTarget, dest)
+	}
+
+	// 如果源路径是文件，直接复制
+	if !srcInfo.IsDir() {
+		return copyFile(src, dest)
+	}
+
+	// 确保目标目录存在
+	err = os.MkdirAll(dest, srcInfo.Mode())
+	if err != nil {
+		return fmt.Errorf("创建目标目录 %s 失败: %v", dest, err)
+	}
+
+	// 使用 Walk 遍历源目录下的所有文件和子目录
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("遍历目录失败 %s: %v", path, err)
+		}
+
+		// 计算目标路径
+		// 获取相对于源目录的路径
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return fmt.Errorf("计算相对路径失败 %s: %v", path, err)
+		}
+		targetPath := filepath.Join(dest, relPath)
+
+		// 跳过源目录本身
+		if path == src {
+			return nil
+		}
+
+		// 处理软链接
+		if info.Mode()&os.ModeSymlink != 0 {
+			linkTarget, err := os.Readlink(path)
+			if err != nil {
+				return fmt.Errorf("读取软链接失败 %s: %v", path, err)
+			}
+			return os.Symlink(linkTarget, targetPath)
+		}
+
+		// 处理目录
+		if info.IsDir() {
+			err = os.MkdirAll(targetPath, info.Mode())
+			if err != nil {
+				return fmt.Errorf("创建目录失败 %s: %v", targetPath, err)
+			}
+			// 保持目录时间戳
+			return os.Chtimes(targetPath, info.ModTime(), info.ModTime())
+		}
+
+		// 处理普通文件
+		return copyFile(path, targetPath)
+	})
+}
+
+// copyFile 复制单个文件，保持文件属性
+// src: 源文件路径
+// dest: 目标文件路径
+func copyFile(src, dest string) error {
+	// 获取源文件信息，使用 Lstat 以便正确处理符号链接
+	srcInfo, err := os.Lstat(src)
+	if err != nil {
+		return fmt.Errorf("获取源文件信息失败: %v", err)
+	}
+
+	// 打开源文件
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("打开源文件失败: %v", err)
+	}
+	defer srcFile.Close()
+
+	// 创建目标文件，保持源文件的权限
+	destFile, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, srcInfo.Mode())
+	if err != nil {
+		return fmt.Errorf("创建目标文件失败: %v", err)
+	}
+	defer destFile.Close()
+
+	// 复制文件内容
+	if _, err := io.Copy(destFile, srcFile); err != nil {
+		return fmt.Errorf("复制文件内容失败: %v", err)
+	}
+
+	// 保持文件的时间戳
+	if err := os.Chtimes(dest, srcInfo.ModTime(), srcInfo.ModTime()); err != nil {
+		return fmt.Errorf("设置文件时间戳失败: %v", err)
+	}
+
+	return nil
+}
+
+func GetFilePathTotalSize(path string) (int64, error) {
+	var totalSize int64 = 0
+
+	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			totalSize += info.Size()
+		}
+		return nil
+	})
+
+	return totalSize / 1024 / 1024 / 1024, err
 }

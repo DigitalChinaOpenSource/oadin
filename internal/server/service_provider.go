@@ -58,7 +58,6 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 	sp.ServiceSource = request.ServiceSource
 	sp.Flavor = request.ApiFlavor
 	sp.AuthType = request.AuthType
-	sp.AuthType = request.AuthType
 	if request.AuthType != types.AuthTypeNone && request.AuthKey == "" {
 		return nil, bcode.ErrProviderAuthInfoLost
 	}
@@ -356,11 +355,9 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 			} else {
 				sp.AuthKey = request.AuthKey
 			}
-
 		} else {
 			sp.AuthKey = request.AuthKey
 		}
-
 	}
 	if request.Desc != "" {
 		sp.Desc = request.Desc
@@ -427,7 +424,124 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 }
 
 func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *dto.GetServiceProviderRequest) (*dto.GetServiceProviderResponse, error) {
-	return &dto.GetServiceProviderResponse{}, nil
+	providerName := request.ProviderName
+	ds := datastore.GetDefaultDatastore()
+	sp := &types.ServiceProvider{
+		ProviderName: providerName,
+	}
+	err := ds.Get(ctx, sp)
+	if err != nil {
+		return nil, err
+	}
+	if request.Page == 0 {
+		request.Page = 1
+	}
+	if request.PageSize == 0 {
+		request.PageSize = 10
+	}
+	var supportModelList []dto.ProviderSupportModelData
+	res := &dto.GetServiceProviderResponseData{}
+	res.ServiceProvider = sp
+	if sp.Flavor == types.FlavorSmartVision {
+		smartvisionModelData, err := GetSmartVisionModelData(ctx, request.EnvType)
+		if err != nil {
+			return nil, err
+		}
+		res.TotalCount = len(smartvisionModelData)
+		res.TotalPage = len(smartvisionModelData) / request.PageSize
+		if res.TotalPage == 0 {
+			res.TotalPage = 1
+		}
+		res.PageSize = request.PageSize
+		res.Page = request.Page
+		dataStart := (request.Page - 1) * request.PageSize
+		dataEnd := request.Page * request.PageSize
+		if dataEnd > len(smartvisionModelData) {
+			dataEnd = len(smartvisionModelData) - 1
+		}
+		modelData := smartvisionModelData[dataStart:dataEnd]
+		for _, model := range modelData {
+			modelQuery := new(types.Model)
+			modelQuery.ModelName = model.Name
+			modelQuery.ProviderName = providerName
+			isDownloaded := false
+			err := ds.Get(context.Background(), modelQuery)
+			if err != nil {
+				isDownloaded = false
+			}
+			if modelQuery.Status == "downloaded" {
+				isDownloaded = true
+			}
+			resModel := dto.ProviderSupportModelData{
+				Name:         model.Name,
+				Avatar:       model.Avatar,
+				Class:        model.Tags,
+				Flavor:       model.Provider,
+				ApiFlavor:    sp.Flavor,
+				IsDownloaded: isDownloaded,
+			}
+			supportModelList = append(supportModelList, resModel)
+		}
+	} else {
+		jds := datastore.GetDefaultJsonDatastore()
+		sm := &types.SupportModel{}
+		queryOpList := []datastore.FuzzyQueryOption{}
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "service_source",
+			Query: sp.ServiceSource,
+		})
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "api_flavor",
+			Query: sp.Flavor,
+		})
+		options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}}
+		totalCount, err := jds.Count(ctx, sm, &datastore.FilterOptions{Queries: queryOpList})
+		if err != nil {
+			return nil, err
+		}
+		res.TotalCount = int(totalCount)
+		res.TotalPage = int(totalCount) / request.PageSize
+		if res.TotalPage == 0 {
+			res.TotalPage = 1
+		}
+		options.Page = request.Page
+		options.PageSize = request.PageSize
+		supportModel, err := jds.List(ctx, sm, options)
+		if err != nil {
+			return nil, err
+		}
+		for _, model := range supportModel {
+			modelInfo := model.(*types.SupportModel)
+			modelQuery := new(types.Model)
+			modelQuery.ModelName = modelInfo.Name
+			modelQuery.ProviderName = providerName
+			isDownloaded := false
+			err := ds.Get(context.Background(), modelQuery)
+			if err != nil {
+				isDownloaded = false
+			}
+			if modelQuery.Status == "downloaded" {
+				isDownloaded = true
+			}
+			resModel := dto.ProviderSupportModelData{
+				Name:         modelInfo.Name,
+				Class:        modelInfo.Class,
+				Flavor:       modelInfo.Flavor,
+				Avatar:       modelInfo.Avatar,
+				ApiFlavor:    modelInfo.ApiFlavor,
+				InputLength:  modelInfo.InputLength,
+				OutputLength: modelInfo.OutputLength,
+				ParamsSize:   modelInfo.ParamSize,
+				IsDownloaded: isDownloaded,
+			}
+			supportModelList = append(supportModelList, resModel)
+		}
+	}
+	res.SupportModelList = supportModelList
+	return &dto.GetServiceProviderResponse{
+		*bcode.ModelCode,
+		*res,
+	}, nil
 }
 
 func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *dto.GetServiceProvidersRequest) (*dto.GetServiceProvidersResponse, error) {
