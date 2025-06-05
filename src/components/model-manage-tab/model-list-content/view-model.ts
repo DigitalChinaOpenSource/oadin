@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { IModelAuthType, IModelAuth } from '../types';
+import { IModelAuthType, IModelAuth, IModelPathSpaceRes } from '../types';
 import { ModelData, IModelDataItem, IRequestModelParams, IModelPathRes } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
@@ -204,6 +204,16 @@ export function useViewModel(props: IModelListContent) {
     setSelectModelData(modelData || ({} as any));
   }, []);
 
+  const { run: onCheckPathSpace, data: currentPathSpace } = useRequest(
+    async (path: string) => {
+      const data = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
+      return data || {};
+    },
+    {
+      manual: true,
+    },
+  );
+
   // 模型存储路径弹窗
   const onModelPathVisible = useCallback(() => {
     setModalPathVisible(!modalPathVisible);
@@ -227,7 +237,16 @@ export function useViewModel(props: IModelListContent) {
       okButtonProps: {
         style: { backgroundColor: '#5429ff' },
       },
-      onOk() {
+      async onOk() {
+        await onCheckPathSpace(modelPath);
+        const modelSizeMb = modelData.size || 0;
+        const freeSpaceGb = currentPathSpace?.free_size || 0;
+        const freeSpaceMb = freeSpaceGb * 1024;
+
+        if (modelSizeMb > freeSpaceMb) {
+          message.warning('当前路径下的磁盘空间不足，无法下载该模型');
+          return Promise.reject();
+        }
         fetchDownloadStart({
           ...modelData,
           type: modelData.type,

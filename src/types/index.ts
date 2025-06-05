@@ -12,7 +12,7 @@ export interface IModelDataItem {
   auth_fields?: string[];
   name: string;
   service_provider_name: string;
-  size: string;
+  size: number;
   is_recommended: boolean;
   status: number | string;
   avatar: string;
