@@ -527,7 +527,11 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			Key:   "service_name",
 			Query: sp.ServiceName,
 		})
-		options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}}
+		sortOption := []datastore.SortOption{
+			{Key: "name", Order: 1},
+		}
+		options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}, SortBy: sortOption}
+
 		totalCount, err := jds.Count(ctx, sm, &datastore.FilterOptions{Queries: queryOpList})
 		if err != nil {
 			return nil, err
@@ -537,6 +541,8 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 		if res.TotalPage == 0 {
 			res.TotalPage = 1
 		}
+		res.PageSize = request.PageSize
+		res.Page = request.Page
 		options.Page = request.Page
 		options.PageSize = request.PageSize
 		supportModel, err := jds.List(ctx, sm, options)
@@ -615,7 +621,9 @@ func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *
 	spModels := make(map[string][]string)
 	for _, v := range mList {
 		dsModel := v.(*types.Model)
-		spModels[dsModel.ProviderName] = append(spModels[dsModel.ProviderName], dsModel.ModelName)
+		if dsModel.Status == "downloaded" {
+			spModels[dsModel.ProviderName] = append(spModels[dsModel.ProviderName], dsModel.ModelName)
+		}
 	}
 
 	respData := make([]dto.ServiceProvider, 0)
