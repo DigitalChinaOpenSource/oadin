@@ -226,49 +226,64 @@ func (j *JSONDatastore) List(ctx context.Context, query datastore.Entity, option
 
 	// Apply sorting if options are provided
 	if options != nil && len(options.SortBy) > 0 {
-		sort.Slice(result, func(i, j int) bool {
+		sort.SliceStable(result, func(i, j int) bool {
+			// Get field values using reflection
+			iValue := reflect.ValueOf(result[i]).Elem()
+			jValue := reflect.ValueOf(result[j]).Elem()
+			iType := iValue.Type()
+
+			// Compare each sort field in order
 			for _, order := range options.SortBy {
-				// Get field values using reflection
-				iValue := reflect.ValueOf(result[i]).Elem()
-				jValue := reflect.ValueOf(result[j]).Elem()
+				// Find field by tag
+				var iField, jField reflect.Value
+				var found bool
+				for k := 0; k < iType.NumField(); k++ {
+					field := iType.Field(k)
+					if field.Tag.Get("json") == order.Key {
+						iField = iValue.Field(k)
+						jField = jValue.Field(k)
+						found = true
+						break
+					}
+				}
 
-				// Find the field
-				iField := iValue.FieldByName(order.Key)
-				jField := jValue.FieldByName(order.Key)
-
-				// If field doesn't exist, skip this ordering
-				if !iField.IsValid() || !jField.IsValid() {
+				// Skip if field not found
+				if !found || !iField.IsValid() || !jField.IsValid() {
 					continue
 				}
 
 				// Compare based on field type
+				var less bool
 				switch iField.Kind() {
 				case reflect.String:
 					iStr := iField.String()
 					jStr := jField.String()
 					if iStr != jStr {
+						less = iStr < jStr
 						if order.Order == datastore.SortOrderAscending {
-							return iStr < jStr
+							return less
 						}
-						return iStr > jStr
+						return !less
 					}
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 					iInt := iField.Int()
 					jInt := jField.Int()
 					if iInt != jInt {
+						less = iInt < jInt
 						if order.Order == datastore.SortOrderAscending {
-							return iInt < jInt
+							return less
 						}
-						return iInt > jInt
+						return !less
 					}
 				case reflect.Float32, reflect.Float64:
 					iFloat := iField.Float()
 					jFloat := jField.Float()
 					if iFloat != jFloat {
+						less = iFloat < jFloat
 						if order.Order == datastore.SortOrderAscending {
-							return iFloat < jFloat
+							return less
 						}
-						return iFloat > jFloat
+						return !less
 					}
 				case reflect.Struct:
 					// Special handling for time.Time
@@ -276,15 +291,28 @@ func (j *JSONDatastore) List(ctx context.Context, query datastore.Entity, option
 						iTime := iField.Interface().(time.Time)
 						jTime := jField.Interface().(time.Time)
 						if !iTime.Equal(jTime) {
+							less = iTime.Before(jTime)
 							if order.Order == datastore.SortOrderAscending {
-								return iTime.Before(jTime)
+								return less
 							}
-							return jTime.Before(iTime)
+							return !less
 						}
 					}
 				}
 			}
-			return false
+
+			// If all sort fields are equal, use ID as the final tiebreaker
+			// Find ID field by tag
+			var iID, jID string
+			for k := 0; k < iType.NumField(); k++ {
+				field := iType.Field(k)
+				if field.Tag.Get("json") == "id" {
+					iID = iValue.Field(k).String()
+					jID = jValue.Field(k).String()
+					break
+				}
+			}
+			return iID < jID
 		})
 	}
 
