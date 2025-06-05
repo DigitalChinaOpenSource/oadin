@@ -1,7 +1,8 @@
 import { create } from 'zustand';
+import { IModelDataItem } from '@/types';
 
 interface IModelDownloadStore {
-  downloadList: any[];
+  downloadList: IModelDataItem[];
   setDownloadList: (list: any[] | ((currentList: any[]) => any[])) => void;
 }
 

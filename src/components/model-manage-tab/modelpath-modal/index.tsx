@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Modal, Input, Form, message } from 'antd';
 import { useRequest, useDebounce } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
 import { IModelPathSpaceRes } from '../types';
+import { DOWNLOAD_STATUS } from '@/constants';
 import styles from './index.module.scss';
 
 interface IModelPathModalProps {
@@ -13,19 +15,21 @@ interface IModelPathModalProps {
   onModalPathChangeSuccess: () => void;
 }
 
-export default function ModelPathModal(props: IModelPathModalProps) {
+export default memo(function ModelPathModal(props: IModelPathModalProps) {
   const { modalPath, onModelPathVisible, onModalPathChangeSuccess } = props;
-  const loadingHideRef = useRef<() => void>();
 
   const { downloadList } = useModelDownloadStore();
-  const { setIsPathMigrating, setMigratingStatus } = useModelPathChangeStore();
+  console.log('downloadList', downloadList);
+  const { IN_PROGRESS } = DOWNLOAD_STATUS;
+  const { setMigratingStatus } = useModelPathChangeStore();
+  const { checkByzeStatus, setCheckByzeServerLoading } = useByzeServerCheckStore();
   const [form] = Form.useForm();
   const formValues = Form.useWatch([], form);
   const modelPathValue = Form.useWatch('modelPath', form);
   const debouncedModelPath = useDebounce(modelPathValue, { wait: 1000 });
   const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes>({} as IModelPathSpaceRes);
   const [isFormValid, setIsFormValid] = useState(false);
-
+  const [changeModelPathLoading, setChangeModelPathLoading] = useState(false);
   useEffect(() => {
     if (!modalPath) return;
     form.setFieldsValue({ modelPath: modalPath });
@@ -46,6 +50,15 @@ export default function ModelPathModal(props: IModelPathModalProps) {
       .catch(() => setIsFormValid(false));
   }, [formValues, form]);
 
+  useEffect(() => {
+    if (!checkByzeStatus) {
+      setChangeModelPathLoading(false);
+      onModelPathVisible();
+      setMigratingStatus('failed');
+      setCheckByzeServerLoading(false);
+    }
+  }, [checkByzeStatus]);
+
   const { run: onCheckPathSpace } = useRequest(
     async (path: string) => {
       const data = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
@@ -62,16 +75,18 @@ export default function ModelPathModal(props: IModelPathModalProps) {
     },
   );
 
-  const { loading: changeModelPathLoading, run: onChangeModelPath } = useRequest(
+  const { run: onChangeModelPath } = useRequest(
     async (params: { source_path: string; target_path: string }) => {
       const data = await httpRequest.post('/control_panel/model/filepath', params);
       return data || {};
     },
     {
       manual: true,
+      onBefore: () => {
+        setChangeModelPathLoading(true);
+      },
       onSuccess: (data) => {
         if (data) {
-          loadingHideRef.current?.();
           message.success('模型存储路径修改成功');
         }
         setCurrentPathSpace(data);
@@ -80,28 +95,29 @@ export default function ModelPathModal(props: IModelPathModalProps) {
         setMigratingStatus('init');
       },
       onError: (error) => {
-        loadingHideRef.current?.();
         message.error(error?.message || '模型存储路径修改失败');
         setMigratingStatus('failed');
       },
       onFinally: () => {
-        setIsPathMigrating(false);
+        setChangeModelPathLoading(false);
+        setMigratingStatus('failed');
+        onModelPathVisible();
       },
     },
   );
 
   const handleToSavePath = () => {
-    loadingHideRef.current = message.loading('正在迁移模型存储路径，请稍候...', 0);
     form.submit();
   };
 
   const onFinish = (values: { modelPath: string }) => {
-    if (downloadList.length > 0) {
+    // 检查是否有正在下载中的模型
+    const hasDownloadingModel = downloadList.some((item) => item.status === IN_PROGRESS);
+    if (hasDownloadingModel) {
       message.error('请等待模型下载完成后再进行操作');
       return;
     }
     // 修改全局状态，标识模型存储路径正在迁移中
-    setIsPathMigrating(true);
     setMigratingStatus('pending');
     onChangeModelPath({
       source_path: modalPath || '',
@@ -161,4 +177,4 @@ export default function ModelPathModal(props: IModelPathModalProps) {
       </div>
     </Modal>
   );
-}
+});
