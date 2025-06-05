@@ -228,6 +228,7 @@ class Byze {
         if (downloadSuccess) {
           let installResult = false;
           try {
+            console.log(`byze-installer 运行 ${dest}`);
             installResult = await this.runByzeInstaller(dest, isMacOS);
           } catch (e) {
             console.error('runByzeInstaller 异常:', e);
