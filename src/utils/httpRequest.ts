@@ -1,4 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
 import { message } from 'antd';
 
 export interface ResponseData<T = any> {
@@ -69,25 +70,65 @@ const apiBaseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.MODE ==
 const healthBaseURL = import.meta.env.VITE_HEALTH_API_URL ?? (import.meta.env.MODE === 'dev' ? '/' : 'http://127.0.0.1:16688');
 
 const byzeInstance = createApiInstance(apiBaseURL);
-const healthInstance = createApiInstance(healthBaseURL);
+
+// 健康检查包装器
+async function withHealthCheck<T>(requestFn: () => Promise<T>): Promise<T> {
+  const { fetchByzeServerStatus } = useByzeServerCheckStore.getState();
+  await fetchByzeServerStatus();
+  if (!useByzeServerCheckStore.getState().checkByzeStatus) {
+    message.destroy();
+    message.error('白泽服务不可用，请确认白泽服务启动状态');
+    // 返回一个永远 pending 的 Promise，阻断后续 then/catch
+    return new Promise(() => {});
+  }
+  return requestFn();
+}
 
 const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) => ({
-  get: <T = any>(url: string, params?: any, config?: any) => {
-    return instance.get<any, T>(url, { ...config, params });
-  },
-  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig, 'data'>) => {
-    return instance.post<any, T>(url, data, config);
-  },
-  put: <T = any>(url: string, data?: any, config?: any) => {
-    return instance.put<any, T>(url, data, config);
-  },
-  del: <T = any>(url: string, data?: any, config?: any) => {
-    return instance.delete<any, T>(url, { ...config, data });
-  },
-
-  request: instance.request,
+  get: <T = any>(url: string, params?: any, config?: any) => withHealthCheck(() => instance.get<any, T>(url, { ...config, params })),
+  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig, 'data'>) => withHealthCheck(() => instance.post<any, T>(url, data, config)),
+  put: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.put<any, T>(url, data, config)),
+  del: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.delete<any, T>(url, { ...config, data })),
 });
 
-// 分别导出两个请求工具
 export const httpRequest = createRequestFunctions(byzeInstance);
-export const healthRequest = createRequestFunctions(healthInstance);
+
+const createHealthApiInstance = (baseURL: string) => {
+  const instance = axios.create({
+    baseURL,
+    timeout: 60000,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+
+  // 响应拦截器
+  instance.interceptors.response.use(
+    (response: AxiosResponse<ResponseData>) => {
+      const { data } = response;
+      if (data?.data) {
+        return data.data;
+      } else {
+        return data;
+      }
+    },
+    (error) => {
+      // 只要 /health 请求出错，统一提示
+      message.error('白泽服务不可用，请确认白泽服务启动状态');
+      return Promise.reject(error);
+    },
+  );
+
+  return instance;
+};
+
+const healthInstance = createHealthApiInstance(healthBaseURL);
+
+export const healthRequest = {
+  get: <T = any>(url: string, params?: any, config?: any) => healthInstance.get<any, T>(url, { ...config, params }),
+  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig, 'data'>) => healthInstance.post<any, T>(url, data, config),
+  put: <T = any>(url: string, data?: any, config?: any) => healthInstance.put<any, T>(url, data, config),
+  del: <T = any>(url: string, data?: any, config?: any) => healthInstance.delete<any, T>(url, { ...config, data }),
+  request: (config: AxiosRequestConfig) => healthInstance.request(config),
+};

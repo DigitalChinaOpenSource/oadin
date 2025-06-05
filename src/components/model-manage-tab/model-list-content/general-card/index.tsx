@@ -167,7 +167,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
       </div>
 
       <div className={styles.infoWrapper}>
-        <div className={styles.providerName}>{modelData.api_flavor}</div>
+        <div className={styles.providerName}>{modelData.flavor}</div>
 
         {modelData?.can_select && modelSourceVal === 'local' && <div className={styles.modelStatus}>已下载</div>}
         {modelData?.can_select && modelSourceVal === 'remote' && <div className={styles.modelStatus}>已授权</div>}

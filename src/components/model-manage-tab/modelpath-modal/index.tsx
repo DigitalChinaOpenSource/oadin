@@ -4,18 +4,13 @@ import { useRequest, useDebounce } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import { IModelPathSpaceRes } from '../types';
 import styles from './index.module.scss';
 
 interface IModelPathModalProps {
   modalPath?: string;
   onModelPathVisible: () => void;
   onModalPathChangeSuccess: () => void;
-}
-
-interface IModelPathSpaceRes {
-  free_size: number;
-  total_size: number;
-  usage_size: number;
 }
 
 export default function ModelPathModal(props: IModelPathModalProps) {
