@@ -105,15 +105,16 @@ func GetSuppliers(ctx context.Context, resp *QueryCloudSupplierJsonRespond) (*dt
 
 // RemoteServiceMap, err := vega.GetModels(ctx, "remote")
 func GetModels(ctx context.Context, deployMode string) (map[string][]dto.LocalSupportModelData, error) {
-	models, err := QueryCloudModelJson(ctx, deployMode)
-	if err != nil {
-		return getLocalModelList(deployMode)
-	}
-	res, err := getRemoteModels(models)
-	if err != nil {
-		return getLocalModelList(deployMode)
-	}
-	return res, nil
+	//models, err := QueryCloudModelJson(ctx, deployMode)
+	//if err != nil {
+	//	return getLocalModelList(deployMode)
+	//}
+	//res, err := getRemoteModels(models)
+	//if err != nil {
+	//	return getLocalModelList(deployMode)
+	//}
+	//return res, nil
+	return getLocalModelList(deployMode)
 }
 
 /*
