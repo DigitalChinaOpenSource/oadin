@@ -523,6 +523,10 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			Key:   "api_flavor",
 			Query: sp.Flavor,
 		})
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "service_name",
+			Query: sp.ServiceName,
+		})
 		options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}}
 		totalCount, err := jds.Count(ctx, sm, &datastore.FilterOptions{Queries: queryOpList})
 		if err != nil {
