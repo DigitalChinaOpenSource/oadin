@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"fmt"
+
 	"github.com/go-resty/resty/v2"
 )
 
@@ -9,7 +10,7 @@ import (
 type MCPListRequest struct {
 	Keyword    string   `json:"keyword"`
 	Category   []string `json:"category"`
-	Tag        []string `json:"tag"`
+	Tag        []string `json:"tags"`
 	Deployment string   `json:"deployment"`
 	MCPIds     []string `json:"id"`
 	Page       int      `json:"page"`

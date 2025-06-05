@@ -2,14 +2,10 @@ package version
 
 import (
 	"bytes"
-	"byze/internal/datastore"
-	"byze/internal/types"
-	"byze/internal/utils"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"io"
 	"log/slog"
 	"net/http"
@@ -21,12 +17,18 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"byze/internal/datastore"
+	"byze/internal/types"
+	"byze/internal/utils"
+
+	"gorm.io/gorm"
 )
 
 var (
 	// awawit provide
 	UpdateCheckUrlBase = "https://api-aipc-test.dcclouds.com"
-	//UpdateCheckUrlBase  = "http://10.3.74.123:3000"
+	// UpdateCheckUrlBase  = "http://10.3.74.123:3000"
 	UpdateCheckInterval = 60 * 60 * time.Second
 
 	AppKey    = "byze"
@@ -51,15 +53,19 @@ type UpdateAuthRequest struct {
 	Sign       string `json:"sign"`
 	ClientType string `json:"clientType"`
 }
-
 type UpdateAuthResponse struct {
+	Code    string                 `json:"code"`
+	Message string                 `json:"message"`
+	Data    UpdateAuthResponseData `json:"data"`
+}
+type UpdateAuthResponseData struct {
 	Code      string `json:"code"`
 	ExpireIn  int    `json:"expireIn"`
 	IssuedAt  int    `json:"issuedAt"`
 	TokenType string `json:"tokenType"`
 }
 
-func UpdaterAuth() (UpdateAuthResponse, error) {
+func UpdaterAuth() (UpdateAuthResponseData, error) {
 	awaitSignMap := make(map[string]string)
 	nonceStr := utils.GenerateNonceString(8)
 	timeStamp := time.Now().Unix()
@@ -100,9 +106,8 @@ func UpdaterAuth() (UpdateAuthResponse, error) {
 	res := UpdateAuthResponse{}
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequest("POST", authUrl, bytes.NewBuffer(reqData))
-
 	if err != nil {
-		return UpdateAuthResponse{}, err
+		return UpdateAuthResponseData{}, err
 	}
 
 	transport := &http.Transport{
@@ -114,20 +119,22 @@ func UpdaterAuth() (UpdateAuthResponse, error) {
 	client := &http.Client{Transport: transport}
 	resp, err := client.Do(req)
 	if err != nil {
-		return UpdateAuthResponse{}, err
+		return UpdateAuthResponseData{}, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return UpdateAuthResponse{}, fmt.Errorf(resp.Status)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return UpdateAuthResponseData{}, fmt.Errorf(resp.Status)
 	}
 	respBody, err := io.ReadAll(resp.Body)
 
 	err = json.Unmarshal(respBody, &res)
 	if err != nil {
-		return UpdateAuthResponse{}, err
+		return UpdateAuthResponseData{}, err
 	}
-	return res, nil
-
+	if res.Code != "200" {
+		return UpdateAuthResponseData{}, fmt.Errorf(res.Message)
+	}
+	return res.Data, nil
 }
 
 func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
@@ -149,7 +156,6 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 	}
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), bytes.NewBuffer(reqData))
-
 	if err != nil {
 		slog.Warn(fmt.Sprintf("failed to check for update: %s", err))
 		return false, updateResp
