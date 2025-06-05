@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { IModelAuthType, IModelAuth } from '../types';
-import { ModelData, IModelDataItem, IRequestModelParams, IModelPathRes } from '@/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { IModelAuth, IModelAuthType } from '../types';
+import { IModelDataItem, IModelPathRes, IRequestModelParams, ModelData } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
-import { Modal, message } from 'antd';
+import { message, Modal } from 'antd';
 import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
@@ -67,8 +67,7 @@ export function useViewModel(props: IModelListContent) {
       const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
       if (paramsTemp.service_source === 'remote') {
         // 处理问学模型列表的数据, 把推荐的模型放在前面
-        const remoteData = dealSmartVisionModels(data?.data || []);
-        return remoteData;
+        return dealSmartVisionModels(data?.data || []);
       }
       return data?.data || [];
     },
@@ -140,7 +139,7 @@ export function useViewModel(props: IModelListContent) {
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: () => {
         message.success('模型删除成功');
       },
       onError: (error) => {

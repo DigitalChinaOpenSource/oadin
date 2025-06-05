@@ -7,7 +7,7 @@ import { DOWNLOAD_STATUS } from '@/constants';
 import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon, SettingIcon, ArrowClockwiseIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
-import React, { MouseEvent, useState } from 'react';
+import React, { MouseEvent } from 'react';
 import recommendedIcon from '@/components/icons/recommendIcon.png';
 
 export interface IGeneralCardProps {
@@ -152,6 +152,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           {/* logo */}
           <div className={styles.avatar}>
             <img
+              alt=""
               src={modelData?.avatar}
               width={24}
             />

@@ -11,6 +11,7 @@ export interface IModelList extends IModelListContent {
   pagination?: PaginationConfig | false;
   dataSource?: any[];
   grid?: ListGridType;
+  isSelectable?: boolean;
 }
 
 export const ModelList = (props: IModelList) => {
@@ -26,7 +27,7 @@ export const ModelList = (props: IModelList) => {
             renderItem={(item) => (
               <List.Item>
                 <GeneralCard
-                  isSelectable={true}
+                  isSelectable={props.isSelectable}
                   modelData={item}
                   modelSourceVal={vm.modelSourceVal}
                   onCardClick={vm.onDetailModalVisible}

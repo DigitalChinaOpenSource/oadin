@@ -1,28 +1,20 @@
-import { Button, Tooltip, List, message, Radio } from 'antd';
 import styles from './index.module.scss';
-import GeneralCard from '@/components/model-manage-tab/model-list-content/general-card';
 import ModelPathModal from '../modelpath-modal';
 import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
-import { SettingIcon, FailedIcon } from '../../icons';
 import realLoadingSvg from '@/components/icons/real-loading.svg';
-import noDataSvg from '@/components/icons/no-data.svg';
 import { IModelSourceType } from '@/types';
-import useModelDownloadStore from '@/store/useModelDownloadStore';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import { ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
 import { useViewModel as useViewTabModel } from '@/components/model-manage-tab/view-model.ts';
-import { useEffect } from 'react';
 export interface IModelListContent {
   modelSearchVal: string;
   modelSourceVal: IModelSourceType;
   onModelSearch: (val: string) => void;
-  // onModelSourceChange: (val: IModelSourceType) => void;
 }
 
 export default function ModelListContent(props: IModelListContent) {
-  const { onModelSearch, modelSearchVal, modelSourceVal, onModelSourceChange } = useViewTabModel();
+  const { onModelSearch, modelSearchVal, modelSourceVal } = useViewTabModel();
   const vm = useViewModel({
     onModelSearch,
     modelSearchVal,

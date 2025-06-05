@@ -21,6 +21,7 @@ export const ModelCheckingNodata = () => {
       <div className={styles.recommendText}>当前暂无可体验的模型，请先下载后，再进行体验</div>
       <ModelList
         {...vmProps}
+        isSelectable={true}
         grid={{ gutter: 16, column: 2 }}
         dataSource={filterModelList}
         pagination={false}
