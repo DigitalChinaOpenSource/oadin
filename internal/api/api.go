@@ -6,6 +6,7 @@ import (
 
 	"byze/internal/server"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,6 +21,13 @@ type ByzeCoreServer struct {
 // NewByzeCoreServer is the constructor of the server structure
 func NewByzeCoreServer() *ByzeCoreServer {
 	g := gin.Default()
+	g.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
+		ExposeHeaders:    []string{"*"},
+		AllowCredentials: true,
+	}))
 	err := g.SetTrustedProxies(nil)
 	if err != nil {
 		fmt.Println("SetTrustedProxies failed")

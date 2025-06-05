@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"byze/internal/datastore"
+	"byze/internal/provider/template"
 	"byze/internal/types"
 
 	"gorm.io/driver/sqlite"
@@ -68,7 +70,10 @@ func (ds *SQLite) insertInitialData() error {
 	if err := ds.db.Model(&types.Service{}).Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to count initial data: %v", err)
 	}
-
+	var servicesProviderCount int64
+	if err := ds.db.Model(&types.Service{}).Count(&servicesProviderCount).Error; err != nil {
+		return fmt.Errorf("failed to count initial data: %v", err)
+	}
 	if count == 0 {
 		initService := make([]*types.Service, 0)
 		initService = append(initService, &types.Service{
@@ -97,7 +102,25 @@ func (ds *SQLite) insertInitialData() error {
 			return fmt.Errorf("failed to create initial service: %v", err)
 		}
 	}
+	if servicesProviderCount == 0 {
+		var serviceProviders []*types.ServiceProvider
+		serviceProviderData, err := template.FlavorTemplateFs.ReadFile("service_provider_data.json")
+		if err != nil {
+			return fmt.Errorf("failed to read service provider data: %v", err)
+		}
+		if err := json.Unmarshal(serviceProviderData, &serviceProviders); err != nil {
+			return fmt.Errorf("failed to unmarshal service provider data: %v", err)
+		}
+		initServiceProvider := make([]*types.ServiceProvider, 0)
+		for _, serviceProvider := range serviceProviders {
+			initServiceProvider = append(initServiceProvider, serviceProvider)
 
+		}
+		if err := ds.db.CreateInBatches(initServiceProvider, len(initServiceProvider)).Error; err != nil {
+			return fmt.Errorf("failed to create initial service: %v", err)
+		}
+
+	}
 	return nil
 }
 
