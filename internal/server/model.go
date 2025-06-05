@@ -564,7 +564,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 	serviceModelList := make(map[string][]dto.RecommendModelData)
 	if request.ServiceSource == types.ServiceSourceLocal {
 		localOllamaModelMap := make(map[string]dto.LocalSupportModelData)
-		localOllamaServiceMap, err := vega.GetModels(ctx, "local")
+		localOllamaServiceMap, err := vega.GetModels(ctx, request.ServiceSource)
 		if err != nil {
 			fmt.Printf("GetModels failed: %v\n", err)
 			return nil, err
