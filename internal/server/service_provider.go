@@ -439,6 +439,35 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 	if request.PageSize == 0 {
 		request.PageSize = 10
 	}
+	if sp.ServiceSource == types.ServiceSourceLocal {
+		providerEngine := provider.GetModelEngine(sp.Flavor)
+		err = providerEngine.HealthCheck()
+		if err == nil {
+			sp.Status = 1
+		}
+	} else {
+		model := types.Model{
+			ProviderName: sp.ProviderName,
+		}
+		modelList, err := ds.List(ctx, &model, &datastore.ListOptions{
+			Page:     0,
+			PageSize: 100,
+		})
+		if err == nil {
+			for _, m := range modelList {
+				mInfo := m.(*types.Model)
+				checkServerObj := ChooseCheckServer(*sp, mInfo.ModelName)
+				status := checkServerObj.CheckServer()
+				if status {
+					sp.Status = 1
+					break
+				}
+			}
+
+		}
+
+	}
+
 	var supportModelList []dto.ProviderSupportModelData
 	res := &dto.GetServiceProviderResponseData{}
 	res.ServiceProvider = sp
