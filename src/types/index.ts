@@ -3,6 +3,7 @@ export type IModelSourceType = 'local' | 'remote';
 export interface IModelDataItem {
   service_name: string;
   api_flavor: string;
+  flavor: string;
   method: string;
   desc: string;
   url: string;
