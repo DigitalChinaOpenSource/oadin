@@ -1,6 +1,7 @@
 .mainLayout {
   width: 100%;
   height: calc(100vh);
+  overflow: hidden;
   .header {
     display: flex;
     align-items: center;

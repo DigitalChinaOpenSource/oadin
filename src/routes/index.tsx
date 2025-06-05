@@ -11,6 +11,7 @@ import ByzeServiceTab from '@/components/byze-service-tab';
 import ModelSetting from '@/components/settings/model-setting';
 import AgentSetting from '@/components/settings/agent-setting';
 import AboutUs from '@/components/settings/about-us';
+import ModelManageTab from '@/components/model-manage-tab';
 
 const router = createBrowserRouter([
   {
@@ -32,7 +33,7 @@ const router = createBrowserRouter([
         children: [
           {
             path: 'model-list',
-            element: <ModelManage />,
+            element: <ModelManageTab />,
           },
           {
             path: 'my-model-list',
