@@ -1,14 +1,32 @@
 .serviceProviderTab {
   height: 100%;
   padding: 24px;
+  overflow: hidden;
   :global(.ant-spin-nested-loading > div > .ant-spin) {
     top: 250px;
+  }
+  :global {
+    .ant-table-wrapper {
+      height: 100%;
+      overflow: hidden;
+    }
+    /* 隐藏滚动条但保留滚动功能 */
+    //.ant-table-body {
+    //  scrollbar-width: none; /* Firefox */
+    //  -ms-overflow-style: none; /* IE/Edge */
+    //
+    //  &::-webkit-scrollbar {
+    //    display: none; /* Chrome/Safari/Edge */
+    //  }
+    //}
   }
   .container {
     height: 100%;
     background-color: #ffffff;
     border-radius: 8px;
     padding: 24px;
+    display: flex;
+    flex-direction: column;
   }
   .noDataIcon {
     img {

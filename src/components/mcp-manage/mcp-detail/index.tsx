@@ -94,7 +94,7 @@ export default function McpDetail() {
                       onClick={handleAddMcp}
                       loading={downMcpLoading || authMcpLoading}
                     >
-                      重新添加
+                      更新
                     </Button>
                     <Button
                       type="default"

@@ -34,7 +34,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
     if (location.pathname.startsWith('/mcp-detail')) return;
     if (pathSegments.length > 0) {
       setSelectedKeys([location.pathname]);
-      setOpenKeys([pathSegments[0]]);
+      setOpenKeys([...openKeys, pathSegments[0]]);
     }
   }, [location.pathname, collapsed]);
 
@@ -78,8 +78,8 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
         />
       ),
       children: [
-        { key: 'mcp-service6', label: '模型设置' },
-        { key: 'mcp-service7', label: '代理设置' },
+        { key: '/settings/model-setting', label: '模型设置' },
+        { key: '/settings/agent-setting', label: '代理设置' },
         { key: '/settings/service-provider-manage', label: '服务提供商管理' },
         { key: '/settings/about-us', label: '关于我们' },
       ],

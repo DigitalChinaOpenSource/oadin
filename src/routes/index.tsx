@@ -9,6 +9,9 @@ import McpDetail from '../components/mcp-manage/mcp-detail';
 import ModelChat from '../pages/model-chat'; // 新增对话页面
 import ServiceProviderManage from '@/components/service-provider-tab';
 import ByzeServiceTab from '@/components/byze-service-tab';
+import ModelSetting from '@/components/settings/model-setting';
+import AgentSetting from '@/components/settings/agent-setting';
+import AboutUs from '@/components/settings/about-us';
 
 const router = createBrowserRouter([
   {
@@ -47,13 +50,15 @@ const router = createBrowserRouter([
         path: '/settings',
         // element: <ServerManage />,
         children: [
+          { path: 'model-setting', element: <ModelSetting /> }, // 模型设置
+          { path: 'agent-setting', element: <AgentSetting /> }, // 代理设置
           {
             path: 'service-provider-manage',
             element: <ServiceProviderManage />, // 服务提供商管理
           },
           {
             path: 'about-us',
-            element: <ByzeServiceTab />, // 关于我们
+            element: <AboutUs />, // 关于我们
           },
         ],
       },

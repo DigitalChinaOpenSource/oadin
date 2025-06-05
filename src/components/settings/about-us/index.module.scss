@@ -1,0 +1,125 @@
+.aboutUs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  justify-content: space-between;
+  .mainContent {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    .aboutUsTitle {
+      color: #000000;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 24px;
+    }
+    .comCard {
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      border-radius: 8px;
+      background-color: #ffffff;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+      .comItem {
+        padding: 24px 0;
+        border-bottom: 1px solid #e4e4e7;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        &:first-child {
+          padding-top: 0;
+        }
+        &:last-child {
+          border: none;
+          padding-bottom: 0;
+        }
+        .comIcon {
+          font-size: 20px;
+          cursor: pointer;
+          &:hover {
+            color: blue;
+          }
+        }
+        .header {
+          display: flex;
+          gap: 16px;
+          .headerIcon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border: 1px solid #d4d4d9;
+            border-radius: 4px;
+            img {
+              width: 32px;
+              height: 32px;
+            }
+          }
+          .headerContent {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            .headerTitle {
+              font-size: 16px;
+              line-height: 24px;
+              font-weight: 600;
+              color: #000000;
+            }
+            .headerDesc {
+              font-size: 14px;
+              line-height: 22px;
+              font-weight: 400;
+              color: #71717d;
+            }
+          }
+        }
+      }
+    }
+  }
+  .serviceStatus {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    .statusName {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 400;
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 8px;
+        background-color: #10b981;
+        margin-top: 2px;
+      }
+
+      .used {
+        color: #10b981;
+      }
+
+      .stopped {
+        color: #e85951;
+      }
+
+      .noCheck {
+        width: 8px;
+        height: 8px;
+        border-radius: 8px;
+        background-color: #e85951;
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .bottomDesc {
+    text-align: center;
+  }
+}
