@@ -5,12 +5,17 @@ import { message } from 'antd';
 interface HealthCheckState {
   checkByzeStatus: boolean; // 服务健康状态
   checkByzeServerLoading: boolean; // 请求加载状态
+  setCheckByzeServerLoading: (status: boolean) => void;
   fetchByzeServerStatus: () => void; // 手动触发健康检查
 }
 
 const useByzeServerCheckStore = create<HealthCheckState>((set) => ({
   checkByzeStatus: false,
   checkByzeServerLoading: false,
+
+  setCheckByzeServerLoading: (loading: boolean) => {
+    set({ checkByzeServerLoading: loading });
+  },
 
   fetchByzeServerStatus: async () => {
     set({ checkByzeServerLoading: true });

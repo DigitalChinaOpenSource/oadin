@@ -20,7 +20,6 @@ export interface IModelListContent {
 
 export default function ModelListContent(props: IModelListContent) {
   const vm = useViewModel(props);
-  const { downloadList } = useModelDownloadStore();
   const { migratingStatus } = useModelPathChangeStore();
   return (
     <>
@@ -37,36 +36,42 @@ export default function ModelListContent(props: IModelListContent) {
             <div className={styles.titlepath}>
               <div className={styles.title}>模型列表</div>
               {vm.modelSourceVal === 'local' && (
-                <Tooltip title={vm.modelPath}>
-                  {(migratingStatus === 'init' || migratingStatus === 'failed') && (
-                    <Button
-                      className={styles.changePath}
-                      type="text"
-                      onClick={vm.onModelPathVisible}
-                    >
-                      <SettingIcon />
-                      修改存储路径
-                    </Button>
-                  )}
-                  {migratingStatus === 'pending' && (
-                    <Button
-                      className={styles.changePath}
-                      type="text"
-                    >
-                      <img
-                        src={realLoadingSvg}
-                        alt="loading"
-                        width={20}
-                      />
-                      <span className={styles.isChangingText}>正在修改至新的存储路径</span>
-                    </Button>
-                  )}
-                  {migratingStatus === 'failed' && (
-                    <span className={styles.changeFailed}>
-                      <FailedIcon fill="#ff6e38" />
-                    </span>
-                  )}
-                </Tooltip>
+                <div>
+                  <Tooltip title={vm.modelPath}>
+                    {(migratingStatus === 'init' || migratingStatus === 'failed') && (
+                      <Button
+                        className={styles.changePath}
+                        type="text"
+                        onClick={vm.onModelPathVisible}
+                      >
+                        <SettingIcon />
+                        修改存储路径
+                      </Button>
+                    )}
+                    {migratingStatus === 'pending' && (
+                      <Button
+                        className={styles.changePath}
+                        type="text"
+                      >
+                        <img
+                          src={realLoadingSvg}
+                          alt="loading"
+                          width={20}
+                        />
+                        <span className={styles.isChangingText}>正在修改至新的存储路径</span>
+                      </Button>
+                    )}
+                  </Tooltip>
+                  <>
+                    {migratingStatus === 'failed' && (
+                      <Tooltip title="修改存储路径失败">
+                        <span className={styles.changeFailed}>
+                          <FailedIcon fill="#ff6e38" />
+                        </span>
+                      </Tooltip>
+                    )}
+                  </>
+                </div>
               )}
             </div>
 
