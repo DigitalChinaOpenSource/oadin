@@ -10,7 +10,14 @@ import { message } from 'antd';
 PrismLight.registerLanguage('json', json);
 const SyntaxHighlighter = PrismLight as unknown as React.ComponentType<SyntaxHighlighterProps>;
 
-export default function McpServiceConfig({ code = '' }: { code?: string }) {
+export interface IJsonParsePanelProps {
+  code?: string;
+  maxHeight?: string;
+  isConfig?: boolean; // 是否是服务器配置
+  propsContentStyles?: React.CSSProperties;
+}
+export default function JsonParsePanel(props: IJsonParsePanelProps) {
+  const { code, maxHeight, isConfig = true, propsContentStyles } = props;
   const [showDefaultIcon, setShowDefaultIcon] = useState<boolean>(true);
 
   const handleClick = async () => {
@@ -36,9 +43,12 @@ export default function McpServiceConfig({ code = '' }: { code?: string }) {
   }`;
 
   return (
-    <div className={styles.mcpServiceConfig}>
-      <div className={styles.configHeader}>服务器配置</div>
-      <div className={styles.configContent}>
+    <div className={styles.jsonParsePanel}>
+      {isConfig && <div className={styles.configHeader}>服务器配置</div>}
+      <div
+        className={styles.configContent}
+        style={propsContentStyles}
+      >
         <div
           className={styles.copyIcon}
           onClick={handleClick}
@@ -52,13 +62,12 @@ export default function McpServiceConfig({ code = '' }: { code?: string }) {
             <CopySuccess />
           )}
         </div>
-        {/*<Button onClick={handleClick}>复制</Button>*/}
         <SyntaxHighlighter
           language="json"
           style={coy}
           customStyle={{
             // width: '400px',
-            maxHeight: '300px',
+            maxHeight: maxHeight || '300px',
             fontSize: '12px',
             backgroundColor: 'transparent',
             border: 'none',

@@ -5,9 +5,9 @@
   overflow: hidden;
   .header {
     height: 30px;
+    padding: 4 8px;
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
     .chatStatus {
       display: flex;
       align-items: center;
@@ -20,14 +20,26 @@
       }
       .statusText {
         margin-left: 8px;
+        color: #27272a;
       }
     }
     .collapse {
       margin-left: auto;
+      cursor: pointer;
     }
   }
   .content {
+    color: #898ea3;
+    max-height: 0px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease-in-out;
+  }
+  .content.expanded {
     max-height: 180px;
     overflow-y: auto;
+    opacity: 1;
+    visibility: visible;
   }
 }

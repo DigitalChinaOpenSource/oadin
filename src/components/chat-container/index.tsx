@@ -3,6 +3,7 @@ import createChat from '@/components/icons/create-chat.svg';
 import chatHistory from '@/components/icons/chat-history.svg';
 import ChatModelManage from './chat-model-manage';
 import DeepThinkChat from './chat-components/deep-think-chat';
+import McpToolChat from './chat-components/mcp-tool-chat';
 import styles from './index.module.scss';
 import { SelectMcp } from '@/components/select-mcp';
 export default function ChatContainer() {
@@ -44,9 +45,9 @@ export default function ChatContainer() {
         >
           <div className={styles.chatContent}>
             <ChatModelManage />
+            <DeepThinkChat />
+            <McpToolChat />
           </div>
-
-          <DeepThinkChat />
         </Col>
       </Row>
       {/* <ChatHistoryDrawer /> */}
