@@ -103,6 +103,7 @@ func GetSuppliers(ctx context.Context, resp *QueryCloudSupplierJsonRespond) (*dt
 	return requestModel, nil
 }
 
+// RemoteServiceMap, err := vega.GetModels(ctx, "remote")
 func GetModels(ctx context.Context, deployMode string) (map[string][]dto.LocalSupportModelData, error) {
 	models, err := QueryCloudModelJson(ctx, deployMode)
 	if err != nil {
@@ -115,10 +116,51 @@ func GetModels(ctx context.Context, deployMode string) (map[string][]dto.LocalSu
 	return res, nil
 }
 
-var typeMapClass = map[string]string{
-	"chat":          "文本生成",
-	"embed":         "文本向量化",
-	"text_to_image": "文生图",
+/*
+	localOllamaServiceMap, err := vega.GetModels(ctx, "local")
+	if err != nil {
+		fmt.Printf("GetModels failed: %v\n", err)
+		return nil, err
+	}
+
+	替换
+	localOllamaServiceMap := make(map[string][]dto.LocalSupportModelData)
+	fileContent, err := template.FlavorTemplateFs.ReadFile("local_model.json")
+	if err != nil {
+		fmt.Printf("Read file failed: %v\n", err)
+		return nil, err
+	}
+	// parse struct
+	err = json.Unmarshal(fileContent, &localOllamaServiceMap)
+	if err != nil {
+		fmt.Printf("Parse JSON failed: %v\n", err)
+		return nil, err
+	}
+
+	RemoteServiceMap, err := vega.GetModels(ctx, "remote")
+	if err != nil {
+		fmt.Printf("GetModels failed: %v\n", err)
+		return nil, err
+	}
+	替换
+		RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
+		fileContent, err := template.FlavorTemplateFs.ReadFile("remote_model.json")
+		if err != nil {
+			fmt.Printf("Read file failed: %v\n", err)
+			return nil, err
+		}
+		// parse struct
+		err = json.Unmarshal(fileContent, &RemoteServiceMap)
+		if err != nil {
+			fmt.Printf("Parse JSON failed: %v\n", err)
+			return nil, err
+		}
+*/
+
+var typeMapClass = map[string][]string{
+	"chat":          []string{"文本生成"},
+	"embed":         []string{"文本向量化"},
+	"text_to_image": []string{"文生图"},
 }
 
 var localFlavorMap = map[string]string{
@@ -137,13 +179,9 @@ var localFlavorMap = map[string]string{
 func getRemoteModels(models []Model) (map[string][]dto.LocalSupportModelData, error) {
 	RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
 	for _, model := range models {
-		class, ok := typeMapClass[model.Type]
-		if !ok {
-			class = "未知"
-		}
-		flavor := model.Flavor
+		class, _ := typeMapClass[model.Type]
+		flavor, ok := localFlavorMap[model.Flavor]
 		if model.OllamaId != "" {
-			flavor, ok = localFlavorMap[model.Flavor]
 			if !ok {
 				flavor = "未知"
 			}

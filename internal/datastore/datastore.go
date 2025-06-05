@@ -135,3 +135,26 @@ func SetDefaultDatastore(ds Datastore) {
 func GetDefaultDatastore() Datastore {
 	return defaultDatastore
 }
+
+type JsonDatastore interface {
+	Init() error
+	Add(ctx context.Context, entity Entity) error
+	BatchAdd(ctx context.Context, entities []Entity) error
+	Put(ctx context.Context, entity Entity) error
+	Delete(ctx context.Context, entity Entity) error
+	Get(ctx context.Context, entity Entity) error
+	List(ctx context.Context, query Entity, options *ListOptions) ([]Entity, error)
+	Count(ctx context.Context, entity Entity, options *FilterOptions) (int64, error)
+	IsExist(ctx context.Context, entity Entity) (bool, error)
+	Commit(ctx context.Context) error
+}
+
+var defaultJsonDatastore JsonDatastore
+
+func SetDefaultJsonDatastore(jds JsonDatastore) {
+	defaultJsonDatastore = jds
+}
+
+func GetDefaultJsonDatastore() JsonDatastore {
+	return defaultJsonDatastore
+}

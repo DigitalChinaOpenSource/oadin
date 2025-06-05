@@ -3,12 +3,18 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"syscall"
+	"unsafe"
 
 	"github.com/StackExchange/wmi"
 	"github.com/jaypipes/ghw"
 	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/registry"
 )
 
 type Win32_PhysicalMemory struct {
@@ -68,4 +74,57 @@ func GetSystemVersion() int {
 		}
 	}
 	return systemVersion
+}
+
+func SamePartitionStatus(srcPath, targetPath string) (bool, error) {
+	abs1, err := filepath.Abs(srcPath)
+	if err != nil {
+		return false, err
+	}
+
+	abs2, err := filepath.Abs(targetPath)
+	if err != nil {
+		return false, err
+	}
+
+	drive1 := strings.ToUpper(filepath.VolumeName(abs1))
+	drive2 := strings.ToUpper(filepath.VolumeName(abs2))
+
+	return drive1 == drive2, nil
+}
+
+func ModifySystemUserVariables(envInfo *EnvVariables) error {
+	key, _, err := registry.CreateKey(registry.CURRENT_USER, `Environment`, registry.SET_VALUE)
+	if err != nil {
+		panic(err)
+	}
+	defer key.Close()
+
+	// set environment variables
+	err = key.SetStringValue(envInfo.Name, envInfo.Value)
+	if err != nil {
+		return err
+	}
+
+	// Notify the system that environment variables have changed
+	user32 := syscall.NewLazyDLL("user32.dll")
+	sendMessageTimeout := user32.NewProc("SendMessageTimeoutW")
+
+	hwndBroadcast := uintptr(0xffff)
+	wmSettingChange := uintptr(0x001A)
+	smtoAbortIfHung := uintptr(0x0002)
+
+	r1, _, _ := sendMessageTimeout.Call(
+		hwndBroadcast,
+		wmSettingChange,
+		0,
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("Environment"))),
+		smtoAbortIfHung,
+		5000,
+		0,
+	)
+	if r1 == 0 {
+		return errors.New("Failed to notify the system of environment variable changes. Please restart or log out for the changes to take effect.")
+	}
+	return nil
 }

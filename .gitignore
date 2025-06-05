@@ -40,6 +40,7 @@ bk.*
 .vscode/
 *.db
 byze
+build.sh
 
 # Demo APP files
 /example/FreeChat/obj
