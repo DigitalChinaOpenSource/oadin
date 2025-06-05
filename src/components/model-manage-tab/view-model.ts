@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IModelSourceType } from '../../types';
+import { IModelSourceType } from '@/types';
 
 export function useViewModel() {
   // 模型来源

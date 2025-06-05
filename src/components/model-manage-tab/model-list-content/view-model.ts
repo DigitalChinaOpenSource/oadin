@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { IModelAuthType, IModelAuth } from '../types';
-import { ModelData, IModelDataItem, IRequestModelParams, IModelPathRes } from '@/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { IModelAuth, IModelAuthType, IModelPathSpaceRes } from '../types';
+import { IModelDataItem, IModelPathRes, IRequestModelParams, ModelData } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
-import { Modal, message } from 'antd';
+import { message, Modal } from 'antd';
 import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
@@ -48,6 +48,8 @@ export function useViewModel(props: IModelListContent) {
   });
   // 选中的模型数据，暂用于配置授权
   const [selectModelData, setSelectModelData] = useState<IModelDataItem>({} as any);
+  // 选中的模型， 用于体验使用
+  const [selectModel, setSelectModel] = useState<IModelDataItem>({} as any);
 
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
@@ -65,8 +67,7 @@ export function useViewModel(props: IModelListContent) {
       const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
       if (paramsTemp.service_source === 'remote') {
         // 处理问学模型列表的数据, 把推荐的模型放在前面
-        const remoteData = dealSmartVisionModels(data?.data || []);
-        return remoteData;
+        return dealSmartVisionModels(data?.data || []);
       }
       return data?.data || [];
     },
@@ -81,7 +82,7 @@ export function useViewModel(props: IModelListContent) {
               type: 0,
               id: index + 1,
               currentDownload: 0,
-            } as any),
+            }) as any,
         );
         setModelListData(dataWithSource);
         setPagination({
@@ -138,7 +139,7 @@ export function useViewModel(props: IModelListContent) {
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: () => {
         message.success('模型删除成功');
       },
       onError: (error) => {
@@ -181,6 +182,7 @@ export function useViewModel(props: IModelListContent) {
   // 计算分页数据，过滤后的，用于渲染
   const pagenationData = useMemo(() => {
     const filteredData = getFilteredData();
+    console.info(filteredData, '过滤的数据');
     return paginatedData(pagination, filteredData);
   }, [modelListData, modelSearchVal, pagination]);
 
@@ -203,6 +205,16 @@ export function useViewModel(props: IModelListContent) {
     // 弹窗关闭清空选择的模型数据
     setSelectModelData(modelData || ({} as any));
   }, []);
+
+  const { run: onCheckPathSpace, data: currentPathSpace } = useRequest(
+    async (path: string) => {
+      const data = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
+      return data || {};
+    },
+    {
+      manual: true,
+    },
+  );
 
   // 模型存储路径弹窗
   const onModelPathVisible = useCallback(() => {
@@ -227,7 +239,16 @@ export function useViewModel(props: IModelListContent) {
       okButtonProps: {
         style: { backgroundColor: '#4f4dff' },
       },
-      onOk() {
+      async onOk() {
+        await onCheckPathSpace(modelPath);
+        const modelSizeMb = Number((modelData.size || '0').toString().replace(/MB$/i, '').trim());
+        const freeSpaceGb = currentPathSpace?.free_size || 0;
+        const freeSpaceMb = freeSpaceGb * 1024;
+
+        if (modelSizeMb > freeSpaceMb) {
+          message.warning('当前路径下的磁盘空间不足，无法下载该模型');
+          return Promise.reject();
+        }
         fetchDownloadStart({
           ...modelData,
           type: modelData.type,
@@ -299,6 +320,8 @@ export function useViewModel(props: IModelListContent) {
     modelSourceVal,
     onModelSearch,
     selectModelData,
+    selectModel,
+    setSelectModel,
 
     pagination,
     onPageChange,

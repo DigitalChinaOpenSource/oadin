@@ -1,0 +1,24 @@
+.select_mcp {
+}
+.select_mcp_default {
+  :global(.ant-btn) {
+    border-color: #d4d4d9;
+  }
+  svg:hover {
+    color: #4f4dff;
+  }
+}
+.select_mcp_selected {
+  :global(.ant-btn) {
+    border-color: #4f4dff;
+    background-color: #ebf0ff;
+  }
+}
+.select_mcp_disabled {
+  :global(.ant-btn) {
+    border-color: #d4d4d9;
+    background-color: #e4e4e7;
+  }
+}
+.select_mcp_count_warp {
+}

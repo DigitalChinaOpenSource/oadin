@@ -1,20 +1,30 @@
 .modelSearch {
   display: flex;
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 24px;
-  :global(.ant-card-body) {
-    display: flex;
-  }
-  .searchInput {
-    margin-right: 16px;
-  }
+  justify-content: space-between;
+  margin-bottom: 16px;
   .searchIcon {
     cursor: pointer;
     position: relative;
-    right: 0px;
+    right: 0;
     height: 22px;
     padding-top: 3px;
   }
+}
+.modelSelect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  :global(.ant-select) {
+    :global(.ant-select-selector) {
+    }
+    .ant-select-arrow {
+      width: 16px;
+      height: 16px;
+      aspect-ratio: 1/1;
+    }
+  }
+}
+.modelTotalWarp {
+  margin-left: 16px;
 }

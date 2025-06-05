@@ -8,7 +8,7 @@ import McpOverview from '@/components/mcp-manage/mcp-detail/mcp-overview';
 import McpTools from '@/components/mcp-manage/mcp-detail/mcp-tools';
 import McpInstructions from '@/components/mcp-manage/mcp-detail/mcp-instructions';
 import DetailDesc from '@/components/mcp-manage/mcp-detail/detail-desc';
-import McpServiceConfig from '@/components/mcp-manage/mcp-detail/mcp-service-config';
+import JsonParsePanel from '@/components/json-parse-panel';
 import RecommendedClient from '@/components/mcp-manage/mcp-detail/recommended-client';
 import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts';
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
@@ -124,7 +124,7 @@ export default function McpDetail() {
             />
           </div>
           <div className={styles.contentRight}>
-            <McpServiceConfig code={JSON.stringify(mcpDetail.serverConfig || '暂无配置数据', null, 2)} />
+            <JsonParsePanel code={JSON.stringify(mcpDetail.serverConfig || '暂无配置数据', null, 2)} />
             <RecommendedClient />
           </div>
         </div>

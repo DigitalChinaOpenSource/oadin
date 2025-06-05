@@ -1,0 +1,45 @@
+.deepThinkChat {
+  padding: 12px 16px;
+  background-color: #ebf0ff;
+  border-radius: 8px;
+  overflow: hidden;
+  .header {
+    height: 30px;
+    padding: 4 8px;
+    display: flex;
+    align-items: center;
+    .chatStatus {
+      display: flex;
+      align-items: center;
+      .thinkingText {
+        margin-left: 8px;
+        background: linear-gradient(270deg, #9747ff 0%, #4f4dff 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .statusText {
+        margin-left: 8px;
+        color: #27272a;
+      }
+    }
+    .collapse {
+      margin-left: auto;
+      cursor: pointer;
+    }
+  }
+  .content {
+    color: #898ea3;
+    max-height: 0px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease-in-out;
+  }
+  .content.expanded {
+    max-height: 180px;
+    overflow-y: auto;
+    opacity: 1;
+    visibility: visible;
+  }
+}

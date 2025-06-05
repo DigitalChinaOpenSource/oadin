@@ -1,27 +1,26 @@
-import { Button, Tooltip, List, message } from 'antd';
 import styles from './index.module.scss';
-import GeneralCard from '@/components/model-manage-tab/model-list-content/general-card';
 import ModelPathModal from '../modelpath-modal';
 import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
-import { SettingIcon, FailedIcon } from '../../icons';
 import realLoadingSvg from '@/components/icons/real-loading.svg';
-import noDataSvg from '@/components/icons/no-data.svg';
 import { IModelSourceType } from '@/types';
-import useModelDownloadStore from '@/store/useModelDownloadStore';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import { ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
+import { useViewModel as useViewTabModel } from '@/components/model-manage-tab/view-model.ts';
 export interface IModelListContent {
   modelSearchVal: string;
   modelSourceVal: IModelSourceType;
   onModelSearch: (val: string) => void;
-  // onModelSourceChange: (val: IModelSourceType) => void;
 }
 
 export default function ModelListContent(props: IModelListContent) {
-  const vm = useViewModel(props);
-  const { downloadList } = useModelDownloadStore();
-  const { migratingStatus } = useModelPathChangeStore();
+  const { onModelSearch, modelSearchVal, modelSourceVal } = useViewTabModel();
+  const vm = useViewModel({
+    onModelSearch,
+    modelSearchVal,
+    modelSourceVal,
+  });
+  console.info(vm, 'content的值');
   return (
     <>
       {vm.modelSupportLoading ? (
@@ -34,83 +33,10 @@ export default function ModelListContent(props: IModelListContent) {
       ) : (
         <div className={styles.modelListContent}>
           <div className={styles.contentContainer}>
-            <div className={styles.titlepath}>
-              <div className={styles.title}>模型列表</div>
-              {vm.modelSourceVal === 'local' && (
-                <Tooltip title={vm.modelPath}>
-                  {(migratingStatus === 'init' || migratingStatus === 'failed') && (
-                    <Button
-                      className={styles.changePath}
-                      type="text"
-                      onClick={vm.onModelPathVisible}
-                    >
-                      <SettingIcon />
-                      修改存储路径
-                    </Button>
-                  )}
-                  {migratingStatus === 'pending' && (
-                    <Button
-                      className={styles.changePath}
-                      type="text"
-                    >
-                      <img
-                        src={realLoadingSvg}
-                        alt="loading"
-                        width={20}
-                      />
-                      <span className={styles.isChangingText}>正在修改至新的存储路径</span>
-                    </Button>
-                  )}
-                  {migratingStatus === 'failed' && (
-                    <span className={styles.changeFailed}>
-                      <FailedIcon fill="#ff6e38" />
-                    </span>
-                  )}
-                </Tooltip>
-              )}
-            </div>
-
-            <div className={styles.modelCardList}>
-              {vm.pagenationData.length > 0 ? (
-                <List
-                  grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
-                  dataSource={vm.pagenationData}
-                  pagination={
-                    vm.modelListData.length > 12 && {
-                      className: styles.pagination,
-                      align: 'end',
-                      ...vm.pagination,
-                      pageSizeOptions: [12, 24, 48, 96],
-                      showSizeChanger: true,
-                      onChange: vm.onPageChange,
-                      onShowSizeChange: vm.onShowSizeChange,
-                    }
-                  }
-                  renderItem={(item) => (
-                    <List.Item>
-                      <GeneralCard
-                        modelData={item}
-                        modelSourceVal={vm.modelSourceVal}
-                        onCardClick={vm.onDetailModalVisible}
-                        onModelAuthVisible={vm.onModelAuthVisible}
-                        onDownloadConfirm={vm.onDownloadConfirm}
-                        onDeleteConfirm={vm.onDeleteConfirm}
-                      />
-                    </List.Item>
-                  )}
-                />
-              ) : (
-                <div className={styles.noData}>
-                  <div className={styles.noDataIcon}>
-                    <img
-                      src={noDataSvg}
-                      alt="no-data"
-                    />
-                  </div>
-                  <div className={styles.noDataText}>暂无匹配的模型</div>
-                </div>
-              )}
-            </div>
+            <ModelList
+              {...props}
+              grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
+            />
           </div>
           {/* 模型路径弹窗 */}
           {vm.modalPathVisible && (
