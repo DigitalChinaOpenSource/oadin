@@ -33,10 +33,18 @@
       border: 1px solid #c1c6d6;
       border-radius: 8px;
       padding: 8px;
+      position: relative;
+      span {
+        img {
+          width: 14px;
+        }
+        position: absolute;
+        right: -10px;
+        top: -10px;
+      }
     }
     .cardTitle {
       display: flex;
-      overflow: hidden;
     }
 
     .title {
@@ -44,7 +52,7 @@
       font-weight: 600;
       margin-left: 8px;
       line-height: 40px;
-      max-width: 80%;
+      max-width: 50%;
     }
     .localOrCloud {
       height: 18px;
@@ -175,4 +183,9 @@
   position: absolute;
   left: 0;
   bottom: -6px;
+}
+.actionsWarp {
+  position: absolute;
+  right: 10px;
+  top: 10px;
 }

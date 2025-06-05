@@ -3,16 +3,22 @@ import { Input, Select } from 'antd';
 import { SearchIcon } from '@/components/icons';
 import { IModelSourceType } from '@/types';
 import styles from './index.module.scss';
+import { useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
+import { IModelListContent } from '@/components/model-manage-tab/model-list-content';
 
-export interface IModelTitleSearchProps {
-  modelSearchVal: string;
-  modelSourceVal: string;
-  onModelSearch: (val: string) => void;
+export interface IModelTitleSearchProps extends IModelListContent {
   onModelSourceChange: (val: IModelSourceType) => void;
 }
 
 export default function ModelSearch(props: IModelTitleSearchProps) {
   const { onModelSearch, modelSearchVal, modelSourceVal, onModelSourceChange } = props;
+
+  const vmContent = useViewModel({
+    onModelSearch,
+    modelSearchVal,
+    modelSourceVal,
+  });
+  const { pagination } = vmContent;
   const [searchVal, setSearchVal] = useState<string>('');
 
   const options = [
@@ -29,10 +35,19 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
 
   return (
     <div className={styles.modelSearch}>
+      <div className={styles.modelSelect}>
+        <Select
+          style={{ width: 160 }}
+          value={modelSourceVal as IModelSourceType}
+          options={options}
+          onChange={onModelSourceChange}
+        />
+        <div className={styles.modelTotalWarp}>共{pagination?.total}条</div>
+      </div>
       <div className={styles.searchInput}>
         <Input
           allowClear
-          placeholder="请输入模型名称"
+          placeholder="搜索模型"
           suffix={
             <div
               className={styles.searchIcon}
@@ -50,14 +65,6 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
           }}
           onClear={() => onModelSearch('')}
           style={{ width: 380 }}
-        />
-      </div>
-      <div className={styles.modelSelect}>
-        <Select
-          style={{ width: 160 }}
-          value={modelSourceVal as IModelSourceType}
-          options={options}
-          onChange={onModelSourceChange}
         />
       </div>
     </div>

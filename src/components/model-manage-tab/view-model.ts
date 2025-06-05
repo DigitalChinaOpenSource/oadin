@@ -13,6 +13,7 @@ export function useViewModel() {
   };
 
   const onModelSearch = (val: string) => {
+    console.info(val, '搜索的只2');
     setModelSearchVal(val);
   };
 
