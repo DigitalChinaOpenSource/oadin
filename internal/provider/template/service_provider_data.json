@@ -8,6 +8,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "ollama",
     "url": "http://127.0.0.1:16677/api/tags"
   },
   {
@@ -19,6 +20,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "ollama",
     "url": "http://127.0.0.1:16677/api/chat"
   },
   {
@@ -30,6 +32,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "ollama",
     "url": "http://127.0.0.1:16677/api/generate"
   },
   {
@@ -41,6 +44,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "ollama",
     "url": "http://127.0.0.1:16677/api/embed"
   },
   {
@@ -52,6 +56,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "smartvision",
     "url": "https://smartvision-dev.digitalchina.com/api/apps/chat"
   },
   {
@@ -63,6 +68,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "smartvision",
     "url": "https://smartvision-dev.digitalchina.com/api/v1/aipc/chat/embedding"
   },
   {
@@ -74,6 +80,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "aliyun",
     "url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis"
   },
   {
@@ -85,6 +92,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "aliyun",
     "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
   },
   {
@@ -96,6 +104,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "aliyun",
     "url": "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings"
   },
   {
@@ -107,6 +116,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "baidu",
     "url": "https://qianfan.baidubce.com/v2/images/generations"
   },
   {
@@ -118,6 +128,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "baidu",
     "url": "https://qianfan.baidubce.com/v2/chat/completions"
   },
   {
@@ -129,6 +140,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "baidu",
     "url": "https://qianfan.baidubce.com/v2/embeddings"
   },
   {
@@ -140,6 +152,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "tencent",
     "url": "https://hunyuan.tencentcloudapi.com/"
   },
   {
@@ -151,6 +164,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "tencent",
     "url": "https://api.hunyuan.cloud.tencent.com/v1/chat/completions"
   },
   {
@@ -162,6 +176,7 @@
     "method": "POST",
     "auth_type": "none",
     "auth_key": "",
+    "flavor": "tencent",
     "url": "https://api.hunyuan.cloud.tencent.com/v1/embeddings"
   }
 ]
