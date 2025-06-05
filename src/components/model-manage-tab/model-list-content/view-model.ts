@@ -239,7 +239,7 @@ export function useViewModel(props: IModelListContent) {
       },
       async onOk() {
         await onCheckPathSpace(modelPath);
-        const modelSizeMb = modelData.size || 0;
+        const modelSizeMb = Number((modelData.size || '0').toString().replace(/MB$/i, '').trim());
         const freeSpaceGb = currentPathSpace?.free_size || 0;
         const freeSpaceMb = freeSpaceGb * 1024;
 
