@@ -12,7 +12,7 @@ interface ModelPathChangeState {
 
 const useModelPathChangeStore = create<ModelPathChangeState>((set) => ({
   isPathMigrating: false,
-  migratingStatus: 'failed',
+  migratingStatus: 'init',
   setMigratingStatus: (status: IStatus) => set({ migratingStatus: status }),
   setIsPathMigrating: (status: boolean) => set({ isPathMigrating: status }),
 }));

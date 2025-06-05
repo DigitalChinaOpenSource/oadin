@@ -1,13 +1,13 @@
 import { useCallback, useRef, useEffect, useMemo } from 'react';
 import { modelDownloadStream, abortDownload } from './download';
 import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
-import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '../../constants';
-import { IModelDataItem } from '../../types';
-import useModelDownloadStore from '../../store/useModelDownloadStore';
-import useModelListStore from '../../store/useModelListStore';
+import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
+import { IModelDataItem } from '@/types';
+import useModelDownloadStore from '@/store/useModelDownloadStore';
+import useModelListStore from '@/store/useModelListStore';
 import { updateDownloadStatus } from './updateDownloadStatus';
 import { getLocalStorageDownList } from '@/utils';
-
+import { IDownParseData } from './types';
 /**
  * 下载操作
  * request.body => {
@@ -63,7 +63,7 @@ export const useDownLoad = () => {
       setModelListData((draft) => draft.map((item) => (item.id === id ? { ...item, status: IN_PROGRESS, currentDownload: 0 } : item)));
 
       modelDownloadStream(paramsTemp, {
-        onmessage: (parsedData: any) => {
+        onmessage: (parsedData: IDownParseData) => {
           const { completedsize, progress, status, totalsize, error } = parsedData;
 
           // 处理错误情况
@@ -109,18 +109,18 @@ export const useDownLoad = () => {
             });
           }
         },
-        onerror: (error: any) => {
+        onerror: (error: Error) => {
           updateDownloadStatus(id, modelType, {
             status: FAILED,
           });
         },
-      } as any);
+      });
     },
     [downloadList, setDownloadList],
   );
 
   // 暂停下载
-  const fetchDownLoadAbort = useCallback(async (data: { model_name: string }, { id, modelType }: any) => {
+  const fetchDownLoadAbort = useCallback(async (data: { model_name: string }, { id, modelType }: { id: number; modelType: string }) => {
     try {
       await abortDownload(data);
       updateDownloadStatus(id, modelType, { status: PAUSED });
@@ -137,7 +137,7 @@ export const useDownLoad = () => {
       const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.DOWN_LIST);
       if (downListLocal.length > 0) {
         // 将所有 IN_PROGRESS 状态的项目更新为 PAUSED
-        const updatedList = downListLocal.map((item: any) => ({
+        const updatedList = downListLocal.map((item: IModelDataItem) => ({
           ...item,
           status: item.status === IN_PROGRESS ? PAUSED : item.status,
         }));
