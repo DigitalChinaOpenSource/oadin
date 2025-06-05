@@ -18,13 +18,14 @@ const useByzeServerCheckStore = create<HealthCheckState>((set) => ({
       const data = await healthRequest.get('/health');
       if (data?.status === 'UP') {
         set({ checkByzeStatus: true });
+        return true;
       } else {
         set({ checkByzeStatus: false });
+        return false;
       }
     } catch (error) {
-      message.error('白泽服务不可用，请检查服务状态');
-      console.error('检查服务健康状态失败:', error);
       set({ checkByzeStatus: false });
+      return false;
     } finally {
       set({ checkByzeServerLoading: false });
     }

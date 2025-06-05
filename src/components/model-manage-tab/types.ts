@@ -12,3 +12,9 @@ export interface IModelAuth {
   type: IModelAuthType;
   modelData: IModelDataItem;
 }
+
+export interface IModelPathSpaceRes {
+  free_size: number;
+  total_size: number;
+  usage_size: number;
+}

@@ -3,6 +3,7 @@ export type IModelSourceType = 'local' | 'remote';
 export interface IModelDataItem {
   service_name: string;
   api_flavor: string;
+  flavor: string;
   method: string;
   desc: string;
   url: string;
@@ -11,7 +12,7 @@ export interface IModelDataItem {
   auth_fields?: string[];
   name: string;
   service_provider_name: string;
-  size: string;
+  size: number;
   is_recommended: boolean;
   status: number | string;
   avatar: string;
