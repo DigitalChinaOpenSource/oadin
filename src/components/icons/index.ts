@@ -12,3 +12,4 @@ export { default as PauseIcon } from './pause-icon';
 export { default as PlayPauseIcon } from './play-pause-icon';
 export { default as FillCloseIcon } from './fill-close-icon';
 export { default as ArrowClockwiseIcon } from './arrow-clockwise-icon';
+export { default as McpSelectBtn } from './mcpSelectBtn.tsx';

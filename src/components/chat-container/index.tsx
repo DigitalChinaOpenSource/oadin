@@ -2,9 +2,9 @@ import { Button, Col, Row } from 'antd';
 import createChat from '@/components/icons/create-chat.svg';
 import chatHistory from '@/components/icons/chat-history.svg';
 import ChatModelManage from './chat-model-manage';
-import ChatHistoryDrawer from './chat-history-drawer';
 import DeepThinkChat from './chat-components/deep-think-chat';
 import styles from './index.module.scss';
+import { SelectMcp } from '@/components/select-mcp';
 export default function ChatContainer() {
   return (
     <div className={styles.chatContainer}>
@@ -50,6 +50,7 @@ export default function ChatContainer() {
         </Col>
       </Row>
       {/* <ChatHistoryDrawer /> */}
+      <SelectMcp />
     </div>
   );
 }
