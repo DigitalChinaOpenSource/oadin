@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -52,11 +51,11 @@ func GetFilePathSize(ctx context.Context, req *dto.GetPathDiskSizeInfoRequest) (
 
 func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathRequest) (*dto.ModifyModelFilePathResponse, error) {
 	if req.TargetPath == req.SourcePath {
-		return &dto.ModifyModelFilePathResponse{}, errors.New("target path is the same as the source path")
+		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
 	}
 	isTargetDirEmpty := utils.IsDirEmpty(req.TargetPath)
 	if !isTargetDirEmpty {
-		return &dto.ModifyModelFilePathResponse{}, errors.New("target path is not empty")
+		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
 	}
 
 	// 迁移之前需停止引擎，避免进程仍在使用文件导致错误
@@ -67,7 +66,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if !isSourceDirEmpty {
 		status, err := utils.SamePartitionStatus(req.SourcePath, req.TargetPath)
 		if err != nil {
-			return nil, err
+			return nil, bcode.ControlPanelPathCheckError
 		}
 		if status {
 			err = utils.CopyDir(req.SourcePath, req.TargetPath)
@@ -77,18 +76,18 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		} else {
 			sourcePathSize, err := utils.GetFilePathTotalSize(req.SourcePath)
 			if err != nil {
-				return nil, err
+				return nil, bcode.ControlPanelPathCheckError
 			}
 			targetDiskSizeInfo, err := utils.SystemDiskSize(req.TargetPath)
 			if err != nil {
-				return nil, err
+				return nil, bcode.ControlPanelPathCheckError
 			}
 			if int(sourcePathSize) > targetDiskSizeInfo.FreeSize {
-				return nil, errors.New("Target file path size is not enough")
+				return nil, bcode.ControlPanelPathSizeError
 			}
 			err = utils.CopyDir(req.SourcePath, req.TargetPath)
 			if err != nil {
-				return nil, err
+				return nil, bcode.ControlPanelCopyDirError
 			}
 		}
 	}
@@ -101,9 +100,9 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if err != nil {
 		err = os.RemoveAll(req.TargetPath)
 		if err != nil {
-			return nil, err
+			return nil, bcode.ControlPanelCopyDirError
 		}
-		return nil, err
+		return nil, bcode.ControlPanelCopyDirError
 	}
 	os.Setenv("BYZE_OLLAMA_MODELS", req.TargetPath)
 
