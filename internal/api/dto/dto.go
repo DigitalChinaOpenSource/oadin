@@ -416,3 +416,12 @@ type ModifyModelFilePathResponse struct {
 	bcode.Bcode
 	Data struct{}
 }
+
+type ProxyRequest struct {
+	Host string `json:"url" validate:"required, url"`
+	Port string `json:"port" `
+}
+
+type FeedbackRequest struct {
+	Feedback string `json:"feedback" validate:"required"`
+}
