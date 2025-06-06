@@ -1,5 +1,4 @@
 import styles from './index.module.scss';
-import ModelPathModal from '../modelpath-modal';
 import ModelAuthorizeModal from '../model-authorize-modal';
 import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
@@ -38,14 +37,6 @@ export default function ModelListContent(props: IModelListContent) {
               grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
             />
           </div>
-          {/* 模型路径弹窗 */}
-          {/*{vm.modalPathVisible && (*/}
-          {/*  <ModelPathModal*/}
-          {/*    modalPath={vm.modelPath}*/}
-          {/*    onModelPathVisible={vm.onModelPathVisible}*/}
-          {/*    onModalPathChangeSuccess={vm.onModalPathChangeSuccess}*/}
-          {/*  />*/}
-          {/*)}*/}
           {/* 配置授权弹窗 */}
           {vm.modelAuthVisible && (
             <ModelAuthorizeModal

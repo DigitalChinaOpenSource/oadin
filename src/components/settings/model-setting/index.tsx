@@ -116,14 +116,13 @@ const ModelSetting: React.FC = () => {
           </div>
         </div>
       </div>
-      {modalPathVisible && (
-        <ModelPathModal
-          modalPath={modelPath}
-          onModelPathVisible={onModelPathVisible}
-          onModalPathChangeSuccess={onModalPathChangeSuccess}
-          updateModelPath={setChangingModelPath}
-        />
-      )}
+      <ModelPathModal
+        modalPath={modelPath}
+        onModelPathVisible={onModelPathVisible}
+        onModalPathChangeSuccess={onModalPathChangeSuccess}
+        updateModelPath={setChangingModelPath}
+        modalPathVisible={modalPathVisible}
+      />
     </div>
   );
 };

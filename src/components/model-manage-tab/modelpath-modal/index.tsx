@@ -14,10 +14,11 @@ interface IModelPathModalProps {
   onModelPathVisible: () => void;
   onModalPathChangeSuccess: () => void;
   updateModelPath: (path: string) => void;
+  modalPathVisible: boolean;
 }
 
 export default memo(function ModelPathModal(props: IModelPathModalProps) {
-  const { modalPath, onModelPathVisible, onModalPathChangeSuccess, updateModelPath } = props;
+  const { modalPath, onModelPathVisible, onModalPathChangeSuccess, updateModelPath, modalPathVisible } = props;
 
   const { downloadList } = useModelDownloadStore();
   console.log('downloadList', downloadList);
@@ -104,7 +105,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
       onFinally: () => {
         setChangeModelPathLoading(false);
         setMigratingStatus('failed');
-        onModelPathVisible();
+        // onModelPathVisible();
       },
     },
   );
@@ -127,6 +128,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
       source_path: modalPath || '',
       target_path: values.modelPath,
     });
+    onModelPathVisible();
   };
 
   return (
@@ -134,7 +136,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
       centered
       title="修改模型存储路径"
       width={480}
-      open
+      open={modalPathVisible}
       okButtonProps={{
         disabled: !isFormValid,
         loading: changeModelPathLoading,
