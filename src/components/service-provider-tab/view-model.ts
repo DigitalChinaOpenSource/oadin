@@ -59,15 +59,16 @@ export function useViewModel() {
         message.success('删除服务商成功');
         fetchServiceProviders();
       },
-      onError: (error) => {
-        message.error('删除服务商失败，请重试');
+      onError: (error: Error & { handled?: boolean }) => {
+        if (!error?.handled) {
+          message.error('删除服务商失败，请重试');
+        }
         console.error('删除服务商失败:', error);
       },
     },
   );
 
   const handleDeleteConfirm = (record: IServiceProviderDataItem) => {
-    console.log('---record', record);
     confirm({
       centered: true,
       title: '删除此服务提供商',

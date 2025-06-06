@@ -141,8 +141,10 @@ export function useViewModel(props: IModelListContent) {
       onSuccess: (data) => {
         message.success('模型删除成功');
       },
-      onError: (error) => {
-        message.error('模型删除失败');
+      onError: (error: Error & { handled?: boolean }) => {
+        if (!error?.handled) {
+          message.error('模型删除失败');
+        }
         console.error('删除模型失败:', error);
       },
       onFinally: async () => {

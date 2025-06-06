@@ -94,8 +94,10 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
         onModalPathChangeSuccess();
         setMigratingStatus('init');
       },
-      onError: (error) => {
-        message.error(error?.message || '模型存储路径修改失败');
+      onError: (error: Error & { handled?: boolean }) => {
+        if (!error?.handled) {
+          message.error(error?.message || '模型存储路径修改失败');
+        }
         setMigratingStatus('failed');
       },
       onFinally: () => {
