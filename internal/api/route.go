@@ -75,6 +75,11 @@ func InjectRouter(e *ByzeCoreServer) {
 	r.Handle(http.MethodPut, "/mcp/:id/reverse", e.ReverseStatus)
 	r.Handle(http.MethodPut, "/mcp/setup", e.SetupFunTool)
 
+	// mcp client apis
+	r.Handle(http.MethodGet, "/mcp/client/:id/start", e.ClientMcpStart)
+	r.Handle(http.MethodGet, "/mcp/client/:id/stop", e.ClientMcpStop)
+	r.Handle(http.MethodPost, "/mcp/client/tools/run", e.ClientRunTool)
+
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }
 

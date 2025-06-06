@@ -5,6 +5,7 @@ import (
 	"byze/internal/hardware"
 	"byze/internal/hardware/installer"
 	"byze/internal/rpc"
+	"byze/internal/server/mcp_handler"
 	"byze/internal/types"
 	"context"
 	"encoding/json"
@@ -27,17 +28,22 @@ type MCPServer interface {
 	AuthorizeMCP(ctx context.Context, id string, auth string) error
 	ReverseStatus(c *gin.Context, id string) error
 	SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest) error
+	ClientMcpStart(c *gin.Context, id string) error
+	ClientMcpStop(c *gin.Context, id string) error
+	ClientRunTools(c *gin.Context, req *rpc.ClientRunToolsRequest) (*rpc.ClientRunToolsResponse, error)
 }
 
 type MCPServerImpl struct {
-	Ds     datastore.Datastore
-	Client *resty.Client
+	Ds         datastore.Datastore
+	Client     *resty.Client
+	McpHandler *mcp_handler.McpClientService
 }
 
 func NewMCPServer() MCPServer {
 	return &MCPServerImpl{
-		Ds:     datastore.GetDefaultDatastore(),
-		Client: rpc.GlobalClient,
+		Ds:         datastore.GetDefaultDatastore(),
+		Client:     rpc.GlobalClient,
+		McpHandler: mcp_handler.NewMcpService(),
 	}
 }
 
@@ -333,4 +339,19 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	}
 
 	return nil
+}
+
+// 会话启用和停止mcp服务器
+func (m *MCPServerImpl) ClientMcpStart(c *gin.Context, id string) error {
+	return nil
+}
+
+func (m *MCPServerImpl) ClientMcpStop(c *gin.Context, id string) error {
+	err := m.McpHandler.Stop(id)
+	return err
+}
+
+// RunTools 运行单个mcp的工具
+func (M *MCPServerImpl) ClientRunTools(c *gin.Context, req *rpc.ClientRunToolsRequest) (*rpc.ClientRunToolsResponse, error) {
+	return nil, nil
 }
