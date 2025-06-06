@@ -1,0 +1,44 @@
+.chat-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-width {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.chat-message-area {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chat-divider {
+  height: 1px;
+  width: 100%;
+  background-color: #ececec;
+}
+
+.chat-input-area {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+.user-bubble.ru-chat-bubble-body-content {
+  background-color: #e7e1ff;
+  color: #5429ff;
+}
+
+.ai-bubble.ru-chat-bubble-body-content {
+  background-color: #faf9ff;
+  color: #000000;
+  width: 100%;
+}

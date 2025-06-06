@@ -6,6 +6,7 @@ import DeepThinkChat from './chat-components/deep-think-chat';
 import McpToolChat from './chat-components/mcp-tool-chat';
 import styles from './index.module.scss';
 import { SelectMcp } from '@/components/select-mcp';
+import ChatView from './chat-view';
 import UploadTool from './upload-tool';
 export default function ChatContainer() {
   return (
@@ -46,9 +47,10 @@ export default function ChatContainer() {
         >
           <div className={styles.chatContent}>
             <ChatModelManage />
-            <DeepThinkChat />
-            <McpToolChat />
             <UploadTool />
+            <ChatView />
+            {/* <DeepThinkChat />
+            <McpToolChat /> */}
           </div>
         </Col>
       </Row>
