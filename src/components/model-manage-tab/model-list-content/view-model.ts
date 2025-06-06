@@ -9,7 +9,7 @@ import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
-import { use } from 'i18next';
+import { convertToMB } from '@/utils';
 
 interface IPagenation {
   current: number;
@@ -246,18 +246,19 @@ export function useViewModel(props: IModelListContent) {
         style: { backgroundColor: '#5429ff' },
       },
       async onOk() {
-        const modelSizeMb = Number((modelData.size || '0').toString().replace(/MB$/i, '').trim());
+        const modelSizeMb = convertToMB(modelData.size || '0MB');
         const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
         if (modelSizeMb > freeSpaceMb) {
           message.warning('当前路径下的磁盘空间不足，无法下载该模型');
-          return Promise.reject();
+          return;
+        } else {
+          fetchDownloadStart({
+            ...modelData,
+            type: modelData.type,
+            status: DOWNLOAD_STATUS.IN_PROGRESS,
+            modelType: 'local',
+          });
         }
-        fetchDownloadStart({
-          ...modelData,
-          type: modelData.type,
-          status: DOWNLOAD_STATUS.IN_PROGRESS,
-          modelType: 'local',
-        });
       },
       onCancel() {
         console.log('Cancel');

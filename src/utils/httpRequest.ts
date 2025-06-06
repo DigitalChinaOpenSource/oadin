@@ -43,7 +43,6 @@ const createApiInstance = (baseURL: string) => {
   // 响应拦截器
   instance.interceptors.response.use(
     (response: AxiosResponse<ResponseData>) => {
-      console.log('response', response);
       const { data } = response;
       if (data?.data) {
         return data.data;
