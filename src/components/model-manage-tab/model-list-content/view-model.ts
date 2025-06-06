@@ -9,6 +9,7 @@ import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
+import { convertToMB } from '@/utils';
 
 interface IPagenation {
   current: number;
@@ -105,6 +106,11 @@ export function useViewModel(props: IModelListContent) {
     fetchModelSupport({ service_source: modelSourceVal });
   }, [modelSourceVal]);
 
+  useEffect(() => {
+    if (!modelPath) return;
+    onCheckPathSpace(modelPath);
+  }, [modelPath]);
+
   // 获取模型存储路径
   const { run: fetchModelPath } = useRequest(
     async () => {
@@ -142,8 +148,10 @@ export function useViewModel(props: IModelListContent) {
       onSuccess: () => {
         message.success('模型删除成功');
       },
-      onError: (error) => {
-        message.error('模型删除失败');
+      onError: (error: Error & { handled?: boolean }) => {
+        if (!error?.handled) {
+          message.error('模型删除失败');
+        }
         console.error('删除模型失败:', error);
       },
       onFinally: async () => {
@@ -240,21 +248,19 @@ export function useViewModel(props: IModelListContent) {
         style: { backgroundColor: '#4f4dff' },
       },
       async onOk() {
-        await onCheckPathSpace(modelPath);
-        const modelSizeMb = Number((modelData.size || '0').toString().replace(/MB$/i, '').trim());
-        const freeSpaceGb = currentPathSpace?.free_size || 0;
-        const freeSpaceMb = freeSpaceGb * 1024;
-
+        const modelSizeMb = convertToMB(modelData.size || '0MB');
+        const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
         if (modelSizeMb > freeSpaceMb) {
           message.warning('当前路径下的磁盘空间不足，无法下载该模型');
-          return Promise.reject();
+          return;
+        } else {
+          fetchDownloadStart({
+            ...modelData,
+            type: modelData.type,
+            status: DOWNLOAD_STATUS.IN_PROGRESS,
+            modelType: 'local',
+          });
         }
-        fetchDownloadStart({
-          ...modelData,
-          type: modelData.type,
-          status: DOWNLOAD_STATUS.IN_PROGRESS,
-          modelType: 'local',
-        });
       },
       onCancel() {
         console.log('Cancel');
