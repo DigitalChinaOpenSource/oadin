@@ -564,7 +564,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 	serviceModelList := make(map[string][]dto.RecommendModelData)
 	if request.ServiceSource == types.ServiceSourceLocal {
 		localOllamaModelMap := make(map[string]dto.LocalSupportModelData)
-		localOllamaServiceMap, err := vega.GetModels(ctx, "local")
+		localOllamaServiceMap, err := vega.GetModels(ctx, request.ServiceSource)
 		if err != nil {
 			fmt.Printf("GetModels failed: %v\n", err)
 			return nil, err
@@ -659,9 +659,16 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 		}
 
 	} else {
-		RemoteServiceMap, err := vega.GetModels(ctx, "remote")
+		RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
+		fileContent, err := template.FlavorTemplateFs.ReadFile("remote_model.json")
 		if err != nil {
-			fmt.Printf("GetModels failed: %v\n", err)
+			fmt.Printf("Read file failed: %v\n", err)
+			return nil, err
+		}
+		// parse struct
+		err = json.Unmarshal(fileContent, &RemoteServiceMap)
+		if err != nil {
+			fmt.Printf("Parse JSON failed: %v\n", err)
 			return nil, err
 		}
 		for _, service := range types.SupportService {

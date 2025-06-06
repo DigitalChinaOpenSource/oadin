@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"byze/internal/types"
 	"byze/internal/utils"
@@ -176,23 +177,16 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	enginePath := fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 	switch runtime.GOOS {
 	case "windows":
-		execFile = "ollama.exe"
-		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-
-		switch utils.DetectGpuModel() {
-		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-all.zip"
-		case types.GPUTypeNvidia:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64.zip"
-		case types.GPUTypeAmd:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-rocm.zip"
-		case types.GPUTypeIntelArc:
+		if utils.IpexOllamaSupportGPUStatus() {
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 			slog.Info("start ipex-llm-ollama ------------- ", execPath)
 			execFile = "ollama.exe"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama.zip"
-		default:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-base.zip"
+		} else {
+			execFile = "ollama.exe"
+			execPath = fmt.Sprintf("%s/%s/%s/%s/%s", userDir, "AppData", "Local", "Programs", "Ollama")
+
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/OllamaSetup.exe"
 		}
 	case "linux":
 		execFile = "ollama"
@@ -267,10 +261,6 @@ func (o *OllamaProvider) InstallEngine() error {
 			appPath = filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
 		}
 
-		//cmd := exec.Command("open", appPath)
-		//if err := cmd.Run(); err != nil {
-		//	return fmt.Errorf("failed to open ollama installer: %v", err)
-		//}
 		// move it to Applications
 		applicationPath := filepath.Join("/Applications/", "Ollama.app")
 		if _, err = os.Stat(applicationPath); os.IsNotExist(err) {
@@ -279,19 +269,43 @@ func (o *OllamaProvider) InstallEngine() error {
 				return fmt.Errorf("failed to move ollama to Applications: %v", err)
 			}
 		}
-	} else if runtime.GOOS == "windows" {
-		ipexPath := o.EngineConfig.ExecPath
-		if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
-			os.MkdirAll(ipexPath, 0o755)
-			unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
-			if err := unzipCmd.Run(); err != nil {
-				return fmt.Errorf("failed to unzip file: %v", err)
-			}
-		}
-	} else {
-		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
-	}
 
+	} else {
+		if utils.IpexOllamaSupportGPUStatus() {
+			// 解压文件
+			userDir, err := os.UserHomeDir()
+			if err != nil {
+				slog.Error("Get user home dir failed: ", err.Error())
+				return err
+			}
+			ipexPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
+				os.MkdirAll(ipexPath, 0o755)
+				if runtime.GOOS == "windows" {
+					unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
+					if err := unzipCmd.Run(); err != nil {
+						return fmt.Errorf("failed to unzip file: %v", err)
+					}
+				}
+			}
+
+		} else { // Handle other operating systems
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, file)
+			_, err := cmd.CombinedOutput()
+			if err != nil {
+				// 如果是超时错误
+				if ctx.Err() == context.DeadlineExceeded {
+					fmt.Println("cmd execute timeout")
+					return err
+				}
+				fmt.Printf("cmd execute error: %v\n", err)
+				return err
+			}
+			return nil
+		}
+	}
 	slog.Info("[Install Engine] model engine install completed")
 	return nil
 }

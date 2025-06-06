@@ -45,7 +45,7 @@
     "name": "deepseek-r1:32b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
     "description": "Deepseek-r1-32B 是 Deepseek 团队研发的大规模语言模型，其参数量达到320亿。该模型在自然语言处理任务中表现出色，能够提供高质量的语言理解和生成能力。",
-    "class": "文本生成",
+    "class": ["文本生成"],
     "provider": "Deepseek",
     "size": "20.0GB",
     "params_size": 32
@@ -55,7 +55,7 @@
     "name": "deepseek-r1:70b",
     "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
     "description": "Deepseek-r1-70B 是 Deepseek 团队研发的大规模语言模型，其参数量达到700亿。该模型在自然语言处理任务中表现出色，能够提供高质量的语言理解和生成能力。",
-    "class": "文本生成",
+    "class": ["文本生成"],
     "provider": "Deepseek",
     "size": "43.0GB",
     "params_size": 70
