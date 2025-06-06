@@ -13,7 +13,7 @@ export interface IDownloadItemProps {
 
 export default function DownloadItem(props: IDownloadItemProps) {
   const { downloadItem } = props;
-  const { isPathMigrating } = useModelPathChangeStore();
+  const { migratingStatus } = useModelPathChangeStore();
   const { fetchCancelModel, fetchRemoveModel, fetchDownloadStart } = useViewModel();
   const { COMPLETED, FAILED, IN_PROGRESS, PAUSED } = DOWNLOAD_STATUS;
   return (
@@ -30,7 +30,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
           {downloadItem.status === IN_PROGRESS && (
             <div
               onClick={() => {
-                if (isPathMigrating) {
+                if (migratingStatus === 'pending') {
                   message.warning('模型存储路径正在变更中，请稍后操作');
                   return;
                 }
@@ -43,7 +43,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
           {downloadItem.status === PAUSED && (
             <div
               onClick={() => {
-                if (isPathMigrating) {
+                if (migratingStatus === 'pending') {
                   message.warning('模型存储路径正在变更中，请稍后操作');
                   return;
                 }
@@ -56,7 +56,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
           {downloadItem.status === FAILED && (
             <div
               onClick={() => {
-                if (isPathMigrating) {
+                if (migratingStatus === 'pending') {
                   message.warning('模型存储路径正在变更中，请稍后操作');
                   return;
                 }
@@ -69,7 +69,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
           <div
             className={styles.cancel}
             onClick={() => {
-              if (isPathMigrating) {
+              if (migratingStatus === 'pending') {
                 message.warning('模型存储路径正在变更中，请稍后操作');
                 return;
               }

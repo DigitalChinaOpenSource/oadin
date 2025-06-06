@@ -30,8 +30,9 @@ export interface IGeneralCardProps {
 
 export default function GeneralCard(props: IGeneralCardProps) {
   const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData, setSelectModel, selectModel } = props;
-  const { isPathMigrating } = useModelPathChangeStore();
   const toolTipsText = props?.selectTooltip ?? '请先下载/授权，再体验';
+
+  const { migratingStatus } = useModelPathChangeStore();
   const statusToText = (item: IModelDataItem) => {
     const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
     const { status, can_select } = item;
@@ -50,7 +51,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           className={styles.downloadedBtn}
           onClick={(e) => {
             e.stopPropagation();
-            if (isPathMigrating) {
+            if (migratingStatus === 'pending') {
               message.warning('模型存储路径正在变更中，请稍后操作');
               return;
             }
@@ -67,7 +68,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           type="primary"
           onClick={(e) => {
             e.stopPropagation();
-            if (isPathMigrating) {
+            if (migratingStatus === 'pending') {
               message.warning('模型存储路径正在变更中，请稍后操作');
               return;
             }
@@ -90,7 +91,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           icon={<ArrowClockwiseIcon fill="#344054" />}
           onClick={(e) => {
             e.stopPropagation();
-            if (isPathMigrating) {
+            if (migratingStatus === 'pending') {
               message.warning('模型存储路径正在变更中，请稍后操作');
               return;
             }
@@ -112,7 +113,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           onClick={(e) => {
             {
               e.stopPropagation();
-              if (isPathMigrating) {
+              if (migratingStatus === 'pending') {
                 message.warning('模型存储路径正在变更中，请稍后操作');
                 return;
               }
