@@ -51,9 +51,11 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
         onModelAuthSuccess();
         message.success('模型配置授权成功');
       },
-      onError: (error) => {
-        message.error('模型配置授权失败，请重试或检查数据是否正确');
+      onError: (error: Error & { handled?: boolean }) => {
         console.error('模型配置授权失败:', error);
+        if (!error?.handled) {
+          message.error('模型配置授权失败，请重试或检查数据是否正确');
+        }
       },
     },
   );
