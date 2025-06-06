@@ -106,6 +106,7 @@ export function useViewModel(props: IModelListContent) {
   }, [modelSourceVal]);
 
   useEffect(() => {
+    if (!modelPath) return;
     onCheckPathSpace(modelPath);
   }, [modelPath]);
 
