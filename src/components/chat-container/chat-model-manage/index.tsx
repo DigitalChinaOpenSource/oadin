@@ -1,8 +1,9 @@
 import React from 'react';
-import styles from './index.module.scss';
 import sample from '@/components/icons/sample.svg';
 import thinkSvg from '@/components/icons/think.svg';
 import exchangeSvg from '@/components/icons/exchange.svg';
+import { Tooltip } from 'antd';
+import styles from './index.module.scss';
 
 interface IChatModelManageProps {
   currModelData?: any;
@@ -42,15 +43,18 @@ export default function ChatModelManage(props: IChatModelManageProps) {
           <span>深度思考</span>
         </div>
         <div className={styles.fill}></div>
-        <div
-          className={styles.changeModel}
-          onClick={() => console.log('切换模型')}
-        >
-          <img
-            src={exchangeSvg}
-            alt="切换模型图标"
-          />
-        </div>
+        {/* TODO */}
+        <Tooltip title="切换模型后，将开启新会话">
+          <div
+            className={styles.changeModel}
+            onClick={() => console.log('切换模型')}
+          >
+            <img
+              src={exchangeSvg}
+              alt="切换模型图标"
+            />
+          </div>
+        </Tooltip>
       </div>
     </div>
   );
