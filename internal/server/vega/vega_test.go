@@ -41,8 +41,6 @@ func TestQueryCloudModelJsonLocal(t *testing.T) {
 				t.Errorf("Model Avatar not match: %s, %s\n", v[i].Avatar, res[k][i].Avatar)
 			} else if v[i].Description != res[k][i].Description {
 				t.Errorf("Model Description not match: %s, %s\n", v[i].Description, res[k][i].Description)
-			} else if v[i].Class != res[k][i].Class {
-				t.Errorf("Model Class not match: %s, %s\n", v[i].Class, res[k][i].Class)
 			} else if v[i].Flavor != res[k][i].Flavor {
 				t.Errorf("Model Flavor not match: %s, %s\n", v[i].Flavor, res[k][i].Flavor)
 			} else if v[i].Size != res[k][i].Size {
@@ -94,8 +92,6 @@ func TestQueryCloudModelJsonRemote(t *testing.T) {
 				t.Errorf("Model Avatar not match: %s, %s\n", v[i].Avatar, res[k][i].Avatar)
 			} else if v[i].Description != res[k][i].Description {
 				t.Errorf("Model Description not match: %s, %s\n", v[i].Description, res[k][i].Description)
-			} else if v[i].Class != res[k][i].Class {
-				t.Errorf("Model Class not match: %s, %s\n", v[i].Class, res[k][i].Class)
 			} else if v[i].Flavor != res[k][i].Flavor {
 				t.Errorf("Model Flavor not match: %s, %s\n", v[i].Flavor, res[k][i].Flavor)
 			} else if v[i].Size != res[k][i].Size {

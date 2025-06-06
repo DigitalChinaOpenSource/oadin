@@ -7,8 +7,6 @@ import (
 	"io/fs"
 	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 //go:embed dist/*
@@ -18,23 +16,6 @@ type ServerResponse struct {
 	Status  string      `json:"status"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
-}
-
-func corsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "*")
-		c.Writer.Header().Set("Access-Control-Max-Age", "86400") // 24小时内不再发送预检请求
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusOK) // 返回200而不是204
-			return
-		}
-
-		c.Next()
-	}
 }
 
 // StartConsoleServer starts the console server
@@ -51,6 +32,8 @@ func StartConsoleServer(ctx context.Context) (*http.Server, error) {
 	// 创建路由处理
 	mux := http.NewServeMux()
 	mux.Handle("/", fileServer)
+	// 使用 StripPrefix 处理 /model-manage 路由
+	mux.Handle("/model-manage/", http.StripPrefix("/model-manage", fileServer))
 
 	// 创建服务器
 	srv := &http.Server{

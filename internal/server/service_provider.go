@@ -439,6 +439,35 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 	if request.PageSize == 0 {
 		request.PageSize = 10
 	}
+	if sp.ServiceSource == types.ServiceSourceLocal {
+		providerEngine := provider.GetModelEngine(sp.Flavor)
+		err = providerEngine.HealthCheck()
+		if err == nil {
+			sp.Status = 1
+		}
+	} else {
+		model := types.Model{
+			ProviderName: sp.ProviderName,
+		}
+		modelList, err := ds.List(ctx, &model, &datastore.ListOptions{
+			Page:     0,
+			PageSize: 100,
+		})
+		if err == nil {
+			for _, m := range modelList {
+				mInfo := m.(*types.Model)
+				checkServerObj := ChooseCheckServer(*sp, mInfo.ModelName)
+				status := checkServerObj.CheckServer()
+				if status {
+					sp.Status = 1
+					break
+				}
+			}
+
+		}
+
+	}
+
 	var supportModelList []dto.ProviderSupportModelData
 	res := &dto.GetServiceProviderResponseData{}
 	res.ServiceProvider = sp
@@ -494,7 +523,15 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			Key:   "api_flavor",
 			Query: sp.Flavor,
 		})
-		options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}}
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "service_name",
+			Query: sp.ServiceName,
+		})
+		sortOption := []datastore.SortOption{
+			{Key: "name", Order: 1},
+		}
+		options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}, SortBy: sortOption}
+
 		totalCount, err := jds.Count(ctx, sm, &datastore.FilterOptions{Queries: queryOpList})
 		if err != nil {
 			return nil, err
@@ -504,6 +541,8 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 		if res.TotalPage == 0 {
 			res.TotalPage = 1
 		}
+		res.PageSize = request.PageSize
+		res.Page = request.Page
 		options.Page = request.Page
 		options.PageSize = request.PageSize
 		supportModel, err := jds.List(ctx, sm, options)
@@ -582,7 +621,9 @@ func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *
 	spModels := make(map[string][]string)
 	for _, v := range mList {
 		dsModel := v.(*types.Model)
-		spModels[dsModel.ProviderName] = append(spModels[dsModel.ProviderName], dsModel.ModelName)
+		if dsModel.Status == "downloaded" {
+			spModels[dsModel.ProviderName] = append(spModels[dsModel.ProviderName], dsModel.ModelName)
+		}
 	}
 
 	respData := make([]dto.ServiceProvider, 0)
