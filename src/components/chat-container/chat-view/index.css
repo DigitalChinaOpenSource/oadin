@@ -1,10 +1,12 @@
 .chat-layout {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  width: 100%;
+  height: calc(100vh - 230px);
 }
 
 .chat-body {
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -28,8 +30,13 @@
 }
 
 .chat-input-area {
-  padding-top: 24px;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  background-color: #e7effb;
+  padding-top: 8px;
   padding-bottom: 24px;
+  z-index: 100;
 }
 
 .user-bubble.ru-chat-bubble-body-content {
@@ -38,7 +45,7 @@
 }
 
 .ai-bubble.ru-chat-bubble-body-content {
-  background-color: #faf9ff;
+  background-color: #fff;
   color: #000000;
   width: 100%;
 }

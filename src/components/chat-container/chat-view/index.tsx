@@ -1,5 +1,9 @@
 import { ChatInput, MessageList, type MessageType, type ChatInputProps, registerMessageContents } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
+import { SelectMcp } from '@/components/select-mcp';
+import DeepThinkChat from '../chat-components/deep-think-chat';
+import McpToolChat from '../chat-components/mcp-tool-chat';
+import UploadTool from '../upload-tool';
 import './index.css';
 
 const testMessages: MessageType[] = [
@@ -63,6 +67,63 @@ const testMessages: MessageType[] = [
           answer: '',
           duration: 25,
         },
+      },
+      {
+        id: '11',
+        type: 'plain',
+        content: '你好 我是智能体',
+      },
+      {
+        id: '12',
+        type: 'think',
+        content: {
+          status: 'success',
+          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
+          duration: 25,
+        },
+      },
+      {
+        id: '13',
+        type: 'think',
+        content: {
+          status: 'thinking',
+          answer: '',
+          duration: 25,
+        },
+      },
+      {
+        id: '14',
+        type: 'plain',
+        content: '你好 我是智能体',
+      },
+      {
+        id: '15',
+        type: 'mcp',
+        content: {
+          status: 'success',
+          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
+          duration: 25,
+        },
+      },
+      {
+        id: '16',
+        type: 'mcp',
+        content: {
+          status: 'thinking',
+          answer: '',
+          duration: 25,
+        },
+      },
+    ],
+  },
+  {
+    id: '3',
+    role: 'user',
+    contentList: [
+      {
+        id: '1',
+        type: 'plain',
+        content: '你好AI，我想知道明天的天气如何？',
       },
     ],
   },
@@ -149,33 +210,8 @@ export default function ChatView() {
                   color: '#7553FC',
                 }}
               >
-                <div
-                  style={{
-                    background: '#E7E1FF',
-                    borderRadius: 6,
-                    padding: '5px 12px',
-                  }}
-                >
-                  上传
-                </div>
-                <div
-                  style={{
-                    background: '#E7E1FF',
-                    borderRadius: 6,
-                    padding: '5px 12px',
-                  }}
-                >
-                  深度思考
-                </div>
-                <div
-                  style={{
-                    background: '#E7E1FF',
-                    borderRadius: 6,
-                    padding: '5px 12px',
-                  }}
-                >
-                  MCP
-                </div>
+                <UploadTool />
+                <SelectMcp />
               </div>
             }
             // className=''
@@ -228,7 +264,7 @@ registerMessageContents({
   // 纯文本
   plain: TextContent,
   // 深度思考
-  think: ThinkContent,
+  think: DeepThinkChat,
   // mcp
-  // mcp:
+  mcp: McpToolChat,
 });
