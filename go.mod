@@ -15,6 +15,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/jaypipes/ghw v0.16.0
 	github.com/k0kubun/pp/v3 v3.4.1
+	github.com/mark3labs/mcp-go v0.31.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/shirou/gopsutil v3.21.11+incompatible
@@ -50,6 +51,7 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jaypipes/pcidb v1.0.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -73,6 +75,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
