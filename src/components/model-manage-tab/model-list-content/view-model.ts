@@ -9,6 +9,7 @@ import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
+import { use } from 'i18next';
 
 interface IPagenation {
   current: number;
@@ -103,6 +104,10 @@ export function useViewModel(props: IModelListContent) {
     setPagination({ ...pagination, current: 1 });
     fetchModelSupport({ service_source: modelSourceVal });
   }, [modelSourceVal]);
+
+  useEffect(() => {
+    onCheckPathSpace(modelPath);
+  }, [modelPath]);
 
   // 获取模型存储路径
   const { run: fetchModelPath } = useRequest(
@@ -240,11 +245,8 @@ export function useViewModel(props: IModelListContent) {
         style: { backgroundColor: '#5429ff' },
       },
       async onOk() {
-        await onCheckPathSpace(modelPath);
         const modelSizeMb = Number((modelData.size || '0').toString().replace(/MB$/i, '').trim());
-        const freeSpaceGb = currentPathSpace?.free_size || 0;
-        const freeSpaceMb = freeSpaceGb * 1024;
-
+        const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
         if (modelSizeMb > freeSpaceMb) {
           message.warning('当前路径下的磁盘空间不足，无法下载该模型');
           return Promise.reject();
