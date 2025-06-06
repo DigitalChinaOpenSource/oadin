@@ -62,6 +62,7 @@ export default function McpSquareTab() {
           onPageChange={vm.handlePageChange}
           handelMcpCardClick={vm.handelMcpCardClick}
           pagination={vm.pagination}
+          pageLoading={vm.mcpListLoading}
         />
       </div>
       {/* 过滤器 */}

@@ -44,6 +44,7 @@ export default function MyMcpTab() {
           pagination={vm.pagination}
           onPageChange={vm.handlePageChange}
           handelMcpCardClick={vm.handelMcpCardClick}
+          pageLoading={vm.mcpListLoading}
         />
       </div>
     </div>
