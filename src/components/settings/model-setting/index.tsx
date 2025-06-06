@@ -1,37 +1,64 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, Input, Tooltip, Button, Space } from 'antd';
 import styles from './index.module.scss';
 import ModelPathModal from '@/components/model-manage-tab/modelpath-modal';
 import { useModelSetting } from '@/components/settings/model-setting/viem-model.ts';
+import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';
 
 // 表单数据类型定义
 interface ModelSettingFormValues {
   modelDownloadUrl: string;
-  modelSavePath: string;
 }
 
 const ModelSetting: React.FC = () => {
   // 创建表单实例并指定泛型类型
   const [form] = Form.useForm<ModelSettingFormValues>();
-  const { modelPath, modalPathVisible, onModelPathVisible, onModalPathChangeSuccess } = useModelSetting();
+  const {
+    fetchModelPath,
+    modelPath,
+    modalPathVisible,
+    onModelPathVisible,
+    onModalPathChangeSuccess,
+    onCheckPathSpace,
+    currentPathSpace,
+    setCurrentPathSpace,
+    modelDownUrl,
+    changeModelDownUrl,
+    changingModelPath,
+    setChangingModelPath,
+  } = useModelSetting();
+
+  const { migratingStatus } = useModelPathChangeStore();
+  const isMigrating: boolean = migratingStatus === 'pending';
+  console.log('isMigratingisMigrating', isMigrating);
+  console.log('migratingStatusmigratingStatus', migratingStatus);
+
   // 表单提交处理
   const onFinish = (values: ModelSettingFormValues) => {
     console.log('提交的表单数据:', values);
     // TODO: 调用API保存配置
+    changeModelDownUrl(values.modelDownloadUrl);
   };
-  console.log('modelPath', modelPath);
 
   // 更改目录按钮点击事件
   const handleChangeDir = () => {
     // TODO: 实现文件选择逻辑
     onModelPathVisible();
-    form.setFieldsValue({ modelSavePath: modelPath });
   };
 
   useEffect(() => {
-    console.log('formform', form.getFieldValue('modelDownloadUrl'));
-    console.log('formform2', form.getFieldValue('modelSavePath'));
-    form.setFieldsValue({ modelSavePath: modelPath });
+    console.log('modelDownUrl', modelDownUrl);
+    form.setFieldValue('modelDownloadUrl', modelDownUrl || '');
+  }, [modelDownUrl]);
+
+  useEffect(() => {
+    if (!modelPath) {
+      fetchModelPath();
+      setCurrentPathSpace({} as IModelPathSpaceRes);
+      return;
+    }
+    onCheckPathSpace(modelPath);
   }, [modelPath]);
 
   return (
@@ -41,10 +68,6 @@ const ModelSetting: React.FC = () => {
         <Form
           form={form}
           name="model-setting-form"
-          initialValues={{
-            modelDownloadUrl: '123',
-            modelSavePath: modelPath,
-          }}
           layout="vertical"
           onFinish={onFinish}
         >
@@ -54,32 +77,10 @@ const ModelSetting: React.FC = () => {
             rules={[{ required: false, message: '请输入模型下载源地址' }]}
             tooltip={'模型下载源地址，所有模型将统一从该入口进行模型的下载'}
           >
-            <Space>
-              <Input
-                placeholder="请输入模型下载源地址，所有模型将统一从该入口进行模型的下载"
-                style={{ width: 500 }}
-                value={form.getFieldValue('modelDownloadUrl')}
-              />
-            </Space>
-          </Form.Item>
-
-          <Form.Item
-            label="模型存储路径"
-            name="modelSavePath"
-          >
-            <Space>
-              <Input
-                readOnly
-                style={{ width: 500 }}
-                value={form.getFieldValue('modelSavePath') || modelPath}
-              />
-              <Button
-                type="link"
-                onClick={handleChangeDir}
-              >
-                更改目录
-              </Button>
-            </Space>
+            <Input
+              placeholder="请输入模型下载源地址，所有模型将统一从该入口进行模型的下载"
+              style={{ width: 500 }}
+            />
           </Form.Item>
 
           <Form.Item>
@@ -91,12 +92,36 @@ const ModelSetting: React.FC = () => {
             </Button>
           </Form.Item>
         </Form>
+        <div className={styles.modelPath}>
+          <div className={styles.pathLabel}>模型存储路径</div>
+          <div className={styles.pathContent}>
+            <div className={styles.mainLeft}>
+              <div className={styles.path}>{modelPath}</div>
+              <div className={styles.storageUse}>
+                {Object.keys(currentPathSpace).length > 0 && (
+                  <div className={styles.diskSpace}>
+                    <span>( {currentPathSpace?.total_size}GB</span> / <span>{currentPathSpace?.usage_size}GB</span>，<span className={styles.diskCanUse}> {currentPathSpace?.free_size}GB可用)</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <Tooltip title={isMigrating ? changingModelPath : ''}>
+              <Button
+                onClick={handleChangeDir}
+                loading={isMigrating}
+              >
+                {isMigrating ? '正在修改至新的存储路径' : '更改'}
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
       </div>
       {modalPathVisible && (
         <ModelPathModal
           modalPath={modelPath}
           onModelPathVisible={onModelPathVisible}
           onModalPathChangeSuccess={onModalPathChangeSuccess}
+          updateModelPath={setChangingModelPath}
         />
       )}
     </div>

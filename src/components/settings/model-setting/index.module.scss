@@ -22,4 +22,27 @@
     //  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.15);
     //}
   }
+  .modelPath {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    .pathContent {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      .mainLeft {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        .storageUse {
+          font-size: 12px;
+          line-height: 22px;
+          color: #9da3bb;
+          .diskCanUse {
+            color: #5429ff;
+          }
+        }
+      }
+    }
+  }
 }

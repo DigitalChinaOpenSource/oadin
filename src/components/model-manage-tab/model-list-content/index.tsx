@@ -39,13 +39,13 @@ export default function ModelListContent(props: IModelListContent) {
             />
           </div>
           {/* 模型路径弹窗 */}
-          {vm.modalPathVisible && (
-            <ModelPathModal
-              modalPath={vm.modelPath}
-              onModelPathVisible={vm.onModelPathVisible}
-              onModalPathChangeSuccess={vm.onModalPathChangeSuccess}
-            />
-          )}
+          {/*{vm.modalPathVisible && (*/}
+          {/*  <ModelPathModal*/}
+          {/*    modalPath={vm.modelPath}*/}
+          {/*    onModelPathVisible={vm.onModelPathVisible}*/}
+          {/*    onModalPathChangeSuccess={vm.onModalPathChangeSuccess}*/}
+          {/*  />*/}
+          {/*)}*/}
           {/* 配置授权弹窗 */}
           {vm.modelAuthVisible && (
             <ModelAuthorizeModal

@@ -65,7 +65,6 @@ export default function ServiceProviderManageTab() {
           ref={tableRef as any}
           loading={vm.serviceProviderLoading}
           columns={columns}
-          rowKey="id"
           scroll={scrollConfig} // 动态设置 scroll 属性
           dataSource={vm.dataList}
           pagination={

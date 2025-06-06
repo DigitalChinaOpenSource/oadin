@@ -13,10 +13,11 @@ interface IModelPathModalProps {
   modalPath?: string;
   onModelPathVisible: () => void;
   onModalPathChangeSuccess: () => void;
+  updateModelPath: (path: string) => void;
 }
 
 export default memo(function ModelPathModal(props: IModelPathModalProps) {
-  const { modalPath, onModelPathVisible, onModalPathChangeSuccess } = props;
+  const { modalPath, onModelPathVisible, onModalPathChangeSuccess, updateModelPath } = props;
 
   const { downloadList } = useModelDownloadStore();
   console.log('downloadList', downloadList);
@@ -119,6 +120,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
     }
     // 修改全局状态，标识模型存储路径正在迁移中
     setMigratingStatus('pending');
+    updateModelPath(values.modelPath);
     onChangeModelPath({
       source_path: modalPath || '',
       target_path: values.modelPath,

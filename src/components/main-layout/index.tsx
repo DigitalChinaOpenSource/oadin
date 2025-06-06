@@ -7,6 +7,7 @@ import { Layout, Tooltip } from 'antd';
 import TopHeader from '@/components/main-layout/top-header';
 import ArrowLineLeft from '@/components/icons/arrow-line-left.tsx';
 import ArrowLineRight from '@/components/icons/arrow-line-right.tsx';
+import ByzeErrorTip from '@/components/byze-error-tip';
 
 export default function MainLayout() {
   const { Header, Content, Sider } = Layout;
@@ -62,6 +63,7 @@ export default function MainLayout() {
       <Header className={styles.header}>
         <TopHeader />
       </Header>
+      <ByzeErrorTip />
       <Layout>
         <Sider
           theme={'light'}

@@ -2,12 +2,22 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { IModelPathRes } from '@/types';
+import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
 
 export function useModelSetting() {
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
   // 接口获取
   const [modelPath, setModelPath] = useState<string>('');
+
+  // 当前路径的空间信息
+  const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes>({} as IModelPathSpaceRes);
+
+  // 模型下载源地址
+  const [modelDownUrl, setModelDownUrl] = useState<string>('测试下载地址');
+
+  // 正在进行修改的模型路径
+  const [changingModelPath, setChangingModelPath] = useState<string>('');
 
   // 模型存储路径弹窗
   const onModelPathVisible = useCallback(() => {
@@ -36,14 +46,52 @@ export function useModelSetting() {
     },
   );
 
-  useEffect(() => {
-    fetchModelPath();
-  }, []);
+  // 获取当前路径的空间信息
+  const { run: onCheckPathSpace } = useRequest(
+    async (path: string) => {
+      const data = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
+      return data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        setCurrentPathSpace(data);
+      },
+      onError: (error) => {
+        setCurrentPathSpace({} as IModelPathSpaceRes);
+      },
+    },
+  );
+
+  // 保存模型下载源地址
+  const { run: changeModelDownUrl } = useRequest(
+    async (url: string) => {
+      const data = await httpRequest.put('/system/modify_repository', { url });
+      return data || url;
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        setModelDownUrl(data);
+      },
+      onError: (error) => {
+        console.log('保存模型下载源地址失败', error);
+      },
+    },
+  );
 
   return {
+    fetchModelPath,
     modelPath,
     modalPathVisible,
     onModelPathVisible,
     onModalPathChangeSuccess,
+    setCurrentPathSpace,
+    currentPathSpace,
+    onCheckPathSpace,
+    changeModelDownUrl,
+    modelDownUrl,
+    changingModelPath,
+    setChangingModelPath,
   };
 }
