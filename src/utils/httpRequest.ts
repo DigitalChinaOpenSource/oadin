@@ -1,12 +1,23 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
 import { message } from 'antd';
+import i18n from '@/i18n';
+
+declare module 'axios' {
+  export interface AxiosError {
+    handled?: boolean;
+  }
+}
 
 export interface ResponseData<T = any> {
   business_code: number;
   message: string;
   data: T;
 }
+
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.MODE === 'dev' ? '/byze/v0.2' : 'http://127.0.0.1:16688/byze/v0.2');
+
+const healthBaseURL = import.meta.env.VITE_HEALTH_API_URL ?? (import.meta.env.MODE === 'dev' ? '/' : 'http://127.0.0.1:16688');
 
 const createApiInstance = (baseURL: string) => {
   const instance = axios.create({
@@ -40,34 +51,35 @@ const createApiInstance = (baseURL: string) => {
       }
     },
     (error) => {
+      message.destroy();
       if (error?.response) {
-        // 配置授权参数错误的情况，不予处理
-        if (error.response?.data?.business_code === 20003) {
-          return Promise.reject(error);
-        }
-        if (error.response?.data?.error) {
-          message.error(`${error.response?.data.error}`);
-          return Promise.reject(error);
-        }
+        const { data } = error.response;
+        // 获取业务错误码
+        const businessCode = data?.business_code?.toString();
 
-        const { status, statusText } = error.response;
-        message.error(`请求错误: ${status} ${statusText}`);
+        if (businessCode) {
+          const errorMessage = i18n.t(`errors.${businessCode}`, {
+            defaultValue: data?.message || '未知错误',
+          });
+          message.error(errorMessage);
+          error.handled = true;
+        } else {
+          message.error(data?.message || i18n.t('errors.unknown'));
+          error.handled = true;
+        }
       } else if (error?.request) {
-        message.error('网络异常，请检查您的网络连接');
+        message.error(i18n.t('errors.network'));
+        error.handled = true;
       } else {
-        message.error(`请求错误: ${error?.message}`);
+        message.error(error?.message || i18n.t('errors.unknown'));
+        error.handled = true;
       }
-
       return Promise.reject(error);
     },
   );
 
   return instance;
 };
-
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.MODE === 'dev' ? '/byze/v0.2' : 'http://127.0.0.1:16688/byze/v0.2');
-
-const healthBaseURL = import.meta.env.VITE_HEALTH_API_URL ?? (import.meta.env.MODE === 'dev' ? '/' : 'http://127.0.0.1:16688');
 
 const byzeInstance = createApiInstance(apiBaseURL);
 
@@ -93,6 +105,7 @@ const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) 
 
 export const httpRequest = createRequestFunctions(byzeInstance);
 
+// Byze 的健康检查，请求路径不同，需要在底层做特殊处理
 const createHealthApiInstance = (baseURL: string) => {
   const instance = axios.create({
     baseURL,
@@ -115,7 +128,8 @@ const createHealthApiInstance = (baseURL: string) => {
     },
     (error) => {
       // 只要 /health 请求出错，统一提示
-      message.error('白泽服务不可用，请确认白泽服务启动状态');
+      message.error(i18n.t('errors.byze_unavailable'));
+      error.handled = true;
       return Promise.reject(error);
     },
   );
