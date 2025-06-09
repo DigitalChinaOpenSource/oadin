@@ -76,6 +76,9 @@ func InjectRouter(e *ByzeCoreServer) {
 	mcpApi.PUT("/:id/auth", e.AuthorizeMCP)
 	mcpApi.PUT("/:id/reverse", e.ReverseStatus)
 	mcpApi.PUT("/setup", e.SetupFunTool)
+	mcpApi.POST("/client/start", e.ClientMcpStart)
+	mcpApi.POST("/client/stop", e.ClientMcpStop)
+	mcpApi.POST("/client/runTool", e.ClientRunTool)
 
 	// Apis related to system
 	systemApi := r.Group("system")
@@ -85,11 +88,6 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi.PUT("/modify_repository", e.ModifyRepositoryURL)
 	systemApi.PUT("/modify_proxy", e.SetProxy)
 	systemApi.POST("/feedback", e.Feedback)
-
-	// mcp client apis
-	r.Handle(http.MethodGet, "/mcp/client/:id/start", e.ClientMcpStart)
-	r.Handle(http.MethodGet, "/mcp/client/:id/stop", e.ClientMcpStop)
-	r.Handle(http.MethodPost, "/mcp/client/tools/run", e.ClientRunTool)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }
