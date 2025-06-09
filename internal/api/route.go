@@ -19,6 +19,7 @@ import (
 	"byze/internal/provider"
 	"byze/internal/types"
 	"byze/internal/utils"
+	"byze/tray"
 	"byze/version"
 )
 
@@ -132,7 +133,7 @@ func getEngineVersion(c *gin.Context) {
 
 func updateAvailableHandler(c *gin.Context) {
 	ctx := c.Request.Context()
-	status, updateResp := version.IsNewVersionAvailable(ctx)
+	status, updateResp := tray.IsNewVersionAvailable(ctx)
 	if status {
 		c.JSON(http.StatusOK, map[string]string{"message": fmt.Sprintf("Ollama version %s is ready to install", updateResp.UpdateVersion)})
 	} else {

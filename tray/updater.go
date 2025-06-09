@@ -244,13 +244,14 @@ func CleanOldVersionFile() error {
 	return nil
 }
 
-func StartCheckUpdate(ctx context.Context) {
+func StartCheckUpdate(ctx context.Context, trayManger *Manager) {
 	go func() {
 		time.Sleep(3 * time.Second)
 
 		for {
 			available, resp := IsNewVersionAvailable(ctx)
 			if available {
+				trayManger.updateAvailable = true
 				err := DownloadNewVersion(ctx, resp)
 				if err != nil {
 					slog.Error(fmt.Sprintf("failed to download new release: %s", err))
