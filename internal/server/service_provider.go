@@ -465,7 +465,6 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			}
 
 		}
-
 	}
 
 	var supportModelList []dto.ProviderSupportModelData
@@ -477,7 +476,12 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			return nil, err
 		}
 		res.TotalCount = len(smartvisionModelData)
-		res.TotalPage = len(smartvisionModelData) / request.PageSize
+		if len(smartvisionModelData)%request.PageSize == 0 {
+			res.TotalPage = len(smartvisionModelData) / request.PageSize
+		} else {
+			res.TotalPage = len(smartvisionModelData)/request.PageSize + 1
+		}
+
 		if res.TotalPage == 0 {
 			res.TotalPage = 1
 		}
@@ -537,7 +541,11 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			return nil, err
 		}
 		res.TotalCount = int(totalCount)
-		res.TotalPage = int(totalCount) / request.PageSize
+		if int(totalCount)%request.PageSize == 0 {
+			res.TotalPage = int(totalCount) / request.PageSize
+		} else {
+			res.TotalPage = int(totalCount)/request.PageSize + 1
+		}
 		if res.TotalPage == 0 {
 			res.TotalPage = 1
 		}
