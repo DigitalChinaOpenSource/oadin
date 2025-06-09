@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
@@ -58,6 +58,8 @@ export function useChatHistoryDrawer() {
     {
       manual: true,
       onSuccess: (data: any) => {
+        // 删除成功 刷新历史记录
+        fetchChatHistory();
         if (!data) return;
       },
       onError: (error) => {
@@ -68,6 +70,10 @@ export function useChatHistoryDrawer() {
       },
     },
   );
+
+  useEffect(() => {
+    fetchChatHistory();
+  }, []);
 
   return { historyLoading, fetchChatHistory, chatHistory, delHistoryLoading, deleteChatHistory, showDeleteId, setShowDeleteId };
 }

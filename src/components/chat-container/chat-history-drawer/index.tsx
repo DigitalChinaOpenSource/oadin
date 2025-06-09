@@ -52,10 +52,6 @@ function groupChatHistoryByDate(history: IChatHistoryItem[]): GroupedChatHistory
 export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistoryDrawerProps) {
   const { historyLoading, fetchChatHistory, chatHistory, delHistoryLoading, deleteChatHistory, setShowDeleteId, showDeleteId } = useChatHistoryDrawer();
 
-  useEffect(() => {
-    fetchChatHistory();
-  }, []);
-
   const grouped = useMemo(() => groupChatHistoryByDate(chatHistory), [chatHistory]);
 
   const renderGroup = (title: string, list: any[]) => {
@@ -82,6 +78,7 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
                   onConfirm={() => deleteChatHistory(item.id)}
                   onCancel={() => setShowDeleteId(null)}
                   okButtonProps={{ loading: delHistoryLoading }}
+                  cancelButtonProps={{ disabled: delHistoryLoading }}
                   open={showDeleteId === item.id}
                 >
                   <TrashIcon
