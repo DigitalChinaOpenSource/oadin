@@ -564,7 +564,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 	serviceModelList := make(map[string][]dto.RecommendModelData)
 	if request.ServiceSource == types.ServiceSourceLocal {
 		localOllamaModelMap := make(map[string]dto.LocalSupportModelData)
-		localOllamaServiceMap, err := vega.GetModels(ctx, "local")
+		localOllamaServiceMap, err := vega.GetModels(ctx, request.ServiceSource)
 		if err != nil {
 			fmt.Printf("GetModels failed: %v\n", err)
 			return nil, err
@@ -659,9 +659,16 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 		}
 
 	} else {
-		RemoteServiceMap, err := vega.GetModels(ctx, "remote")
+		RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
+		fileContent, err := template.FlavorTemplateFs.ReadFile("remote_model.json")
 		if err != nil {
-			fmt.Printf("GetModels failed: %v\n", err)
+			fmt.Printf("Read file failed: %v\n", err)
+			return nil, err
+		}
+		// parse struct
+		err = json.Unmarshal(fileContent, &RemoteServiceMap)
+		if err != nil {
+			fmt.Printf("Parse JSON failed: %v\n", err)
 			return nil, err
 		}
 		for _, service := range types.SupportService {
@@ -894,6 +901,15 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				OllamaId:        smInfo.OllamaId,
 			}
 			resultList = append(resultList, modelData)
+			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			if request.Mine {
+				myModelFilter(&resultList)
+				resData.Total = len(resultList)
+				resData.TotalPage = len(resultList) / pageSize
+				if resData.TotalPage == 0 {
+					resData.TotalPage = 1
+				}
+			}
 		}
 	} else {
 		if request.Flavor == types.FlavorSmartVision {
@@ -944,6 +960,10 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					SmartVisionModelKey: d.ModelKey,
 				}
 				resultList = append(resultList, modelData)
+			}
+			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			if request.Mine {
+				myModelFilter(&resultList)
 			}
 			resData.Total = len(smartvisionModelData)
 			resData.TotalPage = len(smartvisionModelData) / pageSize
@@ -1036,14 +1056,23 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				}
 				resultList = append(resultList, modelData)
 			}
+
+			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			if request.Mine {
+				myModelFilter(&resultList)
+			}
+
 			dataStart := (page - 1) * pageSize
 			dataEnd := page * pageSize
 			if dataEnd > len(resultList) {
 				dataEnd = len(resultList) - 1
 			}
+
+			totalCount := len(resultList)
+			// 当前页数据切片
 			resultList = resultList[dataStart:dataEnd]
-			resData.Total = len(smartvisionModelData) + len(jdsDataList)
-			resData.TotalPage = (len(smartvisionModelData) + len(resultList)) / pageSize
+			resData.Total = totalCount
+			resData.TotalPage = totalCount / pageSize
 			if resData.TotalPage == 0 {
 				resData.TotalPage = 1
 			}
@@ -1054,4 +1083,21 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 		*bcode.ModelCode,
 		resData,
 	}, nil
+}
+
+func myModelFilter(modelList *[]dto.RecommendModelData) {
+	var finalDataList []dto.RecommendModelData
+	if modelList == nil || len(*modelList) == 0 {
+		return
+	}
+
+	var tempList []dto.RecommendModelData = *modelList
+	for i := len(tempList) - 1; i >= 0; i-- {
+		if tempList[i].CanSelect {
+			finalDataList = append(finalDataList, tempList[i])
+		}
+
+	}
+	// 数据回填
+	*modelList = finalDataList
 }

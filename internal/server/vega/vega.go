@@ -103,17 +103,60 @@ func GetSuppliers(ctx context.Context, resp *QueryCloudSupplierJsonRespond) (*dt
 	return requestModel, nil
 }
 
+// RemoteServiceMap, err := vega.GetModels(ctx, "remote")
 func GetModels(ctx context.Context, deployMode string) (map[string][]dto.LocalSupportModelData, error) {
-	models, err := QueryCloudModelJson(ctx, deployMode)
-	if err != nil {
-		return getLocalModelList(deployMode)
-	}
-	res, err := getRemoteModels(models)
-	if err != nil {
-		return getLocalModelList(deployMode)
-	}
-	return res, nil
+	//models, err := QueryCloudModelJson(ctx, deployMode)
+	//if err != nil {
+	//	return getLocalModelList(deployMode)
+	//}
+	//res, err := getRemoteModels(models)
+	//if err != nil {
+	//	return getLocalModelList(deployMode)
+	//}
+	//return res, nil
+	return getLocalModelList(deployMode)
 }
+
+/*
+	localOllamaServiceMap, err := vega.GetModels(ctx, "local")
+	if err != nil {
+		fmt.Printf("GetModels failed: %v\n", err)
+		return nil, err
+	}
+
+	替换
+	localOllamaServiceMap := make(map[string][]dto.LocalSupportModelData)
+	fileContent, err := template.FlavorTemplateFs.ReadFile("local_model.json")
+	if err != nil {
+		fmt.Printf("Read file failed: %v\n", err)
+		return nil, err
+	}
+	// parse struct
+	err = json.Unmarshal(fileContent, &localOllamaServiceMap)
+	if err != nil {
+		fmt.Printf("Parse JSON failed: %v\n", err)
+		return nil, err
+	}
+
+	RemoteServiceMap, err := vega.GetModels(ctx, "remote")
+	if err != nil {
+		fmt.Printf("GetModels failed: %v\n", err)
+		return nil, err
+	}
+	替换
+		RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
+		fileContent, err := template.FlavorTemplateFs.ReadFile("remote_model.json")
+		if err != nil {
+			fmt.Printf("Read file failed: %v\n", err)
+			return nil, err
+		}
+		// parse struct
+		err = json.Unmarshal(fileContent, &RemoteServiceMap)
+		if err != nil {
+			fmt.Printf("Parse JSON failed: %v\n", err)
+			return nil, err
+		}
+*/
 
 var typeMapClass = map[string][]string{
 	"chat":          []string{"文本生成"},
