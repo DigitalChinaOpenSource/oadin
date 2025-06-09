@@ -64,7 +64,7 @@ const createApiInstance = (baseURL: string) => {
           message.error(errorMessage);
           error.handled = true;
         } else {
-          message.error(data?.message || i18n.t('errors.unknown'));
+          message.error(data?.message || data?.error || i18n.t('errors.unknown'));
           error.handled = true;
         }
       } else if (error?.request) {

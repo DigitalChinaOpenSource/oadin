@@ -5,7 +5,7 @@
   background-color: #ffffff;
   border-radius: 8px;
   padding: 20px;
-  cursor: pointer;
+
   :global(.ant-card-body) {
     padding: 16px;
   }
@@ -75,7 +75,7 @@
   .infoWrapper {
     display: flex;
     align-items: center;
-    margin-top: 8px;
+    margin: 8px 0;
     color: #565966;
     transition: all 0.4s ease;
     .dot {
@@ -83,6 +83,19 @@
     }
     .mcpStatus {
       margin-left: auto;
+    }
+  }
+  .cardOperate {
+    border-top: 1px solid #e4e4e7;
+    display: flex;
+    padding-top: 8px;
+    align-items: center;
+    justify-content: space-around;
+    .splitLine {
+      width: 1px;
+      height: 16px;
+      background-color: #e4e4e7;
+      margin: 0 8px;
     }
   }
 
@@ -97,5 +110,24 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+.moreOperate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+
+  .operateBtn {
+    cursor: pointer;
+    width: 100%;
+    padding: 2px 0;
+    + .operateBtn {
+      //margin-top: 4px;
+    }
+    &:hover {
+      color: #4f4dff;
+      background-color: #f3f1f1;
+    }
   }
 }

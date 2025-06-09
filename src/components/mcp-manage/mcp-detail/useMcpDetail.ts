@@ -1,21 +1,21 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import testDta from './mcp_schema.json';
 import { Modal } from 'antd';
 
-export const useMcpDetail = () => {
+export const useMcpDetail = (id?: string | number) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const serviceId = searchParams.get('serviceId');
+  const serviceId = searchParams.get('serviceId') || id;
   const [mcpDetail, setMcpDetail] = useState<McpDetailType>();
   const [showMcpModal, setShowMcpModal] = useState(false);
   // const [authMcpParams,setAuthMcpParams] = useState<any>();
 
   // 获取 mcp 详情
-  const { loading: mcpDetailLoading, run: fetchMcpDetail } = useRequest(
+  const { loading: mcpDetailLoading, runAsync: fetchMcpDetail } = useRequest(
     async () => {
       const data = await httpRequest.get<McpDetailType>(`/mcp/${serviceId}`);
       // if (!data) throw new Error('获取mcp详情失败');
@@ -77,7 +77,7 @@ export const useMcpDetail = () => {
   );
 
   //添加mcp点击
-  const handleAddMcp = async () => {
+  const handleAddMcp = async (mcpDetail: McpDetailType) => {
     try {
       const { hosted, status, envRequired } = mcpDetail || {};
       if (envRequired === 0) {
@@ -141,10 +141,6 @@ export const useMcpDetail = () => {
     navigate(-1);
   };
 
-  useEffect(() => {
-    fetchMcpDetail();
-  }, [serviceId]);
-
   return {
     mcpDetailLoading,
     downMcpLoading,
@@ -158,5 +154,7 @@ export const useMcpDetail = () => {
     authMcpLoading,
     authMcp,
     handleAuthMcp,
+    fetchMcpDetail,
+    serviceId,
   };
 };
