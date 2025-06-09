@@ -4,18 +4,18 @@ import type { PaginationConfig } from 'antd/es/pagination';
 import type { ListGridType } from 'antd/es/list';
 import GeneralCard from '@/components/model-manage-tab/model-list-content/general-card';
 import noDataSvg from '@/components/icons/no-data.svg';
-import { useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
-import { IModelListContent } from '@/components/model-manage-tab/model-list-content/index.tsx';
+import { IUseViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 
-export interface IModelList extends IModelListContent {
+export interface IModelList {
   pagination?: PaginationConfig | false;
   dataSource?: any[];
   grid?: ListGridType;
   isSelectable?: boolean;
+  vm: IUseViewModel;
 }
 
 export const ModelList = (props: IModelList) => {
-  const vm = useViewModel(props);
+  const { vm } = props;
   return (
     <div className={styles.modelCardList}>
       {vm.pagenationData.length > 0 ? (
@@ -23,7 +23,7 @@ export const ModelList = (props: IModelList) => {
           <List
             grid={props?.grid}
             dataSource={props?.dataSource ?? vm.pagenationData}
-            pagination={props?.pagination ?? vm?.pagination}
+            pagination={typeof props?.pagination === 'undefined' ? vm?.pagination : props?.pagination}
             renderItem={(item) => (
               <List.Item>
                 <GeneralCard

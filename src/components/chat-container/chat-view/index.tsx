@@ -1,9 +1,14 @@
+import React, { useState } from 'react';
 import { ChatInput, MessageList, type MessageType, type ChatInputProps, registerMessageContents } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
+import { Button, Tag } from 'antd';
+import type { UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
+import { XCircleIcon } from '@phosphor-icons/react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import UploadTool from '../upload-tool';
+import sendSvg from '@/components/icons/send.svg';
 import './index.css';
 
 const testMessages: MessageType[] = [
@@ -129,6 +134,59 @@ const testMessages: MessageType[] = [
   },
 ];
 export default function ChatView() {
+  const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
+  const onFileListChange = (fileList: UploadFile[]) => {
+    setUploadFileList(fileList);
+    console.log('上传文件列表变化:', fileList);
+  };
+
+  const headerUploadContent = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      {uploadFileList.map((file) => (
+        <div
+          key={file.uid}
+          className="upload-file-item"
+        >
+          {file.name}
+          <div
+            className="upload-file-remove"
+            onClick={(e) => {
+              e.stopPropagation();
+              // 从文件列表中移除该文件
+              const newFileList = uploadFileList.filter((item) => item.uid !== file.uid);
+              setUploadFileList(newFileList);
+            }}
+          >
+            <XCircleIcon
+              width={16}
+              height={16}
+              fill="#9ca3af"
+              weight="fill"
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const extraContent = (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        fontSize: 14,
+        color: '#7553FC',
+      }}
+    >
+      <UploadTool
+        onFileListChange={onFileListChange}
+        uploadFileList={uploadFileList}
+      />
+      <SelectMcp />
+    </div>
+  );
+
   return (
     <div className="chat-layout">
       <div className="chat-body">
@@ -163,58 +221,27 @@ export default function ChatView() {
             }}
             // disabled
             SendButtonComponent={({ onClick }) => (
-              <div
+              <Button
+                type="primary"
                 style={{
-                  background: '#5429FF',
-                  color: '#FFFFFF',
                   borderRadius: 8,
-                  padding: '5px 12px',
                   cursor: 'pointer',
                 }}
+                // TODO
+                // disabled={false}
+                icon={
+                  <img
+                    src={sendSvg}
+                    alt="发送"
+                  />
+                }
                 onClick={onClick}
-              >
-                发送111
-              </div>
+              />
             )}
             // 输入框顶部扩展
-            header={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div
-                  style={{
-                    border: '1px solid #E4E6EB',
-                    borderRadius: 8,
-                    padding: '5px 12px',
-                  }}
-                >
-                  XXX.pdf
-                </div>
-                <div
-                  style={{
-                    border: '1px solid #E4E6EB',
-                    borderRadius: 8,
-                    padding: '5px 12px',
-                  }}
-                >
-                  LLL.pdf
-                </div>
-              </div>
-            }
+            header={headerUploadContent}
             // 输入框底部扩展
-            extra={
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  fontSize: 14,
-                  color: '#7553FC',
-                }}
-              >
-                <UploadTool />
-                <SelectMcp />
-              </div>
-            }
-            // className=''
+            extra={extraContent}
           />
         </div>
       </div>
@@ -224,39 +251,6 @@ export default function ChatView() {
 
 const TextContent = ({ dataSource }: { dataSource: string }) => {
   return <div style={{ fontSize: 14 }}>{dataSource}</div>;
-};
-
-/** 深度思考内容组件（示例） */
-const ThinkContent = (props: { dataSource: { status: string; answer: string; duration: number } }) => {
-  const { status, answer, duration } = props.dataSource;
-  const renderStatus = () => {
-    if (status === 'success') {
-      return <div>✅已完成深度思考{`用时${duration}s`}</div>;
-    }
-    if (status === 'error') {
-      return <div>❌深度思考出错</div>;
-    }
-    if (status === 'thinking') {
-      return <div>⏳深度思考中</div>;
-    }
-    return <div>⏳深度思考中</div>;
-  };
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-        padding: 16,
-        background: '#FFFFFF',
-        color: '#898EA3',
-        fontSize: 14,
-      }}
-    >
-      {renderStatus()}
-      <div>{answer}</div>
-    </div>
-  );
 };
 
 // 注册消息内容组件

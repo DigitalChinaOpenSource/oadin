@@ -1,7 +1,7 @@
 import { Image, message, Progress } from 'antd';
 import styles from './index.module.scss';
-import { PlayPauseIcon, CloseIcon, FillCloseIcon, PauseIcon, ArrowClockwiseIcon } from '../../icons';
 import greySpinner from '@/components/icons/greySpinner.svg';
+import { ArrowClockwiseIcon, PlayPauseIcon, PauseIcon, XIcon, XCircleIcon } from '@phosphor-icons/react';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { useViewModel } from './view-model';
@@ -37,7 +37,11 @@ export default function DownloadItem(props: IDownloadItemProps) {
                 fetchCancelModel(downloadItem);
               }}
             >
-              <PauseIcon />
+              <PauseIcon
+                width={16}
+                height={16}
+                fill="#9daabb"
+              />
             </div>
           )}
           {downloadItem.status === PAUSED && (
@@ -50,7 +54,11 @@ export default function DownloadItem(props: IDownloadItemProps) {
                 fetchDownloadStart(downloadItem);
               }}
             >
-              <PlayPauseIcon />
+              <PlayPauseIcon
+                width={16}
+                height={16}
+                fill="#9daabb"
+              />
             </div>
           )}
           {downloadItem.status === FAILED && (
@@ -63,7 +71,11 @@ export default function DownloadItem(props: IDownloadItemProps) {
                 fetchDownloadStart(downloadItem);
               }}
             >
-              <ArrowClockwiseIcon />
+              <ArrowClockwiseIcon
+                width={16}
+                height={16}
+                fill="#9daabb"
+              />
             </div>
           )}
           <div
@@ -76,7 +88,11 @@ export default function DownloadItem(props: IDownloadItemProps) {
               fetchRemoveModel(downloadItem);
             }}
           >
-            <CloseIcon />
+            <XIcon
+              width={16}
+              height={16}
+              fill="#9daabb"
+            />
           </div>
         </div>
       </div>
@@ -93,7 +109,11 @@ export default function DownloadItem(props: IDownloadItemProps) {
         <div className={styles.status}>
           {downloadItem.status === FAILED && (
             <>
-              <FillCloseIcon />
+              <XCircleIcon
+                width={16}
+                height={16}
+                fill="#E85951"
+              />
               <span className={styles.statusError}>下载失败</span>
             </>
           )}

@@ -4,7 +4,7 @@ import { Button, Tooltip, message, Radio } from 'antd';
 import { IModelAuth } from '../../types';
 import { IModelDataItem, IModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
-import { LoadingIcon, DownloadIcon, LocalIcon, CloudIcon, DeleteIcon, SettingIcon, ArrowClockwiseIcon } from '@/components/icons';
+import { DownloadSimpleIcon, GlobeIcon, ArrowClockwiseIcon, SpinnerIcon, GearSixIcon, TrashIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import React, { MouseEvent } from 'react';
@@ -40,7 +40,13 @@ export default function GeneralCard(props: IGeneralCardProps) {
       return (
         <Button
           className={styles.downloadedBtn}
-          icon={<LoadingIcon />}
+          icon={
+            <SpinnerIcon
+              width={16}
+              height={16}
+              fill="#344054"
+            />
+          }
         >
           下载中
         </Button>
@@ -57,7 +63,13 @@ export default function GeneralCard(props: IGeneralCardProps) {
             }
             onDeleteConfirm?.(modelData);
           }}
-          icon={<DeleteIcon fill="#344054" />}
+          icon={
+            <TrashIcon
+              width={16}
+              height={16}
+              fill="#344054"
+            />
+          }
         >
           删除模型
         </Button>
@@ -74,7 +86,13 @@ export default function GeneralCard(props: IGeneralCardProps) {
             }
             onDownloadConfirm?.(modelData);
           }}
-          icon={<DownloadIcon />}
+          icon={
+            <DownloadSimpleIcon
+              width={16}
+              height={16}
+              fill="#ffffff"
+            />
+          }
         >
           下载
         </Button>
@@ -88,7 +106,13 @@ export default function GeneralCard(props: IGeneralCardProps) {
         <Button
           className={styles.updateSetting}
           variant="filled"
-          icon={<ArrowClockwiseIcon fill="#344054" />}
+          icon={
+            <ArrowClockwiseIcon
+              width={16}
+              height={16}
+              fill="#344054"
+            />
+          }
           onClick={(e) => {
             e.stopPropagation();
             if (migratingStatus === 'pending') {
@@ -124,7 +148,13 @@ export default function GeneralCard(props: IGeneralCardProps) {
               });
             }
           }}
-          icon={<SettingIcon fill="#ffffff" />}
+          icon={
+            <GearSixIcon
+              width={16}
+              height={16}
+              fill="#ffffff"
+            />
+          }
         >
           配置授权
         </Button>
@@ -141,6 +171,18 @@ export default function GeneralCard(props: IGeneralCardProps) {
       }
     }
   };
+
+  const convertProviderName = (flavor: string): string => {
+    const providerMap: Record<string, string> = {
+      deepseek: '深度求索',
+      aliyun: '阿里巴巴',
+      Yi: '灵一万物',
+      zhipuAi: '智谱清言',
+    };
+
+    return providerMap[flavor] || flavor;
+  };
+
   return (
     <div
       className={`${styles.generalCard} ${!isDetail ? styles.generalCardHover : styles.generalCardDetail} `}
@@ -174,12 +216,20 @@ export default function GeneralCard(props: IGeneralCardProps) {
           <div className={styles.localOrCloud}>
             {modelSourceVal === 'local' ? (
               <>
-                <LocalIcon />
+                <HardDrivesIcon
+                  width={16}
+                  height={16}
+                  fill="#898ea3"
+                />
                 <div className={styles.localOrCloudText}>本地</div>
               </>
             ) : (
               <>
-                <CloudIcon />
+                <GlobeIcon
+                  width={16}
+                  height={16}
+                  fill="#898ea3"
+                />
                 <div className={styles.localOrCloudText}>云端</div>
               </>
             )}
@@ -209,7 +259,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
       </div>
 
       <div className={styles.infoWrapper}>
-        <div className={styles.providerName}>{modelData.flavor}</div>
+        <div className={styles.providerName}>{convertProviderName(modelData.flavor)}</div>
 
         {modelData?.can_select && modelSourceVal === 'local' && <div className={styles.modelStatus}>已下载</div>}
         {modelData?.can_select && modelSourceVal === 'remote' && <div className={styles.modelStatus}>已授权</div>}

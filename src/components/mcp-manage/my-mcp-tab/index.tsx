@@ -1,5 +1,5 @@
 import { Input } from 'antd';
-import { SearchIcon } from '@/components/icons';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useViewModel } from './view-model';
 import McpList from '../mcp-list';
 import styles from './index.module.scss';
@@ -25,7 +25,11 @@ export default function MyMcpTab() {
                   className={styles.searchIcon}
                   onClick={() => vm.onMcpInputSearch(vm.searchVal)}
                 >
-                  <SearchIcon />
+                  <MagnifyingGlassIcon
+                    width={16}
+                    height={16}
+                    fill="#808899"
+                  />
                 </div>
               }
               value={vm.searchVal}

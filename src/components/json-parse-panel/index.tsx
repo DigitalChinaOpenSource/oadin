@@ -3,8 +3,8 @@ import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import React, { useState } from 'react';
 import styles from './index.module.scss';
 import { coy } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import CopyIcon from '@/components/icons/copy.tsx';
-import CopySuccess from '@/components/icons/copy-success.tsx';
+import CopySvg from '@/components/icons/copy.tsx';
+import CopySuccessSvg from '@/components/icons/copy-success.tsx';
 import { message } from 'antd';
 // 注册需要的语言（性能优化）
 PrismLight.registerLanguage('json', json);
@@ -54,12 +54,12 @@ export default function JsonParsePanel(props: IJsonParsePanelProps) {
           onClick={handleClick}
         >
           {showDefaultIcon ? (
-            <CopyIcon
+            <CopySvg
               fill={'#C1C6D6'}
               hoverFill={'blue'}
             />
           ) : (
-            <CopySuccess />
+            <CopySuccessSvg />
           )}
         </div>
         <SyntaxHighlighter

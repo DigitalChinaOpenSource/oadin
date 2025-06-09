@@ -12,7 +12,7 @@ export interface IModelListContent {
   onModelSearch: (val: string) => void;
 }
 
-export default function ModelListContent(props: IModelListContent) {
+export default function ModelListContent() {
   const { onModelSearch, modelSearchVal, modelSourceVal } = useViewTabModel();
   const vm = useViewModel({
     onModelSearch,
@@ -33,7 +33,18 @@ export default function ModelListContent(props: IModelListContent) {
         <div className={styles.modelListContent}>
           <div className={styles.contentContainer}>
             <ModelList
-              {...props}
+              vm={vm}
+              pagination={
+                vm.modelListData.length > 12 && {
+                  className: styles.pagination,
+                  align: 'end',
+                  ...vm.pagination,
+                  pageSizeOptions: [12, 24, 48, 96],
+                  showSizeChanger: true,
+                  onChange: vm.onPageChange,
+                  onShowSizeChange: vm.onShowSizeChange,
+                }
+              }
               grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
             />
           </div>

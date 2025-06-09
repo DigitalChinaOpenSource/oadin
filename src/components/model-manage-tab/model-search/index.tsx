@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Input, Select } from 'antd';
-import { SearchIcon } from '@/components/icons';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { IModelSourceType } from '@/types';
 import styles from './index.module.scss';
 import { useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
@@ -53,7 +53,11 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
               className={styles.searchIcon}
               onClick={() => onModelSearch(searchVal)}
             >
-              <SearchIcon />
+              <MagnifyingGlassIcon
+                width={16}
+                height={16}
+                fill="#808899"
+              />
             </div>
           }
           value={searchVal}
