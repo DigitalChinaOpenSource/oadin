@@ -1,4 +1,4 @@
-import { Button, Col, Row } from 'antd';
+import { Button, Col, Row, Tooltip } from 'antd';
 import ChatModelManage from './chat-model-manage';
 import { PlusIcon, ClockCounterClockwiseIcon } from '@phosphor-icons/react';
 import ChatHistoryDrawer from './chat-history-drawer';
@@ -13,19 +13,21 @@ export default function ChatContainer() {
       <div className={styles.header}>
         <div className={styles.title}>模型体验</div>
         <div className={styles.actions}>
-          <Button
-            type="text"
-            className={styles.chatHistory}
-            icon={
-              <ClockCounterClockwiseIcon
-                size={16}
-                fill="#27272a"
-              />
-            }
-            onClick={() => {
-              setHistoryVisible(true);
-            }}
-          />
+          <Tooltip title={'对话历史'}>
+            <Button
+              type="text"
+              className={styles.chatHistory}
+              icon={
+                <ClockCounterClockwiseIcon
+                  size={16}
+                  fill="#27272a"
+                />
+              }
+              onClick={() => {
+                setHistoryVisible(true);
+              }}
+            />
+          </Tooltip>
           <Button
             type="text"
             className={styles.createChat}
