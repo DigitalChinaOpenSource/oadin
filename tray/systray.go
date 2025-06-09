@@ -108,6 +108,7 @@ func (m *Manager) onReady() {
 						dialog.Message("Failed to perform update: %v", err).Title("Error").Error()
 					} else {
 						systray.Quit()
+						os.Exit(0)
 					}
 				}
 			case <-mViewLogs.ClickedCh:

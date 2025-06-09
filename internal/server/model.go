@@ -829,7 +829,11 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 			return nil, err
 		}
 		resData.Total = int(totalCount)
-		resData.TotalPage = int(totalCount) / pageSize
+		if int(totalCount)%pageSize == 0 {
+			resData.TotalPage = int(totalCount) / pageSize
+		} else {
+			resData.TotalPage = int(totalCount)/pageSize + 1
+		}
 		if resData.TotalPage == 0 {
 			resData.TotalPage = 1
 		}
@@ -1072,7 +1076,12 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 			// 当前页数据切片
 			resultList = resultList[dataStart:dataEnd]
 			resData.Total = totalCount
-			resData.TotalPage = totalCount / pageSize
+			if totalCount%pageSize == 0 {
+				resData.TotalPage = totalCount / pageSize
+			} else {
+				resData.TotalPage = totalCount/pageSize + 1
+			}
+
 			if resData.TotalPage == 0 {
 				resData.TotalPage = 1
 			}
