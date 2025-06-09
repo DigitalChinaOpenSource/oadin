@@ -113,13 +113,13 @@ export default function McpToolChat() {
     <div className={styles.mcpToolChat}>
       <div className={styles.header}>
         <div className={styles.chatStatus}>
-          {/* <>
+          <>
             <img
               src={macpChatSvg}
               alt="工具调用中..."
             />
             <div className={styles.thinkingText}>工具调用中...</div>
-          </> */}
+          </>
           {/* <>
             <img
               src={macpChatSvg}
@@ -127,7 +127,7 @@ export default function McpToolChat() {
             />
             <div className={styles.statusText}>调用已停止</div>
           </> */}
-          <>
+          {/* <>
             <CheckCircleIcon
               width={16}
               height={16}
@@ -135,8 +135,9 @@ export default function McpToolChat() {
             />
             <div className={styles.statusText}>工具调用已完成，共执行 3 次</div>
             <div className={styles.coastTime}>（用时 25 秒）</div>
-          </>
+          </> */}
         </div>
+        {/* TODO 工具调用中不能出现 */}
         <div
           className={styles.collapse}
           onClick={() => setIsExpanded(!isExpanded)}

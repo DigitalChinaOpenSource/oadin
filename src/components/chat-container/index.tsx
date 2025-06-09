@@ -1,12 +1,13 @@
 import { Button, Col, Row } from 'antd';
 import ChatModelManage from './chat-model-manage';
-import DeepThinkChat from './chat-components/deep-think-chat';
-import McpToolChat from './chat-components/mcp-tool-chat';
-import styles from './index.module.scss';
 import { PlusIcon, ClockCounterClockwiseIcon } from '@phosphor-icons/react';
-import { SelectMcp } from '@/components/select-mcp';
+import ChatHistoryDrawer from './chat-history-drawer';
 import ChatView from './chat-view';
+import useViewModel from './useViewModel';
+import styles from './index.module.scss';
 export default function ChatContainer() {
+  const { historyVisible, setHistoryVisible } = useViewModel();
+
   return (
     <div className={styles.chatContainer}>
       <div className={styles.header}>
@@ -22,7 +23,7 @@ export default function ChatContainer() {
               />
             }
             onClick={() => {
-              console.log('查看对话历史');
+              setHistoryVisible(true);
             }}
           />
           <Button
@@ -48,12 +49,10 @@ export default function ChatContainer() {
           <div className={styles.chatContent}>
             <ChatModelManage />
             <ChatView />
-            {/* <DeepThinkChat />
-            <McpToolChat /> */}
           </div>
         </Col>
       </Row>
-      {/* <ChatHistoryDrawer /> */}
+      {historyVisible && <ChatHistoryDrawer onHistoryDrawerClose={() => setHistoryVisible(false)} />}
     </div>
   );
 }

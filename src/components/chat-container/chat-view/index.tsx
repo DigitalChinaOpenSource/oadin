@@ -55,60 +55,11 @@ const testMessages: MessageType[] = [
         type: 'plain',
         content: '你好 我是智能体',
       },
-      {
-        id: '5',
-        type: 'think',
-        content: {
-          status: 'success',
-          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
-          duration: 25,
-        },
-      },
-      {
-        id: '6',
-        type: 'think',
-        content: {
-          status: 'thinking',
-          answer: '',
-          duration: 25,
-        },
-      },
+
       {
         id: '11',
         type: 'plain',
         content: '你好 我是智能体',
-      },
-      {
-        id: '12',
-        type: 'think',
-        content: {
-          status: 'success',
-          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
-          duration: 25,
-        },
-      },
-      {
-        id: '13',
-        type: 'think',
-        content: {
-          status: 'thinking',
-          answer: '',
-          duration: 25,
-        },
-      },
-      {
-        id: '14',
-        type: 'plain',
-        content: '你好 我是智能体',
-      },
-      {
-        id: '15',
-        type: 'mcp',
-        content: {
-          status: 'success',
-          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
-          duration: 25,
-        },
       },
       {
         id: '16',
