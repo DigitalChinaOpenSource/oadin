@@ -3,8 +3,9 @@ package api
 import (
 	"byze/internal/rpc"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetMCPList
@@ -151,4 +152,38 @@ func (t *ByzeCoreServer) SetupFunTool(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, nil)
 
+}
+
+func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
+	id := c.Param("id")
+	err := t.MCP.ClientMcpStart(c, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, nil)
+}
+
+func (t *ByzeCoreServer) ClientMcpStop(c *gin.Context) {
+	id := c.Param("id")
+	err := t.MCP.ClientMcpStop(c, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, nil)
+}
+
+func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
+	var req rpc.ClientRunToolsRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	resp, err := t.MCP.ClientRunTools(c, &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
+		return
+	}
+	c.JSON(http.StatusOK, resp.Data)
 }
