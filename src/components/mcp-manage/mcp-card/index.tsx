@@ -2,7 +2,7 @@ import { useMemo, useRef, useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import { Tooltip } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
-import { LocalIcon, CloudIcon } from '@/components/icons';
+import { GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
 import dayjs from 'dayjs';
 import defaultPng from '@/assets/favicon.png';
@@ -56,12 +56,20 @@ export default function McpCard(props: IMcpCardProps) {
           <div className={styles.localOrCloud}>
             {mcpData?.hosted ? (
               <>
-                <LocalIcon />
+                <HardDrivesIcon
+                  width={16}
+                  height={16}
+                  fill="#898ea3"
+                />
                 <div className={styles.localOrCloudText}>本地</div>
               </>
             ) : (
               <>
-                <CloudIcon />
+                <GlobeIcon
+                  width={16}
+                  height={16}
+                  fill="#898ea3"
+                />
                 <div className={styles.localOrCloudText}>云端</div>
               </>
             )}

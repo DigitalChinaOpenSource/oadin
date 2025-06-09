@@ -1,15 +1,1 @@
-export { default as SearchIcon } from './search-icon';
-export { default as DownloadIcon } from './download-icon';
-export { default as CloudIcon } from './cloud-icon';
-export { default as LocalIcon } from './local-icon';
-export { default as SettingIcon } from './setting-icon';
-export { default as FailedIcon } from './failed-icon';
-export { default as LoadingIcon } from './loading-icon';
-export { default as DeleteIcon } from './delete-icon';
-export { default as SiderDownloadIcon } from './sider-download-icon';
-export { default as CloseIcon } from './close-icon';
-export { default as PauseIcon } from './pause-icon';
-export { default as PlayPauseIcon } from './play-pause-icon';
-export { default as FillCloseIcon } from './fill-close-icon';
-export { default as ArrowClockwiseIcon } from './arrow-clockwise-icon';
 export { default as McpSelectBtn } from './mcpSelectBtn.tsx';

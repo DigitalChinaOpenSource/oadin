@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import styles from './index.module.scss';
 import deepThinkSvg from '@/components/icons/deep-think.svg';
-import CheckCircleIcon from '@/components/icons/check-circle';
+import { CheckCircleIcon } from '@phosphor-icons/react';
 import arrowUp from '@/components/icons/arrow-up.svg';
 import arrowDown from '@/components/icons/arrow-down.svg';
 
@@ -37,6 +37,7 @@ export default function DeepThinkChat() {
             <CheckCircleIcon
               width={16}
               height={16}
+              fill="#4f4dff"
             />
             <div className={styles.statusText}>已深度思考</div>
             <div className={styles.coastTime}>（用时 25 秒）</div>

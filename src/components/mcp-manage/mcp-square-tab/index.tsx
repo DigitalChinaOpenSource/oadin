@@ -2,7 +2,7 @@ import { Tooltip } from 'antd';
 import { Input } from 'antd';
 import { useViewModel } from './view-model';
 import expandSvg from '@/components/icons/expand.svg';
-import { SearchIcon } from '@/components/icons';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import McpAdvanceFilter from '../mcp-advance-filter';
 import McpList from '../mcp-list';
 import styles from './index.module.scss';
@@ -29,7 +29,11 @@ export default function McpSquareTab() {
                   className={styles.searchIcon}
                   onClick={() => vm.onMcpInputSearch(vm.searchVal)}
                 >
-                  <SearchIcon />
+                  <MagnifyingGlassIcon
+                    width={16}
+                    height={16}
+                    fill="#808899"
+                  />
                 </div>
               }
               value={vm.searchVal}
