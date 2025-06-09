@@ -138,3 +138,11 @@ type EngineRecommendConfig struct {
 	ExecPath       string `json:"exec_path"`
 	ExecFile       string `json:"exec_file"`
 }
+
+type MCPServerConfig struct {
+	Id      string            `json:"id"`
+	Name    string            `json:"name"`
+	Args    []string          `json:"args"`
+	Command string            `json:"command"`
+	Env     map[string]string `json:"env"` // 使用map存储动态环境变量
+}
