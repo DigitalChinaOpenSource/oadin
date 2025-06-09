@@ -171,6 +171,18 @@ export default function GeneralCard(props: IGeneralCardProps) {
       }
     }
   };
+
+  const convertProviderName = (flavor: string): string => {
+    const providerMap: Record<string, string> = {
+      deepseek: '深度求索',
+      aliyun: '阿里巴巴',
+      Yi: '灵一万物',
+      zhipuAi: '智谱清言',
+    };
+
+    return providerMap[flavor] || flavor;
+  };
+
   return (
     <div
       className={`${styles.generalCard} ${!isDetail ? styles.generalCardHover : styles.generalCardDetail} `}
@@ -247,7 +259,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
       </div>
 
       <div className={styles.infoWrapper}>
-        <div className={styles.providerName}>{modelData.flavor}</div>
+        <div className={styles.providerName}>{convertProviderName(modelData.flavor)}</div>
 
         {modelData?.can_select && modelSourceVal === 'local' && <div className={styles.modelStatus}>已下载</div>}
         {modelData?.can_select && modelSourceVal === 'remote' && <div className={styles.modelStatus}>已授权</div>}
