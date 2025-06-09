@@ -1,142 +1,114 @@
-import { ChatInput, MessageList, type MessageType, type ChatInputProps, registerMessageContents } from '@res-utiles/ui-components';
+import React, { useEffect, useRef } from 'react';
+import { ChatInput, MessageList, type MessageType, registerMessageContents } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
 import { Button } from 'antd';
+import type { UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
+import { XCircleIcon } from '@phosphor-icons/react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import UploadTool from '../upload-tool';
+import useChatStore from '../store/useChatStore';
 import sendSvg from '@/components/icons/send.svg';
 import './index.css';
 
-const testMessages: MessageType[] = [
-  {
-    id: '1',
-    role: 'user',
-    contentList: [
-      {
-        id: '1',
-        type: 'plain',
-        content: '你好AI',
-      },
-    ],
-  },
-  {
-    id: '2',
-    role: 'assistant',
-    contentList: [
-      {
-        id: '1',
-        type: 'plain',
-        content: '你好 我是智能体',
-      },
-      {
-        id: '2',
-        type: 'think',
-        content: {
-          status: 'success',
-          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
-          duration: 25,
-        },
-      },
-      {
-        id: '3',
-        type: 'think',
-        content: {
-          status: 'thinking',
-          answer: '',
-          duration: 25,
-        },
-      },
-      {
-        id: '4',
-        type: 'plain',
-        content: '你好 我是智能体',
-      },
-      {
-        id: '5',
-        type: 'think',
-        content: {
-          status: 'success',
-          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
-          duration: 25,
-        },
-      },
-      {
-        id: '6',
-        type: 'think',
-        content: {
-          status: 'thinking',
-          answer: '',
-          duration: 25,
-        },
-      },
-      {
-        id: '11',
-        type: 'plain',
-        content: '你好 我是智能体',
-      },
-      {
-        id: '12',
-        type: 'think',
-        content: {
-          status: 'success',
-          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
-          duration: 25,
-        },
-      },
-      {
-        id: '13',
-        type: 'think',
-        content: {
-          status: 'thinking',
-          answer: '',
-          duration: 25,
-        },
-      },
-      {
-        id: '14',
-        type: 'plain',
-        content: '你好 我是智能体',
-      },
-      {
-        id: '15',
-        type: 'mcp',
-        content: {
-          status: 'success',
-          answer: '好的，用户问“明天天气怎么样”，我需要回答这个问题。',
-          duration: 25,
-        },
-      },
-      {
-        id: '16',
-        type: 'mcp',
-        content: {
-          status: 'thinking',
-          answer: '',
-          duration: 25,
-        },
-      },
-    ],
-  },
-  {
-    id: '3',
-    role: 'user',
-    contentList: [
-      {
-        id: '1',
-        type: 'plain',
-        content: '你好AI，我想知道明天的天气如何？',
-      },
-    ],
-  },
-];
 export default function ChatView() {
+  const { messages, addMessage, uploadFileList, setUploadFileList } = useChatStore();
+
+  const messageAreaRef = useRef<HTMLDivElement>(null);
+
+  // 监听消息列表变化，自动滚动
+  useEffect(() => {
+    if (messageAreaRef.current && messages.length > 0) {
+      const scrollElement = messageAreaRef.current;
+      scrollElement.scrollTop = scrollElement.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSendMessage = (message: string) => {
+    if (!message.trim()) return;
+
+    const userMessage: MessageType = {
+      id: Date.now().toString(),
+      role: 'user',
+      contentList: [
+        {
+          id: '1',
+          type: 'plain',
+          content: message,
+        },
+      ],
+    };
+
+    addMessage(userMessage);
+
+    // 模拟AI回复，实际项目中替换为API调用
+    setTimeout(() => {
+      const aiMessage: MessageType = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        contentList: [
+          {
+            id: '1',
+            type: 'plain',
+            content: `你好，我收到了你的消息: "${message}"`,
+          },
+        ],
+      };
+      addMessage(aiMessage);
+    }, 1000);
+  };
+
+  const onFileListChange = (fileList: UploadFile[]) => {
+    setUploadFileList(fileList);
+  };
+
+  const headerUploadContent = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      {uploadFileList.map((file) => (
+        <div
+          key={file.uid}
+          className="upload-file-item"
+        >
+          {file.name}
+          <div
+            className="upload-file-remove"
+            onClick={(e) => {
+              e.stopPropagation();
+              setUploadFileList(uploadFileList.filter((item) => item.uid !== file.uid));
+            }}
+          >
+            <XCircleIcon
+              width={16}
+              height={16}
+              fill="#9ca3af"
+              weight="fill"
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const extraContent = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
+      <UploadTool
+        onFileListChange={onFileListChange}
+        uploadFileList={uploadFileList}
+      />
+      <SelectMcp />
+    </div>
+  );
+
   return (
     <div className="chat-layout">
       <div className="chat-body">
-        <div className="chat-message-area chat-width">
+        <div
+          className="chat-message-area chat-width"
+          ref={messageAreaRef}
+        >
           <MessageList
-            messages={testMessages}
+            messages={messages}
             setBubbleProps={(message) => ({
               align: message.role === 'user' ? 'right' : 'left',
               classNames: {
@@ -148,31 +120,22 @@ export default function ChatView() {
             }}
           />
         </div>
+
         <div className="chat-input-area chat-width">
           <ChatInput
             placeholder="输入消息..."
-            onSend={(message) => {
-              console.log('send message2222', message);
-            }}
+            onSend={handleSendMessage}
             containerProps={{
               color: '#FFF',
               borderWidth: 0,
               padding: '16px',
-              style: {
-                height: '100%',
-              },
+              style: { height: '100%' },
               borderRadius: 8,
             }}
-            // disabled
             SendButtonComponent={({ onClick }) => (
               <Button
                 type="primary"
-                style={{
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                }}
-                // TODO
-                // disabled={false}
+                style={{ borderRadius: 8, cursor: 'pointer' }}
                 icon={
                   <img
                     src={sendSvg}
@@ -182,44 +145,8 @@ export default function ChatView() {
                 onClick={onClick}
               />
             )}
-            // 输入框顶部扩展
-            header={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div
-                  style={{
-                    border: '1px solid #E4E6EB',
-                    borderRadius: 8,
-                    padding: '5px 12px',
-                  }}
-                >
-                  XXX.pdf
-                </div>
-                <div
-                  style={{
-                    border: '1px solid #E4E6EB',
-                    borderRadius: 8,
-                    padding: '5px 12px',
-                  }}
-                >
-                  LLL.pdf
-                </div>
-              </div>
-            }
-            // 输入框底部扩展
-            extra={
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  fontSize: 14,
-                  color: '#7553FC',
-                }}
-              >
-                <UploadTool />
-                <SelectMcp />
-              </div>
-            }
+            header={headerUploadContent}
+            extra={extraContent}
           />
         </div>
       </div>
@@ -227,49 +154,8 @@ export default function ChatView() {
   );
 }
 
-const TextContent = ({ dataSource }: { dataSource: string }) => {
-  return <div style={{ fontSize: 14 }}>{dataSource}</div>;
-};
-
-/** 深度思考内容组件（示例） */
-const ThinkContent = (props: { dataSource: { status: string; answer: string; duration: number } }) => {
-  const { status, answer, duration } = props.dataSource;
-  const renderStatus = () => {
-    if (status === 'success') {
-      return <div>✅已完成深度思考{`用时${duration}s`}</div>;
-    }
-    if (status === 'error') {
-      return <div>❌深度思考出错</div>;
-    }
-    if (status === 'thinking') {
-      return <div>⏳深度思考中</div>;
-    }
-    return <div>⏳深度思考中</div>;
-  };
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-        padding: 16,
-        background: '#FFFFFF',
-        color: '#898EA3',
-        fontSize: 14,
-      }}
-    >
-      {renderStatus()}
-      <div>{answer}</div>
-    </div>
-  );
-};
-
-// 注册消息内容组件
 registerMessageContents({
-  // 纯文本
-  plain: TextContent,
-  // 深度思考
+  plain: ({ dataSource }: { dataSource: string }) => <div style={{ fontSize: 14 }}>{dataSource}</div>,
   think: DeepThinkChat,
-  // mcp
   mcp: McpToolChat,
 });

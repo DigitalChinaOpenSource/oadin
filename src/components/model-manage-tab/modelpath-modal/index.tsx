@@ -104,7 +104,6 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
       },
       onFinally: () => {
         setChangeModelPathLoading(false);
-        setMigratingStatus('failed');
         // onModelPathVisible();
       },
     },

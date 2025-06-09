@@ -5,10 +5,11 @@ type McpAddModalProps = {
   setShowMcpModal: (isShow: boolean) => void;
   handleAuthMcp: (authParams: any) => void;
   mcpDetail: McpDetailType;
+  operateType?: 'add' | 'edit';
 };
 
 export default function McpAuthModal(props: McpAddModalProps) {
-  const { showMcpModal, setShowMcpModal, handleAuthMcp, mcpDetail } = props;
+  const { showMcpModal, setShowMcpModal, handleAuthMcp, mcpDetail, operateType } = props;
   const { envSchema } = mcpDetail;
   const { properties } = envSchema;
   const [form] = Form.useForm();
@@ -18,7 +19,7 @@ export default function McpAuthModal(props: McpAddModalProps) {
   };
   return (
     <Modal
-      title="MCP 服务添加"
+      title={operateType === 'edit' ? 'MCP 服务更新' : 'MCP 服务添加'}
       open={showMcpModal}
       onCancel={() => setShowMcpModal(false)}
       footer={null}

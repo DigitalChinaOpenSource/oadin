@@ -1,12 +1,16 @@
 import { Drawer } from 'antd';
 
-export default function ChatHistoryDrawer() {
+export interface IChatHistoryDrawerProps {
+  onHistoryDrawerClose?: () => void;
+}
+export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistoryDrawerProps) {
   return (
     <Drawer
       title="历史对话"
       placement="right"
       closable={true}
-      onClose={() => {}}
+      maskClosable={true}
+      onClose={onHistoryDrawerClose}
       open={true}
     >
       <div>

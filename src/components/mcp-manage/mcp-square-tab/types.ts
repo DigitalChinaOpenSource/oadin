@@ -18,6 +18,7 @@ export interface IMcpListItem {
   id: string | number;
   // 0 未添加未启用；1 已添加已启用
   status: number;
+  envRequired: number;
   name: {
     src: string;
     zh: string;
@@ -32,6 +33,7 @@ export interface IMcpListItem {
   tags: string[];
   hosted: boolean;
   updatedAt: number;
+  envSchema?: Record<string, Record<string, any>>;
 }
 
 export interface IMcpListData {

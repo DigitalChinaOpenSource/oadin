@@ -14,7 +14,8 @@ import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 
 export default function McpDetail() {
-  const { handleGoBack, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail();
+  const { fetchMcpDetail, serviceId, handleGoBack, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } =
+    useMcpDetail();
 
   const detailDescRef = useRef<HTMLDivElement>(null);
   const [descHeight, setDescHeight] = useState(0);
@@ -49,6 +50,9 @@ export default function McpDetail() {
   //     setDescHeight(height);
   //   }
   // }, [mcpDetail]);
+  useEffect(() => {
+    fetchMcpDetail();
+  }, [serviceId]);
 
   return (
     mcpDetail && (
@@ -71,7 +75,7 @@ export default function McpDetail() {
               {mcpDetail?.envRequired === 0 && (
                 <Button
                   type="primary"
-                  onClick={handleAddMcp}
+                  onClick={() => handleAddMcp(mcpDetail)}
                   loading={downMcpLoading || authMcpLoading}
                   disabled={mcpDetail.status === 1}
                 >
@@ -82,7 +86,7 @@ export default function McpDetail() {
                 (mcpDetail.status === 0 ? (
                   <Button
                     type="primary"
-                    onClick={handleAddMcp}
+                    onClick={() => handleAddMcp(mcpDetail)}
                     loading={downMcpLoading || authMcpLoading}
                   >
                     添加
@@ -91,7 +95,7 @@ export default function McpDetail() {
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
                     <Button
                       type="primary"
-                      onClick={handleAddMcp}
+                      onClick={() => handleAddMcp(mcpDetail)}
                       loading={downMcpLoading || authMcpLoading}
                     >
                       更新
