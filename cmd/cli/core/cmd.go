@@ -328,10 +328,6 @@ func Run(ctx context.Context) error {
 					errChan <- fmt.Errorf("byze server error: %v", err)
 				}
 			}()
-			err = <-errChan
-			if err != nil {
-				return err
-			}
 			globalServerManager.byzeServer = byzeSrv
 			return nil
 		},
@@ -368,7 +364,7 @@ func Run(ctx context.Context) error {
 	globalServerManager.trayManager = trayManager
 
 	// 在新的 goroutine 中启动系统托盘
-	go trayManager.Start()
+	trayManager.Start()
 
 	// 等待错误或中断信号
 	sigChan := make(chan os.Signal, 1)

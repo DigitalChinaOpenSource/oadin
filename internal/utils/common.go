@@ -461,6 +461,28 @@ func SystemDiskSize(path string) (*PathDiskSizeInfo, error) {
 	return res, nil
 }
 
+func CheckPathPermission(path string) bool {
+	// check read
+	_, err := os.ReadDir(path)
+	if err != nil {
+		return false
+	}
+
+	// check write
+	testFile := filepath.Join(path, ".permission_test_file")
+	err = os.WriteFile(testFile, []byte("test"), 0644)
+	if err != nil {
+		return false
+	}
+	_ = os.Remove(testFile)
+	return true
+}
+
+func CheckPathIsDirectory(path string) bool {
+	fileInfo, _ := os.Stat(path)
+	return fileInfo.IsDir()
+}
+
 func IsDirEmpty(path string) bool {
 	f, err := os.Open(path)
 	if err != nil {
