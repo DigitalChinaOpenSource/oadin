@@ -81,10 +81,10 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi := r.Group("system")
 
 	systemApi.GET("/about", e.About)
-	systemApi.POST("/change_log", e.Feedback)
-	systemApi.PUT("/modify_repository", e.ModifyRepositoryURL)
-	systemApi.PUT("/modify_proxy", e.SetProxy)
-	systemApi.POST("/feedback", e.Feedback)
+	systemApi.GET("/information", e.SystemSettings)
+	systemApi.PUT("/registry", e.ModifyRepositoryURL)
+	systemApi.PUT("/proxy", e.SetProxy)
+	systemApi.PUT("/proxy/switch", e.ProxySwitch)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }
