@@ -21,7 +21,6 @@ export function useUpdateHistory(open: boolean) {
   );
 
   useEffect(() => {
-    console.log(open);
     if (!open) return;
     fetchUpdateHistory();
   }, [open]);
