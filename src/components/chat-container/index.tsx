@@ -3,10 +3,11 @@ import ChatModelManage from './chat-model-manage';
 import { PlusIcon, ClockCounterClockwiseIcon } from '@phosphor-icons/react';
 import ChatHistoryDrawer from './chat-history-drawer';
 import ChatView from './chat-view';
-import useViewModel from './useViewModel';
+import useChatStore from './store/useChatStore';
 import styles from './index.module.scss';
+
 export default function ChatContainer() {
-  const { historyVisible, setHistoryVisible } = useViewModel();
+  const { historyVisible, setHistoryVisible, createNewChat } = useChatStore();
 
   return (
     <div className={styles.chatContainer}>
@@ -22,9 +23,7 @@ export default function ChatContainer() {
                 fill="#27272a"
               />
             }
-            onClick={() => {
-              setHistoryVisible(true);
-            }}
+            onClick={() => setHistoryVisible(true)}
           />
           <Button
             type="text"
@@ -36,7 +35,8 @@ export default function ChatContainer() {
               />
             }
             onClick={() => {
-              console.log('创建新对话');
+              createNewChat();
+              console.log('已创建新对话');
             }}
           />
         </div>
