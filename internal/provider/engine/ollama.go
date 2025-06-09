@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"byze/internal/cache"
 	"context"
 	"fmt"
 	"log/slog"
@@ -12,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"byze/internal/types"
 	"byze/internal/utils"
@@ -176,23 +178,16 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	enginePath := fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 	switch runtime.GOOS {
 	case "windows":
-		execFile = "ollama.exe"
-		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-
-		switch utils.DetectGpuModel() {
-		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-all.zip"
-		case types.GPUTypeNvidia:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64.zip"
-		case types.GPUTypeAmd:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-rocm.zip"
-		case types.GPUTypeIntelArc:
+		if utils.IpexOllamaSupportGPUStatus() {
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
 			slog.Info("start ipex-llm-ollama ------------- ", execPath)
 			execFile = "ollama.exe"
 			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama.zip"
-		default:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-base.zip"
+		} else {
+			execFile = "ollama.exe"
+			execPath = fmt.Sprintf("%s/%s/%s/%s/%s", userDir, "AppData", "Local", "Programs", "Ollama")
+
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/OllamaSetup.exe"
 		}
 	case "linux":
 		execFile = "ollama"
@@ -267,10 +262,6 @@ func (o *OllamaProvider) InstallEngine() error {
 			appPath = filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
 		}
 
-		//cmd := exec.Command("open", appPath)
-		//if err := cmd.Run(); err != nil {
-		//	return fmt.Errorf("failed to open ollama installer: %v", err)
-		//}
 		// move it to Applications
 		applicationPath := filepath.Join("/Applications/", "Ollama.app")
 		if _, err = os.Stat(applicationPath); os.IsNotExist(err) {
@@ -279,19 +270,43 @@ func (o *OllamaProvider) InstallEngine() error {
 				return fmt.Errorf("failed to move ollama to Applications: %v", err)
 			}
 		}
-	} else if runtime.GOOS == "windows" {
-		ipexPath := o.EngineConfig.ExecPath
-		if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
-			os.MkdirAll(ipexPath, 0o755)
-			unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
-			if err := unzipCmd.Run(); err != nil {
-				return fmt.Errorf("failed to unzip file: %v", err)
-			}
-		}
-	} else {
-		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
-	}
 
+	} else {
+		if utils.IpexOllamaSupportGPUStatus() {
+			// 解压文件
+			userDir, err := os.UserHomeDir()
+			if err != nil {
+				slog.Error("Get user home dir failed: ", err.Error())
+				return err
+			}
+			ipexPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
+				os.MkdirAll(ipexPath, 0o755)
+				if runtime.GOOS == "windows" {
+					unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
+					if err := unzipCmd.Run(); err != nil {
+						return fmt.Errorf("failed to unzip file: %v", err)
+					}
+				}
+			}
+
+		} else { // Handle other operating systems
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, file)
+			_, err := cmd.CombinedOutput()
+			if err != nil {
+				// 如果是超时错误
+				if ctx.Err() == context.DeadlineExceeded {
+					fmt.Println("cmd execute timeout")
+					return err
+				}
+				fmt.Printf("cmd execute error: %v\n", err)
+				return err
+			}
+			return nil
+		}
+	}
 	slog.Info("[Install Engine] model engine install completed")
 	return nil
 }
@@ -328,6 +343,10 @@ func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequ
 	ctx, cancel := context.WithCancel(ctx)
 	modelArray := append(client.ModelClientMap[strings.ToLower(req.Model)], cancel)
 	client.ModelClientMap[strings.ToLower(req.Model)] = modelArray
+
+	// 如果用戶設置了Registry, 則傳遞 insecure為true, 然後從私服地址拉取模型
+	privateRegistryHandle(req)
+
 	if err := c.Do(ctx, http.MethodPost, "/api/pull", req, &resp); err != nil {
 		slog.Error("Pull model failed : " + err.Error())
 		return &resp, err
@@ -341,6 +360,10 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 	ctx, cancel := context.WithCancel(ctx)
 	modelArray := append(client.ModelClientMap[strings.ToLower(req.Model)], cancel)
 	client.ModelClientMap[strings.ToLower(req.Model)] = modelArray
+
+	// 如果用戶設置了Registry, 則傳遞 insecure為true, 然後從私服地址拉取模型
+	privateRegistryHandle(req)
+
 	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req)
 	return dataCh, errCh
 }
@@ -414,4 +437,22 @@ func (o *OllamaProvider) PullHandler(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// 替換為私倉拉取模型, 為防止出現中斷, 不做異常處理
+func privateRegistryHandle(req *types.PullModelRequest) {
+	// 从用户配置文件中读取系统设置
+	var settings cache.SystemSettings
+	err := cache.ReadSystemSettings(&settings)
+	if err != nil {
+		slog.Error("获取Ollama仓库地址失败", "error", err)
+		return
+	}
+
+	// 如果用户设置了Ollama仓库地址，则将其添加到请求中
+	if settings.OllamaRegistry != "" {
+		req.Insecure = true // 设置为true以允许不安全的连接
+		req.Model = settings.OllamaRegistry + "/library/" + req.Model
+
+	}
 }
