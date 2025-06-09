@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"byze/internal/cache"
 	"context"
 	"fmt"
 	"log/slog"
@@ -342,6 +343,10 @@ func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequ
 	ctx, cancel := context.WithCancel(ctx)
 	modelArray := append(client.ModelClientMap[strings.ToLower(req.Model)], cancel)
 	client.ModelClientMap[strings.ToLower(req.Model)] = modelArray
+
+	// 如果用戶設置了Registry, 則傳遞 insecure為true, 然後從私服地址拉取模型
+	privateRegistryHandle(req)
+
 	if err := c.Do(ctx, http.MethodPost, "/api/pull", req, &resp); err != nil {
 		slog.Error("Pull model failed : " + err.Error())
 		return &resp, err
@@ -355,6 +360,10 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 	ctx, cancel := context.WithCancel(ctx)
 	modelArray := append(client.ModelClientMap[strings.ToLower(req.Model)], cancel)
 	client.ModelClientMap[strings.ToLower(req.Model)] = modelArray
+
+	// 如果用戶設置了Registry, 則傳遞 insecure為true, 然後從私服地址拉取模型
+	privateRegistryHandle(req)
+
 	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req)
 	return dataCh, errCh
 }
@@ -428,4 +437,22 @@ func (o *OllamaProvider) PullHandler(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// 替換為私倉拉取模型, 為防止出現中斷, 不做異常處理
+func privateRegistryHandle(req *types.PullModelRequest) {
+	// 从用户配置文件中读取系统设置
+	var settings cache.SystemSettings
+	err := cache.ReadSystemSettings(&settings)
+	if err != nil {
+		slog.Error("获取Ollama仓库地址失败", "error", err)
+		return
+	}
+
+	// 如果用户设置了Ollama仓库地址，则将其添加到请求中
+	if settings.OllamaRegistry != "" {
+		req.Insecure = true // 设置为true以允许不安全的连接
+		req.Model = settings.OllamaRegistry + "/library/" + req.Model
+
+	}
 }

@@ -155,6 +155,7 @@ type GetSupportModelRequest struct {
 	Flavor        string `form:"flavor"`
 	EnvType       string `form:"env_type"`
 	ServiceSource string `form:"service_source" validate:"required"`
+	Mine          bool   `form:"mine" default:"false"`
 	PageSize      int    `form:"page_size"`
 	Page          int    `form:"page"`
 }
@@ -418,8 +419,9 @@ type ModifyModelFilePathResponse struct {
 }
 
 type ProxyRequest struct {
-	Host string `json:"url" validate:"required, url"`
-	Port string `json:"port" `
+	Endpoint string `json:"url" validate:"required, url"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 type FeedbackRequest struct {
