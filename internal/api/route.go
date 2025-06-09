@@ -63,17 +63,33 @@ func InjectRouter(e *ByzeCoreServer) {
 	r.Handle(http.MethodGet, "/control_panel/path/space", e.GetPathDiskSizeHandler)
 	r.Handle(http.MethodGet, "/control_panel/model/square", e.GetSupportModelListCombine)
 
-	// Apis related to mcp
-	r.Handle(http.MethodPost, "/mcp/search", e.GetMCPList)
-	r.Handle(http.MethodGet, "/mcp/:id", e.GetMCPDetail)
-	r.Handle(http.MethodPost, "/mcp/:id/tools/search", e.GetKits)
-	r.Handle(http.MethodGet, "/mcp/:id/clients", e.GetClients)
-	r.Handle(http.MethodGet, "/mcp/categories", e.GetCategories)
-	r.Handle(http.MethodPut, "/mcp/:id/download", e.DownloadMCP)
-	r.Handle(http.MethodPost, "/mcp/mine", e.GetMyMCPList)
-	r.Handle(http.MethodPut, "/mcp/:id/auth", e.AuthorizeMCP)
-	r.Handle(http.MethodPut, "/mcp/:id/reverse", e.ReverseStatus)
-	r.Handle(http.MethodPut, "/mcp/setup", e.SetupFunTool)
+	// Apis related to MCP
+	mcpApi := r.Group("/mcp")
+
+	mcpApi.POST("/search", e.GetMCPList)
+	mcpApi.GET("/:id", e.GetMCPDetail)
+	mcpApi.POST("/:id/tools/search", e.GetKits)
+	mcpApi.GET("/:id/clients", e.GetClients)
+	mcpApi.GET("/categories", e.GetCategories)
+	mcpApi.PUT("/:id/download", e.DownloadMCP)
+	mcpApi.POST("/mine", e.GetMyMCPList)
+	mcpApi.PUT("/:id/auth", e.AuthorizeMCP)
+	mcpApi.PUT("/:id/reverse", e.ReverseStatus)
+	mcpApi.PUT("/setup", e.SetupFunTool)
+
+	// Apis related to system
+	systemApi := r.Group("system")
+
+	systemApi.GET("/about", e.About)
+	systemApi.GET("/information", e.SystemSettings)
+	systemApi.PUT("/registry", e.ModifyRepositoryURL)
+	systemApi.PUT("/proxy", e.SetProxy)
+	systemApi.PUT("/proxy/switch", e.ProxySwitch)
+
+	// mcp client apis
+	r.Handle(http.MethodGet, "/mcp/client/:id/start", e.ClientMcpStart)
+	r.Handle(http.MethodGet, "/mcp/client/:id/stop", e.ClientMcpStop)
+	r.Handle(http.MethodPost, "/mcp/client/tools/run", e.ClientRunTool)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }
