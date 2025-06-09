@@ -15,6 +15,7 @@ export const SelectMcp = () => {
   return (
     <div className={`${styles.select_mcp} ${selectTypeClass}`}>
       <Popover
+        arrow={false}
         content={<SelectMcpDialog />}
         trigger="click"
       >
