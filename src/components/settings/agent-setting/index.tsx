@@ -5,7 +5,8 @@ import styles from './index.module.scss';
 // 表单数据类型定义
 interface AgentSettingFormValues {
   agentIp: string;
-  agentPort: string;
+  username?: string;
+  password?: string;
 }
 
 const AgentSetting: React.FC = () => {
@@ -44,36 +45,49 @@ const AgentSetting: React.FC = () => {
             name="agent-setting-form"
             initialValues={{
               agentIp: '',
-              agentPort: '',
+              username: '',
+              password: '',
             }}
             layout="vertical"
             onFinish={onFinish}
           >
             <Form.Item
-              label="代理IP或域名地址"
+              label="代理地址"
               name="agentIp"
-              rules={[{ required: false, message: '请输入代理IP或域名地址' }]}
+              rules={[{ required: true, message: '请输入代理地址' }]}
+              tooltip={'请输入代理地址'}
             >
-              <Space>
-                <Input
-                  placeholder="请输入代理IP或域名地址"
-                  style={{ width: 500 }}
-                />
+              <Input
+                placeholder="请输入代理地址"
+                style={{ width: 400 }}
+              />
+            </Form.Item>
+            <Form.Item>
+              <Space size={40}>
+                <Form.Item
+                  label="用户名"
+                  name="username"
+                  rules={[{ required: false, message: '请输入用户名' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input
+                    placeholder="请输入用户名"
+                    style={{ width: 400 }}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="密码"
+                  name="password"
+                  rules={[{ required: false, message: '请输入密码' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input.Password
+                    placeholder="请输入密码"
+                    style={{ width: 400 }}
+                  />
+                </Form.Item>
               </Space>
             </Form.Item>
-
-            <Form.Item
-              label="端口"
-              name="agentPort"
-            >
-              <Space>
-                <Input
-                  placeholder="请输入端口"
-                  style={{ width: 500 }}
-                />
-              </Space>
-            </Form.Item>
-
             <Form.Item>
               <Button
                 type="primary"

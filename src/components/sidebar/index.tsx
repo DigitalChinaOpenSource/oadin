@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge, Menu } from 'antd';
 import styles from './index.module.scss';
-import { SiderDownloadIcon } from '../icons';
+import { DownloadIcon } from '@phosphor-icons/react';
 import DownloadListBox from '../download-list-box';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
 import mm from '../icons/mm.svg';
@@ -130,9 +130,10 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
               className={styles.downloadBtn}
               onClick={() => handleDownload(true)}
             >
-              <SiderDownloadIcon
+              <DownloadIcon
                 width={18}
                 height={18}
+                fill="#ffffff"
               />
             </div>
           </Badge>

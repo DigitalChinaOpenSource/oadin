@@ -1,9 +1,11 @@
 import { ChatInput, MessageList, type MessageType, type ChatInputProps, registerMessageContents } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
+import { Button } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import UploadTool from '../upload-tool';
+import sendSvg from '@/components/icons/send.svg';
 import './index.css';
 
 const testMessages: MessageType[] = [
@@ -163,18 +165,22 @@ export default function ChatView() {
             }}
             // disabled
             SendButtonComponent={({ onClick }) => (
-              <div
+              <Button
+                type="primary"
                 style={{
-                  background: '#5429FF',
-                  color: '#FFFFFF',
                   borderRadius: 8,
-                  padding: '5px 12px',
                   cursor: 'pointer',
                 }}
+                // TODO
+                // disabled={false}
+                icon={
+                  <img
+                    src={sendSvg}
+                    alt="发送"
+                  />
+                }
                 onClick={onClick}
-              >
-                发送111
-              </div>
+              />
             )}
             // 输入框顶部扩展
             header={
@@ -214,7 +220,6 @@ export default function ChatView() {
                 <SelectMcp />
               </div>
             }
-            // className=''
           />
         </div>
       </div>

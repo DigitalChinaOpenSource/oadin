@@ -5,10 +5,9 @@ import { CaretRightOutlined } from '@ant-design/icons';
 import { Collapse, Tabs } from 'antd';
 import macpChatSvg from '@/components/icons/mcp-chat.svg';
 import amap from '@/components/icons/amap.png';
-import CheckCircleIcon from '@/components/icons/check-circle';
+import { CheckCircleIcon } from '@phosphor-icons/react';
 import arrowUp from '@/components/icons/arrow-up.svg';
 import arrowDown from '@/components/icons/arrow-down.svg';
-import CaretRightIcon from '@/components/icons/caret-right';
 import JsonParsePanel from '@/components/json-parse-panel';
 import styles from './index.module.scss';
 
@@ -132,6 +131,7 @@ export default function McpToolChat() {
             <CheckCircleIcon
               width={16}
               height={16}
+              fill="#4f4dff"
             />
             <div className={styles.statusText}>工具调用已完成，共执行 3 次</div>
             <div className={styles.coastTime}>（用时 25 秒）</div>
