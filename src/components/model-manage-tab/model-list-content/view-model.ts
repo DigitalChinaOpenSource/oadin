@@ -11,6 +11,8 @@ import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
 import { convertToMB } from '@/utils';
 
+export type ModelSourceType = 'local' | 'remote';
+
 interface IPagenation {
   current: number;
   pageSize: number;
@@ -21,14 +23,48 @@ interface IModelSquareParams {
   // remote时需要传
   // 'dev' | 'product'
   env_type?: string;
-  service_source: 'local' | 'remote';
+  service_source: ModelSourceType;
   page_size?: number;
   page?: number;
 }
 
+export interface IUseViewModel {
+  modelPath: string;
+  modalPathVisible: boolean;
+  onModelPathVisible: () => void;
+  onModalPathChangeSuccess: () => void;
+
+  modelAuthVisible: boolean;
+  onModelAuthVisible: (data: IModelAuth) => void;
+  onModelAuthSuccess: () => Promise<void>;
+
+  isDetailVisible: boolean;
+  onDetailModalVisible: (visible: boolean, modelData?: IModelDataItem) => void;
+  modelAuthType: IModelAuthType;
+
+  onDeleteConfirm: (modelData: IModelDataItem) => void;
+  onDownloadConfirm: (modelData: IModelDataItem) => void;
+
+  modelSupportLoading: boolean;
+  deleteModelLoading: boolean;
+
+  pagenationData: IModelDataItem[];
+  modelListData: IModelDataItem[];
+  modelSearchVal: string;
+  modelSourceVal: ModelSourceType;
+  onModelSearch: (val: string) => void;
+  selectModelData: IModelDataItem;
+  selectModel: IModelDataItem;
+  setSelectModel: (model: IModelDataItem) => void;
+
+  pagination: IPagenation;
+  onPageChange: (current: number) => void;
+  onShowSizeChange: (current: number, pageSize: number) => void;
+}
+
 const { confirm } = Modal;
 
-export function useViewModel(props: IModelListContent) {
+export function useViewModel(props: IModelListContent): IUseViewModel {
   const { modelSourceVal, modelSearchVal, onModelSearch } = props;
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);

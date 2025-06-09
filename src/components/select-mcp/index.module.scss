@@ -22,3 +22,34 @@
 }
 .select_mcp_count_warp {
 }
+
+.dialog_mcp {
+  padding: 12px;
+  width: 496px;
+  box-sizing: border-box;
+}
+.dialog_mcp_title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #000;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: var(--Body-Body-lg-Line-Height, 24px); /* 150% */
+  margin-bottom: 16px;
+  :global(.ant-btn) {
+    padding: 0;
+  }
+}
+.dialog_mcp_search {
+  display: flex;
+  align-items: center;
+}
+.searchIcon {
+  display: flex;
+  align-items: center;
+}
+.dialog_mcp_search_input {
+  flex-grow: 1;
+}

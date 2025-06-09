@@ -1,6 +1,7 @@
-import { Button } from 'antd';
+import { Button, Popover } from 'antd';
 import styles from './index.module.scss';
 import { McpSelectBtn } from '@/components/icons';
+import { SelectMcpDialog } from './dialog.tsx';
 
 enum selectMcpType {
   'default' = 'default',
@@ -13,17 +14,22 @@ export const SelectMcp = () => {
   const selectTypeClass = styles[`select_mcp_${selectMcpType[selectType]}`];
   return (
     <div className={`${styles.select_mcp} ${selectTypeClass}`}>
-      <Button
-        icon={
-          <McpSelectBtn
-            width={20}
-            height={20}
-            color="#27272A"
-          />
-        }
+      <Popover
+        content={<SelectMcpDialog />}
+        trigger="click"
       >
-        已选<span className={styles.select_mcp_count_warp}>0</span>
-      </Button>
+        <Button
+          icon={
+            <McpSelectBtn
+              width={20}
+              height={20}
+              color="#27272A"
+            />
+          }
+        >
+          已选<span className={styles.select_mcp_count_warp}>0</span>
+        </Button>
+      </Popover>
     </div>
   );
 };
