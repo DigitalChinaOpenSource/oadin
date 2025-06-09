@@ -1,6 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../components/main-layout';
-import ModelManage from '../pages/model-manage';
 import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import McpDetail from '../components/mcp-manage/mcp-detail';
@@ -22,7 +21,7 @@ const router = createBrowserRouter([
         path: '/',
         element: (
           <Navigate
-            to="/model-manage"
+            to="/model-manage/model-list"
             replace
           />
         ),
@@ -84,6 +83,15 @@ const router = createBrowserRouter([
       {
         path: '/model-chat',
         element: <ModelChat />, // 新增对话页面
+      },
+      {
+        path: '*',
+        element: (
+          <Navigate
+            to="/model-manage/model-list"
+            replace
+          />
+        ),
       },
     ],
   },
