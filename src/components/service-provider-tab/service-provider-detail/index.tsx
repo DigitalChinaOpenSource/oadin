@@ -83,10 +83,7 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
                         src={model.avatar || modelPng}
                         alt="modelLogo"
                       />
-                      <span className={styles.modelBaseInfo}>
-                        <span className={styles.modelLabel}>模型名称: </span>
-                        {model.name}
-                      </span>
+                      <span className={styles.modelBaseInfo}>{model.name}</span>
                       {model.class.map((tag, tagIndex) => (
                         <span
                           key={tagIndex}
