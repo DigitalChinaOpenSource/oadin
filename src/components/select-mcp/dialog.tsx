@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { List, Checkbox, Button, Input } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
-import { SearchIcon } from '@/components/icons';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useViewModel } from '@/components/mcp-manage/mcp-square-tab/view-model.ts';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import TagsRender from '@/components/tags-render';
@@ -74,7 +74,11 @@ export const SelectMcpDialog: React.FC = () => {
                 className={styles.searchIcon}
                 onClick={() => handleSearch(searchValue)}
               >
-                <SearchIcon />
+                <MagnifyingGlassIcon
+                  width={16}
+                  height={16}
+                  fill="#808899"
+                />
               </div>
             }
             onChange={(e) => handleSearch(e.target.value)}

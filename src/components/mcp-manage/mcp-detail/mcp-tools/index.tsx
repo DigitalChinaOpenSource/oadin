@@ -1,6 +1,5 @@
 import styles from './index.module.scss';
 import { Collapse, CollapseProps, Input, List, Switch, Tooltip } from 'antd';
-// import { SearchIcon } from '@/components/icons';
 import TagsRender from '@/components/tags-render';
 import { useMcpTools } from '@/components/mcp-manage/mcp-detail/mcp-tools/useMcpTools';
 
