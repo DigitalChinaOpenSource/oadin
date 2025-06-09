@@ -4,8 +4,7 @@ import type { PaginationConfig } from 'antd/es/pagination';
 import type { ListGridType } from 'antd/es/list';
 import GeneralCard from '@/components/model-manage-tab/model-list-content/general-card';
 import noDataSvg from '@/components/icons/no-data.svg';
-import { IUseViewModel, useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
-import { IModelListContent } from '@/components/model-manage-tab/model-list-content/index.tsx';
+import { IUseViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 
 export interface IModelList {
   pagination?: PaginationConfig | false;

@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
-import { List, Checkbox, Card, Button, Input } from 'antd';
+import { List, Checkbox, Button, Input } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
 import { SearchIcon } from '@/components/icons';
 import { useViewModel } from '@/components/mcp-manage/mcp-square-tab/view-model.ts';
-import { IMcpListData, IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
+import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import TagsRender from '@/components/tags-render';
-
-// 定义列表项类型
-interface ListItem {
-  id: number;
-  name: string;
-  description: string;
-}
 
 export const SelectMcpDialog: React.FC = () => {
   const vm = useViewModel();
@@ -79,13 +72,13 @@ export const SelectMcpDialog: React.FC = () => {
             suffix={
               <div
                 className={styles.searchIcon}
-                onClick={(e) => handleSearch(searchValue)}
+                onClick={() => handleSearch(searchValue)}
               >
                 <SearchIcon />
               </div>
             }
             onChange={(e) => handleSearch(e.target.value)}
-            onPressEnter={(e) => handleSearch(searchValue)}
+            onPressEnter={() => handleSearch(searchValue)}
           />
         </div>
         <div>

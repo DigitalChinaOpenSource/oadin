@@ -12,7 +12,7 @@ export interface IModelListContent {
   onModelSearch: (val: string) => void;
 }
 
-export default function ModelListContent(props: IModelListContent) {
+export default function ModelListContent() {
   const { onModelSearch, modelSearchVal, modelSourceVal } = useViewTabModel();
   const vm = useViewModel({
     onModelSearch,
