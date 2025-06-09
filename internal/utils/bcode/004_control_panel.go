@@ -11,5 +11,7 @@ var (
 
 	ControlPanelPathStatusError = NewBcode(http.StatusBadRequest, 40003, "path is not empty or same as the source path, please check!")
 
-	ControlPanelCopyDirError = NewBcode(http.StatusOK, 40004, "migrate file failed, please retry!")
+	ControlPanelCopyDirError = NewBcode(http.StatusInternalServerError, 40004, "migrate file failed, please retry!")
+
+	ControlPanelPathPermissionError = NewBcode(http.StatusForbidden, 40005, "path permission denied, please check!")
 )

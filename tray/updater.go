@@ -1,4 +1,4 @@
-package version
+package tray
 
 import (
 	"bytes"
@@ -18,9 +18,11 @@ import (
 	"strings"
 	"time"
 
+	"byze/config"
 	"byze/internal/datastore"
 	"byze/internal/types"
 	"byze/internal/utils"
+	"byze/version"
 
 	"gorm.io/gorm"
 )
@@ -187,7 +189,7 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 		slog.Warn(fmt.Sprintf("malformed response checking for update: %s", err))
 		return false, updateResp
 	}
-	currentVersion := ByzeVersion
+	currentVersion := version.ByzeVersion
 	if updateResp.UpdateVersion == currentVersion {
 		return false, updateResp
 	}
@@ -199,11 +201,7 @@ func DownloadNewVersion(ctx context.Context, updateResponse UpdateResponse) erro
 	if err != nil {
 		return err
 	}
-	downloadDir, err := utils.GetDownloadDir()
-	if err != nil {
-		return err
-	}
-	_, err = utils.DownloadFile(updateResponse.UpdateURL, downloadDir)
+	_, err = utils.DownloadFile(updateResponse.UpdateURL, config.GlobalByzeEnvironment.UpdateDir)
 	if err != nil {
 		return err
 	}
