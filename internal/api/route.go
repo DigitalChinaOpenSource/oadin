@@ -86,6 +86,11 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi.PUT("/proxy", e.SetProxy)
 	systemApi.PUT("/proxy/switch", e.ProxySwitch)
 
+	// mcp client apis
+	r.Handle(http.MethodGet, "/mcp/client/:id/start", e.ClientMcpStart)
+	r.Handle(http.MethodGet, "/mcp/client/:id/stop", e.ClientMcpStop)
+	r.Handle(http.MethodPost, "/mcp/client/tools/run", e.ClientRunTool)
+
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }
 
