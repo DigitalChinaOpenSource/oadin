@@ -33,7 +33,7 @@ export default function McpSquareTab() {
                 </div>
               }
               value={vm.searchVal}
-              onChange={(e) => vm.setSearchVal(e.target.value)}
+              onChange={(e) => vm.setSearchVal(e.target.value.trim())}
               // onSearch={(value) => vm.onMcpInputSearch(value)}
               onClear={() => {
                 vm.setSearchVal('');

@@ -38,42 +38,42 @@ const AgentSetting: React.FC = () => {
             <span>{agentChecked ? '开' : '关'}</span>
           </div>
         </div>
-        <Form
-          form={form}
-          name="agent-setting-form"
-          initialValues={{
-            agentIp: '',
-            agentPort: '',
-          }}
-          layout="vertical"
-          onFinish={onFinish}
-        >
-          <Form.Item
-            label="代理IP或域名地址"
-            name="agentIp"
-            rules={[{ required: false, message: '请输入代理IP或域名地址' }]}
+        {agentChecked && (
+          <Form
+            form={form}
+            name="agent-setting-form"
+            initialValues={{
+              agentIp: '',
+              agentPort: '',
+            }}
+            layout="vertical"
+            onFinish={onFinish}
           >
-            <Space>
-              <Input
-                placeholder="请输入代理IP或域名地址"
-                style={{ width: 500 }}
-              />
-            </Space>
-          </Form.Item>
+            <Form.Item
+              label="代理IP或域名地址"
+              name="agentIp"
+              rules={[{ required: false, message: '请输入代理IP或域名地址' }]}
+            >
+              <Space>
+                <Input
+                  placeholder="请输入代理IP或域名地址"
+                  style={{ width: 500 }}
+                />
+              </Space>
+            </Form.Item>
 
-          <Form.Item
-            label="端口"
-            name="agentPort"
-          >
-            <Space>
-              <Input
-                placeholder="请输入端口"
-                style={{ width: 500 }}
-              />
-            </Space>
-          </Form.Item>
+            <Form.Item
+              label="端口"
+              name="agentPort"
+            >
+              <Space>
+                <Input
+                  placeholder="请输入端口"
+                  style={{ width: 500 }}
+                />
+              </Space>
+            </Form.Item>
 
-          {agentChecked && (
             <Form.Item>
               <Button
                 type="primary"
@@ -82,8 +82,8 @@ const AgentSetting: React.FC = () => {
                 保存
               </Button>
             </Form.Item>
-          )}
-        </Form>
+          </Form>
+        )}
       </div>
     </div>
   );

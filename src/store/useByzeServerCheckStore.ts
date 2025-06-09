@@ -10,7 +10,7 @@ interface HealthCheckState {
 }
 
 const useByzeServerCheckStore = create<HealthCheckState>((set) => ({
-  checkByzeStatus: false,
+  checkByzeStatus: true,
   checkByzeServerLoading: false,
 
   setCheckByzeServerLoading: (loading: boolean) => {
