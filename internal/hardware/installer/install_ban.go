@@ -63,7 +63,7 @@ func downloadBunBinary(platform, arch, version string, isMusl, isBaseline bool) 
 	tempDir := os.TempDir()
 	tempFilename := filepath.Join(tempDir, packageName)
 	// 下载文件
-	if err := DownloadWithRedirects(downloadURL, tempFilename); err != nil {
+	if err := DownloadWithRedirects(downloadURL, tempFilename, nil); err != nil {
 		return fmt.Errorf("download failed: %v", err)
 	}
 	fmt.Printf("Downloaded %s to %s\n", packageName, tempFilename)
