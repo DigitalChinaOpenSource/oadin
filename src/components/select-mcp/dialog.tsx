@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { List, Checkbox, Button, Input } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
@@ -7,25 +7,24 @@ import { useViewModel } from '@/components/mcp-manage/mcp-square-tab/view-model.
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import TagsRender from '@/components/tags-render';
 import defaultLogo from '@/assets/favicon.png';
+import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 
 export const SelectMcpDialog: React.FC = () => {
   const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useViewModel();
-  console.info(mcpListData, 'mcpListData');
   const [allList, setAllList] = useState<IMcpListItem[]>([]);
   const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
-  // 存储选中项的ID
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
   // 控制是否只显示已选中的项
   const [showOnlySelected, setShowOnlySelected] = useState<boolean>(false);
   // 搜索关键字
   const [searchValue, setSearchValue] = useState<string>('');
 
   // 处理单个项目的选择
-  const handleItemSelect = (id: number, checked: boolean) => {
+  const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
     if (checked) {
-      setSelectedIds([...selectedIds, id]);
+      setSelectMcpList([...selectMcpList, item]);
     } else {
-      setSelectedIds(selectedIds.filter((itemId) => itemId !== id));
+      setSelectMcpList(selectMcpList.filter((mcpItem) => mcpItem?.id !== item?.id));
     }
   };
 
@@ -43,18 +42,29 @@ export const SelectMcpDialog: React.FC = () => {
   useEffect(() => {
     const _allList = allList.concat(mcpListData);
     setAllList(_allList);
+
+    setFilteredData(_allList);
+  }, [mcpListData]);
+
+  useEffect(() => {
     // 根据筛选状态和搜索值过滤数据
-    const _filteredData = _allList.filter((item) => {
-      return showOnlySelected ? selectedIds.includes(item.id as number) : true;
+    const _filteredData = allList.filter((item) => {
+      return showOnlySelected
+        ? selectMcpList
+            .map((mcpItem) => {
+              return mcpItem?.id;
+            })
+            .includes(item.id)
+        : true;
     });
     setFilteredData(_filteredData);
-  }, [mcpListData]);
+  }, [showOnlySelected]);
 
   const onLoadMore = () => {
     handlePageChange(pagination.current + 1, 12);
   };
   const loadMore =
-    pagination?.total > 12 && !mcpListLoading ? (
+    pagination?.total > 12 && !mcpListLoading && !showOnlySelected ? (
       <div
         style={{
           textAlign: 'center',
@@ -132,8 +142,12 @@ export const SelectMcpDialog: React.FC = () => {
           >
             <div className={styles.select_mcp_title_warp}>
               <Checkbox
-                checked={selectedIds.includes(Number(item.id))}
-                onChange={(e) => handleItemSelect(item.id as number, e.target.checked)}
+                checked={selectMcpList
+                  .map((item) => {
+                    return item?.id;
+                  })
+                  .includes(item.id)}
+                onChange={(e) => handleItemSelect(item, e.target.checked)}
                 style={{ marginRight: 16 }}
               />
               <div className={styles.select_mcp_title_logo}>
