@@ -108,8 +108,6 @@ export function useViewModel() {
   };
 
   const handlePageChange = (page: number, pageSize: number) => {
-    console.log('page', page);
-    console.log('pageSize', pageSize);
     setPagination({
       ...pagination,
       current: page,

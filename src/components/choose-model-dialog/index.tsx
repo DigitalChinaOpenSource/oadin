@@ -23,11 +23,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (options: IChoose
             onModelSourceChange={vm.onModelSourceChange}
           />
           <div className={styles.chooseModelList}>
-            <ModallistContent
-              modelSearchVal={vm.modelSearchVal}
-              modelSourceVal={vm.modelSourceVal}
-              onModelSearch={vm.onModelSearch}
-            />
+            <ModallistContent />
           </div>
         </div>
       ),

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { List, Checkbox, Button, Input } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
@@ -6,25 +6,13 @@ import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useViewModel } from '@/components/mcp-manage/mcp-square-tab/view-model.ts';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import TagsRender from '@/components/tags-render';
+import defaultLogo from '@/assets/favicon.png';
 
 export const SelectMcpDialog: React.FC = () => {
-  const vm = useViewModel();
-  console.info(vm, 'vmvm');
-  // 示例数据
-  // const [dataSource, setDataSource] = useState<ListItem[]>([
-  //   { id: 1, name: '项目 1', description: '这是第一个项目描述' },
-  //   { id: 2, name: '项目 2', description: '这是第二个项目描述' },
-  //   { id: 3, name: '项目 3', description: '这是第三个项目描述' },
-  //   { id: 4, name: '项目 4', description: '这是第四个项目描述' },
-  //   { id: 5, name: '项目 5', description: '这是第五个项目描述' },
-  // ]);
-  const dataSource: IMcpListItem[] = vm?.mcpListData.map((item) => {
-    return {
-      ...item,
-      id: Number(item.id),
-    };
-  });
-
+  const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useViewModel();
+  console.info(mcpListData, 'mcpListData');
+  const [allList, setAllList] = useState<IMcpListItem[]>([]);
+  const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
   // 存储选中项的ID
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   // 控制是否只显示已选中的项
@@ -48,15 +36,42 @@ export const SelectMcpDialog: React.FC = () => {
 
   // 处理搜索
   const handleSearch = (value: string) => {
-    setSearchValue(value);
+    setAllList([]);
+    onMcpInputSearch(value);
   };
+  /// 通过mcp的分页数据的变化来对数据进行组装
+  useEffect(() => {
+    const _allList = allList.concat(mcpListData);
+    setAllList(_allList);
+    // 根据筛选状态和搜索值过滤数据
+    const _filteredData = _allList.filter((item) => {
+      return showOnlySelected ? selectedIds.includes(item.id as number) : true;
+    });
+    setFilteredData(_filteredData);
+  }, [mcpListData]);
 
-  // 根据筛选状态和搜索值过滤数据
-  const filteredData = dataSource.filter((item) => {
-    const matchesSearch = item.name.zh.includes(searchValue);
-    return showOnlySelected ? matchesSearch && selectedIds.includes(item.id as number) : matchesSearch;
-  });
-
+  const onLoadMore = () => {
+    handlePageChange(pagination.current + 1, 12);
+  };
+  const loadMore =
+    pagination?.total > 12 && !mcpListLoading ? (
+      <div
+        style={{
+          textAlign: 'center',
+          marginTop: 12,
+          height: 32,
+          lineHeight: '32px',
+        }}
+      >
+        <Button
+          type="link"
+          loading={mcpListLoading}
+          onClick={onLoadMore}
+        >
+          显示更多
+        </Button>
+      </div>
+    ) : null;
   return (
     <div className={styles.dialog_mcp}>
       <div className={styles.dialog_mcp_title}>
@@ -69,6 +84,10 @@ export const SelectMcpDialog: React.FC = () => {
             style={{ width: '260px' }}
             allowClear
             placeholder="搜索MCP"
+            onClear={() => {
+              setSearchValue('');
+              handleSearch('');
+            }}
             suffix={
               <div
                 className={styles.searchIcon}
@@ -81,7 +100,7 @@ export const SelectMcpDialog: React.FC = () => {
                 />
               </div>
             }
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => setSearchValue(e.target.value)}
             onPressEnter={() => handleSearch(searchValue)}
           />
         </div>
@@ -96,12 +115,14 @@ export const SelectMcpDialog: React.FC = () => {
       </div>
 
       <List
-        style={{ height: '440px', overflowY: 'scroll' }}
+        loadMore={loadMore}
+        style={{ height: '440px', overflowY: 'scroll', overflowX: 'hidden' }}
         dataSource={filteredData}
         renderItem={(item) => (
           <List.Item
             actions={[
               <Button
+                type="link"
                 size="small"
                 onClick={() => {}}
               >
@@ -109,15 +130,23 @@ export const SelectMcpDialog: React.FC = () => {
               </Button>,
             ]}
           >
-            <div>
+            <div className={styles.select_mcp_title_warp}>
               <Checkbox
                 checked={selectedIds.includes(Number(item.id))}
                 onChange={(e) => handleItemSelect(item.id as number, e.target.checked)}
                 style={{ marginRight: 16 }}
               />
+              <div className={styles.select_mcp_title_logo}>
+                <img
+                  src={item?.logo?.trim() ? item.logo : defaultLogo}
+                  alt=""
+                />
+              </div>
               <div>
                 <div>{item.name.zh}</div>
-                <TagsRender tags={item.tags} />
+                <div style={{ width: '260px' }}>
+                  <TagsRender tags={item.tags} />
+                </div>
               </div>
             </div>
           </List.Item>
