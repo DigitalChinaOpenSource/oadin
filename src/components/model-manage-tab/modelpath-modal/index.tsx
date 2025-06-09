@@ -113,6 +113,12 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
   };
 
   const onFinish = (values: { modelPath: string }) => {
+    // 如果当前输入的路径与传入的modalPath相同，则不调接口，直接关闭弹窗
+    if (values.modelPath === modalPath) {
+      message.info('路径未发生变化');
+      onModelPathVisible();
+      return;
+    }
     // 检查是否有正在下载中的模型
     const hasDownloadingModel = downloadList.some((item) => item.status === IN_PROGRESS);
     if (hasDownloadingModel) {
