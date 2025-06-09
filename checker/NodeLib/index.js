@@ -198,8 +198,8 @@ class Byze {
    try {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS
-        ? 'https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg'
-        : 'https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe';
+        ? 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/byze-installer-latest.pkg'
+        : 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/byze-installer-latest.exe';
 
       const userDir = os.homedir();
       const destDir = path.join(userDir, 'ByzeInstaller');
@@ -228,6 +228,7 @@ class Byze {
         if (downloadSuccess) {
           let installResult = false;
           try {
+            console.log(`byze-installer 运行 ${dest}`);
             installResult = await this.runByzeInstaller(dest, isMacOS);
           } catch (e) {
             console.error('runByzeInstaller 异常:', e);

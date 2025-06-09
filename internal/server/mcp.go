@@ -183,6 +183,7 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 	config.MCPID = id
 	config.Status = 0
 	config.Auth = ""
+	// TODO: 后续优化通过json 数组的方式读取数据库的数据
 	config.Kits = ""
 	// 数据库不存在则初始化一条
 	err = M.Ds.Get(ctx, config)
