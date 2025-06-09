@@ -244,3 +244,21 @@ type SetupFunToolRequest struct {
 	Enabled bool   `json:"enabled"`
 	ToolId  string `json:"toolId"`
 }
+
+type ClientRunToolsRequest struct {
+	ToolUses []struct {
+		MCPId    string         `json:"mcpId"`
+		ToolName string         `json:"toolName"`
+		ToolArgs map[string]any `json:"toolArgs"`
+	} `json:"toolUses"`
+}
+
+type ClientRunToolsResponse struct {
+	Code int `json:"code"`
+	Data struct {
+		ToolResults []struct{
+			Content string `json:"content"`
+			IsError bool   `json:"isError"`
+		} `json:"toolResults"`
+	} `json:"data"`
+}

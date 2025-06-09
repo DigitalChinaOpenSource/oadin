@@ -901,6 +901,15 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				OllamaId:        smInfo.OllamaId,
 			}
 			resultList = append(resultList, modelData)
+			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			if request.Mine {
+				myModelFilter(&resultList)
+				resData.Total = len(resultList)
+				resData.TotalPage = len(resultList) / pageSize
+				if resData.TotalPage == 0 {
+					resData.TotalPage = 1
+				}
+			}
 		}
 	} else {
 		if request.Flavor == types.FlavorSmartVision {
@@ -951,6 +960,10 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					SmartVisionModelKey: d.ModelKey,
 				}
 				resultList = append(resultList, modelData)
+			}
+			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			if request.Mine {
+				myModelFilter(&resultList)
 			}
 			resData.Total = len(smartvisionModelData)
 			resData.TotalPage = len(smartvisionModelData) / pageSize
@@ -1043,14 +1056,23 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				}
 				resultList = append(resultList, modelData)
 			}
+
+			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			if request.Mine {
+				myModelFilter(&resultList)
+			}
+
 			dataStart := (page - 1) * pageSize
 			dataEnd := page * pageSize
 			if dataEnd > len(resultList) {
 				dataEnd = len(resultList) - 1
 			}
+
+			totalCount := len(resultList)
+			// 当前页数据切片
 			resultList = resultList[dataStart:dataEnd]
-			resData.Total = len(smartvisionModelData) + len(jdsDataList)
-			resData.TotalPage = (len(smartvisionModelData) + len(resultList)) / pageSize
+			resData.Total = totalCount
+			resData.TotalPage = totalCount / pageSize
 			if resData.TotalPage == 0 {
 				resData.TotalPage = 1
 			}
@@ -1061,4 +1083,21 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 		*bcode.ModelCode,
 		resData,
 	}, nil
+}
+
+func myModelFilter(modelList *[]dto.RecommendModelData) {
+	var finalDataList []dto.RecommendModelData
+	if modelList == nil || len(*modelList) == 0 {
+		return
+	}
+
+	var tempList []dto.RecommendModelData = *modelList
+	for i := len(tempList) - 1; i >= 0; i-- {
+		if tempList[i].CanSelect {
+			finalDataList = append(finalDataList, tempList[i])
+		}
+
+	}
+	// 数据回填
+	*modelList = finalDataList
 }
