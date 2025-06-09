@@ -15,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 type MCPServer interface {
@@ -28,15 +29,15 @@ type MCPServer interface {
 	AuthorizeMCP(ctx context.Context, id string, auth string) error
 	ReverseStatus(c *gin.Context, id string) error
 	SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest) error
-	ClientMcpStart(c *gin.Context, id string) error
+	ClientMcpStart(c *gin.Context, id string) ([]mcp.Tool, error)
 	ClientMcpStop(c *gin.Context, id string) error
-	ClientRunTools(c *gin.Context, req *rpc.ClientRunToolsRequest) (*rpc.ClientRunToolsResponse, error)
+	ClientRunTool(c *gin.Context, req *rpc.ClientRunToolRequest) (*mcp.CallToolResult, error)
 }
 
 type MCPServerImpl struct {
 	Ds         datastore.Datastore
 	Client     *resty.Client
-	McpHandler *mcp_handler.McpClientService
+	McpHandler *mcp_handler.StdioTransport
 }
 
 func NewMCPServer() MCPServer {
@@ -341,17 +342,99 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	return nil
 }
 
-// 会话启用和停止mcp服务器
-func (m *MCPServerImpl) ClientMcpStart(c *gin.Context, id string) error {
+func (M *MCPServerImpl) ClientMcpStart(ctx *gin.Context, id string) ([]mcp.Tool, error) {
+	mcpUserConfig := new(types.McpUserConfig)
+	mcpUserConfig.MCPID = id
+
+	err := M.Ds.Get(ctx, mcpUserConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	mcpConfig, err := rpc.GetMCPDetail(M.Client, id)
+	if err != nil {
+		return nil, err
+	}
+	var env map[string]string
+	if mcpUserConfig.Auth != "" {
+		err := json.Unmarshal([]byte(mcpUserConfig.Auth), &env)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	serverConfig := mcpConfig.Data.ServerConfig[0]
+	mcpServers := serverConfig.McpServers
+	config := mcpServers[mcpConfig.Data.ServerName]
+	mcpServerConfig := types.MCPServerConfig{
+		Id:      id,
+		Name:    mcpConfig.Data.ServerName,
+		Args:    config.Args,
+		Command: config.Command,
+		Env:     env,
+	}
+
+	_, err = M.McpHandler.Start(mcpServerConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	searchTools, err := rpc.SearchTools(M.Client, id, &rpc.ToolSearchRequest{Size: 100, Page: 1})
+	if err != nil {
+		return nil, err
+	}
+	if mcpUserConfig == nil || mcpUserConfig.ID == 0 || mcpUserConfig.Kits == "" {
+		for i := range searchTools.Data.List {
+			searchTools.Data.List[i].Enabled = true
+		}
+	} else {
+		// 配置数据组合
+		for i, tool := range searchTools.Data.List {
+			// 默认开启
+			searchTools.Data.List[i].Enabled = true
+			for _, item := range strings.Split(mcpUserConfig.Kits, ",") {
+				if item == tool.Id {
+					searchTools.Data.List[i].Enabled = false
+					break
+				}
+			}
+		}
+	}
+
+	fetchTools, err := M.McpHandler.FetchTools(mcpServerConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	var tools []mcp.Tool
+	for i, tool := range fetchTools {
+		for _, item := range searchTools.Data.List {
+			if item.Name == tool.Name && item.Enabled {
+				tools = append(tools, fetchTools[i])
+				break
+			}
+		}
+	}
+	return tools, nil
+}
+
+func (M *MCPServerImpl) ClientMcpStop(ctx *gin.Context, id string) error {
+	err := M.McpHandler.Stop(id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (m *MCPServerImpl) ClientMcpStop(c *gin.Context, id string) error {
-	err := m.McpHandler.Stop(id)
-	return err
-}
-
 // RunTools 运行单个mcp的工具
-func (M *MCPServerImpl) ClientRunTools(c *gin.Context, req *rpc.ClientRunToolsRequest) (*rpc.ClientRunToolsResponse, error) {
-	return nil, nil
+func (M *MCPServerImpl) ClientRunTool(c *gin.Context, req *rpc.ClientRunToolRequest) (*mcp.CallToolResult, error) {
+	params := mcp.CallToolParams{
+		Name:      req.ToolName,
+		Arguments: req.ToolArgs,
+	}
+	data, err := M.McpHandler.CallTool(req.MCPId, params)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
