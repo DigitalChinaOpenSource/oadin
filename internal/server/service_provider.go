@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+
 	"context"
 	"encoding/json"
 	"errors"
@@ -18,6 +19,7 @@ import (
 	"byze/internal/provider"
 	"byze/internal/schedule"
 	"byze/internal/types"
+	"byze/internal/utils"
 	"byze/internal/utils/bcode"
 )
 
@@ -472,6 +474,17 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 	res.ServiceProvider = sp
 	if sp.Flavor == types.FlavorSmartVision {
 		smartvisionModelData, err := GetSmartVisionModelData(ctx, request.EnvType)
+		if sp.ServiceName == types.ServiceEmbed {
+			smartvisionModelDataEmbed := []dto.SmartVisionModelData{}
+			// todo(handle specially)
+			for _, m := range smartvisionModelData {
+				if m.Name == "微软|Azure-GPT-3.5" {
+					smartvisionModelDataEmbed = append(smartvisionModelDataEmbed, m)
+					break
+				}
+			}
+			smartvisionModelData = smartvisionModelDataEmbed
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -490,20 +503,13 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 		dataStart := (request.Page - 1) * request.PageSize
 		dataEnd := request.Page * request.PageSize
 		if dataEnd > len(smartvisionModelData) {
-			dataEnd = len(smartvisionModelData) - 1
+			dataEnd = len(smartvisionModelData)
 		}
 		modelData := smartvisionModelData[dataStart:dataEnd]
 		for _, model := range modelData {
-			modelQuery := new(types.Model)
-			modelQuery.ModelName = model.Name
-			modelQuery.ProviderName = providerName
-			isDownloaded := false
-			err := ds.Get(context.Background(), modelQuery)
-			if err != nil {
+			isDownloaded := true
+			if !model.CanSelect {
 				isDownloaded = false
-			}
-			if modelQuery.Status == "downloaded" {
-				isDownloaded = true
 			}
 			resModel := dto.ProviderSupportModelData{
 				Name:         model.Name,
@@ -599,44 +605,18 @@ func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *
 	sp.ServiceSource = request.ServiceSource
 
 	ds := datastore.GetDefaultDatastore()
+	jds := datastore.GetDefaultJsonDatastore()
 	list, err := ds.List(ctx, sp, &datastore.ListOptions{Page: 0, PageSize: 100})
 	if err != nil {
 		return nil, err
-	}
-	var spNames []string
-	for _, v := range list {
-		dsProvider := v.(*types.ServiceProvider)
-		spNames = append(spNames, dsProvider.ProviderName)
-	}
-
-	inOptions := make([]datastore.InQueryOption, 0)
-	inOptions = append(inOptions, datastore.InQueryOption{
-		Key:    "provider_name",
-		Values: spNames,
-	})
-	m := new(types.Model)
-	mList, err := ds.List(ctx, m, &datastore.ListOptions{
-		FilterOptions: datastore.FilterOptions{
-			In: inOptions,
-		},
-		Page:     0,
-		PageSize: 10,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	spModels := make(map[string][]string)
-	for _, v := range mList {
-		dsModel := v.(*types.Model)
-		if dsModel.Status == "downloaded" {
-			spModels[dsModel.ProviderName] = append(spModels[dsModel.ProviderName], dsModel.ModelName)
-		}
 	}
 
 	respData := make([]dto.ServiceProvider, 0)
 	for _, v := range list {
 		dsProvider := v.(*types.ServiceProvider)
+		if utils.Contains([]string{types.ServiceModels, types.ServiceGenerate}, dsProvider.ServiceName) {
+			continue
+		}
 		serviceProviderStatus := 0
 		if dsProvider.ServiceSource == types.ServiceSourceRemote {
 			fmt.Println(1)
@@ -656,6 +636,46 @@ func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *
 				serviceProviderStatus = 1
 			}
 		}
+		mNameList := make([]string, 0)
+		if dsProvider.Flavor == types.FlavorSmartVision {
+			if dsProvider.ServiceName == types.ServiceEmbed {
+				mNameList = append(mNameList, "微软|Azure-GPT-3.5")
+			} else {
+				smartvisionModelData, err := GetSmartVisionModelData(ctx, "product")
+				if err == nil {
+					for _, model := range smartvisionModelData {
+						mNameList = append(mNameList, model.Name)
+					}
+				}
+			}
+		} else {
+			sm := new(types.SupportModel)
+			queryOpList := []datastore.FuzzyQueryOption{}
+			queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+				Key:   "service_source",
+				Query: dsProvider.ServiceSource,
+			})
+			queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+				Key:   "api_flavor",
+				Query: dsProvider.Flavor,
+			})
+			queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+				Key:   "service_name",
+				Query: dsProvider.ServiceName,
+			})
+			sortOption := []datastore.SortOption{
+				{Key: "name", Order: 1},
+			}
+			options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}, SortBy: sortOption}
+			smList, err := jds.List(ctx, sm, options)
+			if err != nil {
+				return nil, err
+			}
+			for _, v := range smList {
+				smInfo := v.(*types.SupportModel)
+				mNameList = append(mNameList, smInfo.Name)
+			}
+		}
 
 		tmp := &dto.ServiceProvider{
 			ProviderName:  dsProvider.ProviderName,
@@ -669,12 +689,8 @@ func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *
 			Status:        serviceProviderStatus,
 			CreatedAt:     dsProvider.CreatedAt,
 			UpdatedAt:     dsProvider.UpdatedAt,
+			Models:        mNameList,
 		}
-
-		if models, ok := spModels[dsProvider.ProviderName]; ok {
-			tmp.Models = models
-		}
-
 		respData = append(respData, *tmp)
 	}
 
