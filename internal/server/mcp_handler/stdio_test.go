@@ -1,11 +1,14 @@
 package mcp_handler
 
 import (
-	"byze/internal/hardware"
+	"bytes"
 	"byze/internal/types"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"testing"
 	"time"
 
@@ -14,29 +17,167 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func TestMcpClientTest(t *testing.T) {
-	server := types.MCPServerConfig{
-		Name:    "bingcn",
-		Args:    []string{"bing-cn-mcp"},
-		Env:     map[string]string{},
-		Command: "npx",
+func TestMcpClientAndLLM(t *testing.T) {
+	// 我需要用代码实现以下逻辑：第一步是初始化一个 MCP 客户端，使用 stdio 传输方式连接到 MCP 服务。
+	// 第二步是发送一个http请求ollama的涉及工具调用的chat请求。
+	// 第三步是处理返回的结果，打印出工具调用的结果。
+	config := types.MCPServerConfig{
+		Id:      "683ec88241fa614eb1531fc7",
+		Command: "C:\\Users\\Intel\\AppData\\Roaming\\Byze\\runtime\\bun.exe",
+		Args:    []string{"x", "-y", "bing-cn-mcp"},
+		Env:     nil,
 	}
-	config := types.McpUserConfig{
-		ID:        1,
-		MCPID:     "1",
-		Kits:      "",
-		UserID:    "1",
-		Status:    1,
-		Auth:      "",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+	mcpService := NewMcpService()
+	_, err := mcpService.Start(config)
+	if err != nil {
+		log.Fatalf("Failed to initialize MCP client: %v", err)
 	}
-	log.Printf("MCP Server Config: %+v", server)
-	log.Printf("MCP User Config: %+v", config)
+	tools, err := mcpService.FetchTools(config)
+	if err != nil {
+		log.Fatalf("Failed to fetch tools: %v", err)
+	}
+	log.Printf("Available tools: %v", tools)
 
-	commandBuilder := hardware.NewCommandBuilder(server.Command).WithArgs(server.Args...)
-	cmd, _ := commandBuilder.GetRunCommand()
-	log.Printf("Command to run: %s", cmd)
+	// 一个json字符串,转为golang map接受
+	url := "http://localhost:58380/api/chat"
+	method := "POST"
+	type toolOllama struct {
+		Name     string `json:"type"`
+		Function struct {
+			Name        string              `json:"name"`
+			Description string              `json:"description"`
+			Parameters  mcp.ToolInputSchema `json:"parameters"`
+		} `json:"function"`
+	}
+
+	var toolOllamas []toolOllama
+	for _, tool := range tools {
+		toolOllamas = append(toolOllamas, toolOllama{
+			Name: tool.Name,
+			Function: struct {
+				Name        string              `json:"name"`
+				Description string              `json:"description"`
+				Parameters  mcp.ToolInputSchema `json:"parameters"`
+			}{
+				Name:        tool.Name,
+				Description: tool.Description,
+				Parameters:  tool.InputSchema,
+			},
+		})
+	}
+
+	queryMap := map[string]interface{}{
+		"model": "qwen2.5:7b",
+		"messages": map[string]interface{}{
+			"role":    "user",
+			"content": "What's the weather like in Paris?",
+		},
+		"stream": false,
+		"tools":  toolOllamas,
+	}
+
+	// finalText := []any
+	// toolResults := []any
+
+	client := &http.Client{}
+	jsonData, err := json.Marshal(queryMap)
+	if err != nil {
+		fmt.Println("Failed to marshal queryMap:", err)
+		return
+	}
+	req, err := http.NewRequest(method, url, bytes.NewReader(jsonData))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Add("User-Agent", "Apifox/1.0.0 (https://apifox.com)")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "*/*")
+	req.Header.Add("Host", "localhost:58380")
+	req.Header.Add("Connection", "keep-alive")
+
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(body))
+
+	// 处理返回的结果
+	response := struct {
+		Message struct {
+			Role      string `json:"role"`
+			Content   string `json:"content"`
+			ToolCalls []struct {
+				Function struct {
+					Name      string `json:"name"`
+					Arguments any    `json:"arguments"`
+				} `json:"function"`
+			} `json:"tool_calls"`
+		} `json:"message"`
+	}{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		log.Fatalf("Failed to unmarshal response: %v", err)
+	}
+
+	for _, toolCall := range response.Message.ToolCalls {
+		_, _ = mcpService.CallTool(config.Id, mcp.CallToolParams{
+			Name:      toolCall.Function.Name,
+			Arguments: toolCall.Function.Arguments,
+		})
+	}
+}
+
+func TestMcpClientTest(t *testing.T) {
+	config := types.MCPServerConfig{
+		Command: "C:\\Users\\Intel\\AppData\\Roaming\\Byze\\runtime\\bun.exe",
+		Args:    []string{"x", "-y", "bing-cn-mcp"},
+		Env:     nil,
+	}
+	fmt.Println("Initializing transport client with config:", config)
+	if config.Command != "" {
+		// command := "D:\\work_szsm\\20250603\\byze\\internal\\hardware\\installer\\runtime\\bun.exe"
+		// args := []string{"x", "-y", "bing-cn-mcp"}
+		var envVars []string
+		for k, v := range config.Env {
+			envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
+		}
+		stdioTransport := transport.NewStdio(
+			config.Command,
+			envVars,
+			config.Args...,
+		)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if err := stdioTransport.Start(ctx); err != nil {
+			log.Printf("failed to start stdio transport: %v", err)
+		}
+
+		c := client.NewClient(stdioTransport)
+		initRequest := mcp.InitializeRequest{}
+		_, err := c.Initialize(ctx, initRequest)
+		if err != nil {
+			_ = stdioTransport.Close()
+			log.Printf("failed to initialize stdio client: %v", err)
+		}
+
+		// List available tools
+		toolsResult, err := c.ListTools(ctx, mcp.ListToolsRequest{})
+		if err != nil {
+			log.Printf("failed to list tools: %v", err)
+		}
+
+		log.Printf("Available tools: %v", toolsResult.Tools)
+	}
 }
 
 // 这个可以跑通了
