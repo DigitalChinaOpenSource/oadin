@@ -32,6 +32,7 @@ type ByzeEnvironment struct {
 	WorkDir           string // current work directory
 	APIVersion        string // version of this core app layer (gateway etc.)
 	SpecVersion       string // version of the core specification this app layer supports
+	UpdateDir         string // Installation package storage path
 	LogDir            string // logs dir
 	LogHTTP           string // path to the http log
 	LogLevel          string // log level
@@ -104,6 +105,7 @@ func NewByzeEnvironment() *ByzeEnvironment {
 			ApiHost:           "0.0.0.0:16688",
 			Datastore:         "byze.db",
 			DatastoreType:     "sqlite",
+			UpdateDir:         "updates",
 			LogDir:            "logs",
 			LogHTTP:           "server.log",
 			LogLevel:          "DEBUG",
@@ -126,6 +128,7 @@ func NewByzeEnvironment() *ByzeEnvironment {
 			panic("[Init Env] get user dir failed: " + err.Error())
 		}
 		env.Datastore = filepath.Join(env.RootDir, env.Datastore)
+		env.UpdateDir = filepath.Join(env.RootDir, env.UpdateDir)
 		env.LogDir = filepath.Join(env.RootDir, env.LogDir)
 		env.LogHTTP = filepath.Join(env.LogDir, env.LogHTTP)
 		env.ConsoleLog = filepath.Join(env.LogDir, env.ConsoleLog)
