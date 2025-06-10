@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Form, Input, Tooltip, Button, Space, Switch } from 'antd';
 import styles from './index.module.scss';
+import { useAgentSettingViewModel } from '@/components/settings/agent-setting/view.module.ts';
 
 // 表单数据类型定义
 interface AgentSettingFormValues {
-  agentIp: string;
+  endpoint: string;
   username?: string;
   password?: string;
 }
@@ -12,7 +13,7 @@ interface AgentSettingFormValues {
 const AgentSetting: React.FC = () => {
   // 创建表单实例并指定泛型类型
   const [form] = Form.useForm<AgentSettingFormValues>();
-  const [agentChecked, setAgentChecked] = useState(false);
+  const { agentChecked, setAgentChecked, systemProxy } = useAgentSettingViewModel();
 
   // 表单提交处理
   const onFinish = (values: AgentSettingFormValues) => {
@@ -43,17 +44,13 @@ const AgentSetting: React.FC = () => {
           <Form
             form={form}
             name="agent-setting-form"
-            initialValues={{
-              agentIp: '',
-              username: '',
-              password: '',
-            }}
+            initialValues={systemProxy}
             layout="vertical"
             onFinish={onFinish}
           >
             <Form.Item
               label="代理地址"
-              name="agentIp"
+              name="endpoint"
               rules={[{ required: true, message: '请输入代理地址' }]}
               tooltip={'请输入代理地址'}
             >

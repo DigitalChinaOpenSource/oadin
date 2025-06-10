@@ -3,8 +3,12 @@ import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { IModelPathRes } from '@/types';
 import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
+import { useSettingsViewModel } from '@/components/settings/view.module.ts';
 
 export function useModelSetting() {
+  // 获取模型下载源地址
+  const { ollamaRegistry, fetchSettingsLoading } = useSettingsViewModel();
+
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
   // 接口获取
@@ -14,8 +18,7 @@ export function useModelSetting() {
   const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes>({} as IModelPathSpaceRes);
 
   // 模型下载源地址
-  const [modelDownUrl, setModelDownUrl] = useState<string>('测试下载地址');
-
+  const [modelDownUrl, setModelDownUrl] = useState<string>('');
   // 正在进行修改的模型路径
   const [changingModelPath, setChangingModelPath] = useState<string>('');
 
@@ -79,6 +82,10 @@ export function useModelSetting() {
       },
     },
   );
+
+  useEffect(() => {
+    setModelDownUrl(ollamaRegistry);
+  }, [ollamaRegistry]);
 
   return {
     fetchModelPath,

@@ -110,10 +110,16 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
       loading={historyLoading}
     >
       <div className={styles.chatHistory}>
-        {renderGroup('今天', grouped.today)}
-        {renderGroup('昨天', grouped.yesterday)}
-        {renderGroup('近7天', grouped.last7Days)}
-        {renderGroup('更早', grouped.earlier)}
+        {chatHistory.length > 0 ? (
+          <>
+            {renderGroup('今天', grouped.today)}
+            {renderGroup('昨天', grouped.yesterday)}
+            {renderGroup('近7天', grouped.last7Days)}
+            {renderGroup('更早', grouped.earlier)}
+          </>
+        ) : (
+          <div className={styles.noData}>暂无历史记录</div>
+        )}
       </div>
     </Drawer>
   );
