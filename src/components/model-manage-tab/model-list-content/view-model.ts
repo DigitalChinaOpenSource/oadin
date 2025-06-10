@@ -9,6 +9,7 @@ import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import { convertToMB } from '@/utils';
 
 export type ModelSourceType = 'local' | 'remote';
@@ -32,7 +33,7 @@ export interface IUseViewModel {
   modelPath: string;
   modalPathVisible: boolean;
   onModelPathVisible: () => void;
-  onModalPathChangeSuccess: () => void;
+  onChangeModelPath: (params: { source_path: string; target_path: string }) => void;
 
   modelAuthVisible: boolean;
   onModelAuthVisible: (data: IModelAuth) => void;
@@ -64,6 +65,7 @@ const { confirm } = Modal;
 
 export function useViewModel(props: IModelListContent): IUseViewModel {
   const { modelSourceVal, modelSearchVal, onModelSearch } = props;
+  const { setMigratingStatus } = useModelPathChangeStore();
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
   // 接口获取
@@ -260,10 +262,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     setModalPathVisible(!modalPathVisible);
   }, [modalPathVisible]);
 
-  const onModalPathChangeSuccess = useCallback(() => {
-    fetchModelPath();
-  }, []);
-
   const onModelAuthVisible = useCallback((data: IModelAuth) => {
     setModelAuthVisible(data.visible);
     setModelAuthType(data.type);
@@ -331,11 +329,34 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     });
   };
 
+  const { run: onChangeModelPath } = useRequest(
+    async (params: { source_path: string; target_path: string }) => {
+      const data = await httpRequest.post('/control_panel/model/filepath', params);
+      return data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        if (data) {
+          message.success('模型存储路径修改成功');
+        }
+        fetchModelPath();
+        setMigratingStatus('init');
+      },
+      onError: (error: Error & { handled?: boolean }) => {
+        if (!error?.handled) {
+          message.error(error?.message || '模型存储路径修改失败');
+        }
+        setMigratingStatus('failed');
+      },
+    },
+  );
+
   return {
     modelPath,
     modalPathVisible,
     onModelPathVisible,
-    onModalPathChangeSuccess,
+    onChangeModelPath,
 
     modelAuthVisible,
     onModelAuthVisible,

@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
+import { message } from 'antd';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { IModelPathRes } from '@/types';
 import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
-import { useSettingsViewModel } from '@/components/settings/view.module.ts';
+import { useSettingsViewModel } from '@/components/settings/view-module';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';
 
 export function useModelSetting() {
+  const { setMigratingStatus } = useModelPathChangeStore();
   // 获取模型下载源地址
   const { ollamaRegistry, fetchSettingsLoading } = useSettingsViewModel();
-
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
   // 接口获取
   const [modelPath, setModelPath] = useState<string>('');
-
   // 当前路径的空间信息
   const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes>({} as IModelPathSpaceRes);
-
   // 模型下载源地址
   const [modelDownUrl, setModelDownUrl] = useState<string>('');
   // 正在进行修改的模型路径
@@ -26,10 +26,6 @@ export function useModelSetting() {
   const onModelPathVisible = useCallback(() => {
     setModalPathVisible(!modalPathVisible);
   }, [modalPathVisible]);
-
-  const onModalPathChangeSuccess = useCallback(() => {
-    fetchModelPath();
-  }, []);
 
   // 获取模型存储路径
   const { run: fetchModelPath } = useRequest(
@@ -83,16 +79,39 @@ export function useModelSetting() {
     },
   );
 
+  const { run: onChangeModelPath } = useRequest(
+    async (params: { source_path: string; target_path: string }) => {
+      const data = await httpRequest.post('/control_panel/model/filepath', params);
+      return data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        if (data) {
+          message.success('模型存储路径修改成功');
+        }
+        fetchModelPath();
+        setMigratingStatus('init');
+      },
+      onError: (error: Error & { handled?: boolean }) => {
+        if (!error?.handled) {
+          message.error(error?.message || '模型存储路径修改失败');
+        }
+        setMigratingStatus('failed');
+      },
+    },
+  );
+
   useEffect(() => {
     setModelDownUrl(ollamaRegistry);
   }, [ollamaRegistry]);
 
   return {
     fetchModelPath,
+    onChangeModelPath,
     modelPath,
     modalPathVisible,
     onModelPathVisible,
-    onModalPathChangeSuccess,
     setCurrentPathSpace,
     currentPathSpace,
     onCheckPathSpace,
