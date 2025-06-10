@@ -461,6 +461,84 @@ func SystemDiskSize(path string) (*PathDiskSizeInfo, error) {
 	return res, nil
 }
 
+// PathPermissionResult holds the result of a permission check
+type PathPermissionResult struct {
+	HasPermission bool     // Whether all paths have proper permissions
+	FailedPaths   []string // List of paths that failed permission checks
+}
+
+// CheckPathPermission Recursively check the read and write permissions of all files and directories under the given path.
+// As soon as any file or directory does not meet the required permissions, immediately return false.
+func CheckPathPermission(path string) bool {
+	// 获取路径信息
+	info, err := os.Lstat(path)
+	if err != nil {
+		return false
+	}
+
+	// 根据路径类型检查权限
+	if info.IsDir() {
+		return checkDirPermission(path)
+	} else {
+		return checkFilePermission(path)
+	}
+}
+
+// checkDirPermission 检查目录的权限
+func checkDirPermission(path string) bool {
+	// check dictionary read permission
+	_, err := os.ReadDir(path)
+	if err != nil {
+		return false
+	}
+
+	// check dictionary write permission
+	testFile := filepath.Join(path, ".permission_test_file")
+	err = os.WriteFile(testFile, []byte("test"), 0644)
+	if err != nil {
+		return false
+	}
+	_ = os.Remove(testFile)
+
+	// Traverse all files and subdirectories under the directory.
+	err = filepath.Walk(path, func(currentPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip the root directory since it has already been checked.
+		if currentPath == path {
+			return nil
+		}
+
+		// Check permissions based on the type of the path.
+		if info.IsDir() {
+			if !checkDirPermission(currentPath) {
+				return filepath.SkipAll
+			}
+		} else {
+			if !checkFilePermission(currentPath) {
+				return filepath.SkipAll
+			}
+		}
+		return nil
+	})
+
+	return err == nil
+}
+
+// checkFilePermission check file permission
+func checkFilePermission(path string) bool {
+	// read and write permission
+	file, err := os.OpenFile(path, os.O_RDWR, 0)
+	if err != nil {
+		return false
+	}
+	file.Close()
+
+	return true
+}
+
 func IsDirEmpty(path string) bool {
 	f, err := os.Open(path)
 	if err != nil {
@@ -587,4 +665,21 @@ func GetFilePathTotalSize(path string) (int64, error) {
 	})
 
 	return totalSize / 1024 / 1024 / 1024, err
+}
+
+func ClearDir(path string) error {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		entryPath := filepath.Join(path, entry.Name())
+		err = os.RemoveAll(entryPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

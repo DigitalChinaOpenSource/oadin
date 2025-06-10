@@ -93,3 +93,7 @@ func (o *OpenvinoProvider) DeleteModel(ctx context.Context, req *types.DeleteReq
 func (o *OpenvinoProvider) ListModels(ctx context.Context) (*types.ListResponse, error) {
 	return nil, nil
 }
+
+func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
+	return nil
+}
