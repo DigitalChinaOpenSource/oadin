@@ -6,6 +6,7 @@ import { GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import defaultPng from '@/assets/favicon.png';
+import EllipsisTooltip from '@/components/ellipsis-tooltip';
 
 export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
   const { logo, tags, name, abstract, updatedAt, supplier, hosted } = props.mcpDetail;
@@ -14,16 +15,6 @@ export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
     const date = dayjs.unix(unixTime);
     return date.format('YYYY-MM-DD');
   };
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  useEffect(() => {
-    if (contentRef.current) {
-      const isOverflowing = contentRef.current.scrollHeight > contentRef.current.offsetHeight;
-      console.log('isOverflowing', isOverflowing);
-      setShowTooltip(isOverflowing);
-    }
-  }, [abstract?.zh]);
 
   return (
     <div className={styles.detailDescMain}>
@@ -65,17 +56,13 @@ export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
           </div>
         </div>
 
-        <Tooltip
-          title={showTooltip && abstract?.zh}
-          styles={{ root: { maxWidth: '60%' } }}
+        <EllipsisTooltip
+          title={abstract?.zh}
+          className={styles.detailDesc}
+          maxWidth={'60%'}
         >
-          <div
-            ref={contentRef}
-            className={styles.detailDesc}
-          >
-            {abstract?.zh || '暂无描述'}
-          </div>
-        </Tooltip>
+          {abstract?.zh || '暂无描述'}
+        </EllipsisTooltip>
 
         <div className={styles.infoWrapper}>
           <div className={styles.providerName}>{supplier}</div>

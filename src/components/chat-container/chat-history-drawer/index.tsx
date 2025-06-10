@@ -1,10 +1,12 @@
 import { Drawer, Button, Tooltip, Popconfirm } from 'antd';
 import { useChatHistoryDrawer } from '@/components/chat-container/chat-history-drawer/view.module.ts';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './index.module.scss';
 import dayjs from 'dayjs';
 import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
 import { TrashIcon } from '@phosphor-icons/react';
+import noDataSvg from '@/components/icons/no-data.svg';
+import EllipsisTooltip from '@/components/ellipsis-tooltip';
 
 export interface IChatHistoryDrawerProps {
   onHistoryDrawerClose?: () => void;
@@ -49,6 +51,31 @@ function groupChatHistoryByDate(history: IChatHistoryItem[]): GroupedChatHistory
   );
 }
 
+// 新增：仅在溢出时显示Tooltip的组件
+// function EllipsisTooltip({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
+//   const ref = useRef<HTMLDivElement>(null);
+//   const [isOverflow, setIsOverflow] = useState(false);
+//
+//   useEffect(() => {
+//     const el = ref.current;
+//     if (el) {
+//       setIsOverflow(el.scrollWidth > el.clientWidth);
+//     }
+//   }, [title, children]);
+//
+//   const content = (
+//     <div
+//       ref={ref}
+//       className={className}
+//       style={{ width: '100%' }}
+//     >
+//       {children}
+//     </div>
+//   );
+//
+//   return isOverflow ? <Tooltip title={title}>{content}</Tooltip> : content;
+// }
+
 export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistoryDrawerProps) {
   const { historyLoading, fetchChatHistory, chatHistory, delHistoryLoading, deleteChatHistory, setShowDeleteId, showDeleteId } = useChatHistoryDrawer();
 
@@ -56,6 +83,7 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
 
   const renderGroup = (title: string, list: any[]) => {
     if (!list.length) return null;
+
     return (
       <>
         <div className={styles.groupTitle}>{title}</div>
@@ -67,9 +95,13 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
             >
               <div className={styles.groupLeft}>
                 <div className={styles.title}>{item.title}</div>
-                <Tooltip title={item.modelName}>
-                  <div className={styles.modelName}>{item.modelName}</div>
-                </Tooltip>
+                {/* 修改：仅溢出时显示Tooltip */}
+                <EllipsisTooltip
+                  title={item.modelName}
+                  className={styles.modelName}
+                >
+                  {item.modelName}
+                </EllipsisTooltip>
               </div>
               <div className={styles.groupRight}>
                 <Popconfirm
@@ -118,7 +150,15 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
             {renderGroup('更早', grouped.earlier)}
           </>
         ) : (
-          <div className={styles.noData}>暂无历史记录</div>
+          <div className={styles.noData}>
+            <div className={styles.noDataIcon}>
+              <img
+                src={noDataSvg}
+                alt="no-data"
+              />
+            </div>
+            <div className={styles.noDataText}>暂无历史记录</div>
+          </div>
         )}
       </div>
     </Drawer>
