@@ -1,4 +1,4 @@
-import { Drawer, Button, Tooltip, Popconfirm } from 'antd';
+import { Drawer, Button, Tooltip, Popconfirm, Space } from 'antd';
 import { useChatHistoryDrawer } from '@/components/chat-container/chat-history-drawer/view.module.ts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './index.module.scss';
@@ -7,6 +7,7 @@ import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawe
 import { TrashIcon } from '@phosphor-icons/react';
 import noDataSvg from '@/components/icons/no-data.svg';
 import EllipsisTooltip from '@/components/ellipsis-tooltip';
+import { CloseOutlined } from '@ant-design/icons';
 
 export interface IChatHistoryDrawerProps {
   onHistoryDrawerClose?: () => void;
@@ -51,33 +52,8 @@ function groupChatHistoryByDate(history: IChatHistoryItem[]): GroupedChatHistory
   );
 }
 
-// 新增：仅在溢出时显示Tooltip的组件
-// function EllipsisTooltip({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
-//   const ref = useRef<HTMLDivElement>(null);
-//   const [isOverflow, setIsOverflow] = useState(false);
-//
-//   useEffect(() => {
-//     const el = ref.current;
-//     if (el) {
-//       setIsOverflow(el.scrollWidth > el.clientWidth);
-//     }
-//   }, [title, children]);
-//
-//   const content = (
-//     <div
-//       ref={ref}
-//       className={className}
-//       style={{ width: '100%' }}
-//     >
-//       {children}
-//     </div>
-//   );
-//
-//   return isOverflow ? <Tooltip title={title}>{content}</Tooltip> : content;
-// }
-
 export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistoryDrawerProps) {
-  const { historyLoading, fetchChatHistory, chatHistory, delHistoryLoading, deleteChatHistory, setShowDeleteId, showDeleteId } = useChatHistoryDrawer();
+  const { historyLoading, fetchChatHistory, fetchChatHistoryDetail, chatHistory, delHistoryLoading, deleteChatHistory, setShowDeleteId, showDeleteId } = useChatHistoryDrawer();
 
   const grouped = useMemo(() => groupChatHistoryByDate(chatHistory), [chatHistory]);
 
@@ -92,6 +68,7 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
             <div
               className={styles.historyCard}
               key={item.id}
+              onClick={() => fetchChatHistoryDetail(item.id)}
             >
               <div className={styles.groupLeft}>
                 <div className={styles.title}>{item.title}</div>
@@ -140,6 +117,12 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
       onClose={onHistoryDrawerClose}
       open={true}
       loading={historyLoading}
+      extra={
+        <CloseOutlined
+          className={styles.closeIcon}
+          onClick={onHistoryDrawerClose}
+        />
+      }
     >
       <div className={styles.chatHistory}>
         {chatHistory.length > 0 ? (

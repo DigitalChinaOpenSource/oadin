@@ -1,27 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
-import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
+import { IChatDetailItem, IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
 import { chatHistoryData } from './mock-data.ts';
+import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 
 export function useChatHistoryDrawer() {
+  // 获取对话store
+  const { setHistoryVisible } = useChatStore();
   // 历史对话记录
   const [chatHistory, setChatHistory] = useState<IChatHistoryItem[]>(chatHistoryData);
 
   // 用于记录当前显示 Popconfirm 的卡片 id 并设置是否显示确认弹窗
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
 
-  // 获取c
+  // 获取历史对话记录
   const { loading: historyLoading, run: fetchChatHistory } = useRequest(
     async () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      const data = await httpRequest.get('/service/update/history');
+      const data = await httpRequest.get<IChatHistoryItem[]>('/playground/sessions');
       return data || {};
     },
     {
       manual: true,
       onSuccess: (data: any) => {
         if (!data) return;
+        setChatHistory(data);
       },
       onError: (error) => {
         console.error('获取历史对话记录失败:', error);
@@ -52,9 +56,29 @@ export function useChatHistoryDrawer() {
     },
   );
 
+  // 获取历史对话详情
+  const { run: fetchChatHistoryDetail } = useRequest(
+    async (sessionId: string) => {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
+      return data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data: any) => {
+        if (!data) return;
+        setHistoryVisible(false);
+      },
+      onError: (error) => {
+        console.error('获取历史对话记录失败:', error);
+        setHistoryVisible(false);
+      },
+    },
+  );
+
   useEffect(() => {
     fetchChatHistory();
   }, []);
 
-  return { historyLoading, fetchChatHistory, chatHistory, delHistoryLoading, deleteChatHistory, showDeleteId, setShowDeleteId };
+  return { historyLoading, fetchChatHistory, chatHistory, delHistoryLoading, deleteChatHistory, showDeleteId, setShowDeleteId, fetchChatHistoryDetail };
 }
