@@ -3,8 +3,13 @@ import ModelSearch from './model-search';
 import ModallistContent from './model-list-content';
 import { useViewModel } from './view-model';
 
-export default function ModelManageTab() {
+export interface ModelManageProps {
+  isMine?: boolean;
+  isDialog?: boolean;
+}
+export default function ModelManageTab(props: ModelManageProps) {
   const vm = useViewModel();
+  const { isMine, isDialog } = props;
 
   return (
     <div className={styles.modelManageTab}>
@@ -14,8 +19,19 @@ export default function ModelManageTab() {
         onModelSearch={vm.onModelSearch}
         onModelSourceChange={vm.onModelSourceChange}
       />
-
-      <ModallistContent mine={false} />
+      {isDialog ? (
+        <div className={styles.chooseModelList}>
+          <ModallistContent
+            mine={isMine}
+            isSelectable={isDialog}
+          />
+        </div>
+      ) : (
+        <ModallistContent
+          mine={isMine}
+          isSelectable={isDialog}
+        />
+      )}
     </div>
   );
 }

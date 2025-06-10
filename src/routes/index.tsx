@@ -3,15 +3,12 @@ import MainLayout from '../components/main-layout';
 import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import McpDetail from '../components/mcp-manage/mcp-detail';
-// import ModelChecking from '../pages/model-checking';
 import ModelChat from '../pages/model-chat'; // 新增对话页面
 import ServiceProviderManage from '@/components/service-provider-tab';
-import ByzeServiceTab from '@/components/byze-service-tab';
 import ModelSetting from '@/components/settings/model-setting';
 import AgentSetting from '@/components/settings/agent-setting';
 import AboutUs from '@/components/settings/about-us';
 import ModelManageTab from '@/components/model-manage-tab';
-import MyModelManage from '@/components/model-manage-tab/my-model-manage';
 
 const router = createBrowserRouter([
   {
@@ -33,11 +30,21 @@ const router = createBrowserRouter([
         children: [
           {
             path: 'model-list',
-            element: <ModelManageTab />,
+            element: (
+              <ModelManageTab
+                isDialog={false}
+                isMine={false}
+              />
+            ),
           },
           {
             path: 'my-model-list',
-            element: <MyModelManage />,
+            element: (
+              <ModelManageTab
+                isDialog={false}
+                isMine={true}
+              />
+            ),
           },
           {
             path: 'model-experience',

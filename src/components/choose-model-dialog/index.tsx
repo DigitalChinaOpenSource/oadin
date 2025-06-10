@@ -1,11 +1,8 @@
 import React from 'react';
-import { Modal, ModalProps, Tabs, TabsProps, message } from 'antd';
+import { Modal, Tabs, TabsProps, message } from 'antd';
 import styles from './index.module.scss';
-import ModallistContent from '@/components/model-manage-tab/model-list-content';
-import { useViewModel } from '@/components/model-manage-tab/view-model.ts';
-import ModelSearch from '@/components/model-manage-tab/model-search';
 import useSelectedModelStore from '@/store/useSelectedModel';
-import MyModelManageTab from '@/components/model-manage-tab/my-model-manage';
+import ModelManageTab from '@/components/model-manage-tab';
 
 export interface IChooseModelDialog {
   onCancel: () => void;
@@ -13,30 +10,27 @@ export interface IChooseModelDialog {
 }
 
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
-  const vm = useViewModel();
-  const { selectedModel, isSelectedModel, setIsSelectedModel } = useSelectedModelStore();
+  const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
   const items: TabsProps['items'] = [
     {
       key: 'model-square',
       label: '模型广场',
       children: (
-        <div>
-          <ModelSearch
-            modelSearchVal={vm.modelSearchVal}
-            modelSourceVal={vm.modelSourceVal}
-            onModelSearch={vm.onModelSearch}
-            onModelSourceChange={vm.onModelSourceChange}
-          />
-          <div className={styles.chooseModelList}>
-            <ModallistContent isSelectable={true} />
-          </div>
-        </div>
+        <ModelManageTab
+          isDialog={true}
+          isMine={false}
+        />
       ),
     },
     {
       key: 'my-models',
       label: '我的模型',
-      children: <MyModelManageTab />,
+      children: (
+        <ModelManageTab
+          isDialog={true}
+          isMine={true}
+        />
+      ),
     },
   ];
 
@@ -51,6 +45,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
 
   return (
     <Modal
+      style={{ top: 20 }}
       className={styles.choose_model}
       okText="立即体验"
       title="选择模型"
