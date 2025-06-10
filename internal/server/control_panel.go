@@ -89,7 +89,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	}
 	err = utils.ModifySystemUserVariables(envInfo)
 	if err != nil {
-		err = os.RemoveAll(req.TargetPath)
+		err = utils.ClearDir(req.TargetPath)
 		if err != nil {
 			return nil, bcode.ControlPanelCopyDirError
 		}
@@ -99,7 +99,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 
 	time.Sleep(1 * time.Second)
 
-	err = os.RemoveAll(req.SourcePath)
+	err = utils.ClearDir(req.SourcePath)
 	if err != nil {
 		return nil, err
 	}
