@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IModelAuth, IModelAuthType, IModelPathSpaceRes } from '../types';
-import { IModelDataItem, IModelPathRes, IRequestModelParams, ModelData } from '@/types';
+import { IModelDataItem, IModelPathRes, IModelSourceType, IRequestModelParams, ModelData } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
 import { message, Modal } from 'antd';
-import { IModelListContent } from './index';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
@@ -63,6 +62,12 @@ export interface IUseViewModel {
 }
 
 const { confirm } = Modal;
+export interface IModelListContent {
+  modelSearchVal: string;
+  modelSourceVal: IModelSourceType;
+  onModelSearch: (val: string) => void;
+  mine?: boolean;
+}
 
 export function useViewModel(props: IModelListContent): IUseViewModel {
   const { modelSourceVal, modelSearchVal, onModelSearch, mine } = props;
@@ -140,7 +145,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     onModelSearch('');
     setPagination({ ...pagination, current: 1 });
     fetchModelSupport({ service_source: modelSourceVal });
-  }, [modelSourceVal]);
+  }, [modelSourceVal, mine]);
 
   useEffect(() => {
     if (!modelPath) return;

@@ -1,8 +1,7 @@
 import styles from '@/components/model-checking/index.module.scss';
-import { IUseViewModel, useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
+import { IModelListContent, IUseViewModel, useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 import { useMemo } from 'react';
 import { ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
-import { IModelListContent } from '@/components/model-manage-tab/model-list-content';
 
 export const ModelCheckingNodata = () => {
   const vmProps: IModelListContent = {
