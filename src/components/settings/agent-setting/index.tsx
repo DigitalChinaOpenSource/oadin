@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Tooltip, Button, Space, Switch } from 'antd';
 import styles from './index.module.scss';
-import { useAgentSettingViewModel } from '@/components/settings/agent-setting/view.module.ts';
+import { useAgentSettingViewModel } from './view-module';
 
 // 表单数据类型定义
 export interface AgentSettingFormValues {

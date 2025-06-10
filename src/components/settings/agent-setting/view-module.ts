@@ -1,4 +1,4 @@
-import { useSettingsViewModel } from '@/components/settings/view.module.ts';
+import { useSettingsViewModel } from '@/components/settings/view-module';
 import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
