@@ -112,6 +112,11 @@ type PullModelRequest struct {
 	Name string `json:"name"`
 }
 
+type CopyModelRequest struct {
+	Source      string `json:"source"`
+	Destination string `json:"destination"`
+}
+
 // DeleteRequest is the request passed to [Client.Delete].
 type DeleteRequest struct {
 	Model string `json:"model"`

@@ -19,8 +19,7 @@ const createSessionRequestSchema = {
     properties: {
         title: { type: "string" },
         modelId: { type: "string" },
-        embedModelId: { type: "string" },
-        thinkingEnabled: { type: "boolean" }
+        embedModelId: { type: "string" }
     },
     required: ["modelId"]
 };
@@ -282,8 +281,7 @@ const changeSessionModelRequestSchema = {
     properties: {
         sessionId: { type: "string" },
         modelId: { type: "string" },
-        embedModelId: { type: "string" },
-        thinkingEnabled: { type: "boolean" }
+        embedModelId: { type: "string" }
     },
     required: ["sessionId", "modelId"]
 };
