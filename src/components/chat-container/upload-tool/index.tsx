@@ -1,20 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button, Upload, Tooltip, message } from 'antd';
 import type { UploadProps, UploadFile } from 'antd';
+import { httpRequest } from '@/utils/httpRequest';
 import uploadSvg from '@/components/icons/upload.svg';
 
 interface UploadToolProps {
-  uploadFileList: UploadFile[]; // 文件列表，由父组件维护
-  onFileListChange: (fileList: UploadFile[]) => void; // 文件列表变更回调
+  uploadFileList: UploadFile<any>[]; // 文件列表，由父组件维护
+  onFileListChange: (fileList: UploadFile<any>[]) => void; // 文件列表变更回调
   maxFiles?: number; // 最大上传文件数
 }
 
+// 自定义文件状态类型
+export type FileStatus = 'error' | 'uploading' | 'done';
+
 export default function UploadTool({ onFileListChange, maxFiles = 5, uploadFileList }: UploadToolProps) {
-  /**
-   * 检查文件是否满足格式和大小限制
-   * @param file 待检查的文件
-   * @returns 包含验证结果和错误信息的对象
-   */
   const validateFile = (
     file: File,
   ): {
@@ -35,7 +34,6 @@ export default function UploadTool({ onFileListChange, maxFiles = 5, uploadFileL
     }
 
     const maxSize = 50 * 1024 * 1024;
-    // 检查文件大小
     const isSizeValid = file.size <= maxSize;
     if (!isSizeValid) {
       return {
@@ -51,46 +49,120 @@ export default function UploadTool({ onFileListChange, maxFiles = 5, uploadFileL
   };
 
   const handleBeforeUpload = (file: File) => {
-    // 检查文件数量限制
     if (uploadFileList && uploadFileList.length >= maxFiles) {
       message.error(`最多只能上传${maxFiles}个文件`);
       return false;
     }
-
-    // 验证文件
     const validationResult = validateFile(file);
     if (!validationResult.isValid) {
       message.error(validationResult.errorMessage);
       return false;
     }
-    // 通过验证的文件添加至fileList
-    const newFile: UploadFile = {
-      uid: `${Date.now()}-${Math.random()}`,
-      name: file.name,
-      status: 'done',
-      size: file.size,
-      type: file.type,
-      // originFileObj: file as any,
-    };
-    onFileListChange([...uploadFileList, newFile]);
-    return false;
+
+    return true;
   };
 
-  const handleRemove = (file: UploadFile) => {
-    // 直接调用父组件传递的回调，传入过滤后的文件列表
-    onFileListChange(uploadFileList.filter((f) => f.uid !== file.uid));
-    message.success(`已删除文件: ${file.name}`);
+  // 自定义上传请求
+  const customUploadRequest: UploadProps['customRequest'] = async ({ file, onProgress, onSuccess, onError }) => {
+    // 转换为File对象
+    const fileObj = file as File;
+
+    // 创建一个文件对象，状态为uploading
+    const uploadingFile: UploadFile = {
+      uid: `${Date.now()}-${Math.random()}`,
+      name: fileObj.name,
+      status: 'uploading', // 初始状态为上传中
+      percent: 0,
+      size: fileObj.size,
+      type: fileObj.type,
+    };
+
+    // 立即更新父组件状态，显示正在上传
+    onFileListChange([...uploadFileList, uploadingFile]);
+
+    // 创建FormData
+    const formData = new FormData();
+    formData.append('file', fileObj);
+
+    try {
+      // 发送请求
+      const response = await httpRequest.post('/playground/file', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // 上传成功，更新文件状态
+      const successFile: UploadFile = {
+        ...uploadingFile,
+        status: 'done',
+        percent: 100,
+        response: response, // 保存响应数据
+        url: response.url, // 如果响应中包含文件URL
+      };
+
+      // 更新列表中的文件状态
+      const newFileList = uploadFileList.map((item) => (item.uid === uploadingFile.uid ? successFile : item)).filter((item, index, self) => self.findIndex((f) => f.uid === item.uid) === index);
+
+      // 通知父组件更新
+      onFileListChange(newFileList);
+
+      // 通知Upload组件成功
+      onSuccess?.(response);
+
+      message.success(`文件 ${fileObj.name} 上传成功`);
+    } catch (error: Error | any) {
+      // 上传失败，更新文件状态
+      const failedFile: UploadFile = {
+        ...uploadingFile,
+        status: 'error',
+        error: error as Error,
+      };
+
+      // 更新列表中的文件状态
+      const newFileList = uploadFileList.map((item) => (item.uid === uploadingFile.uid ? failedFile : item));
+
+      // 通知父组件更新
+      onFileListChange(newFileList);
+
+      // 通知Upload组件失败
+      onError?.(error as Error);
+
+      message.error(`文件 ${fileObj.name} 上传失败: ${error?.message || '未知错误'}`);
+    }
+  };
+
+  const handleRemove = async (file: UploadFile) => {
+    try {
+      // 如果文件已上传成功（有服务器返回的file_id），则调用删除接口
+      if (file.status === 'done' && file.response?.file_id) {
+        await httpRequest.del('/playground/file', {
+          data: { file_id: file.response.file_id },
+        });
+      }
+
+      // 无论是否调用接口，都从列表中移除
+      onFileListChange(uploadFileList.filter((f) => f.uid !== file.uid));
+      message.success(`已删除文件: ${file.name}`);
+
+      return true;
+    } catch (error: Error | any) {
+      message.error(`删除文件失败: ${error?.message || '未知错误'}`);
+      return false;
+    }
   };
 
   return (
     <Upload
-      showUploadList={false}
+      showUploadList={false} // 不显示默认上传列表，由父组件自定义展示
       fileList={uploadFileList}
       beforeUpload={handleBeforeUpload}
+      customRequest={customUploadRequest}
       onRemove={handleRemove}
+      multiple={false}
       accept=".txt,.html,.htm,.md,.markdown,.pdf,.doc,.docx,.xls,.xlsx,.mp4,.mp3,.avi,.wmv"
     >
-      <Tooltip title={'文件格式支持 txt、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX、MP4、MP3、AVI、WMV，单个文件限制 50MB'}>
+      <Tooltip title="文件格式支持 txt、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX、MP4、MP3、AVI、WMV，单个文件限制 50MB">
         <Button
           icon={
             <img
@@ -98,6 +170,7 @@ export default function UploadTool({ onFileListChange, maxFiles = 5, uploadFileL
               alt="上传"
             />
           }
+          disabled={uploadFileList.some((file) => file.status === 'uploading')} // 如果有文件正在上传，禁用按钮
         />
       </Tooltip>
     </Upload>

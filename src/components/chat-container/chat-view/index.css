@@ -22,6 +22,13 @@
   flex: 1;
   overflow-y: auto;
 }
+.chat-message-list.ru-list {
+  gap: 16px;
+}
+
+.chat-message-content-list.ru-list {
+  gap: 16px;
+}
 
 .chat-divider {
   height: 1px;
@@ -37,6 +44,9 @@
   padding-top: 8px;
   padding-bottom: 24px;
   z-index: 100;
+}
+.chat-input.ru-chat-input {
+  border-color: #5429ff;
 }
 
 .user-bubble.ru-chat-bubble-body-content {

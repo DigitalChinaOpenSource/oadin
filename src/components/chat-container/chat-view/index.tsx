@@ -95,7 +95,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     </div>
   );
 
-  const extraContent = (
+  const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
       {isUploadVisible ? (
         <UploadTool
@@ -142,9 +142,9 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                 content: message.role === 'user' ? 'user-bubble' : 'ai-bubble',
               },
             })}
-            contentListUlProps={{
-              style: { display: 'flex', flexDirection: 'column', gap: 16 },
-            }}
+            className="chat-message-list"
+            contentListClassName="chat-message-content-list"
+            bottomPanel={<div style={{ background: '' }}>这里可以放正在生成的消息，或者是其他什么的...</div>}
           />
         </div>
 
@@ -152,16 +152,11 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           <ChatInput
             placeholder="输入消息..."
             onSend={handleSendMessage}
-            containerProps={{
-              color: '#FFF',
-              borderWidth: 0,
-              padding: '16px',
-              style: { height: '100%' },
-              borderRadius: 8,
-            }}
-            SendButtonComponent={({ onClick }) => (
+            className="chat-input"
+            SendButtonComponent={({ onClick, inputValue }) => (
               <Button
                 type="primary"
+                // disabled={!inputValue.trim()}
                 style={{ borderRadius: 8, cursor: 'pointer' }}
                 icon={
                   <img
@@ -173,7 +168,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
               />
             )}
             header={headerUploadContent}
-            extra={extraContent}
+            footer={footerContent}
           />
         </div>
       </div>
@@ -182,7 +177,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
 }
 
 registerMessageContents({
-  plain: ({ dataSource }: { dataSource: string }) => <div style={{ fontSize: 14 }}>{dataSource}</div>,
+  plain: ({ dataSource }: { dataSource?: string }) => <div style={{ fontSize: 14 }}>{dataSource}</div>,
   think: DeepThinkChat,
   mcp: McpToolChat,
 });
