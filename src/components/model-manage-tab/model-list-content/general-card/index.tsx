@@ -165,6 +165,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
     e.stopPropagation();
     const tempSelectedModel = selectedModel?.id && selectedModel?.id === modelData?.id ? ({} as IModelDataItem) : modelData;
     setSelectedModel(tempSelectedModel);
+
     console.log('handleSelectModelData', tempSelectedModel);
   };
 

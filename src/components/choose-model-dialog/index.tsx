@@ -15,7 +15,7 @@ export interface IChooseModelDialog {
 
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
   const vm = useViewModel();
-  const { selectedModel } = useSelectedModelStore();
+  const { selectedModel, isSelectedModel, setIsSelectedModel } = useSelectedModelStore();
   const items: TabsProps['items'] = [
     {
       key: 'model-square',
@@ -55,6 +55,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
 
   const onOk = () => {
     if (selectedModel && Object.keys(selectedModel).length > 0) {
+      setIsSelectedModel(true);
       props.onCancel();
     } else {
       message.warning('请先选择一个模型');

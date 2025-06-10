@@ -3,7 +3,7 @@ import ModelChecking from '@/components/model-checking';
 import styles from './index.module.scss';
 import useSelectedModelStore from '@/store/useSelectedModel';
 export default function ModelChat() {
-  const { selectedModel } = useSelectedModelStore();
+  const { isSelectedModel } = useSelectedModelStore();
 
-  return <div className={styles.modelChat}>{selectedModel && Object.keys(selectedModel).length > 0 ? <ChatContainer /> : <ModelChecking />}</div>;
+  return <div className={styles.modelChat}>{isSelectedModel ? <ChatContainer /> : <ModelChecking />}</div>;
 }

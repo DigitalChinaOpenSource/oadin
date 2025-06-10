@@ -4,9 +4,9 @@ import styles from './index.module.scss';
 import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 
-export interface IChooseModelDialog extends ModalProps {}
+export type IChooseMcpDialog = ModalProps & {};
 
-export const ChooseMcpDialog: React.FC<IChooseModelDialog> = (options: IChooseModelDialog) => {
+export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpDialog) => {
   const onChange = () => {};
   const mcpDialogTabItems: TabsProps['items'] = [
     {
