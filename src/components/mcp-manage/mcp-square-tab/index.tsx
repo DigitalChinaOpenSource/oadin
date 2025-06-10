@@ -54,6 +54,7 @@ export default function McpSquareTab(props: IMyMcpTabProps) {
     ),
     filterNode: (
       <McpAdvanceFilter
+        isDialog={isDialog}
         collapsed={vm.collapsed}
         setCollapsed={vm.setCollapsed}
         handleClearTags={vm.handleClearTags}
