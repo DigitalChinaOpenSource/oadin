@@ -4,13 +4,11 @@
   :global(.ant-btn) {
     border-color: #d4d4d9;
   }
-  svg:hover {
-    color: #4f4dff;
-  }
 }
 .select_mcp_selected {
   :global(.ant-btn) {
     border-color: #4f4dff;
+    color: #4f4dff;
     background-color: #ebf0ff;
   }
 }

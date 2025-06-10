@@ -27,7 +27,6 @@ export const SelectMcp = () => {
             <McpSelectBtn
               width={20}
               height={20}
-              color="#27272A"
             />
           }
         >
