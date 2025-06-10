@@ -245,20 +245,15 @@ type SetupFunToolRequest struct {
 	ToolId  string `json:"toolId"`
 }
 
-type ClientRunToolsRequest struct {
-	ToolUses []struct {
-		MCPId    string         `json:"mcpId"`
-		ToolName string         `json:"toolName"`
-		ToolArgs map[string]any `json:"toolArgs"`
-	} `json:"toolUses"`
+type ClientMcpStartRequest struct {
+	Id string `json:"id"`
+}
+type ClientMcpStopRequest struct {
+	Id string `json:"id"`
 }
 
-type ClientRunToolsResponse struct {
-	Code int `json:"code"`
-	Data struct {
-		ToolResults []struct{
-			Content string `json:"content"`
-			IsError bool   `json:"isError"`
-		} `json:"toolResults"`
-	} `json:"data"`
+type ClientRunToolRequest struct {
+	MCPId    string         `json:"mcpId"`
+	ToolName string         `json:"toolName"`
+	ToolArgs map[string]any `json:"toolArgs"`
 }
