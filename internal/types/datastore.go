@@ -142,6 +142,7 @@ type Model struct {
 	Status       string    `gorm:"column:status;not null" json:"status"`
 	CreatedAt    time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt    time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
+	ThinkingEnabled bool   `gorm:"column:thinking_enabled;default:false" json:"thinkingEnabled"`
 }
 
 func (t *Model) SetCreateTime(time time.Time) {
