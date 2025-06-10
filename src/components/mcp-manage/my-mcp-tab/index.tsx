@@ -16,6 +16,7 @@ export default function MyMcpTab(props: IMyMcpTabProps) {
         showOnlySelectedMyMcp={showOnlySelectedMyMcp}
         activeKey={activeKey}
         isSelectable={isDialog}
+        isDialog={isDialog}
         grid={genGrid({ isDialog })}
         mcpListData={vm.mcpListData}
         pagination={vm.pagination}

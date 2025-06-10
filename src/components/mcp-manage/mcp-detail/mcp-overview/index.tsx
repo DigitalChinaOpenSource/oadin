@@ -1,5 +1,5 @@
 import styles from './index.module.scss';
-import ReactMarkdown, { Options } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 type markDownDataType =
@@ -10,19 +10,9 @@ type markDownDataType =
     }
   | undefined;
 
-export default function McpOverview({ markDownData, offHeight }: { markDownData: markDownDataType; offHeight: number }) {
-  // 类型断言解决方案
-  // const markdownOptions: Options = {
-  //   children: markDownData?.zh || markDownData?.src || '',
-  //   remarkPlugins: [remarkGfm],
-  //   rehypePlugins: [rehypeRaw],
-  // };
-
+export default function McpOverview({ markDownData }: { markDownData: markDownDataType }) {
   return (
-    <div
-      className={styles.mcpOverview}
-      // style={{ height: `calc(100vh - ${offHeight + 187}px)` }}
-    >
+    <div className={styles.mcpOverview}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}

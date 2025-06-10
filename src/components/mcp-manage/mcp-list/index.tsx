@@ -22,10 +22,17 @@ interface IMcpListProps extends IMcpCommonProps {
   isSelectable?: boolean;
 }
 export default function McpList(props: IMcpListProps) {
-  const { mcpListData, pagination, onPageChange, handelMcpCardClick, pageLoading = false, isSelectable, showOnlySelectedMcpList, showOnlySelectedMyMcp, activeKey } = props;
+  const { mcpListData, pagination, onPageChange, handelMcpCardClick, pageLoading = false, isSelectable, showOnlySelectedMcpList, showOnlySelectedMyMcp, activeKey, isDialog } = props;
 
-  const { selectMcpList } = useSelectMcpStore();
+  const { selectMcpList, setDrawerOpenId } = useSelectMcpStore();
   const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
+  const handleDetail = (id: string) => {
+    if (isDialog) {
+      setDrawerOpenId(id as string);
+    } else {
+      handelMcpCardClick(id);
+    }
+  };
   useEffect(() => {
     if (activeKey === 'myMcp') {
       if (showOnlySelectedMyMcp) {
@@ -87,7 +94,9 @@ export default function McpList(props: IMcpListProps) {
               <McpCard
                 isSelectable={isSelectable}
                 mcpData={item}
-                handelMcpCardClick={handelMcpCardClick}
+                handelMcpCardClick={(id) => {
+                  handleDetail(id as string);
+                }}
               />
             </List.Item>
           )}
