@@ -9,12 +9,13 @@ import TagsRender from '@/components/tags-render';
 import defaultLogo from '@/assets/favicon.png';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
+import { DetailDrawer } from '@/components/detail_drawer';
 
 export const SelectMcpDialog: React.FC = () => {
   const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useViewModel();
   const [allList, setAllList] = useState<IMcpListItem[]>([]);
   const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
-  const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
+  const { setSelectMcpList, selectMcpList, drawerOpenId, setDrawerOpenId } = useSelectMcpStore();
   // 打开选择更多MCP工具弹窗
   const [open, setOpen] = useState<boolean>(false);
   // 控制是否只显示已选中的项
@@ -144,7 +145,9 @@ export const SelectMcpDialog: React.FC = () => {
               <Button
                 type="link"
                 size="small"
-                onClick={() => {}}
+                onClick={() => {
+                  setDrawerOpenId(item?.id as string);
+                }}
               >
                 查看详情
               </Button>,
@@ -180,6 +183,11 @@ export const SelectMcpDialog: React.FC = () => {
       <ChooseMcpDialog
         open={open}
         onCancel={() => setOpen(false)}
+      />
+      <DetailDrawer
+        id={drawerOpenId}
+        open={!!(drawerOpenId && drawerOpenId !== '')}
+        onClose={() => setDrawerOpenId('')}
       />
     </div>
   );

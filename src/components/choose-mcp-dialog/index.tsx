@@ -6,12 +6,11 @@ import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 
 export type IChooseMcpDialog = ModalProps & {};
 
-export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseModelDialog) => {
+export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpDialog) => {
   // 控制是否只显示已选中的项
   const [showOnlySelectedMyMcp, setShowOnlySelectedMyMcp] = useState<boolean>(false);
   const [showOnlySelectedMcpList, setShowOnlySelectedMcpList] = useState<boolean>(false);
   const [activeKey, setActiveKey] = useState<string>('myMcp');
-  console.info(activeKey, '当前选中的页码');
   const mcpDialogTabItems: TabsProps['items'] = [
     {
       key: 'mcpList',

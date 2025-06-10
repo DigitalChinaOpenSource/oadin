@@ -1,5 +1,5 @@
 import styles from './index.module.scss';
-import { Collapse, CollapseProps, Input, List, Switch, Tooltip } from 'antd';
+import { Collapse, Input, List, Switch, Tooltip } from 'antd';
 import TagsRender from '@/components/tags-render';
 import { useMcpTools } from '@/components/mcp-manage/mcp-detail/mcp-tools/useMcpTools';
 
@@ -16,8 +16,10 @@ const CollapseItemHeader = (props: { name: string; desc: string; tags: string[] 
   );
 };
 
-export default function McpTools({ status }: { status: number | undefined }) {
-  const { handlePageChange, mcpTolls, pagination, changeTollStatus, handleSearchChange } = useMcpTools();
+export default function McpTools({ status, id }: { status: number | undefined; id?: string }) {
+  const { handlePageChange, mcpTolls, pagination, changeTollStatus, handleSearchChange } = useMcpTools({
+    id,
+  });
 
   return (
     <div className={styles.mcpTools}>

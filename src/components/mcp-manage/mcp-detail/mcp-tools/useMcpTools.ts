@@ -8,9 +8,9 @@ interface PostParamsType {
   size: number;
 }
 
-export const useMcpTools = () => {
+export const useMcpTools = ({ id }: { id?: string }) => {
   const [searchParams] = useSearchParams();
-  const serviceId = searchParams.get('serviceId');
+  const serviceId = id ?? searchParams.get('serviceId');
   const [mcpTolls, setMcpTolls] = useState<Record<string, any>[]>([]);
   // const [toolsTotal, setToolsTotal] = useState<number>(0);
   const [postParams, setPostParams] = useState<PostParamsType>({ keyword: '', page: 1, size: 10 });
@@ -23,9 +23,13 @@ export const useMcpTools = () => {
   // 获取工具列表
   const { loading: toolsLoading, run: getTolls } = useRequest(
     async () => {
-      const data = await httpRequest.post(`/mcp/${serviceId}/tools/search`, postParams);
-      if (!data) throw new Error('获取工具函数列表失败');
-      return data;
+      if (serviceId) {
+        const data = await httpRequest.post(`/mcp/${serviceId}/tools/search`, postParams);
+        if (!data) throw new Error('获取工具函数列表失败');
+        return data;
+      } else {
+        return {};
+      }
     },
     {
       manual: true,
