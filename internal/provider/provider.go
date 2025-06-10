@@ -22,6 +22,11 @@ type ModelServiceProvider interface {
 	ListModels(ctx context.Context) (*types.ListResponse, error)
 	GetConfig() *types.EngineRecommendConfig
 	GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error)
+	CopyModel(ctx context.Context, req *types.CopyModelRequest) error
+
+	Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error)
+	ChatStream(ctx context.Context, req *types.ChatRequest) (chan *types.ChatResponse, chan error)
+	GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequest) (*types.EmbeddingResponse, error)
 }
 
 func GetModelEngine(engineName string) ModelServiceProvider {
