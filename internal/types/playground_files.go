@@ -5,14 +5,13 @@ import (
 )
 
 type FileChunk struct {
-	ID         string    `json:"id"`
-	FileID     string    `json:"file_id"`
-	Content    string    `json:"content"`
-	ChunkIndex int       `json:"index"`
-	Embedding  []float32 `json:"embedding"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID         string      `json:"id"`
+	FileID     string      `json:"file_id"`
+	Content    string      `json:"content"`
+	ChunkIndex int         `json:"index"`
+	Embedding  Float32List `json:"embedding"`
+	CreatedAt  time.Time   `json:"created_at"`
 }
-
 
 func (f *FileChunk) SetCreateTime(t time.Time) { f.CreatedAt = t }
 func (f *FileChunk) SetUpdateTime(t time.Time) {}
@@ -25,7 +24,6 @@ func (f *FileChunk) Index() map[string]interface{} {
 	}
 }
 
-
 type File struct {
 	ID        string    `json:"id"`
 	SessionID string    `json:"session_id"`
@@ -37,7 +35,6 @@ type File struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
-
 
 func (f *File) SetCreateTime(t time.Time) { f.CreatedAt = t }
 func (f *File) SetUpdateTime(t time.Time) { f.UpdatedAt = t }

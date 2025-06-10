@@ -1,17 +1,16 @@
 package tray
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 
+	"byze/config"
+	"byze/internal/utils"
 	trayTemplate "byze/tray/icon"
 	tray "byze/tray/utils"
-	"byze/version"
-
 	"github.com/getlantern/systray/example/icon"
 	"github.com/pkg/browser"
 
@@ -62,13 +61,12 @@ func (m *Manager) onReady() {
 
 	// Add menu items
 	mStartStop := systray.AddMenuItem("Start Server", "Start/Stop Byze server")
-	mStatus := systray.AddMenuItem("Status", "Show server status")
-	mStatus.Disabled()
 	systray.AddSeparator()
 	mConsole := systray.AddMenuItem("Web Console", "Open Control Panel")
-	mUpdate := systray.AddMenuItem("Check Update", "Check for updates")
 	m.mRestartUpdate = systray.AddMenuItem("Restart and Update", "Restart and install update")
-	m.mRestartUpdate.Hide() // 默认隐藏更新按钮
+	if !m.updateAvailable {
+		m.mRestartUpdate.Hide()
+	}
 	mViewLogs := systray.AddMenuItem("View Logs", "View Logs")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit", "Quit Byze")
@@ -99,22 +97,18 @@ func (m *Manager) onReady() {
 						dialog.Message("Failed to start server: %v", err).Title("Error").Error()
 					}
 				}
-			case <-mStatus.ClickedCh:
-				m.showStatus()
 			case <-mConsole.ClickedCh:
 				err := m.openControlPanel()
 				if err != nil {
 					dialog.Message("Failed to open control panel: %v", err).Title("Error").Error()
 				}
-			case <-mUpdate.ClickedCh:
-				m.checkUpdate()
 			case <-m.mRestartUpdate.ClickedCh:
 				if confirmed := dialog.Message("This will stop all servers and install the update. Continue?").Title("Confirm Update").YesNo(); confirmed {
 					if err := m.performUpdate(); err != nil {
 						dialog.Message("Failed to perform update: %v", err).Title("Error").Error()
 					} else {
-						// 成功执行更新后，退出系统托盘
 						systray.Quit()
+						os.Exit(0)
 					}
 				}
 			case <-mViewLogs.ClickedCh:
@@ -177,7 +171,7 @@ func (m *Manager) openControlPanel() error {
 	return nil
 }
 
-// SetUpdateAvailable 设置是否有更新可用
+// SetUpdateAvailable set update label
 func (m *Manager) SetUpdateAvailable(available bool) {
 	m.updateAvailable = available
 	if available {
@@ -187,14 +181,7 @@ func (m *Manager) SetUpdateAvailable(available bool) {
 	}
 }
 
-// checkUpdate 检查更新
-func (m *Manager) checkUpdate() {
-	status, _ := version.IsNewVersionAvailable(context.Background())
-	m.updateAvailable = status
-	m.SetUpdateAvailable(m.updateAvailable)
-}
-
-// performUpdate 执行更新
+// performUpdate
 func (m *Manager) performUpdate() error {
 	// 1. 停止所有服务器
 	if err := m.onAllSeverStop(); err != nil {
@@ -205,22 +192,32 @@ func (m *Manager) performUpdate() error {
 	if err := m.installUpdate(); err != nil {
 		return fmt.Errorf("failed to install update: %v", err)
 	}
-
-	// 3. 重启应用
-	if err := m.restartApplication(); err != nil {
-		return fmt.Errorf("failed to restart application: %v", err)
-	}
-
 	return nil
 }
 
-// installUpdate 安装更新
+// installUpdate
 func (m *Manager) installUpdate() error {
-	// TODO: 实现安装更新的逻辑
-	// 1. 备份当前版本
+	emptyStatus := utils.IsDirEmpty(config.GlobalByzeEnvironment.UpdateDir)
+	if emptyStatus {
+		return fmt.Errorf("installation directory is empty")
+	}
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		installFilaPath := filepath.Join(config.GlobalByzeEnvironment.UpdateDir, "byze-installer-latest.pkg")
+		cmd = exec.Command("open", installFilaPath)
+	case "linux":
+		installFilaPath := ""
+		fmt.Sprintf(installFilaPath)
+	case "windows":
+		installFilaPath := filepath.Join(config.GlobalByzeEnvironment.UpdateDir, "byze-installer-latest.exe")
+		cmd = exec.Command(installFilaPath, "/S")
+	}
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("failed to install update: %v", err)
+	}
 
-	// 2. 安装新版本
-	// 3. 更新配置文件等
 	return nil
 }
 

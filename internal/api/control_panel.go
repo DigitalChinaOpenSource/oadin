@@ -70,8 +70,3 @@ func (t *ByzeCoreServer) ModifyModelFilePathHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
-
-func (t *ByzeCoreServer) GetAllModels(c *gin.Context) {
-	// ctx := c.Request.Context()
-
-}
