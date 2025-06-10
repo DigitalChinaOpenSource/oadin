@@ -26,4 +26,5 @@ type MessageChunk struct {
 type SendStreamMessageRequest struct {
 	SessionID string `json:"session_id" binding:"required"`
 	Content   string `json:"content" binding:"required"`
+	McpTools  []McpTool `json:"mcpTools,omitempty"` // 支持多个MCP服务器
 }

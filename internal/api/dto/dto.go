@@ -79,7 +79,7 @@ type ImportServiceResponse struct {
 }
 
 type GetAIGCServicesRequest struct {
-	ServiceName string `json:"service_name,omitempty "`
+	ServiceName string `json:"service_name,omitempty"`
 }
 
 type CreateAIGCServiceResponse struct {

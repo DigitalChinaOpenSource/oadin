@@ -157,41 +157,41 @@ func (t *ByzeCoreServer) SetupFunTool(c *gin.Context) {
 func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
 	var req rpc.ClientMcpStartRequest
 	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
 	}
-	tools, err := t.MCP.ClientMcpStart(c, req.Id)
+	resp, err := t.MCP.ClientMcpStart(c.Request.Context(), req.Id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "500", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, tools)
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": resp})
 }
 
 func (t *ByzeCoreServer) ClientMcpStop(c *gin.Context) {
 	var req rpc.ClientMcpStopRequest
 	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
 	}
-	err := t.MCP.ClientMcpStop(c, req.Id)
+	err := t.MCP.ClientMcpStop(c, req.Ids)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "404", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, nil)
+	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success"})
 }
 
 func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
 	var req rpc.ClientRunToolRequest
 	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
 	}
 	resp, err := t.MCP.ClientRunTool(c, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "500", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": resp})
 }
