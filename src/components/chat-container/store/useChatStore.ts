@@ -7,12 +7,14 @@ interface ChatState {
   messages: MessageType[];
   uploadFileList: UploadFile[];
   historyVisible: boolean;
+  currentSessionId: string;
 
   // 操作方法
   setMessages: (messages: MessageType[]) => void;
   addMessage: (message: MessageType) => void;
   setUploadFileList: (files: UploadFile[]) => void;
   setHistoryVisible: (visible: boolean) => void;
+  setCurrentSessionId: (sessionId: string) => void;
   createNewChat: () => void;
 }
 
@@ -21,6 +23,7 @@ const useChatStore = create<ChatState>((set) => ({
   messages: [],
   uploadFileList: [],
   historyVisible: false,
+  currentSessionId: '',
 
   // 操作方法
   setMessages: (messages) => set({ messages }),
@@ -35,6 +38,7 @@ const useChatStore = create<ChatState>((set) => ({
       messages: [],
       uploadFileList: [],
     }),
+  setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
 }));
 
 export default useChatStore;

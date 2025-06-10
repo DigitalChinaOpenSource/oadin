@@ -8,7 +8,7 @@ import useViewModel from './useViewModel';
 import styles from './index.module.scss';
 
 export default function ChatContainer() {
-  const { historyVisible, setHistoryVisible, createNewChat } = useChatStore();
+  const { historyVisible, setHistoryVisible } = useChatStore();
   const vm = useViewModel();
 
   return (
@@ -41,7 +41,7 @@ export default function ChatContainer() {
               />
             }
             onClick={() => {
-              createNewChat();
+              vm.handleCreateNewChat();
               console.log('已创建新对话');
             }}
           />
