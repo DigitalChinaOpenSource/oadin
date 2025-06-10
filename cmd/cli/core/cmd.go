@@ -290,18 +290,18 @@ func Run(ctx context.Context) error {
 
 	go ListenModelEngineHealth()
 
-	// 创建一个带取消的 context
+	// create a cancel context
 	ctx, cancel := context.WithCancel(ctx)
 
-	// 创建错误通道
+	// create error chan
 	errChan := make(chan error, 2)
 
-	// 创建服务器管理器
+	// create server manager
 	globalServerManager = &ServerManager{
 		cancel: cancel,
 	}
 
-	// 启动 byze server
+	// start byze server
 	byzeSrv := &http.Server{
 		Addr:    config.GlobalByzeEnvironment.ApiHost,
 		Handler: byzeServer.Router,
@@ -314,7 +314,7 @@ func Run(ctx context.Context) error {
 		}
 	}()
 
-	// 启动 console server
+	// start console server
 	consoleSrv, err := console.StartConsoleServer(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to start console server: %v", err)
@@ -324,10 +324,9 @@ func Run(ctx context.Context) error {
 	_, _ = color.New(color.FgHiGreen).Println("Byze Gateway starting on port", config.GlobalByzeEnvironment.ApiHost)
 	_, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
 
-	// 创建系统托盘管理器
+	// create tray manager
 	trayManager := tray.NewManager(
 		func() error {
-			// 启动服务器的回调
 			if globalServerManager.byzeServer != nil {
 				return fmt.Errorf("server is already running")
 			}
@@ -340,22 +339,16 @@ func Run(ctx context.Context) error {
 					errChan <- fmt.Errorf("byze server error: %v", err)
 				}
 			}()
-			err = <-errChan
-			if err != nil {
-				return err
-			}
 			globalServerManager.byzeServer = byzeSrv
 			return nil
 		},
 		func() error {
-			// 停止服务器的回调
 			if globalServerManager.byzeServer == nil {
 				return fmt.Errorf("server is not running")
 			}
 			return globalServerManager.StopServer("byze")
 		},
 		func() error {
-			// 停止所有服务器的回调
 			var errs []error
 			if globalServerManager.byzeServer != nil {
 				if err := globalServerManager.StopServer("byze"); err != nil {
@@ -379,10 +372,10 @@ func Run(ctx context.Context) error {
 	)
 	globalServerManager.trayManager = trayManager
 
-	// 在新的 goroutine 中启动系统托盘
-	go trayManager.Start()
+	tray.StartCheckUpdate(ctx, trayManager)
+	// start tray
+	trayManager.Start()
 
-	// 等待错误或中断信号
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
