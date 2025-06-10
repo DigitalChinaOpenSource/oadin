@@ -299,7 +299,6 @@ const createSessionData = {
     title: "测试会话",
     modelId: "deepseek-r1:7b",
     embedModelId: "deepseek-r1:7b",
-    thinkingEnabled: true
 };
 
 byze.CreatePlaygroundSession(createSessionData).then((result) => {
@@ -409,5 +408,15 @@ const fileId = "file-uuid";
 
 byze.DeletePlaygroundFile(fileId).then((result) => {
     console.log(result);
+});
+```
+
+### 8.9 切换会话模型
+
+```javascript
+byze.ChangePlaygroundSessionModel({
+  sessionId: 'your-session-id',
+  modelId: 'new-model-id',
+  embedModelId: 'your-embed-model-id'
 });
 ```
