@@ -843,23 +843,23 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 		if err != nil {
 			return nil, err
 		}
-		IsRecommend := true
-		recommendModel, err := RecommendModels()
-		if err != nil {
-			IsRecommend = false
-		}
+
+		recommendModel, _ := RecommendModels()
 		for _, supportModel := range supportModelList {
+			IsRecommend := false
 			smInfo := supportModel.(*types.SupportModel)
-			if smInfo.Flavor != types.FlavorOllama {
-				IsRecommend = false
-			} else {
-				rmServiceModelInfo := recommendModel[smInfo.ServiceName]
-				if rmServiceModelInfo == nil {
+			if smInfo.ApiFlavor == types.FlavorOllama {
+				if recommendModel == nil {
 					IsRecommend = false
 				}
-				for _, rm := range rmServiceModelInfo {
-					if rm.Name != smInfo.ServiceName {
-						IsRecommend = false
+				rmServiceModelInfo := recommendModel[smInfo.ServiceName]
+				if rmServiceModelInfo != nil {
+					for _, rm := range rmServiceModelInfo {
+						if rm.Name == smInfo.Name {
+							IsRecommend = true
+							break
+						}
+
 					}
 				}
 			}
@@ -1069,7 +1069,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 			dataStart := (page - 1) * pageSize
 			dataEnd := page * pageSize
 			if dataEnd > len(resultList) {
-				dataEnd = len(resultList) - 1
+				dataEnd = len(resultList)
 			}
 
 			totalCount := len(resultList)
