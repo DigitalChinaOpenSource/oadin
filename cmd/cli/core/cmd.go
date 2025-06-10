@@ -30,6 +30,7 @@ import (
 	"byze/internal/event"
 	"byze/internal/provider"
 	"byze/internal/schedule"
+	"byze/internal/server"
 	"byze/internal/types"
 	"byze/internal/utils"
 	"byze/internal/utils/bcode"
@@ -238,6 +239,17 @@ func Run(ctx context.Context) error {
 		fmt.Printf("Failed to initialize json file store: %v\n", err)
 	}
 	datastore.SetDefaultJsonDatastore(jds)
+
+	if server.UseVSSForPlayground() {
+		go func() {
+			dbPath := config.GlobalByzeEnvironment.Datastore
+			if err := server.InitPlaygroundVSS(ctx, dbPath); err != nil {
+				slog.Error("Failed to initialize VSS database", "error", err)
+			} else {
+				slog.Info("VSS database initialized successfully")
+			}
+		}()
+	}
 
 	// version.StartCheckUpdate(ctx)
 	// Initialize core core app server
