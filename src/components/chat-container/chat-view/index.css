@@ -67,7 +67,7 @@
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   font-size: 12px;
-  color: #4b5563;
+  color: #344054;
   margin: 4px 0;
   display: inline-flex;
   align-items: center;
@@ -79,4 +79,24 @@
   top: 2px;
   transform: translateY(-50%);
   cursor: pointer;
+}
+
+.file-icon {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  margin-right: 8px;
+  border-radius: 4px;
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+.uploading-icon,
+.done-icon {
+  background-color: #7b86ff;
+}
+
+.error-icon {
+  background-color: #ffccc7;
 }

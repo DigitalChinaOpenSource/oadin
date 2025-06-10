@@ -4,13 +4,14 @@ import '@res-utiles/ui-components/dist/index.css';
 import { Button, Tooltip } from 'antd';
 import type { UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
-import { XCircleIcon } from '@phosphor-icons/react';
+import { FolderIcon, XCircleIcon } from '@phosphor-icons/react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import UploadTool from '../upload-tool';
 import useChatStore from '../store/useChatStore';
 import sendSvg from '@/components/icons/send.svg';
 import uploadSvg from '@/components/icons/upload.svg';
+import rollingSvg from '@/components/icons/rolling.svg';
 import './index.css';
 
 interface IChatViewProps {
@@ -75,6 +76,27 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           key={file.uid}
           className="upload-file-item"
         >
+          {/* <div className="file-icon uploading-icon">
+          <img
+            src={rollingSvg}
+            alt=""
+          />
+        </div> */}
+          {/* <div className="file-icon done-icon">
+          <FolderIcon
+            width={16}
+            height={16}
+            fill="#ffffff"
+          />
+        </div> */}
+          {/* <div className="file-icon error-icon">
+          <XCircleIcon
+            width={16}
+            height={16}
+            weight="fill"
+            fill="#e85951"
+          />
+        </div> */}
           {file.name}
           <div
             className="upload-file-remove"
@@ -97,7 +119,8 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
 
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      {isUploadVisible ? (
+      {/* TODO 去掉感叹号 */}
+      {!isUploadVisible ? (
         <UploadTool
           onFileListChange={onFileListChange}
           uploadFileList={uploadFileList}
@@ -144,7 +167,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             })}
             className="chat-message-list"
             contentListClassName="chat-message-content-list"
-            bottomPanel={<div style={{ background: '' }}>这里可以放正在生成的消息，或者是其他什么的...</div>}
+            // bottomPanel={<div style={{ background: '' }}>这里可以放正在生成的消息，或者是其他什么的...</div>}
           />
         </div>
 
