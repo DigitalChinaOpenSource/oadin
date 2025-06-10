@@ -18,7 +18,7 @@ ByzeLib 将协助开发者使用 Byze（白泽模型框架）。
 
 
 ``` sh
-npm install byze-lib-1.0.0.tgz
+npm install byze-lib-1.2.66.tgz
 ```
 
 然后在项目中引入该 Node Module：
@@ -282,4 +282,141 @@ byze.TextToImage(data).then((result) => {
     console.log(result);
 });
 
+## 8. Playground 功能
+
+Byze Playground 功能提供了一个与下载的 AI 模型交互的聊天界面，包含以下特性：
+
+- 会话管理
+- 消息发送和接收
+- 文档处理和 RAG（检索增强生成）功能
+- 流式响应
+- 思考模式
+
+### 8.1 创建会话
+
+```javascript
+const createSessionData = {
+    title: "测试会话",
+    modelId: "deepseek-r1:7b",
+    embedModelId: "deepseek-r1:7b",
+};
+
+byze.CreatePlaygroundSession(createSessionData).then((result) => {
+    console.log(result);
+});
+```
+
+### 8.2 获取会话列表
+
+```javascript
+byze.GetPlaygroundSessions().then((result) => {
+    console.log(result);
+
+});
+```
+
+### 8.3 发送消息
+
+```javascript
+const messageData = {
+    sessionId: "session-uuid",
+    content: "Hello, I'd like to chat about AI."
+};
+
+byze.SendPlaygroundMessage(messageData).then((result) => {
+    console.log(result);
+
+});
+```
+
+### 8.4 发送流式消息
+
+```javascript
+const messageData = {
+    sessionId: "session-uuid",
+    content: "Tell me about neural networks"
+};
+
+const stream = byze.SendPlaygroundMessageStream(messageData);
+
+// 使用事件监听器接收流式数据
+stream.on('data', (chunk) => {
+    console.log('收到数据片段:', chunk.content);
+    // 处理流式响应的每个数据片段
+});
+
+stream.on('complete', (finalMessage) => {
+    console.log('完整消息:', finalMessage);
+    // 处理完整的最终消息
+});
+
+stream.on('error', (error) => {
+    console.error('错误:', error);
+});
+
+stream.on('end', () => {
+    console.log('流结束');
+});
+```
+
+### 8.5 获取消息历史
+
+```javascript
+const sessionId = "session-uuid";
+
+byze.GetPlaygroundMessages(sessionId).then((result) => {
+    console.log(result);
+});
+```
+
+### 8.6 文件上传与处理（RAG功能）
+
+```javascript
+// 上传文件
+const sessionId = "session-uuid";
+const filePath = "path/to/document.txt";
+
+byze.UploadPlaygroundFile(sessionId, filePath).then((result) => {
+    console.log('文件上传结果:', result);
+    
+    if (result.code === 200 && result.data) {
+        // 处理文件（生成嵌入）
+        const fileId = result.data.id;
+        const model = "deepseek-r1:7b";  // 用于生成嵌入的模型
+        
+        return byze.ProcessPlaygroundFile(fileId, model);
+    }
+}).then((result) => {
+    console.log('文件处理结果:', result);
+});
+```
+
+### 8.7 获取文件列表
+
+```javascript
+const sessionId = "session-uuid";
+
+byze.GetPlaygroundFiles(sessionId).then((result) => {
+    console.log(result);
+});
+```
+
+### 8.8 删除文件
+
+```javascript
+const fileId = "file-uuid";
+
+byze.DeletePlaygroundFile(fileId).then((result) => {
+    console.log(result);
+});
+```
+
+### 8.9 切换会话模型
+
+```javascript
+byze.ChangePlaygroundSessionModel({
+  sessionId: 'your-session-id',
+  modelId: 'new-model-id',
+  embedModelId: 'your-embed-model-id'
+});
 ```
