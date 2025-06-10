@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { IModelSourceType } from '../../types';
+import { useRequest, useDebounce } from 'ahooks';
+import { httpRequest } from '@/utils/httpRequest';
 
 export function useViewModel() {
   // 模型来源
