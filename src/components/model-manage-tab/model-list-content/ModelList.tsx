@@ -11,14 +11,14 @@ export interface IModelList {
   dataSource?: any[];
   grid?: ListGridType;
   isSelectable?: boolean;
-  vm: IUseViewModel;
+  vm?: IUseViewModel;
 }
 
 export const ModelList = (props: IModelList) => {
   const { vm } = props;
   return (
     <div className={styles.modelCardList}>
-      {vm.pagenationData.length > 0 ? (
+      {vm && vm.pagenationData.length > 0 ? (
         <Radio.Group value={vm?.selectModel?.id}>
           <List
             grid={props?.grid}

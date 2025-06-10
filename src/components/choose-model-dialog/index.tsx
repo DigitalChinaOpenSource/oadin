@@ -23,7 +23,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (options: IChoose
             onModelSourceChange={vm.onModelSourceChange}
           />
           <div className={styles.chooseModelList}>
-            <ModallistContent />
+            <ModallistContent isSelectable={true} />
           </div>
         </div>
       ),

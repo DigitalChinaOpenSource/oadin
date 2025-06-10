@@ -4,7 +4,7 @@ import ModelDetailModal from '../model-detail-modal';
 import { useViewModel } from './view-model';
 import realLoadingSvg from '@/components/icons/real-loading.svg';
 import { IModelSourceType } from '@/types';
-import { ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
+import { IModelList, ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
 import { useViewModel as useViewTabModel } from '@/components/model-manage-tab/view-model.ts';
 export interface IModelListContent {
   modelSearchVal: string;
@@ -12,14 +12,13 @@ export interface IModelListContent {
   onModelSearch: (val: string) => void;
 }
 
-export default function ModelListContent() {
+export default function ModelListContent(props: IModelList) {
   const { onModelSearch, modelSearchVal, modelSourceVal } = useViewTabModel();
   const vm = useViewModel({
     onModelSearch,
     modelSearchVal,
     modelSourceVal,
   });
-  console.info(vm, 'content的值');
   return (
     <>
       {vm.modelSupportLoading ? (
@@ -33,6 +32,7 @@ export default function ModelListContent() {
         <div className={styles.modelListContent}>
           <div className={styles.contentContainer}>
             <ModelList
+              isSelectable={props.isSelectable}
               vm={vm}
               pagination={
                 vm.modelListData.length > 12 && {

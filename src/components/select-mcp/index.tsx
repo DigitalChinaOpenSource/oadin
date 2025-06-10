@@ -2,6 +2,7 @@ import { Button, Popover } from 'antd';
 import styles from './index.module.scss';
 import { McpSelectBtn } from '@/components/icons';
 import { SelectMcpDialog } from './dialog.tsx';
+import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 
 enum selectMcpType {
   'default' = 'default',
@@ -10,7 +11,9 @@ enum selectMcpType {
 }
 
 export const SelectMcp = () => {
-  const selectType: selectMcpType = selectMcpType['default'];
+  const { selectMcpList } = useSelectMcpStore();
+  // 根据selectMcpList长度确定类型
+  const selectType = selectMcpList.length > 0 ? selectMcpType.selected : selectMcpType.default;
   const selectTypeClass = styles[`select_mcp_${selectMcpType[selectType]}`];
   return (
     <div className={`${styles.select_mcp} ${selectTypeClass}`}>
@@ -28,7 +31,7 @@ export const SelectMcp = () => {
             />
           }
         >
-          已选<span className={styles.select_mcp_count_warp}>0</span>
+          已选<span className={styles.select_mcp_count_warp}>{selectMcpList.length || 0}</span>
         </Button>
       </Popover>
     </div>
