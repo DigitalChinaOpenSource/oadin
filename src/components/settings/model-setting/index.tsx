@@ -31,12 +31,9 @@ const ModelSetting: React.FC = () => {
 
   const { migratingStatus } = useModelPathChangeStore();
   const isMigrating: boolean = migratingStatus === 'pending';
-  console.log('isMigratingisMigrating', isMigrating);
-  console.log('migratingStatusmigratingStatus', migratingStatus);
 
   // 表单提交处理
   const onFinish = (values: ModelSettingFormValues) => {
-    console.log('提交的表单数据:', values);
     // TODO: 调用API保存配置
     changeModelDownUrl(values.modelDownloadUrl);
   };
@@ -48,7 +45,6 @@ const ModelSetting: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('modelDownUrl', modelDownUrl);
     form.setFieldValue('modelDownloadUrl', modelDownUrl || '');
   }, [modelDownUrl]);
 
