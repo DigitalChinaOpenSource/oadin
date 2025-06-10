@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"byze/internal/hardware"
 	"byze/internal/types"
 
 	"github.com/mark3labs/mcp-go/client"
@@ -23,53 +22,53 @@ type StdioTransport struct {
 	mu             sync.Mutex
 }
 
+var (
+	stdioTransportInstance StdioTransport
+	stdioTransportOnce     sync.Once
+)
+
 func NewMcpService() *StdioTransport {
-	return &StdioTransport{
-		clients:        make(map[string]*client.Client),
-		pendingClients: make(map[string]chan *client.Client),
-	}
+	stdioTransportOnce.Do(func() {
+		stdioTransportInstance = StdioTransport{
+			clients:        make(map[string]*client.Client),
+			pendingClients: make(map[string]chan *client.Client),
+		}
+	})
+	return &stdioTransportInstance
 }
 
 func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*client.Client, error) {
-	// 命令执行路径
-	// 环境变量
-	if config.Command != "" {
-		// command := "D:\\work_szsm\\20250603\\byze\\internal\\hardware\\installer\\runtime\\bun.exe"
-		// args := []string{"x", "-y", "bing-cn-mcp"}
-		commandBuilder := hardware.NewCommandBuilder(config.Command).WithArgs(config.Args...)
-		for key, value := range config.Env {
-			commandBuilder.WithEnv(key, value)
-		}
-
-		cmd, err := commandBuilder.GetRunCommand()
-		if err != nil {
-			return nil, err
-		}
-		stdioTransport := transport.NewStdio(
-			cmd.Path,
-			cmd.Env,
-			cmd.Args...,
-		)
-		fmt.Printf("Command to run: %s\n", cmd.String())
-
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		if err := stdioTransport.Start(ctx); err != nil {
-			log.Printf("failed to start stdio transport: %v", err)
-		}
-
-		c := client.NewClient(stdioTransport)
-		initRequest := mcp.InitializeRequest{}
-		_, err = c.Initialize(ctx, initRequest)
-		if err != nil {
-			_ = stdioTransport.Close()
-			log.Printf("failed to initialize stdio client: %v", err)
-		}
-		return c, nil
+	fmt.Println("Initializing transport client with config:", config)
+	if config.Command == "" {
+		return nil, errors.New("either baseUrl or command must be provided")
 	}
-	return nil, errors.New("either baseUrl or command must be provided")
+	var envVars []string
+	for k, v := range config.Env {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
+	}
+	stdioTransport := transport.NewStdio(
+		config.Command,
+		envVars,
+		config.Args...,
+	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := stdioTransport.Start(ctx); err != nil {
+		fmt.Printf("failed to start stdio transport: %v", err)
+		return nil, err
+	}
+
+	c := client.NewClient(stdioTransport)
+	initRequest := mcp.InitializeRequest{}
+	_, err := c.Initialize(ctx, initRequest)
+	if err != nil {
+		_ = stdioTransport.Close()
+		fmt.Printf("failed to initialize stdio client: %v", err)
+		return nil, err
+	}
+	return c, nil
 }
 
 func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, error) {
@@ -81,7 +80,7 @@ func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, er
 		s.mu.Unlock()
 		client, ok := <-ch
 		if !ok {
-			return nil, errors.New("client initialization failed")
+			return nil, errors.New("pendingClients client initialization failed")
 		}
 		return client, nil
 	}
@@ -113,10 +112,9 @@ func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, er
 
 		cli, err := s.initTransportClient(config)
 		if err != nil {
-			log.Printf("[MCP] Failed to initialize client for server %s: %v", config.Name, err)
+			fmt.Println("[MCP] Failed to initialize client for server : ", config.Name, err)
 			return
 		}
-
 		s.mu.Lock()
 		s.clients[serverKey] = cli
 		s.mu.Unlock()
@@ -138,15 +136,16 @@ func (s *StdioTransport) Stop(serverKey string) error {
 			return err
 		}
 		delete(s.clients, serverKey)
-		log.Printf("[MCP] Closed server: %s", serverKey)
+		fmt.Printf("[MCP] Closed server: %s", serverKey)
+		return nil
 	} else {
-		log.Printf("[MCP] No client found for server: %s", serverKey)
+		fmt.Printf("[MCP] No client found for server: %s", serverKey)
+		return errors.New("client not found")
 	}
-	return nil
 }
 
 func (s *StdioTransport) FetchTools(config types.MCPServerConfig) ([]mcp.Tool, error) {
-	log.Printf("[MCP] Listing tools for server: %s", config.Name)
+	fmt.Printf("[MCP] Listing tools for server: %s", config.Name)
 	cli, err := s.Start(config)
 	if err != nil {
 		return nil, err

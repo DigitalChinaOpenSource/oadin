@@ -99,6 +99,8 @@ func InjectRouter(e *ByzeCoreServer) {
 	r.Handle(http.MethodPut, "/mcp/:id/auth", e.AuthorizeMCP)
 	r.Handle(http.MethodPut, "/mcp/:id/reverse", e.ReverseStatus)
 	r.Handle(http.MethodPut, "/mcp/setup", e.SetupFunTool)
+	r.Handle(http.MethodPost, "/mcp/client/start", e.ClientMcpStart)
+	r.Handle(http.MethodPost, "/mcp/client/stop", e.ClientMcpStop)
 	playgroundHandler := NewPlaygroundHandler()
 	// Playground相关
 	r.Handle(http.MethodPost, "/playground/session", playgroundHandler.CreateSession)

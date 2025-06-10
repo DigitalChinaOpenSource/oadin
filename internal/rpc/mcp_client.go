@@ -248,10 +248,13 @@ type SetupFunToolRequest struct {
 type ClientMcpStartRequest struct {
 	Id string `json:"id"`
 }
-type ClientMcpStopRequest struct {
+
+type ClientMcpStartResponse struct {
 	Id string `json:"id"`
 }
-
+type ClientMcpStopRequest struct {
+	Ids []string `json:"ids"`
+}
 type ClientRunToolRequest struct {
 	MCPId    string         `json:"mcpId"`
 	ToolName string         `json:"toolName"`
