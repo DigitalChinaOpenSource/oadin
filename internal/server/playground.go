@@ -89,15 +89,19 @@ func getModelNameById(modelId string) string {
 // 创建对话会话
 func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateSessionRequest) (*dto.CreateSessionResponse, error) {
 	session := &types.ChatSession{
-		ID:              uuid.New().String(),
-		Title:           request.Title,
-		ModelID:         request.ModelId,
-		ModelName:       getModelNameById(request.ModelId),
-		EmbedModelID:    request.EmbedModelId,
-		ThinkingEnabled: request.ThinkingEnabled,
+		ID:           uuid.New().String(),
+		Title:        request.Title,
+		ModelID:      request.ModelId,
+		ModelName:    getModelNameById(request.ModelId),
+		EmbedModelID: request.EmbedModelId,
 	}
-
-	err := p.Ds.Add(ctx, session)
+	// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
+	model := &types.Model{ModelName: getModelNameById(request.ModelId)}
+	err := p.Ds.Get(ctx, model)
+	if err == nil {
+		session.ThinkingEnabled = model.ThinkingEnabled
+	}
+	err = p.Ds.Add(ctx, session)
 	if err != nil {
 		slog.Error("Failed to create chat session", "error", err)
 		return nil, err
@@ -369,12 +373,15 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	if req.ModelId != "" {
 		session.ModelID = req.ModelId
 		session.ModelName = getModelNameById(req.ModelId)
+		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
+		model := &types.Model{ModelName: getModelNameById(req.ModelId)}
+		err := p.Ds.Get(ctx, model)
+		if err == nil {
+			session.ThinkingEnabled = model.ThinkingEnabled
+		}
 	}
 	if req.EmbedModelId != "" {
 		session.EmbedModelID = req.EmbedModelId
-	}
-	if req.ThinkingEnabled != nil {
-		session.ThinkingEnabled = *req.ThinkingEnabled
 	}
 	session.UpdatedAt = time.Now()
 	err = p.Ds.Put(ctx, session)

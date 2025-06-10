@@ -6,10 +6,9 @@ import (
 
 // 创建会话请求
 type CreateSessionRequest struct {
-	Title           string `json:"title"`
-	ModelId         string `json:"modelId"`
-	EmbedModelId    string `json:"embedModelId"`
-	ThinkingEnabled bool   `json:"thinkingEnabled"`
+	Title        string `json:"title"`
+	ModelId      string `json:"modelId"`
+	EmbedModelId string `json:"embedModelId"`
 }
 
 type CreateSessionResponse struct {
@@ -69,14 +68,10 @@ type GetMessagesResponse struct {
 }
 
 // 切换会话模型请求
-// 用于切换指定会话的chat模型
-// sessionId: 会话ID, modelId: 新模型ID
-// embedModelId/thinkingEnabled 可选
 type ChangeSessionModelRequest struct {
-	SessionId       string `json:"sessionId"`
-	ModelId         string `json:"modelId"`
-	EmbedModelId    string `json:"embedModelId,omitempty"`
-	ThinkingEnabled *bool  `json:"thinkingEnabled,omitempty"`
+	SessionId    string `json:"sessionId"`
+	ModelId      string `json:"modelId"`
+	EmbedModelId string `json:"embedModelId,omitempty"`
 }
 
 type ChangeSessionModelResponse struct {
