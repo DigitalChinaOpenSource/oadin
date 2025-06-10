@@ -29,8 +29,8 @@ type MCPServer interface {
 	AuthorizeMCP(ctx context.Context, id string, auth string) error
 	ReverseStatus(c *gin.Context, id string) error
 	SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest) error
-	ClientMcpStart(c *gin.Context, id string) ([]mcp.Tool, error)
-	ClientMcpStop(c *gin.Context, id string) error
+	ClientMcpStart(ctx context.Context, id string) ([]mcp.Tool, error)
+	ClientMcpStop(c *gin.Context, ids []string) error
 	ClientRunTool(c *gin.Context, req *rpc.ClientRunToolRequest) (*mcp.CallToolResult, error)
 }
 
@@ -114,7 +114,7 @@ func (M *MCPServerImpl) GetKits(ctx context.Context, id string, request *rpc.Too
 
 	_ = M.Ds.Get(ctx, con)
 	if con == nil || con.ID == 0 || con.Kits == "" {
-		for i, _ := range res.Data.List {
+		for i := range res.Data.List {
 			res.Data.List[i].Enabled = true
 		}
 	} else {
@@ -343,7 +343,7 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	return nil
 }
 
-func (M *MCPServerImpl) ClientMcpStart(ctx *gin.Context, id string) ([]mcp.Tool, error) {
+func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) ([]mcp.Tool, error) {
 	mcpUserConfig := new(types.McpUserConfig)
 	mcpUserConfig.MCPID = id
 
@@ -366,15 +366,16 @@ func (M *MCPServerImpl) ClientMcpStart(ctx *gin.Context, id string) ([]mcp.Tool,
 
 	serverConfig := mcpConfig.Data.ServerConfig[0]
 	mcpServers := serverConfig.McpServers
-	config := mcpServers[mcpConfig.Data.ServerName]
 	mcpServerConfig := types.MCPServerConfig{
-		Id:      id,
-		Name:    mcpConfig.Data.ServerName,
-		Args:    config.Args,
-		Command: config.Command,
-		Env:     env,
+		Id:   id,
+		Name: mcpConfig.Data.ServerName,
 	}
-
+	for _, y := range mcpServers {
+		mcpServerConfig.Command = y.Command
+		mcpServerConfig.Args = y.Args
+		break
+	}
+	fmt.Println("mcpServers", mcpServers)
 	_, err = M.McpHandler.Start(mcpServerConfig)
 	if err != nil {
 		return nil, err
@@ -419,10 +420,12 @@ func (M *MCPServerImpl) ClientMcpStart(ctx *gin.Context, id string) ([]mcp.Tool,
 	return tools, nil
 }
 
-func (M *MCPServerImpl) ClientMcpStop(ctx *gin.Context, id string) error {
-	err := M.McpHandler.Stop(id)
-	if err != nil {
-		return err
+func (M *MCPServerImpl) ClientMcpStop(ctx *gin.Context, ids []string) error {
+	for _, id := range ids {
+		err := M.McpHandler.Stop(id)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
