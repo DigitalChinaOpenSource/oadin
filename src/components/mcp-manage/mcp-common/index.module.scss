@@ -14,26 +14,30 @@
 .mcp_common_content {
   width: 100%;
   padding: 24px;
-  .mcpTitle {
-    display: flex;
-    margin-bottom: 16px;
-    line-height: 32px;
-    .mcpTitleText {
-      font-size: 16px;
-      font-weight: 600;
-      color: #000115;
-    }
-    .mcpCount {
-      font-size: 14px;
-      margin-left: 16px;
-      color: #898ea3;
-    }
-    .searchInput {
-      margin-left: auto;
-    }
-  }
+}
+.mcp_common_content_dialog {
+  width: 100%;
+  padding: 0;
 }
 
+.mcpTitle {
+  display: flex;
+  margin-bottom: 16px;
+  line-height: 32px;
+  .mcpTitleText {
+    font-size: 16px;
+    font-weight: 600;
+    color: #000115;
+  }
+  .mcpCount {
+    font-size: 14px;
+    margin-left: 16px;
+    color: #898ea3;
+  }
+  .searchInput {
+    margin-left: auto;
+  }
+}
 .expandIcon {
   cursor: pointer;
   margin-left: 16px;

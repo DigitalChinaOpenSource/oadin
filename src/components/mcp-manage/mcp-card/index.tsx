@@ -1,6 +1,6 @@
-import { useMemo, useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import styles from './index.module.scss';
-import { Button, Popover, Tooltip } from 'antd';
+import { Button, Checkbox, Popover, Tooltip } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
 import { GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
@@ -11,22 +11,34 @@ import { DotsThreeCircleIcon } from '@phosphor-icons/react';
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
+import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import EllipsisTooltip from '@/components/ellipsis-tooltip';
 
 export interface IMcpCardProps {
   // 模型数据
   mcpData: IMcpListItem;
   handelMcpCardClick: (mcpId: string | number) => void;
+  isSelectable?: boolean;
 }
 
 export default function McpCard(props: IMcpCardProps) {
-  const { mcpData, handelMcpCardClick } = props;
+  const { mcpData, handelMcpCardClick, isSelectable } = props;
+
+  const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
   const { fetchMcpDetail, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail(mcpData.id);
 
   const formatUnixTime = (unixTime: number) => {
     const date = dayjs.unix(unixTime);
     return date.format('YYYY-MM-DD');
   };
-
+  // 处理单个项目的选择
+  const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
+    if (checked) {
+      setSelectMcpList([...selectMcpList, item]);
+    } else {
+      setSelectMcpList(selectMcpList.filter((mcpItem) => mcpItem?.id !== item?.id));
+    }
+  };
   const contentRef = useRef<HTMLDivElement>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [showOperate, setShowOperate] = useState(false);
@@ -45,7 +57,7 @@ export default function McpCard(props: IMcpCardProps) {
       setShowTooltip(isOverflowing);
     }
   }, [mcpData?.abstract?.zh]);
-
+  const isAdd = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
   return (
     <div className={styles.mcpCard}>
       <div className={styles.cardHeader}>
@@ -53,6 +65,7 @@ export default function McpCard(props: IMcpCardProps) {
           {/* logo */}
           <div className={styles.avatar}>
             <img
+              alt=""
               src={mcpData?.logo || defaultPng}
               width={24}
             />
@@ -82,22 +95,33 @@ export default function McpCard(props: IMcpCardProps) {
             )}
           </div>
         </div>
+
+        {isSelectable ? (
+          <div>
+            <Checkbox
+              checked={selectMcpList
+                .map((item) => {
+                  return item?.id;
+                })
+                .includes(mcpData.id)}
+              // disabled={isAdd}
+              onChange={(e) => handleItemSelect(mcpData, e.target.checked)}
+            />
+          </div>
+        ) : null}
       </div>
       <div style={{ height: '24px' }}>
         <TagsRender tags={mcpData?.tags || []} />
       </div>
 
-      <Tooltip
-        title={showTooltip && mcpData?.abstract?.zh}
-        styles={{ root: { maxWidth: '400px' } }}
+      {/* 修改：使用 EllipsisTooltip 组件 */}
+      <EllipsisTooltip
+        title={mcpData?.abstract?.zh}
+        className={styles.contentWrapper}
+        maxWidth={400}
       >
-        <div
-          ref={contentRef}
-          className={styles.contentWrapper}
-        >
-          {mcpData?.abstract?.zh}
-        </div>
-      </Tooltip>
+        {mcpData?.abstract?.zh}
+      </EllipsisTooltip>
 
       <div className={styles.infoWrapper}>
         <div className={styles.providerName}>{mcpData?.supplier}</div>
@@ -114,7 +138,7 @@ export default function McpCard(props: IMcpCardProps) {
           查看详情
         </Button>
         <div className={styles.splitLine}></div>
-        {(mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0) && (
+        {isAdd && (
           <Button
             type={'link'}
             icon={<PlusCircleOutlined />}

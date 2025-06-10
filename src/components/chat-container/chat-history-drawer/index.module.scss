@@ -5,16 +5,17 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  .noData {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    line-height: 22px;
-    color: #9e9faa;
-    font-weight: 400;
+}
+
+.noData {
+  position: relative;
+  top: 200px;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  color: #344054;
+  img {
+    width: 100px;
   }
 }
 
