@@ -1,4 +1,4 @@
-import { Button, Tooltip } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import { ModelCheckingNodata } from './model-checking-nodata';
 import moreModel from '@/components/icons/moreModel.png';
@@ -6,6 +6,7 @@ import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import { useState } from 'react';
 import { IModelListContent, IUseViewModel, useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 import { ModelCheckingHasdata } from '@/components/model-checking/model-checking-data';
+import useSelectedModelStore from '@/store/useSelectedModel.ts';
 
 export default function ModelChecking() {
   const vmProps: IModelListContent = {
@@ -14,9 +15,17 @@ export default function ModelChecking() {
     onModelSearch: () => {},
     mine: true,
   };
+  const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
   const vm: IUseViewModel = useViewModel(vmProps);
   const isHasMedel = vm.pagination.total > 0;
   const [open, setOpen] = useState<boolean>(false);
+  const onOk = () => {
+    if (selectedModel && Object.keys(selectedModel).length > 0) {
+      setIsSelectedModel(true);
+    } else {
+      message.warning('请先选择一个模型');
+    }
+  };
   return (
     <div>
       <div className={styles.warp}>
@@ -41,13 +50,17 @@ export default function ModelChecking() {
         </div>
         <div className={styles.button}>
           {isHasMedel ? (
-            renderButton()
+            renderButton({
+              onOk,
+            })
           ) : (
             <Tooltip
               title="下载模型后即可开始体验"
               color="#fff"
             >
-              {renderButton()}
+              {renderButton({
+                onOk,
+              })}
             </Tooltip>
           )}
         </div>
@@ -59,6 +72,17 @@ export default function ModelChecking() {
     </div>
   );
 }
-const renderButton = () => {
-  return <Button type="primary">立即体验</Button>;
+const renderButton = ({ onOk }: { onOk: () => void }) => {
+  return (
+    <Button
+      type="primary"
+      onClick={() => {
+        if (onOk) {
+          onOk();
+        }
+      }}
+    >
+      立即体验
+    </Button>
+  );
 };
