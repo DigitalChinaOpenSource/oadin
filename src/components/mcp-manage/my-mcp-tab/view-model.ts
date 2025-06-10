@@ -5,7 +5,24 @@ import { IMcpListRequestParams, IMcpListData, IMcpListItem, IPagination, ITagsDa
 import { useNavigate } from 'react-router-dom';
 import usePageParamsStore from '@/store/usePageParamsStore.ts';
 
-export function useViewModel() {
+export interface IUseViewModelReturn {
+  mcpListLoading: boolean;
+  mcpListData: IMcpListItem[];
+  handelMcpCardClick: (serviceId: string | number) => void;
+  onMcpInputSearch: (inputSearchVal: string) => void;
+  collapsed: boolean;
+  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  pagination: IPagination;
+  handlePageChange: (page: number, pageSize: number) => void;
+  handleTagsChange: (category: string, list: string[]) => void;
+  tagsData: ITagsDataItem[];
+  checkedValues: Record<string, string[]>;
+  searchVal: string;
+  setSearchVal: React.Dispatch<React.SetStateAction<string>>;
+  handleClearTags: () => void;
+}
+
+export function useViewModel(): IUseViewModelReturn {
   const navigate = useNavigate();
   const { setPageParams, getPageParams, setTagsDataStore, tagsDataStore } = usePageParamsStore();
   const [mcpListData, setMcpListData] = useState<IMcpListItem[]>([]);

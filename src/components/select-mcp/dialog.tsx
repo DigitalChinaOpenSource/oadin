@@ -8,12 +8,15 @@ import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import TagsRender from '@/components/tags-render';
 import defaultLogo from '@/assets/favicon.png';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
 
 export const SelectMcpDialog: React.FC = () => {
   const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useViewModel();
   const [allList, setAllList] = useState<IMcpListItem[]>([]);
   const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
   const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
+  // 打开选择更多MCP工具弹窗
+  const [open, setOpen] = useState<boolean>(false);
   // 控制是否只显示已选中的项
   const [showOnlySelected, setShowOnlySelected] = useState<boolean>(false);
   // 搜索关键字
@@ -86,7 +89,14 @@ export const SelectMcpDialog: React.FC = () => {
     <div className={styles.dialog_mcp}>
       <div className={styles.dialog_mcp_title}>
         <div>选择 MCP 工具</div>
-        <Button type="link">添加更多MCP工具</Button>
+        <Button
+          type="link"
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          添加更多MCP工具
+        </Button>
       </div>
       <div className={styles.dialog_mcp_search}>
         <div className={styles.dialog_mcp_search_input}>
@@ -165,6 +175,11 @@ export const SelectMcpDialog: React.FC = () => {
             </div>
           </List.Item>
         )}
+      />
+
+      <ChooseMcpDialog
+        open={open}
+        onCancel={() => setOpen(false)}
       />
     </div>
   );

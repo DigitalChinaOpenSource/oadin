@@ -362,6 +362,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     modelSourceVal,
     onModelSearch,
     selectModelData,
+
     selectModel,
     setSelectModel,
 

@@ -4,8 +4,9 @@ import { httpRequest } from '@/utils/httpRequest';
 import { IMcpListRequestParams, IMcpListData, IMcpListItem, IPagination, ITagsDataItem } from './types';
 import { useNavigate } from 'react-router-dom';
 import usePageParamsStore from '@/store/usePageParamsStore.ts';
+import { IUseViewModelReturn } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
 
-export function useViewModel() {
+export function useViewModel(): IUseViewModelReturn {
   const navigate = useNavigate();
   const { setPageParams, getPageParams, setTagsDataStore, tagsDataStore } = usePageParamsStore();
   const [mcpListData, setMcpListData] = useState<IMcpListItem[]>([]);

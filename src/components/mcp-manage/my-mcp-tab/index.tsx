@@ -1,56 +1,34 @@
-import { Input } from 'antd';
-import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useViewModel } from './view-model';
 import McpList from '../mcp-list';
-import styles from './index.module.scss';
-
-export default function MyMcpTab() {
+import { renderSearch, renderTitle, renderWarp } from '@/components/mcp-manage/mcp-common';
+export interface MyMcpTabProps {
+  isDialog?: boolean; // 是否是对话框模式
+}
+export default function MyMcpTab(props: MyMcpTabProps) {
   const vm = useViewModel();
+  const { isDialog } = props;
 
-  return (
-    <div className={styles.myMcpListTab}>
-      {/* 列表区域 */}
-      <div className={styles.myMcpListContent}>
-        <div className={styles.mcpTitle}>
-          <div className={styles.mcpTitleText}>
-            <span>我的MCP</span>
-            <span className={styles.mcpCount}>共 {vm.pagination.total} 个</span>
-          </div>
-          <div className={styles.searchInput}>
-            <Input
-              allowClear
-              placeholder="请输入 MCP 服务名称"
-              suffix={
-                <div
-                  className={styles.searchIcon}
-                  onClick={() => vm.onMcpInputSearch(vm.searchVal)}
-                >
-                  <MagnifyingGlassIcon
-                    width={16}
-                    height={16}
-                    fill="#808899"
-                  />
-                </div>
-              }
-              value={vm.searchVal}
-              onChange={(e) => vm.setSearchVal(e.target.value.trim())}
-              onClear={() => {
-                vm.setSearchVal('');
-                vm.onMcpInputSearch('');
-              }}
-              onPressEnter={(e) => vm.onMcpInputSearch(vm.searchVal)}
-              style={{ width: 380 }}
-            />
-          </div>
-        </div>
-        <McpList
-          mcpListData={vm.mcpListData}
-          pagination={vm.pagination}
-          onPageChange={vm.handlePageChange}
-          handelMcpCardClick={vm.handelMcpCardClick}
-          pageLoading={vm.mcpListLoading}
-        />
-      </div>
-    </div>
-  );
+  return renderWarp({
+    isDialog,
+    childrenNode: (
+      <McpList
+        mcpListData={vm.mcpListData}
+        pagination={vm.pagination}
+        onPageChange={vm.handlePageChange}
+        handelMcpCardClick={vm.handelMcpCardClick}
+        pageLoading={vm.mcpListLoading}
+      />
+    ),
+    titleNode: (
+      <>
+        {isDialog
+          ? null
+          : renderTitle({
+              title: '我的MCP',
+              count: vm.pagination.total ?? 0,
+            })}
+        {renderSearch({ vm })}
+      </>
+    ),
+  });
 }

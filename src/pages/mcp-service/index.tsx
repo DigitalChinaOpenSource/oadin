@@ -6,7 +6,9 @@ import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import { useSearchParams } from 'react-router-dom';
 
 export default function McpManage() {
-  const items: TabsProps['items'] = [
+  const [searchParams] = useSearchParams();
+  const mcpFrom: string | null = searchParams.get('mcpFrom');
+  const mcpTabItems: TabsProps['items'] = [
     {
       key: 'mcpList',
       label: 'MCP广场',
@@ -19,9 +21,6 @@ export default function McpManage() {
     },
   ];
 
-  const [searchParams] = useSearchParams();
-  const mcpFrom: string | null = searchParams.get('mcpFrom');
-
   // const onChange = (key: string) => {
   //   // console.log(key);
   // };
@@ -30,7 +29,7 @@ export default function McpManage() {
     <Tabs
       className={styles.mcpManage}
       defaultActiveKey={mcpFrom ?? 'mcpList'}
-      items={items}
+      items={mcpTabItems}
       tabBarStyle={{ borderBottom: 'none' }}
       // onChange={onChange}
     />
