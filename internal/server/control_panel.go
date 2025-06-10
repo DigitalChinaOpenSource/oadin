@@ -60,37 +60,26 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
 	}
 
-	// 迁移之前需停止引擎，避免进程仍在使用文件导致错误
+	// Stop the engine before migration to avoid errors caused by processes still using the files.
 	engine := provider.GetModelEngine("ollama")
 	_ = engine.StopEngine()
 
 	isSourceDirEmpty := utils.IsDirEmpty(req.SourcePath)
 	if !isSourceDirEmpty {
-		status, err := utils.SamePartitionStatus(req.SourcePath, req.TargetPath)
+		sourcePathSize, err := utils.GetFilePathTotalSize(req.SourcePath)
 		if err != nil {
 			return nil, bcode.ControlPanelPathCheckError
 		}
-		if status {
-			err = utils.CopyDir(req.SourcePath, req.TargetPath)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			sourcePathSize, err := utils.GetFilePathTotalSize(req.SourcePath)
-			if err != nil {
-				return nil, bcode.ControlPanelPathCheckError
-			}
-			targetDiskSizeInfo, err := utils.SystemDiskSize(req.TargetPath)
-			if err != nil {
-				return nil, bcode.ControlPanelPathCheckError
-			}
-			if int(sourcePathSize) > targetDiskSizeInfo.FreeSize {
-				return nil, bcode.ControlPanelPathSizeError
-			}
-			err = utils.CopyDir(req.SourcePath, req.TargetPath)
-			if err != nil {
-				return nil, bcode.ControlPanelCopyDirError
-			}
+		targetDiskSizeInfo, err := utils.SystemDiskSize(req.TargetPath)
+		if err != nil {
+			return nil, bcode.ControlPanelPathCheckError
+		}
+		if int(sourcePathSize) > targetDiskSizeInfo.FreeSize {
+			return nil, bcode.ControlPanelPathSizeError
+		}
+		err = utils.CopyDir(req.SourcePath, req.TargetPath)
+		if err != nil {
+			return nil, bcode.ControlPanelCopyDirError
 		}
 	}
 
