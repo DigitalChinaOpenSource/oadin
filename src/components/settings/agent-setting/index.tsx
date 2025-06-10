@@ -4,7 +4,7 @@ import styles from './index.module.scss';
 import { useAgentSettingViewModel } from '@/components/settings/agent-setting/view.module.ts';
 
 // 表单数据类型定义
-interface AgentSettingFormValues {
+export interface AgentSettingFormValues {
   endpoint: string;
   username?: string;
   password?: string;
@@ -13,12 +13,12 @@ interface AgentSettingFormValues {
 const AgentSetting: React.FC = () => {
   // 创建表单实例并指定泛型类型
   const [form] = Form.useForm<AgentSettingFormValues>();
-  const { agentChecked, setAgentChecked, systemProxy } = useAgentSettingViewModel();
+  const { agentChecked, systemProxy, changeProxy, saveProxy, saveProxyLoading } = useAgentSettingViewModel();
 
   // 表单提交处理
   const onFinish = (values: AgentSettingFormValues) => {
     console.log('提交的表单数据:', values);
-    // TODO: 调用API保存配置
+    saveProxy(values);
   };
 
   return (
@@ -34,7 +34,7 @@ const AgentSetting: React.FC = () => {
               checked={agentChecked}
               onClick={(checked, e) => {
                 e.stopPropagation();
-                setAgentChecked(checked);
+                changeProxy(checked);
               }}
             />
             <span>{agentChecked ? '开' : '关'}</span>
@@ -55,8 +55,10 @@ const AgentSetting: React.FC = () => {
               tooltip={'请输入代理地址'}
             >
               <Input
+                autoComplete={'off'}
                 placeholder="请输入代理地址"
                 style={{ width: 400 }}
+                allowClear={true}
               />
             </Form.Item>
             <Form.Item>
@@ -68,8 +70,10 @@ const AgentSetting: React.FC = () => {
                   style={{ marginBottom: 0 }}
                 >
                   <Input
+                    autoComplete={'off'}
                     placeholder="请输入用户名"
                     style={{ width: 400 }}
+                    allowClear={true}
                   />
                 </Form.Item>
                 <Form.Item
@@ -79,8 +83,10 @@ const AgentSetting: React.FC = () => {
                   style={{ marginBottom: 0 }}
                 >
                   <Input.Password
+                    autoComplete={'off'}
                     placeholder="请输入密码"
                     style={{ width: 400 }}
+                    allowClear={true}
                   />
                 </Form.Item>
               </Space>
@@ -89,6 +95,7 @@ const AgentSetting: React.FC = () => {
               <Button
                 type="primary"
                 htmlType="submit"
+                loading={saveProxyLoading}
               >
                 保存
               </Button>

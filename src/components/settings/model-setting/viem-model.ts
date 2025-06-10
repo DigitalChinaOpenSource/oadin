@@ -67,7 +67,7 @@ export function useModelSetting() {
   );
 
   // 保存模型下载源地址
-  const { run: changeModelDownUrl } = useRequest(
+  const { loading: changeModelDownUrlLoading, run: changeModelDownUrl } = useRequest(
     async (url: string) => {
       const data = await httpRequest.put('/system/modify_repository', { url });
       return data || url;
@@ -97,6 +97,7 @@ export function useModelSetting() {
     currentPathSpace,
     onCheckPathSpace,
     changeModelDownUrl,
+    changeModelDownUrlLoading,
     modelDownUrl,
     changingModelPath,
     setChangingModelPath,
