@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"gorm.io/gorm/utils"
 	"io"
 	"math/rand"
 	"net/http"
@@ -547,7 +548,14 @@ func IsDirEmpty(path string) bool {
 	defer f.Close()
 
 	// Read just one entry from the directory
-	_, err = f.Readdir(1)
+	fName, err := f.Readdirnames(1)
+	if runtime.GOOS == "darwin" {
+		for _, name := range fName {
+			if !utils.Contains([]string{".", "..", ".DS_Store"}, name) && !strings.HasPrefix(name, "._") {
+				return false
+			}
+		}
+	}
 
 	// If we got an EOF error, the directory is empty
 	return err == io.EOF
