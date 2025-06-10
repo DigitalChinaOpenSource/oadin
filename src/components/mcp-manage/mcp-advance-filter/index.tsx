@@ -5,8 +5,9 @@ import foldSvg from '@/components/icons/fold.svg';
 import cleanSvg from '@/components/icons/clean.svg';
 import McpTagsCheck from '@/components/mcp-manage/mcp-advance-filter/mcp-tags-check';
 import { ITagsDataItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
+import { IMcpCommonProps } from '@/components/mcp-manage/mcp-common';
 
-interface IMcpAdvanceFilter {
+interface IMcpAdvanceFilter extends IMcpCommonProps {
   // 是否折叠
   collapsed?: boolean;
   // 折叠通知外部
@@ -17,9 +18,20 @@ interface IMcpAdvanceFilter {
   handleTagsChange?: (category: string, list: any[]) => void;
 }
 
-export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
-  const { collapsed, setCollapsed, handleClearTags, tagsData, checkedValues, handleTagsChange } = props;
+const genPadding = (collapsed?: boolean, isDialog?: boolean): string => {
+  if (collapsed) {
+    return '0';
+  } else {
+    if (isDialog) {
+      return '0 0 0 24px';
+    } else {
+      return '28px 24px 24px 0';
+    }
+  }
+};
 
+export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
+  const { collapsed, setCollapsed, handleClearTags, tagsData, checkedValues, handleTagsChange, isDialog } = props;
   return (
     <div
       className={styles.mcpAdvanceFilter}
@@ -27,7 +39,7 @@ export default function McpAdvanceFilter(props: IMcpAdvanceFilter) {
         visibility: collapsed ? 'hidden' : 'visible',
         width: collapsed ? '0' : '224px',
         transition: 'width 0.3s ease-in-out',
-        padding: collapsed ? '0' : '28px 24px 24px 0',
+        padding: genPadding(collapsed, isDialog),
       }}
     >
       <div className={styles.filterTitle}>

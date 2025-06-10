@@ -21,6 +21,7 @@ export default function ModelManageTab(props: ModelManageProps) {
   return (
     <div className={styles.modelManageTab}>
       <ModelSearch
+        total={vmContent.pagination.total ?? 0}
         modelSearchVal={vm.modelSearchVal}
         modelSourceVal={vm.modelSourceVal}
         onModelSearch={vm.onModelSearch}
