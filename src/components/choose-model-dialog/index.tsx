@@ -1,18 +1,24 @@
-import { Modal, ModalProps, Tabs, TabsProps } from 'antd';
 import React from 'react';
+import { Modal, ModalProps, Tabs, TabsProps, message } from 'antd';
 import styles from './index.module.scss';
 import ModallistContent from '@/components/model-manage-tab/model-list-content';
 import { useViewModel } from '@/components/model-manage-tab/view-model.ts';
 import ModelSearch from '@/components/model-manage-tab/model-search';
 import noDataSvg from '@/components/icons/no-data.svg';
+import useSelectedModelStore from '@/store/useSelectedModel';
+import { on } from 'events';
 
-export interface IChooseModelDialog extends ModalProps {}
+export interface IChooseModelDialog {
+  onCancel: () => void;
+  open?: boolean;
+}
 
-export const ChooseModelDialog: React.FC<IChooseModelDialog> = (options: IChooseModelDialog) => {
+export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
   const vm = useViewModel();
+  const { selectedModel } = useSelectedModelStore();
   const items: TabsProps['items'] = [
     {
-      key: '1',
+      key: 'model-square',
       label: '模型广场',
       children: (
         <div>
@@ -29,7 +35,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (options: IChoose
       ),
     },
     {
-      key: '2',
+      key: 'my-models',
       label: '我的模型',
       children: (
         <div>
@@ -46,19 +52,27 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (options: IChoose
       ),
     },
   ];
-  const onChange = () => {};
+
+  const onOk = () => {
+    if (selectedModel && Object.keys(selectedModel).length > 0) {
+      props.onCancel();
+    } else {
+      message.warning('请先选择一个模型');
+    }
+  };
+
   return (
     <Modal
       className={styles.choose_model}
       okText="立即体验"
       title="选择模型"
       width={1000}
-      {...options}
+      onOk={onOk}
+      {...props}
     >
       <Tabs
-        defaultActiveKey="1"
+        defaultActiveKey="model-square"
         items={items}
-        onChange={onChange}
       />
     </Modal>
   );

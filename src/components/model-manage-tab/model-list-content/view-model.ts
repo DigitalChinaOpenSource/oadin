@@ -54,8 +54,6 @@ export interface IUseViewModel {
   modelSourceVal: ModelSourceType;
   onModelSearch: (val: string) => void;
   selectModelData: IModelDataItem;
-  selectModel: IModelDataItem;
-  setSelectModel: (model: IModelDataItem) => void;
 
   pagination: IPagenation;
   onPageChange: (current: number) => void;
@@ -85,8 +83,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   });
   // 选中的模型数据，暂用于配置授权
   const [selectModelData, setSelectModelData] = useState<IModelDataItem>({} as any);
-  // 选中的模型， 用于体验使用
-  const [selectModel, setSelectModel] = useState<IModelDataItem>({} as any);
 
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
@@ -226,7 +222,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 计算分页数据，过滤后的，用于渲染
   const pagenationData = useMemo(() => {
     const filteredData = getFilteredData();
-    console.info(filteredData, '过滤的数据');
     return paginatedData(pagination, filteredData);
   }, [modelListData, modelSearchVal, pagination]);
 
@@ -362,9 +357,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     modelSourceVal,
     onModelSearch,
     selectModelData,
-
-    selectModel,
-    setSelectModel,
 
     pagination,
     onPageChange,

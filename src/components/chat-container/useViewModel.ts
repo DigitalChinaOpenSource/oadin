@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 export default function useViewModel() {
-  const [historyVisible, setHistoryVisible] = useState(false);
+  const [isUploadVisible, setIsUploadVisible] = useState(false);
+  // TODO 获取当前是否下载词嵌入模型
 
   return {
-    historyVisible,
-    setHistoryVisible,
+    isUploadVisible,
+    setIsUploadVisible,
   };
 }

@@ -1,7 +1,9 @@
 import ModelChecking from '@/components/model-checking';
 
 export default function ModelCheckingPage() {
-  return <div>
+  return (
+    <div>
       <ModelChecking />
-  </div>
+    </div>
+  );
 }

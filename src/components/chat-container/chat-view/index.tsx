@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { ChatInput, MessageList, type MessageType, registerMessageContents } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
-import { Button } from 'antd';
+import { Button, Tooltip } from 'antd';
 import type { UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
 import { XCircleIcon } from '@phosphor-icons/react';
@@ -10,9 +10,14 @@ import McpToolChat from '../chat-components/mcp-tool-chat';
 import UploadTool from '../upload-tool';
 import useChatStore from '../store/useChatStore';
 import sendSvg from '@/components/icons/send.svg';
+import uploadSvg from '@/components/icons/upload.svg';
 import './index.css';
 
-export default function ChatView() {
+interface IChatViewProps {
+  isUploadVisible?: boolean; // 上传功能是否可用，是否下载词嵌入模型
+}
+
+export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages, addMessage, uploadFileList, setUploadFileList } = useChatStore();
 
   const messageAreaRef = useRef<HTMLDivElement>(null);
@@ -92,10 +97,32 @@ export default function ChatView() {
 
   const extraContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      <UploadTool
-        onFileListChange={onFileListChange}
-        uploadFileList={uploadFileList}
-      />
+      {isUploadVisible ? (
+        <UploadTool
+          onFileListChange={onFileListChange}
+          uploadFileList={uploadFileList}
+        />
+      ) : (
+        <Tooltip
+          arrow={false}
+          title={
+            <>
+              该功能需先下载词嵌入模型
+              <a>【立即下载】</a>
+            </>
+          }
+        >
+          <Button
+            icon={
+              <img
+                src={uploadSvg}
+                alt="上传"
+              />
+            }
+          />
+        </Tooltip>
+      )}
+
       <SelectMcp />
     </div>
   );
