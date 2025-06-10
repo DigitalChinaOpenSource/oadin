@@ -12,16 +12,15 @@ import styles from './index.module.scss';
 interface IModelPathModalProps {
   modalPath?: string;
   onModelPathVisible: () => void;
-  onModalPathChangeSuccess: () => void;
   updateModelPath: (path: string) => void;
-  modalPathVisible: boolean;
+  // 在外部调接口，同时关闭弹窗，接口状态由外部控制
+  onChangeModelPath: (params: { source_path: string; target_path: string }) => void;
 }
 
 export default memo(function ModelPathModal(props: IModelPathModalProps) {
-  const { modalPath, onModelPathVisible, onModalPathChangeSuccess, updateModelPath, modalPathVisible } = props;
+  const { modalPath, onModelPathVisible, onChangeModelPath, updateModelPath } = props;
 
   const { downloadList } = useModelDownloadStore();
-  console.log('downloadList', downloadList);
   const { IN_PROGRESS } = DOWNLOAD_STATUS;
   const { setMigratingStatus } = useModelPathChangeStore();
   const { checkByzeStatus, setCheckByzeServerLoading } = useByzeServerCheckStore();
@@ -31,7 +30,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
   const debouncedModelPath = useDebounce(modelPathValue, { wait: 1000 });
   const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes>({} as IModelPathSpaceRes);
   const [isFormValid, setIsFormValid] = useState(false);
-  const [changeModelPathLoading, setChangeModelPathLoading] = useState(false);
+
   useEffect(() => {
     if (!modalPath) return;
     form.setFieldsValue({ modelPath: modalPath });
@@ -54,10 +53,11 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
 
   useEffect(() => {
     if (!checkByzeStatus) {
-      setChangeModelPathLoading(false);
       onModelPathVisible();
       setMigratingStatus('failed');
       setCheckByzeServerLoading(false);
+    } else {
+      setMigratingStatus('init');
     }
   }, [checkByzeStatus]);
 
@@ -73,39 +73,6 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
       },
       onError: (error) => {
         setCurrentPathSpace({} as IModelPathSpaceRes);
-      },
-    },
-  );
-
-  const { run: onChangeModelPath } = useRequest(
-    async (params: { source_path: string; target_path: string }) => {
-      const data = await httpRequest.post('/control_panel/model/filepath', params);
-      return data || {};
-    },
-    {
-      manual: true,
-      onBefore: () => {
-        setChangeModelPathLoading(true);
-      },
-      onSuccess: (data) => {
-        if (data) {
-          message.success('模型存储路径修改成功');
-        }
-        console.log('onChangeModelPath data', data);
-        setCurrentPathSpace(data);
-        onCheckPathSpace(formValues.modelPath);
-        onModalPathChangeSuccess();
-        setMigratingStatus('init');
-      },
-      onError: (error: Error & { handled?: boolean }) => {
-        if (!error?.handled) {
-          message.error(error?.message || '模型存储路径修改失败');
-        }
-        setMigratingStatus('failed');
-      },
-      onFinally: () => {
-        setChangeModelPathLoading(false);
-        // onModelPathVisible();
       },
     },
   );
@@ -142,10 +109,9 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
       centered
       title="修改模型存储路径"
       width={480}
-      open={modalPathVisible}
+      open
       okButtonProps={{
         disabled: !isFormValid,
-        loading: changeModelPathLoading,
       }}
       onOk={handleToSavePath}
       onCancel={onModelPathVisible}

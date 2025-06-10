@@ -83,16 +83,6 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
         { key: '/settings/about-us', label: '关于我们' },
       ],
     },
-    {
-      key: '/model-chat',
-      icon: (
-        <img
-          src={location.pathname.startsWith('/model-chat') ? mmac : mm}
-          alt="模型对话"
-        />
-      ),
-      label: '模型对话',
-    },
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => {

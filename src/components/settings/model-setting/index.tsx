@@ -19,36 +19,32 @@ const ModelSetting: React.FC = () => {
     modelPath,
     modalPathVisible,
     onModelPathVisible,
-    onModalPathChangeSuccess,
+    onChangeModelPath,
     onCheckPathSpace,
     currentPathSpace,
     setCurrentPathSpace,
     modelDownUrl,
     changeModelDownUrl,
+    changeModelDownUrlLoading,
     changingModelPath,
     setChangingModelPath,
   } = useModelSetting();
 
   const { migratingStatus } = useModelPathChangeStore();
   const isMigrating: boolean = migratingStatus === 'pending';
-  console.log('isMigratingisMigrating', isMigrating);
-  console.log('migratingStatusmigratingStatus', migratingStatus);
 
   // 表单提交处理
   const onFinish = (values: ModelSettingFormValues) => {
-    console.log('提交的表单数据:', values);
     // TODO: 调用API保存配置
     changeModelDownUrl(values.modelDownloadUrl);
   };
 
   // 更改目录按钮点击事件
   const handleChangeDir = () => {
-    // TODO: 实现文件选择逻辑
     onModelPathVisible();
   };
 
   useEffect(() => {
-    console.log('modelDownUrl', modelDownUrl);
     form.setFieldValue('modelDownloadUrl', modelDownUrl || '');
   }, [modelDownUrl]);
 
@@ -74,12 +70,14 @@ const ModelSetting: React.FC = () => {
           <Form.Item
             label="模型下载源地址"
             name="modelDownloadUrl"
-            rules={[{ required: false, message: '请输入模型下载源地址' }]}
+            rules={[{ required: true, message: '请输入模型下载源地址' }]}
             tooltip={'模型下载源地址，所有模型将统一从该入口进行模型的下载'}
           >
             <Input
               placeholder="请输入模型下载源地址，所有模型将统一从该入口进行模型的下载"
               style={{ width: 500 }}
+              allowClear={true}
+              autoComplete={'off'}
             />
           </Form.Item>
 
@@ -87,6 +85,7 @@ const ModelSetting: React.FC = () => {
             <Button
               type="primary"
               htmlType="submit"
+              loading={changeModelDownUrlLoading}
             >
               保存
             </Button>
@@ -116,13 +115,15 @@ const ModelSetting: React.FC = () => {
           </div>
         </div>
       </div>
-      <ModelPathModal
-        modalPath={modelPath}
-        onModelPathVisible={onModelPathVisible}
-        onModalPathChangeSuccess={onModalPathChangeSuccess}
-        updateModelPath={setChangingModelPath}
-        modalPathVisible={modalPathVisible}
-      />
+      {modalPathVisible && (
+        <ModelPathModal
+          modalPath={modelPath}
+          onModelPathVisible={onModelPathVisible}
+          updateModelPath={setChangingModelPath}
+          onChangeModelPath={onChangeModelPath}
+        />
+      )}
+      ``
     </div>
   );
 };

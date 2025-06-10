@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { IModelSourceType } from '@/types';
-
 export function useViewModel() {
   // 模型来源
   const [modelSourceVal, setModelSourceVal] = useState<IModelSourceType>('local');

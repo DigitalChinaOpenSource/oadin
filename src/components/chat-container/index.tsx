@@ -4,10 +4,12 @@ import { PlusIcon, ClockCounterClockwiseIcon } from '@phosphor-icons/react';
 import ChatHistoryDrawer from './chat-history-drawer';
 import ChatView from './chat-view';
 import useChatStore from './store/useChatStore';
+import useViewModel from './useViewModel';
 import styles from './index.module.scss';
 
 export default function ChatContainer() {
   const { historyVisible, setHistoryVisible, createNewChat } = useChatStore();
+  const vm = useViewModel();
 
   return (
     <div className={styles.chatContainer}>
@@ -52,7 +54,7 @@ export default function ChatContainer() {
         >
           <div className={styles.chatContent}>
             <ChatModelManage />
-            <ChatView />
+            <ChatView isUploadVisible={vm.isUploadVisible} />
           </div>
         </Col>
       </Row>

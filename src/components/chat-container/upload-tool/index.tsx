@@ -90,7 +90,7 @@ export default function UploadTool({ onFileListChange, maxFiles = 5, uploadFileL
       onRemove={handleRemove}
       accept=".txt,.html,.htm,.md,.markdown,.pdf,.doc,.docx,.xls,.xlsx,.mp4,.mp3,.avi,.wmv"
     >
-      <Tooltip title="文件格式支持 txt、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX、MP4、MP3、AVI、WMV，单个文件限制 50MB">
+      <Tooltip title={'文件格式支持 txt、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX、MP4、MP3、AVI、WMV，单个文件限制 50MB'}>
         <Button
           icon={
             <img
