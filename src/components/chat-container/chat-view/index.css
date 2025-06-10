@@ -46,7 +46,7 @@
   z-index: 100;
 }
 .chat-input.ru-chat-input {
-  border-color: #5429ff;
+  border: unset;
 }
 
 .user-bubble.ru-chat-bubble-body-content {

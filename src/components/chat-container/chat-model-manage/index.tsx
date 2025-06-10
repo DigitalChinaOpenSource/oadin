@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Tooltip } from 'antd';
+import { useRequest } from 'ahooks';
+import { httpRequest } from '@/utils/httpRequest';
 import thinkSvg from '@/components/icons/think.svg';
 import exchangeSvg from '@/components/icons/exchange.svg';
-import { Tooltip } from 'antd';
 import TagsRender from '@/components/tags-render';
 import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import useSelectedModelStore from '@/store/useSelectedModel';
+import useChatStore from '../store/useChatStore';
+import { IPlaygroundSession } from '../types';
+
 import styles from './index.module.scss';
 
 interface IChatModelManageProps {
@@ -14,8 +19,31 @@ interface IChatModelManageProps {
 
 export default function ChatModelManage(props: IChatModelManageProps) {
   const { selectedModel } = useSelectedModelStore();
-  console.log('selectedModel===>', selectedModel);
+  const { setCurrentSessionId, currentSessionId } = useChatStore();
   const [open, setOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (selectedModel && Object.keys(selectedModel).length > 0) {
+      fetchChangeModel({ sessionId: currentSessionId, modelId: selectedModel.name });
+    }
+  }, [selectedModel]);
+
+  const { run: fetchChangeModel } = useRequest(
+    async (params: { sessionId: string; modelId: string }) => {
+      const data = await httpRequest.post('/playground/session/model', {
+        ...params,
+      });
+      return data?.data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data) => {
+        if (data.id) {
+          setCurrentSessionId(data.id);
+        }
+      },
+    },
+  );
 
   return (
     <>
