@@ -43,6 +43,7 @@ export default function McpSquareTab(props: IMyMcpTabProps) {
         showOnlySelectedMyMcp={showOnlySelectedMyMcp}
         showOnlySelectedMcpList={showOnlySelectedMcpList}
         isSelectable={isDialog}
+        isDialog={isDialog}
         grid={genGrid({ isDialog })}
         mcpListData={vm.mcpListData}
         onPageChange={vm.handlePageChange}
