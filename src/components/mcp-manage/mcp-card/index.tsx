@@ -87,7 +87,10 @@ export default function McpCard(props: IMcpCardProps) {
         <TagsRender tags={mcpData?.tags || []} />
       </div>
 
-      <Tooltip title={showTooltip && mcpData?.abstract?.zh}>
+      <Tooltip
+        title={showTooltip && mcpData?.abstract?.zh}
+        styles={{ root: { maxWidth: '400px' } }}
+      >
         <div
           ref={contentRef}
           className={styles.contentWrapper}

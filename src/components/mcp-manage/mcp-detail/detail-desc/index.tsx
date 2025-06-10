@@ -65,7 +65,10 @@ export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
           </div>
         </div>
 
-        <Tooltip title={showTooltip && abstract?.zh}>
+        <Tooltip
+          title={showTooltip && abstract?.zh}
+          styles={{ root: { maxWidth: '60%' } }}
+        >
           <div
             ref={contentRef}
             className={styles.detailDesc}
