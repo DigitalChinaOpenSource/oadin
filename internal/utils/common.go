@@ -666,3 +666,20 @@ func GetFilePathTotalSize(path string) (int64, error) {
 
 	return totalSize / 1024 / 1024 / 1024, err
 }
+
+func ClearDir(path string) error {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		entryPath := filepath.Join(path, entry.Name())
+		err = os.RemoveAll(entryPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
