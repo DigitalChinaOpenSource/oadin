@@ -88,17 +88,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi.PUT("/registry", e.ModifyRepositoryURL)
 	systemApi.PUT("/proxy", e.SetProxy)
 	systemApi.PUT("/proxy/switch", e.ProxySwitch)
-	// Apis related to mcp
-	r.Handle(http.MethodPost, "/mcp/search", e.GetMCPList)
-	r.Handle(http.MethodGet, "/mcp/:id", e.GetMCPDetail)
-	r.Handle(http.MethodPost, "/mcp/:id/tools/search", e.GetKits)
-	r.Handle(http.MethodGet, "/mcp/:id/clients", e.GetClients)
-	r.Handle(http.MethodGet, "/mcp/categories", e.GetCategories)
-	r.Handle(http.MethodPut, "/mcp/:id/download", e.DownloadMCP)
-	r.Handle(http.MethodPost, "/mcp/mine", e.GetMyMCPList)
-	r.Handle(http.MethodPut, "/mcp/:id/auth", e.AuthorizeMCP)
-	r.Handle(http.MethodPut, "/mcp/:id/reverse", e.ReverseStatus)
-	r.Handle(http.MethodPut, "/mcp/setup", e.SetupFunTool)
+
 	playgroundHandler := NewPlaygroundHandler()
 	// Playground相关
 	r.Handle(http.MethodPost, "/playground/session", playgroundHandler.CreateSession)
