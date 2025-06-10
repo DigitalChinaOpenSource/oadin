@@ -91,6 +91,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
         if (data) {
           message.success('模型存储路径修改成功');
         }
+        console.log('onChangeModelPath data', data);
         setCurrentPathSpace(data);
         onCheckPathSpace(formValues.modelPath);
         onModalPathChangeSuccess();
