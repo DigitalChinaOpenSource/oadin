@@ -77,6 +77,9 @@ func InjectRouter(e *ByzeCoreServer) {
 	mcpApi.PUT("/:id/auth", e.AuthorizeMCP)
 	mcpApi.PUT("/:id/reverse", e.ReverseStatus)
 	mcpApi.PUT("/setup", e.SetupFunTool)
+	mcpApi.POST("/client/start", e.ClientMcpStart)
+	mcpApi.POST("/client/stop", e.ClientMcpStop)
+	mcpApi.POST("/client/runTool", e.ClientRunTool)
 
 	// Apis related to system
 	systemApi := r.Group("system")
@@ -87,10 +90,18 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi.PUT("/proxy", e.SetProxy)
 	systemApi.PUT("/proxy/switch", e.ProxySwitch)
 
-	// mcp client apis
-	r.Handle(http.MethodGet, "/mcp/client/:id/start", e.ClientMcpStart)
-	r.Handle(http.MethodGet, "/mcp/client/:id/stop", e.ClientMcpStop)
-	r.Handle(http.MethodPost, "/mcp/client/tools/run", e.ClientRunTool)
+	playgroundHandler := NewPlaygroundHandler()
+	// Playground相关
+	r.Handle(http.MethodPost, "/playground/session", playgroundHandler.CreateSession)
+	r.Handle(http.MethodGet, "/playground/sessions", playgroundHandler.GetSessions)
+	r.Handle(http.MethodPost, "/playground/message", playgroundHandler.SendMessage)
+	r.Handle(http.MethodPost, "/playground/message/stream", playgroundHandler.SendMessageStream)
+	r.Handle(http.MethodGet, "/playground/messages", playgroundHandler.GetMessages)
+	r.Handle(http.MethodPost, "/playground/file", playgroundHandler.UploadFile)
+	r.Handle(http.MethodGet, "/playground/files", playgroundHandler.GetFiles)
+	r.Handle(http.MethodDelete, "/playground/file", playgroundHandler.DeleteFile)
+	r.Handle(http.MethodPost, "/playground/file/process", playgroundHandler.ProcessFile)
+	r.Handle(http.MethodPost, "/playground/session/model", playgroundHandler.ChangeSessionModel)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }
