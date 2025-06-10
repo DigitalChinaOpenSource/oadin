@@ -3,7 +3,7 @@ import MainLayout from '../components/main-layout';
 import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import McpDetail from '../components/mcp-manage/mcp-detail';
-import ModelChecking from '../pages/model-checking';
+// import ModelChecking from '../pages/model-checking';
 import ModelChat from '../pages/model-chat'; // 新增对话页面
 import ServiceProviderManage from '@/components/service-provider-tab';
 import ByzeServiceTab from '@/components/byze-service-tab';
@@ -40,7 +40,7 @@ const router = createBrowserRouter([
           },
           {
             path: 'model-experience',
-            element: <ModelChecking />,
+            element: <ModelChat />,
           },
         ],
       },
@@ -79,10 +79,6 @@ const router = createBrowserRouter([
       {
         path: '/mcp-detail',
         element: <McpDetail />,
-      },
-      {
-        path: '/model-chat',
-        element: <ModelChat />, // 新增对话页面
       },
       {
         path: '*',

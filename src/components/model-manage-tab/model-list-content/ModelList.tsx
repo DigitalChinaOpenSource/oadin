@@ -5,6 +5,7 @@ import type { ListGridType } from 'antd/es/list';
 import GeneralCard from '@/components/model-manage-tab/model-list-content/general-card';
 import noDataSvg from '@/components/icons/no-data.svg';
 import { IUseViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
+import useSelectedModelStore from '@/store/useSelectedModel';
 
 export interface IModelList {
   pagination?: PaginationConfig | false;
@@ -16,10 +17,12 @@ export interface IModelList {
 
 export const ModelList = (props: IModelList) => {
   const { vm } = props;
+  const { selectedModel } = useSelectedModelStore();
+
   return (
     <div className={styles.modelCardList}>
       {vm && vm.pagenationData.length > 0 ? (
-        <Radio.Group value={vm?.selectModel?.id}>
+        <Radio.Group value={selectedModel?.id}>
           <List
             grid={props?.grid}
             dataSource={props?.dataSource ?? vm.pagenationData}
@@ -34,8 +37,6 @@ export const ModelList = (props: IModelList) => {
                   onModelAuthVisible={vm.onModelAuthVisible}
                   onDownloadConfirm={vm.onDownloadConfirm}
                   onDeleteConfirm={vm.onDeleteConfirm}
-                  setSelectModel={vm.setSelectModel}
-                  selectModel={vm.selectModel}
                 />
               </List.Item>
             )}
