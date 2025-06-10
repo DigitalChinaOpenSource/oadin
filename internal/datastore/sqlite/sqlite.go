@@ -71,7 +71,7 @@ func (ds *SQLite) insertInitialData() error {
 		return fmt.Errorf("failed to count initial data: %v", err)
 	}
 	var servicesProviderCount int64
-	if err := ds.db.Model(&types.Service{}).Count(&servicesProviderCount).Error; err != nil {
+	if err := ds.db.Model(&types.ServiceProvider{}).Count(&servicesProviderCount).Error; err != nil {
 		return fmt.Errorf("failed to count initial data: %v", err)
 	}
 	if count == 0 {

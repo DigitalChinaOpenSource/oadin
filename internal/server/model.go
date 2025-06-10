@@ -320,6 +320,20 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 				// fmt.Fprintf(w, "data: %s\n\n", response)
 				if resp.Completed > 0 || resp.Status == "success" {
 					if resp.Status == "success" {
+						// 增加处理逻辑, 如果是私仓下载模型, 通过cp复制一个无私仓前缀的模型镜像
+						if req.Insecure {
+							// 处理私仓模型下载完成后的逻辑
+							var copyModelRequest types.CopyModelRequest
+							copyModelRequest.Source = extractRegistryModelName(req.Model)
+							copyModelRequest.Destination = ExtractModelName(req.Model)
+							// 通过api复制模型
+							err := providerEngine.CopyModel(ctx, &copyModelRequest)
+							if err != nil {
+								newErrorCh <- err
+								return
+							}
+						}
+
 						m.Status = "downloaded"
 						err = ds.Put(ctx, m)
 						if err != nil {
@@ -1100,4 +1114,23 @@ func myModelFilter(modelList *[]dto.RecommendModelData) {
 	}
 	// 数据回填
 	*modelList = finalDataList
+}
+
+// 需要提取模型名
+func extractRegistryModelName(fullName string) string {
+	// 去除https:// 或 http:// 前缀
+	fullName = strings.TrimPrefix(fullName, "https://")
+	fullName = strings.TrimPrefix(fullName, "http://")
+	return fullName
+}
+
+// ExtractModelName 提取模型名
+func ExtractModelName(fullName string) string {
+	// 找到最后一个"/"的位置
+	idx := strings.LastIndex(fullName, "/")
+	if idx == -1 {
+		// 没有"/"，直接返回原始字符串
+		return fullName
+	}
+	return fullName[idx+1:]
 }

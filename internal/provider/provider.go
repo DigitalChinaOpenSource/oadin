@@ -22,6 +22,7 @@ type ModelServiceProvider interface {
 	ListModels(ctx context.Context) (*types.ListResponse, error)
 	GetConfig() *types.EngineRecommendConfig
 	GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error)
+	CopyModel(ctx context.Context, req *types.CopyModelRequest) error
 }
 
 func GetModelEngine(engineName string) ModelServiceProvider {
