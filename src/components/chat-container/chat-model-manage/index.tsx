@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import sample from '@/components/icons/sample.svg';
 import thinkSvg from '@/components/icons/think.svg';
 import exchangeSvg from '@/components/icons/exchange.svg';
 import { Tooltip } from 'antd';
+import TagsRender from '@/components/tags-render';
 import { ChooseModelDialog } from '@/components/choose-model-dialog';
+import useSelectedModelStore from '@/store/useSelectedModel';
 import styles from './index.module.scss';
 
 interface IChatModelManageProps {
@@ -12,7 +13,8 @@ interface IChatModelManageProps {
 }
 
 export default function ChatModelManage(props: IChatModelManageProps) {
-  const modelTags = ['支持 MCP', '深度思考'];
+  const { selectedModel } = useSelectedModelStore();
+  console.log('selectedModel===>', selectedModel);
   const [open, setOpen] = useState<boolean>(false);
 
   return (
@@ -21,33 +23,32 @@ export default function ChatModelManage(props: IChatModelManageProps) {
         <div className={styles.left}>
           <div className={styles.modelIcon}>
             <img
-              src={sample}
+              src={selectedModel?.avatar}
               alt="模型图标"
             />
           </div>
           <div className={styles.modelName}>
-            <div className={styles.name}>模型名称</div>
-            {modelTags.map((tag, index) => (
-              <span
-                key={index}
-                className={styles.modelTag}
-              >
-                {tag}
-              </span>
-            ))}
+            <div className={styles.name}>{selectedModel?.name}</div>
+            <TagsRender
+              tags={selectedModel?.class || []}
+              highlightNums={selectedModel?.class?.length || 0}
+            />
           </div>
         </div>
 
         <div className={styles.right}>
-          {/* TODO */}
-          <div className={styles.think}>
-            <img
-              src={thinkSvg}
-              alt="思考图标"
-            />
-            <span>深度思考</span>
-          </div>
-          <div className={styles.fill}></div>
+          {selectedModel?.thinkingEnabled && (
+            <>
+              <div className={styles.think}>
+                <img
+                  src={thinkSvg}
+                  alt="思考图标"
+                />
+                <span>深度思考</span>
+              </div>
+              <div className={styles.fill}></div>
+            </>
+          )}
           <Tooltip title="切换模型后，将开启新会话">
             <div
               className={styles.changeModel}

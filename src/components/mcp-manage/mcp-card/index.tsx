@@ -12,6 +12,7 @@ import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import EllipsisTooltip from '@/components/ellipsis-tooltip';
 
 export interface IMcpCardProps {
   // 模型数据
@@ -113,17 +114,14 @@ export default function McpCard(props: IMcpCardProps) {
         <TagsRender tags={mcpData?.tags || []} />
       </div>
 
-      <Tooltip
-        title={showTooltip && mcpData?.abstract?.zh}
-        styles={{ root: { maxWidth: '400px' } }}
+      {/* 修改：使用 EllipsisTooltip 组件 */}
+      <EllipsisTooltip
+        title={mcpData?.abstract?.zh}
+        className={styles.contentWrapper}
+        maxWidth={400}
       >
-        <div
-          ref={contentRef}
-          className={styles.contentWrapper}
-        >
-          {mcpData?.abstract?.zh}
-        </div>
-      </Tooltip>
+        {mcpData?.abstract?.zh}
+      </EllipsisTooltip>
 
       <div className={styles.infoWrapper}>
         <div className={styles.providerName}>{mcpData?.supplier}</div>

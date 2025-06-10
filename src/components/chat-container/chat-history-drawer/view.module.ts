@@ -2,30 +2,11 @@ import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
-
-const testData: IChatHistoryItem[] = [
-  { id: '1', title: '对话1', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-06-09 10:00:00' },
-  {
-    id: '2',
-    title: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎',
-    modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎',
-    createdAt: '2025-10-01 10:00:00',
-  },
-  { id: '3', title: '对话3', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-06-09 10:00:00' },
-  { id: '4', title: '对话4', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-06-08 10:00:00' },
-  { id: '5', title: '对话5', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-06-07 10:00:00' },
-  { id: '6', title: '对话6', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-1-01 10:00:00' },
-  { id: '7', title: '对话7', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-1-01 10:00:00' },
-  { id: '8', title: '对话7', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-1-01 10:00:00' },
-  { id: '9', title: '对话7', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-1-01 10:00:00' },
-  { id: '10', title: '对话7', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-1-01 10:00:00' },
-  { id: '11', title: '对话7', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-1-01 10:00:00' },
-  { id: '12', title: '对话12', modelName: '上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎上山打老虎', createdAt: '2025-1-01 10:00:00' },
-];
+import { chatHistoryData } from './mock-data.ts';
 
 export function useChatHistoryDrawer() {
   // 历史对话记录
-  const [chatHistory, setChatHistory] = useState<IChatHistoryItem[]>(testData);
+  const [chatHistory, setChatHistory] = useState<IChatHistoryItem[]>(chatHistoryData);
 
   // 用于记录当前显示 Popconfirm 的卡片 id 并设置是否显示确认弹窗
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
