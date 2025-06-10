@@ -79,24 +79,31 @@ func (m *Manager) onReady() {
 		for {
 			select {
 			case <-mStartStop.ClickedCh:
-				if m.serverRunning {
-					// Show confirmation dialog before stopping
-					if confirmed := dialog.Message("Are you sure you want to stop the Byze server?").Title("Confirm Stop Server").YesNo(); confirmed {
-						if err := m.onServerStop(); err == nil {
-							m.serverRunning = false
+				byzeServerStatus := utils.IsServerRunning()
+				if byzeServerStatus != m.serverRunning {
+					m.serverRunning = byzeServerStatus
+					m.updateStartStopMenuItem(mStartStop)
+				} else {
+					if m.serverRunning {
+						// Show confirmation dialog before stopping
+						if confirmed := dialog.Message("Are you sure you want to stop the Byze server?").Title("Confirm Stop Server").YesNo(); confirmed {
+							if err := m.onServerStop(); err == nil {
+								m.serverRunning = false
+								m.updateStartStopMenuItem(mStartStop)
+							} else {
+								dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
+							}
+						}
+					} else {
+						if err := m.onServerStart(); err == nil {
+							m.serverRunning = true
 							m.updateStartStopMenuItem(mStartStop)
 						} else {
-							dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
+							dialog.Message("Failed to start server: %v", err).Title("Error").Error()
 						}
 					}
-				} else {
-					if err := m.onServerStart(); err == nil {
-						m.serverRunning = true
-						m.updateStartStopMenuItem(mStartStop)
-					} else {
-						dialog.Message("Failed to start server: %v", err).Title("Error").Error()
-					}
 				}
+
 			case <-mConsole.ClickedCh:
 				err := m.openControlPanel()
 				if err != nil {

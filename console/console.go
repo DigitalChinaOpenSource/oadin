@@ -34,6 +34,8 @@ func StartConsoleServer(ctx context.Context) (*http.Server, error) {
 	mux.Handle("/", fileServer)
 	// 使用 StripPrefix 处理 /model-manage 路由
 	mux.Handle("/model-manage/", http.StripPrefix("/model-manage", fileServer))
+	mux.Handle("/server-manage/", http.StripPrefix("/server-manage", fileServer))
+	mux.Handle("/mcp-service/", http.StripPrefix("/mcp-service", fileServer))
 
 	// 创建服务器
 	srv := &http.Server{
