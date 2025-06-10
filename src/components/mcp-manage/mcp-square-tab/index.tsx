@@ -4,22 +4,21 @@ import expandSvg from '@/components/icons/expand.svg';
 import McpAdvanceFilter from '../mcp-advance-filter';
 import McpList from '../mcp-list';
 import commonStyles from '@/components/mcp-manage/mcp-common/index.module.scss';
-import { MyMcpTabProps } from '@/components/mcp-manage/my-mcp-tab';
-import { renderSearch, renderTitle, renderWarp } from '@/components/mcp-manage/mcp-common';
+import { IMyMcpTabProps } from '@/components/mcp-manage/my-mcp-tab';
+import { genGrid, renderSearch, renderTitle, renderWarp } from '@/components/mcp-manage/mcp-common';
 
-export default function McpSquareTab(props: MyMcpTabProps) {
+export default function McpSquareTab(props: IMyMcpTabProps) {
   const vm = useViewModel();
-  const { isDialog } = props;
+  const { isDialog, showOnlySelectedMyMcp, showOnlySelectedMcpList, activeKey } = props;
   return renderWarp({
     isDialog,
     titleNode: (
       <>
-        {isDialog
-          ? null
-          : renderTitle({
-              title: 'MCP广场',
-              count: vm.pagination.total ?? 0,
-            })}
+        {renderTitle({
+          isDialog,
+          title: 'MCP广场',
+          count: vm.pagination.total ?? 0,
+        })}
         {renderSearch({
           vm,
         })}
@@ -40,6 +39,11 @@ export default function McpSquareTab(props: MyMcpTabProps) {
     ),
     childrenNode: (
       <McpList
+        activeKey={activeKey}
+        showOnlySelectedMyMcp={showOnlySelectedMyMcp}
+        showOnlySelectedMcpList={showOnlySelectedMcpList}
+        isSelectable={isDialog}
+        grid={genGrid({ isDialog })}
         mcpListData={vm.mcpListData}
         onPageChange={vm.handlePageChange}
         handelMcpCardClick={vm.handelMcpCardClick}

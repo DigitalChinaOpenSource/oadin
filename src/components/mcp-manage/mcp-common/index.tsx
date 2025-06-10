@@ -2,8 +2,14 @@ import { Input } from 'antd';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import styles from './index.module.scss';
 import { IUseViewModelReturn } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
-
-interface IRenderTitleProps {
+import type { ListGridType } from 'antd/es/list';
+export interface IMcpCommonProps {
+  isDialog?: boolean; // 是否是对话框模式
+  showOnlySelectedMyMcp?: boolean;
+  showOnlySelectedMcpList?: boolean;
+  activeKey?: string;
+}
+interface IRenderTitleProps extends IMcpCommonProps {
   count: number;
   title?: string;
 }
@@ -11,16 +17,15 @@ interface IRenderTitleProps {
 interface IRenderSerchProps {
   vm: IUseViewModelReturn;
 }
-interface IRenderWarpProps {
-  isDialog?: boolean; // 是否是对话框模式
+interface IRenderWarpProps extends IMcpCommonProps {
   filterNode?: React.ReactNode;
   titleNode?: React.ReactNode;
   childrenNode?: React.ReactNode;
 }
 
 export const renderTitle = (props: IRenderTitleProps) => {
-  const { count, title } = props;
-  return (
+  const { count, title, isDialog } = props;
+  return isDialog ? null : (
     <div className={styles.mcpTitleText}>
       <span>{title}</span>
       <span className={styles.mcpCount}>共 {count} 个</span>
@@ -62,11 +67,11 @@ export const renderSearch = (props: IRenderSerchProps) => {
 };
 
 export const renderWarp = (props: IRenderWarpProps) => {
-  const { filterNode, titleNode, childrenNode } = props;
+  const { filterNode, titleNode, childrenNode, isDialog } = props;
   return (
     <div className={styles.mcp_common}>
       {/* 列表区域 */}
-      <div className={styles.mcp_common_content}>
+      <div className={isDialog ? styles.mcp_common_content_dialog : styles.mcp_common_content}>
         <div className={styles.mcpTitle}>{titleNode}</div>
         {childrenNode}
       </div>
@@ -74,4 +79,8 @@ export const renderWarp = (props: IRenderWarpProps) => {
       {filterNode}
     </div>
   );
+};
+
+export const genGrid = (props: IMcpCommonProps): ListGridType => {
+  return props.isDialog ? { gutter: 16, column: 2, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 } : { gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 };
 };
