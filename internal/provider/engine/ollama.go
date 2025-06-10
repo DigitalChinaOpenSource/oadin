@@ -93,6 +93,15 @@ func (o *OllamaProvider) StartEngine() error {
 	}
 
 	cmd := exec.Command(execFile, "serve")
+	// 通過啟動命令設置代理
+	proxyHttp, proxyHttps := o.StartEngineWithProxy()
+	if proxyHttp != "" {
+		cmd.Env = append(os.Environ(),
+			proxyHttp,
+			proxyHttps,
+		)
+	}
+
 	err := cmd.Start()
 	if err != nil {
 		return fmt.Errorf("failed to start ollama: %v", err)
@@ -439,6 +448,21 @@ func (o *OllamaProvider) PullHandler(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// CopyModel 复制模型
+func (o *OllamaProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
+	fmt.Println("Ollama CopyModel: " + req.Source + " to " + req.Destination)
+	c := o.GetDefaultClient()
+
+	if err := c.Do(ctx, http.MethodDelete, "/api/copy", req, nil); err != nil {
+		fmt.Println("[Service] copy model failed : " + err.Error())
+		slog.Error("copye model failed : " + err.Error())
+		// todo: 貌似复制不成功,后续处理
+		return nil
+	}
+
+	return nil
+}
+
 // 替換為私倉拉取模型, 為防止出現中斷, 不做異常處理
 func privateRegistryHandle(req *types.PullModelRequest) {
 	// 从用户配置文件中读取系统设置
@@ -453,6 +477,41 @@ func privateRegistryHandle(req *types.PullModelRequest) {
 	if settings.OllamaRegistry != "" {
 		req.Insecure = true // 设置为true以允许不安全的连接
 		req.Model = settings.OllamaRegistry + "/library/" + req.Model
+		fmt.Println("[PullModel] Using private registry:", req.Model)
 
 	}
+}
+
+// StartEngineWithProxy 通過代理網絡啟動ollama服務
+func (o *OllamaProvider) StartEngineWithProxy() (string, string) {
+	var proxyHttp, proxyHttps string
+	// 读取用户配置文件中的系统设置
+	var settings cache.SystemSettings
+	err := cache.ReadSystemSettings(&settings)
+	if err != nil {
+		slog.Error("获取系统设置失败", "error", err)
+		return proxyHttp, proxyHttps
+	}
+
+	// 通過啟動環境變量設置代理
+	if settings.SystemProxy.Enabled {
+		if settings.SystemProxy.Endpoint == "" {
+			slog.Error("Ollama engine start with proxy, but proxy endpoint is empty")
+			return proxyHttp, proxyHttps
+
+		}
+		if settings.SystemProxy.Username != "" && settings.SystemProxy.Password != "" {
+			proxyHttp = fmt.Sprintf("HTTP_PROXY=http://%s:%s@%s", settings.SystemProxy.Username, settings.SystemProxy.Password, settings.SystemProxy.Endpoint)
+			proxyHttps = fmt.Sprintf("HTTPS_PROXY=http://%s:%s@%s", settings.SystemProxy.Username, settings.SystemProxy.Password, settings.SystemProxy.Endpoint)
+		} else {
+			proxyHttp = fmt.Sprintf("HTTP_PROXY=http://%s", settings.SystemProxy.Endpoint)
+			proxyHttps = fmt.Sprintf("HTTPS_PROXY=http://%s", settings.SystemProxy.Endpoint)
+		}
+		fmt.Println("Ollama engine start with proxy: " + settings.SystemProxy.Endpoint)
+		slog.Info("Ollama engine start with proxy: " + settings.SystemProxy.Endpoint)
+	} else {
+		slog.Info("Ollama engine start without proxy")
+	}
+
+	return proxyHttp, proxyHttps
 }
