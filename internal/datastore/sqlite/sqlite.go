@@ -53,6 +53,10 @@ func (ds *SQLite) Init() error {
 		&types.Model{},
 		&types.VersionUpdateRecord{},
 		&types.McpUserConfig{},
+		&types.ChatSession{},
+		&types.ChatMessage{},
+		&types.File{},
+		&types.FileChunk{},
 	); err != nil {
 		return fmt.Errorf("failed to initialize database tables: %v", err)
 	}

@@ -1,4 +1,5 @@
 const { str } = require("ajv");
+const playgroundSchemas = require('./playground_schema.js');
 
 // ========== 服务管理 ==========
 const getServicesSchema = {
@@ -642,6 +643,9 @@ module.exports = {
     textToImageRequest,
     textToImageResponse,
     embeddingRequest,
-    embeddingResponse
+    embeddingResponse,
+
+
+    ...playgroundSchemas
 };
     

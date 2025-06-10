@@ -8,6 +8,7 @@ const axios = require('axios');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 const EventEmitter = require('events');
+const FormData = require('form-data');
 const { execFile, spawn } = require('child_process');
 const { promises: fsPromises } = require("fs");
 
@@ -1119,6 +1120,323 @@ class Byze {
       return {
         code: 400,
         msg: error.response?.data?.message || error.message,
+        data: null,
+      };
+    }  }
+
+
+
+  // 创建会话
+  async CreatePlaygroundSession(data) {
+    // 直接使用小驼峰字段，不做字段名转换
+    this.validateSchema(schemas.createSessionRequestSchema, data);
+    return new Promise((resolve) => {
+      const userDir = os.homedir();
+      const byzePath = path.join(userDir, 'Byze', 'byze.exe');
+      process.env.PATH = `${process.env.PATH};${byzePath}`;
+
+      const child = spawn(byzePath, ['playground', 'create', JSON.stringify(data)], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
+
+      child.stdout.on('data', (data) => {
+        console.log(`stdout: ${data}`);
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          console.log('创建会话成功');
+          resolve(true);
+        } else {
+          console.error(`创建会话失败，退出码: ${code}`);
+          resolve(false);
+        }
+      });
+
+      child.on('error', (err) => {
+        console.error(`启动 Byze 创建会话命令失败: ${err.message}`);
+        resolve(false);
+      });
+
+      child.unref();
+    });
+  }
+
+  // 获取会话列表
+  async GetPlaygroundSessions() {
+    try {
+      const res = await this.client.get('/playground/sessions');
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.getSessionsResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.bcode?.message || null,
+        data: res.data.data,
+      };
+    } catch (error) {
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
+    }
+  }
+
+  // 发送消息
+  async SendPlaygroundMessage(data) {
+    this.validateSchema(schemas.sendMessageRequestSchema, data);
+    const res = await this.client.post('/playground/message', data);
+    try {
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.sendMessageResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.bcode?.message || null,
+        data: res.data.data,
+      };
+    } catch (error) {
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
+    }
+  }
+
+  // 发送流式消息
+  async SendPlaygroundMessageStream(data) {
+    this.validateSchema(schemas.sendStreamMessageRequestSchema, data);
+    const res = await this.client.post('/playground/message/stream', data, {
+      responseType: 'stream',
+      headers: { 'Accept': 'text/event-stream' }
+    });
+    
+    if (res.status !== 200) {
+      return {
+        code: 400,
+        msg: res.data?.message || 'Bad Request',
+        data: null,
+      };
+    }
+
+    const eventEmitter = new EventEmitter();
+
+    res.data.on('data', (chunk) => {
+      try {
+        const rawData = chunk.toString().trim();
+        // 处理服务器发送的事件流数据
+        let response;
+        try {
+          response = JSON.parse(rawData);
+        } catch (e) {
+          // 尝试去除 data: 前缀
+          const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
+          response = JSON.parse(jsonString);
+        }
+
+        eventEmitter.emit('data', response.data); // 触发数据事件
+        
+        // 如果是最后一个消息块，触发完成事件
+        if (response.data && response.data.is_complete) {
+          eventEmitter.emit('complete', response.data);
+        }
+      } catch (err) {
+        eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+      }
+    });
+
+    res.data.on('error', (err) => {
+      eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+    });
+
+    res.data.on('end', () => {
+      eventEmitter.emit('end'); // 触发结束事件
+    });
+
+    return eventEmitter; // 返回 EventEmitter 实例
+  }
+
+  // 上传文件
+  async UploadPlaygroundFile(sessionId, filePath) {
+    try {
+      const stats = fs.statSync(filePath);
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (stats.size > maxSize) {
+        return {
+          code: 400,
+          msg: 'File size exceeds the maximum limit of 50MB',
+          data: null
+        };
+      }
+      
+      const fileExt = path.extname(filePath).toLowerCase();
+      const allowedFormats = ['.txt', '.md', '.html', '.pdf', '.xlsx', '.docx'];
+      if (!allowedFormats.includes(fileExt)) {
+        return {
+          code: 400,
+          msg: 'File format not allowed. Allowed formats: txt, md, html, pdf, xlsx, docx',
+          data: null
+        };
+      }
+      
+      try {
+        const filesRes = await this.GetPlaygroundFiles(sessionId);
+        if (filesRes.code === 200 && filesRes.data && filesRes.data.length >= 10) {
+          return {
+            code: 400,
+            msg: 'Maximum file count reached (10 files per session)',
+            data: null
+          };
+        }
+      } catch (e) {
+        return {
+          code: 400,
+          msg: 'Failed to retrieve existing files for session',
+          data: null
+        };
+      }
+      
+      // 创建表单数据
+      const formData = new FormData();
+      formData.append('sessionId', sessionId);
+      
+      // 读取文件并添加到表单中
+      const fileStream = fs.createReadStream(filePath);
+      const fileName = path.basename(filePath);
+      formData.append('file', fileStream, fileName);
+
+      // 设置请求配置
+      const config = { 
+        headers: { 
+          ...formData.getHeaders() // 让 form-data 处理内容类型和边界
+        }
+      };
+      
+      const res = await this.client.post('/playground/file', formData, config);
+      
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      
+      await this.validateSchema(schemas.uploadFileResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.bcode?.message || null,
+        data: res.data.data,
+      };
+    } catch (error) {
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
+    }
+  }
+
+  // 处理文件（生成嵌入）
+  async ProcessPlaygroundFile(fileId, model) {
+    const data = {
+      fileId,
+      model
+    };
+    this.validateSchema(schemas.processFileRequestSchema, data);
+    const res = await this.client.post('/playground/file/process', data);
+    
+    if (res.status !== 200) {
+      return {
+        code: 400,
+        msg: res.data?.message || 'Bad Request',
+        data: null,
+      };
+    }
+    
+    await this.validateSchema(schemas.processFileResponseSchema, res.data);
+    return {
+      code: 200,
+      msg: res.data.bcode?.message || null,
+      data: res.data.data,
+    };
+  }
+
+  // 获取文件列表
+  async GetPlaygroundFiles(sessionId) {
+    const res = await this.client.get('/playground/files', {
+      params: { sessionId } 
+    });
+    
+    if (res.status !== 200) {
+      return {
+        code: 400,
+        msg: res.data?.message || 'Bad Request',
+        data: null,
+      };
+    }
+    
+    await this.validateSchema(schemas.getFilesResponseSchema, res.data);
+    return {
+      code: 200,
+      msg: res.data.bcode?.message || null,
+      data: res.data.data,
+    };
+  }
+
+  // 删除文件
+  async DeletePlaygroundFile(fileId) {
+    const res = await this.client.delete('/playground/file', {
+      params: { fileId } 
+    });
+    
+    if (res.status !== 200) {
+      return {
+        code: 400,
+        msg: res.data?.message || 'Bad Request',
+        data: null,
+      };
+    }
+    
+    await this.validateSchema(schemas.baseResponseSchema, res.data);
+    return {
+      code: 200,
+      msg: res.data.bcode?.message || null,
+      data: null,
+    };
+  }
+
+    async ChangePlaygroundSessionModel(data) {
+    this.validateSchema(schemas.changeSessionModelRequestSchema, data);
+    const res = await this.client.post('/playground/session/model', data);
+    try {
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      await this.validateSchema(schemas.changeSessionModelResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.bcode?.message || null,
+        data: res.data.data,
+      };
+    } catch (error) {
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
         data: null,
       };
     }
