@@ -68,7 +68,7 @@ func (sm *ServerManager) StopServer(serverType string) error {
 		return fmt.Errorf("server %s is not running", serverType)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
