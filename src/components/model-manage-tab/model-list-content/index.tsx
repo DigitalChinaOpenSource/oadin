@@ -10,6 +10,7 @@ export interface IModelListContent {
   modelSearchVal: string;
   modelSourceVal: IModelSourceType;
   onModelSearch: (val: string) => void;
+  mine?: boolean;
 }
 
 export default function ModelListContent(props: IModelList) {
@@ -18,6 +19,7 @@ export default function ModelListContent(props: IModelList) {
     onModelSearch,
     modelSearchVal,
     modelSourceVal,
+    mine: props.mine,
   });
   return (
     <>

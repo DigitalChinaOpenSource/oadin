@@ -27,6 +27,7 @@ interface IModelSquareParams {
   service_source: ModelSourceType;
   page_size?: number;
   page?: number;
+  mine?: boolean;
 }
 
 export interface IUseViewModel {
@@ -64,7 +65,7 @@ export interface IUseViewModel {
 const { confirm } = Modal;
 
 export function useViewModel(props: IModelListContent): IUseViewModel {
-  const { modelSourceVal, modelSearchVal, onModelSearch } = props;
+  const { modelSourceVal, modelSearchVal, onModelSearch, mine } = props;
   const { setMigratingStatus } = useModelPathChangeStore();
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
@@ -95,6 +96,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       const paramsTemp = {
         ...params,
         page_size: 999,
+        mine,
       };
       if (params?.service_source === 'remote') {
         paramsTemp.env_type = 'product';
@@ -130,9 +132,9 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
     },
   );
-  useEffect(() => {
-    fetchModelPath();
-  }, []);
+  // useEffect(() => {
+  //   fetchModelPath();
+  // }, []);
 
   useEffect(() => {
     onModelSearch('');

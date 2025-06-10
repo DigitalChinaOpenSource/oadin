@@ -13,6 +13,7 @@ export interface IModelList {
   grid?: ListGridType;
   isSelectable?: boolean;
   vm?: IUseViewModel;
+  mine?: boolean;
 }
 
 export const ModelList = (props: IModelList) => {

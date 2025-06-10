@@ -11,6 +11,7 @@ import ModelSetting from '@/components/settings/model-setting';
 import AgentSetting from '@/components/settings/agent-setting';
 import AboutUs from '@/components/settings/about-us';
 import ModelManageTab from '@/components/model-manage-tab';
+import MyModelManage from '@/components/model-manage-tab/my-model-manage';
 
 const router = createBrowserRouter([
   {
@@ -36,7 +37,7 @@ const router = createBrowserRouter([
           },
           {
             path: 'my-model-list',
-            element: <MyMcpTab />,
+            element: <MyModelManage />,
           },
           {
             path: 'model-experience',

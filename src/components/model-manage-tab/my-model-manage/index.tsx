@@ -1,9 +1,9 @@
-import styles from './index.module.scss';
-import ModelSearch from './model-search';
-import ModallistContent from './model-list-content';
-import { useViewModel } from './view-model';
+import styles from '../index.module.scss';
+import ModelSearch from '../model-search';
+import ModallistContent from '../model-list-content';
+import { useViewModel } from '../view-model.ts';
 
-export default function ModelManageTab() {
+export default function MyModelManageTab() {
   const vm = useViewModel();
 
   return (
@@ -15,7 +15,7 @@ export default function ModelManageTab() {
         onModelSourceChange={vm.onModelSourceChange}
       />
 
-      <ModallistContent mine={false} />
+      <ModallistContent mine={true} />
     </div>
   );
 }
