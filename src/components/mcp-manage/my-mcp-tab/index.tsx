@@ -6,12 +6,14 @@ export interface IMyMcpTabProps extends IMcpCommonProps {}
 
 export default function MyMcpTab(props: IMyMcpTabProps) {
   const vm = useViewModel();
-  const { isDialog, showOnlySelectedMcpList, showOnlySelectedMyMcp, activeKey } = props;
+  const { isDialog, showOnlySelectedMcpList, showOnlySelectedMyMcp, activeKey, setSelectTemporaryMcpItems, selectTemporaryMcpItems } = props;
 
   return renderWarp({
     isDialog,
     childrenNode: (
       <McpList
+        setSelectTemporaryMcpItems={setSelectTemporaryMcpItems}
+        selectTemporaryMcpItems={selectTemporaryMcpItems}
         showOnlySelectedMcpList={showOnlySelectedMcpList}
         showOnlySelectedMyMcp={showOnlySelectedMyMcp}
         activeKey={activeKey}

@@ -3,7 +3,7 @@ import React from 'react';
 import { useViewModel as useViewModelContent } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 import { useViewModel } from '@/components/model-manage-tab/view-model.ts';
 
-export const MyModel = () => {
+export const MyModel = (props: { isDialog?: boolean }) => {
   const vm = useViewModel();
   // 获取接口数据内容
   const vmContent = useViewModelContent({
@@ -16,7 +16,7 @@ export const MyModel = () => {
     <ModelManageTab
       vmContent={vmContent}
       key="my-models"
-      isDialog={true}
+      isDialog={props.isDialog}
     />
   );
 };

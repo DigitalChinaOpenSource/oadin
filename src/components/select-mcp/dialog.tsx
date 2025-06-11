@@ -187,7 +187,7 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
 
       <ChooseMcpDialog
         open={open}
-        onCancel={() => {
+        onCancelProps={() => {
           setOpen(false);
           setSelectMcpPopOpen(false);
         }}

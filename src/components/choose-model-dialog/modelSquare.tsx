@@ -2,8 +2,8 @@ import ModelManageTab from '@/components/model-manage-tab';
 import React from 'react';
 import { useViewModel } from '@/components/model-manage-tab/view-model.ts';
 import { useViewModel as useViewModelContent } from '@/components/model-manage-tab/model-list-content/view-model.ts';
-
-export const ModelSquare = () => {
+// 模型广场
+export const ModelSquare = (props: { isDialog?: boolean }) => {
   const vm = useViewModel();
   // 获取接口数据内容
   const vmContent = useViewModelContent({
@@ -16,7 +16,7 @@ export const ModelSquare = () => {
     <ModelManageTab
       vmContent={vmContent}
       key="model-square"
-      isDialog={true}
+      isDialog={props.isDialog}
     />
   );
 };

@@ -3,11 +3,15 @@ import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import styles from './index.module.scss';
 import { IUseViewModelReturn } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
 import type { ListGridType } from 'antd/es/list';
+import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
+import { Dispatch, SetStateAction } from 'react';
 export interface IMcpCommonProps {
   isDialog?: boolean; // 是否是对话框模式
   showOnlySelectedMyMcp?: boolean;
   showOnlySelectedMcpList?: boolean;
   activeKey?: string;
+  selectTemporaryMcpItems?: IMcpListItem[];
+  setSelectTemporaryMcpItems?: Dispatch<SetStateAction<IMcpListItem[]>>;
 }
 interface IRenderTitleProps extends IMcpCommonProps {
   count: number;

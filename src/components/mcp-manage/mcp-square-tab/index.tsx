@@ -9,7 +9,7 @@ import { genGrid, renderSearch, renderTitle, renderWarp } from '@/components/mcp
 
 export default function McpSquareTab(props: IMyMcpTabProps) {
   const vm = useViewModel();
-  const { isDialog, showOnlySelectedMyMcp, showOnlySelectedMcpList, activeKey } = props;
+  const { isDialog, showOnlySelectedMyMcp, showOnlySelectedMcpList, activeKey, selectTemporaryMcpItems, setSelectTemporaryMcpItems } = props;
   return renderWarp({
     isDialog,
     titleNode: (
@@ -39,6 +39,8 @@ export default function McpSquareTab(props: IMyMcpTabProps) {
     ),
     childrenNode: (
       <McpList
+        selectTemporaryMcpItems={selectTemporaryMcpItems}
+        setSelectTemporaryMcpItems={setSelectTemporaryMcpItems}
         activeKey={activeKey}
         showOnlySelectedMyMcp={showOnlySelectedMyMcp}
         showOnlySelectedMcpList={showOnlySelectedMcpList}

@@ -30,18 +30,18 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
       message.warning('请先选择一个模型');
     }
   };
-    const items: TabsProps['items'] = [
-        {
-            key: 'model-square',
-            label: '模型广场',
-            children: <ModelSquare />,
-        },
-        {
-            key: 'my-models',
-            label: '我的模型',
-            children: <MyModel />,
-        },
-    ];
+  const items: TabsProps['items'] = [
+    {
+      key: 'model-square',
+      label: '模型广场',
+      children: <ModelSquare isDialog={true} />,
+    },
+    {
+      key: 'my-models',
+      label: '我的模型',
+      children: <MyModel isDialog={true} />,
+    },
+  ];
 
   return (
     <Modal

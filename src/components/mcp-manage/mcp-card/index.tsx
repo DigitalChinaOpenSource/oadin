@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, Dispatch, SetStateAction } from 'react';
 import styles from './index.module.scss';
 import { Button, Checkbox, Popover, Tooltip } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
@@ -19,12 +19,13 @@ export interface IMcpCardProps {
   mcpData: IMcpListItem;
   handelMcpCardClick: (mcpId: string | number) => void;
   isSelectable?: boolean;
+  selectTemporaryMcpItems?: IMcpListItem[];
+  setSelectTemporaryMcpItems?: Dispatch<SetStateAction<IMcpListItem[]>>;
 }
 
 export default function McpCard(props: IMcpCardProps) {
-  const { mcpData, handelMcpCardClick, isSelectable } = props;
+  const { mcpData, handelMcpCardClick, isSelectable, setSelectTemporaryMcpItems, selectTemporaryMcpItems = [] } = props;
 
-  const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
   const { fetchMcpDetail, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail(mcpData.id);
 
   const formatUnixTime = (unixTime: number) => {
@@ -33,10 +34,13 @@ export default function McpCard(props: IMcpCardProps) {
   };
   // 处理单个项目的选择
   const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
+    console.info(item, '当前的数据');
+    console.info(checked, '当前的checked');
     if (checked) {
-      setSelectMcpList([...selectMcpList, item]);
+      console.info(setSelectTemporaryMcpItems, 'setSelectTemporaryMcpItems方法');
+      setSelectTemporaryMcpItems?.([...(selectTemporaryMcpItems ?? []), item]);
     } else {
-      setSelectMcpList(selectMcpList.filter((mcpItem) => mcpItem?.id !== item?.id));
+      setSelectTemporaryMcpItems?.(selectTemporaryMcpItems.filter((mcpItem) => mcpItem?.id !== item?.id));
     }
   };
   const contentRef = useRef<HTMLDivElement>(null);
@@ -57,6 +61,7 @@ export default function McpCard(props: IMcpCardProps) {
       setShowTooltip(isOverflowing);
     }
   }, [mcpData?.abstract?.zh]);
+  console.info(selectTemporaryMcpItems, 'selectTemporaryMcpItemsselectTemporaryMcpItemsselectTemporaryMcpItems');
   const isAdd = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
   return (
     <div className={styles.mcpCard}>
@@ -99,7 +104,7 @@ export default function McpCard(props: IMcpCardProps) {
         {isSelectable ? (
           <div>
             <Checkbox
-              checked={selectMcpList
+              checked={selectTemporaryMcpItems
                 .map((item) => {
                   return item?.id;
                 })
