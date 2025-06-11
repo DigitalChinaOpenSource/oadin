@@ -5,7 +5,7 @@ import styles from './index.module.scss';
 import dayjs from 'dayjs';
 import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
 import { TrashIcon } from '@phosphor-icons/react';
-import noDataSvg from '@/components/icons/no-data.svg';
+import noHistorySvg from '@/components/icons/no-history.svg';
 import EllipsisTooltip from '@/components/ellipsis-tooltip';
 import { CloseOutlined } from '@ant-design/icons';
 
@@ -136,11 +136,11 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
           <div className={styles.noData}>
             <div className={styles.noDataIcon}>
               <img
-                src={noDataSvg}
+                src={noHistorySvg}
                 alt="no-data"
               />
             </div>
-            <div className={styles.noDataText}>暂无历史记录</div>
+            <div className={styles.noDataText}>暂无历史对话</div>
           </div>
         )}
       </div>
