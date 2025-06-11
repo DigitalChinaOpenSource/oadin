@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"strconv"
 
 	"context"
 	"encoding/json"
@@ -469,7 +470,7 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 		}
 	}
 
-	var supportModelList []dto.ProviderSupportModelData
+	var supportModelList []dto.RecommendModelData
 	res := &dto.GetServiceProviderResponseData{}
 	res.ServiceProvider = sp
 	if sp.Flavor == types.FlavorSmartVision {
@@ -511,12 +512,13 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			if !model.CanSelect {
 				isDownloaded = false
 			}
-			resModel := dto.ProviderSupportModelData{
+			resModel := dto.RecommendModelData{
 				Name:         model.Name,
 				Avatar:       model.Avatar,
 				Class:        model.Tags,
 				Flavor:       model.Provider,
 				ApiFlavor:    sp.Flavor,
+				Id:           strconv.Itoa(model.ID),
 				IsDownloaded: isDownloaded,
 			}
 			supportModelList = append(supportModelList, resModel)
@@ -576,7 +578,8 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 			if modelQuery.Status == "downloaded" {
 				isDownloaded = true
 			}
-			resModel := dto.ProviderSupportModelData{
+			resModel := dto.RecommendModelData{
+				Id:           modelInfo.Id,
 				Name:         modelInfo.Name,
 				Class:        modelInfo.Class,
 				Flavor:       modelInfo.Flavor,
