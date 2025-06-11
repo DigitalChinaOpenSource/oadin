@@ -32,7 +32,7 @@ func TestMcpClientAndLLM(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Failed to initialize MCP client: %v", err)
 	}
-	tools, err := mcpService.FetchTools(config)
+	tools, err := mcpService.FetchTools(config.Id)
 	if err != nil {
 		log.Fatalf("Failed to fetch tools: %v", err)
 	}
