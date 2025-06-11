@@ -79,7 +79,7 @@ type ImportServiceResponse struct {
 }
 
 type GetAIGCServicesRequest struct {
-	ServiceName string `json:"service_name,omitempty "`
+	ServiceName string `json:"service_name,omitempty"`
 }
 
 type CreateAIGCServiceResponse struct {
@@ -244,7 +244,8 @@ type Model struct {
 }
 
 type LocalSupportModelData struct {
-	OllamaId    string   `json:"id"`
+	Id          string   `json:"id"`
+	OllamaId    string   `json:"ollamaId"`
 	Name        string   `json:"name"`
 	Avatar      string   `json:"avatar"`
 	Description string   `json:"description"`
@@ -280,6 +281,7 @@ type RecommendModelData struct {
 	Source              string   `json:"source"`
 	SmartVisionProvider string   `json:"smartvision_provider"`
 	SmartVisionModelKey string   `json:"smartvision_model_key"`
+	IsDownloaded        bool     `json:"is_downloaded" default:"false"`
 }
 
 type ProviderSupportModelData struct {
@@ -358,11 +360,11 @@ type DeleteServiceProviderResponse struct {
 
 type GetServiceProviderResponseData struct {
 	*types.ServiceProvider
-	SupportModelList []ProviderSupportModelData `json:"support_model_list"`
-	Page             int                        `json:"page"`
-	PageSize         int                        `json:"page_size"`
-	TotalCount       int                        `json:"total_count"`
-	TotalPage        int                        `json:"total_page"`
+	SupportModelList []RecommendModelData `json:"support_model_list"`
+	Page             int                  `json:"page"`
+	PageSize         int                  `json:"page_size"`
+	TotalCount       int                  `json:"total_count"`
+	TotalPage        int                  `json:"total_page"`
 }
 
 type GetServiceProviderResponse struct {
