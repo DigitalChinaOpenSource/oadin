@@ -144,12 +144,12 @@ func (s *StdioTransport) Stop(serverKey string) error {
 	}
 }
 
-func (s *StdioTransport) FetchTools(config types.MCPServerConfig) ([]mcp.Tool, error) {
-	fmt.Printf("[MCP] Listing tools for server: %s", config.Name)
-	cli, err := s.Start(config)
-	if err != nil {
-		return nil, err
+func (s *StdioTransport) FetchTools(serverKey string) ([]mcp.Tool, error) {
+	cli, exists := s.clients[serverKey]
+	if !exists {
+		return nil, errors.New("client not found")
 	}
+	
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
