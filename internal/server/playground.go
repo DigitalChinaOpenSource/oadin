@@ -246,6 +246,12 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if session.ThinkingEnabled {
 		chatRequest.Options["thinking"] = true
 	}
+
+	// Chat request (with tools)
+	if request.Tools != nil {
+		chatRequest.Tools = request.Tools
+	}
+
 	// 调用模型API
 	chatResp, err := modelEngine.Chat(ctx, chatRequest)
 	if err != nil {

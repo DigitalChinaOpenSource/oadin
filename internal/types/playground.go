@@ -68,7 +68,8 @@ type ChatResponse struct {
 	Model      string `json:"model"`
 	ModelName  string `json:"model_name,omitempty"` // 新增字段
 	Content    string `json:"content"`
-	IsComplete bool   `json:"is_complete"`        // 流式输出时，是否是最后一个块
-	Thoughts   string `json:"thoughts,omitempty"` // 深度思考的结果
-	Type       string `json:"type,omitempty"`     // "answer"、"thoughts"等
+	ToolCalls  []any  `json:"tool_calls,omitempty"` // 新增，支持Ollama工具调用
+	IsComplete bool   `json:"is_complete"`          // 流式输出时，是否是最后一个块
+	Thoughts   string `json:"thoughts,omitempty"`   // 深度思考的结果
+	Type       string `json:"type,omitempty"`       // "answer"、"thoughts"等
 }
