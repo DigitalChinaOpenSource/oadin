@@ -1,5 +1,5 @@
 import { Drawer, Button, Tooltip, Popconfirm, Space } from 'antd';
-import { useChatHistoryDrawer } from '@/components/chat-container/chat-history-drawer/view.module.ts';
+import { useChatHistoryDrawer } from '@/components/chat-container/chat-history-drawer/view-module';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './index.module.scss';
 import dayjs from 'dayjs';

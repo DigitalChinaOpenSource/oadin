@@ -1,11 +1,10 @@
 import { useCallback, useRef, useEffect, useMemo } from 'react';
 import { modelDownloadStream, abortDownload } from './download';
-import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
+import { usePageRefreshListener, checkIsMaxDownloadCount, updateDownloadStatus } from './util';
 import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
 import { IModelDataItem } from '@/types';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelListStore from '@/store/useModelListStore';
-import { updateDownloadStatus } from './updateDownloadStatus';
 import { getLocalStorageDownList } from '@/utils';
 import { IDownParseData } from './types';
 /**
