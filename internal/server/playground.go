@@ -33,7 +33,13 @@ func NewPlayground() *PlaygroundImpl {
 		if err := InitPlaygroundVSS(ctx, dbPath); err != nil {
 			slog.Error("初始化VSS失败，将回退到标准向量搜索", "error", err)
 		} else {
-			slog.Info("VSS初始化成功，已启用向量相似度搜索优化")
+			if vssInitialized && vssDB != nil {
+				slog.Info("VSS初始化成功，已启用向量相似度搜索优化")
+			} else if UseVSSForPlayground() {
+				slog.Info("VSS扩展未找到，将使用标准向量搜索")
+			} else {
+				slog.Info("VSS功能已通过环境变量禁用，将使用标准向量搜索")
+			}
 		}
 	}()
 
@@ -169,7 +175,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	messageQuery := &types.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
-			{Key: "order", Order: datastore.SortOrderAscending},
+			{Key: "msg_order", Order: datastore.SortOrderAscending},
 		},
 	})
 	if err != nil {
@@ -328,7 +334,7 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 	messageQuery := &types.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
-			{Key: "order", Order: datastore.SortOrderAscending},
+			{Key: "msg_order", Order: datastore.SortOrderAscending},
 		},
 	})
 	if err != nil {
