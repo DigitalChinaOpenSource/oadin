@@ -342,6 +342,10 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     },
     {
       manual: true,
+      onBefore: () => {
+        // 修改全局状态，标识模型存储路径正在迁移中
+        setMigratingStatus('pending');
+      },
       onSuccess: (data) => {
         if (data) {
           message.success('模型存储路径修改成功');
