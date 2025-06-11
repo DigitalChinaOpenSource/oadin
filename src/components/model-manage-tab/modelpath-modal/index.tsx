@@ -93,8 +93,6 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
       message.error('请等待模型下载完成后再进行操作');
       return;
     }
-    // 修改全局状态，标识模型存储路径正在迁移中
-    setMigratingStatus('pending');
     onModelPathVisible();
     onChangeModelPath({
       source_path: modalPath || '',
