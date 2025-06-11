@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { API_PREFIX, API_HEALTH_ENDPOINT } from './src/constants';
 
 export default defineConfig({
   base: './',
@@ -19,11 +20,11 @@ export default defineConfig({
     port: 16698, // 指定端口号
     strictPort: true, // 如果端口已被占用，则会直接退出而不是尝试下一个可用端口
     proxy: {
-      '/byze/v0.2': {
+      [API_PREFIX]: {
         target: 'http://127.0.0.1:16688',
         // target: 'http://10.3.73.180:16688', // 朱灿的本地ip
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/byze\/v0\.2/, '/byze/v0.2'),
+        rewrite: (path) => path.replace(new RegExp(`^${API_PREFIX}`), API_PREFIX),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
             console.log('代理请求:', req.url, '到', options.target);
@@ -33,10 +34,10 @@ export default defineConfig({
           });
         },
       },
-      '/health': {
+      [API_HEALTH_ENDPOINT]: {
         target: 'http://127.0.0.1:16688',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/health/, '/health'),
+        rewrite: (path) => path.replace(new RegExp(`^${API_HEALTH_ENDPOINT}`), API_HEALTH_ENDPOINT),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
             console.log('代理请求:', req.url, '到', options.target);

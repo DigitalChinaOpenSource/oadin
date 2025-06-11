@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
 import { message } from 'antd';
+import { API_PREFIX } from '@/constants';
 import i18n from '@/i18n';
 
 declare module 'axios' {
@@ -15,7 +16,7 @@ export interface ResponseData<T = any> {
   data: T;
 }
 
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.MODE === 'dev' ? '/byze/v0.2' : 'http://127.0.0.1:16688/byze/v0.2');
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.MODE === 'dev' ? API_PREFIX : `http://127.0.0.1:16688${API_PREFIX}`);
 
 const healthBaseURL = import.meta.env.VITE_HEALTH_API_URL ?? (import.meta.env.MODE === 'dev' ? '/' : 'http://127.0.0.1:16688');
 
