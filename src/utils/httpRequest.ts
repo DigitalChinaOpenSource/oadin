@@ -59,19 +59,19 @@ const createApiInstance = (baseURL: string) => {
 
         if (businessCode) {
           const errorMessage = i18n.t(`errors.${businessCode}`, {
-            defaultValue: data?.message || '未知错误',
+            defaultValue: data?.message || i18n.t('errors.service_error'),
           });
           message.error(errorMessage);
           error.handled = true;
         } else {
-          message.error(data?.message || i18n.t('errors.unknown'));
+          message.error(data?.message || i18n.t('errors.service_error'));
           error.handled = true;
         }
       } else if (error?.request) {
         message.error(i18n.t('errors.network'));
         error.handled = true;
       } else {
-        message.error(error?.message || i18n.t('errors.unknown'));
+        message.error(error?.message || i18n.t('errors.service_error'));
         error.handled = true;
       }
       return Promise.reject(error);
