@@ -7,9 +7,11 @@ import (
 	"byze/internal/rpc"
 	"byze/internal/server/mcp_handler"
 	"byze/internal/types"
+	"byze/internal/utils/bcode"
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -233,11 +235,12 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 			}
 			// 执行安装命令
 			output, errOut, err := commandBuilder.WithTimeout(time.Minute).Execute()
-			if err != nil {
-				return err
-			}
 			fmt.Printf("output of command execution: %s", output)
 			fmt.Printf("error output of command execution: %s", errOut)
+			if err != nil {
+				slog.Error("执行mcp 安装失败: ", err.Error())
+				return bcode.ControlPanelAddMcpError
+			}
 
 		}
 	}
