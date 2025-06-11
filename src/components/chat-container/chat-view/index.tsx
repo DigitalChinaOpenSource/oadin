@@ -138,7 +138,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                     name: 'quentinz/bge-large-zh-v1.5:f16',
                     service_name: 'embed',
                     source: 'local',
-                    service_provider_name: 'BAAI',
+                    service_provider_name: 'local_ollama_embed',
                     id: 'bc8ca0995fcd651',
                   } as any);
                 }}
