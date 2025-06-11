@@ -33,7 +33,7 @@ type ChatMessage struct {
 	SessionID string    `json:"session_id"`
 	Role      string    `json:"role"`
 	Content   string    `json:"content"`
-	Order     int       `json:"order"`
+	Order     int       `json:"order" gorm:"column:msg_order"`
 	CreatedAt time.Time `json:"created_at"`
 	ModelID   string    `json:"model_id,omitempty"`   // 新增字段，模型ID
 	ModelName string    `json:"model_name,omitempty"` // 新增字段，模型名称
