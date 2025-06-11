@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
 func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest) (chan *types.ChatResponse, chan error) {
 	respChan := make(chan *types.ChatResponse)
 	errChan := make(chan error, 1)
@@ -52,7 +51,7 @@ func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest)
 			thinkingReq := types.ChatRequest{
 				Model:    req.Model,
 				Messages: req.Messages,
-				Options: map[string]any{"thinking": true},
+				Options:  map[string]any{"thinking": true},
 			}
 
 			// 执行思考请求，使用上下文超时控制
@@ -96,10 +95,11 @@ func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest)
 							Content:    fullContent.String(),
 							IsComplete: true,
 							Thoughts:   thoughts.String(),
-						}					}
+						}
+					}
 					return
-				} 
-				
+				}
+
 				// 解析JSON响应
 				var chunk map[string]interface{}
 				if err := json.Unmarshal(data, &chunk); err != nil {
@@ -110,6 +110,7 @@ func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest)
 
 				// 提取内容片段
 				var content string
+				var toolCalls []any
 
 				// 检查错误响应
 				if errMsg, hasErr := chunk["error"].(string); hasErr && errMsg != "" {
@@ -122,6 +123,10 @@ func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest)
 				message, ok := chunk["message"].(map[string]interface{})
 				if ok {
 					content, _ = message["content"].(string)
+					// 新增：提取 Ollama 格式的 tool_calls
+					if toolCallsVal, ok := message["tool_calls"].([]any); ok {
+						toolCalls = toolCallsVal
+					}
 				} else {
 					// 尝试OpenAI格式
 					choices, ok := chunk["choices"].([]interface{})
@@ -130,16 +135,23 @@ func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest)
 						delta, ok := choice["delta"].(map[string]interface{})
 						if ok {
 							content, _ = delta["content"].(string)
+							// 新增：提取 OpenAI 格式的 tool_calls
+							if toolCallsVal, ok := delta["tool_calls"].([]any); ok {
+								toolCalls = toolCallsVal
+							}
 						}
 					} else {
 						// 尝试直接从内容字段获取
 						if directContent, ok := chunk["content"].(string); ok {
 							content = directContent
 						}
+						if toolCallsVal, ok := chunk["tool_calls"].([]any); ok {
+							toolCalls = toolCallsVal
+						}
 					}
 				}
 
-				if content != "" {
+				if content != "" || len(toolCalls) > 0 { // 修改：同时检查 content 和 toolCalls
 					fullContent.WriteString(content)
 
 					respChan <- &types.ChatResponse{
@@ -149,6 +161,7 @@ func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest)
 						Content:    content,
 						IsComplete: false,
 						Thoughts:   thoughts.String(),
+						ToolCalls:  toolCalls, // 新增：添加 toolCalls 到响应
 					}
 				}
 
@@ -168,7 +181,6 @@ func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest)
 
 	return respChan, errChan
 }
-
 
 func (o *OpenvinoProvider) ChatStream(ctx context.Context, req *types.ChatRequest) (chan *types.ChatResponse, chan error) {
 	respChan := make(chan *types.ChatResponse)
