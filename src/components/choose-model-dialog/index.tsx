@@ -2,7 +2,9 @@ import React from 'react';
 import { Modal, Tabs, TabsProps, message } from 'antd';
 import styles from './index.module.scss';
 import useSelectedModelStore from '@/store/useSelectedModel';
+import useChatStore from '@/components/chat-container/store/useChatStore';
 import ModelManageTab from '@/components/model-manage-tab';
+import { useViewModel } from './view-model';
 
 export interface IChooseModelDialog {
   onCancel: () => void;
@@ -11,6 +13,8 @@ export interface IChooseModelDialog {
 
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
   const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
+  const { currentSessionId } = useChatStore();
+  const { fetchChangeModel } = useViewModel();
   const items: TabsProps['items'] = [
     {
       key: 'model-square',
@@ -37,6 +41,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
   const onOk = () => {
     if (selectedModel && Object.keys(selectedModel).length > 0) {
       setIsSelectedModel(true);
+      fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedModel.id) });
       props.onCancel();
     } else {
       message.warning('请先选择一个模型');
