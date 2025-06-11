@@ -9,6 +9,7 @@ export default {
     '40002': 'Insufficient available storage space under the current path',
     '40003': 'The folder under the current path is not empty',
     '40004': 'Model file migration failed',
+    '40005': 'Path permission denied, please check!',
 
     unknown: 'Unknown error',
     network: 'Network error, please check your network connection',
