@@ -79,6 +79,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	mcpApi.PUT("/setup", e.SetupFunTool)
 	mcpApi.POST("/client/start", e.ClientMcpStart)
 	mcpApi.POST("/client/stop", e.ClientMcpStop)
+	mcpApi.POST("/client/getTools", e.ClientGetTools)
 	mcpApi.POST("/client/runTool", e.ClientRunTool)
 
 	// Apis related to system
