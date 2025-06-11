@@ -32,13 +32,15 @@ type MCPListResponse struct {
 				Src string `json:"src"`
 				Zh  string `json:"zh"`
 			} `json:"abstract"`
-			Supplier   string   `json:"supplier"`
-			Logo       string   `json:"logo"`
-			Popularity int      `json:"popularity"`
-			Tags       []string `json:"tags"`
-			Hosted     bool     `json:"hosted"`
-			Status     int      `json:"status"`
-			UpdatedAt  int64    `json:"updatedAt"`
+			Supplier    string   `json:"supplier"`
+			Logo        string   `json:"logo"`
+			Popularity  int      `json:"popularity"`
+			Tags        []string `json:"tags"`
+			Hosted      bool     `json:"hosted"`
+			Status      int      `json:"status"`
+			Authorized  int      `json:"authorized"`
+			EnvRequired int      `json:"envRequired"`
+			UpdatedAt   int64    `json:"updatedAt"`
 		} `json:"list"`
 	} `json:"data"`
 }
