@@ -2,22 +2,15 @@ import styles from './index.module.scss';
 import ModelSearch from './model-search';
 import ModallistContent from './model-list-content';
 import { useViewModel } from './view-model';
-import { useViewModel as useViewModelContent } from '@/components/model-manage-tab/model-list-content/view-model.ts';
+import { IUseViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 
 export interface ModelManageProps {
-  isMine?: boolean;
   isDialog?: boolean;
+  vmContent: IUseViewModel;
 }
 export default function ModelManageTab(props: ModelManageProps) {
   const vm = useViewModel();
-  const { isMine, isDialog } = props;
-  // 获取接口数据内容
-  const vmContent = useViewModelContent({
-    onModelSearch: vm.onModelSearch,
-    modelSearchVal: vm.modelSearchVal,
-    modelSourceVal: vm.modelSourceVal,
-    mine: isMine,
-  });
+  const { vmContent, isDialog } = props;
   return (
     <div className={styles.modelManageTab}>
       <ModelSearch

@@ -11,6 +11,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
   const [showOnlySelectedMyMcp, setShowOnlySelectedMyMcp] = useState<boolean>(false);
   const [showOnlySelectedMcpList, setShowOnlySelectedMcpList] = useState<boolean>(false);
   const [activeKey, setActiveKey] = useState<string>('myMcp');
+
   const mcpDialogTabItems: TabsProps['items'] = [
     {
       key: 'mcpList',
@@ -52,6 +53,9 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
       title="选择 MCP"
       style={{ top: 20 }}
       width={1000}
+      onOk={(e) => {
+        options.onCancel && options?.onCancel(e);
+      }}
       footer={(_, { OkBtn, CancelBtn }) => (
         <div className={styles.choose_model_footer}>
           <Checkbox
