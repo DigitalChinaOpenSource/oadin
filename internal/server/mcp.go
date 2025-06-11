@@ -65,6 +65,12 @@ func (M *MCPServerImpl) GetMCPList(ctx context.Context, request *rpc.MCPListRequ
 		for _, config := range configs {
 			if res.Data.List[mcp].ID == config.(*types.McpUserConfig).MCPID {
 				res.Data.List[mcp].Status = config.(*types.McpUserConfig).Status
+				if config.(*types.McpUserConfig).Auth != "" {
+					res.Data.List[mcp].Authorized = 1
+				} else {
+					res.Data.List[mcp].Authorized = 0
+				}
+
 				break
 			}
 		}
@@ -165,6 +171,9 @@ func (M *MCPServerImpl) GetMyMCPList(ctx context.Context, request *rpc.MCPListRe
 			request.MCPIds = append(request.MCPIds, config.(*types.McpUserConfig).MCPID)
 		}
 	}
+	// 处理为空的情况, 防止查询所有数据
+	request.MCPIds = append(request.MCPIds, "unsupported id")
+
 	return M.GetMCPList(ctx, request)
 
 }
