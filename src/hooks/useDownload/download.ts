@@ -3,6 +3,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { httpRequest } from '../../utils/httpRequest';
 import { IRequestModelParams } from '../../types';
 import { IDownParseData, IDownloadCallbacks, IProgressData } from './types';
+import { API_PREFIX } from '@/constants';
 
 /**
  * 暂停模型下载
@@ -119,7 +120,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
     const signal = abortController.signal;
     const API_BASE_URL = import.meta.env.VITE_HEALTH_API_URL || '';
 
-    fetchEventSource(`${API_BASE_URL}/byze/v0.2/model/stream`, {
+    fetchEventSource(`${API_BASE_URL}${API_PREFIX}/model/stream`, {
       method: 'POST',
       headers: baseHeaders(),
       body: JSON.stringify(data),
