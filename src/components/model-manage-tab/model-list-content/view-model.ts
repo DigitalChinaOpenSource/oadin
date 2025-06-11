@@ -121,8 +121,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
           (item, index) =>
             ({
               ...item,
-              type: 0,
-              id: index + 1,
+              id: item?.id || index + 1,
               currentDownload: 0,
             }) as any,
         );
@@ -137,9 +136,11 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
     },
   );
-  // useEffect(() => {
-  //   fetchModelPath();
-  // }, []);
+
+  // 必须，下载时需要获取当前路径的存储空间
+  useEffect(() => {
+    fetchModelPath();
+  }, []);
 
   useEffect(() => {
     onModelSearch('');
@@ -292,9 +293,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         } else {
           fetchDownloadStart({
             ...modelData,
-            type: modelData.type,
             status: DOWNLOAD_STATUS.IN_PROGRESS,
-            modelType: 'local',
           });
         }
       },

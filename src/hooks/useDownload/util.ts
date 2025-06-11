@@ -16,7 +16,7 @@ export const usePageRefreshListener = (onRefresh: () => void) => {
 };
 
 // 检查是否达到下载数量限制
-export const checkIsMaxDownloadCount = ({ modelList, downList, modelType, id }: any) => {
+export const checkIsMaxDownloadCount = ({ modelList, downList, id }: any) => {
   // 检查是否存在可选项
   if (modelList) {
     // 已下载的直接跳过
@@ -25,7 +25,7 @@ export const checkIsMaxDownloadCount = ({ modelList, downList, modelType, id }: 
   }
 
   // 检查是否已存在相同模型
-  const isModelNotInList = !downList.some((item: any) => item?.modelType === modelType && item?.id === id);
+  const isModelNotInList = !downList.some((item: any) => item?.id === id);
   console.info(
     downList.filter((item: any) => !(item.canSelect && item.currentDownload === 100)),
     '过滤的下载列表',

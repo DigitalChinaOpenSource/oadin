@@ -8,7 +8,7 @@ export function useViewModel() {
   const { downloadList, setDownloadList } = useModelDownloadStore();
 
   const fetchCancelModel = async (data: IModelDataItem) => {
-    await fetchDownLoadAbort({ model_name: data.name }, { id: data.id, modelType: data.modelType });
+    await fetchDownLoadAbort({ model_name: data.name }, { id: data.id });
   };
 
   const fetchRemoveModel = async (data: IModelDataItem) => {
