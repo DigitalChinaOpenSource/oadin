@@ -1,11 +1,10 @@
 import { useCallback, useRef, useEffect, useMemo } from 'react';
 import { modelDownloadStream, abortDownload } from './download';
-import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
+import { usePageRefreshListener, checkIsMaxDownloadCount, updateDownloadStatus } from './util';
 import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
 import { IModelDataItem } from '@/types';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelListStore from '@/store/useModelListStore';
-import { updateDownloadStatus } from './updateDownloadStatus';
 import { getLocalStorageDownList } from '@/utils';
 import { IDownParseData } from './types';
 /**
@@ -19,7 +18,7 @@ import { IDownParseData } from './types';
  * @returns {Object} - 下载相关的状态和方法
  */
 export const useDownLoad = () => {
-  const { downloadList, setDownloadList } = useModelDownloadStore();
+  const { downloadList, setDownloadList, setIsDownloadEmbed } = useModelDownloadStore();
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
   downListRef.current = downloadList;
@@ -89,6 +88,12 @@ export const useDownLoad = () => {
               totalsize,
               can_select: true,
             });
+
+            // 处理特殊逻辑，词嵌入模型下载完成后设置状态
+            if (params.name === 'quentinz/bge-large-zh-v1.5:f16') {
+              setIsDownloadEmbed(true);
+            }
+
             setDownloadList((currentList) => currentList.filter((item) => item.status !== COMPLETED));
           } else if (status === 'canceled') {
             updateDownloadStatus(id, {

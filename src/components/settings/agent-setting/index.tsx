@@ -40,68 +40,66 @@ const AgentSetting: React.FC = () => {
             <span>{agentChecked ? '开' : '关'}</span>
           </div>
         </div>
-        {agentChecked && (
-          <Form
-            form={form}
-            name="agent-setting-form"
-            initialValues={systemProxy}
-            layout="vertical"
-            onFinish={onFinish}
+        <Form
+          form={form}
+          name="agent-setting-form"
+          initialValues={systemProxy}
+          layout="vertical"
+          onFinish={onFinish}
+        >
+          <Form.Item
+            label="代理地址"
+            name="endpoint"
+            rules={[{ required: true, message: '请输入代理地址' }]}
+            tooltip={'请输入代理地址'}
           >
-            <Form.Item
-              label="代理地址"
-              name="endpoint"
-              rules={[{ required: true, message: '请输入代理地址' }]}
-              tooltip={'请输入代理地址'}
-            >
-              <Input
-                autoComplete={'off'}
-                placeholder="请输入代理地址"
-                style={{ width: 400 }}
-                allowClear={true}
-              />
-            </Form.Item>
-            <Form.Item>
-              <Space size={40}>
-                <Form.Item
-                  label="用户名"
-                  name="username"
-                  rules={[{ required: false, message: '请输入用户名' }]}
-                  style={{ marginBottom: 0 }}
-                >
-                  <Input
-                    autoComplete={'off'}
-                    placeholder="请输入用户名"
-                    style={{ width: 400 }}
-                    allowClear={true}
-                  />
-                </Form.Item>
-                <Form.Item
-                  label="密码"
-                  name="password"
-                  rules={[{ required: false, message: '请输入密码' }]}
-                  style={{ marginBottom: 0 }}
-                >
-                  <Input.Password
-                    autoComplete={'off'}
-                    placeholder="请输入密码"
-                    style={{ width: 400 }}
-                    allowClear={true}
-                  />
-                </Form.Item>
-              </Space>
-            </Form.Item>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={saveProxyLoading}
+            <Input
+              autoComplete={'off'}
+              placeholder="请输入代理地址"
+              style={{ width: 400 }}
+              allowClear={true}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space size={40}>
+              <Form.Item
+                label="用户名"
+                name="username"
+                rules={[{ required: false, message: '请输入用户名' }]}
+                style={{ marginBottom: 0 }}
               >
-                保存
-              </Button>
-            </Form.Item>
-          </Form>
-        )}
+                <Input
+                  autoComplete={'off'}
+                  placeholder="请输入用户名"
+                  style={{ width: 400 }}
+                  allowClear={true}
+                />
+              </Form.Item>
+              <Form.Item
+                label="密码"
+                name="password"
+                rules={[{ required: false, message: '请输入密码' }]}
+                style={{ marginBottom: 0 }}
+              >
+                <Input.Password
+                  autoComplete={'off'}
+                  placeholder="请输入密码"
+                  style={{ width: 400 }}
+                  allowClear={true}
+                />
+              </Form.Item>
+            </Space>
+          </Form.Item>
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={saveProxyLoading}
+            >
+              保存
+            </Button>
+          </Form.Item>
+        </Form>
       </div>
     </div>
   );

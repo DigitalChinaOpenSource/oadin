@@ -1,5 +1,9 @@
 import { useEffect } from 'react';
 import { message } from 'antd';
+
+import useModelDownloadStore from '@/store/useModelDownloadStore';
+import useModelListStore from '@/store/useModelListStore';
+
 // 监听浏览器刷新 并执行某些操作
 export const usePageRefreshListener = (onRefresh: () => void) => {
   useEffect(() => {
@@ -40,3 +44,39 @@ export const checkIsMaxDownloadCount = ({ modelList, downList, id }: any) => {
   }
   return false;
 };
+
+/**
+ * 同时更新下载列表和模型列表中的下载状态
+ * @param id 模型ID
+ * @param updates 要更新的属性
+ */
+export function updateDownloadStatus(id: string, updates: any) {
+  // 获取两个 store 的状态更新函数
+  const { setDownloadList } = useModelDownloadStore.getState();
+  const { setModelListData } = useModelListStore.getState();
+  // 更新下载列表
+  setDownloadList((draft: any[]): any[] => {
+    if (!draft || !Array.isArray(draft) || draft?.length === 0) {
+      return [];
+    }
+    return draft.map((item) => {
+      if (item.id === id) {
+        return { ...item, ...updates };
+      }
+      return item;
+    });
+  });
+
+  // 更新模型列表
+  setModelListData((draft: any[]): any[] => {
+    if (!Array.isArray(draft) || draft.length === 0) {
+      return [];
+    }
+    return draft.map((item) => {
+      if (item.id === id) {
+        return { ...item, ...updates };
+      }
+      return item;
+    });
+  });
+}

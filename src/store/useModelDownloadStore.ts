@@ -4,6 +4,8 @@ import { IModelDataItem } from '@/types';
 interface IModelDownloadStore {
   downloadList: IModelDataItem[];
   setDownloadList: (list: any[] | ((currentList: any[]) => any[])) => void;
+  isDownloadEmbed: boolean;
+  setIsDownloadEmbed: (isDownloadEmbed: boolean) => void;
 }
 
 const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
@@ -42,6 +44,10 @@ const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
       const uniqueList = Array.from(new Map(processedList.map((item) => [JSON.stringify(item), item])).values());
       set({ downloadList: uniqueList });
     }
+  },
+  isDownloadEmbed: false,
+  setIsDownloadEmbed: (isDownloadEmbed: boolean) => {
+    set({ isDownloadEmbed });
   },
 }));
 

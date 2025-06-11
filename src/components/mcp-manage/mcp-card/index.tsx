@@ -76,7 +76,12 @@ export default function McpCard(props: IMcpCardProps) {
             />
           </div>
           {/* 名称 */}
-          <div className={styles.title}>{mcpData?.name?.zh}</div>
+          <EllipsisTooltip
+            className={styles.title}
+            title={mcpData?.name?.zh}
+          >
+            {mcpData?.name?.zh}
+          </EllipsisTooltip>
           {/* 本地还是云端 */}
           <div className={styles.localOrCloud}>
             {mcpData?.hosted ? (
@@ -192,7 +197,7 @@ export default function McpCard(props: IMcpCardProps) {
                 setShowOperate(!showOperate);
                 await clickBefore();
               }}
-              disabled={mcpData?.envRequired == 0}
+              disabled={mcpData?.envRequired === 0}
               loading={authMcpLoading || downMcpLoading || cancelMcpLoading}
             >
               更多操作

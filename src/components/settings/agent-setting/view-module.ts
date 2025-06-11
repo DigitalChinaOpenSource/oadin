@@ -45,6 +45,7 @@ export function useAgentSettingViewModel() {
       manual: true,
       onSuccess: (data) => {
         console.log('paramsparams', params);
+        setAgentChecked(true);
       },
       onError: (error) => {
         console.log('paramsparams222222', params);
