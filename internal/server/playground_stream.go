@@ -36,7 +36,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		messageQuery := &types.ChatMessage{SessionID: request.SessionID}
 		messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
 			SortBy: []datastore.SortOption{
-				{Key: "order", Order: datastore.SortOrderAscending},
+				{Key: "msg_order", Order: datastore.SortOrderAscending},
 			},
 		})
 		if err != nil {
