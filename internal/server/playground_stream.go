@@ -70,19 +70,6 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			slog.Info("未找到相关上下文，使用通用对话模式", "session_id", session.ID)
 		}
 
-		// 是否启用了mcp服务器
-		mcpResults, err := p.HandleMCPToolInvocation(ctx, session.ModelID, request.Content, request.McpTools)
-		if len(mcpResults) > 0 && err == nil {
-			// 将MCP工具调用结果添加到历史记录中
-			for _, result := range mcpResults {
-				toolResultText := fmt.Sprintf("MCP工具【%s】执行结果:%s", result.McpTool.Tool.Name, result.Result.Content)
-				history = append(history, map[string]string{
-					"role":    "system",
-					"content": toolResultText,
-				})
-			}
-		}
-
 		// 添加当前用户消息
 		userMessage := map[string]string{
 			"role":    "user",

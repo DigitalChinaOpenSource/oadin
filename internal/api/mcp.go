@@ -160,12 +160,12 @@ func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
 	}
-	resp, err := t.MCP.ClientMcpStart(c.Request.Context(), req.Id)
+	err := t.MCP.ClientMcpStart(c.Request.Context(), req.Id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "500", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "200", "data": resp})
+	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success"})
 }
 
 func (t *ByzeCoreServer) ClientMcpStop(c *gin.Context) {
@@ -194,4 +194,23 @@ func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": resp})
+}
+
+func (t *ByzeCoreServer) ClientGetTools(c *gin.Context) {
+	var req rpc.ClientGetToolsRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
+		return
+	}
+
+	mcpTools := make([]rpc.McpTool, 0, len(req.Ids))
+	for _, id := range req.Ids {
+		tools, err := t.MCP.ClientGetTools(c, id)
+		if err != nil {
+			continue
+		}
+		mcpTools = append(mcpTools, rpc.McpTool{McpId: id, Tools: tools})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": mcpTools})
 }

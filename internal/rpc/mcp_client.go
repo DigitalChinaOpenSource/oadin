@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 // 1. MCP 列表检索
@@ -252,11 +253,22 @@ type ClientMcpStartRequest struct {
 type ClientMcpStartResponse struct {
 	Id string `json:"id"`
 }
+
 type ClientMcpStopRequest struct {
 	Ids []string `json:"ids"`
 }
+
 type ClientRunToolRequest struct {
 	MCPId    string         `json:"mcpId"`
 	ToolName string         `json:"toolName"`
 	ToolArgs map[string]any `json:"toolArgs"`
+}
+
+type ClientGetToolsRequest struct {
+	Ids []string `json:"ids"`
+}
+
+type McpTool struct {
+	McpId string     `json:"mcpId"`
+	Tools []mcp.Tool `json:"tools"`
 }
