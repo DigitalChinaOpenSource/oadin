@@ -70,7 +70,7 @@ const ModelSetting: React.FC = () => {
           <Form.Item
             label="模型下载源地址"
             name="modelDownloadUrl"
-            rules={[{ required: true, message: '请输入模型下载源地址' }]}
+            rules={[{ required: false, message: '请输入模型下载源地址' }]}
             tooltip={'模型下载源地址，所有模型将统一从该入口进行模型的下载'}
           >
             <Input
