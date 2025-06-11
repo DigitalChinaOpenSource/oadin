@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 // 1. MCP 列表检索
@@ -31,13 +32,15 @@ type MCPListResponse struct {
 				Src string `json:"src"`
 				Zh  string `json:"zh"`
 			} `json:"abstract"`
-			Supplier   string   `json:"supplier"`
-			Logo       string   `json:"logo"`
-			Popularity int      `json:"popularity"`
-			Tags       []string `json:"tags"`
-			Hosted     bool     `json:"hosted"`
-			Status     int      `json:"status"`
-			UpdatedAt  int64    `json:"updatedAt"`
+			Supplier    string   `json:"supplier"`
+			Logo        string   `json:"logo"`
+			Popularity  int      `json:"popularity"`
+			Tags        []string `json:"tags"`
+			Hosted      bool     `json:"hosted"`
+			Status      int      `json:"status"`
+			Authorized  int      `json:"authorized"`
+			EnvRequired int      `json:"envRequired"`
+			UpdatedAt   int64    `json:"updatedAt"`
 		} `json:"list"`
 	} `json:"data"`
 }
@@ -248,12 +251,26 @@ type SetupFunToolRequest struct {
 type ClientMcpStartRequest struct {
 	Id string `json:"id"`
 }
-type ClientMcpStopRequest struct {
+
+type ClientMcpStartResponse struct {
 	Id string `json:"id"`
+}
+
+type ClientMcpStopRequest struct {
+	Ids []string `json:"ids"`
 }
 
 type ClientRunToolRequest struct {
 	MCPId    string         `json:"mcpId"`
 	ToolName string         `json:"toolName"`
 	ToolArgs map[string]any `json:"toolArgs"`
+}
+
+type ClientGetToolsRequest struct {
+	Ids []string `json:"ids"`
+}
+
+type McpTool struct {
+	McpId string     `json:"mcpId"`
+	Tools []mcp.Tool `json:"tools"`
 }
