@@ -12,6 +12,7 @@ import useChatStore from '../store/useChatStore';
 import sendSvg from '@/components/icons/send.svg';
 import uploadSvg from '@/components/icons/upload.svg';
 import rollingSvg from '@/components/icons/rolling.svg';
+import { useDownLoad } from '@/hooks/useDownload';
 import './index.css';
 
 interface IChatViewProps {
@@ -20,7 +21,7 @@ interface IChatViewProps {
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages, addMessage, uploadFileList, setUploadFileList } = useChatStore();
-
+  const { fetchDownloadStart } = useDownLoad();
   const messageAreaRef = useRef<HTMLDivElement>(null);
 
   // 监听消息列表变化，自动滚动
@@ -120,7 +121,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
       {/* TODO 去掉感叹号 */}
-      {!isUploadVisible ? (
+      {isUploadVisible ? (
         <UploadTool
           onFileListChange={onFileListChange}
           uploadFileList={uploadFileList}
@@ -131,7 +132,19 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           title={
             <>
               该功能需先下载词嵌入模型
-              <a>【立即下载】</a>
+              <a
+                onClick={() => {
+                  fetchDownloadStart({
+                    name: 'quentinz/bge-large-zh-v1.5:f16',
+                    service_name: 'embed',
+                    source: 'local',
+                    service_provider_name: 'BAAI',
+                    id: 'bc8ca0995fcd651',
+                  } as any);
+                }}
+              >
+                【立即下载】
+              </a>
             </>
           }
         >

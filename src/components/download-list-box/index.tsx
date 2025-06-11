@@ -39,7 +39,7 @@ export default function DownloadListBox(props: IDownloadListBoxProps) {
       <div className={styles.downloadList}>
         {downloadList.map((item) => (
           <DownloadItem
-            key={`${item.modelType}-${item.id}`}
+            key={`${item.id}`}
             downloadItem={item}
           />
         ))}
