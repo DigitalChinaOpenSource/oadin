@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -626,6 +627,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 				model.Avatar = localModelInfo.Avatar
 				model.Class = localModelInfo.Class
 				model.OllamaId = localModelInfo.OllamaId
+				model.Id = localModelInfo.Id
 				serviceModelList[modelService] = append(serviceModelList[modelService], model)
 				resModelNameList = append(resModelNameList, model.Name)
 			}
@@ -960,6 +962,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					authFields = append(authFields, cInfo.Name)
 				}
 				modelData := dto.RecommendModelData{
+					Id:                  strconv.Itoa(d.ID),
 					Name:                d.Name,
 					Avatar:              d.Avatar,
 					Desc:                d.Introduce,
@@ -1012,6 +1015,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					authFields = append(authFields, cInfo.Name)
 				}
 				modelData := dto.RecommendModelData{
+					Id:                  strconv.Itoa(d.ID),
 					Name:                d.Name,
 					Avatar:              d.Avatar,
 					Desc:                d.Introduce,

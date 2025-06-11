@@ -33,8 +33,9 @@ type GetSessionsResponse struct {
 }
 
 type SendMessageRequest struct {
-	SessionId string `json:"sessionId"`
-	Content   string `json:"content"`
+	SessionId string           `json:"sessionId"`
+	Content   string           `json:"content"`
+	Tools     []map[string]any `json:"tools,omitempty"`
 }
 
 // 发送消息响应

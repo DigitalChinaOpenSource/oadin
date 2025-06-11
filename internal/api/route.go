@@ -79,6 +79,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	mcpApi.PUT("/setup", e.SetupFunTool)
 	mcpApi.POST("/client/start", e.ClientMcpStart)
 	mcpApi.POST("/client/stop", e.ClientMcpStop)
+	mcpApi.POST("/client/getTools", e.ClientGetTools)
 	mcpApi.POST("/client/runTool", e.ClientRunTool)
 
 	// Apis related to system
@@ -89,7 +90,6 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi.PUT("/registry", e.ModifyRepositoryURL)
 	systemApi.PUT("/proxy", e.SetProxy)
 	systemApi.PUT("/proxy/switch", e.ProxySwitch)
-
 	playgroundHandler := NewPlaygroundHandler()
 	// Playground相关
 	r.Handle(http.MethodPost, "/playground/session", playgroundHandler.CreateSession)
