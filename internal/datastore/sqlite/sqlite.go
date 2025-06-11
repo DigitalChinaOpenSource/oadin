@@ -294,7 +294,6 @@ func (ds *SQLite) List(ctx context.Context, entity datastore.Entity, options *da
 		if len(filters) > 0 {
 			db = db.Where(strings.Join(filters, " AND "))
 		}
-
 		// Add sorting
 		if len(options.SortBy) > 0 {
 			for _, sort := range options.SortBy {
