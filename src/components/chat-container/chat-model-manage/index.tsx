@@ -21,30 +21,6 @@ export default function ChatModelManage(props: IChatModelManageProps) {
   const { selectedModel } = useSelectedModelStore();
   const { setCurrentSessionId, currentSessionId } = useChatStore();
   const [open, setOpen] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (selectedModel && Object.keys(selectedModel).length > 0) {
-      fetchChangeModel({ sessionId: currentSessionId, modelId: selectedModel.name });
-    }
-  }, [selectedModel]);
-
-  const { run: fetchChangeModel } = useRequest(
-    async (params: { sessionId: string; modelId: string }) => {
-      const data = await httpRequest.post('/playground/session/model', {
-        ...params,
-      });
-      return data?.data || {};
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        if (data.id) {
-          setCurrentSessionId(data.id);
-        }
-      },
-    },
-  );
-
   return (
     <>
       <div className={styles.chatModelManage}>

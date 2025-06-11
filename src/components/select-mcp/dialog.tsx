@@ -11,8 +11,13 @@ import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
 import { DetailDrawer } from '@/components/detail_drawer';
 
-export const SelectMcpDialog: React.FC = () => {
+interface ISelectMcpDialogProps {
+  setSelectMcpPopOpen: (bool: boolean) => void;
+}
+
+export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useViewModel();
+  const { setSelectMcpPopOpen } = props;
   const [allList, setAllList] = useState<IMcpListItem[]>([]);
   const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
   const { setSelectMcpList, selectMcpList, drawerOpenId, setDrawerOpenId } = useSelectMcpStore();
@@ -182,7 +187,10 @@ export const SelectMcpDialog: React.FC = () => {
 
       <ChooseMcpDialog
         open={open}
-        onCancel={() => setOpen(false)}
+        onCancel={() => {
+          setOpen(false);
+          setSelectMcpPopOpen(false);
+        }}
       />
       <DetailDrawer
         id={drawerOpenId}

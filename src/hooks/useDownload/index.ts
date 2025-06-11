@@ -1,11 +1,10 @@
 import { useCallback, useRef, useEffect, useMemo } from 'react';
 import { modelDownloadStream, abortDownload } from './download';
-import { usePageRefreshListener, checkIsMaxDownloadCount } from './util';
+import { usePageRefreshListener, checkIsMaxDownloadCount, updateDownloadStatus } from './util';
 import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
 import { IModelDataItem } from '@/types';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelListStore from '@/store/useModelListStore';
-import { updateDownloadStatus } from './updateDownloadStatus';
 import { getLocalStorageDownList } from '@/utils';
 import { IDownParseData } from './types';
 /**
@@ -19,7 +18,7 @@ import { IDownParseData } from './types';
  * @returns {Object} - 下载相关的状态和方法
  */
 export const useDownLoad = () => {
-  const { downloadList, setDownloadList } = useModelDownloadStore();
+  const { downloadList, setDownloadList, setIsDownloadEmbed } = useModelDownloadStore();
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
   downListRef.current = downloadList;
@@ -30,13 +29,11 @@ export const useDownLoad = () => {
   // 开始下载
   const fetchDownloadStart = useCallback(
     (params: IModelDataItem) => {
-      // modelType: 模型提供商类型
-      const { id, type, modelType, source, service_provider_name, service_name, name } = params;
+      const { id, source, service_provider_name, service_name, name } = params;
 
       // 最大下载数量
       const isMaxNum = checkIsMaxDownloadCount({
         downList: downListRef.current,
-        modelType,
         id,
       } as any);
       // 检查是否超过最大下载数量
@@ -53,9 +50,9 @@ export const useDownLoad = () => {
 
       // 更新下载列表
       setDownloadList([
-        ...downloadList.map((item) => (item.type === type && item.modelType === modelType && item.id === id ? { ...item, status: IN_PROGRESS } : item)),
+        ...downloadList.map((item) => (item.id === id ? { ...item, status: IN_PROGRESS } : item)),
         // 如果不存在则添加新项
-        ...(!downloadList.some((item) => item.type === type && item.modelType === modelType && item.id === id) ? [{ ...params, status: IN_PROGRESS }] : []),
+        ...(!downloadList.some((item) => item.id === id) ? [{ ...params, status: IN_PROGRESS }] : []),
       ]);
 
       // 同步更新模型列表中的状态
@@ -68,7 +65,7 @@ export const useDownLoad = () => {
 
           // 处理错误情况
           if (error) {
-            updateDownloadStatus(id, modelType, {
+            updateDownloadStatus(id, {
               status: error.includes('aborted') ? PAUSED : FAILED,
             });
             return;
@@ -83,7 +80,7 @@ export const useDownLoad = () => {
 
           // 根据状态更新下载项
           if (status === 'success') {
-            updateDownloadStatus(id, modelType, {
+            updateDownloadStatus(id, {
               ...baseUpdates,
               currentDownload: 100,
               status: COMPLETED,
@@ -91,26 +88,32 @@ export const useDownLoad = () => {
               totalsize,
               can_select: true,
             });
+
+            // 处理特殊逻辑，词嵌入模型下载完成后设置状态
+            if (params.name === 'quentinz/bge-large-zh-v1.5:f16') {
+              setIsDownloadEmbed(true);
+            }
+
             setDownloadList((currentList) => currentList.filter((item) => item.status !== COMPLETED));
           } else if (status === 'canceled') {
-            updateDownloadStatus(id, modelType, {
+            updateDownloadStatus(id, {
               ...baseUpdates,
               status: PAUSED,
             });
           } else if (status === 'error') {
-            updateDownloadStatus(id, modelType, {
+            updateDownloadStatus(id, {
               ...baseUpdates,
               status: FAILED,
             });
           } else {
-            updateDownloadStatus(id, modelType, {
+            updateDownloadStatus(id, {
               ...baseUpdates,
               status: IN_PROGRESS,
             });
           }
         },
         onerror: (error: Error) => {
-          updateDownloadStatus(id, modelType, {
+          updateDownloadStatus(id, {
             status: FAILED,
           });
         },
@@ -120,14 +123,14 @@ export const useDownLoad = () => {
   );
 
   // 暂停下载
-  const fetchDownLoadAbort = useCallback(async (data: { model_name: string }, { id, modelType }: { id: number; modelType: string }) => {
+  const fetchDownLoadAbort = useCallback(async (data: { model_name: string }, { id }: { id: string }) => {
     try {
       await abortDownload(data);
-      updateDownloadStatus(id, modelType, { status: PAUSED });
+      updateDownloadStatus(id, { status: PAUSED });
     } catch (error) {
       console.error('取消或暂停下载失败:', error);
       // 增加错误处理，即使失败也尝试更新UI状态
-      updateDownloadStatus(id, modelType, { status: FAILED });
+      updateDownloadStatus(id, { status: FAILED });
     }
   }, []);
 

@@ -86,7 +86,6 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => {
-    console.log('key------', key);
     navigate(`${key}`);
   };
 

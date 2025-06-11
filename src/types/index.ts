@@ -22,8 +22,7 @@ export interface IModelDataItem {
   params_size: number;
   source?: IModelSourceType;
   type?: string;
-  id: number;
-  modelType: string;
+  id: string;
   provider?: string;
   modelKey?: string;
   currentDownload?: number;

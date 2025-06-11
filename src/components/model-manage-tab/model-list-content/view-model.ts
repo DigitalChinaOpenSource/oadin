@@ -121,8 +121,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
           (item, index) =>
             ({
               ...item,
-              type: 0,
-              id: index + 1,
+              id: item?.id || index + 1,
               currentDownload: 0,
             }) as any,
         );
@@ -137,9 +136,11 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
     },
   );
-  // useEffect(() => {
-  //   fetchModelPath();
-  // }, []);
+
+  // 必须，下载时需要获取当前路径的存储空间
+  useEffect(() => {
+    fetchModelPath();
+  }, []);
 
   useEffect(() => {
     onModelSearch('');
@@ -292,9 +293,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         } else {
           fetchDownloadStart({
             ...modelData,
-            type: modelData.type,
             status: DOWNLOAD_STATUS.IN_PROGRESS,
-            modelType: 'local',
           });
         }
       },
@@ -343,6 +342,10 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     },
     {
       manual: true,
+      onBefore: () => {
+        // 修改全局状态，标识模型存储路径正在迁移中
+        setMigratingStatus('pending');
+      },
       onSuccess: (data) => {
         if (data) {
           message.success('模型存储路径修改成功');

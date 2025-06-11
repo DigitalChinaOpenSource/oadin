@@ -3,6 +3,7 @@ import styles from './index.module.scss';
 import { McpSelectBtn } from '@/components/icons';
 import { SelectMcpDialog } from './dialog.tsx';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import { useState } from 'react';
 
 enum selectMcpType {
   'default' = 'default',
@@ -12,15 +13,20 @@ enum selectMcpType {
 
 export const SelectMcp = () => {
   const { selectMcpList } = useSelectMcpStore();
+  const [selectMcpPopOpen, setSelectMcpPopOpen] = useState<boolean>(false);
   // 根据selectMcpList长度确定类型
   const selectType = selectMcpList.length > 0 ? selectMcpType.selected : selectMcpType.default;
   const selectTypeClass = styles[`select_mcp_${selectMcpType[selectType]}`];
   return (
     <div className={`${styles.select_mcp} ${selectTypeClass}`}>
       <Popover
+        open={selectMcpPopOpen}
         arrow={false}
-        content={<SelectMcpDialog />}
+        content={<SelectMcpDialog setSelectMcpPopOpen={setSelectMcpPopOpen} />}
         trigger="click"
+        onOpenChange={(open) => {
+          setSelectMcpPopOpen(open);
+        }}
       >
         <Button
           icon={

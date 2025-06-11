@@ -10,7 +10,8 @@ export interface IModelAuthForm {
   auth_type: string;
   service_name: string;
   service_source: string;
-  flavor_name: string;
+  flavor_name?: string;
+  api_flavor?: string;
   provider_name: string;
   models: string[];
   auth_key: string;
@@ -74,8 +75,9 @@ export default function ModelAuthorizeModal(props: IModelAuthorizeModalProps) {
       auth_type: 'credentials',
       service_name: 'chat',
       service_source: 'remote',
-      flavor_name: 'smartvision',
+      // flavor_name: 'smartvision',
       provider_name: 'remote_smartvision_chat',
+      api_flavor: modelDataItem?.api_flavor,
       models: [modelDataItem.name],
       auth_key: JSON.stringify(changeAuthKey),
     };

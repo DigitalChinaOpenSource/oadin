@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, Tabs, TabsProps, message } from 'antd';
 import styles from './index.module.scss';
 import useSelectedModelStore from '@/store/useSelectedModel';
-import ModelManageTab from '@/components/model-manage-tab';
+import { ModelSquare } from '@/components/choose-model-dialog/modelSquare.tsx';
+import { MyModel } from '@/components/choose-model-dialog/myModel.tsx';
+import useChatStore from '@/components/chat-container/store/useChatStore';
+import { useViewModel } from './view-model';
 
 export interface IChooseModelDialog {
   onCancel: () => void;
@@ -11,37 +14,34 @@ export interface IChooseModelDialog {
 
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
   const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
-  const items: TabsProps['items'] = [
-    {
-      key: 'model-square',
-      label: '模型广场',
-      children: (
-        <ModelManageTab
-          isDialog={true}
-          isMine={false}
-        />
-      ),
-    },
-    {
-      key: 'my-models',
-      label: '我的模型',
-      children: (
-        <ModelManageTab
-          isDialog={true}
-          isMine={true}
-        />
-      ),
-    },
-  ];
+  const [activeKey, setActiveKey] = useState<string>('model-square');
+  const onChange = (activeKey: string) => {
+    setActiveKey(activeKey);
+  };
+  const { currentSessionId } = useChatStore();
+  const { fetchChangeModel } = useViewModel();
 
   const onOk = () => {
     if (selectedModel && Object.keys(selectedModel).length > 0) {
       setIsSelectedModel(true);
+      fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedModel.id) });
       props.onCancel();
     } else {
       message.warning('请先选择一个模型');
     }
   };
+    const items: TabsProps['items'] = [
+        {
+            key: 'model-square',
+            label: '模型广场',
+            children: <ModelSquare />,
+        },
+        {
+            key: 'my-models',
+            label: '我的模型',
+            children: <MyModel />,
+        },
+    ];
 
   return (
     <Modal
@@ -54,7 +54,8 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
       {...props}
     >
       <Tabs
-        defaultActiveKey="model-square"
+        onChange={onChange}
+        activeKey={activeKey}
         items={items}
       />
     </Modal>

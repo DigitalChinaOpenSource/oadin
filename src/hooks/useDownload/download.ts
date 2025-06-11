@@ -28,7 +28,7 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
   let totalTimeoutId: NodeJS.Timeout | null = null;
   let hasRetried = false; // 是否已重试一次
   const NO_DATA_TIMEOUT = 10000;
-  const TOTAL_TIMEOUT = 20000;
+  const TOTAL_TIMEOUT = 30000;
 
   // 状态变量
   let lastUsefulDataObj: IDownParseData | null = null;
@@ -188,8 +188,8 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
   };
 
   totalTimeoutId = setTimeout(() => {
-    console.error('总超时：20秒内未收到任何数据');
-    onerror?.(new Error('流式请求超时：20秒未收到数据'));
+    console.error('总超时：30秒内未收到任何数据');
+    onerror?.(new Error('流式请求超时：30秒未收到数据'));
   }, TOTAL_TIMEOUT);
 
   startFetch();

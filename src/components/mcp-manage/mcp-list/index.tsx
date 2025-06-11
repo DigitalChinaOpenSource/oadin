@@ -37,32 +37,14 @@ export default function McpList(props: IMcpListProps) {
     if (activeKey === 'myMcp') {
       if (showOnlySelectedMyMcp) {
         // 根据筛选状态和搜索值过滤数据
-        const _filteredData = mcpListData.filter((item) => {
-          return showOnlySelectedMyMcp
-            ? selectMcpList
-                .map((mcpItem) => {
-                  return mcpItem?.id;
-                })
-                .includes(item.id)
-            : true;
-        });
-        setFilteredData(_filteredData);
+        setFilteredData(selectMcpList);
       } else {
         setFilteredData(mcpListData);
       }
     } else {
       if (showOnlySelectedMcpList) {
         // 根据筛选状态和搜索值过滤数据
-        const _filteredData = mcpListData.filter((item) => {
-          return showOnlySelectedMcpList
-            ? selectMcpList
-                .map((mcpItem) => {
-                  return mcpItem?.id;
-                })
-                .includes(item.id)
-            : true;
-        });
-        setFilteredData(_filteredData);
+        setFilteredData(selectMcpList);
       } else {
         setFilteredData(mcpListData);
       }
@@ -85,7 +67,7 @@ export default function McpList(props: IMcpListProps) {
           pagination={
             showOnlySelectedMyMcp || showOnlySelectedMcpList
               ? false // 筛选状态下强制关闭分页
-              : filteredData.length >= 12
+              : pagination.total >= 12
                 ? { className: styles.mcpListPagination, align: 'end', ...pagination, pageSizeOptions: [12, 24, 48, 96], showSizeChanger: true, onChange: onPageChange }
                 : false
           }
