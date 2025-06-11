@@ -58,7 +58,7 @@ func (t *ByzeCoreServer) SetProxy(c *gin.Context) {
 // ProxySwitch 代理启停
 func (t *ByzeCoreServer) ProxySwitch(c *gin.Context) {
 	var body struct {
-		Enabled bool `json:"enabled" binding:"required"`
+		Enabled bool `json:"enabled"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		slog.Error("Invalid request body", "error", err)
