@@ -121,7 +121,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
           (item, index) =>
             ({
               ...item,
-              id: item?.id || index + 1,
               currentDownload: 0,
             }) as any,
         );

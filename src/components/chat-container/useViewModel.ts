@@ -13,16 +13,16 @@ export default function useViewModel() {
 
   useEffect(() => {
     if (selectedModel && Object.keys(selectedModel).length > 0) {
-      fetchCreateChat({ modelName: selectedModel.name });
+      fetchCreateChat({ modelId: selectedModel.id });
     }
   }, [selectedModel]);
 
   const { run: fetchCreateChat } = useRequest(
     async (params: IPlaygroundSession) => {
-      const data = await httpRequest.post('/playground/session/create', {
+      const data = await httpRequest.post('/playground/session', {
         ...params,
       });
-      return data?.data || {};
+      return data || {};
     },
     {
       manual: true,
@@ -37,7 +37,7 @@ export default function useViewModel() {
   const handleCreateNewChat = () => {
     createNewChat();
     fetchCreateChat({
-      modelName: selectedModel?.name || '',
+      modelId: selectedModel?.id || '',
     });
   };
   return {
