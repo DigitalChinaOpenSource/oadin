@@ -63,25 +63,35 @@ func ModifySystemUserVariables(envInfo *EnvVariables) error {
 
 	fullPath := currentUser.HomeDir + "/" + rcFile
 	variableLine := fmt.Sprintf("export %s=\"%s\"", envInfo.Name, envInfo.Value)
-
-	// check exists
-	content, err := os.ReadFile(fullPath)
+	contentBytes, err := os.ReadFile(fullPath)
 	if err != nil {
 		return err
 	}
-	if strings.Contains(string(content), variableLine) {
-		return nil
+	content := string(contentBytes)
+
+	lines := strings.Split(content, "\n")
+	updated := false
+
+	for i, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "export "+envInfo.Name+"=") {
+			lines[i] = variableLine // Replace existing line
+			updated = true
+			break
+		}
 	}
+
+	if !updated {
+		lines = append(lines, variableLine) // Append new line
+	}
+
+	newContent := strings.Join(lines, "\n")
 
 	// append
-	f, err := os.OpenFile(fullPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o644)
+	err = os.WriteFile(fullPath, []byte(newContent), 0o644)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
-	if _, err := f.WriteString("\n" + variableLine + "\n"); err != nil {
-		return err
-	}
 	return nil
 }
