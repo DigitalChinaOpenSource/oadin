@@ -13,6 +13,7 @@ import sendSvg from '@/components/icons/send.svg';
 import uploadSvg from '@/components/icons/upload.svg';
 import rollingSvg from '@/components/icons/rolling.svg';
 import { useDownLoad } from '@/hooks/useDownload';
+import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import './index.css';
 
 interface IChatViewProps {
@@ -21,16 +22,25 @@ interface IChatViewProps {
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages, addMessage, uploadFileList, setUploadFileList } = useChatStore();
+  const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
-  const messageAreaRef = useRef<HTMLDivElement>(null);
 
-  // 监听消息列表变化，自动滚动
   useEffect(() => {
-    if (messageAreaRef.current && messages.length > 0) {
-      const scrollElement = messageAreaRef.current;
-      scrollElement.scrollTop = scrollElement.scrollHeight;
+    // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部
+    if (messages.length > 0 && getIsNearBottom()) {
+      scrollToBottom();
     }
-  }, [messages]);
+  }, [messages.length]);
+
+  /**
+   * 正在生成的消息控制滚动
+   * @description 如果正在生成的消息存在且当前滚动位置接近底部，则自动滚动到底部
+   */
+  const chattingMessageControlScroll = (message: any) => {
+    if (message && getIsNearBottom()) {
+      scrollToBottom();
+    }
+  };
 
   const handleSendMessage = (message: string) => {
     if (!message.trim()) return;
@@ -70,7 +80,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     setUploadFileList(fileList);
   };
 
-  const headerUploadContent = (
+  const headerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
       {uploadFileList.map((file) => (
         <div
@@ -168,7 +178,8 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
       <div className="chat-body">
         <div
           className="chat-message-area chat-width"
-          ref={messageAreaRef}
+          ref={containerRef}
+          onScroll={handleScroll}
         >
           <MessageList
             messages={messages}
@@ -180,7 +191,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             })}
             className="chat-message-list"
             contentListClassName="chat-message-content-list"
-            // bottomPanel={<div style={{ background: '' }}>这里可以放正在生成的消息，或者是其他什么的...</div>}
+            //  bottomPanel={<ChattingMessage scroll={chattingMessageControlScroll} />}
           />
         </div>
 
@@ -203,7 +214,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                 onClick={onClick}
               />
             )}
-            header={headerUploadContent}
+            header={headerContent}
             footer={footerContent}
           />
         </div>
