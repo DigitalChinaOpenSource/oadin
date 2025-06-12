@@ -174,7 +174,11 @@ export default function GeneralCard(props: IGeneralCardProps) {
       />
 
       <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>
-        {isDetail ? <ReactMarkdown>{modelData?.desc}</ReactMarkdown> : <Tooltip title={<div style={{ maxHeight: '100px', overflow: 'auto' }}>{modelData?.desc}</div>}>{modelData?.desc}</Tooltip>}
+        {isDetail ? (
+          <ReactMarkdown>{modelData?.desc}</ReactMarkdown>
+        ) : (
+          <Tooltip title={<div style={{ maxHeight: '100px', overflow: 'auto' }}>{modelData?.desc}</div>}>{modelData?.desc || '暂无模型简介'}</Tooltip>
+        )}
       </div>
 
       <div className={styles.infoWrapper}>
