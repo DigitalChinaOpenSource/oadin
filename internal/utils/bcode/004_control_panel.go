@@ -14,4 +14,7 @@ var (
 	ControlPanelCopyDirError = NewBcode(http.StatusInternalServerError, 40004, "migrate file failed, please retry!")
 
 	ControlPanelPathPermissionError = NewBcode(http.StatusForbidden, 40005, "path permission denied, please check!")
+
+	// ControlPanelAddMcpError mcp 添加失败
+	ControlPanelAddMcpError = NewBcode(http.StatusInternalServerError, 40006, "mcp add failed, please retry!")
 )

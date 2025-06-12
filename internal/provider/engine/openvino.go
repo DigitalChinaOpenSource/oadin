@@ -97,3 +97,7 @@ func (o *OpenvinoProvider) ListModels(ctx context.Context) (*types.ListResponse,
 func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
 	return nil
 }
+
+func (o *OpenvinoProvider) GetRunModels(ctx context.Context) (*types.ListResponse, error) {
+	return nil, nil
+}
