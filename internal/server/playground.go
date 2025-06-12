@@ -101,11 +101,10 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		ModelName:    getModelNameById(request.ModelId),
 		EmbedModelID: request.EmbedModelId,
 	}
-	// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
-	model := &types.Model{ModelName: getModelNameById(request.ModelId)}
-	err := p.Ds.Get(ctx, model)
+	supportModel := &types.SupportModel{Id: request.ModelId}
+	err := p.Ds.Get(ctx, supportModel)
 	if err == nil {
-		session.ThinkingEnabled = model.ThinkingEnabled
+		session.ThinkingEnabled = supportModel.Think
 	}
 	err = p.Ds.Add(ctx, session)
 	if err != nil {

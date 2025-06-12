@@ -8,8 +8,6 @@ import (
 )
 
 // Ollama embedding API 响应结构
-// https://github.com/ollama/ollama/blob/main/docs/api.md#embedding
-// { "embedding": [float...], "object": "embedding", ... }
 type ollamaEmbeddingResponse struct {
 	Object string `json:"object"`
 	Data   []struct {
