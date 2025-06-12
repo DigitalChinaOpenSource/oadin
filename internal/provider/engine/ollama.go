@@ -76,13 +76,7 @@ func (o *OllamaProvider) StartEngine() error {
 	execFile := "ollama"
 	switch runtime.GOOS {
 	case "windows":
-		if utils.IpexOllamaSupportGPUStatus() {
-			slog.Info("start ipex-llm-ollama...")
-			execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
-			slog.Info("exec file path: " + execFile)
-		} else {
-			execFile = "ollama.exe"
-		}
+		execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
 	case "darwin":
 		execFile = "/Applications/Ollama.app/Contents/Resources/ollama"
 	case "linux":
