@@ -41,7 +41,7 @@ export default function ChatModelManage(props: IChatModelManageProps) {
         </div>
 
         <div className={styles.right}>
-          {selectedModel?.thinkingEnabled && (
+          {selectedModel?.think && (
             <>
               <div className={styles.think}>
                 <img
