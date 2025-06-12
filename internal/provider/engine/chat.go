@@ -38,7 +38,6 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 		}
 		resp := &types.ChatResponse{
 			Content: apiResp.Message.Content,
-			// 其它字段可按需补充
 		}
 		return resp, nil
 	case <-ctx.Done():
