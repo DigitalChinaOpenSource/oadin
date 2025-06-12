@@ -32,10 +32,9 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 			EngineConfig: config,
 		}
 	}
-
 	ByzeDir, err := utils.GetByzeDataDir()
 	if err != nil {
-		slog.Error("Get Byze data dir failed: ", err.Error())
+		slog.Error("Get Byze data dir failed", "error", err.Error())
 		return nil
 	}
 
@@ -165,9 +164,10 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	if o.EngineConfig != nil {
 		return o.EngineConfig
 	}
+
 	userDir, err := os.UserHomeDir()
 	if err != nil {
-		slog.Error("Get user home dir failed: ", err.Error())
+		slog.Error("Get user home dir failed", "error", err)
 		return nil
 	}
 
@@ -178,10 +178,9 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			return nil
 		}
 	}
-
 	dataDir, err := utils.GetByzeDataDir()
 	if err != nil {
-		slog.Error("Get Byze data dir failed: " + err.Error())
+		slog.Error("Get Byze data dir failed", "error", err)
 		return nil
 	}
 

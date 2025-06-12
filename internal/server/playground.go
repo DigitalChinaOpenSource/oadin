@@ -230,7 +230,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 
 	// 直接调用统一 Engine 层
 	chatRequest := &types.ChatRequest{
-		Model:    session.ModelID,
+		Model:    session.ModelName,
 		Messages: history,
 		Options:  make(map[string]any),
 	}
@@ -241,11 +241,18 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		chatRequest.Tools = request.Tools
 	}
 
+	slog.Info("发送非流式请求到引擎", "model", session.ModelName)
 	chatResp, err := engine.NewEngine().Chat(ctx, chatRequest)
 	if err != nil {
 		slog.Error("Failed to call model API", "error", err)
 		return nil, err
 	}
+
+	slog.Info("收到非流式响应",
+		"content_length", len(chatResp.Content),
+		"model", chatResp.Model,
+		"is_complete", chatResp.IsComplete)
+
 	response := chatResp.Content
 
 	// 保存模型回复
