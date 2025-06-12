@@ -97,3 +97,22 @@ func (o *OpenvinoProvider) ListModels(ctx context.Context) (*types.ListResponse,
 func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
 	return nil
 }
+
+func (o *OpenvinoProvider) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error) {
+	return nil, fmt.Errorf("OpenvinoProvider does not implement Chat; use Engine instead")
+}
+
+func (o *OpenvinoProvider) ChatStream(ctx context.Context, req *types.ChatRequest) (chan *types.ChatResponse, chan error) {
+	resp := make(chan *types.ChatResponse)
+	errc := make(chan error, 1)
+	go func() {
+		defer close(resp)
+		defer close(errc)
+		errc <- fmt.Errorf("OpenvinoProvider does not implement ChatStream; use Engine instead")
+	}()
+	return resp, errc
+}
+
+func (o *OpenvinoProvider) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequest) (*types.EmbeddingResponse, error) {
+	return nil, fmt.Errorf("OpenvinoProvider does not implement GenerateEmbedding; use Engine instead")
+}
