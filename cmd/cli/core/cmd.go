@@ -68,7 +68,7 @@ func (sm *ServerManager) StopServer(serverType string) error {
 		return fmt.Errorf("server %s is not running", serverType)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
@@ -497,17 +497,6 @@ func stopByzeServer(cmd *cobra.Command, args []string) error {
 	err := utils.StopByzeServer(pidFile)
 	if err != nil {
 		fmt.Printf("[Stop] Failed to stop byze server err: %s", err)
-	}
-	if runtime.GOOS == "windows" {
-		extraProcessName := "ollama-lib.exe"
-		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-		_, err := extraCmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("failed to kill process: %s", extraProcessName)
-			return nil
-		}
-
-		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
 	}
 
 	return nil
@@ -1039,7 +1028,7 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 	err := engineProvider.HealthCheck()
 	if err != nil {
 		var cmd *exec.Cmd
-		if utils.IpexOllamaSupportGPUStatus() {
+		if runtime.GOOS == "windows" {
 			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 		} else {
 			cmd = exec.Command(engineConfig.ExecFile, "-h")
