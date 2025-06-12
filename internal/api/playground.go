@@ -85,6 +85,23 @@ func (h *PlaygroundHandler) GetMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// 删除会话
+func (h *PlaygroundHandler) DeleteSession(c *gin.Context) {
+	var req dto.DeleteSessionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp, err := h.playground.DeleteSession(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // 切换会话模型
 func (h *PlaygroundHandler) ChangeSessionModel(c *gin.Context) {
 	var req dto.ChangeSessionModelRequest

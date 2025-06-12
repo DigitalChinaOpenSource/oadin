@@ -90,9 +90,9 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi.PUT("/proxy", e.SetProxy)
 	systemApi.PUT("/proxy/switch", e.ProxySwitch)
 	playgroundHandler := NewPlaygroundHandler()
-	// Playground相关
-	r.Handle(http.MethodPost, "/playground/session", playgroundHandler.CreateSession)
+	// Playground相关	r.Handle(http.MethodPost, "/playground/session", playgroundHandler.CreateSession)
 	r.Handle(http.MethodGet, "/playground/sessions", playgroundHandler.GetSessions)
+	r.Handle(http.MethodDelete, "/playground/session", playgroundHandler.DeleteSession)
 	r.Handle(http.MethodPost, "/playground/message", playgroundHandler.SendMessage)
 	r.Handle(http.MethodPost, "/playground/message/stream", playgroundHandler.SendMessageStream)
 	r.Handle(http.MethodGet, "/playground/messages", playgroundHandler.GetMessages)
