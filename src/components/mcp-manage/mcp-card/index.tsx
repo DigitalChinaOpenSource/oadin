@@ -61,7 +61,6 @@ export default function McpCard(props: IMcpCardProps) {
       setShowTooltip(isOverflowing);
     }
   }, [mcpData?.abstract?.zh]);
-  console.info(selectTemporaryMcpItems, 'selectTemporaryMcpItemsselectTemporaryMcpItemsselectTemporaryMcpItems');
   const isAdd = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
   return (
     <div className={styles.mcpCard}>

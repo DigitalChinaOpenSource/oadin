@@ -65,13 +65,13 @@ export function useModelSetting() {
   // 保存模型下载源地址
   const { loading: changeModelDownUrlLoading, run: changeModelDownUrl } = useRequest(
     async (url: string) => {
-      const data = await httpRequest.put('/system/modify_repository', { url });
+      const data = await httpRequest.put('/system/registry', { url });
       return data || url;
     },
     {
       manual: true,
       onSuccess: (data) => {
-        setModelDownUrl(data);
+        message.success(data.message || '模型下载源地址修改成功');
       },
       onError: (error) => {
         console.log('保存模型下载源地址失败', error);
@@ -79,6 +79,7 @@ export function useModelSetting() {
     },
   );
 
+  // 修改模型存储路径
   const { run: onChangeModelPath } = useRequest(
     async (params: { source_path: string; target_path: string }) => {
       const data = await httpRequest.post('/control_panel/model/filepath', params);

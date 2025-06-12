@@ -4,6 +4,7 @@ import { httpRequest } from '@/utils/httpRequest.ts';
 import { IChatDetailItem, IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
 import { chatHistoryData } from './mock-data.ts';
 import useChatStore from '@/components/chat-container/store/useChatStore.ts';
+import { message } from 'antd';
 
 export function useChatHistoryDrawer() {
   // 获取对话store
@@ -49,7 +50,7 @@ export function useChatHistoryDrawer() {
       onSuccess: (data: any) => {
         // 删除成功 刷新历史记录(刷新会导致重新加载，现使用前台过滤)
         setChatHistory((prev) => prev.filter((item) => item.id !== params[0]));
-        // fetchChatHistory();
+        message.success('删除对话历史记录成功');
         // 如果删除的是当前会话的历史记录，则清空当前会话(能否新建一个对话)
         if (params[0] === currentSessionId) {
           createNewChat();
