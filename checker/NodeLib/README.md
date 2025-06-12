@@ -420,3 +420,13 @@ byze.ChangePlaygroundSessionModel({
   embedModelId: 'your-embed-model-id'
 });
 ```
+
+### 8.10 删除会话
+
+```javascript
+const sessionId = "session-uuid";
+
+byze.DeletePlaygroundSession(sessionId).then((result) => {
+    console.log(result);
+});
+```
