@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
 func (o *OllamaProvider) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error) {
 	c := o.GetDefaultClient()
 
@@ -67,16 +66,21 @@ func (o *OllamaProvider) Chat(ctx context.Context, req *types.ChatRequest) (*typ
 		return nil, fmt.Errorf("invalid response format from model")
 	}
 
-	return &types.ChatResponse{
+	res := &types.ChatResponse{
 		ID:         uuid.New().String(),
 		Object:     "chat.completion",
 		Model:      req.Model,
 		Content:    content,
 		IsComplete: true,
 		Thoughts:   thoughts,
-	}, nil
-}
+	}
 
+	toolCalls, ok := response["message"].(map[string]interface{})["tool_calls"].([]any)
+	if ok {
+		res.ToolCalls = toolCalls
+	}
+	return res, nil
+}
 
 func (o *OpenvinoProvider) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error) {
 	return nil, fmt.Errorf("chat not implemented for OpenVINO provider")

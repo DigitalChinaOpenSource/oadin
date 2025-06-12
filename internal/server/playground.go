@@ -12,13 +12,10 @@ import (
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
 	"byze/internal/provider"
-	"byze/internal/rpc"
-	"byze/internal/server/mcp_handler"
 	"byze/internal/types"
 	"byze/internal/utils/bcode"
 
 	"github.com/google/uuid"
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 type PlaygroundImpl struct {
@@ -211,19 +208,6 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		slog.Info("未找到相关上下文，使用通用对话模式", "session_id", session.ID)
 	}
 
-	// 是否启用了mcp服务器
-	mcpResults, err := p.HandleMCPToolInvocation(ctx, session.ModelID, request.Content, request.McpTools)
-	if len(mcpResults) > 0 && err == nil {
-		// 将MCP工具调用结果添加到历史记录中
-		for _, result := range mcpResults {
-			toolResultText := fmt.Sprintf("MCP工具【%s】执行结果:%s", result.McpTool.Tool.Name, result.Result.Content)
-			history = append(history, map[string]string{
-				"role":    "system",
-				"content": toolResultText,
-			})
-		}
-	}
-
 	// 添加当前用户消息
 	userMessage := map[string]string{
 		"role":    "user",
@@ -262,6 +246,12 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if session.ThinkingEnabled {
 		chatRequest.Options["thinking"] = true
 	}
+
+	// Chat request (with tools)
+	if request.Tools != nil {
+		chatRequest.Tools = request.Tools
+	}
+
 	// 调用模型API
 	chatResp, err := modelEngine.Chat(ctx, chatRequest)
 	if err != nil {
@@ -340,9 +330,8 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		})
 	}
 	return &dto.SendMessageResponse{
-		Bcode:      bcode.SuccessCode,
-		Data:       resultMessages,
-		McpResults: mcpResults,
+		Bcode: bcode.SuccessCode,
+		Data:  resultMessages,
 	}, nil
 }
 
@@ -503,110 +492,110 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 }
 
 // 处理消息中的mcp工具调用
-func (p *PlaygroundImpl) HandleMCPToolInvocation(ctx context.Context, model, query string, mcpTools []dto.McpTool) ([]dto.McpToolResult, error) {
-	if len(mcpTools) == 0 {
-		return nil, nil
-	}
-	var results []dto.McpToolResult
+// func (p *PlaygroundImpl) HandleMCPToolInvocation(ctx context.Context, model, query string, mcpTools []dto.McpTool) ([]dto.McpToolResult, error) {
+// 	if len(mcpTools) == 0 {
+// 		return nil, nil
+// 	}
+// 	var results []dto.McpToolResult
 
-	engineName := "ollama" // 默认使用Ollama引擎
-	modelEngine := provider.GetModelEngine(engineName)
+// 	engineName := "ollama" // 默认使用Ollama引擎
+// 	modelEngine := provider.GetModelEngine(engineName)
 
-	userMessage := map[string]string{
-		"role":    "user",
-		"content": query,
-	}
-	chatRequest := &types.ChatRequest{
-		Model:    model,
-		Messages: []map[string]string{userMessage},
-		Tools:    make([]map[string]any, 0, len(mcpTools)),
-	}
-	for _, mcpTool := range mcpTools {
-		chatRequest.Tools = append(chatRequest.Tools, map[string]any{
-			"type":     "function",
-			"function": mcpTool.Tool,
-		})
-	}
+// 	userMessage := map[string]string{
+// 		"role":    "user",
+// 		"content": query,
+// 	}
+// 	chatRequest := &types.ChatRequest{
+// 		Model:    model,
+// 		Messages: []map[string]string{userMessage},
+// 		Tools:    make([]map[string]any, 0, len(mcpTools)),
+// 	}
+// 	for _, mcpTool := range mcpTools {
+// 		chatRequest.Tools = append(chatRequest.Tools, map[string]any{
+// 			"type":     "function",
+// 			"function": mcpTool.Tool,
+// 		})
+// 	}
 
-	// 发起带tools的chat请求
-	chatResp, err := modelEngine.Chat(ctx, chatRequest)
-	if err != nil {
-		return nil, err
-	}
+// 	// 发起带tools的chat请求
+// 	chatResp, err := modelEngine.Chat(ctx, chatRequest)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	// 解析chatResp中的工具调用结果（假设返回内容中包含tool_calls字段）
-	var toolCalls []struct {
-		Function struct {
-			Name      string         `json:"name"`
-			Arguments map[string]any `json:"arguments"`
-		} `json:"function"`
-	}
-	// 兼容不同模型返回格式
-	if chatResp != nil && chatResp.Content != "" {
-		var respMap map[string]interface{}
-		// 这里的 Content 对应api的 message
-		if err := json.Unmarshal([]byte(chatResp.Content), &respMap); err == nil {
-			if tc, ok := respMap["tool_calls"]; ok {
-				if tcArr, ok := tc.([]interface{}); ok {
-					for _, t := range tcArr {
-						b, _ := json.Marshal(t)
-						var call struct {
-							Function struct {
-								Name      string         `json:"name"`
-								Arguments map[string]any `json:"arguments"`
-							} `json:"function"`
-						}
-						if err := json.Unmarshal(b, &call); err == nil {
-							toolCalls = append(toolCalls, call)
-						}
-					}
-				}
-			}
-		}
-	}
+// 	// 解析chatResp中的工具调用结果（假设返回内容中包含tool_calls字段）
+// 	var toolCalls []struct {
+// 		Function struct {
+// 			Name      string         `json:"name"`
+// 			Arguments map[string]any `json:"arguments"`
+// 		} `json:"function"`
+// 	}
+// 	// 兼容不同模型返回格式
+// 	if chatResp != nil && chatResp.Content != "" {
+// 		var respMap map[string]interface{}
+// 		// 这里的 Content 对应api的 message
+// 		if err := json.Unmarshal([]byte(chatResp.Content), &respMap); err == nil {
+// 			if tc, ok := respMap["tool_calls"]; ok {
+// 				if tcArr, ok := tc.([]interface{}); ok {
+// 					for _, t := range tcArr {
+// 						b, _ := json.Marshal(t)
+// 						var call struct {
+// 							Function struct {
+// 								Name      string         `json:"name"`
+// 								Arguments map[string]any `json:"arguments"`
+// 							} `json:"function"`
+// 						}
+// 						if err := json.Unmarshal(b, &call); err == nil {
+// 							toolCalls = append(toolCalls, call)
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
 
-	// 将toolCalls转为rpc.ClientRunToolRequest格式
-	if len(toolCalls) == 0 {
-		slog.Warn("No tool calls found in chat response", "response", chatResp.Content)
-		return nil, nil
-	}
-	clientRunToolRequests := make([]rpc.ClientRunToolRequest, 0, len(toolCalls))
-	for _, call := range toolCalls {
-		for _, mcpTool := range mcpTools {
-			if mcpTool.Tool.Name == call.Function.Name {
-				clientRunToolRequests = append(clientRunToolRequests, rpc.ClientRunToolRequest{
-					MCPId:    mcpTool.MCPId,
-					ToolName: call.Function.Name,
-					ToolArgs: call.Function.Arguments,
-				})
-				break
-			}
-		}
-	}
+// 	// 将toolCalls转为rpc.ClientRunToolRequest格式
+// 	if len(toolCalls) == 0 {
+// 		slog.Warn("No tool calls found in chat response", "response", chatResp.Content)
+// 		return nil, nil
+// 	}
+// 	clientRunToolRequests := make([]rpc.ClientRunToolRequest, 0, len(toolCalls))
+// 	for _, call := range toolCalls {
+// 		for _, mcpTool := range mcpTools {
+// 			if mcpTool.Tool.Name == call.Function.Name {
+// 				clientRunToolRequests = append(clientRunToolRequests, rpc.ClientRunToolRequest{
+// 					MCPId:    mcpTool.MCPId,
+// 					ToolName: call.Function.Name,
+// 					ToolArgs: call.Function.Arguments,
+// 				})
+// 				break
+// 			}
+// 		}
+// 	}
 
-	mcpHandler := mcp_handler.NewMcpService()
-	for _, req := range clientRunToolRequests {
-		// 调用MCP服务器的工具
-		mcpResult, err := mcpHandler.CallTool(req.MCPId, mcp.CallToolParams{
-			Name:      req.ToolName,
-			Arguments: req.ToolArgs,
-		})
-		if err != nil {
-			slog.Error("Failed to call MCP tool", "error", err, "mcpId", req.MCPId, "toolName", req.ToolName)
-			continue // 继续处理其他工具调用
-		}
+// 	mcpHandler := mcp_handler.NewMcpService()
+// 	for _, req := range clientRunToolRequests {
+// 		// 调用MCP服务器的工具
+// 		mcpResult, err := mcpHandler.CallTool(req.MCPId, mcp.CallToolParams{
+// 			Name:      req.ToolName,
+// 			Arguments: req.ToolArgs,
+// 		})
+// 		if err != nil {
+// 			slog.Error("Failed to call MCP tool", "error", err, "mcpId", req.MCPId, "toolName", req.ToolName)
+// 			continue // 继续处理其他工具调用
+// 		}
 
-		// 构建结果
-		for _, mcpTool := range mcpTools {
-			if mcpTool.MCPId == req.MCPId {
-				results = append(results, dto.McpToolResult{
-					McpTool:  mcpTool,
-					ToolArgs: req.ToolArgs,
-					Result:   *mcpResult,
-				})
-				break
-			}
-		}
-	}
-	return results, nil
-}
+// 		// 构建结果
+// 		for _, mcpTool := range mcpTools {
+// 			if mcpTool.MCPId == req.MCPId {
+// 				results = append(results, dto.McpToolResult{
+// 					McpTool:  mcpTool,
+// 					ToolArgs: req.ToolArgs,
+// 					Result:   *mcpResult,
+// 				})
+// 				break
+// 			}
+// 		}
+// 	}
+// 	return results, nil
+// }
