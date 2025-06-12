@@ -19,13 +19,3 @@ export const LOCAL_STORAGE_KEYS = {
 export const API_VERSION = 'v0.2';
 export const API_PREFIX = `/byze/${API_VERSION}`;
 export const API_HEALTH_ENDPOINT = '/health';
-
-// 完整的API基础URL（根据环境变量或默认值）
-export const getApiBaseUrl = () => {
-  return import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.MODE === 'dev' ? API_PREFIX : `http://127.0.0.1:16688${API_PREFIX}`);
-};
-
-// 健康检查URL
-export const getHealthBaseUrl = () => {
-  return import.meta.env.VITE_HEALTH_API_URL ?? (import.meta.env.MODE === 'dev' ? '/' : 'http://127.0.0.1:16688');
-};
