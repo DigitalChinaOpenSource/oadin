@@ -551,7 +551,7 @@ func IsDirEmpty(path string) bool {
 	fName, err := f.Readdirnames(1)
 	if runtime.GOOS == "darwin" {
 		for _, name := range fName {
-			if !utils.Contains([]string{".", "..", ".DS_Store"}, name) && !strings.HasPrefix(name, "._") {
+			if !utils.Contains([]string{".", "..", ".DS_Store"}, name) || !strings.HasPrefix(name, "._") {
 				return false
 			}
 		}
