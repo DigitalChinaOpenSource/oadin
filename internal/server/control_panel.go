@@ -79,6 +79,10 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		}
 		err = utils.CopyDir(req.SourcePath, req.TargetPath)
 		if err != nil {
+			err = utils.ClearDir(req.TargetPath)
+			if err != nil {
+				return nil, bcode.ControlPanelCopyDirError
+			}
 			return nil, bcode.ControlPanelCopyDirError
 		}
 	}
