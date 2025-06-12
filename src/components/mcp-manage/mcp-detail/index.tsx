@@ -24,12 +24,7 @@ export default function McpDetail() {
     {
       key: 'overView',
       label: '概览',
-      children: (
-        <McpOverview
-          markDownData={mcpDetail?.summary}
-          offHeight={descHeight}
-        />
-      ),
+      children: <McpOverview markDownData={mcpDetail?.summary} />,
     },
     {
       key: 'tools',

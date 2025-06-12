@@ -2,7 +2,7 @@ export interface IChatHistoryItem {
   id: string | number;
   title: string;
   modelName: string;
-  modelId: string;
+  modelId?: string;
   embedModelId?: string;
   thinkingEnabled?: boolean;
   createdAt: string;
