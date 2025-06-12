@@ -113,9 +113,7 @@ func (cb *CommandBuilder) Execute() (string, string, error) {
 	return stdout.String(), stderr.String(), nil
 }
 
-func (cb *CommandBuilder) GetRunCommand() (*exec.Cmd, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), cb.timeout)
-	defer cancel()
+func (cb *CommandBuilder) GetRunCommand() (string, []string, error) {
 	// 根据执行器类型构建命令
 	var cmdExec string
 	var cmdArgs []string
@@ -130,20 +128,12 @@ func (cb *CommandBuilder) GetRunCommand() (*exec.Cmd, error) {
 	case "uvx":
 		cmdExec, cmdArgs, err = cb.buildUVXCommand()
 	default:
-		return nil, fmt.Errorf("不支持的执行器类型: %v", cb.command)
+		return "", nil, fmt.Errorf("不支持的执行器类型: %v", cb.command)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("构建命令失败: %w", err)
+		return "", nil, fmt.Errorf("构建命令失败: %w", err)
 	}
-	// 创建命令对象
-	cmd := exec.CommandContext(ctx, cmdExec, cmdArgs...)
-	// 配置环境变量
-	cmd.Env = cb.envVars
-	// 设置工作目录
-	if cb.workingDir != "" {
-		cmd.Dir = cb.workingDir
-	}
-	return cmd, nil
+	return cmdExec, cmdArgs, nil
 }
 
 // buildNpxCommand 构建npx命令
