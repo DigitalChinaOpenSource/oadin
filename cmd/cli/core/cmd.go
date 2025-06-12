@@ -1034,7 +1034,7 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 	err := engineProvider.HealthCheck()
 	if err != nil {
 		var cmd *exec.Cmd
-		if utils.IpexOllamaSupportGPUStatus() {
+		if runtime.GOOS == "windows" {
 			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 		} else {
 			cmd = exec.Command(engineConfig.ExecFile, "-h")
