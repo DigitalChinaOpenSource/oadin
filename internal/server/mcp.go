@@ -381,8 +381,16 @@ func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
 		Name: mcpConfig.Data.ServerName,
 	}
 	for _, y := range mcpServers {
-		mcpServerConfig.Command = y.Command
-		mcpServerConfig.Args = y.Args
+		commandBuilder := hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
+		command, args, err := commandBuilder.GetRunCommand()
+		if err != nil {
+			return err
+		}
+		mcpServerConfig.Command = command
+		mcpServerConfig.Args = args
+		if env != nil {
+			mcpServerConfig.Env = env
+		}
 		break
 	}
 	fmt.Println("mcpServers", mcpServers)
@@ -395,10 +403,7 @@ func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
 
 func (M *MCPServerImpl) ClientMcpStop(ctx *gin.Context, ids []string) error {
 	for _, id := range ids {
-		err := M.McpHandler.Stop(id)
-		if err != nil {
-			return err
-		}
+		M.McpHandler.Stop(id)
 	}
 	return nil
 }
@@ -411,7 +416,7 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 	if err != nil {
 		return nil, err
 	}
-	
+
 	searchTools, err := rpc.SearchTools(M.Client, mcpId, &rpc.ToolSearchRequest{Size: 100, Page: 1})
 	if err != nil {
 		return nil, err
