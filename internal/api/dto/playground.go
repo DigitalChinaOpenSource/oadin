@@ -75,6 +75,16 @@ type ChangeSessionModelRequest struct {
 	EmbedModelId string `json:"embedModelId,omitempty"`
 }
 
+// 删除会话请求
+type DeleteSessionRequest struct {
+	SessionId string `json:"sessionId"`
+}
+
+// 删除会话响应
+type DeleteSessionResponse struct {
+	Bcode *bcode.Bcode `json:"bcode"`
+}
+
 type ChangeSessionModelResponse struct {
 	Bcode *bcode.Bcode `json:"bcode"`
 	Data  *Session     `json:"data"`
