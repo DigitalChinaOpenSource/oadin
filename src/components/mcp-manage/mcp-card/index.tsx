@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, Dispatch, SetStateAction } from 'react';
 import styles from './index.module.scss';
-import { Button, Checkbox, Popover, Tooltip } from 'antd';
+import { Button, Checkbox, Popover } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
 import { GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
@@ -11,8 +11,8 @@ import { DotsThreeCircleIcon } from '@phosphor-icons/react';
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
-import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import EllipsisTooltip from '@/components/ellipsis-tooltip';
+import { checkMcpLength } from '@/components/select-mcp/lib/selectMcpHelper.ts';
 
 export interface IMcpCardProps {
   // 模型数据
@@ -34,17 +34,15 @@ export default function McpCard(props: IMcpCardProps) {
   };
   // 处理单个项目的选择
   const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
-    console.info(item, '当前的数据');
-    console.info(checked, '当前的checked');
     if (checked) {
-      console.info(setSelectTemporaryMcpItems, 'setSelectTemporaryMcpItems方法');
-      setSelectTemporaryMcpItems?.([...(selectTemporaryMcpItems ?? []), item]);
+      if (checkMcpLength(selectTemporaryMcpItems.length)) {
+        setSelectTemporaryMcpItems?.([...(selectTemporaryMcpItems ?? []), item]);
+      }
     } else {
       setSelectTemporaryMcpItems?.(selectTemporaryMcpItems.filter((mcpItem) => mcpItem?.id !== item?.id));
     }
   };
   const contentRef = useRef<HTMLDivElement>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
   const [showOperate, setShowOperate] = useState(false);
 
   const clickBefore = async () => {
@@ -58,7 +56,6 @@ export default function McpCard(props: IMcpCardProps) {
   useEffect(() => {
     if (contentRef.current) {
       const isOverflowing = contentRef.current.scrollHeight > contentRef.current.offsetHeight;
-      setShowTooltip(isOverflowing);
     }
   }, [mcpData?.abstract?.zh]);
   const isAdd = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
