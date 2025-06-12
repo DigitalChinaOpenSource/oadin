@@ -1159,7 +1159,6 @@ class Byze {
       child.unref();
     });
   }
-
   // 获取会话列表
   async GetPlaygroundSessions() {
     try {
@@ -1176,6 +1175,35 @@ class Byze {
         code: 200,
         msg: res.data.bcode?.message || null,
         data: res.data.data,
+      };
+    } catch (error) {
+      return {
+        code: 400,
+        msg: error.response?.data?.message || error.message || '请求失败',
+        data: null,
+      };
+    }
+  }
+  
+  // 删除会话
+  async DeletePlaygroundSession(sessionId) {
+    try {
+      const data = { sessionId };
+      const res = await this.client.delete('/playground/session', { data });
+      
+      if (res.status !== 200) {
+        return {
+          code: 400,
+          msg: res.data?.message || 'Bad Request',
+          data: null,
+        };
+      }
+      
+      await this.validateSchema(schemas.baseResponseSchema, res.data);
+      return {
+        code: 200,
+        msg: res.data.bcode?.message || null,
+        data: null,
       };
     } catch (error) {
       return {

@@ -204,14 +204,20 @@ func (t *ByzeCoreServer) ClientGetTools(c *gin.Context) {
 		return
 	}
 
+	res := rpc.ClientGetToolsResponse{}
 	mcpTools := make([]rpc.McpTool, 0, len(req.Ids))
 	for _, id := range req.Ids {
 		tools, err := t.MCP.ClientGetTools(c, id)
 		if err != nil {
 			continue
 		}
-		mcpTools = append(mcpTools, rpc.McpTool{McpId: id, Tools: tools})
-	}
 
-	c.JSON(http.StatusOK, gin.H{"code": "200", "data": mcpTools})
+		newTools := make([]rpc.Tool, 0, len(tools))
+		for _, tool := range tools {
+			newTools = append(newTools, rpc.Tool{Type: "function", Function: rpc.TypeFunction{Name: tool.Name, Description: tool.Description, Parameters: tool.InputSchema}})
+		}
+		mcpTools = append(mcpTools, rpc.McpTool{McpId: id, Tools: newTools})
+	}
+	res.Tools = mcpTools
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": res})
 }
