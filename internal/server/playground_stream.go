@@ -99,7 +99,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		modelEngine := engine.NewEngine()
 		// 构建聊天请求
 		chatRequest := &types.ChatRequest{
-			Model:    session.ModelID,
+			Model:    session.ModelName,
 			Messages: history,
 			Stream:   true, // 启用流式输出
 			Options:  make(map[string]any),
@@ -122,70 +122,118 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		assistantMsgID := uuid.New().String()
 		var fullContent string
 		var thoughts string
-
 		// 转发流式响应
 		for {
 			select {
 			case resp, ok := <-responseStream:
-				if !ok {
-					// 流结束
-					// 保存完整的助手回复
-					if fullContent != "" {
-						assistantMsg := &types.ChatMessage{
-							ID:        assistantMsgID,
+				if !ok { // 流结束					// 保存完整的助手回复，即使内容为空也要保存
+					// 因为有可能最后一个块是完成标记但内容为空
+					slog.Info("流式输出结束，准备保存助手回复",
+						"content_length", len(fullContent))
+
+					// 显示预览（如果有内容）
+					if len(fullContent) > 0 {
+						previewLen := min(100, len(fullContent))
+						slog.Info("回复内容预览",
+							"content_preview", fullContent[:previewLen])
+					} else {
+						slog.Warn("助手回复内容为空！")
+					}
+
+					assistantMsg := &types.ChatMessage{
+						ID:        assistantMsgID,
+						SessionID: request.SessionID,
+						Role:      "assistant",
+						Content:   fullContent, // 即使为空也保存
+						Order:     len(messages) + 1,
+						CreatedAt: time.Now(),
+						ModelID:   session.ModelID,
+						ModelName: session.ModelName,
+					}
+					err = p.Ds.Add(ctx, assistantMsg)
+					if err != nil {
+						slog.Error("Failed to save assistant message", "error", err)
+					}
+					// 如果是第一条消息，更新会话标题
+					if len(messages) == 0 {
+						title := "新对话 " + time.Now().Format("2006-01-02")
+						session.Title = title
+						err = p.Ds.Put(ctx, session)
+						if err != nil {
+							slog.Error("Failed to update session title", "error", err)
+						}
+					}
+
+					// 保存思考内容（如果有）
+					if thoughts != "" && session.ThinkingEnabled {
+						thoughtsMsg := &types.ChatMessage{
+							ID:        uuid.New().String(),
 							SessionID: request.SessionID,
-							Role:      "assistant",
-							Content:   fullContent,
-							Order:     len(messages) + 1,
+							Role:      "system",
+							Content:   "思考过程: " + thoughts,
+							Order:     len(messages) + 2,
 							CreatedAt: time.Now(),
 							ModelID:   session.ModelID,
 							ModelName: session.ModelName,
 						}
-						err = p.Ds.Add(ctx, assistantMsg)
+						err = p.Ds.Add(ctx, thoughtsMsg)
 						if err != nil {
-							slog.Error("Failed to save assistant message", "error", err)
-						} // 如果是第一条消息，更新会话标题
-						if len(messages) == 0 {
-							title := "新对话 " + time.Now().Format("2006-01-02")
-							session.Title = title
-							err = p.Ds.Put(ctx, session)
-							if err != nil {
-								slog.Error("Failed to update session title", "error", err)
-							}
-						}
-
-						// 保存思考内容（如果有）
-						if thoughts != "" && session.ThinkingEnabled {
-							thoughtsMsg := &types.ChatMessage{
-								ID:        uuid.New().String(),
-								SessionID: request.SessionID,
-								Role:      "system",
-								Content:   "思考过程: " + thoughts,
-								Order:     len(messages) + 2,
-								CreatedAt: time.Now(),
-								ModelID:   session.ModelID,
-								ModelName: session.ModelName,
-							}
-							err = p.Ds.Add(ctx, thoughtsMsg)
-							if err != nil {
-								slog.Error("Failed to save thoughts message", "error", err)
-								// 非致命错误，继续执行
-							}
+							slog.Error("Failed to save thoughts message", "error", err)
+							// 非致命错误，继续执行
 						}
 					}
 					return
 				}
+
 				msgType := "answer"
 				if resp.Thoughts != "" {
 					msgType = "thoughts"
-				}
+				} // 保留原始的 Content 
+				originalContent := resp.Content
 				resp.Type = msgType
-				resp.Model = session.ModelID
-				resp.ModelName = session.ModelName
-				respChan <- resp
+				resp.Model = session.ModelName
+				resp.ModelName = session.ModelName 
+				if resp.IsComplete {
+					slog.Info("收到流式输出完成标记",
+						"is_complete", resp.IsComplete,
+						"content_length", len(originalContent),
+						"accumulated_content_length", len(fullContent))
 
-				// 累积完整内容
-				fullContent += resp.Content
+					// 如果最后一块有内容，需要累积
+					if len(originalContent) > 0 {
+						fullContent += resp.Content
+					}
+
+					assistantMsg := &types.ChatMessage{
+						ID:        assistantMsgID,
+						SessionID: request.SessionID,
+						Role:      "assistant",
+						Content:   fullContent, 
+						Order:     len(messages) + 1,
+						CreatedAt: time.Now(),
+						ModelID:   session.ModelID,
+						ModelName: session.ModelName,
+					}
+					err = p.Ds.Add(ctx, assistantMsg)
+					if err != nil {
+						slog.Error("Failed to save assistant message on complete", "error", err)
+					}
+
+					// 发送全部内容作为响应
+					resp.Content = fullContent
+					respChan <- resp
+				} else if len(originalContent) > 0 {
+					slog.Info("收到非空流式输出块",
+						"content_length", len(originalContent),
+						"is_complete", resp.IsComplete)
+
+					fullContent += resp.Content
+
+					respChan <- resp
+				} else {
+					slog.Debug("跳过空内容块")
+					continue
+				}
 				if resp.Thoughts != "" {
 					thoughts = resp.Thoughts
 				}
