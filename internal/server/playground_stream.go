@@ -113,6 +113,11 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			chatRequest.Options["thinking"] = true
 		}
 
+		// Chat request (with tools)
+		if request.Tools != nil {
+			chatRequest.Tools = request.Tools
+		}
+
 		// 调用流式API
 		responseStream, streamErrChan := modelEngine.ChatStream(ctx, chatRequest)
 

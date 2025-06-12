@@ -24,6 +24,7 @@ type MessageChunk struct {
 
 // 发送流式消息请求
 type SendStreamMessageRequest struct {
-	SessionID string `json:"session_id" binding:"required"`
-	Content   string `json:"content" binding:"required"`
+	SessionID string           `json:"session_id" binding:"required"`
+	Content   string           `json:"content" binding:"required"`
+	Tools     []map[string]any `json:"tools,omitempty"`
 }

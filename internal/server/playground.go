@@ -246,6 +246,12 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if session.ThinkingEnabled {
 		chatRequest.Options["thinking"] = true
 	}
+
+	// Chat request (with tools)
+	if request.Tools != nil {
+		chatRequest.Tools = request.Tools
+	}
+
 	// 调用模型API
 	chatResp, err := modelEngine.Chat(ctx, chatRequest)
 	if err != nil {
@@ -366,6 +372,82 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 	return &dto.GetMessagesResponse{
 		Bcode: bcode.SuccessCode,
 		Data:  messageDTOs,
+	}, nil
+}
+
+// 删除会话
+func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteSessionRequest) (*dto.DeleteSessionResponse, error) {
+	// 1. 获取会话记录
+	session := &types.ChatSession{ID: request.SessionId}
+	err := p.Ds.Get(ctx, session)
+	if err != nil {
+		slog.Error("Failed to get chat session", "error", err, "session_id", request.SessionId)
+		return nil, err
+	}
+
+	// 2. 删除会话相关的消息记录
+	messageQuery := &types.ChatMessage{SessionID: request.SessionId}
+	messages, err := p.Ds.List(ctx, messageQuery, nil)
+	if err != nil {
+		slog.Error("Failed to list chat messages", "error", err)
+	} else {
+		for _, m := range messages {
+			msg := m.(*types.ChatMessage)
+			err = p.Ds.Delete(ctx, msg)
+			if err != nil {
+				slog.Error("Failed to delete chat message", "error", err, "message_id", msg.ID)
+			}
+		}
+	}
+
+	// 3. 删除会话相关的文件记录
+	fileQuery := &types.File{SessionID: request.SessionId}
+	files, err := p.Ds.List(ctx, fileQuery, nil)
+	if err != nil {
+		slog.Error("Failed to list files", "error", err)
+	} else {
+		for _, f := range files {
+			file := f.(*types.File)
+
+			chunkQuery := &types.FileChunk{FileID: file.ID}
+			chunks, err := p.Ds.List(ctx, chunkQuery, nil)
+			if err != nil {
+				slog.Error("Failed to list file chunks", "error", err)
+			} else {
+				// 如果VSS初始化完成，从VSS中删除文件的所有块
+				if vssInitialized {
+					if err := vssDB.DeleteChunks(ctx, file.ID); err != nil {
+						slog.Error("从VSS删除文件块失败", "error", err, "file_id", file.ID)
+					}
+				}
+
+				for _, c := range chunks {
+					chunk := c.(*types.FileChunk)
+					// 删除文件块记录
+					err = p.Ds.Delete(ctx, chunk)
+					if err != nil {
+						slog.Error("Failed to delete file chunk", "error", err)
+					}
+				}
+			}
+
+			// 删除文件记录
+			err = p.Ds.Delete(ctx, file)
+			if err != nil {
+				slog.Error("Failed to delete file", "error", err)
+			}
+		}
+	}
+
+	// 4. 删除会话记录
+	err = p.Ds.Delete(ctx, session)
+	if err != nil {
+		slog.Error("Failed to delete chat session", "error", err)
+		return nil, err
+	}
+
+	return &dto.DeleteSessionResponse{
+		Bcode: bcode.SuccessCode,
 	}, nil
 }
 
