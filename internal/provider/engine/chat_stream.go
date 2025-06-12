@@ -7,13 +7,6 @@ import (
 	"encoding/json"
 )
 
-type ollamaAPIResponse struct {
-	Message struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	} `json:"message"`
-}
-
 func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan *types.ChatResponse, <-chan error) {
 	respChan := make(chan *types.ChatResponse)
 	errChan := make(chan error, 1)
@@ -26,9 +19,13 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 		}()
 		return respChan, errChan
 	}
+
+	// Convert model ID to model name if needed
+	modelName := getModelNameById(req.Model)
+
 	serviceReq := &types.ServiceRequest{
-		Service:       "generate", 
-		Model:         req.Model,
+		Service:       "generate",
+		Model:         modelName, // Using model name instead of ID
 		FromFlavor:    "ollama",
 		AskStreamMode: true,
 		HTTP: types.HTTPContent{
