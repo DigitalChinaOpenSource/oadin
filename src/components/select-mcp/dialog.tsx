@@ -3,20 +3,23 @@ import { List, Checkbox, Button, Input } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
-import { useViewModel } from '@/components/mcp-manage/mcp-square-tab/view-model.ts';
+import { useViewModel as useMcpSquareViewModel } from '@/components/mcp-manage/mcp-square-tab/view-model.ts';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import TagsRender from '@/components/tags-render';
 import defaultLogo from '@/assets/favicon.png';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
 import { DetailDrawer } from '@/components/detail_drawer';
+import { checkMcpLength, selectRemoteHelper } from '@/components/select-mcp/lib/selectMcpHelper.ts';
 
 interface ISelectMcpDialogProps {
   setSelectMcpPopOpen: (bool: boolean) => void;
 }
 
 export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
-  const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useViewModel();
+  const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useMcpSquareViewModel();
+
+  const { startMcps, stopMcps } = selectRemoteHelper();
   const { setSelectMcpPopOpen } = props;
   const [allList, setAllList] = useState<IMcpListItem[]>([]);
   const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
@@ -31,9 +34,19 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   // 处理单个项目的选择
   const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
     if (checked) {
-      setSelectMcpList([...selectMcpList, item]);
+      if (checkMcpLength(selectMcpList.length)) {
+        setSelectMcpList([...selectMcpList, item]);
+        // 启动MCP
+        startMcps({
+          ids: [item?.id as string],
+        });
+      }
     } else {
       setSelectMcpList(selectMcpList.filter((mcpItem) => mcpItem?.id !== item?.id));
+      // 停止MCP
+      stopMcps({
+        ids: [item?.id as string],
+      });
     }
   };
 

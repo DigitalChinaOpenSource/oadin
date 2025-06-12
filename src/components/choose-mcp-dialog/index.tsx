@@ -1,10 +1,11 @@
-import { Button, Checkbox, Modal, ModalProps, Space, Tabs, TabsProps } from 'antd';
+import { Checkbox, Modal, ModalProps, Space, Tabs, TabsProps } from 'antd';
 import React, { useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import { selectRemoteHelper, updateMcp } from '@/components/select-mcp/lib/selectMcpHelper.ts';
 
 export type IChooseMcpDialog = ModalProps & {
   onCancelProps: () => void;
@@ -22,11 +23,28 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
   const [selectTemporaryMcpItems, setSelectTemporaryMcpItems] = useState<ITemporaryMcpListItem[]>([]);
   console.info(selectTemporaryMcpItems, 'selectTemporaryMcpItemsselectTemporaryMcpItems');
   const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
+  const { startMcps, stopMcps } = selectRemoteHelper();
 
   useEffect(() => {
     setSelectTemporaryMcpItems(selectMcpList);
   }, [selectMcpList]);
   const onSelectMcpOk = () => {
+    /// 启用关闭模型
+    const { startList, stopList } = updateMcp(selectMcpList, selectTemporaryMcpItems);
+
+    // 仅当有需要启动的MCP时调用startMcps
+    if (startList.length > 0) {
+      startMcps({
+        ids: startList.map((item) => item.id.toString()),
+      });
+    }
+
+    // 仅当有需要停止的MCP时调用stopMcps
+    if (stopList.length > 0) {
+      stopMcps({
+        ids: stopList.map((item) => item.id.toString()),
+      });
+    }
     // // 更新全局状态
     setSelectMcpList(selectTemporaryMcpItems);
     // 关闭模态框
