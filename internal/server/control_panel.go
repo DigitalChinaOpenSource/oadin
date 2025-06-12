@@ -55,6 +55,10 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if err != nil {
 		return nil, err
 	}
+	err = CheckFilePath(req.TargetPath)
+	if err != nil {
+		return nil, err
+	}
 	isTargetDirEmpty := utils.IsDirEmpty(req.TargetPath)
 	if !isTargetDirEmpty {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
