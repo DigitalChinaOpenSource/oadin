@@ -51,7 +51,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if req.TargetPath == req.SourcePath {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
 	}
-	err := CheckFilePath(req.TargetPath)
+	err := CheckFilePath(req.SourcePath)
 	if err != nil {
 		return nil, err
 	}
