@@ -36,6 +36,7 @@ type SendMessageRequest struct {
 	SessionId string           `json:"sessionId"`
 	Content   string           `json:"content"`
 	Tools     []map[string]any `json:"tools,omitempty"`
+	McpIds    []string         `json:"mcpIds,omitempty"`
 }
 
 // 发送消息响应

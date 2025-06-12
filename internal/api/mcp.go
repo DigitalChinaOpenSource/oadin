@@ -4,6 +4,7 @@ import (
 	"byze/internal/rpc"
 	"byze/internal/utils/bcode"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -161,10 +162,11 @@ func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
 	}
-	err := t.MCP.ClientMcpStart(c.Request.Context(), req.Id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": "500", "message": err.Error()})
-		return
+	for _, id := range req.Ids {
+		err := t.MCP.ClientMcpStart(c, id)
+		if err != nil {
+			fmt.Printf("output of command execution: %s", err.Error())
+		}
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success"})
 }
