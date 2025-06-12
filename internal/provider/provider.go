@@ -30,13 +30,17 @@ type ModelServiceProvider interface {
 }
 
 func GetModelEngine(engineName string) ModelServiceProvider {
+	var provider ModelServiceProvider
+
+	// 根据引擎类型获取特定的提供者实例
 	switch engineName {
 	case "ollama":
-		return engine.NewOllamaProvider(nil)
+		provider = engine.NewOllamaProvider(nil)
 	case "openvino":
-		// todo
-		return engine.NewOpenvinoProvider(nil)
+		provider = engine.NewOpenvinoProvider(nil)
 	default:
-		return engine.NewOllamaProvider(nil)
+		provider = engine.NewOllamaProvider(nil)
 	}
+
+	return provider
 }
