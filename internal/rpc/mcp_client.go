@@ -270,7 +270,21 @@ type ClientGetToolsRequest struct {
 	Ids []string `json:"ids"`
 }
 
+type ClientGetToolsResponse struct {
+	Tools []McpTool `json:"mcpTools"`
+}
+
 type McpTool struct {
-	McpId string     `json:"mcpId"`
-	Tools []mcp.Tool `json:"tools"`
+	McpId string `json:"mcpId"`
+	Tools []Tool `json:"tools"`
+}
+
+type Tool struct {
+	Type     string       `json:"type"`
+	Function TypeFunction `json:"function"`
+}
+type TypeFunction struct {
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	Parameters  mcp.ToolInputSchema `json:"parameters"`
 }
