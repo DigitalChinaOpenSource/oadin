@@ -76,13 +76,7 @@ func (o *OllamaProvider) StartEngine() error {
 	execFile := "ollama"
 	switch runtime.GOOS {
 	case "windows":
-		if utils.IpexOllamaSupportGPUStatus() {
-			slog.Info("start ipex-llm-ollama...")
-			execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
-			slog.Info("exec file path: " + execFile)
-		} else {
-			execFile = "ollama.exe"
-		}
+		execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
 	case "darwin":
 		execFile = "/Applications/Ollama.app/Contents/Resources/ollama"
 	case "linux":
@@ -473,6 +467,16 @@ func (o *OllamaProvider) CopyModel(ctx context.Context, req *types.CopyModelRequ
 	}
 
 	return nil
+}
+
+func (o *OllamaProvider) GetRunModels(ctx context.Context) (*types.ListResponse, error) {
+	c := o.GetDefaultClient()
+	var lr types.ListResponse
+	if err := c.Do(ctx, http.MethodGet, "/api/ps", nil, &lr); err != nil {
+		slog.Error("[Service] Get run model list failed :" + err.Error())
+		return nil, err
+	}
+	return &lr, nil
 }
 
 // 替換為私倉拉取模型, 為防止出現中斷, 不做異常處理
