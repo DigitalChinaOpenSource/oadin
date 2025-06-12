@@ -463,6 +463,16 @@ func (o *OllamaProvider) CopyModel(ctx context.Context, req *types.CopyModelRequ
 	return nil
 }
 
+func (o *OllamaProvider) GetRunModels(ctx context.Context) (*types.ListResponse, error) {
+	c := o.GetDefaultClient()
+	var lr types.ListResponse
+	if err := c.Do(ctx, http.MethodGet, "/api/ps", nil, &lr); err != nil {
+		slog.Error("[Service] Get run model list failed :" + err.Error())
+		return nil, err
+	}
+	return &lr, nil
+}
+
 // 替換為私倉拉取模型, 為防止出現中斷, 不做異常處理
 func privateRegistryHandle(req *types.PullModelRequest) {
 	// 从用户配置文件中读取系统设置

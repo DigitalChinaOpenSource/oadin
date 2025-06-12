@@ -2,6 +2,7 @@ package api
 
 import (
 	"byze/internal/rpc"
+	"byze/internal/utils/bcode"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -80,10 +81,10 @@ func (t *ByzeCoreServer) DownloadMCP(c *gin.Context) {
 	id := c.Param("id")
 	err := t.MCP.DownloadMCP(c, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		bcode.ReturnError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, nil)
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
 
 }
 
@@ -101,7 +102,7 @@ func (t *ByzeCoreServer) AuthorizeMCP(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
 		return
 	}
-	c.JSON(http.StatusOK, nil)
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
 }
 
 func (t *ByzeCoreServer) GetCategories(c *gin.Context) {
@@ -135,7 +136,7 @@ func (t *ByzeCoreServer) ReverseStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
 		return
 	}
-	c.JSON(http.StatusOK, nil)
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
 
 }
 
@@ -151,7 +152,7 @@ func (t *ByzeCoreServer) SetupFunTool(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
 		return
 	}
-	c.JSON(http.StatusOK, nil)
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
 
 }
 
