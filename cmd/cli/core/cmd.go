@@ -498,17 +498,6 @@ func stopByzeServer(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		fmt.Printf("[Stop] Failed to stop byze server err: %s", err)
 	}
-	if runtime.GOOS == "windows" {
-		extraProcessName := "ollama-lib.exe"
-		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-		_, err := extraCmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("failed to kill process: %s", extraProcessName)
-			return nil
-		}
-
-		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
-	}
 
 	return nil
 }
