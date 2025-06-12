@@ -919,6 +919,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				Class:           smInfo.Class,
 				Size:            smInfo.Size,
 				OllamaId:        smInfo.OllamaId,
+				Think:           smInfo.Think,
 			}
 			resultList = append(resultList, modelData)
 			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
@@ -1077,6 +1078,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					OllamaId:        jdModelInfo.OllamaId,
 					Size:            jdModelInfo.Size,
 					ParamsSize:      jdModelInfo.ParamSize,
+					Think:           jdModelInfo.Think,
 				}
 				resultList = append(resultList, modelData)
 			}

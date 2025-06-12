@@ -3,6 +3,7 @@ package server
 import (
 	"byze/internal/api/dto"
 	"byze/internal/cache"
+	"byze/internal/provider"
 	"context"
 	"log/slog"
 )
@@ -52,6 +53,8 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 		slog.Error("设置代理地址失败", "error", err)
 		return err
 	}
+	// 使用临时变量存储代理设置
+	tempProxy := settings.SystemProxy
 
 	// 更新代理地址
 	settings.SystemProxy.Username = req.Username
@@ -64,6 +67,26 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 		slog.Error("设置代理地址失败", "error", err)
 		return err
 	}
+
+	// 重启Ollama服务以应用新的代理设置
+	err = restartOllama(ctx)
+	if err != nil {
+		slog.Error("重启Ollama失败", "error", err)
+		// 回滚代理设置
+		settings.SystemProxy = tempProxy // 清空代理设置
+		return err
+	}
+
+	// 设置代理状态
+	settings.SystemProxy.Enabled = true
+	// 将修改后的设置写回用户配置文件
+	err = cache.WriteSystemSettings(settings)
+	if err != nil {
+		slog.Error("设置代理地址失败", "error", err)
+		// 回滚代理设置
+		settings.SystemProxy = tempProxy // 清空代理设置
+		return err
+	}
 	return nil
 
 }
@@ -73,8 +96,10 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 	// 从用户配置文件中读取系统设置
 	var settings cache.SystemSettings
 	err := cache.ReadSystemSettings(&settings)
+
+	err = restartOllama(ctx)
 	if err != nil {
-		slog.Error("切换代理启用状态失败", "error", err)
+		slog.Error("重启Ollama失败", "error", err)
 		return err
 	}
 
@@ -88,6 +113,35 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 		return err
 	}
 	return nil
+}
+
+func restartOllama(ctx context.Context) error {
+	// 探查ollama服务是否在运行模型
+	engine := provider.GetModelEngine("ollama")
+
+	runModels, err := engine.GetRunModels(ctx)
+	if err != nil {
+		slog.Error("获取正在运行的模型失败", "error", err)
+		return err
+	}
+	if len(runModels.Models) != 0 {
+		slog.Error("无法切换代理启用状态，当前有模型正在运行，请先停止模型")
+		return err
+	} else {
+		err = engine.StopEngine()
+		if err != nil {
+			slog.Error("停止引擎失败", "error", err)
+			return err
+		}
+
+		err = engine.StartEngine()
+		if err != nil {
+			slog.Error("启动引擎失败", "error", err)
+			return err
+		}
+	}
+	return nil
+
 }
 
 // GetSystemSettings 获取系统设置
