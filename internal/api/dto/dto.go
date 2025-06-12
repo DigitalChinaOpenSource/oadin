@@ -282,6 +282,7 @@ type RecommendModelData struct {
 	SmartVisionProvider string   `json:"smartvision_provider"`
 	SmartVisionModelKey string   `json:"smartvision_model_key"`
 	IsDownloaded        bool     `json:"is_downloaded" default:"false"`
+	Think               bool     `json:"think" default:"false"`
 }
 
 type ProviderSupportModelData struct {
@@ -421,9 +422,9 @@ type ModifyModelFilePathResponse struct {
 }
 
 type ProxyRequest struct {
-	Endpoint string `json:"url" validate:"required, url"`
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Endpoint string `json:"endpoint" `
+	Username string `json:"username" `
+	Password string `json:"password" `
 }
 
 type FeedbackRequest struct {
