@@ -249,7 +249,7 @@ type SetupFunToolRequest struct {
 }
 
 type ClientMcpStartRequest struct {
-	Id string `json:"id"`
+	Ids []string `json:"ids"`
 }
 
 type ClientMcpStartResponse struct {

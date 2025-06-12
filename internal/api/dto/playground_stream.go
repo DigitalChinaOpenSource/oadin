@@ -26,5 +26,6 @@ type MessageChunk struct {
 type SendStreamMessageRequest struct {
 	SessionID string           `json:"session_id" binding:"required"`
 	Content   string           `json:"content" binding:"required"`
+	McpIds    []string         `json:"mcpIds,omitempty"`
 	Tools     []map[string]any `json:"tools,omitempty"`
 }
