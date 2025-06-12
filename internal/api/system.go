@@ -22,7 +22,7 @@ func (t *ByzeCoreServer) About(c *gin.Context) {
 // ModifyRepositoryURL 修改仓库地址
 func (t *ByzeCoreServer) ModifyRepositoryURL(c *gin.Context) {
 	var body struct {
-		Url string `json:"url" binding:"required,url"`
+		Url string `json:"url"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数异常"})
