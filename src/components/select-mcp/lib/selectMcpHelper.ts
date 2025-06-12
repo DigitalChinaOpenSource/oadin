@@ -95,3 +95,82 @@ export const updateMcp = (oldMcpList: IMcpListItem[], newMcpList: IMcpListItem[]
   // 返回启动和停止的MCP列表
   return { startList, stopList };
 };
+// 定义数据结构类型
+interface FunctionTool {
+  type: string;
+  function: {
+    name: string;
+    description: string;
+    parameters: any;
+  };
+}
+
+interface McpTool {
+  mcpId: string;
+  tools: FunctionTool[];
+}
+
+interface McpToolsResponse {
+  code: string;
+  data: {
+    mcpTools: McpTool[];
+  };
+}
+
+interface IToolArguments {
+  [key: string]: any; // 动态键值对
+}
+
+interface IToolParams {
+  toolName: string;
+  toolArgs: IToolArguments; // 动态参数对象
+}
+
+interface IToolRequest extends IToolParams {
+  mcpId: string;
+}
+
+// 转换函数
+function generateToolMap(response: McpToolsResponse): Record<string, string> {
+  const result: Record<string, string> = {};
+
+  // 遍历所有 mcpTools 条目
+  for (const mcpTool of response.data.mcpTools) {
+    const mcpId = mcpTool.mcpId;
+
+    // 遍历当前 mcpTool 中的所有工具
+    for (const tool of mcpTool.tools) {
+      // 仅处理类型为 "function" 的工具
+      if (tool.type === 'function') {
+        const functionName = tool.function.name;
+        // 将函数名称作为键，mcpId 作为值
+        result[functionName] = mcpId;
+      }
+    }
+  }
+
+  return result;
+}
+
+export const getMcpDeatilByIds = async (ids: string[]) => {
+  const data: McpToolsResponse = await httpRequest.post<McpToolsResponse>('/api/client/getTools', { ids });
+  return generateToolMap(data);
+};
+/// 基于返回方法从当前选择的MCP服务中获取id等信息
+export const getIdByFunction = async (functionParams: IToolParams, ids: string[]): Promise<IToolRequest> => {
+  const searchData = await getMcpDeatilByIds(ids);
+  const mcpId = searchData[functionParams.toolName];
+  if (mcpId) {
+    return {
+      mcpId,
+      toolName: functionParams.toolName,
+      toolArgs: functionParams.toolArgs,
+    };
+  } else {
+    return {
+      mcpId: '',
+      toolName: functionParams.toolName,
+      toolArgs: functionParams.toolArgs,
+    };
+  }
+};
