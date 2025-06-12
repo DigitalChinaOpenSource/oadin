@@ -94,6 +94,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	// Playground相关
 	r.Handle(http.MethodPost, "/playground/session", playgroundHandler.CreateSession)
 	r.Handle(http.MethodGet, "/playground/sessions", playgroundHandler.GetSessions)
+	r.Handle(http.MethodDelete, "/playground/session", playgroundHandler.DeleteSession)
 	r.Handle(http.MethodPost, "/playground/message", playgroundHandler.SendMessage)
 	r.Handle(http.MethodPost, "/playground/message/stream", playgroundHandler.SendMessageStream)
 	r.Handle(http.MethodGet, "/playground/messages", playgroundHandler.GetMessages)
