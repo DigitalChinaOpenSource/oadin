@@ -91,10 +91,10 @@ const getSessionsResponseSchema = {
 const sendMessageRequestSchema = {
     type: "object",
     properties: {
-        session_id: { type: "string" },
+        SessionID: { type: "string" },
         content: { type: "string" }
     },
-    required: ["session_id", "content"]
+    required: ["SessionID", "content"]
 };
 
 // 发送消息响应
