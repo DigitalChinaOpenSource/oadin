@@ -121,11 +121,11 @@ func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, er
 		ch <- cli
 	}()
 
-	client, ok := <-ch
-	if !ok {
-		return nil, errors.New("client initialization failed")
-	}
-	return client, nil
+	// client, ok := <-ch
+	// if !ok {
+	// 	return nil, errors.New("client initialization failed")
+	// }
+	return nil, nil
 }
 
 func (s *StdioTransport) Stop(serverKey string) error {
@@ -149,7 +149,7 @@ func (s *StdioTransport) FetchTools(serverKey string) ([]mcp.Tool, error) {
 	if !exists {
 		return nil, errors.New("client not found")
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
