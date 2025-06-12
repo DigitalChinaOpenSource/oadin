@@ -2,8 +2,6 @@ package dto
 
 import (
 	"byze/internal/utils/bcode"
-
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 // 创建会话请求
@@ -34,28 +32,16 @@ type GetSessionsResponse struct {
 	Data  []Session    `json:"data"`
 }
 
-type McpToolResult struct {
-	McpTool
-	ToolArgs map[string]any     `json:"toolArgs"` // 工具调用参数
-	Result   mcp.CallToolResult `json:"result"`   // 工具调用结果
-}
-
-type McpTool struct {
-	MCPId string `json:"mcpId"`
-	mcp.Tool
-}
-
 type SendMessageRequest struct {
-	SessionId string    `json:"sessionId"`
-	Content   string    `json:"content"`
-	McpTools  []McpTool `json:"mcpTools,omitempty"` // 支持多个MCP服务器
+	SessionId string           `json:"sessionId"`
+	Content   string           `json:"content"`
+	Tools     []map[string]any `json:"tools,omitempty"`
 }
 
 // 发送消息响应
 type SendMessageResponse struct {
-	Bcode      *bcode.Bcode    `json:"bcode"`
-	Data       []Message       `json:"data"`
-	McpResults []McpToolResult `json:"mcpResults,omitempty"` // MCP工具调用结果
+	Bcode *bcode.Bcode `json:"bcode"`
+	Data  []Message    `json:"data"`
 }
 
 // 消息信息
