@@ -101,8 +101,7 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
                           上下文长度: {model.params_size}k<div className={styles.line}></div>
                         </>
                       )}
-
-                      {model.is_downloaded ? '已下载' : '未下载'}
+                      <>{vm.providerDetail.service_source === 'remote' ? <>{model.is_downloaded ? '已授权' : '未授权'}</> : <>{model.is_downloaded ? '已下载' : '未下载'}</>}</>
                     </div>
                   </div>
                 ))}
