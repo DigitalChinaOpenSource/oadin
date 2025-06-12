@@ -68,7 +68,13 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
             <div
               className={styles.historyCard}
               key={item.id}
-              onClick={() => fetchChatHistoryDetail(item.id)}
+              onClick={() => {
+                if (delHistoryLoading) {
+                  // setShowDeleteId(null);
+                  return;
+                }
+                fetchChatHistoryDetail(item.id);
+              }}
             >
               <div className={styles.groupLeft}>
                 <div className={styles.title}>{item.title}</div>
@@ -84,8 +90,16 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
                 <Popconfirm
                   title={'删除后将无法查看该会话记录，确认删除吗？'}
                   destroyOnHidden={true}
-                  onConfirm={() => deleteChatHistory(item.id)}
-                  onCancel={() => setShowDeleteId(null)}
+                  onConfirm={(e) => {
+                    e?.stopPropagation();
+                    e?.preventDefault();
+                    deleteChatHistory(item.id);
+                  }}
+                  onCancel={(e) => {
+                    e?.stopPropagation();
+                    e?.preventDefault();
+                    setShowDeleteId(null);
+                  }}
                   okButtonProps={{ loading: delHistoryLoading }}
                   cancelButtonProps={{ disabled: delHistoryLoading }}
                   open={showDeleteId === item.id}
@@ -93,7 +107,9 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
                   <TrashIcon
                     size={16}
                     className={styles.deleteBtn}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
                       if (delHistoryLoading) return;
                       setShowDeleteId(item.id);
                     }}
@@ -112,7 +128,7 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
       title="历史对话"
       placement="right"
       closable={false}
-      maskClosable={true}
+      maskClosable={!delHistoryLoading}
       destroyOnHidden={true}
       onClose={onHistoryDrawerClose}
       open={true}
@@ -120,7 +136,10 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
       extra={
         <CloseOutlined
           className={styles.closeIcon}
-          onClick={onHistoryDrawerClose}
+          onClick={() => {
+            if (delHistoryLoading) return;
+            onHistoryDrawerClose?.();
+          }}
         />
       }
     >
