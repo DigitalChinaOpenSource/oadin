@@ -515,3 +515,22 @@ func (o *OllamaProvider) StartEngineWithProxy() (string, string) {
 
 	return proxyHttp, proxyHttps
 }
+
+func (o *OllamaProvider) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error) {
+	return nil, fmt.Errorf("OllamaProvider does not implement Chat; use Engine instead")
+}
+
+func (o *OllamaProvider) ChatStream(ctx context.Context, req *types.ChatRequest) (chan *types.ChatResponse, chan error) {
+	resp := make(chan *types.ChatResponse)
+	errc := make(chan error, 1)
+	go func() {
+		defer close(resp)
+		defer close(errc)
+		errc <- fmt.Errorf("OllamaProvider does not implement ChatStream; use Engine instead")
+	}()
+	return resp, errc
+}
+
+func (o *OllamaProvider) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequest) (*types.EmbeddingResponse, error) {
+	return nil, fmt.Errorf("OllamaProvider does not implement GenerateEmbedding; use Engine instead")
+}

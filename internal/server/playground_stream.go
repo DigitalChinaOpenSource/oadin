@@ -8,7 +8,7 @@ import (
 
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
-	"byze/internal/provider"
+	"byze/internal/provider/engine"
 	"byze/internal/types"
 
 	"github.com/google/uuid"
@@ -94,12 +94,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			errChan <- err
 			return
 		}
-
 		// 调用模型获取流式回复
-		engineName := "ollama" // 默认使用Ollama引擎
-
-		// 获取当前模型的引擎
-		modelEngine := provider.GetModelEngine(engineName)
+		// 获取统一的聊天引擎
+		modelEngine := engine.NewEngine()
 		// 构建聊天请求
 		chatRequest := &types.ChatRequest{
 			Model:    session.ModelID,
