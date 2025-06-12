@@ -283,6 +283,7 @@
     "name": "qwen2-math:1.5b",
     "ollama_id": "a4fdda0c6cc5",
     "params_size": 1.5,
+    "think":true,
     "service_name": "chat",
     "service_source": "local",
     "size": "935MB"
@@ -299,6 +300,7 @@
     "name": "qwen2-math:7b",
     "ollama_id": "28cc3a337734",
     "params_size": 7,
+    "think":true,
     "service_name": "chat",
     "service_source": "local",
     "size": "4.4GB"
@@ -314,6 +316,7 @@
     "id": "0ce77296-e636-4794-af32-613663656161343664383131",
     "name": "glm4:9b",
     "ollama_id": "5b699761eca5",
+    "think": true,
     "params_size": 9,
     "service_name": "chat",
     "service_source": "local",
@@ -777,6 +780,7 @@
     "max_input": 64000,
     "max_output": 64000,
     "name": "deepseek-resoning",
+    "think": true,
     "service_name": "chat",
     "service_source": "remote"
   },
@@ -791,6 +795,7 @@
     "id": "88f7a912-6ded-4fc0-89c9-343236623138363739373630",
     "max_input": 0,
     "max_output": 0,
+    "think": true,
     "name": "deepseek-chat",
     "service_name": "chat",
     "service_source": "remote"
