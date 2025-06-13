@@ -262,7 +262,8 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if session.ThinkingEnabled {
 		chatRequest.Options["thinking"] = true
 	}
-	if request.Tools != nil {
+	
+	if len(request.Tools) > 0 {
 		chatRequest.Tools = request.Tools
 	}
 
