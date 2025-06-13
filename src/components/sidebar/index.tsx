@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Badge, Menu } from 'antd';
+import { Badge, Menu, Popover, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import { DownloadIcon } from '@phosphor-icons/react';
 import DownloadListBox from '../download-list-box';
@@ -12,6 +12,9 @@ import smac from '../icons/smac.svg';
 import mcp from '../icons/mcp.svg';
 import mcpac from '../icons/mcpac.svg';
 import type { MenuProps } from 'antd';
+import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
+import McpDownloadBox from '@/components/mcp-download-box';
+import mcpAddSvg from '@/components/icons/mcpAdd.svg';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -25,6 +28,9 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   // 当前选中的菜单项和展开的菜单项
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
+
+  // 获取当前下载中和失败的mcp
+  const { mcpAddModalShow, setMcpAddModalShow, mcpDownloadList } = useMcpDownloadStore();
 
   useEffect(() => {
     if (collapsed) return;
@@ -93,6 +99,12 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
     setIsDownloadListOpen(visible);
   };
 
+  useEffect(() => {
+    if (mcpDownloadList.length === 0) {
+      setMcpAddModalShow(false);
+    }
+  }, [mcpDownloadList]);
+
   return (
     <div className={styles.sidebar}>
       <div className={styles.menuContainer}>
@@ -107,6 +119,27 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
         />
       </div>
 
+      {mcpDownloadList.length > 0 && (
+        <Popover
+          zIndex={1300}
+          content={<McpDownloadBox />}
+          trigger={'click'}
+          placement={'rightTop'}
+          arrow={false}
+          open={mcpAddModalShow}
+          onOpenChange={setMcpAddModalShow}
+        >
+          <div className={styles.mcpDownloadBox}>
+            <Tooltip title={collapsed ? '添加中' : ''}>
+              <img
+                src={mcpAddSvg}
+                alt=""
+              />
+            </Tooltip>
+            {!collapsed && <div>添加中</div>}
+          </div>
+        </Popover>
+      )}
       {!!downloadList?.length && (
         <div className={styles.downloadBtnBox}>
           <Badge

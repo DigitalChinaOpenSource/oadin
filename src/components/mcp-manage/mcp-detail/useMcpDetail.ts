@@ -5,14 +5,14 @@ import { httpRequest } from '@/utils/httpRequest.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import testDta from './mcp_schema.json';
 import { Modal } from 'antd';
+import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 
 export const useMcpDetail = (id?: string | number) => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const serviceId = searchParams.get('serviceId') || id;
-  const [mcpDetail, setMcpDetail] = useState<McpDetailType>();
+  const serviceId = id;
+  const { addMcpDownloadItemInit, addMcpDownloadItem } = useMcpDownloadStore();
+  const [mcpDetail, setMcpDetail] = useState<McpDetailType | null>(null);
   const [showMcpModal, setShowMcpModal] = useState(false);
-  // const [authMcpParams,setAuthMcpParams] = useState<any>();
 
   // 获取 mcp 详情
   const { loading: mcpDetailLoading, runAsync: fetchMcpDetail } = useRequest(
@@ -35,8 +35,17 @@ export const useMcpDetail = (id?: string | number) => {
 
   // 下载mcp
   const { loading: downMcpLoading, run: downMcp } = useRequest(
-    async () => {
-      return await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/download`, null, { timeout: 2 * 60 * 1000 });
+    async (curMcpDetail?: McpDetailType) => {
+      addMcpDownloadItemInit({
+        mcpDetail: curMcpDetail || mcpDetail,
+        downStatus: 'downloading',
+      });
+      return await httpRequest.put<McpDetailType>(`/mcp/${curMcpDetail ? curMcpDetail.id : serviceId}/download`, null, {
+        timeout: 2 * 60 * 1000,
+        needMcpStore: true,
+        mcpId: curMcpDetail ? curMcpDetail.id : serviceId,
+        addMcpDownloadItem,
+      });
     },
     {
       manual: true,
@@ -55,9 +64,13 @@ export const useMcpDetail = (id?: string | number) => {
   );
 
   // 远端mcp授权
-  const { loading: authMcpLoading, runAsync: authMcp } = useRequest(
-    async (authParams) => {
-      return await httpRequest.put<McpDetailType>(`/mcp/${serviceId}/auth`, authParams);
+  const {
+    params: curAuthParams,
+    loading: authMcpLoading,
+    runAsync: authMcp,
+  } = useRequest(
+    async (authParams: any, curMcpDetail?: McpDetailType) => {
+      return await httpRequest.put<McpDetailType>(`/mcp/${curMcpDetail ? curMcpDetail.id : serviceId}/auth`, authParams);
     },
     {
       manual: true,
@@ -68,7 +81,7 @@ export const useMcpDetail = (id?: string | number) => {
           authorized: 1, // 1为已授权
         });
         // 授权成功 开始下载
-        downMcp();
+        curAuthParams[1] ? downMcp(curAuthParams[1]) : downMcp();
       },
       onError: (error) => {
         console.error('授权mcp失败:', error);
@@ -90,7 +103,7 @@ export const useMcpDetail = (id?: string | number) => {
             style: { backgroundColor: '#4f4dff' },
           },
           onOk() {
-            downMcp(); // 直接下载mcp
+            downMcp(mcpDetail); // 直接下载mcp
           },
           onCancel() {
             console.log('Cancel');
@@ -127,10 +140,10 @@ export const useMcpDetail = (id?: string | number) => {
   );
 
   // 授权mcp 确认
-  const handleAuthMcp = async (authParams: any) => {
+  const handleAuthMcp = async (authParams: any, curMcpDetail?: McpDetailType) => {
     setShowMcpModal(false);
     try {
-      await authMcp(authParams);
+      curMcpDetail ? await authMcp(authParams, curMcpDetail) : await authMcp(authParams);
     } catch (error) {
       console.error('授权mcp失败:', error);
     }
@@ -146,6 +159,7 @@ export const useMcpDetail = (id?: string | number) => {
     downMcpLoading,
     handleGoBack,
     mcpDetail,
+    setMcpDetail,
     handleAddMcp,
     handleCancelMcp,
     cancelMcpLoading,

@@ -20,7 +20,6 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
   const [showOnlySelectedMcpList, setShowOnlySelectedMcpList] = useState<boolean>(false);
   const [activeKey, setActiveKey] = useState<string>('myMcp');
   const [selectTemporaryMcpItems, setSelectTemporaryMcpItems] = useState<ITemporaryMcpListItem[]>([]);
-  console.info(selectTemporaryMcpItems, 'selectTemporaryMcpItemsselectTemporaryMcpItems');
   const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
 
   useEffect(() => {

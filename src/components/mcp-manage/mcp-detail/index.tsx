@@ -14,11 +14,13 @@ import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 
 export default function McpDetail() {
-  const { fetchMcpDetail, serviceId, handleGoBack, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } =
-    useMcpDetail();
+  const [searchParams] = useSearchParams();
+  const serviceId = searchParams.get('serviceId');
+  const { fetchMcpDetail, handleGoBack, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail(
+    serviceId as string,
+  );
 
   const detailDescRef = useRef<HTMLDivElement>(null);
-  const [descHeight, setDescHeight] = useState(0);
 
   const items: TabsProps['items'] = [
     {

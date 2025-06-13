@@ -3,7 +3,7 @@ import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 type McpAddModalProps = {
   showMcpModal: boolean;
   setShowMcpModal: (isShow: boolean) => void;
-  handleAuthMcp: (authParams: any) => void;
+  handleAuthMcp: (authParams: any, curMcpDetail?: McpDetailType) => void;
   mcpDetail: McpDetailType;
   operateType?: 'add' | 'edit';
 };
@@ -15,7 +15,7 @@ export default function McpAuthModal(props: McpAddModalProps) {
   const [form] = Form.useForm();
 
   const onFinish = (formValues: Record<string, any>) => {
-    handleAuthMcp(formValues);
+    handleAuthMcp(formValues, mcpDetail);
   };
   return (
     <Modal

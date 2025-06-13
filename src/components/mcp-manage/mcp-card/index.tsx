@@ -13,6 +13,7 @@ import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import EllipsisTooltip from '@/components/ellipsis-tooltip';
+import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 
 export interface IMcpCardProps {
   // 模型数据
@@ -27,6 +28,9 @@ export default function McpCard(props: IMcpCardProps) {
   const { mcpData, handelMcpCardClick, isSelectable, setSelectTemporaryMcpItems, selectTemporaryMcpItems = [] } = props;
 
   const { fetchMcpDetail, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail(mcpData.id);
+
+  // 获取全局的下载中和失败的mcp
+  const { mcpDownloadList } = useMcpDownloadStore();
 
   const formatUnixTime = (unixTime: number) => {
     const date = dayjs.unix(unixTime);
@@ -47,6 +51,9 @@ export default function McpCard(props: IMcpCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showOperate, setShowOperate] = useState(false);
 
+  // 根据全局store的MCP设置状态
+  const [showLoading, setShowLoading] = useState(false);
+
   const clickBefore = async () => {
     if (!mcpDetail) {
       return fetchMcpDetail();
@@ -54,13 +61,20 @@ export default function McpCard(props: IMcpCardProps) {
       return mcpDetail;
     }
   };
-
   useEffect(() => {
-    if (contentRef.current) {
-      const isOverflowing = contentRef.current.scrollHeight > contentRef.current.offsetHeight;
-      setShowTooltip(isOverflowing);
+    const currentItem = mcpDownloadList.find((item) => item.mcpDetail?.id === mcpData.id);
+    if (!currentItem) return setShowLoading(false);
+    // 如果找到当前mcp的下载状态，则设置对应的loading状态
+    if (currentItem.downStatus === 'downloading') {
+      setShowLoading(true);
+    } else {
+      setShowLoading(false);
+      if (currentItem.downStatus === 'success') {
+        fetchMcpDetail();
+      }
     }
-  }, [mcpData?.abstract?.zh]);
+  }, [mcpDownloadList]);
+
   const isAdd = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
   return (
     <div className={styles.mcpCard}>
@@ -151,7 +165,7 @@ export default function McpCard(props: IMcpCardProps) {
           <Button
             type={'link'}
             icon={<PlusCircleOutlined />}
-            loading={authMcpLoading || downMcpLoading || cancelMcpLoading}
+            loading={showLoading || authMcpLoading || downMcpLoading || cancelMcpLoading}
             onClick={async () => {
               const data = await clickBefore();
               if (data) await handleAddMcp(data);
@@ -197,7 +211,7 @@ export default function McpCard(props: IMcpCardProps) {
                 await clickBefore();
               }}
               disabled={mcpData?.envRequired === 0}
-              loading={authMcpLoading || downMcpLoading || cancelMcpLoading}
+              loading={showLoading || authMcpLoading || downMcpLoading || cancelMcpLoading}
             >
               更多操作
             </Button>

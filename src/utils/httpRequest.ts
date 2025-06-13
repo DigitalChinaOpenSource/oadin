@@ -8,6 +8,11 @@ declare module 'axios' {
   export interface AxiosError {
     handled?: boolean;
   }
+  export interface InternalAxiosRequestConfig {
+    needMcpStore?: boolean;
+    addMcpDownloadItem?: (item: { id: string; error: string; downStatus: string }) => void;
+    mcpId?: string;
+  }
 }
 
 export interface ResponseData<T = any> {
@@ -44,7 +49,15 @@ const createApiInstance = (baseURL: string) => {
   // 响应拦截器
   instance.interceptors.response.use(
     (response: AxiosResponse<ResponseData>) => {
-      const { data } = response;
+      console.log('response', response);
+      const { data, config } = response;
+      if (config.needMcpStore && config.addMcpDownloadItem && config.mcpId) {
+        config.addMcpDownloadItem({
+          id: config.mcpId,
+          error: '成功',
+          downStatus: 'success',
+        });
+      }
       if (data?.data) {
         return data.data;
       } else {
@@ -52,6 +65,15 @@ const createApiInstance = (baseURL: string) => {
       }
     },
     (error) => {
+      console.log('error', error);
+      const { config } = error;
+      if (config.needMcpStore) {
+        config.addMcpDownloadItem({
+          id: config.mcpId,
+          error: error.message,
+          downStatus: 'error',
+        });
+      }
       message.destroy();
       if (error?.response) {
         const { data } = error.response;
