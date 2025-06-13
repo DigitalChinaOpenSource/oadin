@@ -2,8 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"strings"
 	"time"
 
 	"byze/internal/api/dto"
@@ -156,11 +159,47 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 					// 如果是第一条消息，更新会话标题
 					if len(messages) == 0 {
-						title := "新对话 " + time.Now().Format("2006-01-02")
-						session.Title = title
-						err = p.Ds.Put(ctx, session)
-						if err != nil {
-							slog.Error("Failed to update session title", "error", err)
+						genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
+						// 构造 HTTP 请求体
+						payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`,
+							session.ModelName, genTitlePrompt)
+						slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
+						client := &http.Client{Timeout: 15 * time.Second}
+						req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
+						if err == nil {
+							req.Header.Set("Content-Type", "application/json")
+							resp, err := client.Do(req)
+							title := "新对话 " + time.Now().Format("2006-01-02")
+							if err == nil && resp != nil {
+								defer resp.Body.Close()
+								var result struct {
+									Content string `json:"content"`
+									Message struct {
+										Content string `json:"content"`
+									} `json:"message"`
+								}
+								decodeErr := json.NewDecoder(resp.Body).Decode(&result)
+								slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
+								if decodeErr == nil {
+									if len(result.Content) > 0 {
+										title = result.Content
+									} else if len(result.Message.Content) > 0 {
+										title = result.Message.Content
+									}
+									runes := []rune(title)
+									if len(runes) > 10 {
+										title = string(runes[:10])
+									} else {
+										title = string(runes)
+									}
+								}
+							}
+							slog.Info("[DEBUG] TitleGen final title", "title", title)
+							session.Title = title
+							err = p.Ds.Put(context.Background(), session)
+							if err != nil {
+								slog.Error("Failed to update session title", "error", err)
+							}
 						}
 					}
 
@@ -170,7 +209,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 							ID:        uuid.New().String(),
 							SessionID: request.SessionID,
 							Role:      "system",
-							Content:   "思考过程: " + thoughts,
+							Content:   thoughts,
 							Order:     len(messages) + 2,
 							CreatedAt: time.Now(),
 							ModelID:   session.ModelID,
