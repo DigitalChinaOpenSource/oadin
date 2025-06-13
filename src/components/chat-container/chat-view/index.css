@@ -126,3 +126,13 @@
   border-radius: 6px;
   margin: 8px 0;
 }
+
+.chat-message-bubble {
+  width: 100%;
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+  ol {
+    padding-left: 16px;
+  }
+}

@@ -13,7 +13,7 @@ import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import EllipsisTooltip from '@/components/ellipsis-tooltip';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
-import { checkMcpLength } from '@/components/select-mcp/lib/selectMcpHelper.ts';
+import { checkMcpLength } from '@/components/select-mcp/lib/useSelectMcpHelper';
 
 export interface IMcpCardProps {
   // 模型数据

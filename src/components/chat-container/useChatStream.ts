@@ -340,7 +340,6 @@ export function useChatStream() {
                       : []),
                   ],
                 };
-
                 addMessage(aiMessage);
               }
               setIsLoading(false);

@@ -32,11 +32,11 @@ export const checkMcpLength = (mcpListLength: number): boolean => {
  * MCP远程操作相关的钩子函数
  * @returns 返回启动和停止MCP的函数
  */
-export function selectRemoteHelper() {
+export function useSelectRemoteHelper() {
   // 启动MCP服务
   const { run: startMcps, loading: startLoading } = useRequest(
     async (params: IMcpListIds) => {
-      return await httpRequest.post('/api/client/start', params);
+      return await httpRequest.post('/mcp/client/start', params);
     },
     {
       manual: true,
@@ -53,7 +53,7 @@ export function selectRemoteHelper() {
   // 停止MCP服务
   const { run: stopMcps, loading: stopLoading } = useRequest(
     async (params: IMcpListIds) => {
-      return await httpRequest.post('/api/client/stop', params);
+      return await httpRequest.post('/mcp/client/stop', params);
     },
     {
       manual: true,
