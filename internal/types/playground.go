@@ -22,9 +22,13 @@ func (s *ChatSession) SetUpdateTime(t time.Time) { s.UpdatedAt = t }
 func (s *ChatSession) PrimaryKey() string        { return s.ID }
 func (s *ChatSession) TableName() string         { return "chat_sessions" }
 func (s *ChatSession) Index() map[string]interface{} {
-	return map[string]interface{}{
-		"id": s.ID,
+	// 只有ID有值时才添加到查询条件中，否则返回空索引以查询所有记录
+	if s.ID != "" {
+		return map[string]interface{}{
+			"id": s.ID,
+		}
 	}
+	return map[string]interface{}{}
 }
 
 // 对话消息
