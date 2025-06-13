@@ -550,10 +550,14 @@ func IsDirEmpty(path string) bool {
 	// Read just one entry from the directory
 	fName, err := f.Readdirnames(3)
 	if runtime.GOOS == "darwin" {
+		fileHideCount := 0
 		for _, name := range fName {
-			if !utils.Contains([]string{".", "..", ".DS_Store"}, name) || !strings.HasPrefix(name, "._") {
-				return false
+			if utils.Contains([]string{".", "..", ".DS_Store"}, name) {
+				fileHideCount += 1
 			}
+		}
+		if err == nil && fileHideCount == len(fName) {
+			return true
 		}
 	}
 
