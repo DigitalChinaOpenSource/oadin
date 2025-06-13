@@ -356,6 +356,8 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 
 // 获取会话中的消息
 func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error) {
+	slog.Info("GetMessages called", "session_id", request.SessionId)
+
 	messageQuery := &types.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
@@ -366,6 +368,8 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 		slog.Error("Failed to list chat messages", "error", err)
 		return nil, err
 	}
+
+	slog.Info("Found messages in database", "session_id", request.SessionId, "count", len(messages))
 
 	messageDTOs := make([]dto.Message, 0, len(messages))
 	for _, m := range messages {

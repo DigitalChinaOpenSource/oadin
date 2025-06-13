@@ -48,10 +48,19 @@ func (m *ChatMessage) SetUpdateTime(t time.Time) {}
 func (m *ChatMessage) PrimaryKey() string        { return m.ID }
 func (m *ChatMessage) TableName() string         { return "chat_messages" }
 func (m *ChatMessage) Index() map[string]interface{} {
-	return map[string]interface{}{
-		"id":         m.ID,
-		"session_id": m.SessionID,
+	result := map[string]interface{}{}
+
+	// 只有当ID有值时，才添加ID条件
+	if m.ID != "" {
+		result["id"] = m.ID
 	}
+
+	// 只有当SessionID有值时，才添加session_id条件
+	if m.SessionID != "" {
+		result["session_id"] = m.SessionID
+	}
+
+	return result
 }
 
 // 聊天请求模型
