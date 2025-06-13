@@ -49,7 +49,6 @@ const createApiInstance = (baseURL: string) => {
   // 响应拦截器
   instance.interceptors.response.use(
     (response: AxiosResponse<ResponseData>) => {
-      console.log('response', response);
       const { data, config } = response;
       if (config.needMcpStore && config.addMcpDownloadItem && config.mcpId) {
         config.addMcpDownloadItem({
@@ -65,7 +64,6 @@ const createApiInstance = (baseURL: string) => {
       }
     },
     (error) => {
-      console.log('error', error);
       const { config } = error;
       if (config.needMcpStore) {
         config.addMcpDownloadItem({
