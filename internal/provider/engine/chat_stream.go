@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan *types.ChatResponse, <-chan error) {
@@ -152,15 +151,10 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 					fmt.Printf("[ChatStream] JSON解析完全失败: %v，跳过此块\n", err)
 					continue // 如果连JSON都解析不了，就跳过这个块
 				}
-			}
-
-			// 处理提取到的内容
+			} // 处理提取到的内容
 			if content != "" {
-				// 累积内容 (可能是增量的)
-				if !strings.Contains(accumulatedContent, content) {
-					accumulatedContent += content
-					fmt.Printf("[ChatStream] 累积内容，当前长度: %d\n", len(accumulatedContent))
-				}
+				accumulatedContent += content
+				fmt.Printf("[ChatStream] 累积内容，当前长度: %d\n", len(accumulatedContent))
 			}
 
 			// 创建响应对象
@@ -170,15 +164,13 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				IsComplete: isComplete,
 				ToolCalls:  toolCalls,
 				Object:     "chat.completion.chunk",
-			}
-
-			// 发送响应
+			} // 发送响应
 			// 只发送有内容或是最后一个块的响应
 			if resp.Content != "" || resp.IsComplete {
 				// 如果是最后一个块，发送完整累积的内容
 				if resp.IsComplete {
+					// 确保最后一块还包含之前累积的内容
 					resp.Content = accumulatedContent
-					fmt.Printf("[ChatStream] 发送完整累积内容，长度: %d\n", len(accumulatedContent))
 					resp.Object = "chat.completion"
 				}
 				respChan <- resp
@@ -190,49 +182,39 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 // 辅助函数：从数据中提取内容
 func extractContent(data map[string]interface{}) (string, bool) {
-	// 按照优先级顺序提取内容
 
-	// 1. 首先尝试提取 message.content (Ollama /api/chat 格式)
 	if msg, ok := data["message"].(map[string]interface{}); ok {
 		if content, ok := msg["content"].(string); ok && content != "" {
 			return content, true
 		}
 	}
 
-	// 2. 尝试提取 response (Ollama /api/generate 格式)
 	if response, ok := data["response"].(string); ok && response != "" {
 		return response, true
 	}
 
-	// 3. 尝试直接提取 content (有些流式响应可能直接使用这个字段)
 	if content, ok := data["content"].(string); ok && content != "" {
 		return content, true
 	}
 
-	// 4. 尝试提取 text (某些模型可能使用这个字段)
 	if text, ok := data["text"].(string); ok && text != "" {
 		return text, true
 	}
 
-	// 5. 如果message存在但没有content字段，可能是工具调用响应，此时返回空字符串但标记为找到
 	if msg, ok := data["message"].(map[string]interface{}); ok {
 		if toolCalls, ok := msg["tool_calls"].([]interface{}); ok && len(toolCalls) > 0 {
 			return "", true
 		}
 	}
 
-	// 检查顶层的工具调用
 	if toolCalls, ok := data["tool_calls"].([]interface{}); ok && len(toolCalls) > 0 {
 		return "", true
 	}
 
-	// 如果所有尝试都失败，返回空字符串和false
 	return "", false
 }
 
-// debugLogJSON 记录JSON内容的调试信息，方便调试流响应
 func debugLogJSON(prefix string, data []byte) {
-	// 限制日志长度，避免输出过长
 	maxLen := 1000
 	content := string(data)
 	if len(content) > maxLen {
