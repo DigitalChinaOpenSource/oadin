@@ -189,11 +189,18 @@ func (p *PlaygroundImpl) DeleteFile(ctx context.Context, request *dto.DeleteFile
 		return nil, err
 	}
 
-	// 如果VSS初始化完成，从VSS中删除文件的所有块
-	if vssInitialized {
-		if err := vssDB.DeleteChunks(ctx, request.FileID); err != nil {
-			slog.Error("从VSS删除文件块失败", "error", err, "file_id", request.FileID)
-			// 继续处理，不终止流程
+	// 删除VEC向量
+	if vecInitialized && vecDB != nil {
+		var chunkIDs []string
+		for _, c := range chunks {
+			chunk := c.(*types.FileChunk)
+			chunkIDs = append(chunkIDs, chunk.ID)
+		}
+		if len(chunkIDs) > 0 {
+			err := vecDB.DeleteChunks(ctx, chunkIDs)
+			if err != nil {
+				slog.Error("从VEC删除文件块失败", "error", err, "file_id", request.FileID)
+			}
 		}
 	}
 
@@ -285,7 +292,7 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 			if j >= len(embeddingResp.Data) {
 				break
 			}
-			chunkID := uuid.New().String()
+			chunkID := fmt.Sprintf("%d", int64(i+j+1))
 			fileChunk := &types.FileChunk{
 				ID:         chunkID,
 				FileID:     fileRecord.ID,
@@ -296,11 +303,10 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 			}
 			fileChunks = append(fileChunks, fileChunk)
 		}
-		// 批量写入VSS
-		if vssInitialized {
-			err = vssDB.InsertEmbeddingBatch(ctx, fileChunks[i:], fileRecord.ID, fileRecord.SessionID)
+		if vecInitialized && vecDB != nil {
+			err = vecDB.InsertEmbeddingBatch(ctx, fileChunks[i:])
 			if err != nil {
-				slog.Error("批量写入VSS失败", "error", err)
+				slog.Error("批量写入VEC失败", "error", err)
 				return nil, err
 			}
 		}
