@@ -57,51 +57,51 @@ func expandQuery(query string) []string {
 
 // 查找与当前查询相关的上下文
 func (p *PlaygroundImpl) findRelevantContext(ctx context.Context, session *types.ChatSession, query string) (string, error) {
-	return p.findRelevantContextWithVSS(ctx, session, query, defaultRAGOptions)
+	return p.findRelevantContextWithVec(ctx, session, query, defaultRAGOptions)
 }
 
-// VSS相关全局变量
+// VEC相关全局变量
 var (
-	vssDB          *sqlite.VectorDB
-	vssInitialized bool
-	vssMutex       sync.Mutex
+	vecDB          *sqlite.VectorDBVec
+	vecInitialized bool
+	vecMutex       sync.Mutex
 )
 
-// 初始化VSS数据库
-func initVSSDB(dbPath string) error {
-	vssMutex.Lock()
-	defer vssMutex.Unlock()
+// 初始化VEC数据库
+func initVecDB(dbPath string) error {
+	vecMutex.Lock()
+	defer vecMutex.Unlock()
 
-	if vssInitialized {
+	if vecInitialized {
 		return nil
 	}
 
 	var err error
-	vssDB, err = sqlite.NewVectorDB(dbPath)
+	vecDB, err = sqlite.NewVectorDBVec(dbPath)
 	if err != nil {
-		return fmt.Errorf("初始化VSS数据库失败: %w", err)
+		return fmt.Errorf("初始化VEC数据库失败: %w", err)
 	}
 
-	// 初始化VSS表结构
-	if err := vssDB.Initialize(); err != nil {
-		return fmt.Errorf("初始化VSS表结构失败: %w", err)
+	// 初始化VEC表结构
+	if err := vecDB.Initialize(); err != nil {
+		return fmt.Errorf("初始化VEC表结构失败: %w", err)
 	}
 
-	vssInitialized = true
-	slog.Info("VSS向量数据库初始化成功")
+	vecInitialized = true
+	slog.Info("VEC向量数据库初始化成功")
 	return nil
 }
 
-// 查找与当前查询相关的上下文
-func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
+// VEC实现的查找方法
+func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
 	// 如果未设置嵌入模型，无法使用RAG
 	if session.EmbedModelID == "" {
 		return "", fmt.Errorf("这个会话没有设置嵌入模型，无法使用RAG功能")
 	}
-	// 检查VSS是否已初始化，如果未初始化则直接报错
-	if !vssInitialized || vssDB == nil {
-		slog.Error("VSS未初始化，无法进行RAG检索")
-		return "", fmt.Errorf("VSS未初始化")
+	// 检查VEC是否已初始化，如果未初始化则直接报错
+	if !vecInitialized || vecDB == nil {
+		slog.Error("VEC未初始化，无法进行RAG检索")
+		return "", fmt.Errorf("VEC未初始化")
 	}
 	// 生成查询嵌入向量
 	modelEngine := engine.NewEngine()
@@ -151,50 +151,40 @@ func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session
 		return "", nil
 	}
 
-	// 使用VSS搜索所有查询变体的相似块
+	// 使用VEC搜索所有查询变体的相似块（聚合所有结果，去重，排序）
 	allChunks := make([]ChunkScore, 0)
-	chunkMap := make(map[string]ChunkScore) // 去重
-	// 使用批量搜索函数一次处理所有查询向量
+	chunkMap := make(map[int64]ChunkScore) // rowid为key
 	startTime := time.Now()
-	searchResults, err := vssDB.SearchSimilarChunksBatch(
-		ctx,
-		queryEmbeddings,
-		session.ID,
-		options.SimilarityThreshold,
-		options.MaxChunks*3, // 获取更多结果，以便后续处理
-	)
-	searchDuration := time.Since(startTime)
-
-	if err != nil {
-		slog.Error("VSS批量搜索失败", "error", err, "duration_ms", searchDuration.Milliseconds())
-		return "", err
-	}
-
-	slog.Debug("VSS批量搜索完成",
-		"query_count", len(queryEmbeddings),
-		"result_count", len(searchResults),
-		"duration_ms", searchDuration.Milliseconds())
-
-	// 将搜索结果添加到结果集合中
-	startContentFetch := time.Now()
-	for _, result := range searchResults {
-		// 从数据库获取块内容
-		chunkQuery := &types.FileChunk{ID: result.ChunkID}
-		if err := p.Ds.Get(ctx, chunkQuery); err != nil {
-			slog.Error("获取文档块内容失败", "error", err, "chunk_id", result.ChunkID)
+	for _, embedding := range queryEmbeddings {
+		ids, dists, err := vecDB.SearchSimilarChunks(ctx, embedding, options.MaxChunks*3)
+		if err != nil {
+			slog.Warn("VEC搜索失败", "error", err)
 			continue
 		}
-
-		// 添加结果
-		chunkMap[result.ChunkID] = ChunkScore{
-			ChunkID:    result.ChunkID,
-			Content:    chunkQuery.Content,
-			Similarity: result.Similarity,
+		for i, id := range ids {
+			if _, exists := chunkMap[id]; exists {
+				continue
+			}
+			// 这里假设rowid和chunk_id可以一一对应（如需适配请调整）
+			chunkQuery := &types.FileChunk{}
+			chunkQuery.ID = fmt.Sprint(id)
+			if err := p.Ds.Get(ctx, chunkQuery); err != nil {
+				slog.Error("获取文档块内容失败", "error", err, "chunk_id", id)
+				continue
+			}
+			chunkMap[id] = ChunkScore{
+				ChunkID:    chunkQuery.ID,
+				Content:    chunkQuery.Content,
+				Similarity: float32(1.0 - dists[i]), // 距离转为相似度
+			}
 		}
 	}
+	searchDuration := time.Since(startTime)
 
-	contentFetchDuration := time.Since(startContentFetch)
-	slog.Debug("获取块内容完成", "duration_ms", contentFetchDuration.Milliseconds())
+	slog.Debug("VEC批量搜索完成",
+		"query_count", len(queryEmbeddings),
+		"result_count", len(chunkMap),
+		"duration_ms", searchDuration.Milliseconds())
 
 	// 将map转换为slice以便排序
 	for _, chunk := range chunkMap {
@@ -210,21 +200,15 @@ func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session
 	maxChunks := options.MaxChunks
 	similarityThreshold := options.SimilarityThreshold
 
-	// 调整块数量不超过可用块数
 	if len(allChunks) < maxChunks {
 		maxChunks = len(allChunks)
 	}
 
 	var relevantContext strings.Builder
-
-	// 保存已添加块的ID，用于去重
 	includedChunks := make(map[string]bool)
 	var includedChunksCount int
-
-	// 去重检查函数
 	isDuplicate := func(newChunk ChunkScore, existingChunks []ChunkScore) bool {
 		for _, existing := range existingChunks {
-			// 检查内容是否过于相似（可能是重复内容）
 			if existing.ChunkID != newChunk.ChunkID &&
 				(strings.Contains(existing.Content, newChunk.Content) ||
 					strings.Contains(newChunk.Content, existing.Content)) {
@@ -233,12 +217,8 @@ func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session
 		}
 		return false
 	}
-
-	// 已包含的块列表，用于去重检查
 	var selectedChunks []ChunkScore
-
 	for i := 0; i < len(allChunks) && includedChunksCount < maxChunks; i++ {
-		// 检查相似度是否达到阈值
 		if allChunks[i].Similarity < similarityThreshold {
 			slog.Debug("块相似度低于阈值，已跳过",
 				"chunk_id", allChunks[i].ChunkID,
@@ -246,35 +226,25 @@ func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session
 				"threshold", similarityThreshold)
 			continue
 		}
-
-		// 检查是否已经包含
 		if includedChunks[allChunks[i].ChunkID] {
 			continue
 		}
-
-		// 检查是否与已选择内容重复
 		if options.DuplicationThreshold > 0 && isDuplicate(allChunks[i], selectedChunks) {
 			slog.Debug("跳过重复内容", "chunk_id", allChunks[i].ChunkID)
 			continue
 		}
-
-		// 添加分隔符
 		if relevantContext.Len() > 0 {
 			relevantContext.WriteString("\n\n---\n\n")
 		}
-
-		// 添加内容来源提示，帮助模型理解
 		relevantContext.WriteString("信息块 #" + fmt.Sprint(includedChunksCount+1) +
 			" (相似度: " + fmt.Sprintf("%.2f", allChunks[i].Similarity) + "):\n")
 		relevantContext.WriteString(allChunks[i].Content)
-
-		// 标记为已包含
 		includedChunks[allChunks[i].ChunkID] = true
 		selectedChunks = append(selectedChunks, allChunks[i])
 		includedChunksCount++
 	}
 
-	slog.Info("VSS-RAG检索完成",
+	slog.Info("VEC-RAG检索完成",
 		"query", query,
 		"query_variants", len(queryEmbeddings),
 		"total_chunks", len(allChunks),
