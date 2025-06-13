@@ -1,15 +1,18 @@
 import React, { useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface StreamingMessageProps {
   content: string;
   thinking?: string;
-  scroll: (message: any) => void;
+  scroll: () => void;
 }
 
 const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, thinking, scroll }) => {
   useEffect(() => {
     if (content) {
-      scroll(content);
+      scroll();
     }
   }, [content, scroll]);
 
@@ -26,7 +29,13 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, thinking, 
           <div style={{ fontSize: 14 }}>{thinking}</div>
         </div>
       )}
-      <div style={{ fontSize: 14 }}>{content}</div>
+
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+      >
+        {content || ''}
+      </ReactMarkdown>
     </div>
   );
 };

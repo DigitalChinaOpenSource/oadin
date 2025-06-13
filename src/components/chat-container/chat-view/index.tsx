@@ -1,5 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { ChatInput, MessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import '@res-utiles/ui-components/dist/index.css';
 import { Button, Tooltip } from 'antd';
 import type { UploadFile } from 'antd';
@@ -7,13 +10,14 @@ import { SelectMcp } from '@/components/select-mcp';
 import { FolderIcon, XCircleIcon } from '@phosphor-icons/react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
+import StreamingMessage from '../streaming-message';
 import UploadTool from '../upload-tool';
 import useChatStore from '../store/useChatStore';
 import sendSvg from '@/components/icons/send.svg';
 import uploadSvg from '@/components/icons/upload.svg';
-import rollingSvg from '@/components/icons/rolling.svg';
 import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
+import { useChatStream } from '@/components/chat-container/useChatStream';
 import './index.css';
 
 interface IChatViewProps {
@@ -23,12 +27,6 @@ interface IChatViewProps {
 interface ChatMessageContent extends MessageContentType {
   /**
    * 内容类型
-   * @description 目前支持 message task canvas file ref 四种类型
-   * - message: 文本消息
-   * - task: 任务消息
-   * - canvas: 画布消息
-   * - file: 文件消息
-   * - ref: 引用消息
    */
   type: 'message' | 'task' | 'canvas' | 'file' | 'ref';
 }
@@ -44,71 +42,51 @@ interface ChatMessage extends MessageType {
   createdAt?: number;
   /**
    * 消息内容列表
-   * @description 一个消息可以包含多个元素，比如一个消息可以包含多个文本、多个任务等
    */
   contentList?: ChatMessageContent[];
 }
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
-  const { messages, addMessage, uploadFileList, setUploadFileList } = useChatStore();
+  const { messages, uploadFileList, setUploadFileList, setCurrentSessionId, currentSessionId } = useChatStore();
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
+
+  // 使用聊天流钩子
+  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
+
+  console.log('当前会话ID:', currentSessionId);
 
   useEffect(() => {
     // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部
     if (messages.length > 0 && getIsNearBottom()) {
       scrollToBottom();
     }
-  }, [messages.length]);
+  }, [messages.length, getIsNearBottom, scrollToBottom]);
 
   /**
    * 正在生成的消息控制滚动
-   * @description 如果正在生成的消息存在且当前滚动位置接近底部，则自动滚动到底部
    */
-  const chattingMessageControlScroll = (message: ChatMessage) => {
-    if (message && getIsNearBottom()) {
+  const chattingMessageControlScroll = () => {
+    if (getIsNearBottom()) {
       scrollToBottom();
     }
   };
 
-  const handleSendMessage = (message: string) => {
-    if (!message.trim()) return;
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || isLoading) return;
 
-    const userMessage: MessageType = {
-      id: Date.now().toString(),
-      role: 'user',
-      contentList: [
-        {
-          id: '1',
-          type: 'plain',
-          content: message,
-        },
-      ],
-    };
-
-    addMessage(userMessage);
-
-    // 模拟AI回复，实际项目中替换为API调用
-    setTimeout(() => {
-      const aiMessage: MessageType = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        contentList: [
-          {
-            id: '1',
-            type: 'plain',
-            content: `你好，我收到了你的消息: "${message}"`,
-          },
-        ],
-      };
-      addMessage(aiMessage);
-    }, 1000);
+    try {
+      await sendChatMessage(message);
+    } catch (err) {
+      console.error('发送消息失败:', err);
+    }
   };
 
   const onFileListChange = (fileList: UploadFile[]) => {
     setUploadFileList(fileList);
   };
 
+  // 文件上传列表展示区域
   const headerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
       {uploadFileList.map((file) => (
@@ -116,27 +94,6 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           key={file.uid}
           className="upload-file-item"
         >
-          {/* <div className="file-icon uploading-icon">
-          <img
-            src={rollingSvg}
-            alt=""
-          />
-        </div> */}
-          {/* <div className="file-icon done-icon">
-          <FolderIcon
-            width={16}
-            height={16}
-            fill="#ffffff"
-          />
-        </div> */}
-          {/* <div className="file-icon error-icon">
-          <XCircleIcon
-            width={16}
-            height={16}
-            weight="fill"
-            fill="#e85951"
-          />
-        </div> */}
           {file.name}
           <div
             className="upload-file-remove"
@@ -157,9 +114,9 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     </div>
   );
 
+  // 输入框底部功能区
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      {/* TODO 去掉感叹号 */}
       {isUploadVisible ? (
         <UploadTool
           onFileListChange={onFileListChange}
@@ -202,6 +159,50 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     </div>
   );
 
+  // 流式消息和控制按钮的底部面板
+  const renderBottomPanel = () => {
+    return (
+      <div className="bottom-panel-container">
+        {/* 流式生成的消息 */}
+        {isLoading && (
+          <StreamingMessage
+            content={streamingContent}
+            thinking={streamingThinking}
+            scroll={chattingMessageControlScroll}
+          />
+        )}
+
+        {/* 错误提示和操作按钮 */}
+        {(error || isLoading) && (
+          <div className="message-control-buttons">
+            {/* 重试按钮 */}
+            {error && (
+              <Button
+                type="link"
+                onClick={resendLastMessage}
+                loading={isResending}
+                disabled={isLoading && !isResending}
+              >
+                重试
+              </Button>
+            )}
+
+            {/* 停止生成按钮 */}
+            {isLoading && (
+              <Button
+                type="link"
+                danger
+                onClick={cancelRequest}
+              >
+                停止生成
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="chat-layout">
       <div className="chat-body">
@@ -220,8 +221,18 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             })}
             className="chat-message-list"
             contentListClassName="chat-message-content-list"
-            //  bottomPanel={<ChattingMessage scroll={chattingMessageControlScroll} />}
+            bottomPanel={renderBottomPanel()}
           />
+
+          {/* 错误消息展示 */}
+          {error && !isLoading && !isResending && (
+            <div
+              className="error-message"
+              style={{ color: '#e85951', padding: '8px 16px', margin: '8px 0' }}
+            >
+              {error}
+            </div>
+          )}
         </div>
 
         <div className="chat-input-area chat-width">
@@ -232,7 +243,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             SendButtonComponent={({ onClick, inputValue }) => (
               <Button
                 type="primary"
-                // disabled={!inputValue.trim()}
+                disabled={isLoading || !inputValue.trim()}
                 style={{ borderRadius: 8, cursor: 'pointer' }}
                 icon={
                   <img
@@ -252,8 +263,25 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   );
 }
 
+const MarkdownContent = ({ dataSource }: { dataSource?: string }) => {
+  // 如果内容不是文本，或者是空白文本，直接返回空
+  if (!dataSource || typeof dataSource !== 'string' || !dataSource.trim()) {
+    return null;
+  }
+
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
+    >
+      {dataSource}
+    </ReactMarkdown>
+  );
+};
+
 registerMessageContents({
-  plain: ({ dataSource }: { dataSource?: string }) => <div style={{ fontSize: 14 }}>{dataSource}</div>,
+  // @ts-ignore
+  plain: MarkdownContent,
   think: DeepThinkChat,
   mcp: McpToolChat,
 });

@@ -1,6 +1,7 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Drawer, Button, Tooltip, Popconfirm, Space } from 'antd';
 import { useChatHistoryDrawer } from '@/components/chat-container/chat-history-drawer/view-module';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import type { MessageType } from '@res-utiles/ui-components';
 import styles from './index.module.scss';
 import dayjs from 'dayjs';
 import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
@@ -11,6 +12,7 @@ import { CloseOutlined } from '@ant-design/icons';
 
 export interface IChatHistoryDrawerProps {
   onHistoryDrawerClose?: () => void;
+  onHistorySelect?: (historyId: string, historyMessages: MessageType[]) => void;
 }
 
 // 定义分组结果接口
@@ -52,10 +54,30 @@ function groupChatHistoryByDate(history: IChatHistoryItem[]): GroupedChatHistory
   );
 }
 
-export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistoryDrawerProps) {
+export default function ChatHistoryDrawer(props: IChatHistoryDrawerProps) {
+  const { onHistorySelect, onHistoryDrawerClose } = props;
   const { historyLoading, fetchChatHistory, fetchChatHistoryDetail, chatHistory, delHistoryLoading, deleteChatHistory, setShowDeleteId, showDeleteId } = useChatHistoryDrawer();
 
   const grouped = useMemo(() => groupChatHistoryByDate(chatHistory), [chatHistory]);
+
+  const handleHistoryClick = async (id: string) => {
+    if (delHistoryLoading) {
+      return;
+    }
+
+    try {
+      // 获取详细对话内容
+      const historyDetail = await fetchChatHistoryDetail(id);
+
+      // 如果提供了选择回调，则调用
+      if (onHistorySelect && historyDetail) {
+        onHistorySelect(id, historyDetail);
+      }
+    } catch (error) {
+      console.error('加载历史对话失败:', error);
+      // 可以添加错误提示
+    }
+  };
 
   const renderGroup = (title: string, list: any[]) => {
     if (!list.length) return null;
@@ -73,7 +95,8 @@ export default function ChatHistoryDrawer({ onHistoryDrawerClose }: IChatHistory
                   // setShowDeleteId(null);
                   return;
                 }
-                fetchChatHistoryDetail(item.id);
+                // fetchChatHistoryDetail(item.id);
+                handleHistoryClick(item.id);
               }}
             >
               <div className={styles.groupLeft}>

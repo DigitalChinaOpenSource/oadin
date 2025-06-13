@@ -23,11 +23,15 @@
   overflow-y: auto;
 }
 .chat-message-list.ru-list {
+  line-height: 24px;
   gap: 16px;
 }
 
 .chat-message-content-list.ru-list {
   gap: 16px;
+  ol {
+    padding-left: 16px;
+  }
 }
 
 .chat-divider {
@@ -99,4 +103,26 @@
 
 .error-icon {
   background-color: #ffccc7;
+}
+
+.bottom-panel-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.message-control-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+  padding-right: 8px;
+}
+
+.error-message {
+  background-color: rgba(232, 89, 81, 0.1);
+  border-radius: 6px;
+  margin: 8px 0;
 }
