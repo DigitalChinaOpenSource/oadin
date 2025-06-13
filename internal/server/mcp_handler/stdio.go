@@ -52,11 +52,11 @@ func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*cli
 		config.Args...,
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	if err := stdioTransport.Start(ctx); err != nil {
-		fmt.Printf("failed to start stdio transport: %v", err)
+		fmt.Println("failed to start stdio transport: ", err)
 		return nil, err
 	}
 
