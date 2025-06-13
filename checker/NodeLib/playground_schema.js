@@ -91,10 +91,10 @@ const getSessionsResponseSchema = {
 const sendMessageRequestSchema = {
     type: "object",
     properties: {
-        sessionId: { type: "string" },
+        SessionID: { type: "string" },
         content: { type: "string" }
     },
-    required: ["sessionId", "content"]
+    required: ["SessionID", "content"]
 };
 
 // 发送消息响应
@@ -113,7 +113,7 @@ const sendMessageResponseSchema = {
             type: "object",
             properties: {
                 id: { type: "string" },
-                sessionId: { type: "string" },
+                session_id: { type: "string" },
                 role: { type: "string" },
                 content: { type: "string" },
                 modelId: { type: "string" },
@@ -121,7 +121,7 @@ const sendMessageResponseSchema = {
                 createdAt: { type: "string" },
                 thoughts: { type: "string" }
             },
-            required: ["id", "sessionId", "role", "content", "modelId", "modelName"]
+            required: ["id", "session_id", "role", "content", "modelId", "modelName"]
         }
     },
     required: ["bcode", "data"]
@@ -131,19 +131,19 @@ const sendMessageResponseSchema = {
 const sendStreamMessageRequestSchema = {
     type: "object",
     properties: {
-        sessionId: { type: "string" },
+        session_id: { type: "string" },
         content: { type: "string" }
     },
-    required: ["sessionId", "content"]
+    required: ["session_id", "content"]
 };
 
 // 获取消息历史请求
 const getMessagesRequestSchema = {
     type: "object",
     properties: {
-        sessionId: { type: "string" }
+        session_id: { type: "string" }
     },
-    required: ["sessionId"]
+    required: ["session_id"]
 };
 
 // 获取消息历史响应

@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
 	"sync"
 	"time"
-	"sort"
 
 	"byze/internal/datastore/sqlite"
-	"byze/internal/provider"
+	"byze/internal/provider/engine"
 	"byze/internal/types"
 )
 
@@ -103,10 +103,8 @@ func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session
 		slog.Error("VSS未初始化，无法进行RAG检索")
 		return "", fmt.Errorf("VSS未初始化")
 	}
-
 	// 生成查询嵌入向量
-	engineName := "ollama"
-	modelEngine := provider.GetModelEngine(engineName)
+	modelEngine := engine.NewEngine()
 
 	// 查询扩展
 	var queries []string

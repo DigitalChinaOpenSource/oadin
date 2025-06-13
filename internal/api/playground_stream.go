@@ -46,17 +46,20 @@ func (h *PlaygroundHandler) SendMessageStream(c *gin.Context) {
 					Thoughts:   chunk.Thoughts,
 					Type:       chunk.Type,
 				},
-			}
-
-			// 序列化为JSON
+			} // 序列化为JSON
 			data, err := json.Marshal(response)
 			if err != nil {
 				return false // 序列化错误，结束流
 			}
 
+			// 增加SSE格式的前缀
+			c.Writer.Write([]byte("data: "))
 			// 写入数据
 			c.Writer.Write(data)
-			c.Writer.Write([]byte("\n")) // 添加换行符分隔事件
+			c.Writer.Write([]byte("\n\n")) // 添加双换行符符合SSE格式
+
+			// 立即刷新写入器，确保数据能及时发送到客户端
+			c.Writer.Flush()
 
 			return !chunk.IsComplete // 如果是最后一块，则结束流
 

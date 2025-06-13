@@ -13,7 +13,7 @@ import (
 
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
-	"byze/internal/provider"
+	"byze/internal/provider/engine"
 	"byze/internal/types"
 	"byze/internal/utils"
 	"byze/internal/utils/bcode"
@@ -258,10 +258,8 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 	if len(chunks) > 1 && overlapSize > 0 {
 		slog.Debug("应用块重叠处理", "chunk_count", len(chunks), "overlap_size", overlapSize)
 		chunks = utils.ApplyChunkOverlap(chunks, overlapSize)
-	}
-	// 获取模型引擎
-	engineName := "ollama"
-	modelEngine := provider.GetModelEngine(engineName)
+	} // 获取聊天引擎用于生成嵌入向量
+	modelEngine := engine.NewEngine()
 
 	batchSize := 100
 	fileChunks := make([]*types.FileChunk, 0, len(chunks))
@@ -362,7 +360,6 @@ func chunkFile(filePath string, chunkSize int) ([]string, error) {
 	case ".md", ".txt", ".log", ".rst", ".asciidoc":
 		// 文档类文件按段落分块效果更好
 		return chunkTextFileByParagraphs(file, chunkSize)
-
 
 	case ".json", ".xml", ".yaml", ".yml", ".toml":
 		slog.Debug("使用专用分块器处理结构化文件", "ext", fileExt)
