@@ -15,7 +15,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// McpService 结构体
+// StdioTransport is a thread-safe singleton responsible for managing the lifecycle of MCP clients over stdio transport,
+// ensuring safe concurrent access, initialization, and cleanup of client instances.
 type StdioTransport struct {
 	clients        map[string]*client.Client
 	pendingClients map[string]chan *client.Client
@@ -23,24 +24,23 @@ type StdioTransport struct {
 }
 
 var (
-	stdioTransportInstance StdioTransport
-	stdioTransportOnce     sync.Once
+	stdioTransportInstance = StdioTransport{
+		clients:        make(map[string]*client.Client),
+		pendingClients: make(map[string]chan *client.Client),
+	}
+	stdioTransportOnce sync.Once
 )
 
-func NewMcpService() *StdioTransport {
-	stdioTransportOnce.Do(func() {
-		stdioTransportInstance = StdioTransport{
-			clients:        make(map[string]*client.Client),
-			pendingClients: make(map[string]chan *client.Client),
-		}
-	})
+// NewStdioTransport returns a singleton instance of StdioTransport.
+// This ensures that all MCP clients over stdio transport are managed centrally and safely across the application lifecycle.
+func NewStdioTransport() *StdioTransport {
 	return &stdioTransportInstance
 }
 
 func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*client.Client, error) {
-	fmt.Println("Initializing transport client with config:", config)
+	// fmt.Println("Initializing transport client with config:", config) // Debug only: avoid printing sensitive config in production
 	if config.Command == "" {
-		return nil, errors.New("either baseUrl or command must be provided")
+		return nil, errors.New("command must be provided")
 	}
 	var envVars []string
 	for k, v := range config.Env {
@@ -56,7 +56,7 @@ func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*cli
 	defer cancel()
 
 	if err := stdioTransport.Start(ctx); err != nil {
-		fmt.Println("failed to start stdio transport: ", err)
+		log.Printf("failed to start stdio transport: %v", err)
 		return nil, err
 	}
 
@@ -65,7 +65,7 @@ func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*cli
 	_, err := c.Initialize(ctx, initRequest)
 	if err != nil {
 		_ = stdioTransport.Close()
-		fmt.Printf("failed to initialize stdio client: %v", err)
+		fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Name, err)
 		return nil, err
 	}
 	return c, nil
@@ -107,18 +107,19 @@ func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, er
 			s.mu.Lock()
 			delete(s.pendingClients, serverKey)
 			s.mu.Unlock()
-			close(ch)
 		}()
 
 		cli, err := s.initTransportClient(config)
 		if err != nil {
-			fmt.Println("[MCP] Failed to initialize client for server : ", config.Name, err)
+			log.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Name, err)
+			close(ch)
 			return
 		}
 		s.mu.Lock()
 		s.clients[serverKey] = cli
 		s.mu.Unlock()
 		ch <- cli
+		close(ch)
 	}()
 
 	// client, ok := <-ch
@@ -130,18 +131,22 @@ func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, er
 
 func (s *StdioTransport) Stop(serverKey string) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	if cli, exists := s.clients[serverKey]; exists {
-		if err := cli.Close(); err != nil {
-			return err
-		}
-		delete(s.clients, serverKey)
-		fmt.Printf("[MCP] Closed server: %s", serverKey)
+	cli, exists := s.clients[serverKey]
+	s.mu.Unlock()
+	if !exists {
 		return nil
-	} else {
-		fmt.Printf("[MCP] No client found for server: %s", serverKey)
-		return errors.New("client not found")
 	}
+
+	if err := cli.Close(); err != nil {
+		fmt.Printf("[MCP] Error closing client for server %s: %v\n", serverKey, err)
+		return err
+	}
+
+	s.mu.Lock()
+	delete(s.clients, serverKey)
+	s.mu.Unlock()
+	fmt.Printf("[MCP] Closed server: %s\n", serverKey)
+	return nil
 }
 
 func (s *StdioTransport) FetchTools(serverKey string) ([]mcp.Tool, error) {
@@ -172,10 +177,9 @@ func (s *StdioTransport) CallTool(serverKey string, params mcp.CallToolParams) (
 
 	fetchRequest := mcp.CallToolRequest{}
 	fetchRequest.Params.Name = params.Name
-	fetchRequest.Params.Arguments = params.Arguments
 	result, err := cli.CallTool(ctx, fetchRequest)
 	if err != nil {
-		log.Fatalf("Failed to call the tool: %v", err)
+		log.Printf("Failed to call the tool: %v", err)
 		return nil, err
 	}
 	return result, nil
