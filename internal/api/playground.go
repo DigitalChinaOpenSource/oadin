@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"byze/internal/api/dto"
-
+	"byze/internal/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,6 +44,21 @@ func (t *ByzeCoreServer) SendMessage(c *gin.Context) {
 		return
 	}
 
+	if len(req.McpIds) > 0 {
+	   req.Tools = make([]types.Tool, 0)
+	   for _, id := range req.McpIds {
+			tools, err := t.MCP.ClientGetTools(c, id)
+			if err != nil {
+				continue
+			}
+
+			newTools := make([]types.Tool, 0, len(tools))
+			for _, tool := range tools {
+				newTools = append(newTools, types.Tool{Type: "function", Function: types.TypeFunction{Name: tool.Name, Description: tool.Description, Parameters: tool.InputSchema}})
+			}
+			req.Tools = append(req.Tools, newTools...)
+		}
+	}
 	resp, err := t.Playground.SendMessage(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

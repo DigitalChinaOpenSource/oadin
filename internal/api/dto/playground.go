@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"byze/internal/types"
 	"byze/internal/utils/bcode"
 )
 
@@ -33,10 +34,10 @@ type GetSessionsResponse struct {
 }
 
 type SendMessageRequest struct {
-	SessionId string           `json:"sessionId"`
-	Content   string           `json:"content"`
-	Tools     []map[string]any `json:"tools,omitempty"`
-	McpIds    []string         `json:"mcpIds,omitempty"`
+	SessionId string     `json:"sessionId"`
+	Content   string     `json:"content"`
+	Tools     []types.Tool `json:"tools,omitempty"`
+	McpIds    []string   `json:"mcpIds,omitempty"`
 }
 
 // 发送消息响应
