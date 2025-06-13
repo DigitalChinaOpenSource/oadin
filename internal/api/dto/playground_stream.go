@@ -2,6 +2,7 @@ package dto
 
 import (
 	"byze/internal/utils/bcode"
+	"byze/internal/types"
 )
 
 // 流式消息响应
@@ -27,5 +28,5 @@ type SendStreamMessageRequest struct {
 	SessionID string           `json:"SessionID" binding:"required"`
 	Content   string           `json:"content" binding:"required"`
 	McpIds    []string         `json:"mcpIds,omitempty"`
-	Tools     []map[string]any `json:"tools,omitempty"`
+	Tools     []types.Tool     `json:"tools,omitempty"`
 }
