@@ -16,7 +16,7 @@ export default function ByzeServiceTab() {
             className={styles.logoIcon}
           />
           <div className={styles.infoBlock}>
-            <span>白泽服务状态</span>
+            <span>奥丁服务状态</span>
             <div className={styles.statusName}>
               {vm.checkByzeStatus ? (
                 <>

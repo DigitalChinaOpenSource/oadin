@@ -5,10 +5,11 @@ interface ISelectMcpStore {
   drawerOpenId: string;
   setDrawerOpenId: (id: string) => void;
   selectMcpList: IMcpListItem[];
-  setSelectMcpList: (list: IMcpListItem[] | ((currentList: IMcpListItem[]) => IMcpListItem[])) => void;
+  setSelectMcpList: (list: IMcpListItem[] | ((currentList: IMcpListItem[]) => IMcpListItem[])) => void; // 添加计算属性
+  selectedMcpIds: () => string[];
 }
 
-const useSelectMcpStore = create<ISelectMcpStore>((set) => ({
+const useSelectMcpStore = create<ISelectMcpStore>((set, get) => ({
   selectMcpList: [],
   setSelectMcpList: (list: IMcpListItem[] | ((currentList: IMcpListItem[]) => IMcpListItem[])) => {
     if (typeof list === 'function') {
@@ -19,6 +20,7 @@ const useSelectMcpStore = create<ISelectMcpStore>((set) => ({
       set({ selectMcpList: list });
     }
   },
+  selectedMcpIds: () => get().selectMcpList.map((item) => item.id as string),
   drawerOpenId: '',
   setDrawerOpenId: (id: string) => {
     if (id) {

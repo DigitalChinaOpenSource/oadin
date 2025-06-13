@@ -1,4 +1,4 @@
-import { Button, Popover } from 'antd';
+import { Button, message, Popover } from 'antd';
 import styles from './index.module.scss';
 import { McpSelectBtn } from '@/components/icons';
 import { SelectMcpDialog } from './dialog.tsx';
@@ -26,6 +26,9 @@ export const SelectMcp = () => {
         trigger="click"
         onOpenChange={(open) => {
           setSelectMcpPopOpen(open);
+          if (!open) {
+            message.info('调用启动MCP服务');
+          }
         }}
       >
         <Button

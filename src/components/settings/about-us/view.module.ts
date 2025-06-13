@@ -18,7 +18,7 @@ const testData = {
   logo: '',
   officialWebsite: '',
   copyright:
-    '© 2025 白泽团队 版权所有。保留所有权利。  \n' +
+    '© 2025 奥丁团队 版权所有。保留所有权利。  \n' +
     '\n' +
     '本产品由 **XXX科技有限公司** 开发与维护。使用本产品即表示您同意我们的 [《用户协议》](https://www.baize.ai/user-agreement)和 [《隐私政策》](https://www.baize.ai/privacy-policy)。  \n' +
     '\n' +

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ChatInput, MessageList, type MessageType, registerMessageContents } from '@res-utiles/ui-components';
+import { ChatInput, MessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
 import { Button, Tooltip } from 'antd';
 import type { UploadFile } from 'antd';
@@ -13,24 +13,63 @@ import sendSvg from '@/components/icons/send.svg';
 import uploadSvg from '@/components/icons/upload.svg';
 import rollingSvg from '@/components/icons/rolling.svg';
 import { useDownLoad } from '@/hooks/useDownload';
+import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import './index.css';
 
 interface IChatViewProps {
   isUploadVisible?: boolean; // 上传功能是否可用，是否下载词嵌入模型
 }
 
+interface ChatMessageContent extends MessageContentType {
+  /**
+   * 内容类型
+   * @description 目前支持 message task canvas file ref 四种类型
+   * - message: 文本消息
+   * - task: 任务消息
+   * - canvas: 画布消息
+   * - file: 文件消息
+   * - ref: 引用消息
+   */
+  type: 'message' | 'task' | 'canvas' | 'file' | 'ref';
+}
+
+interface ChatMessage extends MessageType {
+  /**
+   * 所属对话ID
+   */
+  conversationId: string;
+  /**
+   * 消息时间
+   */
+  createdAt?: number;
+  /**
+   * 消息内容列表
+   * @description 一个消息可以包含多个元素，比如一个消息可以包含多个文本、多个任务等
+   */
+  contentList?: ChatMessageContent[];
+}
+
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages, addMessage, uploadFileList, setUploadFileList } = useChatStore();
+  const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
-  const messageAreaRef = useRef<HTMLDivElement>(null);
 
-  // 监听消息列表变化，自动滚动
   useEffect(() => {
-    if (messageAreaRef.current && messages.length > 0) {
-      const scrollElement = messageAreaRef.current;
-      scrollElement.scrollTop = scrollElement.scrollHeight;
+    // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部
+    if (messages.length > 0 && getIsNearBottom()) {
+      scrollToBottom();
     }
-  }, [messages]);
+  }, [messages.length]);
+
+  /**
+   * 正在生成的消息控制滚动
+   * @description 如果正在生成的消息存在且当前滚动位置接近底部，则自动滚动到底部
+   */
+  const chattingMessageControlScroll = (message: ChatMessage) => {
+    if (message && getIsNearBottom()) {
+      scrollToBottom();
+    }
+  };
 
   const handleSendMessage = (message: string) => {
     if (!message.trim()) return;
@@ -70,7 +109,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     setUploadFileList(fileList);
   };
 
-  const headerUploadContent = (
+  const headerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
       {uploadFileList.map((file) => (
         <div
@@ -168,7 +207,8 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
       <div className="chat-body">
         <div
           className="chat-message-area chat-width"
-          ref={messageAreaRef}
+          ref={containerRef}
+          onScroll={handleScroll}
         >
           <MessageList
             messages={messages}
@@ -180,7 +220,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             })}
             className="chat-message-list"
             contentListClassName="chat-message-content-list"
-            // bottomPanel={<div style={{ background: '' }}>这里可以放正在生成的消息，或者是其他什么的...</div>}
+            //  bottomPanel={<ChattingMessage scroll={chattingMessageControlScroll} />}
           />
         </div>
 
@@ -203,7 +243,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                 onClick={onClick}
               />
             )}
-            header={headerUploadContent}
+            header={headerContent}
             footer={footerContent}
           />
         </div>

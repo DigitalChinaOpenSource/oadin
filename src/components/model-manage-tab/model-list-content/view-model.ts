@@ -30,10 +30,8 @@ interface IModelSquareParams {
 }
 
 export interface IUseViewModel {
-  modelPath: string;
   modalPathVisible: boolean;
   onModelPathVisible: () => void;
-  onChangeModelPath: (params: { source_path: string; target_path: string }) => void;
 
   modelAuthVisible: boolean;
   onModelAuthVisible: (data: IModelAuth) => void;
@@ -74,8 +72,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const { setMigratingStatus } = useModelPathChangeStore();
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
-  // 接口获取
-  const [modelPath, setModelPath] = useState<string>('');
   // 云端模型授权弹窗是否显示
   const [modelAuthVisible, setModelAuthVisible] = useState<boolean>(false);
   // 模型详情弹窗是否显示
@@ -147,11 +143,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     fetchModelSupport({ service_source: modelSourceVal });
   }, [modelSourceVal, mine]);
 
-  useEffect(() => {
-    if (!modelPath) return;
-    onCheckPathSpace(modelPath);
-  }, [modelPath]);
-
   // 获取模型存储路径
   const { run: fetchModelPath } = useRequest(
     async () => {
@@ -160,8 +151,8 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     },
     {
       manual: true,
-      onSuccess: (data) => {
-        setModelPath(data?.path || '');
+      onSuccess: async (data) => {
+        await onCheckPathSpace(data?.path || '');
       },
       onError: (error) => {
         console.error('获取模型存储路径失败:', error);
@@ -334,38 +325,9 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     });
   };
 
-  const { run: onChangeModelPath } = useRequest(
-    async (params: { source_path: string; target_path: string }) => {
-      const data = await httpRequest.post('/control_panel/model/filepath', params);
-      return data || {};
-    },
-    {
-      manual: true,
-      onBefore: () => {
-        // 修改全局状态，标识模型存储路径正在迁移中
-        setMigratingStatus('pending');
-      },
-      onSuccess: (data) => {
-        if (data) {
-          message.success('模型存储路径修改成功');
-        }
-        fetchModelPath();
-        setMigratingStatus('init');
-      },
-      onError: (error: Error & { handled?: boolean }) => {
-        if (!error?.handled) {
-          message.error(error?.message || '模型存储路径修改失败');
-        }
-        setMigratingStatus('failed');
-      },
-    },
-  );
-
   return {
-    modelPath,
     modalPathVisible,
     onModelPathVisible,
-    onChangeModelPath,
 
     modelAuthVisible,
     onModelAuthVisible,

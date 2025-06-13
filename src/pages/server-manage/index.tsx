@@ -9,7 +9,7 @@ export default function ServiceManage() {
   const items: TabsProps['items'] = [
     {
       key: 'byzeServiceTab',
-      label: '白泽服务',
+      label: '奥丁服务',
       children: <ByzeServiceTab />,
     },
     {
