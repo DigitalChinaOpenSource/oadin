@@ -24,7 +24,6 @@ export const useMcpDetail = (id?: string | number) => {
     {
       manual: true,
       onSuccess: (data) => {
-        console.log('fetchMcpList===>', data);
         setMcpDetail(data);
       },
       onError: (error) => {
@@ -81,7 +80,11 @@ export const useMcpDetail = (id?: string | number) => {
           authorized: 1, // 1为已授权
         });
         // 授权成功 开始下载
-        curAuthParams[1] ? downMcp(curAuthParams[1]) : downMcp();
+        if (curAuthParams[1]) {
+          downMcp(curAuthParams[1]);
+        } else {
+          downMcp();
+        }
       },
       onError: (error) => {
         console.error('授权mcp失败:', error);
@@ -143,7 +146,11 @@ export const useMcpDetail = (id?: string | number) => {
   const handleAuthMcp = async (authParams: any, curMcpDetail?: McpDetailType) => {
     setShowMcpModal(false);
     try {
-      curMcpDetail ? await authMcp(authParams, curMcpDetail) : await authMcp(authParams);
+      if (curMcpDetail) {
+        await authMcp(authParams, curMcpDetail);
+      } else {
+        await authMcp(authParams);
+      }
     } catch (error) {
       console.error('授权mcp失败:', error);
     }

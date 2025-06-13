@@ -56,12 +56,14 @@
 .user-bubble.ru-chat-bubble-body-content {
   background-color: #e7e1ff;
   color: #5429ff;
+  border-radius: 8px;
 }
 
 .ai-bubble.ru-chat-bubble-body-content {
   background-color: #fff;
   color: #000000;
   width: 100%;
+  border-radius: 8px;
 }
 
 .upload-file-item {

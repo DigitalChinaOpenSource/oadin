@@ -4,6 +4,7 @@ import { httpRequest } from '@/utils/httpRequest';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import useChatStore from './store/useChatStore';
 import { IPlaygroundSession } from './types';
+import { message } from 'antd';
 
 export default function useViewModel() {
   const [isUploadVisible, setIsUploadVisible] = useState(false);
@@ -14,6 +15,7 @@ export default function useViewModel() {
   useEffect(() => {
     if (selectedModel && Object.keys(selectedModel).length > 0) {
       fetchCreateChat({ modelId: selectedModel.id });
+      // TODO 通过判断 sessionId 查对应的历史记录，如果没有则新建一个会话
     }
   }, [selectedModel]);
 
@@ -36,6 +38,10 @@ export default function useViewModel() {
 
   const handleCreateNewChat = () => {
     createNewChat();
+    if (!selectedModel?.id) {
+      message.error('请先选择一个模型');
+      return;
+    }
     fetchCreateChat({
       modelId: selectedModel?.id || '',
     });

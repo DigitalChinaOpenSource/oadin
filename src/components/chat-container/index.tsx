@@ -4,7 +4,7 @@ import { PlusIcon, ClockCounterClockwiseIcon } from '@phosphor-icons/react';
 import ChatHistoryDrawer from './chat-history-drawer';
 import ChatView from './chat-view';
 import useChatStore from './store/useChatStore';
-import useViewModel from './useViewModel';
+import useViewModel from './view-model';
 import styles from './index.module.scss';
 
 export default function ChatContainer() {
@@ -42,7 +42,6 @@ export default function ChatContainer() {
             }
             onClick={() => {
               vm.handleCreateNewChat();
-              console.log('已创建新对话');
             }}
           />
         </div>
