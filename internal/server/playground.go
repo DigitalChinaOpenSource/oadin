@@ -11,7 +11,7 @@ import (
 	"byze/config"
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
-	"byze/internal/provider"
+	"byze/internal/provider/engine"
 	"byze/internal/types"
 	"byze/internal/utils/bcode"
 
@@ -101,11 +101,10 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		ModelName:    getModelNameById(request.ModelId),
 		EmbedModelID: request.EmbedModelId,
 	}
-	// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
-	model := &types.Model{ModelName: getModelNameById(request.ModelId)}
-	err := p.Ds.Get(ctx, model)
+	supportModel := &types.SupportModel{Id: request.ModelId}
+	err := p.Ds.Get(ctx, supportModel)
 	if err == nil {
-		session.ThinkingEnabled = model.ThinkingEnabled
+		session.ThinkingEnabled = supportModel.Think
 	}
 	err = p.Ds.Add(ctx, session)
 	if err != nil {
@@ -174,9 +173,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	// 获取会话中的所有消息，构建历史上下文
 	messageQuery := &types.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
-		SortBy: []datastore.SortOption{
-			{Key: "msg_order", Order: datastore.SortOrderAscending},
-		},
+		SortBy: []datastore.SortOption{{Key: "msg_order", Order: datastore.SortOrderAscending}},
 	})
 	if err != nil {
 		slog.Error("Failed to list chat messages", "error", err)
@@ -202,8 +199,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if relevantContext != "" {
 		// 添加RAG上下文到用户消息中
 		slog.Info("找到相关上下文，使用RAG增强对话", "session_id", session.ID, "context_length", len(relevantContext))
-		enhancedContent = fmt.Sprintf("我的问题是: %s\n\n参考以下信息回答我的问题:\n\n%s",
-			request.Content, relevantContext)
+		enhancedContent = fmt.Sprintf("我的问题是: %s\n\n参考以下信息回答我的问题:\n\n%s", request.Content, relevantContext)
 	} else {
 		slog.Info("未找到相关上下文，使用通用对话模式", "session_id", session.ID)
 	}
@@ -230,35 +226,35 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if err != nil {
 		slog.Error("Failed to save user message", "error", err)
 		return nil, err
-	} // 调用模型获取回复
-	engineName := "ollama" // 默认使用Ollama引擎
+	}
 
-	// 获取当前模型的引擎
-	modelEngine := provider.GetModelEngine(engineName)
-	// 构建聊天请求
+	// 直接调用统一 Engine 层
 	chatRequest := &types.ChatRequest{
-		Model:    session.ModelID,
+		Model:    session.ModelName,
 		Messages: history,
 		Options:  make(map[string]any),
 	}
-
-	// 如果启用了思考模式，则添加thinking选项
 	if session.ThinkingEnabled {
 		chatRequest.Options["thinking"] = true
 	}
-
-	// Chat request (with tools)
 	if request.Tools != nil {
 		chatRequest.Tools = request.Tools
 	}
 
-	// 调用模型API
-	chatResp, err := modelEngine.Chat(ctx, chatRequest)
+	slog.Info("发送非流式请求到引擎", "model", session.ModelName)
+	chatResp, err := engine.NewEngine().Chat(ctx, chatRequest)
 	if err != nil {
 		slog.Error("Failed to call model API", "error", err)
 		return nil, err
 	}
+
+	slog.Info("收到非流式响应",
+		"content_length", len(chatResp.Content),
+		"model", chatResp.Model,
+		"is_complete", chatResp.IsComplete)
+
 	response := chatResp.Content
+
 	// 保存模型回复
 	assistantMsg := &types.ChatMessage{
 		ID:        uuid.New().String(),
@@ -304,19 +300,17 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		}
 	}
 	// 返回响应
-	resultMessages := []dto.Message{
-		{
-			Id:        assistantMsg.ID,
-			SessionId: assistantMsg.SessionID,
-			Role:      assistantMsg.Role,
-			Content:   assistantMsg.Content,
-			CreatedAt: assistantMsg.CreatedAt.Format(time.RFC3339),
-			Thoughts:  chatResp.Thoughts,
-			Type:      "answer",
-			ModelId:   session.ModelID,
-			ModelName: session.ModelName,
-		},
-	}
+	resultMessages := []dto.Message{{
+		Id:        assistantMsg.ID,
+		SessionId: assistantMsg.SessionID,
+		Role:      assistantMsg.Role,
+		Content:   assistantMsg.Content,
+		CreatedAt: assistantMsg.CreatedAt.Format(time.RFC3339),
+		Thoughts:  chatResp.Thoughts,
+		Type:      "answer",
+		ModelId:   session.ModelID,
+		ModelName: session.ModelName,
+	}}
 	if chatResp.Thoughts != "" && session.ThinkingEnabled {
 		resultMessages = append(resultMessages, dto.Message{
 			Id:        "thoughts-" + assistantMsg.ID,
