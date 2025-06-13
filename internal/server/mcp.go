@@ -396,7 +396,7 @@ func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
 		}
 		break
 	}
-	fmt.Println("mcpServers", mcpServers)
+
 	_, err = M.McpHandler.Start(mcpServerConfig)
 	if err != nil {
 		return err
