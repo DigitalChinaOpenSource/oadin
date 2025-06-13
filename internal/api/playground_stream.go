@@ -12,7 +12,7 @@ import (
 )
 
 // 发送消息并流式返回响应
-func (h *PlaygroundHandler) SendMessageStream(c *gin.Context) {
+func (t *ByzeCoreServer) SendMessageStream(c *gin.Context) {
 	var req dto.SendStreamMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -26,7 +26,7 @@ func (h *PlaygroundHandler) SendMessageStream(c *gin.Context) {
 	c.Header("Transfer-Encoding", "chunked")
 
 	// 开始流式处理
-	respChan, errChan := h.playground.SendMessageStream(c.Request.Context(), &req)
+	respChan, errChan := t.Playground.SendMessageStream(c.Request.Context(), &req)
 
 	// 写入响应流
 	c.Stream(func(w io.Writer) bool {
