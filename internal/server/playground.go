@@ -148,6 +148,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 
 // GetSessions 获取所有会话
 func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsResponse, error) {
+	slog.Info("GetSessions called")
 	sessionQuery := &types.ChatSession{}
 	sessions, err := p.Ds.List(ctx, sessionQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
@@ -159,9 +160,13 @@ func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsRespo
 		return nil, err
 	}
 
+	slog.Info("Found sessions in database", "count", len(sessions))
+
 	sessionDTOs := make([]dto.Session, 0, len(sessions))
 	for _, s := range sessions {
 		session := s.(*types.ChatSession)
+		slog.Info("Processing session", "id", session.ID, "title", session.Title)
+
 		sessionDTOs = append(sessionDTOs, dto.Session{
 			Id:              session.ID,
 			Title:           session.Title,
