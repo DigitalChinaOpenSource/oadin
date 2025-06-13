@@ -14,7 +14,7 @@ export async function requestWithHealthCheck<T>(requestFn: () => Promise<T>): Pr
   // 检查健康状态
   if (!useByzeServerCheckStore.getState().checkByzeStatus) {
     // 健康检查未通过，直接中断
-    return Promise.reject(new Error('白泽服务不可用，已拦截请求'));
+    return Promise.reject(new Error('奥丁服务不可用，已拦截请求'));
   }
 
   // 健康检查通过，执行后续请求

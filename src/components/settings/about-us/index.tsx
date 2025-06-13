@@ -16,7 +16,7 @@ export default function AboutUs() {
   const [openCopyright, setOpenCopyright] = useState(false);
   // 意见反馈
   const [openFeedback, setOpenFeedback] = useState(false);
-  // 白泽服务状态
+  // 奥丁服务状态
   const { checkByzeStatus, fetchByzeServerStatus } = useByzeServerCheckStore();
   // 关于我们详情
   const { aboutDetails, aboutUsLoading, fetchAboutUsDetail } = useAboutUsView();

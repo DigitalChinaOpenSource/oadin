@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ChatInput, MessageList, type MessageType, registerMessageContents } from '@res-utiles/ui-components';
+import { ChatInput, MessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
 import { Button, Tooltip } from 'antd';
 import type { UploadFile } from 'antd';
@@ -20,6 +20,35 @@ interface IChatViewProps {
   isUploadVisible?: boolean; // 上传功能是否可用，是否下载词嵌入模型
 }
 
+interface ChatMessageContent extends MessageContentType {
+  /**
+   * 内容类型
+   * @description 目前支持 message task canvas file ref 四种类型
+   * - message: 文本消息
+   * - task: 任务消息
+   * - canvas: 画布消息
+   * - file: 文件消息
+   * - ref: 引用消息
+   */
+  type: 'message' | 'task' | 'canvas' | 'file' | 'ref';
+}
+
+interface ChatMessage extends MessageType {
+  /**
+   * 所属对话ID
+   */
+  conversationId: string;
+  /**
+   * 消息时间
+   */
+  createdAt?: number;
+  /**
+   * 消息内容列表
+   * @description 一个消息可以包含多个元素，比如一个消息可以包含多个文本、多个任务等
+   */
+  contentList?: ChatMessageContent[];
+}
+
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages, addMessage, uploadFileList, setUploadFileList } = useChatStore();
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
@@ -36,7 +65,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
    * 正在生成的消息控制滚动
    * @description 如果正在生成的消息存在且当前滚动位置接近底部，则自动滚动到底部
    */
-  const chattingMessageControlScroll = (message: any) => {
+  const chattingMessageControlScroll = (message: ChatMessage) => {
     if (message && getIsNearBottom()) {
       scrollToBottom();
     }

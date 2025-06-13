@@ -90,7 +90,7 @@ async function withHealthCheck<T>(requestFn: () => Promise<T>): Promise<T> {
   await fetchByzeServerStatus();
   if (!useByzeServerCheckStore.getState().checkByzeStatus) {
     message.destroy();
-    message.error('白泽服务不可用，请确认白泽服务启动状态');
+    message.error('奥丁服务不可用，请确认奥丁服务启动状态');
     // 返回一个永远 pending 的 Promise，阻断后续 then/catch
     return new Promise(() => {});
   }

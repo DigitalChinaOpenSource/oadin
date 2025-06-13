@@ -12,7 +12,7 @@ export default function MainLayout() {
   const { Header, Content, Sider } = Layout;
   const [collapsed, setCollapsed] = useState(false);
 
-  // 获取和更新白泽服务的健康状态
+  // 获取和更新奥丁服务的健康状态
   const { fetchByzeServerStatus } = useByzeServerCheckStore();
   useEffect(() => {
     const interval = setInterval(() => {

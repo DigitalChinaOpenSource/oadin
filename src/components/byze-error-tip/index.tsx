@@ -2,7 +2,7 @@ import { Alert, Button } from 'antd';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore.ts';
 
 export default function ByzeErrorTip() {
-  // 白泽服务状态
+  // 奥丁服务状态
   const { checkByzeStatus, fetchByzeServerStatus } = useByzeServerCheckStore();
 
   return (
