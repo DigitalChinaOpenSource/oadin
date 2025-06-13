@@ -111,7 +111,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		}
 
 		// Chat request (with tools)
-		if request.Tools != nil {
+		if len(request.Tools) > 0 {
 			chatRequest.Tools = request.Tools
 		}
 
