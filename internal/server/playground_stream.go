@@ -126,7 +126,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		for {
 			select {
 			case resp, ok := <-responseStream:
-				if !ok { // 流结束					// 保存完整的助手回复，即使内容为空也要保存
+				if !ok { // 流结束
 					// 因为有可能最后一个块是完成标记但内容为空
 					slog.Info("流式输出结束，准备保存助手回复",
 						"content_length", len(fullContent))
@@ -184,15 +184,15 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 					return
 				}
-
 				msgType := "answer"
 				if resp.Thoughts != "" {
 					msgType = "thoughts"
-				} // 保留原始的 Content 
+				} // 保留原始的 Content
 				originalContent := resp.Content
 				resp.Type = msgType
 				resp.Model = session.ModelName
-				resp.ModelName = session.ModelName 
+				resp.ModelName = session.ModelName
+
 				if resp.IsComplete {
 					slog.Info("收到流式输出完成标记",
 						"is_complete", resp.IsComplete,
@@ -204,11 +204,12 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						fullContent += resp.Content
 					}
 
+					// 确保完整内容被保存和返回给客户端
 					assistantMsg := &types.ChatMessage{
 						ID:        assistantMsgID,
 						SessionID: request.SessionID,
 						Role:      "assistant",
-						Content:   fullContent, 
+						Content:   fullContent,
 						Order:     len(messages) + 1,
 						CreatedAt: time.Now(),
 						ModelID:   session.ModelID,
