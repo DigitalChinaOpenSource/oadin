@@ -4,30 +4,19 @@ import (
 	"net/http"
 
 	"byze/internal/api/dto"
-	"byze/internal/server"
 
 	"github.com/gin-gonic/gin"
 )
 
-type PlaygroundHandler struct {
-	playground *server.PlaygroundImpl
-}
-
-func NewPlaygroundHandler() *PlaygroundHandler {
-	return &PlaygroundHandler{
-		playground: server.NewPlayground(),
-	}
-}
-
 // 创建会话
-func (h *PlaygroundHandler) CreateSession(c *gin.Context) {
+func (t *ByzeCoreServer) CreateSession(c *gin.Context) {
 	var req dto.CreateSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp, err := h.playground.CreateSession(c.Request.Context(), &req)
+	resp, err := t.Playground.CreateSession(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -37,8 +26,8 @@ func (h *PlaygroundHandler) CreateSession(c *gin.Context) {
 }
 
 // 获取会话列表
-func (h *PlaygroundHandler) GetSessions(c *gin.Context) {
-	resp, err := h.playground.GetSessions(c.Request.Context())
+func (t *ByzeCoreServer) GetSessions(c *gin.Context) {
+	resp, err := t.Playground.GetSessions(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -48,14 +37,14 @@ func (h *PlaygroundHandler) GetSessions(c *gin.Context) {
 }
 
 // 发送消息
-func (h *PlaygroundHandler) SendMessage(c *gin.Context) {
+func (t *ByzeCoreServer) SendMessage(c *gin.Context) {
 	var req dto.SendMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp, err := h.playground.SendMessage(c.Request.Context(), &req)
+	resp, err := t.Playground.SendMessage(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -65,7 +54,7 @@ func (h *PlaygroundHandler) SendMessage(c *gin.Context) {
 }
 
 // 获取消息
-func (h *PlaygroundHandler) GetMessages(c *gin.Context) {
+func (t *ByzeCoreServer) GetMessages(c *gin.Context) {
 	sessionID := c.Query("sessionId")
 	if sessionID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "sessionId is required"})
@@ -76,7 +65,7 @@ func (h *PlaygroundHandler) GetMessages(c *gin.Context) {
 		SessionId: sessionID,
 	}
 
-	resp, err := h.playground.GetMessages(c.Request.Context(), req)
+	resp, err := t.Playground.GetMessages(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -86,14 +75,14 @@ func (h *PlaygroundHandler) GetMessages(c *gin.Context) {
 }
 
 // 删除会话
-func (h *PlaygroundHandler) DeleteSession(c *gin.Context) {
+func (t *ByzeCoreServer) DeleteSession(c *gin.Context) {
 	var req dto.DeleteSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp, err := h.playground.DeleteSession(c.Request.Context(), &req)
+	resp, err := t.Playground.DeleteSession(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -103,13 +92,13 @@ func (h *PlaygroundHandler) DeleteSession(c *gin.Context) {
 }
 
 // 切换会话模型
-func (h *PlaygroundHandler) ChangeSessionModel(c *gin.Context) {
+func (t *ByzeCoreServer) ChangeSessionModel(c *gin.Context) {
 	var req dto.ChangeSessionModelRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	resp, err := h.playground.ChangeSessionModel(c.Request.Context(), &req)
+	resp, err := t.Playground.ChangeSessionModel(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

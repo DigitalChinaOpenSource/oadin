@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log/slog"
 	"time"
@@ -18,12 +19,31 @@ import (
 	"github.com/google/uuid"
 )
 
+type Playground interface {
+	CreateSession(ctx context.Context, request *dto.CreateSessionRequest) (*dto.CreateSessionResponse, error)
+	GetSessions(ctx context.Context) (*dto.GetSessionsResponse, error)
+	SendMessage(ctx context.Context, request *dto.SendMessageRequest) (*dto.SendMessageResponse, error)
+	GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error)
+	DeleteSession(ctx context.Context, request *dto.DeleteSessionRequest) (*dto.DeleteSessionResponse, error)
+	ChangeSessionModel(ctx context.Context, req *dto.ChangeSessionModelRequest) (*dto.ChangeSessionModelResponse, error)
+
+	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
+
+	UploadFile(ctx context.Context, request *dto.UploadFileRequest, fileHeader io.Reader, filename string, filesize int64) (*dto.UploadFileResponse, error)
+	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
+	DeleteFile(ctx context.Context, request *dto.DeleteFileRequest) (*dto.DeleteFileResponse, error)
+	ProcessFile(ctx context.Context, request *dto.GenerateEmbeddingRequest) (*dto.GenerateEmbeddingResponse, error)
+
+	findRelevantContext(ctx context.Context, session *types.ChatSession, query string) (string, error)
+	findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error)
+}
+
 type PlaygroundImpl struct {
 	Ds datastore.Datastore
 }
 
 // 创建Playground服务实例
-func NewPlayground() *PlaygroundImpl {
+func NewPlayground() Playground {
 	playground := &PlaygroundImpl{
 		Ds: datastore.GetDefaultDatastore(),
 	}
