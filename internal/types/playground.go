@@ -58,7 +58,7 @@ type ChatRequest struct {
 	MaxTokens   int                 `json:"max_tokens,omitempty"`
 	Stream      bool                `json:"stream,omitempty"`
 	Options     map[string]any      `json:"options,omitempty"`
-	Tools       []map[string]any    `json:"tools,omitempty"` // 新增，支持Ollama工具调用
+	Tools       []Tool              `json:"tools,omitempty"` // 新增，支持Ollama工具调用
 }
 
 // 聊天响应模型

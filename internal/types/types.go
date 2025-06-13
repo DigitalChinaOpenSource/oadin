@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 const (
@@ -150,4 +151,45 @@ type MCPServerConfig struct {
 	Args    []string          `json:"args"`
 	Command string            `json:"command"`
 	Env     map[string]string `json:"env"` // 使用map存储动态环境变量
+}
+
+type ClientMcpStartRequest struct {
+	Ids []string `json:"ids"`
+}
+
+type ClientMcpStartResponse struct {
+	Id string `json:"id"`
+}
+
+type ClientMcpStopRequest struct {
+	Ids []string `json:"ids"`
+}
+
+type ClientRunToolRequest struct {
+	MCPId    string         `json:"mcpId"`
+	ToolName string         `json:"toolName"`
+	ToolArgs map[string]any `json:"toolArgs"`
+}
+
+type ClientGetToolsRequest struct {
+	Ids []string `json:"ids"`
+}
+
+type ClientGetToolsResponse struct {
+	Tools []McpTool `json:"mcpTools"`
+}
+
+type McpTool struct {
+	McpId string `json:"mcpId"`
+	Tools []Tool `json:"tools"`
+}
+
+type Tool struct {
+	Type     string       `json:"type"`
+	Function TypeFunction `json:"function"`
+}
+type TypeFunction struct {
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	Parameters  mcp.ToolInputSchema `json:"parameters"`
 }
