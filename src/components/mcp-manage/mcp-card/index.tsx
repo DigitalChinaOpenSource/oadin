@@ -125,7 +125,7 @@ export default function McpCard(props: IMcpCardProps) {
                   return item?.id;
                 })
                 .includes(mcpData.id)}
-              // disabled={isAdd}
+              disabled={isAdd}
               onChange={(e) => handleItemSelect(mcpData, e.target.checked)}
             />
           </div>
