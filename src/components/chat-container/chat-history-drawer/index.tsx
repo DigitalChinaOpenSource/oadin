@@ -100,7 +100,13 @@ export default function ChatHistoryDrawer(props: IChatHistoryDrawerProps) {
               }}
             >
               <div className={styles.groupLeft}>
-                <div className={styles.title}>{item.title}</div>
+                {/*<div className={styles.title}>{item.title || '新对话'}</div>*/}
+                <EllipsisTooltip
+                  title={item.title || '新对话'}
+                  className={styles.title}
+                >
+                  {item.title || '新对话'}
+                </EllipsisTooltip>
                 {/* 修改：仅溢出时显示Tooltip */}
                 <EllipsisTooltip
                   title={item.modelName}
