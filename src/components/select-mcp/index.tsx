@@ -20,6 +20,7 @@ export const SelectMcp = () => {
   return (
     <div className={`${styles.select_mcp} ${selectTypeClass}`}>
       <Popover
+        placement="topLeft"
         open={selectMcpPopOpen}
         arrow={false}
         content={<SelectMcpDialog setSelectMcpPopOpen={setSelectMcpPopOpen} />}
