@@ -200,9 +200,13 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
 
       <ChooseMcpDialog
         open={open}
-        onCancelProps={() => {
+        onSelectMcpOkProps={() => {
           setOpen(false);
           setSelectMcpPopOpen(false);
+        }}
+        onCancelProps={() => {
+          setOpen(false);
+          // setSelectMcpPopOpen(false);
         }}
       />
       <DetailDrawer

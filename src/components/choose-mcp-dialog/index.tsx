@@ -9,6 +9,7 @@ import { useSelectRemoteHelper, updateMcp } from '@/components/select-mcp/lib/us
 
 export type IChooseMcpDialog = ModalProps & {
   onCancelProps: () => void;
+  onSelectMcpOkProps: () => void;
 };
 
 interface ITemporaryMcpListItem extends IMcpListItem {
@@ -47,8 +48,8 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
     // // 更新全局状态
     setSelectMcpList(selectTemporaryMcpItems);
     // 关闭模态框
-    if (options.onCancelProps) {
-      options.onCancelProps();
+    if (options.onSelectMcpOkProps) {
+      options.onSelectMcpOkProps();
     }
   };
   const mcpDialogTabItems: TabsProps['items'] = [
