@@ -11,7 +11,16 @@ import arrowDown from '@/components/icons/arrow-down.svg';
 import JsonParsePanel from '@/components/json-parse-panel';
 import styles from './index.module.scss';
 
-// interface IMcpToolChatProps {}
+interface IMcpToolChatData {
+  contentData?: {
+    name: string;
+    desc: string;
+    logo: string;
+    inputParams: Record<string, any>;
+    outputParams: Record<string, any>;
+    status: 'success' | 'error';
+  };
+}
 
 export default function McpToolChat() {
   // TODO 思考完毕之后自动收起
@@ -75,7 +84,7 @@ export default function McpToolChat() {
               alt="高德地图"
             />
           </div>
-          <div className={styles.mcpTitle}>maps_anyTool</div>
+          <div className={styles.mcpTitle}></div>
         </div>
         <div className={styles.fill}></div>
         <div className={styles.mcpDesc}>
