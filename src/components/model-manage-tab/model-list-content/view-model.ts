@@ -69,7 +69,6 @@ export interface IModelListContent {
 
 export function useViewModel(props: IModelListContent): IUseViewModel {
   const { modelSourceVal, modelSearchVal, onModelSearch, mine } = props;
-  const { setMigratingStatus } = useModelPathChangeStore();
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
   // 云端模型授权弹窗是否显示

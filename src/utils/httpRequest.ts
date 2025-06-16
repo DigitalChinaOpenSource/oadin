@@ -4,11 +4,16 @@ import { message } from 'antd';
 import { API_PREFIX } from '@/constants';
 import i18n from '@/i18n';
 
+interface IModelChangeStore {
+  needModelChangeStore?: boolean;
+  setMigratingStatus?: (status: 'init' | 'pending' | 'failed') => void;
+}
+
 declare module 'axios' {
   export interface AxiosError {
     handled?: boolean;
   }
-  export interface InternalAxiosRequestConfig {
+  export interface InternalAxiosRequestConfig extends IModelChangeStore {
     needMcpStore?: boolean;
     addMcpDownloadItem?: (item: { id: string; error: string; downStatus: string }) => void;
     mcpId?: string;
@@ -50,12 +55,17 @@ const createApiInstance = (baseURL: string) => {
   instance.interceptors.response.use(
     (response: AxiosResponse<ResponseData>) => {
       const { data, config } = response;
+      // 处理响应成功时，检查是否需要更新 MCP 下载状态
       if (config.needMcpStore && config.addMcpDownloadItem && config.mcpId) {
         config.addMcpDownloadItem({
           id: config.mcpId,
           error: '成功',
           downStatus: 'success',
         });
+      }
+      // 处理响应成功时，模型迁移状态
+      if (config.needModelChangeStore && config.setMigratingStatus) {
+        config.setMigratingStatus('init');
       }
       if (data?.data) {
         return data.data;
@@ -65,12 +75,17 @@ const createApiInstance = (baseURL: string) => {
     },
     (error) => {
       const { config } = error;
+      // 处理错误时，检查是否需要更新 MCP 下载状态
       if (config.needMcpStore) {
         config.addMcpDownloadItem({
           id: config.mcpId,
           error: error.message,
           downStatus: 'error',
         });
+      }
+      // 处理错误时，模型迁移状态
+      if (config.needModelChangeStore) {
+        config.setMigratingStatus('failed');
       }
       message.destroy();
       if (error?.response) {
@@ -119,7 +134,7 @@ async function withHealthCheck<T>(requestFn: () => Promise<T>): Promise<T> {
 
 const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) => ({
   get: <T = any>(url: string, params?: any, config?: any) => withHealthCheck(() => instance.get<any, T>(url, { ...config, params })),
-  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig, 'data'>) => withHealthCheck(() => instance.post<any, T>(url, data, config)),
+  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => withHealthCheck(() => instance.post<any, T>(url, data, config)),
   put: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.put<any, T>(url, data, config)),
   del: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.delete<any, T>(url, { ...config, data })),
 });
@@ -162,7 +177,7 @@ const healthInstance = createHealthApiInstance(healthBaseURL);
 
 export const healthRequest = {
   get: <T = any>(url: string, params?: any, config?: any) => healthInstance.get<any, T>(url, { ...config, params }),
-  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig, 'data'>) => healthInstance.post<any, T>(url, data, config),
+  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => healthInstance.post<any, T>(url, data, config),
   put: <T = any>(url: string, data?: any, config?: any) => healthInstance.put<any, T>(url, data, config),
   del: <T = any>(url: string, data?: any, config?: any) => healthInstance.delete<any, T>(url, { ...config, data }),
   request: (config: AxiosRequestConfig) => healthInstance.request(config),

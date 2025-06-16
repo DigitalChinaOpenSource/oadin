@@ -33,13 +33,12 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   const { mcpAddModalShow, setMcpAddModalShow, mcpDownloadList } = useMcpDownloadStore();
 
   useEffect(() => {
-    if (collapsed) return;
     // 根据当前路由设置选中菜单项和展开的菜单项
     const pathSegments = location.pathname.split('/').filter(Boolean);
     if (location.pathname.startsWith('/mcp-detail')) return;
     if (pathSegments.length > 0) {
       setSelectedKeys([location.pathname]);
-      setOpenKeys([...openKeys, pathSegments[0]]);
+      setOpenKeys(collapsed ? [] : [pathSegments[0]]);
     }
   }, [location.pathname, collapsed]);
 

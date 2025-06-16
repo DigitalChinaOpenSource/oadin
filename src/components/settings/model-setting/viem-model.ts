@@ -82,7 +82,8 @@ export function useModelSetting() {
   // 修改模型存储路径
   const { run: onChangeModelPath } = useRequest(
     async (params: { source_path: string; target_path: string }) => {
-      const data = await httpRequest.post('/control_panel/model/filepath', params);
+      setMigratingStatus('pending');
+      const data = await httpRequest.post('/control_panel/model/filepath', params, { needModelChangeStore: true, setMigratingStatus });
       return data || {};
     },
     {
@@ -90,13 +91,11 @@ export function useModelSetting() {
       onSuccess: (data) => {
         message.success('模型存储路径修改成功');
         fetchModelPath();
-        setMigratingStatus('init');
       },
       onError: (error: Error & { handled?: boolean }) => {
         if (!error?.handled) {
           message.error(error?.message || '模型存储路径修改失败');
         }
-        setMigratingStatus('failed');
       },
     },
   );
