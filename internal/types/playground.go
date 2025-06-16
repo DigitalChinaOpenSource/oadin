@@ -76,13 +76,19 @@ type ChatRequest struct {
 
 // 聊天响应模型
 type ChatResponse struct {
-	ID         string `json:"id"`
-	Object     string `json:"object"`
-	Model      string `json:"model"`
-	ModelName  string `json:"model_name,omitempty"` // 新增字段
-	Content    string `json:"content"`
-	ToolCalls  []any  `json:"tool_calls,omitempty"` // 新增，支持Ollama工具调用
-	IsComplete bool   `json:"is_complete"`          // 流式输出时，是否是最后一个块
-	Thoughts   string `json:"thoughts,omitempty"`   // 深度思考的结果
-	Type       string `json:"type,omitempty"`       // "answer"、"thoughts"等
+	ID         string     `json:"id"`
+	Object     string     `json:"object"`
+	Model      string     `json:"model"`
+	ModelName  string     `json:"model_name,omitempty"` // 新增字段
+	Content    string     `json:"content"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"` // 新增，支持Ollama工具调用
+	IsComplete bool       `json:"is_complete"`          // 流式输出时，是否是最后一个块
+	Thoughts   string     `json:"thoughts,omitempty"`   // 深度思考的结果
+	Type       string     `json:"type,omitempty"`       // "answer"、"thoughts"等
+}
+type ToolCall struct {
+	Function struct {
+		Name      string                 `json:"name"`
+		Arguments map[string]interface{} `json:"arguments"`
+	} `json:"function"`
 }
