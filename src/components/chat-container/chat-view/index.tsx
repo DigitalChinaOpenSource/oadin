@@ -185,7 +185,9 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
               <Button
                 type="link"
                 danger
-                onClick={cancelRequest}
+                onClick={() => {
+                  cancelRequest();
+                }}
               >
                 停止生成
               </Button>

@@ -17,7 +17,7 @@ export default function useViewModel() {
     if (!currentSessionId && selectedModel?.id) {
       fetchCreateChat({ modelId: selectedModel.id });
     }
-  }, [currentSessionId]);
+  }, [currentSessionId, selectedModel]);
 
   const { run: fetchCreateChat } = useRequest(
     async (params: IPlaygroundSession) => {
