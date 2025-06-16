@@ -207,7 +207,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             )}
 
             {/* 流式输出结束后显示复制和重新发送按钮 */}
-            {!isLoading && streamingContent && !error && (
+            {!isLoading && !error && streamingContent && (
               <>
                 <Button
                   type="link"

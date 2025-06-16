@@ -134,7 +134,8 @@
   border-radius: 8px;
   background: #fff;
   padding: 16px;
-  ol {
+  ol,
+  ul {
     padding-left: 16px;
   }
 }

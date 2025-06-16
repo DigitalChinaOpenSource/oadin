@@ -152,14 +152,16 @@ export default function McpToolChat(props: IMcpToolChatData) {
           </div>
         )}
       </div>
-      <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
-        <Collapse
-          items={collapseItems}
-          bordered={false}
-          expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-          defaultActiveKey={['1']}
-        />
-      </div>
+      {status !== 'progress' && (
+        <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
+          <Collapse
+            items={collapseItems}
+            bordered={false}
+            expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
+            defaultActiveKey={['1']}
+          />
+        </div>
+      )}
     </div>
   );
 }
