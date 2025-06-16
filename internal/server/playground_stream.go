@@ -206,14 +206,15 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					// 保存思考内容（如果有）
 					if thoughts != "" && session.ThinkingEnabled {
 						thoughtsMsg := &types.ChatMessage{
-							ID:        uuid.New().String(),
-							SessionID: request.SessionID,
-							Role:      "system",
-							Content:   thoughts,
-							Order:     len(messages) + 2,
-							CreatedAt: time.Now(),
-							ModelID:   session.ModelID,
-							ModelName: session.ModelName,
+							ID:            uuid.New().String(),
+							SessionID:     request.SessionID,
+							Role:          "system",
+							Content:       thoughts,
+							Order:         len(messages) + 2,
+							CreatedAt:     time.Now(),
+							ModelID:       session.ModelID,
+							ModelName:     session.ModelName,
+							TotalDuration: resp.TotalDuration,
 						}
 						err = p.Ds.Add(ctx, thoughtsMsg)
 						if err != nil {
@@ -252,20 +253,20 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 								slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
 							}
 							fullContent += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
-							break
 						}
 					}
 
 					// 确保完整内容被保存和返回给客户端
 					assistantMsg := &types.ChatMessage{
-						ID:        assistantMsgID,
-						SessionID: request.SessionID,
-						Role:      "assistant",
-						Content:   fullContent,
-						Order:     len(messages) + 1,
-						CreatedAt: time.Now(),
-						ModelID:   session.ModelID,
-						ModelName: session.ModelName,
+						ID:            assistantMsgID,
+						SessionID:     request.SessionID,
+						Role:          "assistant",
+						Content:       fullContent,
+						Order:         len(messages) + 1,
+						CreatedAt:     time.Now(),
+						ModelID:       session.ModelID,
+						ModelName:     session.ModelName,
+						TotalDuration: resp.TotalDuration,
 					}
 					err = p.Ds.Add(ctx, assistantMsg)
 					if err != nil {

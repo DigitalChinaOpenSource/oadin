@@ -153,11 +153,12 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 			// 创建响应对象
 			resp := &types.ChatResponse{
-				Content:    content, // 只发送当前块的内容，而不是累积的内容
-				Model:      model,
-				IsComplete: isComplete,
-				ToolCalls:  toolCalls,
-				Object:     "chat.completion.chunk",
+				Content:       content, // 只发送当前块的内容，而不是累积的内容
+				Model:         model,
+				IsComplete:    isComplete,
+				ToolCalls:     toolCalls,
+				Object:        "chat.completion.chunk",
+				TotalDuration: ollamaResp.TotalDuration, // 使用HTTP响应的持续时间
 			} // 发送响应
 			// 只发送有内容或是最后一个块的响应
 			if resp.Content != "" || resp.IsComplete {
