@@ -243,6 +243,19 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						fullContent += resp.Content
 					}
 
+					// 如果没有内容但有工具调用，构建提示信息
+					if fullContent == "" && len(resp.ToolCalls) > 0 {
+						for _, toolCall := range resp.ToolCalls {
+							// toolCall.Function.Argument 是map[string]interface{}, 转为json字符串
+							arguments, err := json.Marshal(toolCall.Function.Arguments)
+							if err != nil {
+								slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
+							}
+							fullContent += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
+							break
+						}
+					}
+
 					// 确保完整内容被保存和返回给客户端
 					assistantMsg := &types.ChatMessage{
 						ID:        assistantMsgID,

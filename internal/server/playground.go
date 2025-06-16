@@ -277,9 +277,25 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	slog.Info("收到非流式响应",
 		"content_length", len(chatResp.Content),
 		"model", chatResp.Model,
-		"is_complete", chatResp.IsComplete)
+		"is_complete", chatResp.IsComplete,
+		"tool_calls_count", len(chatResp.ToolCalls),
+	)
 
 	response := chatResp.Content
+
+	// 如果没有内容但有工具调用，构建提示信息
+	if response == "" && len(chatResp.ToolCalls) > 0 {
+		slog.Info("模型未生成内容，但有工具调用，构建提示信息", "tool_calls_count", len(chatResp.ToolCalls), chatResp.ToolCalls)
+		for _, toolCall := range chatResp.ToolCalls {
+			// toolCall.Function.Argument 是map[string]interface{}, 转为json字符串
+			arguments, err := json.Marshal(toolCall.Function.Arguments)
+			if err != nil {
+				slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
+			}
+			response += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
+			break
+		}
+	}
 
 	// 保存模型回复
 	assistantMsg := &types.ChatMessage{
@@ -336,6 +352,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		Type:      "answer",
 		ModelId:   session.ModelID,
 		ModelName: session.ModelName,
+		ToolCalls: chatResp.ToolCalls, // 新增工具调用支持
 	}}
 	if chatResp.Thoughts != "" && session.ThinkingEnabled {
 		resultMessages = append(resultMessages, dto.Message{
