@@ -10,14 +10,14 @@ export default function useViewModel() {
   const [isUploadVisible, setIsUploadVisible] = useState(false);
   // TODO 获取当前是否下载词嵌入模型
   const { selectedModel } = useSelectedModelStore();
-  const { setCurrentSessionId, createNewChat } = useChatStore();
+  const { setCurrentSessionId, createNewChat, currentSessionId, messages } = useChatStore();
 
   useEffect(() => {
-    if (selectedModel && Object.keys(selectedModel).length > 0) {
+    // 如果当前会话ID不存在且已选择模型，则创建新的会话
+    if (!currentSessionId && selectedModel?.id) {
       fetchCreateChat({ modelId: selectedModel.id });
-      // TODO 通过判断 sessionId 查对应的历史记录，如果没有则新建一个会话
     }
-  }, [selectedModel]);
+  }, [currentSessionId]);
 
   const { run: fetchCreateChat } = useRequest(
     async (params: IPlaygroundSession) => {
@@ -37,11 +37,14 @@ export default function useViewModel() {
   );
 
   const handleCreateNewChat = () => {
-    createNewChat();
+    if (messages.length === 0) {
+      return;
+    }
     if (!selectedModel?.id) {
       message.error('请先选择一个模型');
       return;
     }
+    createNewChat();
     fetchCreateChat({
       modelId: selectedModel?.id || '',
     });
