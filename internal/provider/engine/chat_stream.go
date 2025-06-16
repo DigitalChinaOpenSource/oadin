@@ -47,7 +47,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 		// 跟踪流的状态
 		accumulatedContent := ""
-		var toolCalls []any
+		var toolCalls []types.ToolCall
 
 		// 处理流式响应
 		for result := range ch {
@@ -97,16 +97,10 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 				// 提取工具调用(如果有)
 				if ollamaResp.Message != nil && ollamaResp.Message.ToolCalls != nil && len(ollamaResp.Message.ToolCalls) > 0 {
-					toolCalls = make([]any, len(ollamaResp.Message.ToolCalls))
-					for i, tc := range ollamaResp.Message.ToolCalls {
-						toolCalls[i] = tc
-					}
+					toolCalls = ollamaResp.Message.ToolCalls
 					fmt.Printf("[ChatStream] 提取到工具调用，数量: %d\n", len(toolCalls))
 				} else if ollamaResp.ToolCalls != nil && len(ollamaResp.ToolCalls) > 0 {
-					toolCalls = make([]any, len(ollamaResp.ToolCalls))
-					for i, tc := range ollamaResp.ToolCalls {
-						toolCalls[i] = tc
-					}
+					toolCalls = ollamaResp.ToolCalls
 					fmt.Printf("[ChatStream] 提取到工具调用，数量: %d\n", len(toolCalls))
 				}
 			} else {
@@ -134,7 +128,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 					// 提取工具调用
 					if msg, ok := data["message"].(map[string]interface{}); ok {
-						if tc, ok := msg["tool_calls"].([]interface{}); ok && len(tc) > 0 {
+						if tc, ok := msg["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
 							toolCalls = tc
 							fmt.Printf("[ChatStream] 提取到工具调用，数量: %d\n", len(toolCalls))
 						}
@@ -142,7 +136,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 					// 如果没有在message中找到，尝试从顶层查找
 					if len(toolCalls) == 0 {
-						if tc, ok := data["tool_calls"].([]interface{}); ok && len(tc) > 0 {
+						if tc, ok := data["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
 							toolCalls = tc
 							fmt.Printf("[ChatStream] 从顶层提取到工具调用，数量: %d\n", len(toolCalls))
 						}

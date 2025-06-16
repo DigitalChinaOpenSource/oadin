@@ -62,6 +62,7 @@ func (t *ByzeCoreServer) SendMessageStream(c *gin.Context) {
 					IsComplete: chunk.IsComplete,
 					Thoughts:   chunk.Thoughts,
 					Type:       chunk.Type,
+					ToolCalls:  chunk.ToolCalls, // 新增，支持Ollama工具调用
 				},
 			} // 序列化为JSON
 			data, err := json.Marshal(response)

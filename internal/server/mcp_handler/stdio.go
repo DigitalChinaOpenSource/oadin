@@ -50,7 +50,7 @@ func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*cli
 			config.Args...,
 		)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		if err := stdioTransport.Start(ctx); err != nil {
@@ -75,7 +75,7 @@ func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*cli
 	}
 
 	// 等待一小段时间后重试一次
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	log.Printf("initTransportClient: retrying after failure for server %s", config.Id)
 	return try()
 }
