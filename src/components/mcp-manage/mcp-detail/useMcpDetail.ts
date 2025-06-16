@@ -4,7 +4,7 @@ import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import testDta from './mcp_schema.json';
-import { Modal } from 'antd';
+import { message, Modal } from 'antd';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 
 export const useMcpDetail = (id?: string | number) => {
@@ -18,7 +18,6 @@ export const useMcpDetail = (id?: string | number) => {
   const { loading: mcpDetailLoading, runAsync: fetchMcpDetail } = useRequest(
     async () => {
       const data = await httpRequest.get<McpDetailType>(`/mcp/${serviceId}`);
-      // if (!data) throw new Error('获取mcp详情失败');
       return data || testDta;
     },
     {
@@ -55,6 +54,7 @@ export const useMcpDetail = (id?: string | number) => {
           ...(mcpDetail as McpDetailType),
           status: 1,
         });
+        message.success('mcp添加成功');
       },
       onError: (error) => {
         console.error('下载本地mcp失败:', error);
@@ -63,25 +63,21 @@ export const useMcpDetail = (id?: string | number) => {
   );
 
   // 远端mcp授权
-  const {
-    params: curAuthParams,
-    loading: authMcpLoading,
-    runAsync: authMcp,
-  } = useRequest(
+  const { loading: authMcpLoading, runAsync: authMcp } = useRequest(
     async (authParams: any, curMcpDetail?: McpDetailType) => {
       return await httpRequest.put<McpDetailType>(`/mcp/${curMcpDetail ? curMcpDetail.id : serviceId}/auth`, authParams);
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: (data, params) => {
         console.log('授权mcp===>', data);
         setMcpDetail({
           ...(mcpDetail as McpDetailType),
           authorized: 1, // 1为已授权
         });
         // 授权成功 开始下载
-        if (curAuthParams[1]) {
-          downMcp(curAuthParams[1]);
+        if (params[1]) {
+          downMcp(params[1]);
         } else {
           downMcp();
         }
@@ -134,11 +130,9 @@ export const useMcpDetail = (id?: string | number) => {
           ...(mcpDetail as McpDetailType),
           status: 0,
         });
+        message.success('取消添加mcp成功');
       },
-      onError: (error) => {
-        console.error('授权mcp失败:', error);
-        return false;
-      },
+      onError: (error) => {},
     },
   );
 

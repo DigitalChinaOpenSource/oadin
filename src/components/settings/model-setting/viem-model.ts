@@ -71,7 +71,7 @@ export function useModelSetting() {
     {
       manual: true,
       onSuccess: (data) => {
-        message.success(data.message || '模型下载源地址修改成功');
+        message.success('模型下载源地址修改成功');
       },
       onError: (error) => {
         console.log('保存模型下载源地址失败', error);
@@ -88,9 +88,7 @@ export function useModelSetting() {
     {
       manual: true,
       onSuccess: (data) => {
-        if (data) {
-          message.success('模型存储路径修改成功');
-        }
+        message.success('模型存储路径修改成功');
         fetchModelPath();
         setMigratingStatus('init');
       },

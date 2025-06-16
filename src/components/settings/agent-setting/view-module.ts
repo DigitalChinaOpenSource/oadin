@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { AgentSettingFormValues } from '@/components/settings/agent-setting/index.tsx';
+import { message } from 'antd';
 
 export function useAgentSettingViewModel() {
   // 是否开启代理设置
@@ -15,24 +16,17 @@ export function useAgentSettingViewModel() {
   }, [systemProxy.enabled]);
 
   // 修改代理启停
-  const {
-    params,
-    loading: changeProxyLoading,
-    run: changeProxy,
-  } = useRequest(
+  const { loading: changeProxyLoading, run: changeProxy } = useRequest(
     async (enabled: boolean) => {
       return await httpRequest.put('/system/proxy/switch', { enabled });
     },
     {
       manual: true,
-      onSuccess: (data) => {
-        console.log('paramsparams', params);
-        setAgentChecked(params[0] as boolean);
+      onSuccess: (data, params) => {
+        setAgentChecked(params[0]);
+        message.success('代理地址设置成功');
       },
-      onError: (error) => {
-        console.log('paramsparams222222', params);
-        console.log('保存模型下载源地址失败', error);
-      },
+      onError: (error) => {},
     },
   );
 
@@ -44,11 +38,10 @@ export function useAgentSettingViewModel() {
     {
       manual: true,
       onSuccess: (data) => {
-        console.log('paramsparams', params);
         setAgentChecked(true);
+        message.success('代理地址设置成功');
       },
       onError: (error) => {
-        console.log('paramsparams222222', params);
         console.log('保存模型下载源地址失败', error);
       },
     },

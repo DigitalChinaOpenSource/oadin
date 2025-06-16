@@ -1,6 +1,6 @@
 import styles from './index.module.scss';
 import favicon from '@/assets/favicon.png';
-import { Button } from 'antd';
+import { Button, Modal } from 'antd';
 import { RightOutlined, ExportOutlined } from '@ant-design/icons';
 import UpdateHistory from '@/components/settings/about-us/update-history';
 import { useEffect, useState } from 'react';
@@ -17,13 +17,30 @@ export default function AboutUs() {
   // 意见反馈
   const [openFeedback, setOpenFeedback] = useState(false);
   // 奥丁服务状态
-  const { checkByzeStatus, fetchByzeServerStatus } = useByzeServerCheckStore();
+  const { checkByzeStatus, fetchByzeServerStatus, checkByzeServerLoading } = useByzeServerCheckStore();
   // 关于我们详情
   const { aboutDetails, aboutUsLoading, fetchAboutUsDetail } = useAboutUsView();
 
   useEffect(() => {
     fetchAboutUsDetail();
   }, []);
+
+  const handleByzeRefresh = () => {
+    Modal.confirm({
+      title: '确认重启吗？',
+      okText: '确认',
+      centered: true,
+      okButtonProps: {
+        style: { backgroundColor: '#4f4dff' },
+      },
+      async onOk() {
+        await fetchByzeServerStatus(); // 重启byze服务
+      },
+      onCancel() {
+        console.log('Cancel');
+      },
+    });
+  };
 
   return (
     <div className={styles.aboutUs}>
@@ -42,7 +59,9 @@ export default function AboutUs() {
                   />
                 </div>
                 <div className={styles.headerContent}>
-                  <div className={styles.headerTitle}>{aboutDetails?.name}</div>
+                  <div className={styles.headerTitle}>
+                    {aboutDetails?.name} {aboutDetails?.enName && `(${aboutDetails?.enName})`}
+                  </div>
                   <div className={styles.headerDesc}>{aboutDetails?.description}</div>
                 </div>
               </div>
@@ -67,7 +86,7 @@ export default function AboutUs() {
               </div>
               <Button
                 type="default"
-                onClick={fetchByzeServerStatus}
+                onClick={handleByzeRefresh}
               >
                 重启
               </Button>

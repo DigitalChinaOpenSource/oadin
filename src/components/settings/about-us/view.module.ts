@@ -4,6 +4,7 @@ import { httpRequest } from '@/utils/httpRequest.ts';
 
 interface IAboutUsView {
   name: string;
+  enName?: string;
   version: string;
   description: string;
   logo: string;

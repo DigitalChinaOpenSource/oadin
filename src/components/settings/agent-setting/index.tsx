@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, Input, Tooltip, Button, Space, Switch } from 'antd';
 import styles from './index.module.scss';
 import { useAgentSettingViewModel } from './view-module';
@@ -14,6 +14,11 @@ const AgentSetting: React.FC = () => {
   // 创建表单实例并指定泛型类型
   const [form] = Form.useForm<AgentSettingFormValues>();
   const { agentChecked, systemProxy, changeProxy, saveProxy, saveProxyLoading } = useAgentSettingViewModel();
+
+  // 监听systemProxy变化，回显到表单
+  useEffect(() => {
+    form.setFieldsValue(systemProxy);
+  }, [systemProxy, form]);
 
   // 表单提交处理
   const onFinish = (values: AgentSettingFormValues) => {
