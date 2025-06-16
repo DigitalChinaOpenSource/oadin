@@ -293,7 +293,6 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 				slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
 			}
 			response += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
-			break
 		}
 	}
 
