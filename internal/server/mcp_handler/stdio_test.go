@@ -27,7 +27,7 @@ func TestMcpClientAndLLM(t *testing.T) {
 		Args:    []string{"x", "-y", "bing-cn-mcp"},
 		Env:     nil,
 	}
-	mcpService := NewMcpService()
+	mcpService := NewStdioTransport()
 	_, err := mcpService.Start(config)
 	if err != nil {
 		log.Fatalf("Failed to initialize MCP client: %v", err)

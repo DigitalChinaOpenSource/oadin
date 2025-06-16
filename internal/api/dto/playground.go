@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"byze/internal/types"
 	"byze/internal/utils/bcode"
 )
 
@@ -33,10 +34,10 @@ type GetSessionsResponse struct {
 }
 
 type SendMessageRequest struct {
-	SessionId string           `json:"sessionId"`
-	Content   string           `json:"content"`
-	Tools     []map[string]any `json:"tools,omitempty"`
-	McpIds    []string         `json:"mcpIds,omitempty"`
+	SessionId string       `json:"sessionId"`
+	Content   string       `json:"content"`
+	Tools     []types.Tool `json:"tools,omitempty"`
+	McpIds    []string     `json:"mcpIds,omitempty"`
 }
 
 // 发送消息响应
@@ -47,15 +48,16 @@ type SendMessageResponse struct {
 
 // 消息信息
 type Message struct {
-	Id        string `json:"id"`
-	SessionId string `json:"sessionId"`
-	Role      string `json:"role"`
-	Content   string `json:"content"`
-	CreatedAt string `json:"createdAt"`
-	Thoughts  string `json:"thoughts,omitempty"`
-	Type      string `json:"type,omitempty"`
-	ModelId   string `json:"modelId,omitempty"`
-	ModelName string `json:"modelName,omitempty"`
+	Id        string           `json:"id"`
+	SessionId string           `json:"sessionId"`
+	Role      string           `json:"role"`
+	Content   string           `json:"content"`
+	CreatedAt string           `json:"createdAt"`
+	Thoughts  string           `json:"thoughts,omitempty"`
+	Type      string           `json:"type,omitempty"`
+	ModelId   string           `json:"modelId,omitempty"`
+	ModelName string           `json:"modelName,omitempty"`
+	ToolCalls []types.ToolCall `json:"tool_calls,omitempty"` // 新增，支持Ollama工具调用
 }
 
 // 获取会话消息请求

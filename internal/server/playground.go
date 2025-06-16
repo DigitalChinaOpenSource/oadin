@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log/slog"
 	"time"
@@ -18,12 +19,31 @@ import (
 	"github.com/google/uuid"
 )
 
+type Playground interface {
+	CreateSession(ctx context.Context, request *dto.CreateSessionRequest) (*dto.CreateSessionResponse, error)
+	GetSessions(ctx context.Context) (*dto.GetSessionsResponse, error)
+	SendMessage(ctx context.Context, request *dto.SendMessageRequest) (*dto.SendMessageResponse, error)
+	GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error)
+	DeleteSession(ctx context.Context, request *dto.DeleteSessionRequest) (*dto.DeleteSessionResponse, error)
+	ChangeSessionModel(ctx context.Context, req *dto.ChangeSessionModelRequest) (*dto.ChangeSessionModelResponse, error)
+
+	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
+
+	UploadFile(ctx context.Context, request *dto.UploadFileRequest, fileHeader io.Reader, filename string, filesize int64) (*dto.UploadFileResponse, error)
+	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
+	DeleteFile(ctx context.Context, request *dto.DeleteFileRequest) (*dto.DeleteFileResponse, error)
+	ProcessFile(ctx context.Context, request *dto.GenerateEmbeddingRequest) (*dto.GenerateEmbeddingResponse, error)
+
+	findRelevantContext(ctx context.Context, session *types.ChatSession, query string) (string, error)
+	findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error)
+}
+
 type PlaygroundImpl struct {
 	Ds datastore.Datastore
 }
 
 // 创建Playground服务实例
-func NewPlayground() *PlaygroundImpl {
+func NewPlayground() Playground {
 	playground := &PlaygroundImpl{
 		Ds: datastore.GetDefaultDatastore(),
 	}
@@ -128,6 +148,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 
 // GetSessions 获取所有会话
 func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsResponse, error) {
+	slog.Info("GetSessions called")
 	sessionQuery := &types.ChatSession{}
 	sessions, err := p.Ds.List(ctx, sessionQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
@@ -139,9 +160,13 @@ func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsRespo
 		return nil, err
 	}
 
+	slog.Info("Found sessions in database", "count", len(sessions))
+
 	sessionDTOs := make([]dto.Session, 0, len(sessions))
 	for _, s := range sessions {
 		session := s.(*types.ChatSession)
+		slog.Info("Processing session", "id", session.ID, "title", session.Title)
+
 		sessionDTOs = append(sessionDTOs, dto.Session{
 			Id:              session.ID,
 			Title:           session.Title,
@@ -237,7 +262,8 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if session.ThinkingEnabled {
 		chatRequest.Options["thinking"] = true
 	}
-	if request.Tools != nil {
+
+	if len(request.Tools) > 0 {
 		chatRequest.Tools = request.Tools
 	}
 
@@ -251,9 +277,25 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	slog.Info("收到非流式响应",
 		"content_length", len(chatResp.Content),
 		"model", chatResp.Model,
-		"is_complete", chatResp.IsComplete)
+		"is_complete", chatResp.IsComplete,
+		"tool_calls_count", len(chatResp.ToolCalls),
+	)
 
 	response := chatResp.Content
+
+	// 如果没有内容但有工具调用，构建提示信息
+	if response == "" && len(chatResp.ToolCalls) > 0 {
+		slog.Info("模型未生成内容，但有工具调用，构建提示信息", "tool_calls_count", len(chatResp.ToolCalls), chatResp.ToolCalls)
+		for _, toolCall := range chatResp.ToolCalls {
+			// toolCall.Function.Argument 是map[string]interface{}, 转为json字符串
+			arguments, err := json.Marshal(toolCall.Function.Arguments)
+			if err != nil {
+				slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
+			}
+			response += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
+			break
+		}
+	}
 
 	// 保存模型回复
 	assistantMsg := &types.ChatMessage{
@@ -310,6 +352,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		Type:      "answer",
 		ModelId:   session.ModelID,
 		ModelName: session.ModelName,
+		ToolCalls: chatResp.ToolCalls, // 新增工具调用支持
 	}}
 	if chatResp.Thoughts != "" && session.ThinkingEnabled {
 		resultMessages = append(resultMessages, dto.Message{
@@ -331,6 +374,8 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 
 // 获取会话中的消息
 func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error) {
+	slog.Info("GetMessages called", "session_id", request.SessionId)
+
 	messageQuery := &types.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
@@ -341,6 +386,8 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 		slog.Error("Failed to list chat messages", "error", err)
 		return nil, err
 	}
+
+	slog.Info("Found messages in database", "session_id", request.SessionId, "count", len(messages))
 
 	messageDTOs := make([]dto.Message, 0, len(messages))
 	for _, m := range messages {
@@ -484,112 +531,3 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 		},
 	}, nil
 }
-
-// 处理消息中的mcp工具调用
-// func (p *PlaygroundImpl) HandleMCPToolInvocation(ctx context.Context, model, query string, mcpTools []dto.McpTool) ([]dto.McpToolResult, error) {
-// 	if len(mcpTools) == 0 {
-// 		return nil, nil
-// 	}
-// 	var results []dto.McpToolResult
-
-// 	engineName := "ollama" // 默认使用Ollama引擎
-// 	modelEngine := provider.GetModelEngine(engineName)
-
-// 	userMessage := map[string]string{
-// 		"role":    "user",
-// 		"content": query,
-// 	}
-// 	chatRequest := &types.ChatRequest{
-// 		Model:    model,
-// 		Messages: []map[string]string{userMessage},
-// 		Tools:    make([]map[string]any, 0, len(mcpTools)),
-// 	}
-// 	for _, mcpTool := range mcpTools {
-// 		chatRequest.Tools = append(chatRequest.Tools, map[string]any{
-// 			"type":     "function",
-// 			"function": mcpTool.Tool,
-// 		})
-// 	}
-
-// 	// 发起带tools的chat请求
-// 	chatResp, err := modelEngine.Chat(ctx, chatRequest)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// 解析chatResp中的工具调用结果（假设返回内容中包含tool_calls字段）
-// 	var toolCalls []struct {
-// 		Function struct {
-// 			Name      string         `json:"name"`
-// 			Arguments map[string]any `json:"arguments"`
-// 		} `json:"function"`
-// 	}
-// 	// 兼容不同模型返回格式
-// 	if chatResp != nil && chatResp.Content != "" {
-// 		var respMap map[string]interface{}
-// 		// 这里的 Content 对应api的 message
-// 		if err := json.Unmarshal([]byte(chatResp.Content), &respMap); err == nil {
-// 			if tc, ok := respMap["tool_calls"]; ok {
-// 				if tcArr, ok := tc.([]interface{}); ok {
-// 					for _, t := range tcArr {
-// 						b, _ := json.Marshal(t)
-// 						var call struct {
-// 							Function struct {
-// 								Name      string         `json:"name"`
-// 								Arguments map[string]any `json:"arguments"`
-// 							} `json:"function"`
-// 						}
-// 						if err := json.Unmarshal(b, &call); err == nil {
-// 							toolCalls = append(toolCalls, call)
-// 						}
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	// 将toolCalls转为rpc.ClientRunToolRequest格式
-// 	if len(toolCalls) == 0 {
-// 		slog.Warn("No tool calls found in chat response", "response", chatResp.Content)
-// 		return nil, nil
-// 	}
-// 	clientRunToolRequests := make([]rpc.ClientRunToolRequest, 0, len(toolCalls))
-// 	for _, call := range toolCalls {
-// 		for _, mcpTool := range mcpTools {
-// 			if mcpTool.Tool.Name == call.Function.Name {
-// 				clientRunToolRequests = append(clientRunToolRequests, rpc.ClientRunToolRequest{
-// 					MCPId:    mcpTool.MCPId,
-// 					ToolName: call.Function.Name,
-// 					ToolArgs: call.Function.Arguments,
-// 				})
-// 				break
-// 			}
-// 		}
-// 	}
-
-// 	mcpHandler := mcp_handler.NewMcpService()
-// 	for _, req := range clientRunToolRequests {
-// 		// 调用MCP服务器的工具
-// 		mcpResult, err := mcpHandler.CallTool(req.MCPId, mcp.CallToolParams{
-// 			Name:      req.ToolName,
-// 			Arguments: req.ToolArgs,
-// 		})
-// 		if err != nil {
-// 			slog.Error("Failed to call MCP tool", "error", err, "mcpId", req.MCPId, "toolName", req.ToolName)
-// 			continue // 继续处理其他工具调用
-// 		}
-
-// 		// 构建结果
-// 		for _, mcpTool := range mcpTools {
-// 			if mcpTool.MCPId == req.MCPId {
-// 				results = append(results, dto.McpToolResult{
-// 					McpTool:  mcpTool,
-// 					ToolArgs: req.ToolArgs,
-// 					Result:   *mcpResult,
-// 				})
-// 				break
-// 			}
-// 		}
-// 	}
-// 	return results, nil
-// }
