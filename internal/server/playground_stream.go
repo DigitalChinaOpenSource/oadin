@@ -2,8 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"strings"
 	"time"
 
 	"byze/internal/api/dto"
@@ -111,7 +114,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		}
 
 		// Chat request (with tools)
-		if request.Tools != nil {
+		if len(request.Tools) > 0 {
 			chatRequest.Tools = request.Tools
 		}
 
@@ -126,7 +129,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		for {
 			select {
 			case resp, ok := <-responseStream:
-				if !ok { // 流结束					// 保存完整的助手回复，即使内容为空也要保存
+				if !ok { // 流结束
 					// 因为有可能最后一个块是完成标记但内容为空
 					slog.Info("流式输出结束，准备保存助手回复",
 						"content_length", len(fullContent))
@@ -156,11 +159,47 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 					// 如果是第一条消息，更新会话标题
 					if len(messages) == 0 {
-						title := "新对话 " + time.Now().Format("2006-01-02")
-						session.Title = title
-						err = p.Ds.Put(ctx, session)
-						if err != nil {
-							slog.Error("Failed to update session title", "error", err)
+						genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
+						// 构造 HTTP 请求体
+						payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`,
+							session.ModelName, genTitlePrompt)
+						slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
+						client := &http.Client{Timeout: 15 * time.Second}
+						req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
+						if err == nil {
+							req.Header.Set("Content-Type", "application/json")
+							resp, err := client.Do(req)
+							title := "新对话 " + time.Now().Format("2006-01-02")
+							if err == nil && resp != nil {
+								defer resp.Body.Close()
+								var result struct {
+									Content string `json:"content"`
+									Message struct {
+										Content string `json:"content"`
+									} `json:"message"`
+								}
+								decodeErr := json.NewDecoder(resp.Body).Decode(&result)
+								slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
+								if decodeErr == nil {
+									if len(result.Content) > 0 {
+										title = result.Content
+									} else if len(result.Message.Content) > 0 {
+										title = result.Message.Content
+									}
+									runes := []rune(title)
+									if len(runes) > 10 {
+										title = string(runes[:10])
+									} else {
+										title = string(runes)
+									}
+								}
+							}
+							slog.Info("[DEBUG] TitleGen final title", "title", title)
+							session.Title = title
+							err = p.Ds.Put(context.Background(), session)
+							if err != nil {
+								slog.Error("Failed to update session title", "error", err)
+							}
 						}
 					}
 
@@ -170,7 +209,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 							ID:        uuid.New().String(),
 							SessionID: request.SessionID,
 							Role:      "system",
-							Content:   "思考过程: " + thoughts,
+							Content:   thoughts,
 							Order:     len(messages) + 2,
 							CreatedAt: time.Now(),
 							ModelID:   session.ModelID,
@@ -184,15 +223,15 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 					return
 				}
-
 				msgType := "answer"
 				if resp.Thoughts != "" {
 					msgType = "thoughts"
-				} // 保留原始的 Content 
+				} // 保留原始的 Content
 				originalContent := resp.Content
 				resp.Type = msgType
 				resp.Model = session.ModelName
-				resp.ModelName = session.ModelName 
+				resp.ModelName = session.ModelName
+
 				if resp.IsComplete {
 					slog.Info("收到流式输出完成标记",
 						"is_complete", resp.IsComplete,
@@ -204,11 +243,25 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						fullContent += resp.Content
 					}
 
+					// 如果没有内容但有工具调用，构建提示信息
+					if fullContent == "" && len(resp.ToolCalls) > 0 {
+						for _, toolCall := range resp.ToolCalls {
+							// toolCall.Function.Argument 是map[string]interface{}, 转为json字符串
+							arguments, err := json.Marshal(toolCall.Function.Arguments)
+							if err != nil {
+								slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
+							}
+							fullContent += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
+							break
+						}
+					}
+
+					// 确保完整内容被保存和返回给客户端
 					assistantMsg := &types.ChatMessage{
 						ID:        assistantMsgID,
 						SessionID: request.SessionID,
 						Role:      "assistant",
-						Content:   fullContent, 
+						Content:   fullContent,
 						Order:     len(messages) + 1,
 						CreatedAt: time.Now(),
 						ModelID:   session.ModelID,

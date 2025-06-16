@@ -26,13 +26,13 @@ type ollamaAPIResponse struct {
 	EvalCount          int              `json:"eval_count,omitempty"`
 	EvalDuration       int64            `json:"eval_duration,omitempty"`
 	Message            *ollamaMessage   `json:"message,omitempty"` // Used by /api/chat
-	ToolCalls          []map[string]any `json:"tool_calls,omitempty"`
+	ToolCalls          []types.ToolCall `json:"tool_calls,omitempty"`
 }
 
 type ollamaMessage struct {
 	Role      string           `json:"role"`
 	Content   string           `json:"content"`
-	ToolCalls []map[string]any `json:"tool_calls,omitempty"`
+	ToolCalls []types.ToolCall `json:"tool_calls,omitempty"`
 }
 
 func NewEngine() *Engine {
@@ -143,7 +143,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 		// Log the raw response for debugging
 		fmt.Printf("[Chat] Raw response received, length: %d\n", len(result.HTTP.Body))
-
+		fmt.Printf("[Chat] Raw response content: %s\n", string(result.HTTP.Body))
 		// 尝试直接解析成完整的ChatResponse
 		var response types.ChatResponse
 		if err := json.Unmarshal(result.HTTP.Body, &response); err == nil && response.Content != "" {
@@ -179,18 +179,12 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			model := ollamaResp.Model
 
 			// 提取工具调用(如果有)
-			var toolCalls []any
+			var toolCalls []types.ToolCall
 			if ollamaResp.Message != nil && ollamaResp.Message.ToolCalls != nil && len(ollamaResp.Message.ToolCalls) > 0 {
-				toolCalls = make([]any, len(ollamaResp.Message.ToolCalls))
-				for i, tc := range ollamaResp.Message.ToolCalls {
-					toolCalls[i] = tc
-				}
+				toolCalls = ollamaResp.Message.ToolCalls
 				fmt.Printf("[Chat] 提取到工具调用，数量: %d\n", len(toolCalls))
 			} else if ollamaResp.ToolCalls != nil && len(ollamaResp.ToolCalls) > 0 {
-				toolCalls = make([]any, len(ollamaResp.ToolCalls))
-				for i, tc := range ollamaResp.ToolCalls {
-					toolCalls[i] = tc
-				}
+				toolCalls = ollamaResp.ToolCalls
 				fmt.Printf("[Chat] 提取到工具调用，数量: %d\n", len(toolCalls))
 			}
 
@@ -214,7 +208,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 		content := ""
 		isComplete := false
 		model := ""
-		var toolCalls []any
+		var toolCalls []types.ToolCall
 
 		// 尝试提取message.content (Ollama /api/chat)
 		if msg, ok := data["message"].(map[string]interface{}); ok {
@@ -225,7 +219,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			}
 
 			// 提取tool_calls
-			if tc, ok := msg["tool_calls"].([]interface{}); ok && len(tc) > 0 {
+			if tc, ok := msg["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
 				toolCalls = tc
 				fmt.Printf("[Chat] 提取到tool_calls，数量: %d\n", len(toolCalls))
 			}
@@ -259,7 +253,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 		// 若还没有提取到工具调用，尝试从顶层提取
 		if len(toolCalls) == 0 {
-			if tc, ok := data["tool_calls"].([]interface{}); ok && len(tc) > 0 {
+			if tc, ok := data["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
 				toolCalls = tc
 				fmt.Printf("[Chat] 从顶层提取到tool_calls，数量: %d\n", len(toolCalls))
 			}
