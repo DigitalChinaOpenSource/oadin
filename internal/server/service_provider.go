@@ -394,10 +394,36 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 		}
 		server := ChooseCheckServer(*sp, model.ModelName)
 		if server == nil {
+			model.Status = "failed"
+			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+				return nil, err
+			} else if errors.Is(err, datastore.ErrEntityInvalid) {
+				err = ds.Add(ctx, &model)
+				if err != nil {
+					return nil, err
+				}
+			}
+			err = ds.Put(ctx, &model)
+			if err != nil {
+				return nil, err
+			}
 			return nil, bcode.ErrProviderIsUnavailable
 		}
 		checkRes := server.CheckServer()
 		if !checkRes {
+			model.Status = "failed"
+			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+				return nil, err
+			} else if errors.Is(err, datastore.ErrEntityInvalid) {
+				err = ds.Add(ctx, &model)
+				if err != nil {
+					return nil, err
+				}
+			}
+			err = ds.Put(ctx, &model)
+			if err != nil {
+				return nil, err
+			}
 			return nil, bcode.ErrProviderIsUnavailable
 		}
 		model.Status = "downloaded"

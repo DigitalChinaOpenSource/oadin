@@ -19,7 +19,7 @@ type ChatSession struct {
 // Entity接口
 func (s *ChatSession) SetCreateTime(t time.Time) { s.CreatedAt = t }
 func (s *ChatSession) SetUpdateTime(t time.Time) { s.UpdatedAt = t }
-func (s *ChatSession) PrimaryKey() string        { return s.ID }
+func (s *ChatSession) PrimaryKey() string        { return "id" }
 func (s *ChatSession) TableName() string         { return "chat_sessions" }
 func (s *ChatSession) Index() map[string]interface{} {
 	// 只有ID有值时才添加到查询条件中，否则返回空索引以查询所有记录
@@ -45,7 +45,7 @@ type ChatMessage struct {
 
 func (m *ChatMessage) SetCreateTime(t time.Time) { m.CreatedAt = t }
 func (m *ChatMessage) SetUpdateTime(t time.Time) {}
-func (m *ChatMessage) PrimaryKey() string        { return m.ID }
+func (m *ChatMessage) PrimaryKey() string        { return "id" }
 func (m *ChatMessage) TableName() string         { return "chat_messages" }
 func (m *ChatMessage) Index() map[string]interface{} {
 	result := map[string]interface{}{}
