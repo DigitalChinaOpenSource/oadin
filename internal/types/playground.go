@@ -22,9 +22,13 @@ func (s *ChatSession) SetUpdateTime(t time.Time) { s.UpdatedAt = t }
 func (s *ChatSession) PrimaryKey() string        { return "id" }
 func (s *ChatSession) TableName() string         { return "chat_sessions" }
 func (s *ChatSession) Index() map[string]interface{} {
-	return map[string]interface{}{
-		"id": s.ID,
+	// 只有ID有值时才添加到查询条件中，否则返回空索引以查询所有记录
+	if s.ID != "" {
+		return map[string]interface{}{
+			"id": s.ID,
+		}
 	}
+	return map[string]interface{}{}
 }
 
 // 对话消息
@@ -44,10 +48,19 @@ func (m *ChatMessage) SetUpdateTime(t time.Time) {}
 func (m *ChatMessage) PrimaryKey() string        { return "id" }
 func (m *ChatMessage) TableName() string         { return "chat_messages" }
 func (m *ChatMessage) Index() map[string]interface{} {
-	return map[string]interface{}{
-		"id":         m.ID,
-		"session_id": m.SessionID,
+	result := map[string]interface{}{}
+
+	// 只有当ID有值时，才添加ID条件
+	if m.ID != "" {
+		result["id"] = m.ID
 	}
+
+	// 只有当SessionID有值时，才添加session_id条件
+	if m.SessionID != "" {
+		result["session_id"] = m.SessionID
+	}
+
+	return result
 }
 
 // 聊天请求模型
@@ -58,18 +71,24 @@ type ChatRequest struct {
 	MaxTokens   int                 `json:"max_tokens,omitempty"`
 	Stream      bool                `json:"stream,omitempty"`
 	Options     map[string]any      `json:"options,omitempty"`
-	Tools       []map[string]any    `json:"tools,omitempty"` // 新增，支持Ollama工具调用
+	Tools       []Tool              `json:"tools,omitempty"` // 新增，支持Ollama工具调用
 }
 
 // 聊天响应模型
 type ChatResponse struct {
-	ID         string `json:"id"`
-	Object     string `json:"object"`
-	Model      string `json:"model"`
-	ModelName  string `json:"model_name,omitempty"` // 新增字段
-	Content    string `json:"content"`
-	ToolCalls  []any  `json:"tool_calls,omitempty"` // 新增，支持Ollama工具调用
-	IsComplete bool   `json:"is_complete"`          // 流式输出时，是否是最后一个块
-	Thoughts   string `json:"thoughts,omitempty"`   // 深度思考的结果
-	Type       string `json:"type,omitempty"`       // "answer"、"thoughts"等
+	ID         string     `json:"id"`
+	Object     string     `json:"object"`
+	Model      string     `json:"model"`
+	ModelName  string     `json:"model_name,omitempty"` // 新增字段
+	Content    string     `json:"content"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"` // 新增，支持Ollama工具调用
+	IsComplete bool       `json:"is_complete"`          // 流式输出时，是否是最后一个块
+	Thoughts   string     `json:"thoughts,omitempty"`   // 深度思考的结果
+	Type       string     `json:"type,omitempty"`       // "answer"、"thoughts"等
+}
+type ToolCall struct {
+	Function struct {
+		Name      string                 `json:"name"`
+		Arguments map[string]interface{} `json:"arguments"`
+	} `json:"function"`
 }
