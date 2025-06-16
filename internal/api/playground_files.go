@@ -11,7 +11,7 @@ import (
 )
 
 // 上传文件
-func (h *PlaygroundHandler) UploadFile(c *gin.Context) {
+func (t *ByzeCoreServer) UploadFile(c *gin.Context) {
 	// 解析表单
 	sessionID := c.PostForm("sessionId")
 	if sessionID == "" {
@@ -53,7 +53,7 @@ func (h *PlaygroundHandler) UploadFile(c *gin.Context) {
 	fileQuery := &dto.GetFilesRequest{
 		SessionID: sessionID,
 	}
-	filesResp, err := h.playground.GetFiles(c.Request.Context(), fileQuery)
+	filesResp, err := t.Playground.GetFiles(c.Request.Context(), fileQuery)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -69,7 +69,7 @@ func (h *PlaygroundHandler) UploadFile(c *gin.Context) {
 		SessionID: sessionID,
 	}
 
-	resp, err := h.playground.UploadFile(c.Request.Context(), req, file, header.Filename, header.Size)
+	resp, err := t.Playground.UploadFile(c.Request.Context(), req, file, header.Filename, header.Size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -79,7 +79,7 @@ func (h *PlaygroundHandler) UploadFile(c *gin.Context) {
 }
 
 // 获取文件列表
-func (h *PlaygroundHandler) GetFiles(c *gin.Context) {
+func (t *ByzeCoreServer) GetFiles(c *gin.Context) {
 	sessionID := c.Query("sessionId")
 	if sessionID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "sessionId is required"})
@@ -90,7 +90,7 @@ func (h *PlaygroundHandler) GetFiles(c *gin.Context) {
 		SessionID: sessionID,
 	}
 
-	resp, err := h.playground.GetFiles(c.Request.Context(), req)
+	resp, err := t.Playground.GetFiles(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -100,14 +100,14 @@ func (h *PlaygroundHandler) GetFiles(c *gin.Context) {
 }
 
 // 删除文件
-func (h *PlaygroundHandler) DeleteFile(c *gin.Context) {
+func (t *ByzeCoreServer) DeleteFile(c *gin.Context) {
 	var req dto.DeleteFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp, err := h.playground.DeleteFile(c.Request.Context(), &req)
+	resp, err := t.Playground.DeleteFile(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -117,14 +117,14 @@ func (h *PlaygroundHandler) DeleteFile(c *gin.Context) {
 }
 
 // 处理文件生成嵌入向量
-func (h *PlaygroundHandler) ProcessFile(c *gin.Context) {
+func (t *ByzeCoreServer) ProcessFile(c *gin.Context) {
 	var req dto.GenerateEmbeddingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp, err := h.playground.ProcessFile(c.Request.Context(), &req)
+	resp, err := t.Playground.ProcessFile(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -6,17 +6,34 @@ import (
 	"net/http"
 
 	"byze/internal/api/dto"
+	"byze/internal/types"
 	"byze/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
 
 // 发送消息并流式返回响应
-func (h *PlaygroundHandler) SendMessageStream(c *gin.Context) {
+func (t *ByzeCoreServer) SendMessageStream(c *gin.Context) {
 	var req dto.SendStreamMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if len(req.McpIds) > 0 {
+		req.Tools = make([]types.Tool, 0)
+		for _, id := range req.McpIds {
+			tools, err := t.MCP.ClientGetTools(c, id)
+			if err != nil {
+				continue
+			}
+
+			newTools := make([]types.Tool, 0, len(tools))
+			for _, tool := range tools {
+				newTools = append(newTools, types.Tool{Type: "function", Function: types.TypeFunction{Name: tool.Name, Description: tool.Description, Parameters: tool.InputSchema}})
+			}
+			req.Tools = append(req.Tools, newTools...)
+		}
 	}
 
 	// 设置响应头
@@ -26,7 +43,7 @@ func (h *PlaygroundHandler) SendMessageStream(c *gin.Context) {
 	c.Header("Transfer-Encoding", "chunked")
 
 	// 开始流式处理
-	respChan, errChan := h.playground.SendMessageStream(c.Request.Context(), &req)
+	respChan, errChan := t.Playground.SendMessageStream(c.Request.Context(), &req)
 
 	// 写入响应流
 	c.Stream(func(w io.Writer) bool {
@@ -45,6 +62,7 @@ func (h *PlaygroundHandler) SendMessageStream(c *gin.Context) {
 					IsComplete: chunk.IsComplete,
 					Thoughts:   chunk.Thoughts,
 					Type:       chunk.Type,
+					ToolCalls:  chunk.ToolCalls, // 新增，支持Ollama工具调用
 				},
 			} // 序列化为JSON
 			data, err := json.Marshal(response)

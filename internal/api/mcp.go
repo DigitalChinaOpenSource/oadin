@@ -2,6 +2,7 @@ package api
 
 import (
 	"byze/internal/rpc"
+	"byze/internal/types"
 	"byze/internal/utils/bcode"
 	"encoding/json"
 	"fmt"
@@ -157,7 +158,7 @@ func (t *ByzeCoreServer) SetupFunTool(c *gin.Context) {
 }
 
 func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
-	var req rpc.ClientMcpStartRequest
+	var req types.ClientMcpStartRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
@@ -172,7 +173,7 @@ func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
 }
 
 func (t *ByzeCoreServer) ClientMcpStop(c *gin.Context) {
-	var req rpc.ClientMcpStopRequest
+	var req types.ClientMcpStopRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
@@ -186,7 +187,7 @@ func (t *ByzeCoreServer) ClientMcpStop(c *gin.Context) {
 }
 
 func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
-	var req rpc.ClientRunToolRequest
+	var req types.ClientRunToolRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
@@ -200,25 +201,25 @@ func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
 }
 
 func (t *ByzeCoreServer) ClientGetTools(c *gin.Context) {
-	var req rpc.ClientGetToolsRequest
+	var req types.ClientGetToolsRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
 	}
 
-	res := rpc.ClientGetToolsResponse{}
-	mcpTools := make([]rpc.McpTool, 0, len(req.Ids))
+	res := types.ClientGetToolsResponse{}
+	mcpTools := make([]types.McpTool, 0, len(req.Ids))
 	for _, id := range req.Ids {
 		tools, err := t.MCP.ClientGetTools(c, id)
 		if err != nil {
 			continue
 		}
 
-		newTools := make([]rpc.Tool, 0, len(tools))
+		newTools := make([]types.Tool, 0, len(tools))
 		for _, tool := range tools {
-			newTools = append(newTools, rpc.Tool{Type: "function", Function: rpc.TypeFunction{Name: tool.Name, Description: tool.Description, Parameters: tool.InputSchema}})
+			newTools = append(newTools, types.Tool{Type: "function", Function: types.TypeFunction{Name: tool.Name, Description: tool.Description, Parameters: tool.InputSchema}})
 		}
-		mcpTools = append(mcpTools, rpc.McpTool{McpId: id, Tools: newTools})
+		mcpTools = append(mcpTools, types.McpTool{McpId: id, Tools: newTools})
 	}
 	res.Tools = mcpTools
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": res})
