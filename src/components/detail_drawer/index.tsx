@@ -58,7 +58,7 @@ export const DetailDrawer: React.FC<IDetailDrawer> = (options: IDetailDrawer) =>
           <div className={styles.detailContent}>
             <Tabs
               className={styles.tabs}
-              defaultActiveKey="overView"
+              defaultActiveKey="tools"
               items={items}
               // onChange={onChange}
             />

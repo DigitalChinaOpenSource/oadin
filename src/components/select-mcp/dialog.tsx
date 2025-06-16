@@ -4,6 +4,7 @@ import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useViewModel as useMcpSquareViewModel } from '@/components/mcp-manage/mcp-square-tab/view-model.ts';
+import { useViewModel as useMyMcpViewModel } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import TagsRender from '@/components/tags-render';
 import defaultLogo from '@/assets/favicon.png';
@@ -17,7 +18,7 @@ interface ISelectMcpDialogProps {
 }
 
 export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
-  const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useMcpSquareViewModel();
+  const { mcpListData, handlePageChange, pagination, mcpListLoading, onMcpInputSearch } = useMyMcpViewModel();
 
   const { startMcps, stopMcps } = useSelectRemoteHelper();
   const { setSelectMcpPopOpen } = props;
