@@ -20,7 +20,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
   // 控制是否只显示已选中的项
   const [showOnlySelectedMyMcp, setShowOnlySelectedMyMcp] = useState<boolean>(false);
   const [showOnlySelectedMcpList, setShowOnlySelectedMcpList] = useState<boolean>(false);
-  const [activeKey, setActiveKey] = useState<string>('myMcp');
+  const [activeKey, setActiveKey] = useState<string>('mcpList');
   const [selectTemporaryMcpItems, setSelectTemporaryMcpItems] = useState<ITemporaryMcpListItem[]>([]);
   const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
   const { startMcps, stopMcps } = useSelectRemoteHelper();
