@@ -2,12 +2,12 @@ import { create } from 'zustand';
 import type { MessageType } from '@res-utiles/ui-components';
 import type { UploadFile } from 'antd';
 import { persist } from 'zustand/middleware';
+import { generateUniqueId } from '../utils';
 
 // 用于 localStorage 中的 key
 const STORAGE_KEY = 'vanta-chat-store';
 
 interface ChatState {
-  // 聊天状态
   messages: MessageType[];
   uploadFileList: UploadFile[];
   historyVisible: boolean;
@@ -15,7 +15,7 @@ interface ChatState {
 
   // 操作方法
   setMessages: (messages: MessageType[]) => void;
-  addMessage: (message: MessageType) => void;
+  addMessage: (message: MessageType, isReplace?: boolean) => string;
   setUploadFileList: (files: UploadFile[]) => void;
   setHistoryVisible: (visible: boolean) => void;
   setCurrentSessionId: (sessionId: string) => void;
@@ -33,10 +33,32 @@ const useChatStore = create<ChatState>()(
 
       // 操作方法
       setMessages: (messages) => set({ messages }),
-      addMessage: (message) =>
-        set((state) => ({
-          messages: [...state.messages, message],
-        })),
+      addMessage: (message: MessageType, isReplace?: boolean): string => {
+        // 生成消息ID
+        const messageId = message.id || generateUniqueId('msg');
+        message.id = messageId;
+
+        set((state) => {
+          const messages = [...state.messages];
+
+          // 如果是替换模式，查找并替换相同ID的消息
+          if (isReplace) {
+            const msgIndex = messages.findIndex((msg) => msg.id === messageId);
+            if (msgIndex >= 0) {
+              messages[msgIndex] = message;
+            } else {
+              messages.push(message);
+            }
+          } else {
+            // 正常添加
+            messages.push(message);
+          }
+
+          return { messages };
+        });
+
+        return messageId;
+      },
       setUploadFileList: (files) => set({ uploadFileList: files }),
       setHistoryVisible: (visible) => set({ historyVisible: visible }),
       createNewChat: () =>
@@ -47,9 +69,8 @@ const useChatStore = create<ChatState>()(
       setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
     }),
     {
-      name: STORAGE_KEY, // localStorage 中使用的键名
+      name: STORAGE_KEY,
       partialize: (state) => ({
-        // 只持久化这些字段到 localStorage
         currentSessionId: state.currentSessionId,
         messages: state.messages,
       }),

@@ -11,7 +11,8 @@ import { MessageType } from '@res-utiles/ui-components';
 
 export function useChatHistoryDrawer() {
   // 获取对话store
-  const { setHistoryVisible, currentSessionId, createNewChat, setCurrentSessionId, setMessages } = useChatStore();
+  const { setHistoryVisible, createNewChat, setCurrentSessionId, setMessages } = useChatStore();
+  const currentSessionId = useChatStore((state) => state.currentSessionId);
 
   // 获取模型store
   const { setSelectedModel, setIsSelectedModel } = useSelectedModelStore();

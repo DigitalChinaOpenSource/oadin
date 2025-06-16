@@ -19,6 +19,7 @@ import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import './index.css';
+import { data } from 'react-router-dom';
 
 interface IChatViewProps {
   isUploadVisible?: boolean; // 上传功能是否可用，是否下载词嵌入模型
@@ -47,13 +48,12 @@ interface ChatMessage extends MessageType {
 }
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
-  const { messages, uploadFileList, setUploadFileList, setCurrentSessionId, currentSessionId } = useChatStore();
+  const { messages, uploadFileList, setUploadFileList } = useChatStore();
+  const currentSessionId = useChatStore((state) => state.currentSessionId);
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
 
-  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage, copyMessageToClipboard } = useChatStream();
-
-  console.log('当前会话ID:', currentSessionId);
+  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage, copyMessageToClipboard } = useChatStream(currentSessionId);
 
   useEffect(() => {
     // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部
@@ -312,5 +312,5 @@ registerMessageContents({
   // @ts-ignore
   plain: MarkdownContent,
   think: DeepThinkChat,
-  mcp: McpToolChat,
+  mcp: (props: any) => <McpToolChat dataSource={props.dataSource} />,
 });
