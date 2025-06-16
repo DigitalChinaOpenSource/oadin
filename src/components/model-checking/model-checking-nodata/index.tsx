@@ -11,7 +11,7 @@ export const ModelCheckingNodata = () => {
   };
   // 获取当前的列表中的全部数据
   const vm: IUseViewModel = useViewModel(vmProps);
-
+  console.info(vm, 'vmvm');
   const filterModelList = useMemo(() => {
     return vm.pagenationData?.length > 0 ? vm.pagenationData.splice(0, 2) : [];
   }, [vm.pagenationData]);

@@ -6,6 +6,7 @@ import GeneralCard from '@/components/model-manage-tab/model-list-content/genera
 import noDataSvg from '@/components/icons/no-data.svg';
 import { IUseViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 import useSelectedModelStore from '@/store/useSelectedModel';
+import { IModelDataItem } from '@/types';
 
 export interface IModelList {
   pagination?: PaginationConfig | false;
@@ -13,15 +14,28 @@ export interface IModelList {
   grid?: ListGridType;
   isSelectable?: boolean;
   vm?: IUseViewModel;
+  selectVms?: any;
 }
 
 export const ModelList = (props: IModelList) => {
-  const { vm } = props;
+  const { vm, selectVms } = props;
+  console.info(vm, '外部的数据');
+  console.info(selectVms, '外部的选择的数据');
   const { selectedModel } = useSelectedModelStore();
-
-  return (
-    <div className={styles.modelCardList}>
-      {vm && vm.pagenationData.length > 0 ? (
+  const renderVmList = () => {
+    let content = (
+      <div className={styles.noData}>
+        <div className={styles.noDataIcon}>
+          <img
+            src={noDataSvg}
+            alt="no-data"
+          />
+        </div>
+        <div className={styles.noDataText}>暂无匹配的模型</div>
+      </div>
+    );
+    if (vm && vm.pagenationData.length > 0) {
+      content = (
         <Radio.Group value={selectedModel?.id}>
           <List
             grid={props?.grid}
@@ -42,17 +56,28 @@ export const ModelList = (props: IModelList) => {
             )}
           />
         </Radio.Group>
-      ) : (
-        <div className={styles.noData}>
-          <div className={styles.noDataIcon}>
-            <img
-              src={noDataSvg}
-              alt="no-data"
-            />
-          </div>
-          <div className={styles.noDataText}>暂无匹配的模型</div>
-        </div>
-      )}
-    </div>
-  );
+      );
+    } else if (selectVms) {
+      content = (
+        <Radio.Group value={selectedModel?.id}>
+          <List
+            grid={props?.grid}
+            dataSource={props.dataSource}
+            pagination={false}
+            renderItem={(item: IModelDataItem) => (
+              <List.Item>
+                <GeneralCard
+                  isSelectable={props.isSelectable}
+                  modelData={item}
+                  modelSourceVal={'local'}
+                />
+              </List.Item>
+            )}
+          />
+        </Radio.Group>
+      );
+    }
+    return content;
+  };
+  return <div className={styles.modelCardList}>{renderVmList()}</div>;
 };

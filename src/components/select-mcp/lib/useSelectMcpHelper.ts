@@ -111,10 +111,7 @@ interface McpTool {
 }
 
 interface McpToolsResponse {
-  code: string;
-  data: {
-    mcpTools: McpTool[];
-  };
+  mcpTools: McpTool[];
 }
 
 interface IToolArguments {
@@ -128,6 +125,7 @@ interface IToolParams {
 
 interface IToolRequest extends IToolParams {
   mcpId: string;
+  toolDesc?: string; // 可选的工具描述
 }
 
 // 转换函数
@@ -135,7 +133,7 @@ function generateToolMap(response: McpToolsResponse): Record<string, string> {
   const result: Record<string, string> = {};
 
   // 遍历所有 mcpTools 条目
-  for (const mcpTool of response.data.mcpTools) {
+  for (const mcpTool of response.mcpTools) {
     const mcpId = mcpTool.mcpId;
 
     // 遍历当前 mcpTool 中的所有工具
@@ -153,24 +151,31 @@ function generateToolMap(response: McpToolsResponse): Record<string, string> {
 }
 
 export const getMcpDeatilByIds = async (ids: string[]) => {
-  const data: McpToolsResponse = await httpRequest.post<McpToolsResponse>('/api/client/getTools', { ids });
-  return generateToolMap(data);
+  const data: McpToolsResponse = await httpRequest.post<McpToolsResponse>('/mcp/client/getTools', { ids });
+  console.info('获取MCP服务详情:', data);
+  return data;
 };
-/// 基于返回方法从当前选择的MCP服务中获取id等信息
+
+// 基于返回方法从当前选择的MCP服务中获取id等信息
 export const getIdByFunction = async (functionParams: IToolParams, ids: string[]): Promise<IToolRequest> => {
-  const searchData = await getMcpDeatilByIds(ids);
-  const mcpId = searchData[functionParams.toolName];
+  const resData = await getMcpDeatilByIds(ids);
+  const searchDataMap = generateToolMap(resData);
+  const mcpId = searchDataMap[functionParams.toolName];
+  const idTool = resData?.mcpTools.find((item) => item.mcpId === mcpId);
+  const toolDesc = idTool?.tools.find((tool) => tool.function.name === functionParams.toolName)?.function.description || '';
   if (mcpId) {
     return {
       mcpId,
       toolName: functionParams.toolName,
       toolArgs: functionParams.toolArgs,
+      toolDesc: toolDesc,
     };
   } else {
     return {
       mcpId: '',
       toolName: functionParams.toolName,
       toolArgs: functionParams.toolArgs,
+      toolDesc: toolDesc,
     };
   }
 };
