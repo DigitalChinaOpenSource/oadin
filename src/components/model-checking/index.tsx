@@ -3,21 +3,14 @@ import styles from './index.module.scss';
 import { ModelCheckingNodata } from './model-checking-nodata';
 import moreModel from '@/components/icons/moreModel.png';
 import { ChooseModelDialog } from '@/components/choose-model-dialog';
-import { useState } from 'react';
-import { IModelListContent, IUseViewModel, useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
+import { useEffect, useMemo, useState } from 'react';
+import { useViewModel, IMyModelListViewModel } from './view-model.ts';
 import { ModelCheckingHasdata } from '@/components/model-checking/model-checking-data';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
 
 export default function ModelChecking() {
-  const vmProps: IModelListContent = {
-    modelSearchVal: '',
-    modelSourceVal: 'local',
-    onModelSearch: () => {},
-    mine: true,
-  };
   const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
-  const vm: IUseViewModel = useViewModel(vmProps);
-  const isHasMedel = vm.pagination.total > 0;
+  const vm: IMyModelListViewModel = useViewModel();
   const [open, setOpen] = useState<boolean>(false);
   const onOk = () => {
     if (selectedModel && Object.keys(selectedModel).length > 0) {
@@ -26,6 +19,14 @@ export default function ModelChecking() {
       message.warning('请先选择一个模型');
     }
   };
+  const isHasMedel = useMemo(() => {
+    return vm.modelListData.length > 0;
+  }, [vm.modelListData]);
+  useEffect(() => {
+    vm?.fetchModelSupport({
+      service_source: 'local',
+    });
+  }, []);
   return (
     <div>
       <div className={styles.warp}>
