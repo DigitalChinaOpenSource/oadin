@@ -202,6 +202,12 @@ export function useChatStream() {
         // 添加错误处理回调
         onerror: (err) => {
           console.error('流式请求错误:', err);
+          if (err.message) {
+            hasRetriedRef.current = true;
+            setError(`请求发送错误: ${JSON.stringify(err.message)}`);
+          }
+          clearTimers();
+          setIsLoading(false);
 
           // 调用原始错误处理器（如果有）
           if (options.onerror) {
@@ -286,7 +292,8 @@ export function useChatStream() {
       }
       const NO_DATA_TIMEOUT = 10000;
       const TOTAL_TIMEOUT = 30000;
-
+      console.log('====>,', requestData);
+      // return;
       const resetNoDataTimer = () => {
         if (noDataTimerRef.current) clearTimeout(noDataTimerRef.current);
         noDataTimerRef.current = setTimeout(() => {
