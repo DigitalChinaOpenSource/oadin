@@ -10,7 +10,7 @@ import defaultLogo from '@/assets/favicon.png';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
 import { DetailDrawer } from '@/components/detail_drawer';
-import { checkMcpLength, selectRemoteHelper } from '@/components/select-mcp/lib/selectMcpHelper.ts';
+import { checkMcpLength, useSelectRemoteHelper } from '@/components/select-mcp/lib/useSelectMcpHelper';
 
 interface ISelectMcpDialogProps {
   setSelectMcpPopOpen: (bool: boolean) => void;
@@ -19,7 +19,7 @@ interface ISelectMcpDialogProps {
 export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   const { handlePageChange, mcpListData, pagination, mcpListLoading, onMcpInputSearch } = useMcpSquareViewModel();
 
-  const { startMcps, stopMcps } = selectRemoteHelper();
+  const { startMcps, stopMcps } = useSelectRemoteHelper();
   const { setSelectMcpPopOpen } = props;
   const [allList, setAllList] = useState<IMcpListItem[]>([]);
   const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);

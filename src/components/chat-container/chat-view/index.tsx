@@ -4,10 +4,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import '@res-utiles/ui-components/dist/index.css';
-import { Button, Tooltip } from 'antd';
+import { Button, Tooltip, message } from 'antd';
 import type { UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
-import { FolderIcon, XCircleIcon } from '@phosphor-icons/react';
+import { FolderIcon, XCircleIcon, CopyIcon, ArrowClockwiseIcon } from '@phosphor-icons/react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import StreamingMessage from '../streaming-message';
@@ -51,8 +51,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
 
-  // 使用聊天流钩子
-  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
+  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage, copyMessageToClipboard } = useChatStream();
 
   console.log('当前会话ID:', currentSessionId);
 
@@ -79,6 +78,14 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
       await sendChatMessage(message);
     } catch (err) {
       console.error('发送消息失败:', err);
+    }
+  };
+  // 复制消息
+  const handleCopyMessage = (content: string) => {
+    if (copyMessageToClipboard(content)) {
+      message.success('已复制到剪贴板');
+    } else {
+      message.error('复制失败');
     }
   };
 
@@ -172,22 +179,8 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           />
         )}
 
-        {/* 错误提示和操作按钮 */}
-        {(error || isLoading) && (
+        {(error || isLoading || streamingContent) && (
           <div className="message-control-buttons">
-            {/* 重试按钮 */}
-            {error && (
-              <Button
-                type="link"
-                onClick={resendLastMessage}
-                loading={isResending}
-                disabled={isLoading && !isResending}
-              >
-                重试
-              </Button>
-            )}
-
-            {/* 停止生成按钮 */}
             {isLoading && (
               <Button
                 type="link"
@@ -196,6 +189,40 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
               >
                 停止生成
               </Button>
+            )}
+
+            {/* 出现错误时显示重试按钮 */}
+            {error && (
+              <Button
+                type="link"
+                icon={<ArrowClockwiseIcon width={16} />}
+                onClick={resendLastMessage}
+                loading={isResending}
+                disabled={isLoading && !isResending}
+              >
+                重试
+              </Button>
+            )}
+
+            {/* 流式输出结束后显示复制和重新发送按钮 */}
+            {!isLoading && streamingContent && !error && (
+              <>
+                <Button
+                  type="link"
+                  icon={<CopyIcon width={16} />}
+                  onClick={() => handleCopyMessage(streamingContent)}
+                >
+                  复制
+                </Button>
+                <Button
+                  type="link"
+                  icon={<ArrowClockwiseIcon width={16} />}
+                  onClick={resendLastMessage}
+                  loading={isResending}
+                >
+                  重新发送
+                </Button>
+              </>
             )}
           </div>
         )}

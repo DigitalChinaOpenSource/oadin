@@ -5,7 +5,7 @@ import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
-import { selectRemoteHelper, updateMcp } from '@/components/select-mcp/lib/selectMcpHelper.ts';
+import { useSelectRemoteHelper, updateMcp } from '@/components/select-mcp/lib/useSelectMcpHelper';
 
 export type IChooseMcpDialog = ModalProps & {
   onCancelProps: () => void;
@@ -22,7 +22,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
   const [activeKey, setActiveKey] = useState<string>('myMcp');
   const [selectTemporaryMcpItems, setSelectTemporaryMcpItems] = useState<ITemporaryMcpListItem[]>([]);
   const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
-  const { startMcps, stopMcps } = selectRemoteHelper();
+  const { startMcps, stopMcps } = useSelectRemoteHelper();
 
   useEffect(() => {
     setSelectTemporaryMcpItems(selectMcpList);

@@ -41,7 +41,6 @@ export function useViewModel(): IUseViewModelReturn {
     {
       manual: true,
       onSuccess: (data) => {
-        console.log('fetchMcpList===>', data);
         setMcpListData(data?.list || []);
         setPagination({
           ...pagination,
