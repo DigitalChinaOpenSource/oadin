@@ -356,38 +356,38 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	return nil
 }
 
-func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
+func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.MCPServerConfig, error) {
 	mcpUserConfig := new(types.McpUserConfig)
-	mcpUserConfig.MCPID = id
+	mcpUserConfig.MCPID = mcpId
 
 	err := M.Ds.Get(ctx, mcpUserConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	mcpConfig, err := rpc.GetMCPDetail(M.Client, id)
+	mcpConfig, err := rpc.GetMCPDetail(M.Client, mcpId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var env map[string]string
 	if mcpUserConfig.Auth != "" {
 		err := json.Unmarshal([]byte(mcpUserConfig.Auth), &env)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	serverConfig := mcpConfig.Data.ServerConfig[0]
 	mcpServers := serverConfig.McpServers
 	mcpServerConfig := types.MCPServerConfig{
-		Id:   id,
+		Id:   mcpId,
 		Name: mcpConfig.Data.ServerName,
 	}
 	for _, y := range mcpServers {
 		commandBuilder := hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
 		command, args, err := commandBuilder.GetRunCommand()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		mcpServerConfig.Command = command
 		mcpServerConfig.Args = args
@@ -397,7 +397,15 @@ func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
 		break
 	}
 
-	_, err = M.McpHandler.Start(mcpServerConfig)
+	return &mcpServerConfig, nil
+}
+
+func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
+	mcpServerConfig, err := M.getMCPConfig(ctx, id)
+	if err != nil {
+		return err
+	}
+	err = M.McpHandler.Start(mcpServerConfig)
 	if err != nil {
 		return err
 	}
@@ -459,13 +467,16 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 	return tools, nil
 }
 
-// RunTools 运行单个mcp的工具
-func (M *MCPServerImpl) ClientRunTool(c *gin.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error) {
+func (M *MCPServerImpl) ClientRunTool(ctx *gin.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error) {
 	params := mcp.CallToolParams{
 		Name:      req.ToolName,
 		Arguments: req.ToolArgs,
 	}
-	data, err := M.McpHandler.CallTool(req.MCPId, params)
+	mcpServerConfig, err := M.getMCPConfig(ctx, req.MCPId)
+	if err != nil {
+		return nil, err
+	}
+	data, err := M.McpHandler.CallTool(mcpServerConfig, params)
 	if err != nil {
 		return nil, err
 	}
