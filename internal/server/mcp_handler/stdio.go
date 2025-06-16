@@ -15,8 +15,6 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// StdioTransport is a thread-safe singleton responsible for managing the lifecycle of MCP clients over stdio transport,
-// ensuring safe concurrent access, initialization, and cleanup of client instances.
 type StdioTransport struct {
 	clients map[string]*client.Client
 	mu      sync.Mutex
@@ -29,8 +27,6 @@ var (
 	stdioTransportOnce sync.Once
 )
 
-// NewStdioTransport returns a singleton instance of StdioTransport.
-// This ensures that all MCP clients over stdio transport are managed centrally and safely across the application lifecycle.
 func NewStdioTransport() *StdioTransport {
 	return &stdioTransportInstance
 }
@@ -50,7 +46,7 @@ func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*cli
 			config.Args...,
 		)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		if err := stdioTransport.Start(ctx); err != nil {
@@ -157,7 +153,7 @@ func (s *StdioTransport) CallTool(serverKey string, params mcp.CallToolParams) (
 		return nil, errors.New("client not found")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	fetchRequest := mcp.CallToolRequest{}
