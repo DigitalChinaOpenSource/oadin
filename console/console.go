@@ -1,10 +1,12 @@
 package console
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"path"
@@ -75,7 +77,11 @@ func handleRoute(router *Router, basePath string, mux *http.ServeMux, fileServer
 	fullPath := path.Join(basePath, router.Path)
 
 	// 注册当前路径
-	mux.Handle(fullPath+"/", http.StripPrefix(fullPath, fileServer))
+	if fullPath == "/" {
+		mux.Handle(fullPath+"/", fileServer)
+	} else {
+		mux.Handle(fullPath+"/", http.StripPrefix(fullPath, fileServer))
+	}
 
 	// 处理带参数的路由
 	if hasPathParams(fullPath) {
@@ -138,6 +144,23 @@ func StartConsoleServer(ctx context.Context) (*http.Server, error) {
 
 	// 创建路由处理
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		f, err := distContents.Open("index.html")
+		if err != nil {
+			http.Error(w, "index.html not found", http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+		data, err := io.ReadAll(f)
+		if err != nil {
+			http.Error(w, "failed to read index.html", http.StatusInternalServerError)
+			return
+		}
+
+		// 用 bytes.Reader 构造 io.ReadSeeker
+		reader := bytes.NewReader(data)
+		http.ServeContent(w, r, "index.html", time.Now(), reader)
+	})
 	routeData, err := initRoute()
 	if err != nil {
 		return nil, err
