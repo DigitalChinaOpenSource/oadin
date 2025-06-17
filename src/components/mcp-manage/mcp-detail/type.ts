@@ -18,8 +18,8 @@ export type McpDetailType = {
   };
   envSchema: Record<string, Record<string, any>>;
   logo: string;
-  serverConfig: Record<string, any>[];
-  summary: {
+  serverConfig?: Record<string, any>[];
+  summary?: {
     src: string;
     zh: string;
   };

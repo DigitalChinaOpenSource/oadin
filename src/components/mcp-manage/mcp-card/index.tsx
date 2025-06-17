@@ -22,10 +22,12 @@ export interface IMcpCardProps {
   isSelectable?: boolean;
   selectTemporaryMcpItems?: IMcpListItem[];
   setSelectTemporaryMcpItems?: Dispatch<SetStateAction<IMcpListItem[]>>;
+  handlePageToFirst?: (page: number) => void;
+  isMyMcp?: boolean; // 是否是我的MCP
 }
 
 export default function McpCard(props: IMcpCardProps) {
-  const { mcpData, handelMcpCardClick, isSelectable, setSelectTemporaryMcpItems, selectTemporaryMcpItems = [] } = props;
+  const { mcpData, handelMcpCardClick, isSelectable, setSelectTemporaryMcpItems, selectTemporaryMcpItems = [], isMyMcp = false } = props;
 
   const { fetchMcpDetail, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail(mcpData.id);
 
@@ -194,7 +196,7 @@ export default function McpCard(props: IMcpCardProps) {
                   className={styles.operateBtn}
                   onClick={() => {
                     setShowOperate(false);
-                    handleCancelMcp();
+                    isMyMcp ? handleCancelMcp(isMyMcp, props.handlePageToFirst) : handleCancelMcp();
                   }}
                 >
                   取消添加

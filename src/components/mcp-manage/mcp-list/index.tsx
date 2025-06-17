@@ -20,6 +20,8 @@ interface IMcpListProps extends IMcpCommonProps {
   pageLoading?: boolean;
   grid?: ListGridType;
   isSelectable?: boolean;
+  handlePageToFirst?: (page: number) => void;
+  isMyMcp?: boolean; // 是否是我的MCP
 }
 export default function McpList(props: IMcpListProps) {
   const {
@@ -35,6 +37,8 @@ export default function McpList(props: IMcpListProps) {
     showOnlySelectedMyMcp,
     activeKey,
     isDialog,
+    handlePageToFirst,
+    isMyMcp = false,
   } = props;
 
   const { selectMcpList, setDrawerOpenId } = useSelectMcpStore();
@@ -80,7 +84,7 @@ export default function McpList(props: IMcpListProps) {
           pagination={
             showOnlySelectedMyMcp || showOnlySelectedMcpList
               ? false // 筛选状态下强制关闭分页
-              : pagination.total >= 12
+              : pagination.total >= pagination.pageSize
                 ? { className: styles.mcpListPagination, align: 'end', ...pagination, pageSizeOptions: [12, 24, 48, 96], showSizeChanger: true, onChange: onPageChange }
                 : false
           }
@@ -94,6 +98,8 @@ export default function McpList(props: IMcpListProps) {
                 handelMcpCardClick={(id) => {
                   handleDetail(id as string);
                 }}
+                handlePageToFirst={handlePageToFirst}
+                isMyMcp={isMyMcp}
               />
             </List.Item>
           )}

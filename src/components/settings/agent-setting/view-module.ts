@@ -24,7 +24,7 @@ export function useAgentSettingViewModel() {
       manual: true,
       onSuccess: (data, params) => {
         setAgentChecked(params[0]);
-        message.success('代理地址设置成功');
+        message.success(`${params[0] ? '开启' : '关闭'}代理成功`);
       },
       onError: (error) => {},
     },

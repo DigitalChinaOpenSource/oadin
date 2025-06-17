@@ -20,6 +20,7 @@ export interface IUseViewModelReturn {
   searchVal: string;
   setSearchVal: React.Dispatch<React.SetStateAction<string>>;
   handleClearTags: () => void;
+  handlePageToFirst?: (page: number) => void;
 }
 
 export function useViewModel(): IUseViewModelReturn {
@@ -122,18 +123,30 @@ export function useViewModel(): IUseViewModelReturn {
     });
   };
 
+  // 页码改变，页码数量改变
   const handlePageChange = (page: number, pageSize: number) => {
-    console.log('page', page);
-    console.log('pageSize', pageSize);
+    const toPage = pagination.pageSize === pageSize ? page : 1;
     setPagination({
       ...pagination,
-      current: page,
+      current: toPage,
       pageSize,
     });
     setPostParams({
       ...postParams,
-      page,
+      page: toPage,
       size: pageSize,
+    });
+  };
+
+  // 我的mcp列表取消添加时，将页面参数重置为第一页
+  const handlePageToFirst = (page: number) => {
+    setPagination({
+      ...pagination,
+      current: page,
+    });
+    setPostParams({
+      ...postParams,
+      page: page,
     });
   };
 
@@ -217,5 +230,6 @@ export function useViewModel(): IUseViewModelReturn {
     searchVal,
     setSearchVal,
     handleClearTags,
+    handlePageToFirst,
   };
 }
