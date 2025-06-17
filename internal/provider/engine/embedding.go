@@ -5,6 +5,7 @@ import (
 	"byze/internal/types"
 	"context"
 	"encoding/json"
+	"fmt"
 )
 
 // Ollama embedding API 响应结构
@@ -27,9 +28,15 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 	if err != nil {
 		return nil, err
 	}
+
+	originalModel := req.Model
+	modelName := getModelNameById(req.Model)
+
+	fmt.Printf("[Embedding] Embed 模型: %s -> %s\n", originalModel, modelName)
+
 	serviceReq := &types.ServiceRequest{
-		Service:    "embedding",
-		Model:      req.Model,
+		Service:    "embed",
+		Model:      modelName,
 		FromFlavor: "ollama",
 		HTTP: types.HTTPContent{
 			Body: body,

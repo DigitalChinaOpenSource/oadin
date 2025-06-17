@@ -33,6 +33,7 @@ type Playground interface {
 	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
 	DeleteFile(ctx context.Context, request *dto.DeleteFileRequest) (*dto.DeleteFileResponse, error)
 	ProcessFile(ctx context.Context, request *dto.GenerateEmbeddingRequest) (*dto.GenerateEmbeddingResponse, error)
+	CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error)
 
 	findRelevantContext(ctx context.Context, session *types.ChatSession, query string) (string, error)
 	findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error)
@@ -213,12 +214,12 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 			"role":    msg.Role,
 			"content": msg.Content,
 		})
-	}
-	// 添加RAG上下文
+	} // 添加RAG上下文
 	enhancedContent := request.Content
+	slog.Info("开始查找相关RAG上下文", "session_id", session.ID, "question", request.Content)
 	relevantContext, err := p.findRelevantContext(ctx, session, request.Content)
 	if err != nil {
-		slog.Warn("查找相关上下文失败", "error", err)
+		slog.Warn("查找相关上下文失败", "error", err, "session_id", session.ID)
 	}
 
 	if relevantContext != "" {
@@ -438,7 +439,6 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 			if err != nil {
 				slog.Error("Failed to list file chunks", "error", err)
 			} else {
-				// 如果VSS初始化完成，从VSS中删除文件的所有块
 				if vecInitialized {
 					if vecDB != nil {
 						var chunkIDs []string
@@ -637,4 +637,52 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 // 兼容接口，VSS已废弃，直接返回空
 func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
 	return "", nil
+}
+
+func InitPlaygroundVec(ctx context.Context, dbPath string) error {
+
+	return initVecDB(dbPath)
+}
+
+func UseVSSForPlayground() bool {
+	return false
+}
+
+// 检查是否有可用的Embed服务
+func (p *PlaygroundImpl) CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error) {
+	slog.Info("Server: 检查embed服务可用性", "sessionID", sessionID)
+
+	// 1. 先检查会话是否设置了嵌入模型
+	session := &types.ChatSession{ID: sessionID}
+	err := p.Ds.Get(ctx, session)
+	if err != nil {
+		slog.Error("Server: 获取会话失败", "sessionID", sessionID, "error", err)
+		return false, fmt.Errorf("获取会话失败: %w", err)
+	}
+
+	if session.EmbedModelID == "" {
+		slog.Warn("Server: 会话未设置嵌入模型", "sessionID", sessionID)
+		return false, fmt.Errorf("会话未设置嵌入模型")
+	} // 2. 检查是否存在embed服务
+	service := &types.Service{Name: "embed"}
+	err = p.Ds.Get(ctx, service)
+	if err != nil {
+		slog.Error("Server: embed服务不存在", "sessionID", sessionID, "error", err)
+		return false, fmt.Errorf("embed服务不存在: %w", err)
+	}
+
+	if service.Status != 1 {
+		slog.Warn("Server: embed服务已禁用", "sessionID", sessionID)
+		return false, fmt.Errorf("embed服务已禁用")
+	}
+
+	// 3. 检查服务是否可用
+	modelEngine := engine.NewEngine()
+	if modelEngine == nil {
+		slog.Error("Server: 无法创建模型引擎", "sessionID", sessionID)
+		return false, fmt.Errorf("无法创建模型引擎")
+	}
+
+	slog.Info("Server: embed服务验证通过", "sessionID", sessionID, "embedModel", session.EmbedModelID)
+	return true, nil
 }
