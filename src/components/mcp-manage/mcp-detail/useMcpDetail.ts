@@ -119,18 +119,22 @@ export const useMcpDetail = (id?: string | number) => {
 
   // 取消mcp
   const { loading: cancelMcpLoading, run: handleCancelMcp } = useRequest(
-    async () => {
+    async (isMyMcp?: boolean, onPageChange?: (page: number) => void) => {
       return await httpRequest.put(`/mcp/${serviceId}/reverse`);
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: (data, params) => {
         console.log('授权mcp===>', data);
         setMcpDetail({
           ...(mcpDetail as McpDetailType),
           status: 0,
         });
         message.success('取消添加mcp成功');
+        // 如果是在我的mcp列表页，删除mcp时刷新页面到第一页
+        if (params[0] && params[1]) {
+          params[1]?.(1); // 如果是我的mcp 则回到第一页
+        }
       },
       onError: (error) => {},
     },
