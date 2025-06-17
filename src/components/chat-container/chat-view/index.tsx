@@ -7,7 +7,7 @@ import '@res-utiles/ui-components/dist/index.css';
 import { Button, Tooltip, message } from 'antd';
 import type { UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
-import { FolderIcon, XCircleIcon, CopyIcon, ArrowClockwiseIcon } from '@phosphor-icons/react';
+import { FolderIcon, XCircleIcon, CopyIcon, ArrowClockwiseIcon, StopIcon } from '@phosphor-icons/react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import StreamingMessage from '../streaming-message';
@@ -15,10 +15,12 @@ import UploadTool from '../upload-tool';
 import useChatStore from '../store/useChatStore';
 import sendSvg from '@/components/icons/send.svg';
 import uploadSvg from '@/components/icons/upload.svg';
+import realLoading from '@/components/icons/real-loading.svg';
 import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
-import './index.css';
+import { copyMessageToClipboard } from '../useChatStream/utils';
+import './index.scss';
 
 interface IChatViewProps {
   isUploadVisible?: boolean; // 上传功能是否可用，是否下载词嵌入模型
@@ -47,13 +49,12 @@ interface ChatMessage extends MessageType {
 }
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
-  const { messages, uploadFileList, setUploadFileList, setCurrentSessionId, currentSessionId } = useChatStore();
+  const { messages, uploadFileList, setUploadFileList } = useChatStore();
+  const currentSessionId = useChatStore((state) => state.currentSessionId);
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
 
-  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage, copyMessageToClipboard } = useChatStream();
-
-  console.log('当前会话ID:', currentSessionId);
+  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream(currentSessionId);
 
   useEffect(() => {
     // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部
@@ -182,17 +183,12 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
         {(error || isLoading || streamingContent) && (
           <div className="message-control-buttons">
             {isLoading && (
-              <Button
-                type="link"
-                danger
-                onClick={() => {
-                  cancelRequest();
-                }}
-              >
-                停止生成
-              </Button>
+              <img
+                src={realLoading}
+                alt="加载中"
+                style={{ width: 24, height: 24 }}
+              />
             )}
-
             {/* 出现错误时显示重试按钮 */}
             {error && (
               <Button
@@ -207,7 +203,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             )}
 
             {/* 流式输出结束后显示复制和重新发送按钮 */}
-            {!isLoading && streamingContent && !error && (
+            {!isLoading && !error && streamingContent && (
               <>
                 <Button
                   type="link"
@@ -270,18 +266,32 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             onSend={handleSendMessage}
             className="chat-input"
             SendButtonComponent={({ onClick, inputValue }) => (
-              <Button
-                type="primary"
-                disabled={isLoading || !inputValue.trim()}
-                style={{ borderRadius: 8, cursor: 'pointer' }}
-                icon={
-                  <img
-                    src={sendSvg}
-                    alt="发送"
+              <>
+                {isLoading ? (
+                  <Button
+                    icon={
+                      <StopIcon
+                        width={24}
+                        weight="fill"
+                        fill="#4f4dff"
+                      />
+                    }
+                    onClick={() => cancelRequest()}
                   />
-                }
-                onClick={onClick}
-              />
+                ) : (
+                  <Button
+                    type="primary"
+                    style={{ borderRadius: 8, cursor: 'pointer' }}
+                    icon={
+                      <img
+                        src={sendSvg}
+                        alt="发送"
+                      />
+                    }
+                    onClick={onClick}
+                  />
+                )}
+              </>
             )}
             header={headerContent}
             footer={footerContent}
@@ -299,12 +309,14 @@ const MarkdownContent = ({ dataSource }: { dataSource?: string }) => {
   }
 
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw]}
-    >
-      {dataSource}
-    </ReactMarkdown>
+    <div className="markdown-content">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+      >
+        {dataSource}
+      </ReactMarkdown>
+    </div>
   );
 };
 
@@ -312,5 +324,5 @@ registerMessageContents({
   // @ts-ignore
   plain: MarkdownContent,
   think: DeepThinkChat,
-  mcp: McpToolChat,
+  mcp: (props: any) => <McpToolChat dataSource={props.dataSource} />,
 });

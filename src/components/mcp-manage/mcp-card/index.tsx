@@ -178,6 +178,7 @@ export default function McpCard(props: IMcpCardProps) {
             arrow={false}
             open={showOperate}
             onOpenChange={(visible) => setShowOperate(visible)}
+            styles={{ body: { padding: 0 } }}
             content={
               <div className={styles.moreOperate}>
                 <div

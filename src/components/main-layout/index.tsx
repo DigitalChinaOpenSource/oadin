@@ -68,6 +68,7 @@ export default function MainLayout() {
       <Layout>
         <Sider
           theme={'light'}
+          style={{ background: 'rgba(255, 255, 255, 0.5)' }}
           collapsible={true}
           onCollapse={handleCollapse}
           trigger={<TriggerIcon />}

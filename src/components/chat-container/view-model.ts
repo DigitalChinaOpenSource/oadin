@@ -10,7 +10,8 @@ export default function useViewModel() {
   const [isUploadVisible, setIsUploadVisible] = useState(false);
   // TODO 获取当前是否下载词嵌入模型
   const { selectedModel } = useSelectedModelStore();
-  const { setCurrentSessionId, createNewChat, currentSessionId, messages } = useChatStore();
+  const { setCurrentSessionId, createNewChat, messages } = useChatStore();
+  const currentSessionId = useChatStore((state) => state.currentSessionId);
 
   useEffect(() => {
     // 如果当前会话ID不存在且已选择模型，则创建新的会话

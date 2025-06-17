@@ -6,7 +6,7 @@ import favicon from '@/assets/favicon.png';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts';
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import loadingSvg from '@/components/icons/real-loading.svg';
 import failedSvg from '@/components/icons/failed.svg';
@@ -15,7 +15,6 @@ import { Tooltip } from 'antd';
 export default function McpDownloadBox() {
   const { mcpDownloadList, setMcpAddModalShow, delMcpDownloadItem } = useMcpDownloadStore();
   const { handleAuthMcp, setShowMcpModal, showMcpModal, handleAddMcp } = useMcpDetail();
-  // const [curMcpDetail, setCurMcpDetail] = useState<McpDetailType | null>(null);
   const currentMcpDetail = useRef<McpDetailType | null>(null);
 
   return (
@@ -95,7 +94,7 @@ export default function McpDownloadBox() {
                     alt=""
                     style={{ width: '16px', height: '16px' }}
                   />
-                  <div>添加失败</div>
+                  <div style={{ color: 'red' }}>添加失败</div>
                 </>
               )}
             </div>

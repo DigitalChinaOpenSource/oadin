@@ -35,9 +35,11 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   useEffect(() => {
     // 根据当前路由设置选中菜单项和展开的菜单项
     const pathSegments = location.pathname.split('/').filter(Boolean);
+    console.log('location.pathname', location.pathname);
     if (location.pathname.startsWith('/mcp-detail')) return;
     if (pathSegments.length > 0) {
-      setSelectedKeys([location.pathname]);
+      const curPath = location.pathname.endsWith('/') ? location.pathname.slice(0, -1) : location.pathname;
+      setSelectedKeys([curPath]);
       setOpenKeys(collapsed ? [] : [pathSegments[0]]);
     }
   }, [location.pathname, collapsed]);
@@ -129,13 +131,15 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
           onOpenChange={setMcpAddModalShow}
         >
           <div className={styles.mcpDownloadBox}>
-            <Tooltip title={collapsed ? '添加中' : ''}>
-              <img
-                src={mcpAddSvg}
-                alt=""
-              />
-            </Tooltip>
-            {!collapsed && <div>添加中</div>}
+            <div className={styles.mpcDownloadBoxContent}>
+              <Tooltip title={collapsed ? '添加中' : ''}>
+                <img
+                  src={mcpAddSvg}
+                  alt=""
+                />
+              </Tooltip>
+              {!collapsed && <div>添加中</div>}
+            </div>
           </div>
         </Popover>
       )}

@@ -11,7 +11,8 @@ import { MessageType } from '@res-utiles/ui-components';
 
 export function useChatHistoryDrawer() {
   // 获取对话store
-  const { setHistoryVisible, currentSessionId, createNewChat, setCurrentSessionId, setMessages } = useChatStore();
+  const { setHistoryVisible, createNewChat, setCurrentSessionId, setMessages } = useChatStore();
+  const currentSessionId = useChatStore((state) => state.currentSessionId);
 
   // 获取模型store
   const { setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
@@ -79,10 +80,9 @@ export function useChatHistoryDrawer() {
     {
       manual: true,
       onSuccess: (data: any) => {
-        if (!data) return;
-        if (data.length === 0) return;
+        if (!data || !data.length) return;
 
-        fetchModelDetail(data[0].modelId, data, data[0].sessionId);
+        fetchModelDetail(data[data.length - 1].modelId, data, data[data.length - 1].sessionId);
       },
       onError: (error) => {
         console.error('获取历史对话记录失败:', error);
