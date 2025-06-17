@@ -214,7 +214,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 							CreatedAt:     time.Now(),
 							ModelID:       session.ModelID,
 							ModelName:     session.ModelName,
-							TotalDuration: resp.TotalDuration,
+							TotalDuration: resp.TotalDuration / int64(time.Second),
 						}
 						err = p.Ds.Add(ctx, thoughtsMsg)
 						if err != nil {
@@ -266,7 +266,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						CreatedAt:     time.Now(),
 						ModelID:       session.ModelID,
 						ModelName:     session.ModelName,
-						TotalDuration: resp.TotalDuration,
+						TotalDuration: resp.TotalDuration / int64(time.Second),
 					}
 					err = p.Ds.Add(ctx, assistantMsg)
 					if err != nil {
@@ -275,6 +275,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 
 					// 发送全部内容作为响应
 					resp.Content = fullContent
+					resp.ID = assistantMsgID
 					respChan <- resp
 				} else if len(originalContent) > 0 {
 					slog.Info("收到非空流式输出块",
