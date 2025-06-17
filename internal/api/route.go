@@ -90,6 +90,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi.PUT("/registry", e.ModifyRepositoryURL)
 	systemApi.PUT("/proxy", e.SetProxy)
 	systemApi.PUT("/proxy/switch", e.ProxySwitch)
+
 	// Playground相关
 	playgroundApi := r.Group("playground")
 	playgroundApi.POST("/session", e.CreateSession)
