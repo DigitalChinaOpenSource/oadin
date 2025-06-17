@@ -17,12 +17,14 @@ import (
 
 type StdioTransport struct {
 	clients map[string]*client.Client
+	pending map[string]int
 	mu      sync.Mutex
 }
 
 var (
 	stdioTransportInstance = StdioTransport{
 		clients: make(map[string]*client.Client),
+		pending: make(map[string]int),
 	}
 	stdioTransportOnce sync.Once
 )
@@ -46,7 +48,7 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 			config.Args...,
 		)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
 		if err := stdioTransport.Start(ctx); err != nil {
@@ -81,6 +83,11 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 
 	// 检查是否有正在初始化的客户端
 	s.mu.Lock()
+	if s.pending[serverKey] > 0 {
+		s.mu.Unlock()
+		return nil
+	}
+
 	// 检查是否已有客户端实例
 	if cli, exists := s.clients[serverKey]; exists {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -89,11 +96,14 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 			s.mu.Unlock()
 			return nil
 		}
+		s.Stop(serverKey)
 		delete(s.clients, serverKey)
+		delete(s.pending, serverKey)
 	}
 	s.mu.Unlock()
 
 	// 异步初始化客户端
+	s.pending[serverKey] = 1
 	go func(s *StdioTransport) {
 		cli, err := s.initTransportClient(config)
 		if err != nil {
@@ -109,34 +119,6 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	return nil
 }
 
-func (s *StdioTransport) getClient(config *types.MCPServerConfig) (*client.Client, error) {
-	serverKey := config.Id
-
-	s.mu.Lock()
-	if cli, exists := s.clients[serverKey]; exists {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := cli.Ping(ctx); err == nil {
-			s.mu.Unlock()
-			return cli, nil
-		}
-		delete(s.clients, serverKey)
-	}
-	s.mu.Unlock()
-
-	cli, err := s.initTransportClient(config)
-	if err != nil {
-		log.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
-		return nil, err
-	}
-	fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
-	s.mu.Lock()
-	s.clients[serverKey] = cli
-	s.mu.Unlock()
-
-	return cli, nil
-}
-
 func (s *StdioTransport) Stop(serverKey string) error {
 	s.mu.Lock()
 	cli, exists := s.clients[serverKey]
@@ -147,6 +129,7 @@ func (s *StdioTransport) Stop(serverKey string) error {
 	}
 	// 先从map删除，防止并发重复关闭
 	delete(s.clients, serverKey)
+	delete(s.pending, serverKey)
 	s.mu.Unlock()
 
 	// 关闭客户端
@@ -158,14 +141,11 @@ func (s *StdioTransport) Stop(serverKey string) error {
 	return nil
 }
 
-func (s *StdioTransport) FetchTools(serverKey string) ([]mcp.Tool, error) {
+func (s *StdioTransport) FetchTools(ctx context.Context, serverKey string) ([]mcp.Tool, error) {
 	cli, exists := s.clients[serverKey]
 	if !exists {
 		return nil, errors.New("client not found")
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	toolsRequest := mcp.ListToolsRequest{}
 	tools, err := cli.ListTools(ctx, toolsRequest)
@@ -175,22 +155,18 @@ func (s *StdioTransport) FetchTools(serverKey string) ([]mcp.Tool, error) {
 	return tools.Tools, nil
 }
 
-func (s *StdioTransport) CallTool(config *types.MCPServerConfig, params mcp.CallToolParams) (*mcp.CallToolResult, error) {
-	cli, err := s.getClient(config)
-	if err != nil {
-		log.Printf("Failed to get client for server %s: %v", config.Id, err)
-		return nil, err
+func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.CallToolParams) (*mcp.CallToolResult, error) {
+	cli, exist := s.clients[mcpId]
+	if !exist {
+		return nil, fmt.Errorf("client for MCP %s not found", mcpId)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	fetchRequest := mcp.CallToolRequest{}
 	fetchRequest.Params.Name = params.Name
 	fetchRequest.Params.Arguments = params.Arguments
 	result, err := cli.CallTool(ctx, fetchRequest)
 	if err != nil {
-		log.Printf("Failed to call the tool: %v", err)
+		fmt.Printf("Failed to call the tool: %v\n", err)
 		return nil, err
 	}
 	return result, nil
