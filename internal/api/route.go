@@ -104,6 +104,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	playgroundApi.DELETE("/file", e.DeleteFile)
 	playgroundApi.POST("/file/process", e.ProcessFile)
 	playgroundApi.POST("/session/model", e.ChangeSessionModel)
+	playgroundApi.POST("/session/thinking", e.ToggleSessionThinking)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }

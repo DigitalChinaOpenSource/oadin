@@ -99,18 +99,16 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		}
 		// 调用模型获取流式回复
 		// 获取统一的聊天引擎
-		modelEngine := engine.NewEngine()
-		// 构建聊天请求
+		modelEngine := engine.NewEngine() // 构建聊天请求
 		chatRequest := &types.ChatRequest{
 			Model:    session.ModelName,
 			Messages: history,
-			Stream:   true, // 启用流式输出
-			Options:  make(map[string]any),
+			Stream:   true,  // 启用流式输出
+			Think:    false, // 默认不启用深度思考
 		}
-
-		// 如果启用了思考模式，则添加thinking选项
-		if session.ThinkingEnabled {
-			chatRequest.Options["thinking"] = true
+		// 如果模型支持深度思考且用户启用了思考模式，则添加thinking选项
+		if session.ThinkingEnabled && session.ThinkingActive {
+			chatRequest.Think = true
 		}
 
 		// Chat request (with tools)
@@ -201,14 +199,12 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 								slog.Error("Failed to update session title", "error", err)
 							}
 						}
-					}
-
-					// 保存思考内容（如果有）
-					if thoughts != "" && session.ThinkingEnabled {
+					} // 保存思考内容（如果有）
+					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 						thoughtsMsg := &types.ChatMessage{
 							ID:            uuid.New().String(),
 							SessionID:     request.SessionID,
-							Role:          "system",
+							Role:          "think",
 							Content:       thoughts,
 							Order:         len(messages) + 2,
 							CreatedAt:     time.Now(),
