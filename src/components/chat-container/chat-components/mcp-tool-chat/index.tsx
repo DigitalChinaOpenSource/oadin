@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import type { CollapseProps, TabsProps } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
-import { Collapse, Tabs } from 'antd';
+import { Collapse, Tabs, Tooltip } from 'antd';
 import macpChatSvg from '@/components/icons/mcp-chat.svg';
 import amap from '@/components/icons/amap.png';
 import { CheckCircleIcon } from '@phosphor-icons/react';
@@ -72,20 +72,30 @@ export default function McpToolChat(props: IMcpToolChatData) {
       <div className={styles.mcpToolHeader}>
         <div className={styles.mcpLeft}>
           <div className={styles.mcpLogo}>
-            <img
-              src={amap}
-              alt="高德地图"
-            />
+            <img src={amap} />
           </div>
-          <div className={styles.mcpTitle}>{item?.name}</div>
+          <Tooltip title={item?.name}>
+            <div className={styles.mcpTitle}>{item?.name}</div>
+          </Tooltip>
         </div>
         <div className={styles.fill}></div>
-        <div className={styles.mcpDesc}>{item?.desc || '暂无描述信息'}</div>
+        <Tooltip title={item?.desc}>
+          <div className={styles.mcpDesc}>{item?.desc || '暂无描述信息'}</div>
+        </Tooltip>
         <div className={styles.fill}></div>
         <div className={styles.mcpStatus}>
-          <div className={styles.successDot}></div>
-          <span className={styles.mcpSuccess}>成功</span>
-          {/* <span className={styles.mcpError}>失败</span> */}
+          {item?.status === 'success' && (
+            <>
+              <div className={styles.successDot}></div>
+              <span className={styles.mcpSuccess}>成功</span>
+            </>
+          )}
+          {item?.status === 'error' && (
+            <>
+              <div className={styles.errorDot}></div>
+              <span className={styles.mcpError}>失败</span>
+            </>
+          )}
         </div>
       </div>
     );

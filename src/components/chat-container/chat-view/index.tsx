@@ -272,6 +272,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                     icon={
                       <StopIcon
                         width={24}
+                        weight="fill"
                         fill="#4f4dff"
                       />
                     }
