@@ -243,7 +243,7 @@ func Run(ctx context.Context) error {
 	if server.UseVSSForPlayground() {
 		go func() {
 			dbPath := config.GlobalByzeEnvironment.Datastore
-			if err := server.InitPlaygroundVSS(ctx, dbPath); err != nil {
+			if err := server.InitPlaygroundVec(ctx, dbPath); err != nil {
 				slog.Error("Failed to initialize VSS database", "error", err)
 			} else {
 				slog.Info("VSS database initialized successfully")
