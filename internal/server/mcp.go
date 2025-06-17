@@ -34,7 +34,7 @@ type MCPServer interface {
 	ClientMcpStart(ctx context.Context, id string) error
 	ClientMcpStop(ctx context.Context, ids []string) error
 	ClientGetTools(ctx context.Context, mcpId string) ([]mcp.Tool, error)
-	ClientRunTool(c *gin.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error)
+	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error)
 }
 
 type MCPServerImpl struct {
@@ -450,7 +450,7 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 		}
 	}
 
-	fetchTools, err := M.McpHandler.FetchTools(mcpId)
+	fetchTools, err := M.McpHandler.FetchTools(ctx,mcpId)
 	if err != nil {
 		return nil, err
 	}
@@ -467,17 +467,14 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 	return tools, nil
 }
 
-func (M *MCPServerImpl) ClientRunTool(ctx *gin.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error) {
+func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error) {
 	params := mcp.CallToolParams{
 		Name:      req.ToolName,
 		Arguments: req.ToolArgs,
 	}
-	mcpServerConfig, err := M.getMCPConfig(ctx, req.MCPId)
+	data, err := M.McpHandler.CallTool(ctx, req.MCPId, params)
 	if err != nil {
-		return nil, err
-	}
-	data, err := M.McpHandler.CallTool(mcpServerConfig, params)
-	if err != nil {
+		fmt.Println("Failed to call tool:", err)
 		return nil, err
 	}
 	return data, nil
