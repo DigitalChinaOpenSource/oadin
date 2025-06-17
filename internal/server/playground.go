@@ -26,6 +26,7 @@ type Playground interface {
 	GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error)
 	DeleteSession(ctx context.Context, request *dto.DeleteSessionRequest) (*dto.DeleteSessionResponse, error)
 	ChangeSessionModel(ctx context.Context, req *dto.ChangeSessionModelRequest) (*dto.ChangeSessionModelResponse, error)
+	ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error)
 
 	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
 
@@ -125,6 +126,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 	err := p.Ds.Get(ctx, supportModel)
 	if err == nil {
 		session.ThinkingEnabled = supportModel.Think
+		session.ThinkingActive = supportModel.Think // 默认情况下，如果支持深度思考，则启用它
 	}
 	err = p.Ds.Add(ctx, session)
 	if err != nil {
@@ -132,7 +134,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		return nil, err
 	}
 	return &dto.CreateSessionResponse{
-		Bcode: bcode.SuccessCode,
+		Bcode: bcode.SuccessCode, 
 		Data: dto.Session{
 			Id:              session.ID,
 			Title:           session.Title,
@@ -140,6 +142,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		},
@@ -174,6 +177,7 @@ func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsRespo
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		})
@@ -257,10 +261,10 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	chatRequest := &types.ChatRequest{
 		Model:    session.ModelName,
 		Messages: history,
-		Options:  make(map[string]any),
+		Think:    false, 
 	}
-	if session.ThinkingEnabled {
-		chatRequest.Options["thinking"] = true
+	if session.ThinkingEnabled && session.ThinkingActive {
+		chatRequest.Think = true
 	}
 
 	if len(request.Tools) > 0 {
@@ -311,9 +315,9 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if err != nil {
 		slog.Error("Failed to save assistant message", "error", err)
 		return nil, err
-	}
+	} 
 	// 保存思考内容
-	if chatResp.Thoughts != "" && session.ThinkingEnabled {
+	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		thoughtsMsg := &types.ChatMessage{
 			ID:        uuid.New().String(),
 			SessionID: request.SessionId,
@@ -353,7 +357,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		ModelName: session.ModelName,
 		ToolCalls: chatResp.ToolCalls, // 新增工具调用支持
 	}}
-	if chatResp.Thoughts != "" && session.ThinkingEnabled {
+	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		resultMessages = append(resultMessages, dto.Message{
 			Id:        "thoughts-" + assistantMsg.ID,
 			SessionId: assistantMsg.SessionID,
@@ -500,12 +504,16 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	}
 	if req.ModelId != "" {
 		session.ModelID = req.ModelId
-		session.ModelName = getModelNameById(req.ModelId)
+		session.ModelName = getModelNameById(req.ModelId) 
 		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
 		model := &types.Model{ModelName: getModelNameById(req.ModelId)}
 		err := p.Ds.Get(ctx, model)
 		if err == nil {
 			session.ThinkingEnabled = model.ThinkingEnabled
+			// 切换模型时，如果新模型支持思考，则保持当前思考状态；如果不支持，则关闭思考
+			if !model.ThinkingEnabled {
+				session.ThinkingActive = false
+			}
 		}
 	}
 	if req.EmbedModelId != "" {
@@ -525,8 +533,44 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		},
+	}, nil
+}
+
+// 切换思考状态
+func (p *PlaygroundImpl) ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error) {
+	// 查找会话
+	session := &types.ChatSession{ID: req.SessionId}
+	err := p.Ds.Get(ctx, session)
+	if err != nil {
+		return nil, fmt.Errorf("会话不存在: %v", err)
+	}
+	// 首先检查模型是否支持深度思考
+	if !session.ThinkingEnabled {
+		return nil, fmt.Errorf("当前模型不支持深度思考功能")
+	}
+
+	// 根据请求切换深度思考状态
+	if req.Enabled != nil {
+		// 如果提供了明确的启用/禁用值，则使用该值
+		session.ThinkingActive = *req.Enabled
+	} else {
+		// 如果没有提供值，则切换当前状态
+		session.ThinkingActive = !session.ThinkingActive
+	}
+
+	// 更新会话
+	session.UpdatedAt = time.Now()
+	err = p.Ds.Put(ctx, session)
+	if err != nil {
+		return nil, fmt.Errorf("更新会话失败: %v", err)
+	}
+	// 返回更新后的状态
+	return &dto.ToggleThinkingResponse{
+		Bcode:          bcode.SuccessCode,
+		ThinkingActive: session.ThinkingActive,
 	}, nil
 }
