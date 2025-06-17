@@ -61,10 +61,6 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				fmt.Printf("[ChatStream] 收到空块，跳过\n")
 				continue
 			}
-			// Debug输出
-			fmt.Printf("[ChatStream] 收到块，长度: %d\n", len(result.HTTP.Body))
-			debugLogJSON("[ChatStream] 原始响应内容", result.HTTP.Body)
-			debugLogJSON("[ChatStream] 收到块内容", result.HTTP.Body) // 调用调试日志函数
 
 			// 每个块都是一个完整的JSON对象
 			var ollamaResp ollamaAPIResponse
