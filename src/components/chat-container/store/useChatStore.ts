@@ -20,6 +20,11 @@ interface ChatState {
   setHistoryVisible: (visible: boolean) => void;
   setCurrentSessionId: (sessionId: string) => void;
   createNewChat: () => void;
+
+  toolCallNumber?: number;
+  toolCallCoastTime?: number;
+  setToolCallNumber?: (number: number) => void;
+  setToolCallCoastTime?: (time: number) => void;
 }
 
 const useChatStore = create<ChatState>()(
@@ -30,6 +35,7 @@ const useChatStore = create<ChatState>()(
       uploadFileList: [],
       historyVisible: false,
       currentSessionId: '',
+      toolCallNumber: 0,
 
       // 操作方法
       setMessages: (messages) => set({ messages }),
@@ -67,6 +73,7 @@ const useChatStore = create<ChatState>()(
           uploadFileList: [],
         }),
       setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
+      setToolCallNumber: (number) => set({ toolCallNumber: number }),
     }),
     {
       name: STORAGE_KEY,
