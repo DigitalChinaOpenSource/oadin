@@ -48,6 +48,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 		// 跟踪流的状态
 		accumulatedContent := ""
 		var toolCalls []types.ToolCall
+		var thoughts string
 
 		// 处理流式响应
 		for result := range ch {
@@ -95,6 +96,13 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 					fmt.Printf("[ChatStream] 从content提取内容，长度: %d\n", len(content))
 				}
 
+
+				var thoughts string
+				if ollamaResp.Message != nil && ollamaResp.Message.Thinking != "" {
+					thoughts = ollamaResp.Message.Thinking
+					fmt.Printf("[ChatStream] 提取到思考内容，长度: %d\n", len(thoughts))
+				}
+
 				// 提取工具调用(如果有)
 				if ollamaResp.Message != nil && ollamaResp.Message.ToolCalls != nil && len(ollamaResp.Message.ToolCalls) > 0 {
 					toolCalls = ollamaResp.Message.ToolCalls
@@ -126,6 +134,21 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 						model = m
 					}
 
+					// 提取思考内容
+					if msg, ok := data["message"].(map[string]interface{}); ok {
+						if th, ok := msg["thinking"].(string); ok && th != "" {
+							thoughts = th
+							fmt.Printf("[ChatStream] 从通用格式message.thinking中提取到思考内容，长度: %d\n", len(thoughts))
+						}
+					}
+					// 如果没有在message中找到thinking，尝试从顶层查找
+					if thoughts == "" {
+						if th, ok := data["thinking"].(string); ok && th != "" {
+							thoughts = th
+							fmt.Printf("[ChatStream] 从顶层thinking中提取到思考内容，长度: %d\n", len(thoughts))
+						}
+					}
+
 					// 提取工具调用
 					if msg, ok := data["message"].(map[string]interface{}); ok {
 						if tc, ok := msg["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
@@ -149,9 +172,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			if content != "" {
 				accumulatedContent += content
 				fmt.Printf("[ChatStream] 累积内容，当前长度: %d\n", len(accumulatedContent))
-			}
-
-			// 创建响应对象
+			} // 创建响应对象
 			resp := &types.ChatResponse{
 				Content:       content, // 只发送当前块的内容，而不是累积的内容
 				Model:         model,
@@ -159,6 +180,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				ToolCalls:     toolCalls,
 				Object:        "chat.completion.chunk",
 				TotalDuration: ollamaResp.TotalDuration, // 使用HTTP响应的持续时间
+				Thoughts:      thoughts,                 // 添加思考内容
 			} // 发送响应
 			// 只发送有内容或是最后一个块的响应
 			if resp.Content != "" || resp.IsComplete {
