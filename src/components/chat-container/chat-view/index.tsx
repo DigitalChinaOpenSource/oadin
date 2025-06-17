@@ -19,8 +19,8 @@ import realLoading from '@/components/icons/real-loading.svg';
 import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
+import { copyMessageToClipboard } from '../useChatStream/utils';
 import './index.scss';
-import { data } from 'react-router-dom';
 
 interface IChatViewProps {
   isUploadVisible?: boolean; // 上传功能是否可用，是否下载词嵌入模型
@@ -54,7 +54,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
 
-  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage, copyMessageToClipboard } = useChatStream(currentSessionId);
+  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream(currentSessionId);
 
   useEffect(() => {
     // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部

@@ -6,68 +6,11 @@ import { MessageType } from '@res-utiles/ui-components';
 import useChatStore from '@/components/chat-container/store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
-import { getIdByFunction } from '../select-mcp/lib/useSelectMcpHelper';
+import { getIdByFunction } from '../../select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
-import { generateUniqueId } from './utils';
-
-// 请求参数接口
-interface ChatRequestParams {
-  content: string;
-  SessionID?: string;
-  mcpIds?: string[];
-}
-
-// 响应数据接口
-interface ChatResponseData {
-  bcode: {
-    business_code: number;
-    message: string;
-  };
-  data: {
-    id: string;
-    session_id: string;
-    content: string;
-    is_complete: boolean;
-    type: string;
-    thinking?: string;
-    tool_calls?: IToolCall[];
-  };
-}
-
-// 工具调用接口
-interface IToolCall {
-  function: {
-    name: string;
-    arguments: Record<string, any>;
-  };
-}
-
-// 工具调用参数接口
-interface IRunToolParams {
-  mcpId: string;
-  toolName: string;
-  toolArgs: Record<string, any>;
-}
-
-// 流式请求回调接口
-interface StreamCallbacks {
-  onDataReceived: (data: ChatResponseData) => void;
-  onComplete: () => void;
-  onFallbackResponse: (response: Response) => Promise<void>;
-}
-
-// 错误消息常量
-const ERROR_MESSAGES = {
-  NO_MODEL_SELECTED: '未选择模型，请先选择一个模型',
-  NO_DATA_TIMEOUT: '请求超时：15秒未收到数据',
-  TOTAL_TIMEOUT: '请求超时：30秒内未收到任何数据',
-  PARSE_ERROR: '解析响应数据失败',
-  CONNECTION_INTERRUPTED: '\n\n[消息传输中断]',
-  EMPTY_RESPONSE: '服务器响应异常，未能获取到有效数据',
-  NON_STREAMING: '服务器未返回流式数据',
-  TOOL_EXECUTION_FAILED: '工具执行失败',
-  RESPONSE_INTERRUPTED: '\n\n[回复已中断]',
-};
+import { ChatRequestParams, ChatResponseData, IRunToolParams, StreamCallbacks, IToolCall } from './types';
+import { ERROR_MESSAGES } from './contant';
+import { generateUniqueId, copyMessageToClipboard } from './utils';
 
 // 超时设置（毫秒）
 const TIMEOUT_CONFIG = {
@@ -79,12 +22,10 @@ const TIMEOUT_CONFIG = {
  * 流式聊天Hook
  */
 export function useChatStream(currentSessionId: string) {
-  // 状态与引用
   const { addMessage, setCurrentSessionId } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
-  // UI状态
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -131,24 +72,7 @@ export function useChatStream(currentSessionId: string) {
     totalTimer: null,
   });
 
-  /**
-   * 清除所有定时器
-   */
-  const clearTimers = useCallback(() => {
-    if (timeoutRefsRef.current.noDataTimer) {
-      clearTimeout(timeoutRefsRef.current.noDataTimer);
-      timeoutRefsRef.current.noDataTimer = null;
-    }
-
-    if (timeoutRefsRef.current.totalTimer) {
-      clearTimeout(timeoutRefsRef.current.totalTimer);
-      timeoutRefsRef.current.totalTimer = null;
-    }
-  }, []);
-
-  /**
-   * 重置无数据超时定时器
-   */
+  // 重置无数据超时定时器
   const resetNoDataTimer = useCallback(() => {
     if (timeoutRefsRef.current.noDataTimer) {
       clearTimeout(timeoutRefsRef.current.noDataTimer);
@@ -278,7 +202,7 @@ export function useChatStream(currentSessionId: string) {
         }
 
         setError(errorMessage);
-        clearTimers();
+        cleanupResources();
         setIsLoading(false);
         if (options.onerror) {
           options.onerror(err);
@@ -287,7 +211,7 @@ export function useChatStream(currentSessionId: string) {
 
       // 连接关闭处理
       onclose: () => {
-        clearTimers();
+        cleanupResources();
         if (options.onclose) {
           options.onclose();
         }
@@ -684,7 +608,7 @@ export function useChatStream(currentSessionId: string) {
               }
 
               setIsLoading(false);
-              clearTimers();
+              cleanupResources();
             },
             onFallbackResponse: async (response) => {
               try {
@@ -793,11 +717,11 @@ export function useChatStream(currentSessionId: string) {
             onerror: (error) => {
               console.error('流式请求错误:', error);
               setError(`请求失败: ${error.message}`);
-              clearTimers();
+              cleanupResources();
               setIsLoading(false);
             },
             onclose: () => {
-              clearTimers();
+              cleanupResources();
 
               // 如果连接关闭但未完成且有内容，保存部分回复
               if (isLoading && responseContent) {
@@ -871,7 +795,7 @@ export function useChatStream(currentSessionId: string) {
               }
               clearStreamingState();
               setIsLoading(false);
-              clearTimers();
+              cleanupResources();
             },
 
             // 非流式响应处理
@@ -926,10 +850,10 @@ export function useChatStream(currentSessionId: string) {
         console.error('发送聊天请求失败:', error);
         setError(`发送请求失败: ${error.message}`);
         setIsLoading(false);
-        clearTimers();
+        cleanupResources();
       }
     },
-    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, setCurrentSessionId, createStreamRequest, clearTimers, resetNoDataTimer, handleToolCalls],
+    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, setCurrentSessionId, createStreamRequest, cleanupResources, resetNoDataTimer, handleToolCalls],
   );
 
   const sendChatMessage = useCallback(
@@ -942,21 +866,6 @@ export function useChatStream(currentSessionId: string) {
     },
     [sendChatMessageInternal, isLoading],
   );
-
-  /**
-   * 复制消息到剪贴板
-   */
-  const copyMessageToClipboard = useCallback((content: string) => {
-    if (!content) return false;
-
-    try {
-      navigator.clipboard.writeText(content);
-      return true;
-    } catch (err) {
-      console.error('复制到剪贴板失败:', err);
-      return false;
-    }
-  }, []);
 
   // 重发最后一条消息
   const resendLastMessage = useCallback(async () => {
@@ -995,7 +904,6 @@ export function useChatStream(currentSessionId: string) {
     }
   }, [isResending, sendChatMessageInternal, addMessage]);
 
-  // 初始化工具调用处理程序引用
   useEffect(() => {
     toolCallHandlersRef.current.continueConversation = continueConversationWithResult;
 
@@ -1019,6 +927,5 @@ export function useChatStream(currentSessionId: string) {
     sendChatMessage,
     cancelRequest,
     resendLastMessage,
-    copyMessageToClipboard,
   };
 }
