@@ -108,14 +108,15 @@ export function useViewModel(): IUseViewModelReturn {
   };
 
   const handlePageChange = (page: number, pageSize: number) => {
+    const toPage = pagination.pageSize === pageSize ? page : 1;
     setPagination({
       ...pagination,
-      current: page,
+      current: toPage,
       pageSize,
     });
     setPostParams({
       ...postParams,
-      page,
+      page: toPage,
       size: pageSize,
     });
   };

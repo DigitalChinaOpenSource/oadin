@@ -22,7 +22,9 @@ export default defineConfig({
     proxy: {
       [API_PREFIX]: {
         target: 'http://127.0.0.1:16688',
-        // target: 'http://10.3.74.110:16688',
+        // target: 'http://10.3.73.243:16688', // 朱灿的本地ip
+        // target: 'http://10.3.74.123:16688', // 向秋怡的本地ip
+        // target: 'http://10.3.73.149:16688',
         changeOrigin: true,
         rewrite: (path) => path.replace(new RegExp(`^${API_PREFIX}`), API_PREFIX),
         configure: (proxy, options) => {

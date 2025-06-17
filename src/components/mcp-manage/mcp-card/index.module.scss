@@ -118,17 +118,27 @@
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
+  border-radius: 8px;
+  box-sizing: border-box;
 
   .operateBtn {
     cursor: pointer;
     width: 100%;
-    padding: 2px 0;
-    + .operateBtn {
-      //margin-top: 4px;
+    padding: 0 16px;
+    height: 40px;
+    line-height: 40px;
+    &:nth-child(1) {
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+    &:nth-last-child(1) {
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
     }
     &:hover {
       color: #4f4dff;
-      background-color: #f3f1f1;
+      background-color: #f5f8ff;
+      box-sizing: border-box;
     }
   }
 }

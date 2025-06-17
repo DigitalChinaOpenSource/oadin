@@ -1,13 +1,9 @@
 .sidebar {
   width: 100%;
   height: 100%;
-  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  //position: fixed;
-  //left: 0;
-  //top: 0;
 
   .logo {
     padding: 16px 0;
@@ -32,14 +28,18 @@
   }
   .mcpDownloadBox {
     width: 100%;
-    height: 38px;
     padding: 0 24px;
-    box-sizing: border-box;
-    display: flex;
-    gap: 8px;
     margin-bottom: 10px;
-    align-items: center;
-    cursor: pointer;
+
+    .mpcDownloadBoxContent {
+      height: 38px;
+      display: flex;
+      gap: 8px;
+      box-sizing: border-box;
+      align-items: center;
+      background-color: #ffffff;
+      cursor: pointer;
+    }
   }
   .downloadBtnBox {
     width: 42px;
@@ -49,7 +49,7 @@
     padding: 4px;
     margin-top: auto;
     margin-bottom: 20px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     position: relative;
     cursor: pointer;
     :global(.ant-badge-count) {
@@ -72,11 +72,11 @@
     .downloadListWrapper {
       position: absolute;
       left: 44px;
-      bottom: 0px;
+      bottom: 0;
       width: 340px;
       background-color: #ffffff;
       border-radius: 8px;
-      box-shadow: 0px 4px 12px rgba(0, 1, 21, 0.2);
+      box-shadow: 0 4px 12px rgba(0, 1, 21, 0.2);
       z-index: 9999;
     }
   }

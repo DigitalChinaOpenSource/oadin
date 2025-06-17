@@ -131,13 +131,15 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
           onOpenChange={setMcpAddModalShow}
         >
           <div className={styles.mcpDownloadBox}>
-            <Tooltip title={collapsed ? '添加中' : ''}>
-              <img
-                src={mcpAddSvg}
-                alt=""
-              />
-            </Tooltip>
-            {!collapsed && <div>添加中</div>}
+            <div className={styles.mpcDownloadBoxContent}>
+              <Tooltip title={collapsed ? '添加中' : ''}>
+                <img
+                  src={mcpAddSvg}
+                  alt=""
+                />
+              </Tooltip>
+              {!collapsed && <div>添加中</div>}
+            </div>
           </div>
         </Popover>
       )}

@@ -79,10 +79,9 @@ export function useChatHistoryDrawer() {
     {
       manual: true,
       onSuccess: (data: any) => {
-        if (!data) return;
-        if (data.length === 0) return;
+        if (!data || !data.length) return;
 
-        fetchModelDetail(data[0].modelId, data, data[0].sessionId);
+        fetchModelDetail(data[data.length - 1].modelId, data, data[data.length - 1].sessionId);
       },
       onError: (error) => {
         console.error('获取历史对话记录失败:', error);
