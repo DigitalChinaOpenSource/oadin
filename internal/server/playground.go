@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log/slog"
+	"strings"
 	"time"
 
 	"byze/config"
@@ -396,6 +397,10 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			typeStr = "answer"
 		} else if msg.Role == "system" && len(msg.Content) > 0 && (msg.Content[:12] == "思考过程: " || msg.Content[:9] == "Thoughts:") {
 			typeStr = "thoughts"
+		}
+
+		if msg.Role == "assistant" && len(msg.Content) > 0 && strings.Contains(msg.Content, "<tool_use>") {
+			typeStr = "mcp"
 		}
 		messageDTOs = append(messageDTOs, dto.Message{
 			Id:        msg.ID,
