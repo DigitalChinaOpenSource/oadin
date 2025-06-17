@@ -5,6 +5,7 @@ package utils
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"os/user"
 	"strings"
 
