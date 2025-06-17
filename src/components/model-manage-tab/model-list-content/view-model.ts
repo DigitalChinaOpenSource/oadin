@@ -8,7 +8,6 @@ import { message, Modal } from 'antd';
 import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import { convertToMB } from '@/utils';
 
 export type ModelSourceType = 'local' | 'remote';
@@ -53,6 +52,8 @@ export interface IUseViewModel {
   modelSourceVal: ModelSourceType;
   onModelSearch: (val: string) => void;
   selectModelData: IModelDataItem;
+
+  fetchModelSupport: (params: IModelSquareParams) => void;
 
   pagination: IPagenation;
   onPageChange: (current: number) => void;
@@ -113,7 +114,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       onSuccess: (data) => {
         // 处理一些数据格式
         const dataWithSource = (data || []).map(
-          (item, index) =>
+          (item) =>
             ({
               ...item,
               currentDownload: 0,
@@ -348,6 +349,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     modelSourceVal,
     onModelSearch,
     selectModelData,
+    fetchModelSupport,
 
     pagination,
     onPageChange,
