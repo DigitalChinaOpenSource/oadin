@@ -14,6 +14,7 @@ type System interface {
 	SwitchProxy(ctx context.Context, enabled bool) error
 	GetSystemSettings(ctx context.Context) (*cache.SystemSettings, error)
 	GetOllamaRegistry() (string, error)
+	RestartOllama(ctx context.Context) error
 }
 
 type SystemImpl struct {
@@ -69,7 +70,7 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 	}
 
 	// 重启Ollama服务以应用新的代理设置
-	err = restartOllama(ctx)
+	err = s.RestartOllama(ctx)
 	if err != nil {
 		slog.Error("重启Ollama失败", "error", err)
 		// 回滚代理设置
@@ -97,7 +98,7 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 	var settings cache.SystemSettings
 	err := cache.ReadSystemSettings(&settings)
 
-	err = restartOllama(ctx)
+	err = s.RestartOllama(ctx)
 	if err != nil {
 		slog.Error("重启Ollama失败", "error", err)
 		return err
@@ -115,7 +116,7 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 	return nil
 }
 
-func restartOllama(ctx context.Context) error {
+func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	// 探查ollama服务是否在运行模型
 	engine := provider.GetModelEngine("ollama")
 
