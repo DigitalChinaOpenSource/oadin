@@ -85,6 +85,7 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	s.mu.Lock()
 	if s.pending[serverKey] > 0 {
 		s.mu.Unlock()
+		log.Printf("[MCP] Client for server %s is already pending initialization", serverKey)
 		return nil
 	}
 
@@ -100,11 +101,12 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 		delete(s.clients, serverKey)
 		delete(s.pending, serverKey)
 	}
+
+	s.pending[serverKey] = 1
 	s.mu.Unlock()
 
 	// 异步初始化客户端
-	s.pending[serverKey] = 1
-	go func(s *StdioTransport) {
+	go func() {
 		cli, err := s.initTransportClient(config)
 		if err != nil {
 			log.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
@@ -114,7 +116,7 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 		s.mu.Lock()
 		s.clients[serverKey] = cli
 		s.mu.Unlock()
-	}(s)
+	}()
 
 	return nil
 }
@@ -161,13 +163,28 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		return nil, fmt.Errorf("client for MCP %s not found", mcpId)
 	}
 
-	fetchRequest := mcp.CallToolRequest{}
-	fetchRequest.Params.Name = params.Name
-	fetchRequest.Params.Arguments = params.Arguments
-	result, err := cli.CallTool(ctx, fetchRequest)
-	if err != nil {
-		fmt.Printf("Failed to call the tool: %v\n", err)
-		return nil, err
+	try := func() (*mcp.CallToolResult, error) {
+		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		defer cancel()
+
+		fetchRequest := mcp.CallToolRequest{}
+		fetchRequest.Params.Name = params.Name
+		fetchRequest.Params.Arguments = params.Arguments
+		result, err := cli.CallTool(ctx, fetchRequest)
+		if err != nil {
+			fmt.Printf("Failed to call the tool: %v\n", err)
+			return nil, err
+		}
+		return result, nil
 	}
-	return result, nil
+
+	for i := range 5 {
+		result, err := try()
+		if err == nil {
+			return result, nil
+		}
+		fmt.Printf("Retrying to call tool for MCP %s, attempt %d\n", mcpId, i+1)
+		time.Sleep(100 * time.Millisecond)
+	}
+	return nil, fmt.Errorf("failed to call tool after 5 attempts for MCP %s", mcpId)
 }
