@@ -11,7 +11,8 @@ type ChatSession struct {
 	ModelID         string    `json:"model_id"`         // 使用的chat模型
 	ModelName       string    `json:"model_name"`       // 新增字段，模型名称
 	EmbedModelID    string    `json:"embed_model_id"`   // 使用的embedding模型
-	ThinkingEnabled bool      `json:"thinking_enabled"` // 是否启用思考模式
+	ThinkingEnabled bool      `json:"thinking_enabled"` // 模型是否支持深度思考
+	ThinkingActive  bool      `json:"thinking_active"`  // 当前会话是否启用深度思考
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
@@ -71,7 +72,7 @@ type ChatRequest struct {
 	Temperature float32             `json:"temperature,omitempty"`
 	MaxTokens   int                 `json:"max_tokens,omitempty"`
 	Stream      bool                `json:"stream,omitempty"`
-	Options     map[string]any      `json:"options,omitempty"`
+	Think       bool                `json:"think,omitempty"` 
 	Tools       []Tool              `json:"tools,omitempty"` // 新增，支持Ollama工具调用
 }
 
@@ -84,7 +85,7 @@ type ChatResponse struct {
 	Content       string     `json:"content"`
 	ToolCalls     []ToolCall `json:"tool_calls,omitempty"`     // 新增，支持Ollama工具调用
 	IsComplete    bool       `json:"is_complete"`              // 流式输出时，是否是最后一个块
-	Thoughts      string     `json:"thoughts,omitempty"`       // 深度思考的结果
+	Thoughts      string     `json:"thinking,omitempty"`       // 深度思考的结果
 	Type          string     `json:"type,omitempty"`           // "answer"、"thoughts"等
 	TotalDuration int64      `json:"total_duration,omitempty"` // 总耗时，单位秒
 }

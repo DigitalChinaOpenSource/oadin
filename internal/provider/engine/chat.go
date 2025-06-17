@@ -32,6 +32,7 @@ type ollamaAPIResponse struct {
 type ollamaMessage struct {
 	Role      string           `json:"role"`
 	Content   string           `json:"content"`
+	Thinking  string           `json:"thinking,omitempty"` // 支持深度思考模式
 	ToolCalls []types.ToolCall `json:"tool_calls,omitempty"`
 }
 
@@ -178,6 +179,13 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			// 提取模型名称
 			model := ollamaResp.Model
 
+			// 提取思考内容(如果有)
+			var thoughts string
+			if ollamaResp.Message != nil && ollamaResp.Message.Thinking != "" {
+				thoughts = ollamaResp.Message.Thinking
+				fmt.Printf("[Chat] 提取到思考内容，长度: %d\n", len(thoughts))
+			}
+
 			// 提取工具调用(如果有)
 			var toolCalls []types.ToolCall
 			if ollamaResp.Message != nil && ollamaResp.Message.ToolCalls != nil && len(ollamaResp.Message.ToolCalls) > 0 {
@@ -195,6 +203,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 				IsComplete: isComplete,
 				Object:     "chat.completion",
 				ToolCalls:  toolCalls,
+				Thoughts:   thoughts, // 添加思考内容
 			}
 			return resp, nil
 		}
@@ -209,6 +218,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 		isComplete := false
 		model := ""
 		var toolCalls []types.ToolCall
+		var thoughts string
 
 		// 尝试提取message.content (Ollama /api/chat)
 		if msg, ok := data["message"].(map[string]interface{}); ok {
@@ -216,6 +226,12 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			if c, ok := msg["content"].(string); ok {
 				content = c
 				fmt.Printf("[Chat] 从message.content提取内容，长度: %d\n", len(content))
+			}
+
+			// 提取thinking
+			if th, ok := msg["thinking"].(string); ok {
+				thoughts = th
+				fmt.Printf("[Chat] 从message.thinking提取思考内容，长度: %d\n", len(thoughts))
 			}
 
 			// 提取tool_calls
@@ -258,6 +274,13 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 				fmt.Printf("[Chat] 从顶层提取到tool_calls，数量: %d\n", len(toolCalls))
 			}
 		}
+		// 尝试从顶级字段提取thinking
+		if thoughts == "" {
+			if th, ok := data["thinking"].(string); ok {
+				thoughts = th
+				fmt.Printf("[Chat] 从顶级thinking字段提取思考内容，长度: %d\n", len(thoughts))
+			}
+		}
 
 		// 创建响应对象
 		resp := &types.ChatResponse{
@@ -266,6 +289,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			IsComplete: isComplete,
 			Object:     "chat.completion",
 			ToolCalls:  toolCalls,
+			Thoughts:   thoughts, // 添加思考内容
 		}
 		return resp, nil
 	case <-ctx.Done():
