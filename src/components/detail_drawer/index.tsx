@@ -50,6 +50,7 @@ export const DetailDrawer: React.FC<IDetailDrawer> = (options: IDetailDrawer) =>
       closable={false}
       open={true}
       {...options}
+      destroyOnHidden={true}
     >
       {mcpDetail && (
         <div className={styles.mcpManageDetail}>
