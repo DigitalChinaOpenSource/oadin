@@ -95,3 +95,7 @@ func ModifySystemUserVariables(envInfo *EnvVariables) error {
 
 	return nil
 }
+
+func SetCmdSysProcAttr(cmd *exec.Cmd) {
+	fmt.Printf("not implement")
+}
