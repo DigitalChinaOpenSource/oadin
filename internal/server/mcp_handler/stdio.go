@@ -15,8 +15,6 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// StdioTransport is a thread-safe singleton responsible for managing the lifecycle of MCP clients over stdio transport,
-// ensuring safe concurrent access, initialization, and cleanup of client instances.
 type StdioTransport struct {
 	clients map[string]*client.Client
 	mu      sync.Mutex
@@ -29,13 +27,11 @@ var (
 	stdioTransportOnce sync.Once
 )
 
-// NewStdioTransport returns a singleton instance of StdioTransport.
-// This ensures that all MCP clients over stdio transport are managed centrally and safely across the application lifecycle.
 func NewStdioTransport() *StdioTransport {
 	return &stdioTransportInstance
 }
 
-func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*client.Client, error) {
+func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*client.Client, error) {
 	if config.Command == "" {
 		return nil, errors.New("command must be provided")
 	}
@@ -50,7 +46,7 @@ func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*cli
 			config.Args...,
 		)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		if err := stdioTransport.Start(ctx); err != nil {
@@ -80,7 +76,7 @@ func (s *StdioTransport) initTransportClient(config types.MCPServerConfig) (*cli
 	return try()
 }
 
-func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, error) {
+func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	serverKey := config.Id
 
 	// 检查是否有正在初始化的客户端
@@ -91,7 +87,7 @@ func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, er
 		defer cancel()
 		if err := cli.Ping(ctx); err == nil {
 			s.mu.Unlock()
-			return cli, nil
+			return nil
 		}
 		delete(s.clients, serverKey)
 	}
@@ -110,7 +106,35 @@ func (s *StdioTransport) Start(config types.MCPServerConfig) (*client.Client, er
 		s.mu.Unlock()
 	}(s)
 
-	return nil, nil
+	return nil
+}
+
+func (s *StdioTransport) getClient(config *types.MCPServerConfig) (*client.Client, error) {
+	serverKey := config.Id
+
+	s.mu.Lock()
+	if cli, exists := s.clients[serverKey]; exists {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := cli.Ping(ctx); err == nil {
+			s.mu.Unlock()
+			return cli, nil
+		}
+		delete(s.clients, serverKey)
+	}
+	s.mu.Unlock()
+
+	cli, err := s.initTransportClient(config)
+	if err != nil {
+		log.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
+		return nil, err
+	}
+	fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
+	s.mu.Lock()
+	s.clients[serverKey] = cli
+	s.mu.Unlock()
+
+	return cli, nil
 }
 
 func (s *StdioTransport) Stop(serverKey string) error {
@@ -151,13 +175,14 @@ func (s *StdioTransport) FetchTools(serverKey string) ([]mcp.Tool, error) {
 	return tools.Tools, nil
 }
 
-func (s *StdioTransport) CallTool(serverKey string, params mcp.CallToolParams) (*mcp.CallToolResult, error) {
-	cli, exists := s.clients[serverKey]
-	if !exists {
-		return nil, errors.New("client not found")
+func (s *StdioTransport) CallTool(config *types.MCPServerConfig, params mcp.CallToolParams) (*mcp.CallToolResult, error) {
+	cli, err := s.getClient(config)
+	if err != nil {
+		log.Printf("Failed to get client for server %s: %v", config.Id, err)
+		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	fetchRequest := mcp.CallToolRequest{}

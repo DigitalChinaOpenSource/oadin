@@ -33,14 +33,15 @@ func (s *ChatSession) Index() map[string]interface{} {
 
 // 对话消息
 type ChatMessage struct {
-	ID        string    `json:"id"`
-	SessionID string    `json:"session_id"`
-	Role      string    `json:"role"`
-	Content   string    `json:"content"`
-	Order     int       `json:"order" gorm:"column:msg_order"`
-	CreatedAt time.Time `json:"created_at"`
-	ModelID   string    `json:"model_id,omitempty"`   // 新增字段，模型ID
-	ModelName string    `json:"model_name,omitempty"` // 新增字段，模型名称
+	ID            string    `json:"id"`
+	SessionID     string    `json:"session_id"`
+	Role          string    `json:"role"`
+	Content       string    `json:"content"`
+	Order         int       `json:"order" gorm:"column:msg_order"`
+	CreatedAt     time.Time `json:"created_at"`
+	ModelID       string    `json:"model_id,omitempty"`       // 新增字段，模型ID
+	ModelName     string    `json:"model_name,omitempty"`     // 新增字段，模型名称
+	TotalDuration int64     `json:"total_duration,omitempty"` // 总耗时，单位秒
 }
 
 func (m *ChatMessage) SetCreateTime(t time.Time) { m.CreatedAt = t }
@@ -76,15 +77,16 @@ type ChatRequest struct {
 
 // 聊天响应模型
 type ChatResponse struct {
-	ID         string     `json:"id"`
-	Object     string     `json:"object"`
-	Model      string     `json:"model"`
-	ModelName  string     `json:"model_name,omitempty"` // 新增字段
-	Content    string     `json:"content"`
-	ToolCalls  []ToolCall `json:"tool_calls,omitempty"` // 新增，支持Ollama工具调用
-	IsComplete bool       `json:"is_complete"`          // 流式输出时，是否是最后一个块
-	Thoughts   string     `json:"thoughts,omitempty"`   // 深度思考的结果
-	Type       string     `json:"type,omitempty"`       // "answer"、"thoughts"等
+	ID            string     `json:"id"`
+	Object        string     `json:"object"`
+	Model         string     `json:"model"`
+	ModelName     string     `json:"model_name,omitempty"` // 新增字段
+	Content       string     `json:"content"`
+	ToolCalls     []ToolCall `json:"tool_calls,omitempty"`     // 新增，支持Ollama工具调用
+	IsComplete    bool       `json:"is_complete"`              // 流式输出时，是否是最后一个块
+	Thoughts      string     `json:"thoughts,omitempty"`       // 深度思考的结果
+	Type          string     `json:"type,omitempty"`           // "answer"、"thoughts"等
+	TotalDuration int64      `json:"total_duration,omitempty"` // 总耗时，单位秒
 }
 type ToolCall struct {
 	Function struct {
