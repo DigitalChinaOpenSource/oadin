@@ -183,7 +183,17 @@ export default function GeneralCard(props: IGeneralCardProps) {
   return (
     <div
       className={`${styles.generalCard} ${!isDetail ? styles.generalCardHover : styles.generalCardDetail} `}
-      onClick={() => onCardClick?.(true, modelData)}
+      onClick={(e) => {
+        if (props.isSelectable) {
+          if (modelData?.can_select) {
+            handleSelectModelData(e);
+          } else {
+            message.warning(toolTipsText);
+          }
+        } else {
+          onCardClick?.(true, modelData);
+        }
+      }}
     >
       {/* 推荐使用，定位右上角 */}
       {modelData?.is_recommended && !props.isSelectable && <div className={styles.recommend}>推荐使用</div>}
