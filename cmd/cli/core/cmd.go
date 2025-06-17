@@ -1407,6 +1407,7 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 }
 
 func ListenModelEngineHealth() {
+	time.Sleep(10 * time.Second)
 	ds := datastore.GetDefaultDatastore()
 
 	sp := &types.ServiceProvider{
