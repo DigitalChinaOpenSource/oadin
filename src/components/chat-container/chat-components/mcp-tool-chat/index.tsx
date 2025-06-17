@@ -9,6 +9,7 @@ import { CheckCircleIcon } from '@phosphor-icons/react';
 import arrowUp from '@/components/icons/arrow-up.svg';
 import arrowDown from '@/components/icons/arrow-down.svg';
 import JsonParsePanel from '@/components/json-parse-panel';
+import useChatStore from '../../store/useChatStore';
 import styles from './index.module.scss';
 
 interface IDataSourceItem {
@@ -30,6 +31,7 @@ export default function McpToolChat(props: IMcpToolChatData) {
   console.log('McpToolChat dataSource=====>', props);
   const { data, status } = props.dataSource;
   const [isExpanded, setIsExpanded] = useState(false);
+  const { toolCallNumber } = useChatStore();
 
   const jsonParsePannel = (data: string) => {
     return (
@@ -137,8 +139,8 @@ export default function McpToolChat(props: IMcpToolChatData) {
                 height={16}
                 fill="#4f4dff"
               />
-              <div className={styles.statusText}>工具调用已完成，共执行 3 次</div>
-              <div className={styles.coastTime}>（用时 25 秒）</div>
+              <div className={styles.statusText}>工具调用已完成，共执行 {toolCallNumber || 0} 次</div>
+              {/* <div className={styles.coastTime}>（用时 25 秒）</div> */}
             </>
           )}
         </div>
