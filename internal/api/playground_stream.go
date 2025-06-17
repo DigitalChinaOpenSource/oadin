@@ -56,13 +56,14 @@ func (t *ByzeCoreServer) SendMessageStream(c *gin.Context) {
 			response := dto.StreamMessageResponse{
 				Bcode: bcode.SuccessCode,
 				Data: dto.MessageChunk{
-					ID:         chunk.ID,
-					SessionID:  req.SessionID,
-					Content:    chunk.Content,
-					IsComplete: chunk.IsComplete,
-					Thoughts:   chunk.Thoughts,
-					Type:       chunk.Type,
-					ToolCalls:  chunk.ToolCalls, // 新增，支持Ollama工具调用
+					ID:            chunk.ID,
+					SessionID:     req.SessionID,
+					Content:       chunk.Content,
+					IsComplete:    chunk.IsComplete,
+					Thoughts:      chunk.Thoughts,
+					Type:          chunk.Type,
+					ToolCalls:     chunk.ToolCalls,     // 新增，支持Ollama工具调用
+					TotalDuration: chunk.TotalDuration, // 新增总耗时
 				},
 			} // 序列化为JSON
 			data, err := json.Marshal(response)
