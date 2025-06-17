@@ -6,96 +6,42 @@ import { MessageType } from '@res-utiles/ui-components';
 import useChatStore from '@/components/chat-container/store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
-import { getIdByFunction } from '../select-mcp/lib/useSelectMcpHelper';
+import { getIdByFunction } from '../../select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
-
-// 请求参数接口
-interface ChatRequestParams {
-  content: string;
-  SessionID?: string;
-  mcpIds?: string[];
-}
-
-// 响应数据接口
-interface ChatResponseData {
-  bcode: {
-    business_code: number;
-    message: string;
-  };
-  data: {
-    id: string;
-    session_id: string;
-    content: string;
-    is_complete: boolean;
-    type: string;
-    thinking?: string;
-    tool_calls?: IToolCall[];
-  };
-}
-
-// 工具调用接口
-interface IToolCall {
-  function: {
-    name: string;
-    arguments: Record<string, any>;
-  };
-}
-
-// 工具调用参数接口
-interface IRunToolParams {
-  mcpId: string;
-  toolName: string;
-  toolArgs: Record<string, any>;
-}
-
-// 流式请求回调接口
-interface StreamCallbacks {
-  onDataReceived: (data: ChatResponseData) => void;
-  onComplete: () => void;
-  onFallbackResponse: (response: Response) => Promise<void>;
-}
-
-// 错误消息常量
-const ERROR_MESSAGES = {
-  NO_MODEL_SELECTED: '未选择模型，请先选择一个模型',
-  NO_DATA_TIMEOUT: '请求超时：15秒未收到数据',
-  TOTAL_TIMEOUT: '请求超时：30秒内未收到任何数据',
-  PARSE_ERROR: '解析响应数据失败',
-  CONNECTION_INTERRUPTED: '\n\n[消息传输中断]',
-  EMPTY_RESPONSE: '服务器响应异常，未能获取到有效数据',
-  NON_STREAMING: '服务器未返回流式数据',
-  TOOL_EXECUTION_FAILED: '工具执行失败',
-  RESPONSE_INTERRUPTED: '\n\n[回复已中断]',
-};
+import { ChatRequestParams, ChatResponseData, IRunToolParams, StreamCallbacks, IToolCall } from './types';
+import { ERROR_MESSAGES } from './contant';
+import { generateUniqueId, copyMessageToClipboard } from './utils';
 
 // 超时设置（毫秒）
 const TIMEOUT_CONFIG = {
-  NO_DATA: 15000, // 15秒无数据超时
-  TOTAL: 30000, // 30秒总超时
+  NO_DATA: 60000, // 60秒无数据超时
+  TOTAL: 120000, // 120秒总超时
 };
-
-/**
- * 生成唯一ID的工具函数
- */
-function generateUniqueId(prefix: string = 'id'): string {
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
 
 /**
  * 流式聊天Hook
  */
-export function useChatStream() {
-  // 状态与引用
-  const { addMessage, currentSessionId, setCurrentSessionId } = useChatStore();
+export function useChatStream(currentSessionId: string) {
+  const { addMessage, setCurrentSessionId } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
-  // UI状态
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 在状态定义部分添加工具调用状态
+  const [toolCallStatus, setToolCallStatus] = useState<{
+    isActive: boolean;
+    toolName?: string;
+    toolDesc?: string;
+    startTime?: number;
+    callCount: number;
+  }>({
+    isActive: false,
+    callCount: 0,
+  });
 
   // 请求控制
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -126,24 +72,7 @@ export function useChatStream() {
     totalTimer: null,
   });
 
-  /**
-   * 清除所有定时器
-   */
-  const clearTimers = useCallback(() => {
-    if (timeoutRefsRef.current.noDataTimer) {
-      clearTimeout(timeoutRefsRef.current.noDataTimer);
-      timeoutRefsRef.current.noDataTimer = null;
-    }
-
-    if (timeoutRefsRef.current.totalTimer) {
-      clearTimeout(timeoutRefsRef.current.totalTimer);
-      timeoutRefsRef.current.totalTimer = null;
-    }
-  }, []);
-
-  /**
-   * 重置无数据超时定时器
-   */
+  // 重置无数据超时定时器
   const resetNoDataTimer = useCallback(() => {
     if (timeoutRefsRef.current.noDataTimer) {
       clearTimeout(timeoutRefsRef.current.noDataTimer);
@@ -156,9 +85,7 @@ export function useChatStream() {
     }, TIMEOUT_CONFIG.NO_DATA);
   }, []);
 
-  /**
-   * 清除流式状态
-   */
+  // 清除流式状态
   const clearStreamingState = useCallback(() => {
     setStreamingContent('');
     setStreamingThinking('');
@@ -192,17 +119,9 @@ export function useChatStream() {
     }
   }, []);
 
-  /**
-   * 取消请求并保存已生成内容
-   */
+  // 取消请求并保存已生成内容
   const cancelRequest = useCallback(
     (reason?: string) => {
-      console.log(`取消请求 (原因: ${reason || '用户操作'})`, {
-        isLoading,
-        hasContent: !!streamingContent,
-        isAbortControllerActive: !!abortControllerRef.current,
-      });
-
       // 如果有生成的内容，保存为消息
       if (isLoading && streamingContent) {
         const aiMessage: MessageType = {
@@ -214,15 +133,6 @@ export function useChatStream() {
               type: 'plain',
               content: streamingContent + ERROR_MESSAGES.RESPONSE_INTERRUPTED,
             },
-            ...(streamingThinking
-              ? [
-                  {
-                    id: generateUniqueId('thinking'),
-                    type: 'think',
-                    content: streamingThinking,
-                  },
-                ]
-              : []),
           ],
         };
 
@@ -239,9 +149,7 @@ export function useChatStream() {
     [isLoading, streamingContent, streamingThinking, addMessage, cleanupResources, clearStreamingState],
   );
 
-  /**
-   * 创建流式请求
-   */
+  // 创建流式请求
   const createStreamRequest = useCallback(async (url: string, options: FetchEventSourceInit, callbacks: StreamCallbacks) => {
     requestStateRef.current.hasReceivedData = false;
     const enhancedOptions: FetchEventSourceInit = {
@@ -253,7 +161,6 @@ export function useChatStream() {
           console.error('流式请求打开失败:', response.status, response.statusText, errorText);
           throw new Error(`服务器返回错误: ${response.status} ${response.statusText} - ${errorText}`);
         }
-
         // 检查Content-Type是否为EventStream
         const contentType = response.headers.get('Content-Type');
         if (!contentType || !contentType.includes('text/event-stream')) {
@@ -276,11 +183,6 @@ export function useChatStream() {
             console.error('JSON解析失败，收到的数据:', event.data);
             throw new Error(`解析响应JSON失败: ${parseError.message}`);
           }
-          // 检查业务状态码
-          if (response.bcode.business_code !== 200) {
-            throw new Error(`API错误: ${response.bcode.message}`);
-          }
-
           callbacks.onDataReceived(response);
 
           if (response.data.is_complete) {
@@ -300,10 +202,8 @@ export function useChatStream() {
         }
 
         setError(errorMessage);
-        clearTimers();
+        cleanupResources();
         setIsLoading(false);
-
-        // 调用原始错误处理器（如果有）
         if (options.onerror) {
           options.onerror(err);
         }
@@ -311,9 +211,7 @@ export function useChatStream() {
 
       // 连接关闭处理
       onclose: () => {
-        clearTimers();
-
-        // 调用原始关闭处理器（如果有）
+        cleanupResources();
         if (options.onclose) {
           options.onclose();
         }
@@ -325,95 +223,284 @@ export function useChatStream() {
 
   const handleToolCalls = useCallback(
     async (toolCalls: IToolCall[], currentContent: string) => {
-      // 防止重复处理工具调用
       if (requestStateRef.current.isToolCallActive) {
         console.log('工具调用已在处理中，忽略新请求');
         return;
       }
 
       requestStateRef.current.isToolCallActive = true;
+
+      // 用于跟踪当前工具调用的消息ID
+      let currentToolMessageId = '';
+      // 用于保存所有工具调用的结果数组
+      let toolCallResults: any[] = [];
+      // 跟踪是否所有工具调用完成
+      let allToolCallsCompleted = true;
+      // 跟踪当前消息的contentList
+      let currentContentList: any[] = [];
+
       try {
-        setStreamingContent(currentContent);
         const _function = toolCalls[0].function;
+        setToolCallStatus((prev) => ({
+          isActive: true,
+          toolName: _function.name,
+          toolDesc: '工具调用',
+          startTime: Date.now(),
+          callCount: prev.callCount + 1,
+        }));
+
+        setStreamingContent(currentContent);
         const toolResponse = await getIdByFunction({ toolName: _function.name, toolArgs: _function.arguments }, selectedMcpIds());
 
-        // 调用工具API
-        const data = await httpRequest.post('/mcp/client/runTool', toolResponse);
-        // 检查结果
-        if (!data || data?.content?.isError) {
-          throw new Error(ERROR_MESSAGES.TOOL_EXECUTION_FAILED);
+        // 检查是否已存在工具调用消息
+        const existingToolMessage = useChatStore
+          .getState()
+          .messages.find(
+            (msg) =>
+              msg.role === 'assistant' &&
+              msg.contentList?.some(
+                (contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.data?.some((tool: any) => tool.mcpId === toolResponse.mcpId),
+              ),
+          );
+
+        // 如果找到包含同一mcpId的消息，使用它
+        if (existingToolMessage) {
+          currentToolMessageId = existingToolMessage.id;
+          currentContentList = [...(existingToolMessage.contentList || [])];
+
+          // 查找该消息中包含mcpId的内容项
+          const mcpContentIndex = currentContentList.findIndex(
+            (content) => content.type === 'mcp' && typeof content.content === 'object' && content.content.data?.some((tool: any) => tool.mcpId === toolResponse.mcpId),
+          );
+
+          if (mcpContentIndex >= 0) {
+            // 获取现有的工具调用数据
+            toolCallResults = [...currentContentList[mcpContentIndex].content.data];
+
+            // 检查现有工具调用是否都已完成
+            allToolCallsCompleted = toolCallResults.every((tool) => tool.status === 'success' || tool.status === 'error');
+          }
+        } else {
+          // 如果没找到同mcpId的消息，检查是否有进行中的工具调用消息
+          const progressToolMessage = useChatStore
+            .getState()
+            .messages.find((msg) => msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress'));
+
+          if (progressToolMessage) {
+            currentToolMessageId = progressToolMessage.id;
+            currentContentList = [...(progressToolMessage.contentList || [])];
+
+            // 找到progress状态的内容项
+            const progressContentIndex = currentContentList.findIndex((content) => content.type === 'mcp' && typeof content.content === 'object' && content.content.status === 'progress');
+
+            if (progressContentIndex >= 0) {
+              toolCallResults = [...currentContentList[progressContentIndex].content.data];
+              allToolCallsCompleted = toolCallResults.every((tool) => tool.status === 'success' || tool.status === 'error');
+            }
+          }
         }
+
+        // 添加当前进行中的工具到结果数组
+        toolCallResults.push({
+          mcpId: toolResponse.mcpId, // 添加mcpId用于标识
+          name: toolResponse.toolName,
+          desc: toolResponse.toolDesc || '工具调用',
+          logo: '',
+          inputParams: JSON.stringify(toolResponse.toolArgs),
+          status: 'progress',
+        });
+
+        // 因为有新的进行中的工具调用，整体状态应该是进行中
+        allToolCallsCompleted = false;
+
+        // 构建或更新工具调用内容
+        const mcpContent = {
+          id: generateUniqueId('content'),
+          type: 'mcp' as const,
+          content: {
+            status: 'progress',
+            data: toolCallResults,
+          },
+        };
+
+        // 如果已有消息，找到或替换MCP内容项
+        if (currentContentList.length > 0) {
+          const mcpIndex = currentContentList.findIndex((item) => item.type === 'mcp');
+          if (mcpIndex >= 0) {
+            // 替换现有的MCP内容项
+            currentContentList[mcpIndex] = mcpContent;
+          } else {
+            // 添加新的MCP内容项
+            currentContentList.push(mcpContent);
+          }
+        } else {
+          // 创建新的内容列表
+          currentContentList = [mcpContent];
+        }
+
+        // 构建消息对象
+        const mcpMessage: MessageType = {
+          id: currentToolMessageId || generateUniqueId('mcp_msg'),
+          role: 'assistant',
+          contentList: currentContentList,
+        };
+
+        // 更新或添加消息
+        currentToolMessageId = addMessage(mcpMessage, !!currentToolMessageId);
+
+        // 调用工具API
+        const data = await httpRequest.post('/mcp/client/runTool', toolResponse as IRunToolParams);
+        const isToolError = data?.content?.isError === true;
+        const toolErrorMessage = isToolError && Array.isArray(data.content) && data.content.length > 0 ? data.content[0]?.text || ERROR_MESSAGES.TOOL_EXECUTION_FAILED : '';
+
         setStreamingContent(currentContent);
         requestStateRef.current.responseContent = currentContent;
 
-        // 构建MCP类型消息并添加到消息列表
-        const mcpMessage: MessageType = {
-          id: generateUniqueId('mcp_msg'),
-          role: 'assistant',
-          contentList: [
-            {
-              id: generateUniqueId('content'),
-              type: 'mcp',
-              content: {
-                name: toolResponse.toolName,
-                desc: toolResponse.toolDesc,
-                logo: '',
-                inputParams: JSON.stringify(toolResponse.toolArgs),
-                outputParams: data.content[0].text,
-                status: data?.content[0].text ? 'success' : 'error',
-              },
-            },
-          ],
+        // 更新数组中最后一个工具的状态
+        const lastIndex = toolCallResults.length - 1;
+        toolCallResults[lastIndex] = {
+          ...toolCallResults[lastIndex],
+          outputParams: isToolError ? toolErrorMessage : data.content[0]?.text || '',
+          status: isToolError ? 'error' : 'success',
+          executionTime: Date.now() - (toolCallStatus.startTime || Date.now()),
         };
 
-        // 添加MCP消息到聊天
-        addMessage(mcpMessage);
+        // 检查所有工具是否完成
+        const allComplete = toolCallResults.every((tool) => tool.status === 'success' || tool.status === 'error');
 
-        if (toolCallHandlersRef.current.continueConversation) {
+        // 更新MCP内容
+        const updatedMcpContent = {
+          id: generateUniqueId('content'),
+          type: 'mcp' as const,
+          content: {
+            status: allComplete ? (toolCallResults.some((t) => t.status === 'error') ? 'error' : 'success') : 'progress',
+            data: toolCallResults,
+          },
+        };
+
+        // 再次找到或替换MCP内容项
+        const updatedContentList = [...currentContentList];
+        const mcpIndex = updatedContentList.findIndex((item) => item.type === 'mcp');
+        if (mcpIndex >= 0) {
+          updatedContentList[mcpIndex] = updatedMcpContent;
+        } else {
+          updatedContentList.push(updatedMcpContent);
+        }
+
+        // 构建更新后的消息对象
+        const updatedMessage: MessageType = {
+          id: currentToolMessageId,
+          role: 'assistant',
+          contentList: updatedContentList,
+        };
+
+        // 更新消息
+        addMessage(updatedMessage, true);
+
+        // 如果工具调用成功，继续对话
+        if (!isToolError && toolCallHandlersRef.current.continueConversation) {
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
+        } else if (isToolError) {
+          console.error('工具调用失败:', toolErrorMessage);
+          const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
+          setStreamingContent(errorContent);
+          requestStateRef.current.responseContent = errorContent;
         } else {
           console.error('工具调用处理程序未初始化');
           setError('工具调用处理失败: 内部错误');
         }
       } catch (error: any) {
         console.error('工具调用失败:', error);
-        // 更新界面显示错误
         const errorMessage = `\n\n[工具调用失败: ${error.message || '未知错误'}]`;
         const updatedContent = currentContent + errorMessage;
         setStreamingContent(updatedContent);
         requestStateRef.current.responseContent = updatedContent;
 
-        // 添加失败的MCP消息
-        const mcpErrorMessage: MessageType = {
-          id: generateUniqueId('mcp_error_msg'),
-          role: 'assistant',
-          contentList: [
-            {
-              id: generateUniqueId('content'),
-              type: 'mcp',
-              content: {
-                name: toolCalls[0].function.name,
-                desc: '工具调用',
-                logo: '',
-                inputParams: JSON.stringify(toolCalls[0].function.arguments),
-                outputParams: error.message || '未知错误',
-                status: 'error',
-              },
-            },
-          ],
-        };
+        // 如果有正在处理的工具调用，将其状态更新为错误
+        if (toolCallResults.length > 0) {
+          const lastIndex = toolCallResults.length - 1;
+          toolCallResults[lastIndex] = {
+            ...toolCallResults[lastIndex],
+            outputParams: error.message || '未知错误',
+            status: 'error',
+            executionTime: Date.now() - (toolCallStatus.startTime || Date.now()),
+          };
 
-        addMessage(mcpErrorMessage);
+          // 更新MCP内容
+          const errorMcpContent = {
+            id: generateUniqueId('content'),
+            type: 'mcp' as const,
+            content: {
+              status: toolCallResults.every((t) => t.status === 'error' || t.status === 'success') ? 'error' : 'progress',
+              data: toolCallResults,
+            },
+          };
+
+          // 更新内容列表
+          const errorContentList = [...currentContentList];
+          const mcpIndex = errorContentList.findIndex((item) => item.type === 'mcp');
+          if (mcpIndex >= 0) {
+            errorContentList[mcpIndex] = errorMcpContent;
+          } else {
+            errorContentList.push(errorMcpContent);
+          }
+
+          // 构建错误消息
+          const errorMessage: MessageType = {
+            id: currentToolMessageId || generateUniqueId('mcp_error_msg'),
+            role: 'assistant',
+            contentList: errorContentList,
+          };
+
+          addMessage(errorMessage, !!currentToolMessageId);
+        } else {
+          // 如果没有正在处理的工具调用，创建新的错误消息
+          const mcpErrorMessage: MessageType = {
+            id: generateUniqueId('mcp_error_msg'),
+            role: 'assistant',
+            contentList: [
+              {
+                id: generateUniqueId('content'),
+                type: 'mcp',
+                content: {
+                  status: 'error',
+                  data: [
+                    {
+                      mcpId: selectedMcpIds()[0] || '',
+                      name: toolCalls[0].function.name,
+                      desc: '工具调用',
+                      logo: '',
+                      inputParams: JSON.stringify(toolCalls[0].function.arguments),
+                      outputParams: error.message || '未知错误',
+                      status: 'error',
+                      executionTime: Date.now() - (toolCallStatus.startTime || Date.now()),
+                    },
+                  ],
+                },
+              },
+            ],
+          };
+
+          addMessage(mcpErrorMessage);
+        }
       } finally {
-        requestStateRef.current.isToolCallActive = false;
+        // 这里不重置工具调用状态，只在最终完成时重置
+        if (allToolCallsCompleted) {
+          requestStateRef.current.isToolCallActive = false;
+          setToolCallStatus((prev) => ({
+            isActive: false,
+            callCount: prev.callCount,
+          }));
+        } else {
+          // 如果工具调用还未全部完成，保持活跃状态
+          console.log('工具调用未全部完成，保持活跃状态');
+        }
       }
     },
     [selectedMcpIds, setStreamingContent, setError, addMessage],
   );
 
-  /**
-   * 使用工具结果继续对话
-   */
+  // 使用工具结果继续对话
   const continueConversationWithResult = useCallback(
     async (toolResult: string) => {
       try {
@@ -479,28 +566,58 @@ export function useChatStream() {
                     localResponseContent = data.content;
                   }
                 }
-
                 setStreamingContent(localResponseContent);
                 requestStateRef.current.responseContent = localResponseContent;
               }
             },
-
             onComplete: () => {
-              setStreamingContent(localResponseContent);
-              requestStateRef.current.responseContent = localResponseContent;
-            },
+              // 获取当前所有消息
+              const allMessages = useChatStore.getState().messages;
 
+              // 检查是否有进行中的工具调用
+              const hasActiveToolCall = allMessages.some((msg) =>
+                msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem?.content?.status === 'progress'),
+              );
+
+              // 只有当没有活跃的工具调用和有内容时，才添加纯文本消息
+              if (!requestStateRef.current.isToolCallActive && !hasActiveToolCall && (requestStateRef.current.responseContent || localResponseContent)) {
+                const aiMessage: MessageType = {
+                  id: generateUniqueId('ai_msg'),
+                  role: 'assistant',
+                  contentList: [
+                    {
+                      id: generateUniqueId('content'),
+                      type: 'plain',
+                      content: requestStateRef.current.responseContent || localResponseContent,
+                    },
+                  ],
+                };
+
+                // 添加到消息列表
+                addMessage(aiMessage);
+              }
+
+              // 如果所有工具调用都已完成，完全清理状态
+              if (!hasActiveToolCall) {
+                requestStateRef.current.isToolCallActive = false;
+                setToolCallStatus((prev) => ({
+                  isActive: false,
+                  callCount: prev.callCount,
+                }));
+                clearStreamingState();
+              }
+
+              setIsLoading(false);
+              cleanupResources();
+            },
             onFallbackResponse: async (response) => {
               try {
                 const fullResponseText = await response.text();
-
                 try {
                   const fullResponse = JSON.parse(fullResponseText);
-
                   if (fullResponse.error) {
                     console.error('工具调用返回错误:', fullResponse.error);
                     const errorContent = streamingContent + `\n\n[工具调用失败: ${fullResponse.error}]`;
-
                     setStreamingContent(errorContent);
                     requestStateRef.current.responseContent = errorContent;
                   } else if (fullResponse?.data?.content) {
@@ -510,14 +627,12 @@ export function useChatStream() {
                 } catch (parseError) {
                   console.error('解析工具调用响应失败:', parseError);
                   const errorContent = streamingContent + '\n\n[解析工具调用响应失败]';
-
                   setStreamingContent(errorContent);
                   requestStateRef.current.responseContent = errorContent;
                 }
               } catch (readError) {
                 console.error('读取工具调用响应失败:', readError);
                 const errorContent = streamingContent + '\n\n[读取工具调用响应失败]';
-
                 setStreamingContent(errorContent);
                 requestStateRef.current.responseContent = errorContent;
               }
@@ -535,80 +650,62 @@ export function useChatStream() {
   const sendChatMessageInternal = useCallback(
     async (userMessage: string, isResend = false) => {
       if (!userMessage.trim()) return;
-
       // 取消之前的请求
       cancelRequest('发送新消息');
-
       // 清除流状态
       clearStreamingState();
-
       // 模型检查
       if (!selectedModel) {
         setError(ERROR_MESSAGES.NO_MODEL_SELECTED);
         return;
       }
-
       // 记录最后一条消息用于重发
       if (!isResend) {
         lastUserMessageRef.current = userMessage;
-      }
 
-      // 创建用户消息，仅在非重发时添加
-      const userMsg: MessageType = {
-        id: generateUniqueId('user_msg'),
-        role: 'user',
-        contentList: [
-          {
-            id: generateUniqueId('content'),
-            type: 'plain',
-            content: userMessage,
-          },
-        ],
-      };
-
-      // 如果不是重发，添加用户消息到消息列表
-      if (!isResend) {
+        // 创建用户消息，仅在非重发时添加
+        const userMsg: MessageType = {
+          id: generateUniqueId('user_msg'),
+          role: 'user',
+          contentList: [
+            {
+              id: generateUniqueId('content'),
+              type: 'plain',
+              content: userMessage,
+            },
+          ],
+        };
         addMessage(userMsg);
       }
-
       // 设置加载状态
       setIsLoading(true);
-
       // 创建请求控制器
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
-
       // 构建请求参数
       const requestData: ChatRequestParams = {
         content: userMessage,
       };
-
-      // 添加会话ID (如果有)
+      // 添加会话ID
       if (currentSessionId && currentSessionId.trim()) {
         requestData.SessionID = currentSessionId;
       }
-
-      // 添加MCP IDs (如果有)
+      // 添加MCP IDs
       if (selectedMcpIds().length > 0) {
         requestData.mcpIds = selectedMcpIds();
       }
-
       try {
         const API_BASE_URL = import.meta.env.VITE_HEALTH_API_URL || '';
-
         // 设置总超时
         timeoutRefsRef.current.totalTimer = setTimeout(() => {
           console.log('总超时触发');
           setError(ERROR_MESSAGES.TOTAL_TIMEOUT);
           cancelRequest('总超时');
         }, TIMEOUT_CONFIG.TOTAL);
-
         // 在收到第一个数据前启动无数据超时计时器
         resetNoDataTimer();
-
         // 初始化响应内容
         let responseContent = '';
-
         await createStreamRequest(
           `${API_BASE_URL}${API_PREFIX}/playground/message/stream`,
           {
@@ -620,11 +717,11 @@ export function useChatStream() {
             onerror: (error) => {
               console.error('流式请求错误:', error);
               setError(`请求失败: ${error.message}`);
-              clearTimers();
+              cleanupResources();
               setIsLoading(false);
             },
             onclose: () => {
-              clearTimers();
+              cleanupResources();
 
               // 如果连接关闭但未完成且有内容，保存部分回复
               if (isLoading && responseContent) {
@@ -680,23 +777,25 @@ export function useChatStream() {
 
             // 完成回调
             onComplete: () => {
-              const aiMessage: MessageType = {
-                id: generateUniqueId('ai_msg'),
-                role: 'assistant',
-                contentList: [
-                  {
-                    id: generateUniqueId('content'),
-                    type: 'plain',
-                    content: requestStateRef.current.responseContent || responseContent,
-                  },
-                ],
-              };
+              if (!requestStateRef.current.isToolCallActive && (requestStateRef.current.responseContent || responseContent)) {
+                const aiMessage: MessageType = {
+                  id: generateUniqueId('ai_msg'),
+                  role: 'assistant',
+                  contentList: [
+                    {
+                      id: generateUniqueId('content'),
+                      type: 'plain',
+                      content: requestStateRef.current.responseContent || responseContent,
+                    },
+                  ],
+                };
 
-              // 添加到消息列表
-              addMessage(aiMessage);
+                // 添加到消息列表
+                addMessage(aiMessage);
+              }
               clearStreamingState();
               setIsLoading(false);
-              clearTimers();
+              cleanupResources();
             },
 
             // 非流式响应处理
@@ -751,10 +850,10 @@ export function useChatStream() {
         console.error('发送聊天请求失败:', error);
         setError(`发送请求失败: ${error.message}`);
         setIsLoading(false);
-        clearTimers();
+        cleanupResources();
       }
     },
-    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, setCurrentSessionId, createStreamRequest, clearTimers, resetNoDataTimer, handleToolCalls],
+    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, setCurrentSessionId, createStreamRequest, cleanupResources, resetNoDataTimer, handleToolCalls],
   );
 
   const sendChatMessage = useCallback(
@@ -768,39 +867,43 @@ export function useChatStream() {
     [sendChatMessageInternal, isLoading],
   );
 
-  /**
-   * 复制消息到剪贴板
-   */
-  const copyMessageToClipboard = useCallback((content: string) => {
-    if (!content) return false;
-
-    try {
-      navigator.clipboard.writeText(content);
-      return true;
-    } catch (err) {
-      console.error('复制到剪贴板失败:', err);
-      return false;
-    }
-  }, []);
-
-  /**
-   * 重发最后一条消息
-   */
+  // 重发最后一条消息
   const resendLastMessage = useCallback(async () => {
-    if (!lastUserMessageRef.current || isLoading) {
-      console.log('无上一条消息或正在加载中，不进行重发');
-      return;
-    }
+    if (isResending) return;
 
-    setIsResending(true);
     try {
-      await sendChatMessageInternal(lastUserMessageRef.current, true);
+      setIsResending(true);
+      setError(null);
+
+      // 获取上次发送的消息内容
+      const lastMessage = lastUserMessageRef.current;
+      if (!lastMessage) {
+        console.warn('没有可重发的消息');
+        setIsResending(false);
+        return;
+      }
+      const userMessage: MessageType = {
+        id: generateUniqueId('user_msg'),
+        role: 'user',
+        contentList: [
+          {
+            id: generateUniqueId('content'),
+            type: 'plain',
+            content: lastMessage,
+          },
+        ],
+      };
+      addMessage(userMessage);
+
+      await sendChatMessageInternal(lastMessage, true);
+    } catch (error: any) {
+      console.error('重发消息失败:', error);
+      setError(`重发消息失败: ${error.message || '未知错误'}`);
     } finally {
       setIsResending(false);
     }
-  }, [isLoading, sendChatMessageInternal]);
+  }, [isResending, sendChatMessageInternal, addMessage]);
 
-  // 初始化工具调用处理程序引用
   useEffect(() => {
     toolCallHandlersRef.current.continueConversation = continueConversationWithResult;
 
@@ -811,7 +914,6 @@ export function useChatStream() {
 
   useEffect(() => {
     return () => {
-      console.log('组件卸载，清理资源');
       cleanupResources();
     };
   }, [cleanupResources]);
@@ -825,6 +927,5 @@ export function useChatStream() {
     sendChatMessage,
     cancelRequest,
     resendLastMessage,
-    copyMessageToClipboard,
   };
 }
