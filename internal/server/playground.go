@@ -35,6 +35,7 @@ type Playground interface {
 	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
 	DeleteFile(ctx context.Context, request *dto.DeleteFileRequest) (*dto.DeleteFileResponse, error)
 	ProcessFile(ctx context.Context, request *dto.GenerateEmbeddingRequest) (*dto.GenerateEmbeddingResponse, error)
+	CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error)
 
 	findRelevantContext(ctx context.Context, session *types.ChatSession, query string) (string, error)
 	findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error)
@@ -52,15 +53,15 @@ func NewPlayground() Playground {
 	go func() {
 		ctx := context.Background()
 		dbPath := config.GlobalByzeEnvironment.Datastore
-		if err := InitPlaygroundVSS(ctx, dbPath); err != nil {
-			slog.Error("初始化VSS失败，将回退到标准向量搜索", "error", err)
+		if err := InitPlaygroundVec(ctx, dbPath); err != nil {
+			slog.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
 		} else {
-			if vssInitialized && vssDB != nil {
-				slog.Info("VSS初始化成功，已启用向量相似度搜索优化")
+			if vecInitialized && vecDB != nil {
+				slog.Info("VEC初始化成功，已启用向量相似度搜索优化")
 			} else if UseVSSForPlayground() {
-				slog.Info("VSS扩展未找到，将使用标准向量搜索")
+				slog.Info("VEC扩展未找到，将使用标准向量搜索")
 			} else {
-				slog.Info("VSS功能已通过环境变量禁用，将使用标准向量搜索")
+				slog.Info("VEC功能已通过环境变量禁用，将使用标准向量搜索")
 			}
 		}
 	}()
@@ -218,12 +219,12 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 			"role":    msg.Role,
 			"content": msg.Content,
 		})
-	}
-	// 添加RAG上下文
+	} // 添加RAG上下文
 	enhancedContent := request.Content
+	slog.Info("开始查找相关RAG上下文", "session_id", session.ID, "question", request.Content)
 	relevantContext, err := p.findRelevantContext(ctx, session, request.Content)
 	if err != nil {
-		slog.Warn("查找相关上下文失败", "error", err)
+		slog.Warn("查找相关上下文失败", "error", err, "session_id", session.ID)
 	}
 
 	if relevantContext != "" {
@@ -463,10 +464,19 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 			if err != nil {
 				slog.Error("Failed to list file chunks", "error", err)
 			} else {
-				// 如果VSS初始化完成，从VSS中删除文件的所有块
-				if vssInitialized {
-					if err := vssDB.DeleteChunks(ctx, file.ID); err != nil {
-						slog.Error("从VSS删除文件块失败", "error", err, "file_id", file.ID)
+				if vecInitialized {
+					if vecDB != nil {
+						var chunkIDs []string
+						for _, c := range chunks {
+							chunk := c.(*types.FileChunk)
+							chunkIDs = append(chunkIDs, chunk.ID)
+						}
+						if len(chunkIDs) > 0 {
+							err := vecDB.DeleteChunks(ctx, chunkIDs)
+							if err != nil {
+								slog.Error("从VEC删除文件块失败", "error", err, "file_id", file.ID)
+							}
+						}
 					}
 				}
 
