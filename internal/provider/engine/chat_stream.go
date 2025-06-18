@@ -27,6 +27,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 	// Debug log to trace model conversion
 	fmt.Printf("[ChatStream] Model conversion: %s -> %s\n", originalModel, modelName)
+	fmt.Printf("[ChatStream] Request body: %s\n", string(body))
 
 	serviceReq := &types.ServiceRequest{
 		Service:       "chat",
@@ -63,9 +64,9 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				continue
 			}
 			// Debug输出
-			fmt.Printf("[ChatStream] 收到块，长度: %d\n", len(result.HTTP.Body))
-			debugLogJSON("[ChatStream] 原始响应内容", result.HTTP.Body)
-			debugLogJSON("[ChatStream] 收到块内容", result.HTTP.Body) // 调用调试日志函数
+			// fmt.Printf("[ChatStream] 收到块，长度: %d\n", len(result.HTTP.Body))
+			// fmt.Printf("[ChatStream] 原始响应内容", string(result.HTTP.Body))
+			// debugLogJSON("[ChatStream] 收到块内容", result.HTTP.Body) // 调用调试日志函数
 
 			// 每个块都是一个完整的JSON对象
 			var ollamaResp ollamaAPIResponse
@@ -85,7 +86,6 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				// 1. 如果存在message字段且有内容，使用message.content (优先 /api/chat 格式)
 				if ollamaResp.Message != nil && ollamaResp.Message.Content != "" {
 					content = ollamaResp.Message.Content
-					fmt.Printf("[ChatStream] 从message.content提取内容，长度: %d\n", len(content))
 				} else if ollamaResp.Response != "" {
 					// 2. 如果存在response字段且有内容，使用response (/api/generate 格式)
 					content = ollamaResp.Response
@@ -95,7 +95,6 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 					content = ollamaResp.Content
 					fmt.Printf("[ChatStream] 从content提取内容，长度: %d\n", len(content))
 				}
-
 
 				var thoughts string
 				if ollamaResp.Message != nil && ollamaResp.Message.Thinking != "" {
@@ -171,7 +170,6 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			} // 处理提取到的内容
 			if content != "" {
 				accumulatedContent += content
-				fmt.Printf("[ChatStream] 累积内容，当前长度: %d\n", len(accumulatedContent))
 			} // 创建响应对象
 			resp := &types.ChatResponse{
 				Content:       content, // 只发送当前块的内容，而不是累积的内容
