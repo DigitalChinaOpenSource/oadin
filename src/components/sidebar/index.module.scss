@@ -42,18 +42,17 @@
     }
   }
   .downloadBtnBox {
-    width: 42px;
-    height: 42px;
-    border-radius: 8px;
+    width: 22px;
+    height: 22px;
     background-color: #ffffff;
-    padding: 4px;
-    margin-top: auto;
-    margin-bottom: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     position: relative;
     cursor: pointer;
     :global(.ant-badge-count) {
       background: #e85951;
+      height: 12px;
+      min-width: 12px;
+      line-height: 12px;
     }
     .badge {
       display: block;
@@ -63,21 +62,18 @@
     .downloadBtn {
       width: 100%;
       height: 100%;
-      padding: 8px;
-      border-radius: 8px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background-color: #4f4dff;
-      text-align: center;
-    }
-
-    .downloadListWrapper {
-      position: absolute;
-      left: 44px;
-      bottom: 0;
-      width: 340px;
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 1, 21, 0.2);
-      z-index: 9999;
     }
   }
+}
+
+.downloadListWrapper {
+  width: 340px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  z-index: 9999;
 }

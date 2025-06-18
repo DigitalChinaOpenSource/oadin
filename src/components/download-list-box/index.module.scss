@@ -1,5 +1,5 @@
 .downloadListBox {
-  padding: 16px;
+  padding: 8px;
   cursor: default;
   .header {
     display: flex;
@@ -13,10 +13,13 @@
       display: flex;
     }
     .downloadIcon {
-      width: 16px;
-      height: 16px;
-      margin-top: 3px;
+      width: 22px;
+      height: 22px;
+      margin-top: 1px;
       margin-right: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       background-color: #4f4dff;
       border-radius: 4px;
       padding: 1px;
