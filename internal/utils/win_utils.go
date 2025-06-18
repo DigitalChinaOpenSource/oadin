@@ -5,6 +5,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -127,4 +128,10 @@ func ModifySystemUserVariables(envInfo *EnvVariables) error {
 		return errors.New("Failed to notify the system of environment variable changes. Please restart or log out for the changes to take effect.")
 	}
 	return nil
+}
+
+func SetCmdSysProcAttr(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		CreationFlags: syscall.CRYPT_NEWKEYSET | syscall.CREATE_NEW_PROCESS_GROUP,
+	}
 }
