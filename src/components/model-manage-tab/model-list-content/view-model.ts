@@ -128,6 +128,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
+        setModelListData([]);
       },
     },
   );
@@ -139,7 +140,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
   useEffect(() => {
     onModelSearch('');
-    setPagination({ ...pagination, current: 1 });
+    setPagination({ ...pagination, current: 1, total: 0 });
     fetchModelSupport({ service_source: modelSourceVal });
   }, [modelSourceVal, mine]);
 
@@ -159,15 +160,20 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
     },
   );
-
   // 根据搜索值和分页参数更新分页数据
+  const prevModelSearchValRef = useRef(modelSearchVal);
+  
   useEffect(() => {
-    const filteredData = getFilteredData();
-    setPagination({
-      current: 1,
-      pageSize: pagination.pageSize,
-      total: filteredData.length,
-    });
+    // 只有当搜索值真正变化时才执行，避免路由切换触发
+    if (prevModelSearchValRef.current !== modelSearchVal) {
+      const filteredData = getFilteredData();
+      setPagination({
+        current: 1,
+        pageSize: pagination.pageSize,
+        total: filteredData.length,
+      });
+      prevModelSearchValRef.current = modelSearchVal;
+    }
   }, [modelSearchVal]);
 
   // 删除模型

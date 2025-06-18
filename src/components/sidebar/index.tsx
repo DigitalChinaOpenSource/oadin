@@ -5,6 +5,8 @@ import styles from './index.module.scss';
 import { DownloadIcon } from '@phosphor-icons/react';
 import DownloadListBox from '../download-list-box';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
+import mxty from '../icons/mxty.svg';
+import mxtyac from '../icons/mxtyac.svg';
 import mm from '../icons/mm.svg';
 import mmac from '../icons/mmac.svg';
 import sm from '../icons/sm.svg';
@@ -46,6 +48,16 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
 
   const menuItems: MenuItem[] = [
     {
+      key: '/model-experience',
+      label: '体验中心',
+      icon: (
+        <img
+          src={location.pathname.startsWith('/model-experience') ? mxtyac : mxty}
+          alt="体验中心"
+        />
+      ),
+    },
+    {
       key: 'model-manage',
       label: '模型管理',
       icon: (
@@ -57,7 +69,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
       children: [
         { key: '/model-manage/model-list', label: '模型广场' },
         { key: '/model-manage/my-model-list', label: '我的模型' },
-        { key: '/model-manage/model-experience', label: '模型体验' },
+        // { key: '/model-manage/model-experience', label: '模型体验' },
       ],
     },
     {

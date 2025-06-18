@@ -31,13 +31,15 @@ export const useDownLoad = () => {
     (params: IModelDataItem) => {
       const { id, source, service_provider_name, service_name, name } = params;
 
+      // TODO: 根据bug单上https://jira.digitalchina.com/browse/PAP-1635?jql=project%20%3D%20PAP%20AND%20Sprint%20%3D%201579%20AND%20assignee%20in%20(currentUser()%2C%20wangfjf%2C%20liuchangaq)%20ORDER%20BY%20created%20DESC
+      // TODO: BUG单上要求不限制下载数量（是否还需在确认）
       // 最大下载数量
-      const isMaxNum = checkIsMaxDownloadCount({
-        downList: downListRef.current,
-        id,
-      } as any);
-      // 检查是否超过最大下载数量
-      if (isMaxNum) return;
+      // const isMaxNum = checkIsMaxDownloadCount({
+      //   downList: downListRef.current,
+      //   id,
+      // } as any);
+      // // 检查是否超过最大下载数量
+      // if (isMaxNum) return;
       // 兼容处理第一条数据id===0的场景
       if (id === undefined || id === null) return;
 

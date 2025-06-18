@@ -15,7 +15,7 @@ export default function ByzeErrorTip() {
           closable={true}
           message={
             <div>
-              {/*服务状态异常，点击*/}
+              {/*奥丁服务状态异常，点击*/}
               奥丁服务状态异常
               {/*<Button*/}
               {/*  type={'link'}*/}

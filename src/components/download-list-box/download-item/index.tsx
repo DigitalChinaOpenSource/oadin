@@ -21,6 +21,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
       <div className={styles.titleControlBar}>
         <div>
           <Image
+            preview={false}
             className={styles.modelImg}
             src={downloadItem.avatar}
           />
