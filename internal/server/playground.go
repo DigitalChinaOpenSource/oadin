@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log/slog"
+	"strings"
 	"time"
 
 	"byze/config"
@@ -26,6 +27,7 @@ type Playground interface {
 	GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error)
 	DeleteSession(ctx context.Context, request *dto.DeleteSessionRequest) (*dto.DeleteSessionResponse, error)
 	ChangeSessionModel(ctx context.Context, req *dto.ChangeSessionModelRequest) (*dto.ChangeSessionModelResponse, error)
+	ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error)
 
 	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
 
@@ -126,6 +128,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 	err := p.Ds.Get(ctx, supportModel)
 	if err == nil {
 		session.ThinkingEnabled = supportModel.Think
+		session.ThinkingActive = supportModel.Think // 默认情况下，如果支持深度思考，则启用它
 	}
 	err = p.Ds.Add(ctx, session)
 	if err != nil {
@@ -133,7 +136,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		return nil, err
 	}
 	return &dto.CreateSessionResponse{
-		Bcode: bcode.SuccessCode,
+		Bcode: bcode.SuccessCode, 
 		Data: dto.Session{
 			Id:              session.ID,
 			Title:           session.Title,
@@ -141,6 +144,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		},
@@ -175,6 +179,7 @@ func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsRespo
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		})
@@ -258,10 +263,10 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	chatRequest := &types.ChatRequest{
 		Model:    session.ModelName,
 		Messages: history,
-		Options:  make(map[string]any),
+		Think:    false, 
 	}
-	if session.ThinkingEnabled {
-		chatRequest.Options["thinking"] = true
+	if session.ThinkingEnabled && session.ThinkingActive {
+		chatRequest.Think = true
 	}
 
 	if len(request.Tools) > 0 {
@@ -278,9 +283,24 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	slog.Info("收到非流式响应",
 		"content_length", len(chatResp.Content),
 		"model", chatResp.Model,
-		"is_complete", chatResp.IsComplete)
+		"is_complete", chatResp.IsComplete,
+		"tool_calls_count", len(chatResp.ToolCalls),
+	)
 
 	response := chatResp.Content
+
+	// 如果没有内容但有工具调用，构建提示信息
+	if response == "" && len(chatResp.ToolCalls) > 0 {
+		slog.Info("模型未生成内容，但有工具调用，构建提示信息", "tool_calls_count", len(chatResp.ToolCalls), chatResp.ToolCalls)
+		for _, toolCall := range chatResp.ToolCalls {
+			// toolCall.Function.Argument 是map[string]interface{}, 转为json字符串
+			arguments, err := json.Marshal(toolCall.Function.Arguments)
+			if err != nil {
+				slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
+			}
+			response += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
+		}
+	}
 
 	// 保存模型回复
 	assistantMsg := &types.ChatMessage{
@@ -297,9 +317,9 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if err != nil {
 		slog.Error("Failed to save assistant message", "error", err)
 		return nil, err
-	}
+	} 
 	// 保存思考内容
-	if chatResp.Thoughts != "" && session.ThinkingEnabled {
+	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		thoughtsMsg := &types.ChatMessage{
 			ID:        uuid.New().String(),
 			SessionID: request.SessionId,
@@ -337,8 +357,9 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		Type:      "answer",
 		ModelId:   session.ModelID,
 		ModelName: session.ModelName,
+		ToolCalls: chatResp.ToolCalls, // 新增工具调用支持
 	}}
-	if chatResp.Thoughts != "" && session.ThinkingEnabled {
+	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		resultMessages = append(resultMessages, dto.Message{
 			Id:        "thoughts-" + assistantMsg.ID,
 			SessionId: assistantMsg.SessionID,
@@ -381,6 +402,10 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			typeStr = "answer"
 		} else if msg.Role == "system" && len(msg.Content) > 0 && (msg.Content[:12] == "思考过程: " || msg.Content[:9] == "Thoughts:") {
 			typeStr = "thoughts"
+		}
+
+		if msg.Role == "assistant" && len(msg.Content) > 0 && strings.Contains(msg.Content, "<tool_use>") {
+			typeStr = "mcp"
 		}
 		messageDTOs = append(messageDTOs, dto.Message{
 			Id:        msg.ID,
@@ -494,12 +519,16 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	}
 	if req.ModelId != "" {
 		session.ModelID = req.ModelId
-		session.ModelName = getModelNameById(req.ModelId)
+		session.ModelName = getModelNameById(req.ModelId) 
 		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
 		model := &types.Model{ModelName: getModelNameById(req.ModelId)}
 		err := p.Ds.Get(ctx, model)
 		if err == nil {
 			session.ThinkingEnabled = model.ThinkingEnabled
+			// 切换模型时，如果新模型支持思考，则保持当前思考状态；如果不支持，则关闭思考
+			if !model.ThinkingEnabled {
+				session.ThinkingActive = false
+			}
 		}
 	}
 	if req.EmbedModelId != "" {
@@ -519,170 +548,44 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		},
 	}, nil
 }
 
-// 处理消息中的mcp工具调用
-// func (p *PlaygroundImpl) HandleMCPToolInvocation(ctx context.Context, model, query string, mcpTools []dto.McpTool) ([]dto.McpToolResult, error) {
-// 	if len(mcpTools) == 0 {
-// 		return nil, nil
-// 	}
-// 	var results []dto.McpToolResult
-
-// 	engineName := "ollama" // 默认使用Ollama引擎
-// 	modelEngine := provider.GetModelEngine(engineName)
-
-// 	userMessage := map[string]string{
-// 		"role":    "user",
-// 		"content": query,
-// 	}
-// 	chatRequest := &types.ChatRequest{
-// 		Model:    model,
-// 		Messages: []map[string]string{userMessage},
-// 		Tools:    make([]map[string]any, 0, len(mcpTools)),
-// 	}
-// 	for _, mcpTool := range mcpTools {
-// 		chatRequest.Tools = append(chatRequest.Tools, map[string]any{
-// 			"type":     "function",
-// 			"function": mcpTool.Tool,
-// 		})
-// 	}
-
-// 	// 发起带tools的chat请求
-// 	chatResp, err := modelEngine.Chat(ctx, chatRequest)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// 解析chatResp中的工具调用结果（假设返回内容中包含tool_calls字段）
-// 	var toolCalls []struct {
-// 		Function struct {
-// 			Name      string         `json:"name"`
-// 			Arguments map[string]any `json:"arguments"`
-// 		} `json:"function"`
-// 	}
-// 	// 兼容不同模型返回格式
-// 	if chatResp != nil && chatResp.Content != "" {
-// 		var respMap map[string]interface{}
-// 		// 这里的 Content 对应api的 message
-// 		if err := json.Unmarshal([]byte(chatResp.Content), &respMap); err == nil {
-// 			if tc, ok := respMap["tool_calls"]; ok {
-// 				if tcArr, ok := tc.([]interface{}); ok {
-// 					for _, t := range tcArr {
-// 						b, _ := json.Marshal(t)
-// 						var call struct {
-// 							Function struct {
-// 								Name      string         `json:"name"`
-// 								Arguments map[string]any `json:"arguments"`
-// 							} `json:"function"`
-// 						}
-// 						if err := json.Unmarshal(b, &call); err == nil {
-// 							toolCalls = append(toolCalls, call)
-// 						}
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	// 将toolCalls转为rpc.ClientRunToolRequest格式
-// 	if len(toolCalls) == 0 {
-// 		slog.Warn("No tool calls found in chat response", "response", chatResp.Content)
-// 		return nil, nil
-// 	}
-// 	clientRunToolRequests := make([]rpc.ClientRunToolRequest, 0, len(toolCalls))
-// 	for _, call := range toolCalls {
-// 		for _, mcpTool := range mcpTools {
-// 			if mcpTool.Tool.Name == call.Function.Name {
-// 				clientRunToolRequests = append(clientRunToolRequests, rpc.ClientRunToolRequest{
-// 					MCPId:    mcpTool.MCPId,
-// 					ToolName: call.Function.Name,
-// 					ToolArgs: call.Function.Arguments,
-// 				})
-// 				break
-// 			}
-// 		}
-// 	}
-
-// 	mcpHandler := mcp_handler.NewMcpService()
-// 	for _, req := range clientRunToolRequests {
-// 		// 调用MCP服务器的工具
-// 		mcpResult, err := mcpHandler.CallTool(req.MCPId, mcp.CallToolParams{
-// 			Name:      req.ToolName,
-// 			Arguments: req.ToolArgs,
-// 		})
-// 		if err != nil {
-// 			slog.Error("Failed to call MCP tool", "error", err, "mcpId", req.MCPId, "toolName", req.ToolName)
-// 			continue // 继续处理其他工具调用
-// 		}
-
-// 		// 构建结果
-// 		for _, mcpTool := range mcpTools {
-// 			if mcpTool.MCPId == req.MCPId {
-// 				results = append(results, dto.McpToolResult{
-// 					McpTool:  mcpTool,
-// 					ToolArgs: req.ToolArgs,
-// 					Result:   *mcpResult,
-// 				})
-// 				break
-// 			}
-// 		}
-// 	}
-// 	return results, nil
-// }
-
-// 兼容接口，VSS已废弃，直接返回空
-func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
-	return "", nil
-}
-
-func InitPlaygroundVec(ctx context.Context, dbPath string) error {
-
-	return initVecDB(dbPath)
-}
-
-func UseVSSForPlayground() bool {
-	return false
-}
-
-// 检查是否有可用的Embed服务
-func (p *PlaygroundImpl) CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error) {
-	slog.Info("Server: 检查embed服务可用性", "sessionID", sessionID)
-
-	// 1. 先检查会话是否设置了嵌入模型
-	session := &types.ChatSession{ID: sessionID}
+// 切换思考状态
+func (p *PlaygroundImpl) ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error) {
+	// 查找会话
+	session := &types.ChatSession{ID: req.SessionId}
 	err := p.Ds.Get(ctx, session)
 	if err != nil {
-		slog.Error("Server: 获取会话失败", "sessionID", sessionID, "error", err)
-		return false, fmt.Errorf("获取会话失败: %w", err)
+		return nil, fmt.Errorf("会话不存在: %v", err)
+	}
+	// 首先检查模型是否支持深度思考
+	if !session.ThinkingEnabled {
+		return nil, fmt.Errorf("当前模型不支持深度思考功能")
 	}
 
-	if session.EmbedModelID == "" {
-		slog.Warn("Server: 会话未设置嵌入模型", "sessionID", sessionID)
-		return false, fmt.Errorf("会话未设置嵌入模型")
-	} // 2. 检查是否存在embed服务
-	service := &types.Service{Name: "embed"}
-	err = p.Ds.Get(ctx, service)
+	// 根据请求切换深度思考状态
+	if req.Enabled != nil {
+		// 如果提供了明确的启用/禁用值，则使用该值
+		session.ThinkingActive = *req.Enabled
+	} else {
+		// 如果没有提供值，则切换当前状态
+		session.ThinkingActive = !session.ThinkingActive
+	}
+
+	// 更新会话
+	session.UpdatedAt = time.Now()
+	err = p.Ds.Put(ctx, session)
 	if err != nil {
-		slog.Error("Server: embed服务不存在", "sessionID", sessionID, "error", err)
-		return false, fmt.Errorf("embed服务不存在: %w", err)
+		return nil, fmt.Errorf("更新会话失败: %v", err)
 	}
-
-	if service.Status != 1 {
-		slog.Warn("Server: embed服务已禁用", "sessionID", sessionID)
-		return false, fmt.Errorf("embed服务已禁用")
-	}
-
-	// 3. 检查服务是否可用
-	modelEngine := engine.NewEngine()
-	if modelEngine == nil {
-		slog.Error("Server: 无法创建模型引擎", "sessionID", sessionID)
-		return false, fmt.Errorf("无法创建模型引擎")
-	}
-
-	slog.Info("Server: embed服务验证通过", "sessionID", sessionID, "embedModel", session.EmbedModelID)
-	return true, nil
+	// 返回更新后的状态
+	return &dto.ToggleThinkingResponse{
+		Bcode:          bcode.SuccessCode,
+		ThinkingActive: session.ThinkingActive,
+	}, nil
 }

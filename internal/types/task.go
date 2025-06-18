@@ -95,6 +95,7 @@ type ServiceRequest struct {
 	RequestExtraUrl       string        `json:"extra_url"`
 	HTTP                  HTTPContent   `json:"-"`
 	OriginalRequest       *http.Request `json:"-"`
+	Think                 bool          `json:"think"`
 }
 
 func (sr *ServiceRequest) String() string {

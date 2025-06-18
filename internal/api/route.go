@@ -90,6 +90,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	systemApi.PUT("/registry", e.ModifyRepositoryURL)
 	systemApi.PUT("/proxy", e.SetProxy)
 	systemApi.PUT("/proxy/switch", e.ProxySwitch)
+
 	// Playground相关
 	playgroundApi := r.Group("playground")
 	playgroundApi.POST("/session", e.CreateSession)
@@ -103,6 +104,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	playgroundApi.DELETE("/file", e.DeleteFile)
 	playgroundApi.POST("/file/process", e.ProcessFile)
 	playgroundApi.POST("/session/model", e.ChangeSessionModel)
+	playgroundApi.POST("/session/thinking", e.ToggleSessionThinking)
 
 	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
 }

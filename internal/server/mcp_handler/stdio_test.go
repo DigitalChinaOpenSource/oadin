@@ -28,11 +28,13 @@ func TestMcpClientAndLLM(t *testing.T) {
 		Env:     nil,
 	}
 	mcpService := NewStdioTransport()
-	_, err := mcpService.Start(config)
+	err := mcpService.Start(&config)
 	if err != nil {
 		log.Fatalf("Failed to initialize MCP client: %v", err)
 	}
-	tools, err := mcpService.FetchTools(config.Id)
+
+	ctx := context.Background()
+	tools, err := mcpService.FetchTools(ctx, config.Id)
 	if err != nil {
 		log.Fatalf("Failed to fetch tools: %v", err)
 	}
@@ -128,7 +130,7 @@ func TestMcpClientAndLLM(t *testing.T) {
 	}
 
 	for _, toolCall := range response.Message.ToolCalls {
-		_, _ = mcpService.CallTool(config.Id, mcp.CallToolParams{
+		_, _ = mcpService.CallTool(ctx, config.Id, mcp.CallToolParams{
 			Name:      toolCall.Function.Name,
 			Arguments: toolCall.Function.Arguments,
 		})
