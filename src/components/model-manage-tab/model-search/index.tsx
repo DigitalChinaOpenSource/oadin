@@ -35,7 +35,7 @@ export default function ModelSearch(props: IModelTitleSearchProps) {
           options={options}
           onChange={onModelSourceChange}
         />
-        <div className={styles.modelTotalWarp}>共{total ?? 0}条</div>
+        {!!total ? <div className={styles.modelTotalWarp}>共{total ?? 0}条</div> : null}
       </div>
       <div className={styles.searchInput}>
         <Input
