@@ -5,6 +5,7 @@ package utils
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"os/user"
 	"strings"
 	"syscall"
@@ -94,4 +95,8 @@ func ModifySystemUserVariables(envInfo *EnvVariables) error {
 	}
 
 	return nil
+}
+
+func SetCmdSysProcAttr(cmd *exec.Cmd) {
+	fmt.Printf("not implement" + cmd.Path)
 }
