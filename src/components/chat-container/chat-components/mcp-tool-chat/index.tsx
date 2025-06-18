@@ -1,5 +1,5 @@
 /** MCP工具对话块 */
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { CollapseProps, TabsProps } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
 import { Collapse, Tabs, Tooltip } from 'antd';
@@ -9,7 +9,6 @@ import { CheckCircleIcon } from '@phosphor-icons/react';
 import arrowUp from '@/components/icons/arrow-up.svg';
 import arrowDown from '@/components/icons/arrow-down.svg';
 import JsonParsePanel from '@/components/json-parse-panel';
-import useChatStore from '../../store/useChatStore';
 import styles from './index.module.scss';
 
 interface IDataSourceItem {
@@ -29,7 +28,7 @@ interface IMcpToolChatData {
   };
 }
 
-export default function McpToolChat(props: IMcpToolChatData) {
+export default memo(function McpToolChat(props: IMcpToolChatData) {
   console.log('McpToolChat dataSource=====>', props);
   const { data, status } = props.dataSource;
   const [isExpanded, setIsExpanded] = useState(false);
@@ -201,4 +200,4 @@ export default function McpToolChat(props: IMcpToolChatData) {
       </div>
     </div>
   );
-}
+});

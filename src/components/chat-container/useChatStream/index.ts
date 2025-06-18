@@ -9,52 +9,9 @@ import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
 import { generateUniqueId } from './utils';
-
-// 请求参数接口
-interface ChatRequestParams {
-  content: string;
-  SessionID?: string;
-  mcpIds?: string[];
-}
-
-// 响应数据接口
-interface ChatResponseData {
-  bcode: {
-    business_code: number;
-    message: string;
-  };
-  data: {
-    id: string;
-    session_id: string;
-    content: string;
-    is_complete: boolean;
-    type: string;
-    thinking?: string;
-    tool_calls?: IToolCall[];
-  };
-}
-
-// 工具调用接口
-interface IToolCall {
-  function: {
-    name: string;
-    arguments: Record<string, any>;
-  };
-}
-
-// 工具调用参数接口
-interface IRunToolParams {
-  mcpId: string;
-  toolName: string;
-  toolArgs: Record<string, any>;
-}
-
-// 流式请求回调接口
-interface StreamCallbacks {
-  onDataReceived: (data: ChatResponseData) => void;
-  onComplete: () => void;
-  onFallbackResponse: (response: Response) => Promise<void>;
-}
+import { findExistingToolMessage, findProgressToolMessage, extractToolCallData, createMcpContent, updateContentListWithMcp, buildToolCallData, handleToolCallErrorMessage } from './mcpContentUtils';
+import { parseThinkContent, buildMessageWithThinkContent, handleTextContent } from './thinkContentUtils';
+import { IContentItem, IRunToolParams, IToolCall, IToolCallData, StreamCallbacks, ChatRequestParams, ChatResponseData, IStreamData } from './types';
 
 // 错误消息常量
 const ERROR_MESSAGES = {
@@ -199,19 +156,9 @@ export function useChatStream(currentSessionId: string) {
   const cancelRequest = useCallback(
     (reason?: string) => {
       // 如果有生成的内容，保存为消息
-      if (isLoading && streamingContent) {
-        const aiMessage: MessageType = {
-          id: generateUniqueId('msg'),
-          role: 'assistant',
-          contentList: [
-            {
-              id: generateUniqueId('content'),
-              type: 'plain',
-              content: streamingContent + ERROR_MESSAGES.RESPONSE_INTERRUPTED,
-            },
-          ],
-        };
-
+      if (isLoading && (streamingContent || requestStateRef.current.responseContent)) {
+        const finalContent = (requestStateRef.current.responseContent || streamingContent) + ERROR_MESSAGES.RESPONSE_INTERRUPTED;
+        const aiMessage = buildMessageWithThinkContent(finalContent);
         addMessage(aiMessage);
       }
 
@@ -222,7 +169,7 @@ export function useChatStream(currentSessionId: string) {
       // 更新加载状态
       setIsLoading(false);
     },
-    [isLoading, streamingContent, streamingThinking, addMessage, cleanupResources, clearStreamingState],
+    [isLoading, streamingContent, addMessage, cleanupResources, clearStreamingState],
   );
 
   // 创建流式请求
@@ -375,10 +322,11 @@ export function useChatStream(currentSessionId: string) {
         const data = await httpRequest.post('/mcp/client/runTool', toolResponse as IRunToolParams);
         const isToolError = data?.content?.isError === true;
         const toolErrorMessage = isToolError && Array.isArray(data.content) && data.content.length > 0 ? data.content[0]?.text || ERROR_MESSAGES.TOOL_EXECUTION_FAILED : '';
+
         setStreamingContent(currentContent);
         requestStateRef.current.responseContent = currentContent;
 
-        // 7. 更新工具调用结果
+        // 9. 更新工具调用结果
         const lastIndex = toolCallResults.length - 1;
         toolCallResults[lastIndex] = {
           ...toolCallResults[lastIndex],
@@ -386,11 +334,11 @@ export function useChatStream(currentSessionId: string) {
           status: isToolError ? 'error' : 'success',
         };
 
-        // 8. 检查所有工具是否完成
+        // 10. 检查所有工具是否完成
         const allComplete = toolCallResults.every((tool) => tool.status === 'success' || tool.status === 'error');
         const finalStatus = allComplete ? (toolCallResults.some((t) => t.status === 'error') ? 'error' : 'success') : 'progress';
 
-        // 9. 更新最终消息
+        // 11. 更新最终消息
         const updatedMcpContent = createMcpContent(finalStatus, toolCallResults);
         const updatedContentList = updateContentListWithMcp(currentContentList, updatedMcpContent);
 
@@ -402,30 +350,32 @@ export function useChatStream(currentSessionId: string) {
 
         addMessage(updatedMessage, true);
 
-        // 10. 处理后续操作
+        // 12. 处理后续操作
         if (!isToolError && toolCallHandlersRef.current.continueConversation) {
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
         } else if (isToolError) {
           console.error('工具调用失败:', toolErrorMessage);
           const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
-          setStreamingContent(errorContent);
+          // 使用 handleTextContent 处理错误内容
+          handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
           requestStateRef.current.responseContent = errorContent;
         } else {
           console.error('工具调用处理程序未初始化');
           setError('工具调用处理失败: 内部错误');
         }
       } catch (error: any) {
-        // 11. 错误处理
+        // 13. 错误处理
         console.error('工具调用失败:', error);
         const errorMessage = error.message || '未知错误';
         const updatedContent = currentContent + `\n\n[工具调用失败: ${errorMessage}]`;
-        setStreamingContent(updatedContent);
+        // 使用 handleTextContent 处理错误内容
+        handleTextContent({ content: updatedContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
         requestStateRef.current.responseContent = updatedContent;
 
         // 更新错误消息
         handleToolCallErrorMessage(toolCallResults, currentContentList, currentToolMessageId, errorMessage, addMessage);
       } finally {
-        // 12. 清理状态
+        // 14. 清理状态
         if (allToolCallsCompleted) {
           requestStateRef.current.isToolCallActive = false;
           setToolCallStatus((prev) => ({
@@ -490,23 +440,8 @@ export function useChatStream(currentSessionId: string) {
               if (data?.tool_calls && data.tool_calls.length > 0) {
                 await handleToolCalls(data.tool_calls, localResponseContent);
               } else if (data.content) {
-                // 处理文本内容
-                if (data.is_complete) {
-                  localResponseContent = data.content;
-                } else if (data.type === 'answer') {
-                  if (localResponseContent.length === 0) {
-                    localResponseContent = data.content;
-                  } else {
-                    localResponseContent += data.content;
-                  }
-                } else {
-                  if (data.content.length > localResponseContent.length || !localResponseContent.includes(data.content.trim())) {
-                    localResponseContent += data.content;
-                  } else {
-                    localResponseContent = data.content;
-                  }
-                }
-                setStreamingContent(localResponseContent);
+                // 使用 handleTextContent 处理文本内容
+                localResponseContent = handleTextContent(data, localResponseContent, setStreamingContent, setStreamingThinking, requestStateRef);
                 requestStateRef.current.responseContent = localResponseContent;
               }
             },
@@ -519,19 +454,10 @@ export function useChatStream(currentSessionId: string) {
                 msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem?.content?.status === 'progress'),
               );
 
-              // 只有当没有活跃的工具调用和有内容时，才添加纯文本消息
+              // 只有当没有活跃的工具调用和有内容时，才添加消息
               if (!requestStateRef.current.isToolCallActive && !hasActiveToolCall && (requestStateRef.current.responseContent || localResponseContent)) {
-                const aiMessage: MessageType = {
-                  id: generateUniqueId('ai_msg'),
-                  role: 'assistant',
-                  contentList: [
-                    {
-                      id: generateUniqueId('content'),
-                      type: 'plain',
-                      content: requestStateRef.current.responseContent || localResponseContent,
-                    },
-                  ],
-                };
+                const finalContent = requestStateRef.current.responseContent || localResponseContent;
+                const aiMessage = buildMessageWithThinkContent(finalContent);
 
                 // 添加到消息列表
                 addMessage(aiMessage);
@@ -557,23 +483,25 @@ export function useChatStream(currentSessionId: string) {
                   const fullResponse = JSON.parse(fullResponseText);
                   if (fullResponse.error) {
                     console.error('工具调用返回错误:', fullResponse.error);
-                    const errorContent = streamingContent + `\n\n[工具调用失败: ${fullResponse.error}]`;
-                    setStreamingContent(errorContent);
+                    const errorContent = (requestStateRef.current.responseContent || streamingContent) + `\n\n[工具调用失败: ${fullResponse.error}]`;
+                    // 使用 handleTextContent 处理错误内容
+                    handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
                     requestStateRef.current.responseContent = errorContent;
                   } else if (fullResponse?.data?.content) {
-                    setStreamingContent(fullResponse.data.content);
-                    requestStateRef.current.responseContent = fullResponse.data.content;
+                    // 使用 handleTextContent 处理响应内容
+                    const processedContent = handleTextContent({ content: fullResponse.data.content, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
+                    requestStateRef.current.responseContent = processedContent;
                   }
                 } catch (parseError) {
                   console.error('解析工具调用响应失败:', parseError);
-                  const errorContent = streamingContent + '\n\n[解析工具调用响应失败]';
-                  setStreamingContent(errorContent);
+                  const errorContent = (requestStateRef.current.responseContent || streamingContent) + '\n\n[解析工具调用响应失败]';
+                  handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
                   requestStateRef.current.responseContent = errorContent;
                 }
               } catch (readError) {
                 console.error('读取工具调用响应失败:', readError);
-                const errorContent = streamingContent + '\n\n[读取工具调用响应失败]';
-                setStreamingContent(errorContent);
+                const errorContent = (requestStateRef.current.responseContent || streamingContent) + '\n\n[读取工具调用响应失败]';
+                handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
                 requestStateRef.current.responseContent = errorContent;
               }
             },
@@ -664,19 +592,10 @@ export function useChatStream(currentSessionId: string) {
               clearTimers();
 
               // 如果连接关闭但未完成且有内容，保存部分回复
-              if (isLoading && responseContent) {
+              if (isLoading && (requestStateRef.current.responseContent || responseContent)) {
                 // 创建部分AI回复消息
-                const aiMessage: MessageType = {
-                  id: generateUniqueId('ai_msg'),
-                  role: 'assistant',
-                  contentList: [
-                    {
-                      id: generateUniqueId('content'),
-                      type: 'plain',
-                      content: responseContent + ERROR_MESSAGES.CONNECTION_INTERRUPTED,
-                    },
-                  ],
-                };
+                const finalContent = (requestStateRef.current.responseContent || responseContent) + ERROR_MESSAGES.CONNECTION_INTERRUPTED;
+                const aiMessage = buildMessageWithThinkContent(finalContent);
                 addMessage(aiMessage);
               }
               setIsLoading(false);
@@ -690,27 +609,18 @@ export function useChatStream(currentSessionId: string) {
                 timeoutRefsRef.current.totalTimer = null;
               }
               const data = response.data;
+
+              // 保存会话ID
+              if (data.session_id && (!currentSessionId || currentSessionId !== data.session_id)) {
+                setCurrentSessionId(data.session_id);
+              }
+
               if (data?.tool_calls && data.tool_calls.length > 0) {
                 // 处理工具调用
                 await handleToolCalls(data.tool_calls, responseContent);
               } else if (data.content) {
-                // 处理文本内容
-                if (data.is_complete) {
-                  responseContent = data.content;
-                } else if (data.type === 'answer') {
-                  if (responseContent.length === 0) {
-                    responseContent = data.content;
-                  } else {
-                    responseContent += data.content;
-                  }
-                } else {
-                  if (data.content.length > responseContent.length || !responseContent.includes(data.content.trim())) {
-                    responseContent += data.content;
-                  } else {
-                    responseContent = data.content;
-                  }
-                }
-                setStreamingContent(responseContent);
+                // 使用 handleTextContent 处理文本内容
+                responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestStateRef);
                 requestStateRef.current.responseContent = responseContent;
               }
             },
@@ -718,17 +628,8 @@ export function useChatStream(currentSessionId: string) {
             // 完成回调
             onComplete: () => {
               if (!requestStateRef.current.isToolCallActive && (requestStateRef.current.responseContent || responseContent)) {
-                const aiMessage: MessageType = {
-                  id: generateUniqueId('ai_msg'),
-                  role: 'assistant',
-                  contentList: [
-                    {
-                      id: generateUniqueId('content'),
-                      type: 'plain',
-                      content: requestStateRef.current.responseContent || responseContent,
-                    },
-                  ],
-                };
+                const finalContent = requestStateRef.current.responseContent || responseContent;
+                const aiMessage = buildMessageWithThinkContent(finalContent);
 
                 // 添加到消息列表
                 addMessage(aiMessage);
@@ -757,17 +658,7 @@ export function useChatStream(currentSessionId: string) {
 
                   // 处理正常的非流式响应
                   if (fullResponse?.data?.content) {
-                    const aiMessage: MessageType = {
-                      id: generateUniqueId('ai_msg'),
-                      role: 'assistant',
-                      contentList: [
-                        {
-                          id: generateUniqueId('content'),
-                          type: 'plain',
-                          content: fullResponse.data.content,
-                        },
-                      ],
-                    };
+                    const aiMessage = buildMessageWithThinkContent(fullResponse.data.content);
                     addMessage(aiMessage);
                   } else {
                     setError('服务器返回了非流式数据，但无法解析内容');
@@ -883,145 +774,3 @@ export function useChatStream(currentSessionId: string) {
     copyMessageToClipboard,
   };
 }
-
-/**
- * 查找包含特定 mcpId 的工具调用消息
- */
-const findExistingToolMessage = (messages: MessageType[], mcpId: string) => {
-  return messages.find(
-    (msg) =>
-      msg.role === 'assistant' &&
-      msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.data?.some((tool: any) => tool.mcpId === mcpId)),
-  );
-};
-
-/**
- * 查找进行中的工具调用消息
- */
-const findProgressToolMessage = (messages: MessageType[]) => {
-  return messages.find((msg) => msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress'));
-};
-
-/**
- * 从消息中提取工具调用数据
- */
-const extractToolCallData = (contentList: any[], mcpId?: string) => {
-  let toolCallResults: any[] = [];
-  let mcpContentIndex = -1;
-
-  if (mcpId) {
-    // 查找包含特定 mcpId 的内容项
-    mcpContentIndex = contentList.findIndex((content) => content.type === 'mcp' && typeof content.content === 'object' && content.content.data?.some((tool: any) => tool.mcpId === mcpId));
-  } else {
-    // 查找 progress 状态的内容项
-    mcpContentIndex = contentList.findIndex((content) => content.type === 'mcp' && typeof content.content === 'object' && content.content.status === 'progress');
-  }
-
-  if (mcpContentIndex >= 0) {
-    toolCallResults = [...contentList[mcpContentIndex].content.data];
-  }
-
-  return { toolCallResults, mcpContentIndex };
-};
-
-/**
- * 创建 MCP 内容对象
- */
-const createMcpContent = (status: string, data: any[]) => {
-  return {
-    id: generateUniqueId('content'),
-    type: 'mcp' as const,
-    content: {
-      status,
-      data,
-    },
-  };
-};
-
-/**
- * 更新内容列表中的 MCP 项
- */
-const updateContentListWithMcp = (contentList: any[], mcpContent: any) => {
-  const updatedList = [...contentList];
-  const mcpIndex = updatedList.findIndex((item) => item.type === 'mcp');
-
-  if (mcpIndex >= 0) {
-    updatedList[mcpIndex] = mcpContent;
-  } else {
-    updatedList.push(mcpContent);
-  }
-
-  return updatedList;
-};
-
-/**
- * 构建工具调用数据对象
- */
-const buildToolCallData = (toolResponse: any, toolCall: IToolCall, status: 'progress' | 'success' | 'error', outputParams?: string) => {
-  return {
-    mcpId: toolResponse.mcpId,
-    name: toolResponse.toolName,
-    desc: toolResponse.toolDesc || '工具调用',
-    logo: '',
-    inputParams: JSON.stringify(toolResponse.toolArgs),
-    outputParams: outputParams || '',
-    status,
-  };
-};
-
-/**
- * 处理工具调用错误时的消息更新
- */
-const handleToolCallErrorMessage = (
-  toolCallResults: any[],
-  currentContentList: any[],
-  currentToolMessageId: string,
-  errorMessage: string,
-  addMessage: (msg: MessageType, isUpdate?: boolean) => string,
-) => {
-  if (toolCallResults.length > 0) {
-    // 更新最后一个工具的状态为错误
-    const lastIndex = toolCallResults.length - 1;
-    toolCallResults[lastIndex] = {
-      ...toolCallResults[lastIndex],
-      outputParams: errorMessage,
-      status: 'error',
-    };
-
-    // 创建错误状态的 MCP 内容
-    const errorMcpContent = createMcpContent(toolCallResults.every((t) => t.status === 'error' || t.status === 'success') ? 'error' : 'progress', toolCallResults);
-
-    // 更新内容列表
-    const errorContentList = updateContentListWithMcp(currentContentList, errorMcpContent);
-
-    // 构建错误消息
-    const errorMsg: MessageType = {
-      id: currentToolMessageId || generateUniqueId('mcp_error_msg'),
-      role: 'assistant',
-      contentList: errorContentList,
-    };
-
-    addMessage(errorMsg, !!currentToolMessageId);
-  } else {
-    // 创建新的错误消息
-    const mcpErrorMessage: MessageType = {
-      id: generateUniqueId('mcp_error_msg'),
-      role: 'assistant',
-      contentList: [
-        createMcpContent('error', [
-          {
-            mcpId: '',
-            name: '',
-            desc: '工具调用',
-            logo: '',
-            inputParams: '',
-            outputParams: errorMessage,
-            status: 'error',
-          },
-        ]),
-      ],
-    };
-
-    addMessage(mcpErrorMessage);
-  }
-};
