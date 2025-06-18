@@ -5,6 +5,7 @@ import (
 
 	"byze/internal/api/dto"
 	"byze/internal/types"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,8 +46,8 @@ func (t *ByzeCoreServer) SendMessage(c *gin.Context) {
 	}
 
 	if len(req.McpIds) > 0 {
-	   req.Tools = make([]types.Tool, 0)
-	   for _, id := range req.McpIds {
+		req.Tools = make([]types.Tool, 0)
+		for _, id := range req.McpIds {
 			tools, err := t.MCP.ClientGetTools(c, id)
 			if err != nil {
 				continue
@@ -85,7 +86,6 @@ func (t *ByzeCoreServer) GetMessages(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, resp)
 }
 
