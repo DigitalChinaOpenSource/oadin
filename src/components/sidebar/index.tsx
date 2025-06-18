@@ -169,8 +169,8 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
           placement={'rightTop'}
           arrow={false}
           open={isDownloadListOpen}
-          onOpenChange={() => {
-            handleDownload(true);
+          onOpenChange={(visible) => {
+            handleDownload(visible);
           }}
         >
           <div className={styles.mcpDownloadBox}>
