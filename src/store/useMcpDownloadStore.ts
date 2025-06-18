@@ -87,7 +87,7 @@ const useMcpDownLoadStore = create<IMcpDownloadStore>()(
             const updatedList = currentList.filter((item) => {
               if (item.downStatus === 'downloading' && item.startTime) {
                 const elapsedTime = Date.now() - item.startTime;
-                return elapsedTime <= 2 * 60 * 1000 + 5000; // 保留未超过三分钟的项目
+                return elapsedTime <= 2 * 60 * 1000 + 5000; // 保留未超过二分钟的项目
               }
               return true; // 保留其他状态的项目
             });

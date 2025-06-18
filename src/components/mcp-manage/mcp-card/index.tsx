@@ -205,7 +205,7 @@ export default function McpCard(props: IMcpCardProps) {
             }
           >
             <Button
-              type={'link'}
+              type={'text'}
               icon={<DotsThreeCircleIcon />}
               onClick={async () => {
                 setShowOperate(!showOperate);
