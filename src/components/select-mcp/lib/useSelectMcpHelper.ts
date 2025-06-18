@@ -125,7 +125,8 @@ interface IToolParams {
 
 interface IToolRequest extends IToolParams {
   mcpId: string;
-  toolDesc?: string; // 可选的工具描述
+  toolDesc?: string;
+  toolLogo?: string;
 }
 
 // 转换函数
@@ -152,7 +153,6 @@ function generateToolMap(response: McpToolsResponse): Record<string, string> {
 
 export const getMcpDeatilByIds = async (ids: string[]) => {
   const data: McpToolsResponse = await httpRequest.post<McpToolsResponse>('/mcp/client/getTools', { ids });
-  console.info('获取MCP服务详情:', data);
   return data;
 };
 
@@ -163,12 +163,14 @@ export const getIdByFunction = async (functionParams: IToolParams, ids: string[]
   const mcpId = searchDataMap[functionParams.toolName];
   const idTool = resData?.mcpTools.find((item) => item.mcpId === mcpId);
   const toolDesc = idTool?.tools.find((tool) => tool.function.name === functionParams.toolName)?.function.description || '';
+  const toolLogo = idTool?.tools.find((tool) => tool.function.name === functionParams.toolName)?.function.parameters?.logo || '';
   if (mcpId) {
     return {
       mcpId,
       toolName: functionParams.toolName,
       toolArgs: functionParams.toolArgs,
       toolDesc: toolDesc,
+      toolLogo: toolLogo,
     };
   } else {
     return {
@@ -176,6 +178,7 @@ export const getIdByFunction = async (functionParams: IToolParams, ids: string[]
       toolName: functionParams.toolName,
       toolArgs: functionParams.toolArgs,
       toolDesc: toolDesc,
+      toolLogo: '',
     };
   }
 };

@@ -8,9 +8,9 @@ import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../../select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
-import { ChatRequestParams, ChatResponseData, IRunToolParams, StreamCallbacks, IToolCall } from './types';
+import { ChatRequestParams, ChatResponseData, IRunToolParams, StreamCallbacks, IToolCall, IStreamData, IContentItem, IToolCallData } from './types';
 import { ERROR_MESSAGES } from './contant';
-import { generateUniqueId, copyMessageToClipboard } from './utils';
+import { generateUniqueId } from './utils';
 
 // 超时设置（毫秒）
 const TIMEOUT_CONFIG = {
@@ -28,17 +28,6 @@ export function useChatStream(currentSessionId: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // 在状态定义部分添加工具调用状态
-  const [toolCallStatus, setToolCallStatus] = useState<{
-    isActive: boolean;
-    toolName?: string;
-    toolDesc?: string;
-    startTime?: number;
-    callCount: number;
-  }>({
-    isActive: false,
-    callCount: 0,
-  });
 
   // 请求控制
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -222,84 +211,92 @@ export function useChatStream(currentSessionId: string) {
 
   const handleToolCalls = useCallback(
     async (toolCalls: IToolCall[], currentContent: string) => {
-      // 重置工具调用状态，确保每次都是新的工具调用
-      let currentToolMessageId = '';
-      let toolCallResults: any[] = [];
-      let currentContentList: any[] = [];
-
       // 标记工具调用为活跃状态
       requestStateRef.current.isToolCallActive = true;
-
       try {
         const _function = toolCalls[0].function;
-        setToolCallStatus((prev) => ({
-          isActive: true,
-          toolName: _function.name,
-          toolDesc: '工具调用',
-          startTime: Date.now(),
-          callCount: prev.callCount + 1,
-        }));
-
         setStreamingContent(currentContent);
         const toolResponse = await getIdByFunction({ toolName: _function.name, toolArgs: _function.arguments }, selectedMcpIds());
+        // 为新工具调用生成唯一ID
+        const newToolCallId = generateUniqueId('tool_call');
+        // 检查是否已有一个工具调用消息正在进行中
+        const existingMessages = useChatStore.getState().messages;
+        const activeToolMessage = existingMessages.find((msg) => msg.contentList?.some((content: IContentItem) => content.type === 'mcp' && content.content?.status === 'progress')) as any;
 
-        // 创建全新的工具调用数据
-        toolCallResults = [
-          {
-            mcpId: toolResponse.mcpId,
-            name: toolResponse.toolName,
-            desc: toolResponse.toolDesc || '工具调用',
-            logo: '',
-            inputParams: JSON.stringify(toolResponse.toolArgs),
-            status: 'progress',
-          },
-        ];
+        let currentToolMessageId = '';
+        let currentToolCallResults: IToolCallData[] = [];
 
-        // 构建全新的MCP内容
+        if (activeToolMessage) {
+          // 使用现有的工具调用消息
+          currentToolMessageId = activeToolMessage.id;
+
+          // 找到MCP内容
+          const mcpContentIndex = (activeToolMessage?.contentList || []).findIndex((content: IContentItem) => content.type === 'mcp');
+
+          if (mcpContentIndex >= 0) {
+            // 获取现有的工具调用结果列表
+            currentToolCallResults = [...activeToolMessage.contentList[mcpContentIndex].content.data];
+          }
+        }
+
+        // 添加新的工具调用到结果列表
+        currentToolCallResults.push({
+          id: newToolCallId,
+          mcpId: toolResponse.mcpId,
+          name: toolResponse.toolName,
+          desc: toolResponse.toolDesc || '工具调用',
+          logo: toolResponse.toolLogo || '',
+          inputParams: JSON.stringify(toolResponse.toolArgs),
+          status: 'progress', // 初始状态为进行中
+        });
+
+        // 构建或更新MCP内容
         const mcpContent = {
           id: generateUniqueId('content'),
           type: 'mcp' as const,
           content: {
-            status: 'progress',
-            data: toolCallResults,
+            status: 'progress', // 整体状态保持为进行中
+            data: currentToolCallResults,
           },
         };
 
-        // 创建全新的内容列表
-        currentContentList = [mcpContent];
-
-        // 构建消息对象
+        // 创建或更新消息对象
         const mcpMessage: MessageType = {
-          id: generateUniqueId('mcp_msg'), // 始终生成新ID
+          id: currentToolMessageId || generateUniqueId('mcp_msg'),
           role: 'assistant',
-          contentList: currentContentList,
+          contentList: [mcpContent],
         };
 
-        // 添加新消息，不更新现有消息
-        currentToolMessageId = addMessage(mcpMessage, false);
+        // 添加或更新消息
+        currentToolMessageId = addMessage(mcpMessage, !!currentToolMessageId);
 
         // 调用工具API
         const data = await httpRequest.post('/mcp/client/runTool', toolResponse as IRunToolParams);
+
         const isToolError = data?.content?.isError === true;
         const toolErrorMessage = isToolError && Array.isArray(data.content) && data.content.length > 0 ? data.content[0]?.text || ERROR_MESSAGES.TOOL_EXECUTION_FAILED : '';
 
         setStreamingContent(currentContent);
         requestStateRef.current.responseContent = currentContent;
 
-        // 更新工具调用状态
-        toolCallResults[0] = {
-          ...toolCallResults[0],
-          outputParams: isToolError ? toolErrorMessage : data.content[0]?.text || '',
-          status: isToolError ? 'error' : 'success',
-        };
+        const updatedToolCallResults = [...currentToolCallResults];
+        const currentToolIndex = updatedToolCallResults.findIndex((tool) => tool.id === newToolCallId);
 
-        // 更新MCP内容
+        if (currentToolIndex >= 0) {
+          updatedToolCallResults[currentToolIndex] = {
+            ...updatedToolCallResults[currentToolIndex],
+            outputParams: isToolError ? toolErrorMessage : data.content[0]?.text || '',
+            status: isToolError ? 'error' : 'success',
+          };
+        }
+
+        // 更新MCP内容，整体状态仍保持为progress
         const updatedMcpContent = {
           id: generateUniqueId('content'),
           type: 'mcp' as const,
           content: {
-            status: isToolError ? 'error' : 'success',
-            data: toolCallResults,
+            status: 'progress',
+            data: updatedToolCallResults,
           },
         };
 
@@ -331,51 +328,6 @@ export function useChatStream(currentSessionId: string) {
         const updatedContent = currentContent + errorMessage;
         setStreamingContent(updatedContent);
         requestStateRef.current.responseContent = updatedContent;
-
-        // 创建新的错误消息
-        const mcpErrorMessage: MessageType = {
-          id: currentToolMessageId || generateUniqueId('mcp_error_msg'),
-          role: 'assistant',
-          contentList: [
-            {
-              id: generateUniqueId('content'),
-              type: 'mcp',
-              content: {
-                status: 'error',
-                data: [
-                  {
-                    mcpId: selectedMcpIds()[0] || '',
-                    name: toolCalls[0].function.name,
-                    desc: '工具调用',
-                    logo: '',
-                    inputParams: JSON.stringify(toolCalls[0].function.arguments),
-                    outputParams: error.message || '未知错误',
-                    status: 'error',
-                  },
-                ],
-              },
-            },
-          ],
-        };
-
-        // 始终添加新消息，不更新现有消息
-        addMessage(mcpErrorMessage, currentToolMessageId ? true : false);
-      } finally {
-        // 检查是否还有进行中的工具调用
-        const allMessages = useChatStore.getState().messages;
-        const hasActiveToolCall = allMessages.some((msg) =>
-          msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress'),
-        );
-
-        if (!hasActiveToolCall) {
-          requestStateRef.current.isToolCallActive = false;
-          setToolCallStatus((prev) => ({
-            isActive: false,
-            callCount: prev.callCount,
-          }));
-        } else {
-          console.log('仍有工具调用进行中，保持活跃状态');
-        }
       }
     },
     [selectedMcpIds, setStreamingContent, setError, addMessage],
@@ -389,7 +341,7 @@ export function useChatStream(currentSessionId: string) {
 
       // 检查是否有进行中的工具调用
       const hasActiveToolCall = allMessages.some((msg) =>
-        msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem?.content?.status === 'progress'),
+        msg.contentList?.some((contentItem: IContentItem) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem?.content?.status === 'progress'),
       );
 
       // 只有当没有活跃的工具调用和有内容时，才添加纯文本消息
@@ -409,21 +361,21 @@ export function useChatStream(currentSessionId: string) {
       }
 
       // 如果存在工具调用消息但所有工具调用已完成，则更新工具调用消息状态为最终状态
-      const toolMessages = allMessages.filter((msg) => msg.contentList?.some((contentItem) => contentItem.type === 'mcp' && typeof contentItem.content === 'object'));
+      const toolMessages = allMessages.filter((msg) => msg.contentList?.some((contentItem: IContentItem) => contentItem.type === 'mcp' && typeof contentItem.content === 'object'));
 
       toolMessages.forEach((message: any) => {
-        const mcpContentIndex = message.contentList.findIndex((item: any) => item.type === 'mcp' && typeof item.content === 'object');
+        const mcpContentIndex = message.contentList.findIndex((item: IContentItem) => item.type === 'mcp' && typeof item.content === 'object');
 
         if (mcpContentIndex >= 0) {
           const mcpContent = message.contentList[mcpContentIndex];
           const toolCallData = mcpContent.content.data || [];
 
-          // 如果所有工具调用都已完成（不是progress状态）
-          const allToolCallsCompleted = !toolCallData.some((tool: any) => tool.status === 'progress');
+          // 如果所有工具调用都已完成
+          const allToolCallsCompleted = !toolCallData.some((tool: IToolCallData) => tool.status === 'progress');
 
           if (allToolCallsCompleted && mcpContent.content.status === 'progress') {
             // 检查是否有任何错误
-            const hasErrors = toolCallData.some((tool: any) => tool.status === 'error');
+            const hasErrors = toolCallData.some((tool: IToolCallData) => tool.status === 'error');
 
             // 创建更新后的消息副本
             const updatedContentList = [...message.contentList];
@@ -450,10 +402,6 @@ export function useChatStream(currentSessionId: string) {
       // 如果所有工具调用都已完成，完全清理状态
       if (!hasActiveToolCall) {
         requestStateRef.current.isToolCallActive = false;
-        setToolCallStatus((prev) => ({
-          isActive: false,
-          callCount: prev.callCount,
-        }));
         clearStreamingState();
       } else {
         // 如果还有活跃工具调用，记录日志
@@ -468,7 +416,7 @@ export function useChatStream(currentSessionId: string) {
   );
   // 处理onDataReceived逻辑
   const handleStreamData = useCallback(
-    async (data: any, currentContent: string, updateSessionId = false) => {
+    async (data: IStreamData, currentContent: string, updateSessionId = false) => {
       // 重置超时定时器
       resetNoDataTimer();
       if (timeoutRefsRef.current.totalTimer) {
@@ -583,10 +531,6 @@ export function useChatStream(currentSessionId: string) {
 
       // 确保工具调用状态重置
       requestStateRef.current.isToolCallActive = false;
-      setToolCallStatus((prev) => ({
-        isActive: false,
-        callCount: prev.callCount,
-      }));
 
       // 模型检查
       if (!selectedModel) {
@@ -717,17 +661,11 @@ export function useChatStream(currentSessionId: string) {
   // 重发最后一条消息
   const resendLastMessage = useCallback(async () => {
     if (isResending) return;
-
     try {
       setIsResending(true);
       setError(null);
-
       // 重置工具调用状态
       requestStateRef.current.isToolCallActive = false;
-      setToolCallStatus((prev) => ({
-        isActive: false,
-        callCount: prev.callCount,
-      }));
 
       // 获取上次发送的消息内容
       const lastMessage = lastUserMessageRef.current;
@@ -762,7 +700,6 @@ export function useChatStream(currentSessionId: string) {
 
   useEffect(() => {
     toolCallHandlersRef.current.continueConversation = continueConversationWithResult;
-
     return () => {
       toolCallHandlersRef.current.continueConversation = null;
     };

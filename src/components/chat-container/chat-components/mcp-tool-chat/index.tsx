@@ -19,7 +19,9 @@ interface IDataSourceItem {
   inputParams: string;
   outputParams: string;
   status: 'success' | 'error' | 'progress';
+  executionTime?: number; // 执行时间
 }
+
 interface IMcpToolChatData {
   dataSource: {
     data: IDataSourceItem[];
@@ -31,33 +33,39 @@ export default function McpToolChat(props: IMcpToolChatData) {
   console.log('McpToolChat dataSource=====>', props);
   const { data, status } = props.dataSource;
   const [isExpanded, setIsExpanded] = useState(false);
-  const { toolCallNumber } = useChatStore();
 
-  const jsonParsePannel = (data: string) => {
+  // 计算已完成的工具调用
+  const completedCalls = data.filter((item) => item.status === 'success' || item.status === 'error');
+  const inProgressCalls = data.filter((item) => item.status === 'progress');
+
+  // 计算总耗时
+  const totalExecutionTime = data.reduce((sum, item) => sum + (item.executionTime || 0), 0);
+
+  const jsonParsePannel = (content: string) => {
     return (
       <JsonParsePanel
         propsContentStyles={{ backgroundColor: 'unset' }}
         isConfig={false}
         maxHeight="240px"
-        code={data}
+        code={content}
       />
     );
   };
 
   const tabItems = (item: IDataSourceItem) => [
     {
-      key: '1',
+      key: 'inputParams',
       label: '输入参数',
       children: jsonParsePannel(item.inputParams),
     },
     {
-      key: '2',
+      key: 'outputParams',
       label: '输出参数',
-      children: jsonParsePannel(item.outputParams),
+      children: item.status === 'progress' ? <div className={styles.progressLoading}>工具调用中...</div> : jsonParsePannel(item.outputParams),
     },
   ];
 
-  const inputoutParams = (item: any) => {
+  const inputoutParams = (item: IDataSourceItem) => {
     return (
       <div className={styles.inputoutParams}>
         <Tabs
@@ -74,7 +82,10 @@ export default function McpToolChat(props: IMcpToolChatData) {
       <div className={styles.mcpToolHeader}>
         <div className={styles.mcpLeft}>
           <div className={styles.mcpLogo}>
-            <img src={amap} />
+            <img
+              src={amap}
+              alt={item.name}
+            />
           </div>
           <Tooltip title={item?.name}>
             <div className={styles.mcpTitle}>{item?.name}</div>
@@ -98,16 +109,32 @@ export default function McpToolChat(props: IMcpToolChatData) {
               <span className={styles.mcpError}>失败</span>
             </>
           )}
+          {item?.status === 'progress' && (
+            <>
+              <div className={styles.progressDot}></div>
+              <span className={styles.mcpProgress}>进行中</span>
+            </>
+          )}
         </div>
       </div>
     );
   };
 
-  const collapseItems: CollapseProps['items'] = data.map((item: any, index: number) => ({
-    key: `${index + 1}`,
-    label: mcpToolHeader(item),
-    children: inputoutParams(item),
-  }));
+  // 构建折叠面板项
+  const collapseItems: CollapseProps['items'] = [
+    // 显示已完成的调用
+    ...completedCalls.map((item, index) => ({
+      key: `completed-${index}`,
+      label: mcpToolHeader(item),
+      children: inputoutParams(item),
+    })),
+    // 显示进行中的调用
+    ...inProgressCalls.map((item, index) => ({
+      key: `progress-${index}`,
+      label: mcpToolHeader(item),
+      children: inputoutParams(item),
+    })),
+  ];
 
   return (
     <div className={styles.mcpToolChat}>
@@ -132,6 +159,7 @@ export default function McpToolChat(props: IMcpToolChatData) {
               <div className={styles.statusText}>调用已停止</div>
             </>
           )}
+
           {status === 'success' && (
             <>
               <CheckCircleIcon
@@ -139,41 +167,38 @@ export default function McpToolChat(props: IMcpToolChatData) {
                 height={16}
                 fill="#4f4dff"
               />
-              <div className={styles.statusText}>工具调用已完成，共执行 {toolCallNumber || 0} 次</div>
-              {/* <div className={styles.coastTime}>（用时 25 秒）</div> */}
+              <div className={styles.statusText}>工具调用已完成，共执行 {data.length} 次</div>
+              <div className={styles.coastTime}>（总用时 {(totalExecutionTime / 1000).toFixed(1)} 秒）</div>
             </>
           )}
         </div>
 
-        {status !== 'progress' && (
-          <div
-            className={styles.collapse}
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? (
-              <img
-                src={arrowUp}
-                alt="收起"
-              />
-            ) : (
-              <img
-                src={arrowDown}
-                alt="展开"
-              />
-            )}
-          </div>
-        )}
-      </div>
-      {status !== 'progress' && (
-        <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
-          <Collapse
-            items={collapseItems}
-            bordered={false}
-            expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
-            defaultActiveKey={['1']}
-          />
+        <div
+          className={styles.collapse}
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? (
+            <img
+              src={arrowUp}
+              alt="收起"
+            />
+          ) : (
+            <img
+              src={arrowDown}
+              alt="展开"
+            />
+          )}
         </div>
-      )}
+      </div>
+
+      <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
+        <Collapse
+          items={collapseItems}
+          bordered={false}
+          expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
+          // defaultActiveKey={collapseItems.map((item, index) => item?.key || index)}
+        />
+      </div>
     </div>
   );
 }
