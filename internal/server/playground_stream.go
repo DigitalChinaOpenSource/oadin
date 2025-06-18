@@ -181,11 +181,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 										title = result.Message.Content
 									}
 									runes := []rune(title)
-									if len(runes) > 10 {
-										title = string(runes[:10])
-									} else {
-										title = string(runes)
-									}
+									title = string(runes)
 								}
 							}
 							slog.Info("[DEBUG] TitleGen final title", "title", title)

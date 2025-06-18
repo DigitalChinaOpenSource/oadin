@@ -1,9 +1,11 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"byze/internal/api/dto"
 
@@ -71,11 +73,68 @@ func (t *ByzeCoreServer) UploadFile(c *gin.Context) {
 
 	resp, err := t.Playground.UploadFile(c.Request.Context(), req, file, header.Filename, header.Size)
 	if err != nil {
+		slog.Error("API: 文件上传失败", "sessionID", sessionID, "filename", header.Filename, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	slog.Info("API: 文件上传成功", "sessionID", sessionID, "filename", header.Filename, "fileID", resp.Data.ID)
+
+	if err := t.DataStore.Commit(c.Request.Context()); err != nil {
+		slog.Warn("API: 提交数据库操作失败，但将继续处理", "error", err)
+	}
+
+	hasEmbeddingService, embeddingError := t.Playground.CheckEmbeddingService(c.Request.Context(), sessionID)
+	if !hasEmbeddingService {
+		slog.Warn("API: 文件已上传但embed服务不可用", "sessionID", sessionID, "fileID", resp.Data.ID, "error", embeddingError)
+
+		c.JSON(http.StatusOK, gin.H{
+			"bcode":   resp.Bcode,
+			"data":    resp.Data,
+			"warning": "文件已上传，但无法生成向量嵌入。请检查embed服务是否可用。"})
+		return
+	}
+
+	// 自动触发文件向量生成，添加重试机制
+	slog.Info("API: 开始自动处理文件生成向量", "sessionID", sessionID, "fileID", resp.Data.ID)
+	embReq := &dto.GenerateEmbeddingRequest{
+		FileID: resp.Data.ID,
+	}
+
+	// 添加重试机制，最多重试3次
+	var embErr error
+	maxRetries := 3
+	for i := 0; i < maxRetries; i++ {
+		if i > 0 {
+			// 重试前短暂延迟，给数据库写入留出时间
+			time.Sleep(time.Millisecond * 200 * time.Duration(i))
+			slog.Info("API: 重试处理文件生成向量", "尝试次数", i+1, "fileID", resp.Data.ID)
+		}
+
+		_, embErr = t.Playground.ProcessFile(c.Request.Context(), embReq)
+		if embErr == nil {
+			// 处理成功，跳出重试循环
+			break
+		}
+
+		slog.Warn("API: 处理文件生成向量失败，准备重试", "尝试次数", i+1, "fileID", resp.Data.ID, "error", embErr)
+	}
+
+	if embErr != nil {
+		slog.Error("API: 自动向量生成失败", "fileID", resp.Data.ID, "error", embErr)
+		// 返回一个带警告的成功响应
+		c.JSON(http.StatusOK, gin.H{
+			"bcode":   resp.Bcode,
+			"data":    resp.Data,
+			"warning": "文件已上传，但向量生成失败: " + embErr.Error()})
+		return
+	}
+
+	slog.Info("API: 文件向量生成成功", "fileID", resp.Data.ID)
+	c.JSON(http.StatusOK, gin.H{
+		"bcode":             resp.Bcode,
+		"data":              resp.Data,
+		"embedding_success": true})
 }
 
 // 获取文件列表
