@@ -34,7 +34,7 @@ type MCPServer interface {
 	ClientMcpStart(ctx context.Context, id string) error
 	ClientMcpStop(ctx context.Context, ids []string) error
 	ClientGetTools(ctx context.Context, mcpId string) ([]mcp.Tool, error)
-	ClientRunTool(c *gin.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error)
+	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error)
 }
 
 type MCPServerImpl struct {
@@ -164,7 +164,7 @@ func (M *MCPServerImpl) GetCategories(ctx context.Context) (*rpc.CategoryListRes
 
 func (M *MCPServerImpl) GetMyMCPList(ctx context.Context, request *rpc.MCPListRequest) (*rpc.MCPListResponse, error) {
 	// 先获取属于我的mcp数据, 带入条件去查询列表数据
-	configs, err := M.Ds.List(ctx, &types.McpUserConfig{}, &datastore.ListOptions{})
+	configs, err := M.Ds.List(ctx, &types.McpUserConfig{}, &datastore.ListOptions{SortBy: []datastore.SortOption{{Key: "created_at", Order: datastore.SortOrderDescending}}})
 	if err != nil {
 		return nil, err
 	}
@@ -356,38 +356,38 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	return nil
 }
 
-func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
+func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.MCPServerConfig, error) {
 	mcpUserConfig := new(types.McpUserConfig)
-	mcpUserConfig.MCPID = id
+	mcpUserConfig.MCPID = mcpId
 
 	err := M.Ds.Get(ctx, mcpUserConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	mcpConfig, err := rpc.GetMCPDetail(M.Client, id)
+	mcpConfig, err := rpc.GetMCPDetail(M.Client, mcpId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var env map[string]string
 	if mcpUserConfig.Auth != "" {
 		err := json.Unmarshal([]byte(mcpUserConfig.Auth), &env)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	serverConfig := mcpConfig.Data.ServerConfig[0]
 	mcpServers := serverConfig.McpServers
 	mcpServerConfig := types.MCPServerConfig{
-		Id:   id,
+		Id:   mcpId,
 		Name: mcpConfig.Data.ServerName,
 	}
 	for _, y := range mcpServers {
 		commandBuilder := hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
 		command, args, err := commandBuilder.GetRunCommand()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		mcpServerConfig.Command = command
 		mcpServerConfig.Args = args
@@ -397,7 +397,15 @@ func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
 		break
 	}
 
-	_, err = M.McpHandler.Start(mcpServerConfig)
+	return &mcpServerConfig, nil
+}
+
+func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
+	mcpServerConfig, err := M.getMCPConfig(ctx, id)
+	if err != nil {
+		return err
+	}
+	err = M.McpHandler.Start(mcpServerConfig)
 	if err != nil {
 		return err
 	}
@@ -442,7 +450,7 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 		}
 	}
 
-	fetchTools, err := M.McpHandler.FetchTools(mcpId)
+	fetchTools, err := M.McpHandler.FetchTools(ctx,mcpId)
 	if err != nil {
 		return nil, err
 	}
@@ -459,14 +467,14 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 	return tools, nil
 }
 
-// RunTools 运行单个mcp的工具
-func (M *MCPServerImpl) ClientRunTool(c *gin.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error) {
+func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error) {
 	params := mcp.CallToolParams{
 		Name:      req.ToolName,
 		Arguments: req.ToolArgs,
 	}
-	data, err := M.McpHandler.CallTool(req.MCPId, params)
+	data, err := M.McpHandler.CallTool(ctx, req.MCPId, params)
 	if err != nil {
+		fmt.Println("Failed to call tool:", err)
 		return nil, err
 	}
 	return data, nil

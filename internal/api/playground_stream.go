@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"byze/internal/api/dto"
+	"byze/internal/types"
 	"byze/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,22 @@ func (t *ByzeCoreServer) SendMessageStream(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if len(req.McpIds) > 0 {
+		req.Tools = make([]types.Tool, 0)
+		for _, id := range req.McpIds {
+			tools, err := t.MCP.ClientGetTools(c, id)
+			if err != nil {
+				continue
+			}
+
+			newTools := make([]types.Tool, 0, len(tools))
+			for _, tool := range tools {
+				newTools = append(newTools, types.Tool{Type: "function", Function: types.TypeFunction{Name: tool.Name, Description: tool.Description, Parameters: tool.InputSchema}})
+			}
+			req.Tools = append(req.Tools, newTools...)
+		}
 	}
 
 	// 设置响应头
@@ -39,12 +56,14 @@ func (t *ByzeCoreServer) SendMessageStream(c *gin.Context) {
 			response := dto.StreamMessageResponse{
 				Bcode: bcode.SuccessCode,
 				Data: dto.MessageChunk{
-					ID:         chunk.ID,
-					SessionID:  req.SessionID,
-					Content:    chunk.Content,
-					IsComplete: chunk.IsComplete,
-					Thoughts:   chunk.Thoughts,
-					Type:       chunk.Type,
+					ID:            chunk.ID,
+					SessionID:     req.SessionID,
+					Content:       chunk.Content,
+					IsComplete:    chunk.IsComplete,
+					Thoughts:      chunk.Thoughts,
+					Type:          chunk.Type,
+					ToolCalls:     chunk.ToolCalls,     // 新增，支持Ollama工具调用
+					TotalDuration: chunk.TotalDuration, // 新增总耗时
 				},
 			} // 序列化为JSON
 			data, err := json.Marshal(response)
