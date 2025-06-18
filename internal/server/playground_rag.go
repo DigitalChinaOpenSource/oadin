@@ -133,6 +133,10 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 			return "", fmt.Errorf("RAG: 查询变体嵌入生成失败: %w", err)
 		}
 
+		if len(embeddingResp.Data) == 0 {
+			slog.Error("RAG: 嵌入返回数据为空", "sessionID", session.ID, "query", q)
+			return "", fmt.Errorf("RAG: 嵌入返回数据为空")
+		}
 		embedding := embeddingResp.Data[0].Embedding
 		queryEmbeddings = append(queryEmbeddings, embedding)
 		slog.Debug("RAG: 查询变体embedding生成成功", "sessionID", session.ID, "query", q, "embeddingDim", len(embedding))
