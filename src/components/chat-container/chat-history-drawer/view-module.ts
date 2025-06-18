@@ -63,10 +63,7 @@ export function useChatHistoryDrawer() {
         }
         if (!data) return;
       },
-      onError: (error) => {
-        console.error('获取更新日志失败:', error);
-      },
-      onFinally: (data: any) => {
+      onFinally: () => {
         setShowDeleteId(null);
       },
     },
@@ -85,24 +82,28 @@ export function useChatHistoryDrawer() {
 
         fetchModelDetail(data[data.length - 1].modelId, data, data[data.length - 1].sessionId);
       },
-      onError: (error) => {
+      onError: () => {
         message.error('获取历史对话记录失败');
       },
     },
   );
 
   const getModelList = async (params: IModelSquareParams, modelId: string) => {
-    const data = await httpRequest.get<ModelData>('/control_panel/model/square', params);
-    if (data && data.data && data.data.length) {
-      return data.data.find((item) => item.id === modelId);
-    } else {
-      return undefined; // 返回空数组表示没有数据
+    try {
+      const data = await httpRequest.get<ModelData>('/control_panel/model/square', params);
+      if (data && data.data && data.data.length) {
+        return data.data.find((item) => item.id === modelId);
+      } else {
+        return undefined; // 返回空数组表示没有数据
+      }
+    } catch (error) {
+      return undefined;
     }
   };
 
   // 根据模型id获取模型详情
   const fetchModelDetail = async (modelId: string, messages: MessageType[], sessionId: string) => {
-    let res = undefined;
+    let res;
     const localParams: IModelSquareParams = {
       service_source: 'local',
       page_size: 999,

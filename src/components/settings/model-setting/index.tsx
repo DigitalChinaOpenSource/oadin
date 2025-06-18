@@ -123,7 +123,6 @@ const ModelSetting: React.FC = () => {
           onChangeModelPath={onChangeModelPath}
         />
       )}
-      ``
     </div>
   );
 };
