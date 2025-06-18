@@ -39,7 +39,7 @@ export const SelectMcp = () => {
         onOpenChange={(open) => {
           setSelectMcpPopOpen(open);
           if (!open) {
-            message.info('调用启动MCP服务');
+            // message.info('调用启动MCP服务');
           }
         }}
       >

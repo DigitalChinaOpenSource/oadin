@@ -20,10 +20,12 @@ export interface IUseViewModelReturn {
   searchVal: string;
   setSearchVal: React.Dispatch<React.SetStateAction<string>>;
   handleClearTags: () => void;
+}
+interface IMyMcpTabReturn extends IUseViewModelReturn {
   handleMcpListToPage: (page?: number) => void;
 }
 
-export function useViewModel(): IUseViewModelReturn {
+export function useViewModel(): IMyMcpTabReturn {
   const navigate = useNavigate();
   const { setPageParams, getPageParams, setTagsDataStore, tagsDataStore } = usePageParamsStore();
   const [mcpListData, setMcpListData] = useState<IMcpListItem[]>([]);

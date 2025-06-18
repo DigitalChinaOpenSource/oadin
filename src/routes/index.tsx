@@ -26,6 +26,11 @@ const router = createBrowserRouter([
           />
         ),
       },
+      //体验中心
+      {
+        path: '/model-experience',
+        element: <ModelChat />,
+      },
       // 模型管理
       {
         path: '/model-manage',
@@ -37,10 +42,6 @@ const router = createBrowserRouter([
           {
             path: 'my-model-list',
             element: <MyModel isDialog={false} />,
-          },
-          {
-            path: 'model-experience',
-            element: <ModelChat />,
           },
         ],
       },

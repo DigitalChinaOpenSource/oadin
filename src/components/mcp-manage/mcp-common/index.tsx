@@ -32,7 +32,7 @@ export const renderTitle = (props: IRenderTitleProps) => {
   return isDialog ? null : (
     <div className={styles.mcpTitleText}>
       <span>{title}</span>
-      <span className={styles.mcpCount}>共 {count} 个</span>
+      {!!count && <span className={styles.mcpCount}>共 {count} 个</span>}
     </div>
   );
 };
