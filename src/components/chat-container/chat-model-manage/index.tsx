@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tooltip } from 'antd';
-import { useRequest } from 'ahooks';
-import { httpRequest } from '@/utils/httpRequest';
 import thinkSvg from '@/components/icons/think.svg';
+import nothinkSvg from '@/components/icons/no-think.svg';
 import exchangeSvg from '@/components/icons/exchange.svg';
 import TagsRender from '@/components/tags-render';
 import { ChooseModelDialog } from '@/components/choose-model-dialog';
@@ -21,6 +20,7 @@ export default function ChatModelManage(props: IChatModelManageProps) {
   const { selectedModel } = useSelectedModelStore();
   const { setCurrentSessionId, currentSessionId } = useChatStore();
   const [open, setOpen] = useState<boolean>(false);
+  const [isThinking, setIsThinking] = useState<boolean>(true);
   return (
     <>
       <div className={styles.chatModelManage}>
@@ -43,9 +43,15 @@ export default function ChatModelManage(props: IChatModelManageProps) {
         <div className={styles.right}>
           {selectedModel?.think && (
             <>
-              <div className={styles.think}>
+              <div
+                className={isThinking ? styles.think : styles.noThink}
+                onClick={() => {
+                  setIsThinking(!isThinking);
+                  // TODO 调接口去关闭
+                }}
+              >
                 <img
-                  src={thinkSvg}
+                  src={isThinking ? thinkSvg : nothinkSvg}
                   alt="思考图标"
                 />
                 <span>深度思考</span>
@@ -53,6 +59,7 @@ export default function ChatModelManage(props: IChatModelManageProps) {
               <div className={styles.fill}></div>
             </>
           )}
+
           <Tooltip title="切换模型后，将开启新会话">
             <div
               className={styles.changeModel}
