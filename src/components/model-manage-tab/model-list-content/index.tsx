@@ -5,11 +5,11 @@ import realLoadingSvg from '@/components/icons/real-loading.svg';
 import { IModelList, ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
 
 export default function ModelListContent(props: IModelList) {
-  const { vm } = props;
+  const { vmContent } = props;
   return (
-    vm && (
+    vmContent && (
       <>
-        {vm.modelSupportLoading ? (
+        {vmContent.modelSupportLoading ? (
           <div className={styles.loading}>
             <img
               src={realLoadingSvg}
@@ -21,36 +21,36 @@ export default function ModelListContent(props: IModelList) {
             <div className={styles.contentContainer}>
               <ModelList
                 isSelectable={props.isSelectable}
-                vm={vm}
+                vmContent={vmContent}
                 pagination={
-                  vm.modelListData.length > 12 && {
+                  vmContent.modelListStateData.length > 12 && {
                     className: styles.pagination,
                     align: 'end',
-                    ...vm.pagination,
+                    ...vmContent.pagination,
                     pageSizeOptions: [12, 24, 48, 96],
                     showSizeChanger: true,
-                    onChange: vm.onPageChange,
-                    onShowSizeChange: vm.onShowSizeChange,
+                    onChange: vmContent.onPageChange,
+                    onShowSizeChange: vmContent.onShowSizeChange,
                   }
                 }
                 grid={{ gutter: 16, column: 3, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
               />
             </div>
             {/* 配置授权弹窗 */}
-            {vm.modelAuthVisible && (
+            {vmContent.modelAuthVisible && (
               <ModelAuthorizeModal
-                modelDataItem={vm.selectModelData}
-                modelAuthType={vm.modelAuthType}
-                onModelAuthVisible={vm.onModelAuthVisible}
-                onModelAuthSuccess={vm.onModelAuthSuccess}
+                modelDataItem={vmContent.selectModelData}
+                modelAuthType={vmContent.modelAuthType}
+                onModelAuthVisible={vmContent.onModelAuthVisible}
+                onModelAuthSuccess={vmContent.onModelAuthSuccess}
               />
             )}
             {/* 模型详情弹窗 */}
-            {vm.isDetailVisible && (
+            {vmContent.isDetailVisible && (
               <ModelDetailModal
-                modelSourceVal={vm.modelSourceVal}
-                onDetailModalVisible={vm.onDetailModalVisible}
-                selectModelData={vm.selectModelData}
+                modelSourceVal={vmContent.modelSourceVal}
+                onDetailModalVisible={vmContent.onDetailModalVisible}
+                selectModelData={vmContent.selectModelData}
               />
             )}
           </div>

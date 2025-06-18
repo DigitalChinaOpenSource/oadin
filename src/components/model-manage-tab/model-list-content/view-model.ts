@@ -10,6 +10,7 @@ import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
 import { convertToMB } from '@/utils';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
+import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 
 export type ModelSourceType = 'local' | 'remote';
 
@@ -48,7 +49,6 @@ export interface IUseViewModel {
   deleteModelLoading: boolean;
 
   pagenationData: IModelDataItem[];
-  modelListData: IModelDataItem[];
   modelSearchVal: string;
   modelSourceVal: ModelSourceType;
   onModelSearch: (val: string) => void;
@@ -59,6 +59,8 @@ export interface IUseViewModel {
   pagination: IPagenation;
   onPageChange: (current: number) => void;
   onShowSizeChange: (current: number, pageSize: number) => void;
+  modelListStateData: IModelDataItem[];
+  mine: boolean;
 }
 
 const { confirm } = Modal;
@@ -80,7 +82,11 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 配置 ｜ 更新授权
   const [modelAuthType, setModelAuthType] = useState<IModelAuthType>('config');
   // 模型/问学列表全量数据
-  const { modelListData, setModelListData } = useModelListStore();
+  const { setModelListData, modelListData } = useModelListStore();
+  const { setCurrentSessionId } = useChatStore();
+
+  // 本地缓存的模型数据
+  const [modelListStateData, setModelListStateData] = useState<IModelDataItem[]>([]);
   const [pagination, setPagination] = useState<IPagenation>({
     current: 1,
     pageSize: 12,
@@ -93,6 +99,71 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
+
+  const setListData = (list: IModelDataItem[]) => {
+    setModelListData(list);
+    setModelListStateData(list);
+  };
+
+  /// 可能还有问题， 下面的Effect的作用是当全局的list发生变化的时候更新本地的state
+  const prevDownloadStatusMapRef = useRef<Record<string, any>>({});
+
+  useEffect(() => {
+    // 创建一个映射来跟踪当前的下载状态
+    const currentDownloadStatusMap: Record<string, any> = {};
+
+    // 从downloadList中提取status信息
+    modelListData.forEach((item) => {
+      if (item.id) {
+        currentDownloadStatusMap[item.id] = item.status;
+      }
+    });
+
+    // 检查是否有状态变化
+    let hasStatusChanged = false;
+
+    // 检查新增或修改的状态
+    for (const id in currentDownloadStatusMap) {
+      if (prevDownloadStatusMapRef.current[id] !== currentDownloadStatusMap[id]) {
+        hasStatusChanged = true;
+        break;
+      }
+    }
+
+    // 检查删除的状态
+    if (!hasStatusChanged) {
+      for (const id in prevDownloadStatusMapRef.current) {
+        if (!(id in currentDownloadStatusMap)) {
+          hasStatusChanged = true;
+          break;
+        }
+      }
+    }
+
+    // 如果状态有变化，更新modelListStateData
+    if (hasStatusChanged) {
+      console.info('下载状态发生变化，更新modelListStateData');
+
+      const updatedList = modelListStateData.map((item) => {
+        const downItem = modelListData.find((_item) => _item.id === item.id);
+        if (downItem) {
+          return {
+            ...item,
+            status: downItem?.status,
+            can_select: downItem?.can_select,
+          };
+        }
+        return item;
+      });
+      console.info('更新后的模型列表数据:', updatedList);
+      if (updatedList.length > 0) {
+        setModelListStateData(updatedList);
+      }
+
+      // 更新记录的状态
+      prevDownloadStatusMapRef.current = { ...currentDownloadStatusMap };
+    }
+  }, [modelListData, modelListStateData]);
 
   // 获取模型列表 （本地和云端）
   const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
@@ -123,7 +194,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
               currentDownload: 0,
             }) as any,
         );
-        setModelListData(dataWithSource);
+        setListData(dataWithSource);
         setPagination({
           ...pagination,
           total: dataWithSource.length,
@@ -131,7 +202,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
-        setModelListData([]);
+        setListData([]);
       },
     },
   );
@@ -191,6 +262,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         if (params[0].model_name === selectedModel?.name) {
           setIsSelectedModel(false);
           setSelectedModel(null);
+          setCurrentSessionId('');
         }
       },
       onError: (error: Error & { handled?: boolean }) => {
@@ -219,9 +291,9 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 获取过滤后的数据
   const getFilteredData = () => {
     if (!modelSearchVal || modelSearchVal.trim() === '') {
-      return modelListData;
+      return modelListStateData;
     }
-    return modelListData.filter((model) => model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase()));
+    return modelListStateData.filter((model) => model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase()));
   };
 
   // 添加分页数据计算逻辑
@@ -236,7 +308,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const pagenationData = useMemo(() => {
     const filteredData = getFilteredData();
     return paginatedData(pagination, filteredData);
-  }, [modelListData, modelSearchVal, pagination]);
+  }, [modelListStateData, modelSearchVal, pagination]);
 
   const onPageChange = (current: number) => {
     if (isPageSizeChangingRef.current) {
@@ -357,15 +429,17 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     deleteModelLoading,
 
     pagenationData,
-    modelListData,
     modelSearchVal,
     modelSourceVal,
     onModelSearch,
     selectModelData,
     fetchModelSupport,
 
+    modelListStateData,
     pagination,
     onPageChange,
     onShowSizeChange,
+
+    mine: !!mine,
   };
 }

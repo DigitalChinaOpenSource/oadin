@@ -13,12 +13,12 @@ export interface IModelList {
   dataSource?: any[];
   grid?: ListGridType;
   isSelectable?: boolean;
-  vm?: IUseViewModel;
+  vmContent?: IUseViewModel;
   selectVms?: any;
 }
 
 export const ModelList = (props: IModelList) => {
-  const { vm, selectVms } = props;
+  const { vmContent, selectVms, dataSource } = props;
   const { selectedModel } = useSelectedModelStore();
   const renderVmList = () => {
     let content = (
@@ -32,7 +32,7 @@ export const ModelList = (props: IModelList) => {
         <div className={styles.noDataText}>暂无匹配的模型</div>
       </div>
     );
-    if (vm && vm.pagenationData.length > 0) {
+    if (vmContent && vmContent.pagenationData.length > 0) {
       content = (
         <Radio.Group
           value={selectedModel?.id}
@@ -40,18 +40,19 @@ export const ModelList = (props: IModelList) => {
         >
           <List
             grid={props?.grid}
-            dataSource={props?.dataSource ?? vm.pagenationData}
-            pagination={typeof props?.pagination === 'undefined' ? vm?.pagination : props?.pagination}
+            dataSource={dataSource ?? vmContent.pagenationData}
+            pagination={typeof props?.pagination === 'undefined' ? vmContent?.pagination : props?.pagination}
             renderItem={(item) => (
               <List.Item>
                 <GeneralCard
+                  mine={vmContent?.mine}
                   isSelectable={props.isSelectable}
                   modelData={item}
-                  modelSourceVal={vm.modelSourceVal}
-                  onCardClick={vm.onDetailModalVisible}
-                  onModelAuthVisible={vm.onModelAuthVisible}
-                  onDownloadConfirm={vm.onDownloadConfirm}
-                  onDeleteConfirm={vm.onDeleteConfirm}
+                  modelSourceVal={vmContent.modelSourceVal}
+                  onCardClick={vmContent.onDetailModalVisible}
+                  onModelAuthVisible={vmContent.onModelAuthVisible}
+                  onDownloadConfirm={vmContent.onDownloadConfirm}
+                  onDeleteConfirm={vmContent.onDeleteConfirm}
                 />
               </List.Item>
             )}

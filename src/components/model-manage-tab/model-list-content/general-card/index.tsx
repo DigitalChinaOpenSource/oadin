@@ -25,10 +25,11 @@ export interface IGeneralCardProps {
   onModelAuthVisible?: (data: IModelAuth) => void;
   onDeleteConfirm?: (modelData: IModelDataItem) => void;
   onDownloadConfirm?: (modelData: IModelDataItem) => void;
+  mine?: boolean;
 }
 
 export default function GeneralCard(props: IGeneralCardProps) {
-  const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData } = props;
+  const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData, mine } = props;
   const toolTipsText = props?.selectTooltip ?? '请先下载/授权，再体验';
 
   const { migratingStatus } = useModelPathChangeStore();
@@ -51,7 +52,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
           下载中
         </Button>
       );
-    if (can_select || status === COMPLETED)
+    if (can_select || status === COMPLETED || mine)
       return (
         <Button
           className={styles.downloadedBtn}

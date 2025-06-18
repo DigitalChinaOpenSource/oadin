@@ -10,16 +10,16 @@ export const ModelCheckingNodata = () => {
     onModelSearch: () => {},
   };
   // 获取当前的列表中的全部数据
-  const vm: IUseViewModel = useViewModel(vmProps);
-  console.info(vm, 'vmvm');
+  const vmContent: IUseViewModel = useViewModel(vmProps);
+  console.info(vmContent, 'vmvm');
   const filterModelList = useMemo(() => {
-    return vm.pagenationData?.length > 0 ? vm.pagenationData.splice(0, 2) : [];
-  }, [vm.pagenationData]);
+    return vmContent.pagenationData?.length > 0 ? vmContent.pagenationData.splice(0, 2) : [];
+  }, [vmContent.pagenationData]);
   return (
     <>
       <div className={styles.recommendText}>当前暂无可体验的模型，请先下载后，再进行体验</div>
       <ModelList
-        vm={vm}
+        vmContent={vmContent}
         isSelectable={true}
         grid={{ gutter: 16, column: 2 }}
         dataSource={filterModelList}
