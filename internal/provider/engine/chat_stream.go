@@ -23,7 +23,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 	// Convert model ID to model name if needed
 	originalModel := req.Model
-	modelName := getModelNameById(req.Model)
+	modelName := e.GetModelById(ctx, req.Model).Name
 
 	// Debug log to trace model conversion
 	fmt.Printf("[ChatStream] Model conversion: %s -> %s\n", originalModel, modelName)
