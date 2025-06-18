@@ -99,18 +99,16 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		}
 		// 调用模型获取流式回复
 		// 获取统一的聊天引擎
-		modelEngine := engine.NewEngine()
-		// 构建聊天请求
+		modelEngine := engine.NewEngine() // 构建聊天请求
 		chatRequest := &types.ChatRequest{
 			Model:    session.ModelName,
 			Messages: history,
-			Stream:   true, // 启用流式输出
-			Options:  make(map[string]any),
+			Stream:   true,  // 启用流式输出
+			Think:    false, // 默认不启用深度思考
 		}
-
-		// 如果启用了思考模式，则添加thinking选项
-		if session.ThinkingEnabled {
-			chatRequest.Options["thinking"] = true
+		// 如果模型支持深度思考且用户启用了思考模式，则添加thinking选项
+		if session.ThinkingEnabled && session.ThinkingActive {
+			chatRequest.Think = true
 		}
 
 		// Chat request (with tools)
@@ -197,19 +195,18 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 								slog.Error("Failed to update session title", "error", err)
 							}
 						}
-					}
-
-					// 保存思考内容（如果有）
-					if thoughts != "" && session.ThinkingEnabled {
+					} // 保存思考内容（如果有）
+					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 						thoughtsMsg := &types.ChatMessage{
-							ID:        uuid.New().String(),
-							SessionID: request.SessionID,
-							Role:      "system",
-							Content:   thoughts,
-							Order:     len(messages) + 2,
-							CreatedAt: time.Now(),
-							ModelID:   session.ModelID,
-							ModelName: session.ModelName,
+							ID:            uuid.New().String(),
+							SessionID:     request.SessionID,
+							Role:          "think",
+							Content:       thoughts,
+							Order:         len(messages) + 2,
+							CreatedAt:     time.Now(),
+							ModelID:       session.ModelID,
+							ModelName:     session.ModelName,
+							TotalDuration: resp.TotalDuration / int64(time.Second),
 						}
 						err = p.Ds.Add(ctx, thoughtsMsg)
 						if err != nil {
@@ -239,16 +236,29 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						fullContent += resp.Content
 					}
 
+					// 如果没有内容但有工具调用，构建提示信息
+					if fullContent == "" && len(resp.ToolCalls) > 0 {
+						for _, toolCall := range resp.ToolCalls {
+							// toolCall.Function.Argument 是map[string]interface{}, 转为json字符串
+							arguments, err := json.Marshal(toolCall.Function.Arguments)
+							if err != nil {
+								slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
+							}
+							fullContent += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
+						}
+					}
+
 					// 确保完整内容被保存和返回给客户端
 					assistantMsg := &types.ChatMessage{
-						ID:        assistantMsgID,
-						SessionID: request.SessionID,
-						Role:      "assistant",
-						Content:   fullContent,
-						Order:     len(messages) + 1,
-						CreatedAt: time.Now(),
-						ModelID:   session.ModelID,
-						ModelName: session.ModelName,
+						ID:            assistantMsgID,
+						SessionID:     request.SessionID,
+						Role:          "assistant",
+						Content:       fullContent,
+						Order:         len(messages) + 1,
+						CreatedAt:     time.Now(),
+						ModelID:       session.ModelID,
+						ModelName:     session.ModelName,
+						TotalDuration: resp.TotalDuration / int64(time.Second),
 					}
 					err = p.Ds.Add(ctx, assistantMsg)
 					if err != nil {
@@ -257,6 +267,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 
 					// 发送全部内容作为响应
 					resp.Content = fullContent
+					resp.ID = assistantMsgID
 					respChan <- resp
 				} else if len(originalContent) > 0 {
 					slog.Info("收到非空流式输出块",

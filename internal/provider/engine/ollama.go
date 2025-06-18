@@ -145,7 +145,7 @@ func (o *OllamaProvider) StopEngine() error {
 	if err := os.Remove(pidFile); err != nil {
 		return fmt.Errorf("failed to remove pid file: %v", err)
 	}
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == "windows" && utils.IpexOllamaSupportGPUStatus() {
 		extraProcessName := "ollama-lib.exe"
 		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
 		_, err := extraCmd.CombinedOutput()
