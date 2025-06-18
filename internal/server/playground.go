@@ -136,7 +136,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		return nil, err
 	}
 	return &dto.CreateSessionResponse{
-		Bcode: bcode.SuccessCode, 
+		Bcode: bcode.SuccessCode,
 		Data: dto.Session{
 			Id:              session.ID,
 			Title:           session.Title,
@@ -263,7 +263,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	chatRequest := &types.ChatRequest{
 		Model:    session.ModelName,
 		Messages: history,
-		Think:    false, 
+		Think:    false,
 	}
 	if session.ThinkingEnabled && session.ThinkingActive {
 		chatRequest.Think = true
@@ -317,7 +317,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if err != nil {
 		slog.Error("Failed to save assistant message", "error", err)
 		return nil, err
-	} 
+	}
 	// 保存思考内容
 	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		thoughtsMsg := &types.ChatMessage{
@@ -519,7 +519,7 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	}
 	if req.ModelId != "" {
 		session.ModelID = req.ModelId
-		session.ModelName = getModelNameById(req.ModelId) 
+		session.ModelName = getModelNameById(req.ModelId)
 		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
 		model := &types.Model{ModelName: getModelNameById(req.ModelId)}
 		err := p.Ds.Get(ctx, model)
@@ -588,4 +588,21 @@ func (p *PlaygroundImpl) ToggleThinking(ctx context.Context, req *dto.ToggleThin
 		Bcode:          bcode.SuccessCode,
 		ThinkingActive: session.ThinkingActive,
 	}, nil
+}
+
+func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
+	return "", nil
+}
+
+func (p *PlaygroundImpl) CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error) {
+	return true, nil
+}
+
+func InitPlaygroundVec(ctx context.Context, dbPath string) error {
+
+	return initVecDB(dbPath)
+}
+
+func UseVSSForPlayground() bool {
+	return false
 }
