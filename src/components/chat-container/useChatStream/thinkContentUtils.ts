@@ -1,105 +1,28 @@
-// utils/thinkContentUtils.ts
-
 import { generateUniqueId } from './utils';
 import { MessageType } from '@res-utiles/ui-components';
 
-/**
- * 解析包含 <think> 标签的内容
- * @param content 原始内容
- * @returns 解析后的内容数组
- */
-export const parseThinkContent = (content: string): Array<{ type: 'think' | 'plain'; content: string }> => {
-  const result: Array<{ type: 'think' | 'plain'; content: string }> = [];
-
-  // 正则表达式匹配 <think> 标签
-  const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = thinkRegex.exec(content)) !== null) {
-    // 添加 <think> 标签之前的内容（如果有）
-    if (match.index > lastIndex) {
-      const beforeContent = content.substring(lastIndex, match.index).trim();
-      if (beforeContent) {
-        result.push({
-          type: 'plain',
-          content: beforeContent,
-        });
-      }
-    }
-
-    // 添加 <think> 标签内的内容
-    const thinkContent = match[1].trim();
-    if (thinkContent) {
-      result.push({
-        type: 'think',
-        content: thinkContent,
-      });
-    }
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  // 添加最后一个 </think> 之后的内容（如果有）
-  if (lastIndex < content.length) {
-    const afterContent = content.substring(lastIndex).trim();
-    if (afterContent) {
-      result.push({
-        type: 'plain',
-        content: afterContent,
-      });
-    }
-  }
-
-  // 如果没有找到 think 标签，返回原始内容
-  if (result.length === 0 && content.trim()) {
-    result.push({
-      type: 'plain',
-      content: content,
-    });
-  }
-
-  return result;
-};
-
-/**
- * 构建包含 think 内容的消息
- * @param responseContent 响应内容
- * @param isComplete 是否完成
- * @returns MessageType 对象
- */
-export const buildMessageWithThinkContent = (responseContent: string, isComplete: boolean = false): MessageType => {
-  const parsedContents = parseThinkContent(responseContent);
-
-  const contentList = parsedContents.map((item) => ({
-    id: generateUniqueId('content'),
-    type: item.type,
-    content: item.content,
-  }));
-
-  return {
-    id: generateUniqueId('ai_msg'),
-    role: 'assistant',
-    contentList,
+interface ThinkContentItem {
+  id: string;
+  type: 'think';
+  content: {
+    status: 'complete';
+    data: string;
   };
-};
+}
+
+interface PlainContentItem {
+  id: string;
+  type: 'plain';
+  content: string;
+}
 
 /**
- * 处理包含 think 标签的文本内容
+ * 处理流式响应数据，返回累积的内容
  * @param data 响应数据
  * @param currentResponseContent 当前累积的响应内容
- * @param setStreamingContent 设置流式内容的函数
- * @param setStreamingThinking 设置流式思考内容的函数
- * @param requestStateRef 请求状态引用
  * @returns 更新后的响应内容
  */
-export const handleTextContent = (
-  data: any,
-  currentResponseContent: string,
-  setStreamingContent: (content: string) => void,
-  setStreamingThinking: (content: string) => void,
-  requestStateRef: any,
-): string => {
+export const accumulateResponseContent = (data: any, currentResponseContent: string): string => {
   let responseContent = currentResponseContent;
 
   // 根据不同的数据类型处理内容累积
@@ -119,34 +42,100 @@ export const handleTextContent = (
     }
   }
 
-  // 检查是否包含 think 标签
-  if (responseContent.includes('<think>')) {
-    // 解析完整内容
-    const parsedContents = parseThinkContent(responseContent);
+  return responseContent;
+};
 
-    // 累积 thinking 内容（只包含 think 标签内的内容）
-    const thinkContents = parsedContents
-      .filter((item) => item.type === 'think')
-      .map((item) => item.content)
-      .join('\n\n');
+/**
+ * 提取并处理完整的 think 标签
+ * @param responseContent 包含 think 标签的完整响应内容
+ * @param processedThinkIds 已处理的 think 内容标识集合
+ * @param addMessage 添加消息的函数
+ * @returns 已处理的 think 内容标识集合
+ */
+export const processCompletedThinkTags = (responseContent: string, processedThinkIds: Set<string>, addMessage: (message: MessageType, isUpdate?: boolean) => string): Set<string> => {
+  const updatedProcessedIds = new Set(processedThinkIds);
 
-    // 更新 thinking 内容的流式显示
-    setStreamingThinking(thinkContents);
-    if (requestStateRef) {
-      requestStateRef.current.thinkingContent = thinkContents;
+  // 正则表达式匹配所有完整的 think 标签
+  const completedThinkRegex = /<think>([\s\S]*?)<\/think>/g;
+  let match;
+
+  while ((match = completedThinkRegex.exec(responseContent)) !== null) {
+    const thinkContent = match[1].trim();
+
+    // 为每个 think 内容生成唯一标识（基于内容和位置）
+    const thinkId = `${match.index}-${thinkContent.length}`;
+
+    // 只处理尚未处理过的 think 内容
+    if (thinkContent && !updatedProcessedIds.has(thinkId)) {
+      const thinkMessage: MessageType = {
+        id: generateUniqueId('think_msg'),
+        role: 'assistant',
+        contentList: [
+          {
+            id: generateUniqueId('content'),
+            type: 'think' as const,
+            content: {
+              status: 'complete',
+              data: thinkContent,
+            },
+          },
+        ],
+      };
+
+      addMessage(thinkMessage);
+      updatedProcessedIds.add(thinkId);
     }
-
-    // 累积显示内容（只包含 plain 内容）
-    const plainContents = parsedContents
-      .filter((item) => item.type === 'plain')
-      .map((item) => item.content)
-      .join('\n\n');
-
-    setStreamingContent(plainContents);
-  } else {
-    // 没有 think 标签，正常设置
-    setStreamingContent(responseContent);
   }
 
-  return responseContent;
+  return updatedProcessedIds;
+};
+
+/**
+ * 从完整内容中提取 plain 内容（不包含 think 标签）
+ * @param fullContent 包含 think 标签的完整内容
+ * @returns 仅包含 plain 内容的字符串
+ */
+export const extractPlainContent = (fullContent: string): string => {
+  // 移除所有 think 标签及其内容
+  return fullContent.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+};
+
+/**
+ * 构建最终的纯文本消息（不包含 think 内容）
+ * @param responseContent 包含 think 标签的响应内容
+ * @returns 仅包含 plain 内容的消息
+ */
+export const buildPlainMessage = (responseContent: string): MessageType => {
+  const plainContent = extractPlainContent(responseContent);
+
+  if (!plainContent) {
+    // 如果没有 plain 内容，返回空消息
+    return {
+      id: generateUniqueId('ai_msg'),
+      role: 'assistant',
+      contentList: [],
+    };
+  }
+
+  return {
+    id: generateUniqueId('ai_msg'),
+    role: 'assistant',
+    contentList: [
+      {
+        id: generateUniqueId('content'),
+        type: 'plain' as const,
+        content: plainContent,
+      },
+    ],
+  };
+};
+
+/**
+ * 解析包含 <think> 标签的内容（用于非流式响应）
+ * @param content 原始内容
+ * @param addMessage 添加消息的函数
+ */
+export const parseAndAddThinkMessages = (content: string, addMessage: (message: MessageType, isUpdate?: boolean) => string): void => {
+  const processedIds = new Set<string>();
+  processCompletedThinkTags(content, processedIds, addMessage);
 };

@@ -18,7 +18,6 @@ interface IDataSourceItem {
   inputParams: string;
   outputParams: string;
   status: 'success' | 'error' | 'progress';
-  executionTime?: number; // 执行时间
 }
 
 interface IMcpToolChatData {
@@ -36,9 +35,6 @@ export default memo(function McpToolChat(props: IMcpToolChatData) {
   // 计算已完成的工具调用
   const completedCalls = data.filter((item) => item.status === 'success' || item.status === 'error');
   const inProgressCalls = data.filter((item) => item.status === 'progress');
-
-  // 计算总耗时
-  const totalExecutionTime = data.reduce((sum, item) => sum + (item.executionTime || 0), 0);
 
   const jsonParsePannel = (content: string) => {
     return (
@@ -167,7 +163,7 @@ export default memo(function McpToolChat(props: IMcpToolChatData) {
                 fill="#4f4dff"
               />
               <div className={styles.statusText}>工具调用已完成，共执行 {data.length} 次</div>
-              <div className={styles.coastTime}>（总用时 {(totalExecutionTime / 1000).toFixed(1)} 秒）</div>
+              {/* <div className={styles.coastTime}>（总用时）</div> */}
             </>
           )}
         </div>

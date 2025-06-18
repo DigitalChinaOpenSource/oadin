@@ -10,7 +10,7 @@ import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
 import { generateUniqueId } from './utils';
 import { findExistingToolMessage, findProgressToolMessage, extractToolCallData, createMcpContent, updateContentListWithMcp, buildToolCallData, handleToolCallErrorMessage } from './mcpContentUtils';
-import { parseThinkContent, buildMessageWithThinkContent, handleTextContent } from './thinkContentUtils';
+import { accumulateResponseContent, processCompletedThinkTags, extractPlainContent, buildPlainMessage, parseAndAddThinkMessages } from './thinkContentUtils';
 import { IContentItem, IRunToolParams, IToolCall, IToolCallData, StreamCallbacks, ChatRequestParams, ChatResponseData, IStreamData } from './types';
 
 // 错误消息常量
@@ -43,7 +43,6 @@ export function useChatStream(currentSessionId: string) {
 
   // UI状态
   const [streamingContent, setStreamingContent] = useState<string>('');
-  const [streamingThinking, setStreamingThinking] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,14 +62,14 @@ export function useChatStream(currentSessionId: string) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestStateRef = useRef<{
     responseContent: string;
-    thinkingContent: string;
     hasReceivedData: boolean;
     isToolCallActive: boolean;
+    processedThinkIds: Set<string>;
   }>({
     responseContent: '',
-    thinkingContent: '',
     hasReceivedData: false,
     isToolCallActive: false,
+    processedThinkIds: new Set<string>(),
   });
 
   // 上下文保存
@@ -103,33 +102,17 @@ export function useChatStream(currentSessionId: string) {
     }
   }, []);
 
-  /**
-   * 重置无数据超时定时器
-   */
-  const resetNoDataTimer = useCallback(() => {
-    if (timeoutRefsRef.current.noDataTimer) {
-      clearTimeout(timeoutRefsRef.current.noDataTimer);
-    }
-
-    timeoutRefsRef.current.noDataTimer = setTimeout(() => {
-      console.log('无数据超时触发');
-      setError(ERROR_MESSAGES.NO_DATA_TIMEOUT);
-      cancelRequest('无数据超时');
-    }, TIMEOUT_CONFIG.NO_DATA);
-  }, []);
-
   // 清除流式状态
   const clearStreamingState = useCallback(() => {
     setStreamingContent('');
-    setStreamingThinking('');
     setError(null);
 
     // 重置请求状态
     requestStateRef.current = {
       responseContent: '',
-      thinkingContent: '',
       hasReceivedData: false,
       isToolCallActive: false,
+      processedThinkIds: new Set<string>(),
     };
   }, []);
 
@@ -152,14 +135,42 @@ export function useChatStream(currentSessionId: string) {
     }
   }, []);
 
+  /**
+   * 重置无数据超时定时器
+   */
+  const resetNoDataTimer = useCallback(() => {
+    if (timeoutRefsRef.current.noDataTimer) {
+      clearTimeout(timeoutRefsRef.current.noDataTimer);
+    }
+
+    timeoutRefsRef.current.noDataTimer = setTimeout(() => {
+      console.log('无数据超时触发');
+      setError(ERROR_MESSAGES.NO_DATA_TIMEOUT);
+
+      // 直接执行清理操作
+      cleanupResources();
+      clearStreamingState();
+      setIsLoading(false);
+    }, TIMEOUT_CONFIG.NO_DATA);
+  }, [cleanupResources, clearStreamingState]);
+
   // 取消请求并保存已生成内容
   const cancelRequest = useCallback(
     (reason?: string) => {
       // 如果有生成的内容，保存为消息
       if (isLoading && (streamingContent || requestStateRef.current.responseContent)) {
         const finalContent = (requestStateRef.current.responseContent || streamingContent) + ERROR_MESSAGES.RESPONSE_INTERRUPTED;
-        const aiMessage = buildMessageWithThinkContent(finalContent);
-        addMessage(aiMessage);
+
+        // 处理任何未完成的 think 标签
+        if (finalContent.includes('<think>')) {
+          parseAndAddThinkMessages(finalContent, addMessage);
+        }
+
+        // 添加 plain 内容
+        const plainMessage = buildPlainMessage(finalContent);
+        if ((plainMessage?.contentList || []).length > 0) {
+          addMessage(plainMessage);
+        }
       }
 
       // 调用纯清理函数
@@ -356,8 +367,7 @@ export function useChatStream(currentSessionId: string) {
         } else if (isToolError) {
           console.error('工具调用失败:', toolErrorMessage);
           const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
-          // 使用 handleTextContent 处理错误内容
-          handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
+          setStreamingContent(errorContent);
           requestStateRef.current.responseContent = errorContent;
         } else {
           console.error('工具调用处理程序未初始化');
@@ -368,8 +378,8 @@ export function useChatStream(currentSessionId: string) {
         console.error('工具调用失败:', error);
         const errorMessage = error.message || '未知错误';
         const updatedContent = currentContent + `\n\n[工具调用失败: ${errorMessage}]`;
-        // 使用 handleTextContent 处理错误内容
-        handleTextContent({ content: updatedContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
+
+        setStreamingContent(updatedContent);
         requestStateRef.current.responseContent = updatedContent;
 
         // 更新错误消息
@@ -432,17 +442,26 @@ export function useChatStream(currentSessionId: string) {
                 timeoutRefsRef.current.totalTimer = null;
               }
               const data = response.data;
+
               // 保存会话ID
               if (data.session_id && (!currentSessionId || currentSessionId !== data.session_id)) {
                 setCurrentSessionId(data.session_id);
               }
+
               // 处理工具调用或文本内容
               if (data?.tool_calls && data.tool_calls.length > 0) {
                 await handleToolCalls(data.tool_calls, localResponseContent);
               } else if (data.content) {
-                // 使用 handleTextContent 处理文本内容
-                localResponseContent = handleTextContent(data, localResponseContent, setStreamingContent, setStreamingThinking, requestStateRef);
+                // 累积响应内容
+                localResponseContent = accumulateResponseContent(data, localResponseContent);
                 requestStateRef.current.responseContent = localResponseContent;
+
+                // 处理已完成的 think 标签
+                requestStateRef.current.processedThinkIds = processCompletedThinkTags(localResponseContent, requestStateRef.current.processedThinkIds, addMessage);
+
+                // 更新显示的内容（只显示 plain 部分）
+                const plainContent = extractPlainContent(localResponseContent);
+                setStreamingContent(plainContent);
               }
             },
             onComplete: () => {
@@ -455,12 +474,14 @@ export function useChatStream(currentSessionId: string) {
               );
 
               // 只有当没有活跃的工具调用和有内容时，才添加消息
-              if (!requestStateRef.current.isToolCallActive && !hasActiveToolCall && (requestStateRef.current.responseContent || localResponseContent)) {
-                const finalContent = requestStateRef.current.responseContent || localResponseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent);
+              if (!requestStateRef.current.isToolCallActive && !hasActiveToolCall && requestStateRef.current.responseContent) {
+                // 使用 buildPlainMessage 只添加 plain 内容
+                const plainMessage = buildPlainMessage(requestStateRef.current.responseContent);
 
-                // 添加到消息列表
-                addMessage(aiMessage);
+                // 只有当有实际的 plain 内容时才添加消息
+                if ((plainMessage?.contentList || []).length > 0) {
+                  addMessage(plainMessage);
+                }
               }
 
               // 如果所有工具调用都已完成，完全清理状态
@@ -484,25 +505,33 @@ export function useChatStream(currentSessionId: string) {
                   if (fullResponse.error) {
                     console.error('工具调用返回错误:', fullResponse.error);
                     const errorContent = (requestStateRef.current.responseContent || streamingContent) + `\n\n[工具调用失败: ${fullResponse.error}]`;
-                    // 使用 handleTextContent 处理错误内容
-                    handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
+
+                    // 直接设置错误内容
                     requestStateRef.current.responseContent = errorContent;
+                    setStreamingContent(extractPlainContent(errorContent));
                   } else if (fullResponse?.data?.content) {
-                    // 使用 handleTextContent 处理响应内容
-                    const processedContent = handleTextContent({ content: fullResponse.data.content, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
-                    requestStateRef.current.responseContent = processedContent;
+                    // 处理响应内容
+                    const responseContent = fullResponse.data.content;
+
+                    // 处理所有的 think 标签
+                    parseAndAddThinkMessages(responseContent, addMessage);
+
+                    // 设置最终内容
+                    requestStateRef.current.responseContent = responseContent;
+                    const plainContent = extractPlainContent(responseContent);
+                    setStreamingContent(plainContent);
                   }
                 } catch (parseError) {
                   console.error('解析工具调用响应失败:', parseError);
                   const errorContent = (requestStateRef.current.responseContent || streamingContent) + '\n\n[解析工具调用响应失败]';
-                  handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
                   requestStateRef.current.responseContent = errorContent;
+                  setStreamingContent(errorContent);
                 }
               } catch (readError) {
                 console.error('读取工具调用响应失败:', readError);
                 const errorContent = (requestStateRef.current.responseContent || streamingContent) + '\n\n[读取工具调用响应失败]';
-                handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestStateRef);
                 requestStateRef.current.responseContent = errorContent;
+                setStreamingContent(errorContent);
               }
             },
           },
@@ -512,7 +541,7 @@ export function useChatStream(currentSessionId: string) {
         setError(`继续对话失败: ${error.message}`);
       }
     },
-    [createStreamRequest, currentSessionId, selectedMcpIds, resetNoDataTimer, setCurrentSessionId, setError, setStreamingContent, setStreamingThinking, streamingContent, handleToolCalls],
+    [createStreamRequest, currentSessionId, selectedMcpIds, resetNoDataTimer, setCurrentSessionId, setError, setStreamingContent, streamingContent, handleToolCalls, addMessage],
   );
 
   const sendChatMessageInternal = useCallback(
@@ -595,8 +624,17 @@ export function useChatStream(currentSessionId: string) {
               if (isLoading && (requestStateRef.current.responseContent || responseContent)) {
                 // 创建部分AI回复消息
                 const finalContent = (requestStateRef.current.responseContent || responseContent) + ERROR_MESSAGES.CONNECTION_INTERRUPTED;
-                const aiMessage = buildMessageWithThinkContent(finalContent);
-                addMessage(aiMessage);
+
+                // 处理任何未完成的 think 标签
+                if (finalContent.includes('<think>')) {
+                  parseAndAddThinkMessages(finalContent, addMessage);
+                }
+
+                // 添加 plain 内容
+                const plainMessage = buildPlainMessage(finalContent);
+                if ((plainMessage?.contentList || []).length > 0) {
+                  addMessage(plainMessage);
+                }
               }
               setIsLoading(false);
             },
@@ -619,20 +657,29 @@ export function useChatStream(currentSessionId: string) {
                 // 处理工具调用
                 await handleToolCalls(data.tool_calls, responseContent);
               } else if (data.content) {
-                // 使用 handleTextContent 处理文本内容
-                responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestStateRef);
+                // 累积响应内容
+                responseContent = accumulateResponseContent(data, responseContent);
                 requestStateRef.current.responseContent = responseContent;
+
+                // 处理已完成的 think 标签
+                requestStateRef.current.processedThinkIds = processCompletedThinkTags(responseContent, requestStateRef.current.processedThinkIds, addMessage);
+
+                // 更新显示的内容（只显示 plain 部分）
+                const plainContent = extractPlainContent(responseContent);
+                setStreamingContent(plainContent);
               }
             },
 
             // 完成回调
             onComplete: () => {
-              if (!requestStateRef.current.isToolCallActive && (requestStateRef.current.responseContent || responseContent)) {
-                const finalContent = requestStateRef.current.responseContent || responseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent);
+              if (!requestStateRef.current.isToolCallActive && requestStateRef.current.responseContent) {
+                // 只添加 plain 内容的消息
+                const plainMessage = buildPlainMessage(requestStateRef.current.responseContent);
 
-                // 添加到消息列表
-                addMessage(aiMessage);
+                // 只有当有实际的 plain 内容时才添加消息
+                if ((plainMessage?.contentList || []).length > 0) {
+                  addMessage(plainMessage);
+                }
               }
               clearStreamingState();
               setIsLoading(false);
@@ -658,8 +705,16 @@ export function useChatStream(currentSessionId: string) {
 
                   // 处理正常的非流式响应
                   if (fullResponse?.data?.content) {
-                    const aiMessage = buildMessageWithThinkContent(fullResponse.data.content);
-                    addMessage(aiMessage);
+                    const responseContent = fullResponse.data.content;
+
+                    // 处理所有的 think 标签
+                    parseAndAddThinkMessages(responseContent, addMessage);
+
+                    // 添加 plain 内容消息
+                    const plainMessage = buildPlainMessage(responseContent);
+                    if ((plainMessage?.contentList || []).length > 0) {
+                      addMessage(plainMessage);
+                    }
                   } else {
                     setError('服务器返回了非流式数据，但无法解析内容');
                   }
@@ -764,7 +819,6 @@ export function useChatStream(currentSessionId: string) {
 
   return {
     streamingContent,
-    streamingThinking,
     isLoading,
     isResending,
     error,

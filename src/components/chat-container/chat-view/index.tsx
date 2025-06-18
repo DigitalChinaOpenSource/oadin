@@ -175,7 +175,6 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
         {isLoading && (
           <StreamingMessage
             content={streamingContent}
-            thinking={streamingThinking}
             scroll={chattingMessageControlScroll}
           />
         )}
@@ -323,6 +322,6 @@ const MarkdownContent = ({ dataSource }: { dataSource?: string }) => {
 registerMessageContents({
   // @ts-ignore
   plain: MarkdownContent,
-  think: DeepThinkChat,
+  think: (props: any) => <DeepThinkChat dataSource={props.dataSource} />,
   mcp: (props: any) => <McpToolChat dataSource={props.dataSource} />,
 });
