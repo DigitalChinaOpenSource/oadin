@@ -9,7 +9,9 @@ import (
 	"fmt"
 )
 
-// Ollama embedding API 响应结构
+// Ollama embedding API 响应结构，兼容 data 和 embeddings 两种格式
+// 以及解析逻辑兼容
+
 type ollamaEmbeddingResponse struct {
 	Object string `json:"object"`
 	Data   []struct {
@@ -22,6 +24,8 @@ type ollamaEmbeddingResponse struct {
 		PromptTokens int `json:"prompt_tokens"`
 		TotalTokens  int `json:"total_tokens"`
 	} `json:"usage"`
+	// 兼容 embeddings 字段
+	Embeddings [][]float32 `json:"embeddings"`
 }
 
 func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequest) (*types.EmbeddingResponse, error) {
@@ -70,13 +74,23 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 				TotalTokens:  apiResp.Usage.TotalTokens,
 			},
 		}
-		// 转换 Data
+		// 兼容 data 字段
 		for _, d := range apiResp.Data {
 			resp.Data = append(resp.Data, types.EmbeddingData{
 				Object:     d.Object,
 				Embedding:  d.Embedding,
 				EmbedIndex: d.Index,
 			})
+		}
+
+		if len(resp.Data) == 0 && len(apiResp.Embeddings) > 0 {
+			for i, emb := range apiResp.Embeddings {
+				resp.Data = append(resp.Data, types.EmbeddingData{
+					Object:     "embedding",
+					Embedding:  emb,
+					EmbedIndex: i,
+				})
+			}
 		}
 		return resp, nil
 	case <-ctx.Done():
