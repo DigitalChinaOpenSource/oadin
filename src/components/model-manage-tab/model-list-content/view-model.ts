@@ -9,6 +9,7 @@ import { useRequest } from 'ahooks';
 import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
 import { convertToMB } from '@/utils';
+import useSelectedModelStore from '@/store/useSelectedModel.ts';
 
 export type ModelSourceType = 'local' | 'remote';
 
@@ -88,6 +89,8 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 选中的模型数据，暂用于配置授权
   const [selectModelData, setSelectModelData] = useState<IModelDataItem>({} as any);
 
+  const { selectedModel, setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
+
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
 
@@ -162,7 +165,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   );
   // 根据搜索值和分页参数更新分页数据
   const prevModelSearchValRef = useRef(modelSearchVal);
-  
+
   useEffect(() => {
     // 只有当搜索值真正变化时才执行，避免路由切换触发
     if (prevModelSearchValRef.current !== modelSearchVal) {
@@ -183,8 +186,12 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     },
     {
       manual: true,
-      onSuccess: () => {
+      onSuccess: (data, params) => {
         message.success('模型删除成功');
+        if (params[0].model_name === selectedModel?.name) {
+          setIsSelectedModel(false);
+          setSelectedModel(null);
+        }
       },
       onError: (error: Error & { handled?: boolean }) => {
         if (!error?.handled) {
