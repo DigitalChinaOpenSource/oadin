@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"byze/config"
 	"byze/internal/api/dto"
 	"byze/internal/datastore"
 	"byze/internal/provider/engine"
@@ -19,6 +21,7 @@ import (
 	"byze/internal/utils/bcode"
 
 	"github.com/google/uuid"
+	_ "github.com/mattn/go-sqlite3" // SQLite驱动
 )
 
 // 上传文件
@@ -111,12 +114,24 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 		Type:      fileType,
 		ChunkSize: 1000, // 默认块大小
 	}
-
 	err = p.Ds.Add(ctx, fileRecord)
 	if err != nil {
-		slog.Error("Failed to save file record", "error", err)
+		slog.Error("Failed to save file record", "error", err, "fileID", fileID)
 		return nil, err
 	}
+
+
+	if err = p.Ds.Commit(ctx); err != nil {
+		slog.Error("Failed to commit file record", "error", err, "fileID", fileID)
+	}
+	checkRecord := &types.File{ID: fileID}
+	if err = p.Ds.Get(ctx, checkRecord); err != nil {
+		slog.Warn("无法验证文件记录是否已保存", "error", err, "fileID", fileID)
+	} else {
+		slog.Info("Server: 文件记录验证成功", "fileID", checkRecord.ID, "sessionID", checkRecord.SessionID)
+	}
+
+	slog.Info("Server: 文件记录保存成功", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID, "filename", fileRecord.Name)
 
 	return &dto.UploadFileResponse{
 		Bcode: bcode.SuccessCode,
@@ -189,11 +204,18 @@ func (p *PlaygroundImpl) DeleteFile(ctx context.Context, request *dto.DeleteFile
 		return nil, err
 	}
 
-	// 如果VSS初始化完成，从VSS中删除文件的所有块
-	if vssInitialized {
-		if err := vssDB.DeleteChunks(ctx, request.FileID); err != nil {
-			slog.Error("从VSS删除文件块失败", "error", err, "file_id", request.FileID)
-			// 继续处理，不终止流程
+	// 删除VEC向量
+	if vecInitialized && vecDB != nil {
+		var chunkIDs []string
+		for _, c := range chunks {
+			chunk := c.(*types.FileChunk)
+			chunkIDs = append(chunkIDs, chunk.ID)
+		}
+		if len(chunkIDs) > 0 {
+			err := vecDB.DeleteChunks(ctx, chunkIDs)
+			if err != nil {
+				slog.Error("从VEC删除文件块失败", "error", err, "file_id", request.FileID)
+			}
 		}
 	}
 
@@ -220,36 +242,129 @@ func (p *PlaygroundImpl) DeleteFile(ctx context.Context, request *dto.DeleteFile
 
 // 处理文件并生成嵌入向量
 func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateEmbeddingRequest) (*dto.GenerateEmbeddingResponse, error) {
-	// 获取文件记录
-	fileRecord := &types.File{ID: request.FileID}
-	err := p.Ds.Get(ctx, fileRecord)
-	if err != nil {
-		slog.Error("Failed to get file record", "error", err)
-		return nil, err
+	if request.FileID == "" {
+		return nil, fmt.Errorf("文件ID不能为空")
 	}
+
+	// 获取SQLite数据库路径
+	dbPath := config.GlobalByzeEnvironment.Datastore
+	slog.Info("尝试打开数据库直接查询", "dbPath", dbPath, "fileID", request.FileID)
+
+	// 直接使用SQL查询文件
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		slog.Error("无法打开数据库", "error", err, "dbPath", dbPath)
+		return nil, fmt.Errorf("无法打开数据库: %w", err)
+	}
+	defer db.Close()
+
+	// 直接执行SQL查询
+	var fileID, sessionID, name, path, fileType string
+	var size int64
+	var chunkSize int
+	var createdAt, updatedAt string
+
+	query := "SELECT id, session_id, name, path, size, type, chunk_size, created_at, updated_at FROM files WHERE id = ?"
+	slog.Info("执行SQL查询", "query", query, "fileID", request.FileID)
+
+	err = db.QueryRow(query, request.FileID).Scan(
+		&fileID, &sessionID, &name, &path, &size, &fileType, &chunkSize, &createdAt, &updatedAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Error("文件记录不存在 (SQL)", "fileID", request.FileID)
+
+			// 列出所有文件以便调试
+			rows, _ := db.Query("SELECT id FROM files")
+			defer rows.Close()
+
+			var ids []string
+			for rows.Next() {
+				var id string
+				if rows.Scan(&id) == nil {
+					ids = append(ids, id)
+				}
+			}
+
+			if len(ids) > 0 {
+				slog.Info("数据库中的文件ID列表 (SQL)", "ids", strings.Join(ids, ", "))
+			} else {
+				slog.Info("数据库中没有文件记录 (SQL)")
+			}
+
+			return nil, fmt.Errorf("文件记录不存在，fileID: %s", request.FileID)
+		}
+		slog.Error("查询文件记录失败 (SQL)", "error", err, "fileID", request.FileID)
+		return nil, fmt.Errorf("查询文件记录失败: %w", err)
+	}
+
+	// 创建文件记录
+	fileRecord := &types.File{
+		ID:        fileID,
+		SessionID: sessionID,
+		Name:      name,
+		Path:      path,
+		Size:      size,
+		Type:      fileType,
+		ChunkSize: chunkSize,
+	}
+
+	// 尝试解析时间
+	if t, parseErr := time.Parse(time.RFC3339, createdAt); parseErr == nil {
+		fileRecord.CreatedAt = t
+	}
+	if t, parseErr := time.Parse(time.RFC3339, updatedAt); parseErr == nil {
+		fileRecord.UpdatedAt = t
+	}
+
+	slog.Info("通过SQL成功查询到文件记录", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID, "name", fileRecord.Name)
+
+	// 验证文件记录的完整性
+	if fileRecord.SessionID == "" || fileRecord.Path == "" {
+		slog.Error("文件记录不完整", "fileID", request.FileID, "sessionID", fileRecord.SessionID, "path", fileRecord.Path)
+		return nil, fmt.Errorf("文件记录不完整，缺少必要字段")
+	}
+
+	slog.Info("Server: 开始处理文件embedding", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID)
+
+	// 检查embed服务是否可用
+	service := &types.Service{Name: "embed"}
+	serviceErr := p.Ds.Get(ctx, service)
+	if serviceErr != nil {
+		slog.Error("Server: Embed服务不存在", "error", serviceErr, "fileID", request.FileID)
+		return nil, fmt.Errorf("embed服务不存在，请先配置embed服务: %w", serviceErr)
+	}
+	if service.Status != 1 {
+		slog.Error("Server: Embed服务已禁用", "fileID", request.FileID)
+		return nil, fmt.Errorf("embed服务已禁用，请先启用embed服务")
+	}
+
 	// 获取会话记录（为了获取嵌入模型ID）
 	session := &types.ChatSession{ID: fileRecord.SessionID}
-	err = p.Ds.Get(ctx, session)
-	if err != nil {
-		slog.Error("Failed to get chat session", "error", err)
-		return nil, err
+	sessionErr := p.Ds.Get(ctx, session)
+	if sessionErr != nil {
+		slog.Error("Failed to get chat session", "error", sessionErr)
+		return nil, sessionErr
 	}
+
 	// 使用会话中的嵌入模型ID，如果请求中指定了则使用请求的
 	// 如果都没有设置，则使用默认嵌入模型
 	embedModelID := session.EmbedModelID
+
 	if request.Model != "" {
 		embedModelID = request.Model
 	}
 	if embedModelID == "" {
-		embedModelID = "nomic-embed-text"
+		embedModelID = "5d204ef2-fc6a-4545-9c98-306139646136346637613561"
 		slog.Warn("未设置嵌入模型，使用默认模型", "default_model", embedModelID)
+	} // 读取文件内容并分块
+	slog.Info("Server: 开始分块文件", "fileID", fileRecord.ID, "path", fileRecord.Path, "chunkSize", fileRecord.ChunkSize)
+	chunks, chunkErr := chunkFile(fileRecord.Path, fileRecord.ChunkSize)
+	if chunkErr != nil {
+		slog.Error("Failed to chunk file", "error", chunkErr)
+		return nil, fmt.Errorf("文件分块失败：%w", chunkErr)
 	}
-	// 读取文件内容并分块
-	chunks, err := chunkFile(fileRecord.Path, fileRecord.ChunkSize)
-	if err != nil {
-		slog.Error("Failed to chunk file", "error", err)
-		return nil, fmt.Errorf("文件分块失败：%w", err)
-	}
+	slog.Info("Server: 分块完成", "fileID", fileRecord.ID, "chunkCount", len(chunks))
 	// 应用重叠处理，默认重叠大小为块大小的10%
 	overlapSize := fileRecord.ChunkSize / 10
 	if overlapSize > 200 {
@@ -263,29 +378,36 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 
 	batchSize := 100
 	fileChunks := make([]*types.FileChunk, 0, len(chunks))
+
+	slog.Info("Server: 开始批量生成embedding", "fileID", fileRecord.ID, "totalChunks", len(chunks), "batchSize", batchSize, "embedModel", embedModelID)
+
 	for i := 0; i < len(chunks); i += batchSize {
 		end := i + batchSize
 		if end > len(chunks) {
 			end = len(chunks)
 		}
 		batch := chunks[i:end]
+
+		slog.Info("Server: 处理embedding批次", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "batchSize", len(batch))
 		embeddingReq := &types.EmbeddingRequest{
 			Model: embedModelID,
 			Input: batch,
 		}
+
 		embeddingResp, err := modelEngine.GenerateEmbedding(ctx, embeddingReq)
 		if err != nil {
-			slog.Error("Failed to generate batch embeddings", "error", err)
+			slog.Error("Failed to generate batch embeddings", "error", err, "fileID", fileRecord.ID, "batchIndex", i/batchSize)
 			return nil, err
 		}
 		if len(embeddingResp.Data) != len(batch) {
-			slog.Warn("嵌入数量与块数量不符", "embeddings", len(embeddingResp.Data), "chunks", len(batch))
+			slog.Warn("嵌入数量与块数量不符", "embeddings", len(embeddingResp.Data), "chunks", len(batch), "fileID", fileRecord.ID)
 		}
+		slog.Info("Server: embedding批次生成完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "embeddingCount", len(embeddingResp.Data))
 		for j, content := range batch {
 			if j >= len(embeddingResp.Data) {
 				break
 			}
-			chunkID := uuid.New().String()
+			chunkID := fmt.Sprintf("%d", int64(i+j+1))
 			fileChunk := &types.FileChunk{
 				ID:         chunkID,
 				FileID:     fileRecord.ID,
@@ -296,15 +418,18 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 			}
 			fileChunks = append(fileChunks, fileChunk)
 		}
-		// 批量写入VSS
-		if vssInitialized {
-			err = vssDB.InsertEmbeddingBatch(ctx, fileChunks[i:], fileRecord.ID, fileRecord.SessionID)
+		if vecInitialized && vecDB != nil {
+			slog.Info("Server: 开始写入VEC", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "chunkCount", len(fileChunks[i:]))
+			err = vecDB.InsertEmbeddingBatch(ctx, fileChunks[i:])
 			if err != nil {
-				slog.Error("批量写入VSS失败", "error", err)
+				slog.Error("批量写入VEC失败", "error", err, "fileID", fileRecord.ID, "batchIndex", i/batchSize)
 				return nil, err
 			}
+			slog.Info("Server: VEC写入完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize)
 		}
 	}
+
+	slog.Info("Server: 文件embedding全部处理完成", "fileID", fileRecord.ID, "totalChunks", len(fileChunks), "sessionID", fileRecord.SessionID)
 	return &dto.GenerateEmbeddingResponse{
 		Bcode: bcode.SuccessCode,
 	}, nil

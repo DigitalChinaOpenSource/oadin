@@ -1,16 +1,19 @@
 package engine
 
 import (
+	"byze/internal/datastore"
 	"byze/internal/schedule"
 	"byze/internal/types"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"strings"
 )
 
-type Engine struct{}
+type Engine struct {
+	js datastore.JsonDatastore
+	ds datastore.Datastore
+}
 
 type ollamaAPIResponse struct {
 	Model              string           `json:"model"`
@@ -37,69 +40,34 @@ type ollamaMessage struct {
 }
 
 func NewEngine() *Engine {
-	return &Engine{}
+	return &Engine{
+		js: datastore.GetDefaultJsonDatastore(),
+		ds: datastore.GetDefaultDatastore(),
+	}
 }
 
-// getModelNameById converts a model ID to its corresponding name
-func getModelNameById(modelId string) string {
+// GetModelById converts a model ID to its corresponding name
+func (e *Engine) GetModelById(ctx context.Context, modelId string) *types.SupportModel {
 	// If the modelId is empty, return empty string
 	if modelId == "" {
-		return ""
+		return &types.SupportModel{}
 	}
 
-	// 1. First check local model json
-	data, err := ioutil.ReadFile("internal/provider/template/local_model.json")
-	if err == nil {
-		var local struct {
-			Chat []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"chat"`
-			Embed []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"embed"`
-		}
-		if err := json.Unmarshal(data, &local); err == nil {
-			for _, m := range local.Chat {
-				if m.ID == modelId {
-					// fmt.Printf("Found model name in local_model.json (Chat): %s -> %s\n", modelId, m.Name)
-					return m.Name
-				}
-			}
-			for _, m := range local.Embed {
-				if m.ID == modelId {
-					// fmt.Printf("Found model name in local_model.json (Embed): %s -> %s\n", modelId, m.Name)
-					return m.Name
-				}
-			}
-		}
+	model := &types.SupportModel{Id: modelId}
+	queryOpList := []datastore.FuzzyQueryOption{}
+	queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+		Key:   "id",
+		Query: modelId,
+	})
+	res, err := e.js.List(ctx, model, &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}})
+	if err != nil {
+		return &types.SupportModel{}
+	}
+	if len(res) == 0 {
+		return &types.SupportModel{}
 	}
 
-	// 2. Check support_model.json
-	data, err = ioutil.ReadFile("internal/datastore/jsonds/data/support_model.json")
-	if err == nil {
-		var arr []struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		}
-		if err := json.Unmarshal(data, &arr); err == nil {
-			for _, m := range arr {
-				if m.ID == modelId {
-					return m.Name
-				}
-			}
-		}
-	}
-
-	if len(modelId) >= 32 && (modelId != cleanModelId(modelId)) {
-		cleaned := cleanModelId(modelId)
-		if cleaned != modelId {
-			return cleaned
-		}
-	}
-
-	return modelId
+	return res[0].(*types.SupportModel)
 }
 
 func cleanModelId(modelId string) string {
@@ -122,7 +90,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 	// Convert model ID to model name for ServiceRequest
 	originalModel := req.Model
-	modelName := getModelNameById(req.Model)
+	modelName := e.GetModelById(ctx, req.Model).Name
 
 	// Debug log to trace model conversion
 	fmt.Printf("[Chat] Model conversion: %s -> %s\n", originalModel, modelName)
