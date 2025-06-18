@@ -12,7 +12,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-
 type VectorDBVec struct {
 	db *sql.DB
 }
@@ -36,10 +35,13 @@ func (vdb *VectorDBVec) Close() error {
 // 初始化sqlite-vec表结构
 func (vdb *VectorDBVec) Initialize() error {
 	_, err := vdb.db.Exec(`
-		CREATE VIRTUAL TABLE IF NOT EXISTS vec_items USING vec0(embedding float[1536])
+		CREATE TABLE IF NOT EXISTS embed_items (
+			rowid INTEGER PRIMARY KEY,
+			embedding BLOB
+		)
 	`)
 	if err != nil {
-		return fmt.Errorf("创建vec_items表失败: %w", err)
+		return fmt.Errorf("创建embed_items表失败: %w", err)
 	}
 	return nil
 }
@@ -50,7 +52,7 @@ func (vdb *VectorDBVec) InsertEmbedding(ctx context.Context, chunkID int64, embe
 	if err != nil {
 		return fmt.Errorf("向量序列化失败: %w", err)
 	}
-	_, err = vdb.db.ExecContext(ctx, `INSERT INTO vec_items(rowid, embedding) VALUES (?, ?)`, chunkID, v)
+	_, err = vdb.db.ExecContext(ctx, `INSERT INTO embed_items(rowid, embedding) VALUES (?, ?)`, chunkID, v)
 	if err != nil {
 		return fmt.Errorf("插入向量失败: %w", err)
 	}
@@ -63,7 +65,7 @@ func (vdb *VectorDBVec) InsertEmbeddingBatch(ctx context.Context, chunks []*type
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.PrepareContext(ctx, `INSERT INTO vec_items(rowid, embedding) VALUES (?, ?)`)
+	stmt, err := tx.PrepareContext(ctx, `INSERT INTO embed_items(rowid, embedding) VALUES (?, ?)`)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -95,7 +97,7 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 	if err != nil {
 		return nil, nil, fmt.Errorf("查询向量序列化失败: %w", err)
 	}
-	rows, err := vdb.db.QueryContext(ctx, `SELECT rowid, distance FROM vec_items WHERE embedding MATCH ? ORDER BY distance LIMIT ?`, q, limit)
+	rows, err := vdb.db.QueryContext(ctx, `SELECT rowid, distance FROM embed_items WHERE embedding MATCH ? ORDER BY distance LIMIT ?`, q, limit)
 	if err != nil {
 		return nil, nil, fmt.Errorf("查询失败: %w", err)
 	}
@@ -137,7 +139,7 @@ func (vdb *VectorDBVec) DeleteChunks(ctx context.Context, chunkIDs []string) err
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.PrepareContext(ctx, `DELETE FROM vec_items WHERE rowid = ?`)
+	stmt, err := tx.PrepareContext(ctx, `DELETE FROM embed_items WHERE rowid = ?`)
 	if err != nil {
 		tx.Rollback()
 		return err
