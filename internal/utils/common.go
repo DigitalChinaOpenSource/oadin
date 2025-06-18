@@ -19,6 +19,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/jaypipes/ghw"
@@ -381,6 +382,11 @@ func StartByzeServer(logPath string, pidFilePath string) error {
 	cmd := exec.Command(execCmd, "server", "start")
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
+	if runtime.GOOS != "windows" {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP | syscall.CRYPT_NEWKEYSET,
+		}
+	}
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start Byze server: %v", err)
@@ -548,12 +554,16 @@ func IsDirEmpty(path string) bool {
 	defer f.Close()
 
 	// Read just one entry from the directory
-	fName, err := f.Readdirnames(1)
+	fName, err := f.Readdirnames(3)
 	if runtime.GOOS == "darwin" {
+		fileHideCount := 0
 		for _, name := range fName {
-			if !utils.Contains([]string{".", "..", ".DS_Store"}, name) && !strings.HasPrefix(name, "._") {
-				return false
+			if utils.Contains([]string{".", "..", ".DS_Store"}, name) {
+				fileHideCount += 1
 			}
+		}
+		if err == nil && fileHideCount == len(fName) {
+			return true
 		}
 	}
 
