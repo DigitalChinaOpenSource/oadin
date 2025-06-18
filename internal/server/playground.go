@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log/slog"
 	"strings"
 	"time"
@@ -43,12 +42,14 @@ type Playground interface {
 
 type PlaygroundImpl struct {
 	Ds datastore.Datastore
+	Js datastore.JsonDatastore
 }
 
 // 创建Playground服务实例
 func NewPlayground() Playground {
 	playground := &PlaygroundImpl{
 		Ds: datastore.GetDefaultDatastore(),
+		Js: datastore.GetDefaultJsonDatastore(),
 	}
 	go func() {
 		ctx := context.Background()
@@ -70,49 +71,27 @@ func NewPlayground() Playground {
 }
 
 // 工具函数：根据modelId查找modelName
-func getModelNameById(modelId string) string {
-	// 1. 先查本地模型json
-	data, err := ioutil.ReadFile("internal/provider/template/local_model.json")
-	if err == nil {
-		var local struct {
-			Chat []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"chat"`
-			Embed []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"embed"`
-		}
-		if json.Unmarshal(data, &local) == nil {
-			for _, m := range local.Chat {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-			for _, m := range local.Embed {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-		}
+func (p *PlaygroundImpl) GetModelById(ctx context.Context, modelId string) *types.SupportModel {
+	// If the modelId is empty, return empty string
+	if modelId == "" {
+		return &types.SupportModel{}
 	}
-	// 2. 查support_model.json
-	data, err = ioutil.ReadFile("internal/datastore/jsonds/data/support_model.json")
-	if err == nil {
-		var arr []struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		}
-		if json.Unmarshal(data, &arr) == nil {
-			for _, m := range arr {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-		}
+
+	model := &types.SupportModel{Id: modelId}
+	queryOpList := []datastore.FuzzyQueryOption{}
+	queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+		Key:   "id",
+		Query: modelId,
+	})
+	res, err := p.Js.List(ctx, model, &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}})
+	if err != nil {
+		return &types.SupportModel{}
 	}
-	return ""
+	if len(res) == 0 {
+		return &types.SupportModel{}
+	}
+
+	return res[0].(*types.SupportModel)
 }
 
 // 创建对话会话
@@ -121,7 +100,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		ID:           uuid.New().String(),
 		Title:        request.Title,
 		ModelID:      request.ModelId,
-		ModelName:    getModelNameById(request.ModelId),
+		ModelName:    p.GetModelById(ctx, request.ModelId).Name,
 		EmbedModelID: request.EmbedModelId,
 	}
 	supportModel := &types.SupportModel{Id: request.ModelId}
@@ -519,9 +498,10 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	}
 	if req.ModelId != "" {
 		session.ModelID = req.ModelId
-		session.ModelName = getModelNameById(req.ModelId)
+		modelInfo := p.GetModelById(ctx, req.ModelId)
+		session.ModelName = modelInfo.Name
 		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
-		model := &types.Model{ModelName: getModelNameById(req.ModelId)}
+		model := &types.Model{ModelName: modelInfo.Name}
 		err := p.Ds.Get(ctx, model)
 		if err == nil {
 			session.ThinkingEnabled = model.ThinkingEnabled
