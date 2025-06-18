@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"byze/internal/datastore"
 	"byze/internal/server"
 
 	"github.com/gin-contrib/cors"
@@ -18,6 +19,7 @@ type ByzeCoreServer struct {
 	MCP             server.MCPServer
 	System          server.System
 	Playground      server.Playground
+	DataStore       datastore.Datastore
 }
 
 // NewByzeCoreServer is the constructor of the server structure
@@ -52,4 +54,5 @@ func (t *ByzeCoreServer) Register() {
 	t.MCP = server.NewMCPServer()
 	t.System = server.NewSystemImpl()
 	t.Playground = server.NewPlayground()
+	t.DataStore = datastore.GetDefaultDatastore()
 }

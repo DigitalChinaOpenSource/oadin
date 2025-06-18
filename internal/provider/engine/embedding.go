@@ -3,11 +3,15 @@ package engine
 import (
 	"byze/internal/schedule"
 	"byze/internal/types"
+	"byze/internal/utils/bcode"
 	"context"
 	"encoding/json"
+	"fmt"
 )
 
-// Ollama embedding API 响应结构
+// Ollama embedding API 响应结构，兼容 data 和 embeddings 两种格式
+// 以及解析逻辑兼容
+
 type ollamaEmbeddingResponse struct {
 	Object string `json:"object"`
 	Data   []struct {
@@ -20,16 +24,33 @@ type ollamaEmbeddingResponse struct {
 		PromptTokens int `json:"prompt_tokens"`
 		TotalTokens  int `json:"total_tokens"`
 	} `json:"usage"`
+	// 兼容 embeddings 字段
+	Embeddings [][]float32 `json:"embeddings"`
 }
 
 func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequest) (*types.EmbeddingResponse, error) {
+
+	originalModel := req.Model
+	modelInfo := e.GetModelById(ctx, req.Model)
+	modelName := modelInfo.Name
+
+	// 需要将embed模型加装到数据库中 service (这个的作用是记录运行中的各类模型)
+	err := e.restoreCurrentModel(ctx, req.Model)
+	if err != nil {
+		return nil, fmt.Errorf("failed to restore model: %w", err)
+	}
+
+	fmt.Printf("[Embedding] Embed 模型: %s -> %s\n", originalModel, modelName)
+
+	// 这里重新设置model为modelName因为与ollama交互只认name
+	req.Model = modelName
 	body, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 	serviceReq := &types.ServiceRequest{
-		Service:    "embedding",
-		Model:      req.Model,
+		Service:    "embed",
+		Model:      modelName,
 		FromFlavor: "ollama",
 		HTTP: types.HTTPContent{
 			Body: body,
@@ -53,7 +74,7 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 				TotalTokens:  apiResp.Usage.TotalTokens,
 			},
 		}
-		// 转换 Data
+		// 兼容 data 字段
 		for _, d := range apiResp.Data {
 			resp.Data = append(resp.Data, types.EmbeddingData{
 				Object:     d.Object,
@@ -61,8 +82,60 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 				EmbedIndex: d.Index,
 			})
 		}
+
+		if len(resp.Data) == 0 && len(apiResp.Embeddings) > 0 {
+			for i, emb := range apiResp.Embeddings {
+				resp.Data = append(resp.Data, types.EmbeddingData{
+					Object:     "embedding",
+					Embedding:  emb,
+					EmbedIndex: i,
+				})
+			}
+		}
 		return resp, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
+}
+
+func (e *Engine) restoreCurrentModel(ctx context.Context, modelId string) error {
+	model := e.GetModelById(ctx, modelId)
+	// 检查模式是否已下载安
+	if model == nil {
+		return fmt.Errorf("model with ID %s not found", modelId)
+	}
+	// 检查是否已存在于数据库中
+	modelRecord := new(types.Model)
+	modelRecord.ModelName = model.Name
+	err := e.ds.Get(ctx, modelRecord)
+	if err != nil {
+		return fmt.Errorf("failed to check model existence: %w", err)
+	}
+
+	// 设置模型上下文到 service
+	if modelRecord.ModelName != "" {
+		service := types.Service{
+			Name: model.ServiceName,
+		}
+
+		err := e.ds.Get(ctx, &service)
+		if err != nil {
+			return bcode.ErrServiceRecordNotFound
+		}
+
+		if model.ServiceSource == "local" {
+			service.LocalProvider = modelRecord.ProviderName
+		} else {
+			service.RemoteProvider = model.ServiceSource
+		}
+
+		service.HybridPolicy = "default"
+		err = e.ds.Put(ctx, &service)
+		if err != nil {
+			return bcode.ErrServiceRecordNotFound
+		}
+
+	}
+	return nil
+
 }
