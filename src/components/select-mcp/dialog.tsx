@@ -3,7 +3,7 @@ import { List, Checkbox, Button, Input } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
-import { useViewModel as useMyMcpViewModel } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
+import { IUseViewModelReturn, useViewModel as useMyMcpViewModel } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import TagsRender from '@/components/tags-render';
 import defaultLogo from '@/assets/favicon.png';
@@ -14,15 +14,26 @@ import { checkMcpLength, useSelectRemoteHelper } from '@/components/select-mcp/l
 
 interface ISelectMcpDialogProps {
   setSelectMcpPopOpen: (bool: boolean) => void;
+  myMcpViewModel: IUseViewModelReturn;
 }
 
 export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
-  const { mcpListData, handlePageChange, pagination, mcpListLoading, onMcpInputSearch } = useMyMcpViewModel();
-
+  const { mcpListData, handlePageChange, pagination, mcpListLoading, onMcpInputSearch } = props.myMcpViewModel;
   const { startMcps, stopMcps } = useSelectRemoteHelper();
   const { setSelectMcpPopOpen } = props;
   const [allList, setAllList] = useState<IMcpListItem[]>([]);
   const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
+  
+  // 组件挂载时重置列表数据
+  useEffect(() => {
+    setAllList(mcpListData);
+    setFilteredData(mcpListData);
+    return () => {
+      // 组件卸载时清空数据
+      setAllList([]);
+      setFilteredData([]);
+    };
+  }, []);
   const { setSelectMcpList, selectMcpList, drawerOpenId, setDrawerOpenId } = useSelectMcpStore();
   // 打开选择更多MCP工具弹窗
   const [open, setOpen] = useState<boolean>(false);
@@ -59,14 +70,19 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   const handleSearch = (value: string) => {
     setAllList([]);
     onMcpInputSearch(value);
-  };
-  /// 通过mcp的分页数据的变化来对数据进行组装
+  };  /// 通过mcp的分页数据的变化来对数据进行组装
   useEffect(() => {
-    const _allList = allList.concat(mcpListData);
-    setAllList(_allList);
-
-    setFilteredData(_allList);
-  }, [mcpListData]);
+    // 仅在分页时累加数据，避免重复添加
+    if (pagination.current > 1) {
+      const _allList = allList.concat(mcpListData);
+      setAllList(_allList);
+      setFilteredData(_allList);
+    } else {
+      // 首次加载或弹窗打开时，直接使用新数据
+      setAllList(mcpListData);
+      setFilteredData(mcpListData);
+    }
+  }, [mcpListData, pagination.current]);
 
   useEffect(() => {
     // 根据筛选状态和搜索值过滤数据

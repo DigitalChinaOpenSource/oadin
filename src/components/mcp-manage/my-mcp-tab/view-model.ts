@@ -20,7 +20,7 @@ export interface IUseViewModelReturn {
   searchVal: string;
   setSearchVal: React.Dispatch<React.SetStateAction<string>>;
   handleClearTags: () => void;
-  handlePageToFirst?: (page: number) => void;
+  handleMcpListToPage: (page?: number) => void;
 }
 
 export function useViewModel(): IUseViewModelReturn {
@@ -139,7 +139,7 @@ export function useViewModel(): IUseViewModelReturn {
   };
 
   // 我的mcp列表取消添加时，将页面参数重置为第一页
-  const handlePageToFirst = (page: number) => {
+  const handleMcpListToPage = (page: number = 1) => {
     setPagination({
       ...pagination,
       current: page,
@@ -230,6 +230,6 @@ export function useViewModel(): IUseViewModelReturn {
     searchVal,
     setSearchVal,
     handleClearTags,
-    handlePageToFirst,
+    handleMcpListToPage,
   };
 }

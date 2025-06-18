@@ -25,7 +25,7 @@ export default function MyMcpTab(props: IMyMcpTabProps) {
         onPageChange={vm.handlePageChange}
         handelMcpCardClick={vm.handelMcpCardClick}
         pageLoading={vm.mcpListLoading}
-        handlePageToFirst={vm.handlePageToFirst}
+        handleMcpListToPage={vm.handleMcpListToPage}
         isMyMcp={true}
       />
     ),

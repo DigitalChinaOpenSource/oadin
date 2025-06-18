@@ -20,7 +20,7 @@ interface IMcpListProps extends IMcpCommonProps {
   pageLoading?: boolean;
   grid?: ListGridType;
   isSelectable?: boolean;
-  handlePageToFirst?: (page: number) => void;
+  handleMcpListToPage?: (page?: number) => void;
   isMyMcp?: boolean; // 是否是我的MCP
 }
 export default function McpList(props: IMcpListProps) {
@@ -37,7 +37,7 @@ export default function McpList(props: IMcpListProps) {
     showOnlySelectedMyMcp,
     activeKey,
     isDialog,
-    handlePageToFirst,
+    handleMcpListToPage,
     isMyMcp = false,
   } = props;
 
@@ -98,7 +98,7 @@ export default function McpList(props: IMcpListProps) {
                 handelMcpCardClick={(id) => {
                   handleDetail(id as string);
                 }}
-                handlePageToFirst={handlePageToFirst}
+                handleMcpListToPage={handleMcpListToPage}
                 isMyMcp={isMyMcp}
               />
             </List.Item>
