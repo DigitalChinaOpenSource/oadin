@@ -1,16 +1,19 @@
 package engine
 
 import (
+	"byze/internal/datastore"
 	"byze/internal/schedule"
 	"byze/internal/types"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"strings"
 )
 
-type Engine struct{}
+type Engine struct {
+	js datastore.JsonDatastore
+	ds datastore.Datastore
+}
 
 type ollamaAPIResponse struct {
 	Model              string           `json:"model"`
@@ -32,73 +35,39 @@ type ollamaAPIResponse struct {
 type ollamaMessage struct {
 	Role      string           `json:"role"`
 	Content   string           `json:"content"`
+	Thinking  string           `json:"thinking,omitempty"` // 支持深度思考模式
 	ToolCalls []types.ToolCall `json:"tool_calls,omitempty"`
 }
 
 func NewEngine() *Engine {
-	return &Engine{}
+	return &Engine{
+		js: datastore.GetDefaultJsonDatastore(),
+		ds: datastore.GetDefaultDatastore(),
+	}
 }
 
-// getModelNameById converts a model ID to its corresponding name
-func getModelNameById(modelId string) string {
+// GetModelById converts a model ID to its corresponding name
+func (e *Engine) GetModelById(ctx context.Context, modelId string) *types.SupportModel {
 	// If the modelId is empty, return empty string
 	if modelId == "" {
-		return ""
+		return &types.SupportModel{}
 	}
 
-	// 1. First check local model json
-	data, err := ioutil.ReadFile("internal/provider/template/local_model.json")
-	if err == nil {
-		var local struct {
-			Chat []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"chat"`
-			Embed []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"embed"`
-		}
-		if err := json.Unmarshal(data, &local); err == nil {
-			for _, m := range local.Chat {
-				if m.ID == modelId {
-					// fmt.Printf("Found model name in local_model.json (Chat): %s -> %s\n", modelId, m.Name)
-					return m.Name
-				}
-			}
-			for _, m := range local.Embed {
-				if m.ID == modelId {
-					// fmt.Printf("Found model name in local_model.json (Embed): %s -> %s\n", modelId, m.Name)
-					return m.Name
-				}
-			}
-		}
+	model := &types.SupportModel{Id: modelId}
+	queryOpList := []datastore.FuzzyQueryOption{}
+	queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+		Key:   "id",
+		Query: modelId,
+	})
+	res, err := e.js.List(ctx, model, &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}})
+	if err != nil {
+		return &types.SupportModel{}
+	}
+	if len(res) == 0 {
+		return &types.SupportModel{}
 	}
 
-	// 2. Check support_model.json
-	data, err = ioutil.ReadFile("internal/datastore/jsonds/data/support_model.json")
-	if err == nil {
-		var arr []struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		}
-		if err := json.Unmarshal(data, &arr); err == nil {
-			for _, m := range arr {
-				if m.ID == modelId {
-					return m.Name
-				}
-			}
-		}
-	}
-
-	if len(modelId) >= 32 && (modelId != cleanModelId(modelId)) {
-		cleaned := cleanModelId(modelId)
-		if cleaned != modelId {
-			return cleaned
-		}
-	}
-
-	return modelId
+	return res[0].(*types.SupportModel)
 }
 
 func cleanModelId(modelId string) string {
@@ -121,7 +90,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 	// Convert model ID to model name for ServiceRequest
 	originalModel := req.Model
-	modelName := getModelNameById(req.Model)
+	modelName := e.GetModelById(ctx, req.Model).Name
 
 	// Debug log to trace model conversion
 	fmt.Printf("[Chat] Model conversion: %s -> %s\n", originalModel, modelName)
@@ -178,6 +147,13 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			// 提取模型名称
 			model := ollamaResp.Model
 
+			// 提取思考内容(如果有)
+			var thoughts string
+			if ollamaResp.Message != nil && ollamaResp.Message.Thinking != "" {
+				thoughts = ollamaResp.Message.Thinking
+				fmt.Printf("[Chat] 提取到思考内容，长度: %d\n", len(thoughts))
+			}
+
 			// 提取工具调用(如果有)
 			var toolCalls []types.ToolCall
 			if ollamaResp.Message != nil && ollamaResp.Message.ToolCalls != nil && len(ollamaResp.Message.ToolCalls) > 0 {
@@ -195,6 +171,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 				IsComplete: isComplete,
 				Object:     "chat.completion",
 				ToolCalls:  toolCalls,
+				Thoughts:   thoughts, // 添加思考内容
 			}
 			return resp, nil
 		}
@@ -209,6 +186,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 		isComplete := false
 		model := ""
 		var toolCalls []types.ToolCall
+		var thoughts string
 
 		// 尝试提取message.content (Ollama /api/chat)
 		if msg, ok := data["message"].(map[string]interface{}); ok {
@@ -216,6 +194,12 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			if c, ok := msg["content"].(string); ok {
 				content = c
 				fmt.Printf("[Chat] 从message.content提取内容，长度: %d\n", len(content))
+			}
+
+			// 提取thinking
+			if th, ok := msg["thinking"].(string); ok {
+				thoughts = th
+				fmt.Printf("[Chat] 从message.thinking提取思考内容，长度: %d\n", len(thoughts))
 			}
 
 			// 提取tool_calls
@@ -258,6 +242,13 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 				fmt.Printf("[Chat] 从顶层提取到tool_calls，数量: %d\n", len(toolCalls))
 			}
 		}
+		// 尝试从顶级字段提取thinking
+		if thoughts == "" {
+			if th, ok := data["thinking"].(string); ok {
+				thoughts = th
+				fmt.Printf("[Chat] 从顶级thinking字段提取思考内容，长度: %d\n", len(thoughts))
+			}
+		}
 
 		// 创建响应对象
 		resp := &types.ChatResponse{
@@ -266,6 +257,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			IsComplete: isComplete,
 			Object:     "chat.completion",
 			ToolCalls:  toolCalls,
+			Thoughts:   thoughts, // 添加思考内容
 		}
 		return resp, nil
 	case <-ctx.Done():

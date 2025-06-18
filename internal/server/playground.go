@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log/slog"
+	"strings"
 	"time"
 
 	"byze/config"
@@ -26,6 +26,7 @@ type Playground interface {
 	GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error)
 	DeleteSession(ctx context.Context, request *dto.DeleteSessionRequest) (*dto.DeleteSessionResponse, error)
 	ChangeSessionModel(ctx context.Context, req *dto.ChangeSessionModelRequest) (*dto.ChangeSessionModelResponse, error)
+	ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error)
 
 	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
 
@@ -33,6 +34,7 @@ type Playground interface {
 	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
 	DeleteFile(ctx context.Context, request *dto.DeleteFileRequest) (*dto.DeleteFileResponse, error)
 	ProcessFile(ctx context.Context, request *dto.GenerateEmbeddingRequest) (*dto.GenerateEmbeddingResponse, error)
+	CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error)
 
 	findRelevantContext(ctx context.Context, session *types.ChatSession, query string) (string, error)
 	findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error)
@@ -40,25 +42,27 @@ type Playground interface {
 
 type PlaygroundImpl struct {
 	Ds datastore.Datastore
+	Js datastore.JsonDatastore
 }
 
 // 创建Playground服务实例
 func NewPlayground() Playground {
 	playground := &PlaygroundImpl{
 		Ds: datastore.GetDefaultDatastore(),
+		Js: datastore.GetDefaultJsonDatastore(),
 	}
 	go func() {
 		ctx := context.Background()
 		dbPath := config.GlobalByzeEnvironment.Datastore
-		if err := InitPlaygroundVSS(ctx, dbPath); err != nil {
-			slog.Error("初始化VSS失败，将回退到标准向量搜索", "error", err)
+		if err := InitPlaygroundVec(ctx, dbPath); err != nil {
+			slog.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
 		} else {
-			if vssInitialized && vssDB != nil {
-				slog.Info("VSS初始化成功，已启用向量相似度搜索优化")
+			if vecInitialized && vecDB != nil {
+				slog.Info("VEC初始化成功，已启用向量相似度搜索优化")
 			} else if UseVSSForPlayground() {
-				slog.Info("VSS扩展未找到，将使用标准向量搜索")
+				slog.Info("VEC扩展未找到，将使用标准向量搜索")
 			} else {
-				slog.Info("VSS功能已通过环境变量禁用，将使用标准向量搜索")
+				slog.Info("VEC功能已通过环境变量禁用，将使用标准向量搜索")
 			}
 		}
 	}()
@@ -67,49 +71,27 @@ func NewPlayground() Playground {
 }
 
 // 工具函数：根据modelId查找modelName
-func getModelNameById(modelId string) string {
-	// 1. 先查本地模型json
-	data, err := ioutil.ReadFile("internal/provider/template/local_model.json")
-	if err == nil {
-		var local struct {
-			Chat []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"chat"`
-			Embed []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"embed"`
-		}
-		if json.Unmarshal(data, &local) == nil {
-			for _, m := range local.Chat {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-			for _, m := range local.Embed {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-		}
+func (p *PlaygroundImpl) GetModelById(ctx context.Context, modelId string) *types.SupportModel {
+	// If the modelId is empty, return empty string
+	if modelId == "" {
+		return &types.SupportModel{}
 	}
-	// 2. 查support_model.json
-	data, err = ioutil.ReadFile("internal/datastore/jsonds/data/support_model.json")
-	if err == nil {
-		var arr []struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		}
-		if json.Unmarshal(data, &arr) == nil {
-			for _, m := range arr {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-		}
+
+	model := &types.SupportModel{Id: modelId}
+	queryOpList := []datastore.FuzzyQueryOption{}
+	queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+		Key:   "id",
+		Query: modelId,
+	})
+	res, err := p.Js.List(ctx, model, &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}})
+	if err != nil {
+		return &types.SupportModel{}
 	}
-	return ""
+	if len(res) == 0 {
+		return &types.SupportModel{}
+	}
+
+	return res[0].(*types.SupportModel)
 }
 
 // 创建对话会话
@@ -118,13 +100,14 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		ID:           uuid.New().String(),
 		Title:        request.Title,
 		ModelID:      request.ModelId,
-		ModelName:    getModelNameById(request.ModelId),
+		ModelName:    p.GetModelById(ctx, request.ModelId).Name,
 		EmbedModelID: request.EmbedModelId,
 	}
 	supportModel := &types.SupportModel{Id: request.ModelId}
 	err := p.Ds.Get(ctx, supportModel)
 	if err == nil {
 		session.ThinkingEnabled = supportModel.Think
+		session.ThinkingActive = supportModel.Think // 默认情况下，如果支持深度思考，则启用它
 	}
 	err = p.Ds.Add(ctx, session)
 	if err != nil {
@@ -140,6 +123,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		},
@@ -174,6 +158,7 @@ func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsRespo
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		})
@@ -213,12 +198,12 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 			"role":    msg.Role,
 			"content": msg.Content,
 		})
-	}
-	// 添加RAG上下文
+	} // 添加RAG上下文
 	enhancedContent := request.Content
+	slog.Info("开始查找相关RAG上下文", "session_id", session.ID, "question", request.Content)
 	relevantContext, err := p.findRelevantContext(ctx, session, request.Content)
 	if err != nil {
-		slog.Warn("查找相关上下文失败", "error", err)
+		slog.Warn("查找相关上下文失败", "error", err, "session_id", session.ID)
 	}
 
 	if relevantContext != "" {
@@ -257,10 +242,10 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	chatRequest := &types.ChatRequest{
 		Model:    session.ModelName,
 		Messages: history,
-		Options:  make(map[string]any),
+		Think:    false,
 	}
-	if session.ThinkingEnabled {
-		chatRequest.Options["thinking"] = true
+	if session.ThinkingEnabled && session.ThinkingActive {
+		chatRequest.Think = true
 	}
 
 	if len(request.Tools) > 0 {
@@ -313,7 +298,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		return nil, err
 	}
 	// 保存思考内容
-	if chatResp.Thoughts != "" && session.ThinkingEnabled {
+	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		thoughtsMsg := &types.ChatMessage{
 			ID:        uuid.New().String(),
 			SessionID: request.SessionId,
@@ -353,7 +338,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		ModelName: session.ModelName,
 		ToolCalls: chatResp.ToolCalls, // 新增工具调用支持
 	}}
-	if chatResp.Thoughts != "" && session.ThinkingEnabled {
+	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		resultMessages = append(resultMessages, dto.Message{
 			Id:        "thoughts-" + assistantMsg.ID,
 			SessionId: assistantMsg.SessionID,
@@ -396,6 +381,10 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			typeStr = "answer"
 		} else if msg.Role == "system" && len(msg.Content) > 0 && (msg.Content[:12] == "思考过程: " || msg.Content[:9] == "Thoughts:") {
 			typeStr = "thoughts"
+		}
+
+		if msg.Role == "assistant" && len(msg.Content) > 0 && strings.Contains(msg.Content, "<tool_use>") {
+			typeStr = "mcp"
 		}
 		messageDTOs = append(messageDTOs, dto.Message{
 			Id:        msg.ID,
@@ -454,10 +443,19 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 			if err != nil {
 				slog.Error("Failed to list file chunks", "error", err)
 			} else {
-				// 如果VSS初始化完成，从VSS中删除文件的所有块
-				if vssInitialized {
-					if err := vssDB.DeleteChunks(ctx, file.ID); err != nil {
-						slog.Error("从VSS删除文件块失败", "error", err, "file_id", file.ID)
+				if vecInitialized {
+					if vecDB != nil {
+						var chunkIDs []string
+						for _, c := range chunks {
+							chunk := c.(*types.FileChunk)
+							chunkIDs = append(chunkIDs, chunk.ID)
+						}
+						if len(chunkIDs) > 0 {
+							err := vecDB.DeleteChunks(ctx, chunkIDs)
+							if err != nil {
+								slog.Error("从VEC删除文件块失败", "error", err, "file_id", file.ID)
+							}
+						}
 					}
 				}
 
@@ -500,12 +498,17 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	}
 	if req.ModelId != "" {
 		session.ModelID = req.ModelId
-		session.ModelName = getModelNameById(req.ModelId)
+		modelInfo := p.GetModelById(ctx, req.ModelId)
+		session.ModelName = modelInfo.Name
 		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
-		model := &types.Model{ModelName: getModelNameById(req.ModelId)}
+		model := &types.Model{ModelName: modelInfo.Name}
 		err := p.Ds.Get(ctx, model)
 		if err == nil {
 			session.ThinkingEnabled = model.ThinkingEnabled
+			// 切换模型时，如果新模型支持思考，则保持当前思考状态；如果不支持，则关闭思考
+			if !model.ThinkingEnabled {
+				session.ThinkingActive = false
+			}
 		}
 	}
 	if req.EmbedModelId != "" {
@@ -525,8 +528,61 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 			ModelName:       session.ModelName,
 			EmbedModelId:    session.EmbedModelID,
 			ThinkingEnabled: session.ThinkingEnabled,
+			ThinkingActive:  session.ThinkingActive,
 			CreatedAt:       session.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:       session.UpdatedAt.Format(time.RFC3339),
 		},
 	}, nil
+}
+
+// 切换思考状态
+func (p *PlaygroundImpl) ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error) {
+	// 查找会话
+	session := &types.ChatSession{ID: req.SessionId}
+	err := p.Ds.Get(ctx, session)
+	if err != nil {
+		return nil, fmt.Errorf("会话不存在: %v", err)
+	}
+	// 首先检查模型是否支持深度思考
+	if !session.ThinkingEnabled {
+		return nil, fmt.Errorf("当前模型不支持深度思考功能")
+	}
+
+	// 根据请求切换深度思考状态
+	if req.Enabled != nil {
+		// 如果提供了明确的启用/禁用值，则使用该值
+		session.ThinkingActive = *req.Enabled
+	} else {
+		// 如果没有提供值，则切换当前状态
+		session.ThinkingActive = !session.ThinkingActive
+	}
+
+	// 更新会话
+	session.UpdatedAt = time.Now()
+	err = p.Ds.Put(ctx, session)
+	if err != nil {
+		return nil, fmt.Errorf("更新会话失败: %v", err)
+	}
+	// 返回更新后的状态
+	return &dto.ToggleThinkingResponse{
+		Bcode:          bcode.SuccessCode,
+		ThinkingActive: session.ThinkingActive,
+	}, nil
+}
+
+func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
+	return "", nil
+}
+
+func (p *PlaygroundImpl) CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error) {
+	return true, nil
+}
+
+func InitPlaygroundVec(ctx context.Context, dbPath string) error {
+
+	return initVecDB(dbPath)
+}
+
+func UseVSSForPlayground() bool {
+	return false
 }
