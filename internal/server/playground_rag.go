@@ -103,11 +103,15 @@ func initVecDB(dbPath string) error {
 
 // VEC实现的查找方法
 func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
+	// 日志：入口参数
+	slog.Info("[RAG] findRelevantContextWithVec called", "sessionID", session.ID, "embedModelID", session.EmbedModelID, "query", query, "options", options)
 	// 如果未设置嵌入模型，无法使用RAG
 	if session.EmbedModelID == "" {
+		slog.Warn("[RAG] EmbedModelID 为空，跳过RAG检索", "sessionID", session.ID)
 		return "", fmt.Errorf("这个会话没有设置嵌入模型，无法使用RAG功能")
 	}
 	if !vecInitialized || vecDB == nil {
+		slog.Warn("[RAG] VEC未初始化，跳过RAG检索", "sessionID", session.ID)
 		return "", fmt.Errorf("VEC未初始化")
 	}
 	modelEngine := engine.NewEngine()
@@ -119,9 +123,13 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	} else {
 		queries = []string{query}
 	}
+	// 日志：扩展后的 queries
+	slog.Debug("[RAG] queries after expansion", "queries", queries)
 	// 为每个查询变体生成嵌入
 	var queryEmbeddings [][]float32
 	for _, q := range queries {
+		// 日志：准备生成嵌入
+		slog.Info("[RAG] Generating embedding for query", "sessionID", session.ID, "query", q, "embedModelID", session.EmbedModelID)
 		// 直接生成嵌入，不使用缓存
 		embeddingReq := &types.EmbeddingRequest{
 			Model: session.EmbedModelID,
@@ -129,22 +137,21 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 		}
 		embeddingResp, err := modelEngine.GenerateEmbedding(ctx, embeddingReq)
 		if err != nil {
-			slog.Error("RAG: 查询变体嵌入生成失败", "sessionID", session.ID, "query", q, "error", err)
+			slog.Error("[RAG] 查询变体嵌入生成失败", "sessionID", session.ID, "query", q, "error", err)
 			return "", fmt.Errorf("RAG: 查询变体嵌入生成失败: %w", err)
 		}
-
 		if len(embeddingResp.Data) == 0 {
-			slog.Error("RAG: 嵌入返回数据为空", "sessionID", session.ID, "query", q)
+			slog.Error("[RAG] 嵌入返回数据为空", "sessionID", session.ID, "query", q)
 			return "", fmt.Errorf("RAG: 嵌入返回数据为空")
 		}
 		embedding := embeddingResp.Data[0].Embedding
+		slog.Info("[RAG] Got embedding", "sessionID", session.ID, "query", q, "embeddingDim", len(embedding))
 		queryEmbeddings = append(queryEmbeddings, embedding)
-		slog.Debug("RAG: 查询变体embedding生成成功", "sessionID", session.ID, "query", q, "embeddingDim", len(embedding))
 	}
-
-	slog.Info("RAG: 查询embedding生成完成", "sessionID", session.ID, "successCount", len(queryEmbeddings), "totalQueries", len(queries))
+	// 日志：所有 embedding 生成完成
+	slog.Info("[RAG] 查询embedding生成完成", "sessionID", session.ID, "successCount", len(queryEmbeddings), "totalQueries", len(queries))
 	if len(queryEmbeddings) == 0 {
-		slog.Error("RAG: 所有查询embedding生成失败", "sessionID", session.ID)
+		slog.Error("[RAG] 所有查询embedding生成失败", "sessionID", session.ID)
 		return "", fmt.Errorf("failed to generate query embeddings")
 	}
 
@@ -179,13 +186,14 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 		for i, id := range ids {
 			if _, exists := chunkMap[id]; exists {
 				continue
-			} // 这里假设rowid和chunk_id可以一一对应（如需适配请调整）
+			}
 			chunkQuery := &types.FileChunk{}
 			chunkQuery.ID = fmt.Sprint(id)
 			if err := p.Ds.Get(ctx, chunkQuery); err != nil {
 				slog.Error("获取文档块内容失败", "error", err, "chunk_id", id)
 				return "", fmt.Errorf("获取文档块内容失败: %w", err)
 			}
+			slog.Debug("RAG: 检索到chunk", "rowid", id, "chunkID", chunkQuery.ID, "content", chunkQuery.Content)
 			chunkMap[id] = ChunkScore{
 				ChunkID:    chunkQuery.ID,
 				Content:    chunkQuery.Content,
