@@ -20,6 +20,8 @@ import (
 	"byze/internal/utils"
 	"byze/internal/utils/bcode"
 
+	"hash/fnv"
+
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3" // SQLite驱动
 )
@@ -119,7 +121,6 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 		slog.Error("Failed to save file record", "error", err, "fileID", fileID)
 		return nil, err
 	}
-
 
 	if err = p.Ds.Commit(ctx); err != nil {
 		slog.Error("Failed to commit file record", "error", err, "fileID", fileID)
@@ -238,6 +239,18 @@ func (p *PlaygroundImpl) DeleteFile(ctx context.Context, request *dto.DeleteFile
 	return &dto.DeleteFileResponse{
 		Bcode: bcode.SuccessCode,
 	}, nil
+}
+
+func generateUniqueChunkID(fileID string, chunkIndex int64) int64 {
+	// 使用FNV-1a哈希算法生成唯一ID
+	combined := fmt.Sprintf("%s-%d", fileID, chunkIndex)
+
+	// 创建一个hash函数
+	h := fnv.New64a()
+	h.Write([]byte(combined))
+
+	// 获取哈希值并返回
+	return int64(h.Sum64())
 }
 
 // 处理文件并生成嵌入向量
@@ -407,9 +420,9 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 			if j >= len(embeddingResp.Data) {
 				break
 			}
-			chunkID := fmt.Sprintf("%d", int64(i+j+1))
+			chunkID := generateUniqueChunkID(fileRecord.ID, int64(i+j+1))
 			fileChunk := &types.FileChunk{
-				ID:         chunkID,
+				ID:         fmt.Sprintf("%d", chunkID),
 				FileID:     fileRecord.ID,
 				Content:    content,
 				ChunkIndex: i + j,
@@ -426,6 +439,14 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 				return nil, err
 			}
 			slog.Info("Server: VEC写入完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize)
+		}
+	}
+
+	for _, fileChunk := range fileChunks {
+		err := p.Ds.Put(ctx, fileChunk)
+		if err != nil {
+			slog.Error("Failed to save file chunk", "error", err, "chunkID", fileChunk.ID, "fileID", fileChunk.FileID)
+			return nil, err
 		}
 	}
 
