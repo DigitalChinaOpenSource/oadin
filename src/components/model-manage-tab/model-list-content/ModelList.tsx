@@ -19,8 +19,6 @@ export interface IModelList {
 
 export const ModelList = (props: IModelList) => {
   const { vm, selectVms } = props;
-  console.info(vm, '外部的数据');
-  console.info(selectVms, '外部的选择的数据');
   const { selectedModel } = useSelectedModelStore();
   const renderVmList = () => {
     let content = (
@@ -36,7 +34,10 @@ export const ModelList = (props: IModelList) => {
     );
     if (vm && vm.pagenationData.length > 0) {
       content = (
-        <Radio.Group value={selectedModel?.id}>
+        <Radio.Group
+          value={selectedModel?.id}
+          style={{ width: '100%' }}
+        >
           <List
             grid={props?.grid}
             dataSource={props?.dataSource ?? vm.pagenationData}
