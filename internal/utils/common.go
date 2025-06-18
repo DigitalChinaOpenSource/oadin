@@ -19,7 +19,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/jaypipes/ghw"
@@ -382,16 +381,12 @@ func StartByzeServer(logPath string, pidFilePath string) error {
 	cmd := exec.Command(execCmd, "server", "start")
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
-	if runtime.GOOS != "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP | syscall.CRYPT_NEWKEYSET,
-		}
+	if runtime.GOOS == "windows" {
+		SetCmdSysProcAttr(cmd)
 	}
-
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start Byze server: %v", err)
 	}
-
 	// Save PID to file.
 	pid := cmd.Process.Pid
 	pidFile := filepath.Join(pidFilePath, "byze.pid")

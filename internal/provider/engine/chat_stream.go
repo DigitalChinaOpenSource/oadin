@@ -23,17 +23,21 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 	// Convert model ID to model name if needed
 	originalModel := req.Model
-	modelName := getModelNameById(req.Model)
+	modelName := e.GetModelById(ctx, req.Model).Name
 
 	// Debug log to trace model conversion
 	fmt.Printf("[ChatStream] Model conversion: %s -> %s\n", originalModel, modelName)
 	fmt.Printf("[ChatStream] Request body: %s\n", string(body))
+
+	// 打印即将发往Ollama的请求体内容，重点关注think参数
+	fmt.Printf("[ChatStream] Final request body to Ollama: %s\n", string(body))
 
 	serviceReq := &types.ServiceRequest{
 		Service:       "chat",
 		Model:         modelName, // 使用模型名
 		FromFlavor:    "ollama",  // 使用Ollama风格
 		AskStreamMode: true,      // 启用流式输出
+		Think:         req.Think,
 		HTTP: types.HTTPContent{
 			Body: body,
 		},
@@ -60,12 +64,12 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 			// 如果chunk为空，则跳过
 			if len(result.HTTP.Body) == 0 {
-				fmt.Printf("[ChatStream] 收到空块，跳过\n")
+				// fmt.Printf("[ChatStream] 收到空块，跳过\n")
 				continue
 			}
 			// Debug输出
 			// fmt.Printf("[ChatStream] 收到块，长度: %d\n", len(result.HTTP.Body))
-			// fmt.Printf("[ChatStream] 原始响应内容", string(result.HTTP.Body))
+			// debugLogJSON("[ChatStream] 原始响应内容", result.HTTP.Body)
 			// debugLogJSON("[ChatStream] 收到块内容", result.HTTP.Body) // 调用调试日志函数
 
 			// 每个块都是一个完整的JSON对象
@@ -86,6 +90,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				// 1. 如果存在message字段且有内容，使用message.content (优先 /api/chat 格式)
 				if ollamaResp.Message != nil && ollamaResp.Message.Content != "" {
 					content = ollamaResp.Message.Content
+					// fmt.Printf("[ChatStream] 从message.content提取内容，长度: %d\n", len(content))
 				} else if ollamaResp.Response != "" {
 					// 2. 如果存在response字段且有内容，使用response (/api/generate 格式)
 					content = ollamaResp.Response
@@ -170,6 +175,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			} // 处理提取到的内容
 			if content != "" {
 				accumulatedContent += content
+				// fmt.Printf("[ChatStream] 累积内容，当前长度: %d\n", len(accumulatedContent))
 			} // 创建响应对象
 			resp := &types.ChatResponse{
 				Content:       content, // 只发送当前块的内容，而不是累积的内容

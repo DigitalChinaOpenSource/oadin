@@ -93,7 +93,9 @@ func (o *OllamaProvider) StartEngine() error {
 			proxyHttps,
 		)
 	}
-
+	if runtime.GOOS == "windows" {
+		utils.SetCmdSysProcAttr(cmd)
+	}
 	err := cmd.Start()
 	if err != nil {
 		return fmt.Errorf("failed to start ollama: %v", err)
