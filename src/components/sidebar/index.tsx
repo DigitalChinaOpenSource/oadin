@@ -155,33 +155,76 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
           </div>
         </Popover>
       )}
-      {!!downloadList?.length && (
-        <div className={styles.downloadBtnBox}>
-          <Badge
-            // dot={!!downloadList?.length}
-            count={downloadList?.length}
-            showZero={false}
-            className={styles.badge}
-          >
-            <div
-              className={styles.downloadBtn}
-              onClick={() => handleDownload(true)}
-            >
-              <DownloadIcon
-                width={18}
-                height={18}
-                fill="#ffffff"
-              />
-            </div>
-          </Badge>
-          {isDownloadListOpen && downloadList.length > 0 && (
+      {downloadList.length > 0 && (
+        <Popover
+          style={{ padding: 0 }}
+          zIndex={1300}
+          content={
             <DownloadListBox
               className={styles.downloadListWrapper}
               handleDownload={() => handleDownload(false)}
             />
-          )}
-        </div>
+          }
+          trigger={'click'}
+          placement={'rightTop'}
+          arrow={false}
+          open={isDownloadListOpen}
+          onOpenChange={() => {
+            handleDownload(true);
+          }}
+        >
+          <div className={styles.mcpDownloadBox}>
+            <div className={styles.mpcDownloadBoxContent}>
+              <Tooltip title={collapsed ? '正在下载' : ''}>
+                <div className={styles.downloadBtnBox}>
+                  <Badge
+                    // dot={!!downloadList?.length}
+                    count={downloadList?.length}
+                    showZero={false}
+                    className={styles.badge}
+                  >
+                    <div className={styles.downloadBtn}>
+                      <DownloadIcon
+                        width={14}
+                        height={14}
+                        fill="#ffffff"
+                      />
+                    </div>
+                  </Badge>
+                </div>
+              </Tooltip>
+              {!collapsed && <div>正在下载</div>}
+            </div>
+          </div>
+        </Popover>
       )}
+      {/*{!!downloadList?.length && (*/}
+      {/*  <div className={styles.downloadBtnBox}>*/}
+      {/*    <Badge*/}
+      {/*      // dot={!!downloadList?.length}*/}
+      {/*      count={downloadList?.length}*/}
+      {/*      showZero={false}*/}
+      {/*      className={styles.badge}*/}
+      {/*    >*/}
+      {/*      <div*/}
+      {/*        className={styles.downloadBtn}*/}
+      {/*        onClick={() => handleDownload(true)}*/}
+      {/*      >*/}
+      {/*        <DownloadIcon*/}
+      {/*          width={18}*/}
+      {/*          height={18}*/}
+      {/*          fill="#ffffff"*/}
+      {/*        />*/}
+      {/*      </div>*/}
+      {/*    </Badge>*/}
+      {/*    {isDownloadListOpen && downloadList.length > 0 && (*/}
+      {/*      <DownloadListBox*/}
+      {/*        className={styles.downloadListWrapper}*/}
+      {/*        handleDownload={() => handleDownload(false)}*/}
+      {/*      />*/}
+      {/*    )}*/}
+      {/*  </div>*/}
+      {/*)}*/}
     </div>
   );
 }
