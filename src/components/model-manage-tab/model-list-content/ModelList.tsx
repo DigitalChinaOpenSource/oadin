@@ -18,8 +18,10 @@ export interface IModelList {
 }
 
 export const ModelList = (props: IModelList) => {
-  const { vm, selectVms } = props;
+  const { vm, selectVms, dataSource } = props;
   const { selectedModel } = useSelectedModelStore();
+  console.info(vm, '当前的列表数据');
+  console.info(dataSource, '当前的列表dataSource');
   const renderVmList = () => {
     let content = (
       <div className={styles.noData}>
@@ -40,7 +42,7 @@ export const ModelList = (props: IModelList) => {
         >
           <List
             grid={props?.grid}
-            dataSource={props?.dataSource ?? vm.pagenationData}
+            dataSource={vm.pagenationData}
             pagination={typeof props?.pagination === 'undefined' ? vm?.pagination : props?.pagination}
             renderItem={(item) => (
               <List.Item>

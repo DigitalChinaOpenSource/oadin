@@ -59,6 +59,7 @@ export interface IUseViewModel {
   pagination: IPagenation;
   onPageChange: (current: number) => void;
   onShowSizeChange: (current: number, pageSize: number) => void;
+  modelListStateData: IModelDataItem[];
 }
 
 const { confirm } = Modal;
@@ -81,6 +82,9 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const [modelAuthType, setModelAuthType] = useState<IModelAuthType>('config');
   // 模型/问学列表全量数据
   const { modelListData, setModelListData } = useModelListStore();
+
+  // 本地缓存的模型数据
+  const [modelListStateData, setModelListStateData] = useState<IModelDataItem[]>([]);
   const [pagination, setPagination] = useState<IPagenation>({
     current: 1,
     pageSize: 12,
@@ -93,6 +97,11 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
+
+  const setListData = (list: IModelDataItem[]) => {
+    setModelListData(list);
+    setModelListStateData(list);
+  };
 
   // 获取模型列表 （本地和云端）
   const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
@@ -123,7 +132,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
               currentDownload: 0,
             }) as any,
         );
-        setModelListData(dataWithSource);
+        setListData(dataWithSource);
         setPagination({
           ...pagination,
           total: dataWithSource.length,
@@ -131,7 +140,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);
-        setModelListData([]);
+        setListData([]);
       },
     },
   );
@@ -219,9 +228,9 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 获取过滤后的数据
   const getFilteredData = () => {
     if (!modelSearchVal || modelSearchVal.trim() === '') {
-      return modelListData;
+      return modelListStateData;
     }
-    return modelListData.filter((model) => model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase()));
+    return modelListStateData.filter((model) => model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase()));
   };
 
   // 添加分页数据计算逻辑
@@ -236,7 +245,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const pagenationData = useMemo(() => {
     const filteredData = getFilteredData();
     return paginatedData(pagination, filteredData);
-  }, [modelListData, modelSearchVal, pagination]);
+  }, [modelListStateData, modelSearchVal, pagination]);
 
   const onPageChange = (current: number) => {
     if (isPageSizeChangingRef.current) {
@@ -364,6 +373,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     selectModelData,
     fetchModelSupport,
 
+    modelListStateData,
     pagination,
     onPageChange,
     onShowSizeChange,
