@@ -48,7 +48,6 @@ export interface IUseViewModel {
   deleteModelLoading: boolean;
 
   pagenationData: IModelDataItem[];
-  modelListData: IModelDataItem[];
   modelSearchVal: string;
   modelSourceVal: ModelSourceType;
   onModelSearch: (val: string) => void;
@@ -60,6 +59,7 @@ export interface IUseViewModel {
   onPageChange: (current: number) => void;
   onShowSizeChange: (current: number, pageSize: number) => void;
   modelListStateData: IModelDataItem[];
+  mine: boolean;
 }
 
 const { confirm } = Modal;
@@ -81,7 +81,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 配置 ｜ 更新授权
   const [modelAuthType, setModelAuthType] = useState<IModelAuthType>('config');
   // 模型/问学列表全量数据
-  const { modelListData, setModelListData } = useModelListStore();
+  const { setModelListData, modelListData } = useModelListStore();
 
   // 本地缓存的模型数据
   const [modelListStateData, setModelListStateData] = useState<IModelDataItem[]>([]);
@@ -102,6 +102,66 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     setModelListData(list);
     setModelListStateData(list);
   };
+
+  /// 可能还有问题， 下面的Effect的作用是当全局的list发生变化的时候更新本地的state
+  const prevDownloadStatusMapRef = useRef<Record<string, any>>({});
+
+  useEffect(() => {
+    // 创建一个映射来跟踪当前的下载状态
+    const currentDownloadStatusMap: Record<string, any> = {};
+
+    // 从downloadList中提取status信息
+    modelListData.forEach((item) => {
+      if (item.id) {
+        currentDownloadStatusMap[item.id] = item.status;
+      }
+    });
+
+    // 检查是否有状态变化
+    let hasStatusChanged = false;
+
+    // 检查新增或修改的状态
+    for (const id in currentDownloadStatusMap) {
+      if (prevDownloadStatusMapRef.current[id] !== currentDownloadStatusMap[id]) {
+        hasStatusChanged = true;
+        break;
+      }
+    }
+
+    // 检查删除的状态
+    if (!hasStatusChanged) {
+      for (const id in prevDownloadStatusMapRef.current) {
+        if (!(id in currentDownloadStatusMap)) {
+          hasStatusChanged = true;
+          break;
+        }
+      }
+    }
+
+    // 如果状态有变化，更新modelListStateData
+    if (hasStatusChanged) {
+      console.info('下载状态发生变化，更新modelListStateData');
+
+      const updatedList = modelListStateData.map((item) => {
+        const downItem = modelListData.find((_item) => _item.id === item.id);
+        if (downItem) {
+          return {
+            ...item,
+            status: downItem?.status,
+            can_select: downItem?.can_select,
+          };
+        }
+        return item;
+      });
+      console.info('更新后的模型列表数据:', updatedList);
+      if (updatedList.length > 0) {
+        setModelListStateData(updatedList);
+      }
+
+      // 更新记录的状态
+      prevDownloadStatusMapRef.current = { ...currentDownloadStatusMap };
+    }
+  }, [modelListData, modelListStateData]);
 
   // 获取模型列表 （本地和云端）
   const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
@@ -366,7 +426,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     deleteModelLoading,
 
     pagenationData,
-    modelListData,
     modelSearchVal,
     modelSourceVal,
     onModelSearch,
@@ -377,5 +436,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     pagination,
     onPageChange,
     onShowSizeChange,
+
+    mine: !!mine,
   };
 }
