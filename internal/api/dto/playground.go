@@ -24,6 +24,7 @@ type Session struct {
 	ModelName       string `json:"modelName"`
 	EmbedModelId    string `json:"embedModelId"`
 	ThinkingEnabled bool   `json:"thinkingEnabled"`
+	ThinkingActive  bool   `json:"thinkingActive"`
 	CreatedAt       string `json:"createdAt"`
 	UpdatedAt       string `json:"updatedAt"`
 }

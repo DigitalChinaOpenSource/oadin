@@ -44,6 +44,9 @@ func (s *SupportModel) Index() map[string]interface{} {
 	if s.Name != "" {
 		index["name"] = s.Name
 	}
+	if s.Id != "" {
+		index["id"] = s.Id
+	}
 
 	return index
 }
