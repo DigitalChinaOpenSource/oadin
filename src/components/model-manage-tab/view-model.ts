@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { IModelSourceType } from '@/types';
-export function useViewModel() {
+export interface IUseSearchViewModelReturn {
+  modelSourceVal: IModelSourceType;
+  onModelSourceChange: (val: IModelSourceType) => void;
+  modelSearchVal: string;
+  onModelSearch: (val: string) => void;
+}
+export function useViewModel(): IUseSearchViewModelReturn {
   // 模型来源
   const [modelSourceVal, setModelSourceVal] = useState<IModelSourceType>('local');
   // 模型搜索
