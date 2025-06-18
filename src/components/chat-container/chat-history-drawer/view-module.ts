@@ -5,9 +5,10 @@ import { IChatDetailItem, IChatHistoryItem } from '@/components/chat-container/c
 import { chatHistoryData } from './mock-data.ts';
 import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 import { message } from 'antd';
-import { IModelDataItem } from '@/types';
+import { IModelDataItem, ModelData } from '@/types';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
 import { MessageType } from '@res-utiles/ui-components';
+import { IModelSquareParams } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 
 export function useChatHistoryDrawer() {
   // 获取对话store
@@ -80,38 +81,53 @@ export function useChatHistoryDrawer() {
     {
       manual: true,
       onSuccess: (data: any) => {
-        if (!data || !data.length) return;
+        if (!data || !data.length) return message.error('获取历史对话记录失败');
 
         fetchModelDetail(data[data.length - 1].modelId, data, data[data.length - 1].sessionId);
       },
       onError: (error) => {
-        console.error('获取历史对话记录失败:', error);
         message.error('获取历史对话记录失败');
       },
     },
   );
 
+  const getModelList = async (params: IModelSquareParams, modelId: string) => {
+    const data = await httpRequest.get<ModelData>('/control_panel/model/square', params);
+    if (data && data.data && data.data.length) {
+      return data.data.find((item) => item.id === modelId);
+    } else {
+      return undefined; // 返回空数组表示没有数据
+    }
+  };
+
   // 根据模型id获取模型详情
-  const { run: fetchModelDetail } = useRequest(
-    async (modelId: string, messages: MessageType[], sessionId: string) => {
-      const data = await httpRequest.get<IModelDataItem>(`control_panel/model/square?modelId=${modelId}`);
-      return data || {};
-    },
-    {
-      manual: true,
-      onSuccess: (data: any, params) => {
-        if (!data) return;
-        setSelectedModel(data);
-        setIsSelectedModel(true);
-        setCurrentSessionId(params[2]);
-        setMessages(params[1]);
-        setHistoryVisible(false);
-      },
-      onError: (error) => {
-        console.error('获取历史对话记录失败:', error);
-      },
-    },
-  );
+  const fetchModelDetail = async (modelId: string, messages: MessageType[], sessionId: string) => {
+    let res = undefined;
+    const localParams: IModelSquareParams = {
+      service_source: 'local',
+      page_size: 999,
+      mine: false,
+    };
+    res = await getModelList(localParams, modelId);
+    if (!res) {
+      const remoteParams: IModelSquareParams = {
+        service_source: 'remote',
+        page_size: 999,
+        mine: false,
+        env_type: 'product',
+      };
+      res = await getModelList(remoteParams, modelId);
+    }
+    if (res) {
+      setSelectedModel(res);
+      setIsSelectedModel(true);
+      setCurrentSessionId(sessionId);
+      setMessages(messages);
+      setHistoryVisible(false);
+    } else {
+      message.error('获取历史记录详情失败，未找到对应模型');
+    }
+  };
 
   useEffect(() => {
     fetchChatHistory();

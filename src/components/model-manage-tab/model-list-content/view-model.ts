@@ -18,7 +18,7 @@ interface IPagenation {
   pageSize: number;
   total: number;
 }
-interface IModelSquareParams {
+export interface IModelSquareParams {
   flavor?: string;
   // remote时需要传
   // 'dev' | 'product'
