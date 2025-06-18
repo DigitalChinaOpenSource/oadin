@@ -41,10 +41,13 @@ func (f *File) SetUpdateTime(t time.Time) { f.UpdatedAt = t }
 func (f *File) PrimaryKey() string        { return f.ID }
 func (f *File) TableName() string         { return "files" }
 func (f *File) Index() map[string]interface{} {
-	return map[string]interface{}{
-		"id":         f.ID,
-		"session_id": f.SessionID,
+	index := map[string]interface{}{
+		"id": f.ID,
 	}
+	if f.SessionID != "" {
+		index["session_id"] = f.SessionID
+	}
+	return index
 }
 
 type EmbeddingRequest struct {

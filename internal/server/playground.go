@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log/slog"
 	"time"
 
@@ -35,6 +34,7 @@ type Playground interface {
 	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
 	DeleteFile(ctx context.Context, request *dto.DeleteFileRequest) (*dto.DeleteFileResponse, error)
 	ProcessFile(ctx context.Context, request *dto.GenerateEmbeddingRequest) (*dto.GenerateEmbeddingResponse, error)
+	CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error)
 
 	findRelevantContext(ctx context.Context, session *types.ChatSession, query string) (string, error)
 	findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error)
@@ -42,25 +42,27 @@ type Playground interface {
 
 type PlaygroundImpl struct {
 	Ds datastore.Datastore
+	Js datastore.JsonDatastore
 }
 
 // 创建Playground服务实例
 func NewPlayground() Playground {
 	playground := &PlaygroundImpl{
 		Ds: datastore.GetDefaultDatastore(),
+		Js: datastore.GetDefaultJsonDatastore(),
 	}
 	go func() {
 		ctx := context.Background()
 		dbPath := config.GlobalByzeEnvironment.Datastore
-		if err := InitPlaygroundVSS(ctx, dbPath); err != nil {
-			slog.Error("初始化VSS失败，将回退到标准向量搜索", "error", err)
+		if err := InitPlaygroundVec(ctx, dbPath); err != nil {
+			slog.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
 		} else {
-			if vssInitialized && vssDB != nil {
-				slog.Info("VSS初始化成功，已启用向量相似度搜索优化")
+			if vecInitialized && vecDB != nil {
+				slog.Info("VEC初始化成功，已启用向量相似度搜索优化")
 			} else if UseVSSForPlayground() {
-				slog.Info("VSS扩展未找到，将使用标准向量搜索")
+				slog.Info("VEC扩展未找到，将使用标准向量搜索")
 			} else {
-				slog.Info("VSS功能已通过环境变量禁用，将使用标准向量搜索")
+				slog.Info("VEC功能已通过环境变量禁用，将使用标准向量搜索")
 			}
 		}
 	}()
@@ -69,49 +71,27 @@ func NewPlayground() Playground {
 }
 
 // 工具函数：根据modelId查找modelName
-func getModelNameById(modelId string) string {
-	// 1. 先查本地模型json
-	data, err := ioutil.ReadFile("internal/provider/template/local_model.json")
-	if err == nil {
-		var local struct {
-			Chat []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"chat"`
-			Embed []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"embed"`
-		}
-		if json.Unmarshal(data, &local) == nil {
-			for _, m := range local.Chat {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-			for _, m := range local.Embed {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-		}
+func (p *PlaygroundImpl) GetModelById(ctx context.Context, modelId string) *types.SupportModel {
+	// If the modelId is empty, return empty string
+	if modelId == "" {
+		return &types.SupportModel{}
 	}
-	// 2. 查support_model.json
-	data, err = ioutil.ReadFile("internal/datastore/jsonds/data/support_model.json")
-	if err == nil {
-		var arr []struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		}
-		if json.Unmarshal(data, &arr) == nil {
-			for _, m := range arr {
-				if m.ID == modelId || m.Name == modelId {
-					return m.Name
-				}
-			}
-		}
+
+	model := &types.SupportModel{Id: modelId}
+	queryOpList := []datastore.FuzzyQueryOption{}
+	queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+		Key:   "id",
+		Query: modelId,
+	})
+	res, err := p.Js.List(ctx, model, &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}})
+	if err != nil {
+		return &types.SupportModel{}
 	}
-	return ""
+	if len(res) == 0 {
+		return &types.SupportModel{}
+	}
+
+	return res[0].(*types.SupportModel)
 }
 
 // 创建对话会话
@@ -120,7 +100,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		ID:           uuid.New().String(),
 		Title:        request.Title,
 		ModelID:      request.ModelId,
-		ModelName:    getModelNameById(request.ModelId),
+		ModelName:    p.GetModelById(ctx, request.ModelId).Name,
 		EmbedModelID: request.EmbedModelId,
 	}
 	supportModel := &types.SupportModel{Id: request.ModelId}
@@ -218,12 +198,12 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 			"role":    msg.Role,
 			"content": msg.Content,
 		})
-	}
-	// 添加RAG上下文
+	} // 添加RAG上下文
 	enhancedContent := request.Content
+	slog.Info("开始查找相关RAG上下文", "session_id", session.ID, "question", request.Content)
 	relevantContext, err := p.findRelevantContext(ctx, session, request.Content)
 	if err != nil {
-		slog.Warn("查找相关上下文失败", "error", err)
+		slog.Warn("查找相关上下文失败", "error", err, "session_id", session.ID)
 	}
 
 	if relevantContext != "" {
@@ -405,7 +385,8 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 		var toolMessages []types.ToolMessage
 		if msg.Role == "user" && msg.IsToolGroupID {
 			typeStr = "mcp"
-			toolMsgQuery := &types.ToolMessage{MessageId: msg.ID}
+			toolMsgQuery := new(types.ToolMessage)
+			toolMsgQuery.MessageId = msg.ID
 			toolMsgResults, err := p.Ds.List(ctx, toolMsgQuery, &datastore.ListOptions{
 				SortBy: []datastore.SortOption{
 					{Key: "updated_at", Order: datastore.SortOrderAscending},
@@ -417,7 +398,9 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			}
 			for _, tm := range toolMsgResults {
 				if tmsg, ok := tm.(*types.ToolMessage); ok {
-					toolMessages = append(toolMessages, *tmsg)
+					if tmsg.MessageId == msg.ID {
+						toolMessages = append(toolMessages, *tmsg)
+					}
 				}
 			}
 		}
@@ -479,10 +462,19 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 			if err != nil {
 				slog.Error("Failed to list file chunks", "error", err)
 			} else {
-				// 如果VSS初始化完成，从VSS中删除文件的所有块
-				if vssInitialized {
-					if err := vssDB.DeleteChunks(ctx, file.ID); err != nil {
-						slog.Error("从VSS删除文件块失败", "error", err, "file_id", file.ID)
+				if vecInitialized {
+					if vecDB != nil {
+						var chunkIDs []string
+						for _, c := range chunks {
+							chunk := c.(*types.FileChunk)
+							chunkIDs = append(chunkIDs, chunk.ID)
+						}
+						if len(chunkIDs) > 0 {
+							err := vecDB.DeleteChunks(ctx, chunkIDs)
+							if err != nil {
+								slog.Error("从VEC删除文件块失败", "error", err, "file_id", file.ID)
+							}
+						}
 					}
 				}
 
@@ -525,9 +517,10 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	}
 	if req.ModelId != "" {
 		session.ModelID = req.ModelId
-		session.ModelName = getModelNameById(req.ModelId)
+		modelInfo := p.GetModelById(ctx, req.ModelId)
+		session.ModelName = modelInfo.Name
 		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
-		model := &types.Model{ModelName: getModelNameById(req.ModelId)}
+		model := &types.Model{ModelName: modelInfo.Name}
 		err := p.Ds.Get(ctx, model)
 		if err == nil {
 			session.ThinkingEnabled = model.ThinkingEnabled
@@ -594,4 +587,21 @@ func (p *PlaygroundImpl) ToggleThinking(ctx context.Context, req *dto.ToggleThin
 		Bcode:          bcode.SuccessCode,
 		ThinkingActive: session.ThinkingActive,
 	}, nil
+}
+
+func (p *PlaygroundImpl) findRelevantContextWithVSS(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
+	return "", nil
+}
+
+func (p *PlaygroundImpl) CheckEmbeddingService(ctx context.Context, sessionID string) (bool, error) {
+	return true, nil
+}
+
+func InitPlaygroundVec(ctx context.Context, dbPath string) error {
+
+	return initVecDB(dbPath)
+}
+
+func UseVSSForPlayground() bool {
+	return false
 }
