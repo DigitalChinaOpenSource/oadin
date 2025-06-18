@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log/slog"
-	"strings"
 	"time"
 
 	"byze/config"
@@ -30,6 +29,7 @@ type Playground interface {
 	ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error)
 
 	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
+	UpdateToolCall(ctx context.Context, toolMessage *types.ToolMessage) error
 
 	UploadFile(ctx context.Context, request *dto.UploadFileRequest, fileHeader io.Reader, filename string, filesize int64) (*dto.UploadFileResponse, error)
 	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
@@ -135,7 +135,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 		return nil, err
 	}
 	return &dto.CreateSessionResponse{
-		Bcode: bcode.SuccessCode, 
+		Bcode: bcode.SuccessCode,
 		Data: dto.Session{
 			Id:              session.ID,
 			Title:           session.Title,
@@ -262,7 +262,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	chatRequest := &types.ChatRequest{
 		Model:    session.ModelName,
 		Messages: history,
-		Think:    false, 
+		Think:    false,
 	}
 	if session.ThinkingEnabled && session.ThinkingActive {
 		chatRequest.Think = true
@@ -316,7 +316,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	if err != nil {
 		slog.Error("Failed to save assistant message", "error", err)
 		return nil, err
-	} 
+	}
 	// 保存思考内容
 	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		thoughtsMsg := &types.ChatMessage{
@@ -356,7 +356,6 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		Type:      "answer",
 		ModelId:   session.ModelID,
 		ModelName: session.ModelName,
-		ToolCalls: chatResp.ToolCalls, // 新增工具调用支持
 	}}
 	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		resultMessages = append(resultMessages, dto.Message{
@@ -403,8 +402,24 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			typeStr = "thoughts"
 		}
 
-		if msg.Role == "assistant" && len(msg.Content) > 0 && strings.Contains(msg.Content, "<tool_use>") {
+		var toolMessages []types.ToolMessage
+		if msg.Role == "user" && msg.IsToolGroupID {
 			typeStr = "mcp"
+			toolMsgQuery := &types.ToolMessage{MessageId: msg.ID}
+			toolMsgResults, err := p.Ds.List(ctx, toolMsgQuery, &datastore.ListOptions{
+				SortBy: []datastore.SortOption{
+					{Key: "updated_at", Order: datastore.SortOrderAscending},
+				},
+			})
+			if err != nil {
+				slog.Error("Failed to list tool messages", "error", err)
+				return nil, err
+			}
+			for _, tm := range toolMsgResults {
+				if tmsg, ok := tm.(*types.ToolMessage); ok {
+					toolMessages = append(toolMessages, *tmsg)
+				}
+			}
 		}
 		messageDTOs = append(messageDTOs, dto.Message{
 			Id:        msg.ID,
@@ -415,6 +430,7 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			Type:      typeStr,
 			ModelId:   msg.ModelID,
 			ModelName: msg.ModelName,
+			ToolCalls: toolMessages,
 		})
 	}
 
@@ -509,7 +525,7 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	}
 	if req.ModelId != "" {
 		session.ModelID = req.ModelId
-		session.ModelName = getModelNameById(req.ModelId) 
+		session.ModelName = getModelNameById(req.ModelId)
 		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
 		model := &types.Model{ModelName: getModelNameById(req.ModelId)}
 		err := p.Ds.Get(ctx, model)

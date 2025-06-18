@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -166,11 +167,15 @@ type ClientMcpStopRequest struct {
 }
 
 type ClientRunToolRequest struct {
-	MCPId    string         `json:"mcpId"`
+	McpId    string         `json:"mcpId"` // 工具调用的MCP ID
 	ToolName string         `json:"toolName"`
 	ToolArgs map[string]any `json:"toolArgs"`
-}
 
+	MessageId     string `json:"messageId"`     // 关联的消息ID
+	Logo          string `json:"logo"`          // 工具调用的MCP图标
+	Desc          string `json:"desc"`          // 工具描述
+	ExecutionTime int64  `json:"executionTime"` // 大模型选择工具的思考时间，单位为秒
+}
 type ClientGetToolsRequest struct {
 	Ids []string `json:"ids"`
 }

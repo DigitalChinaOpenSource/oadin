@@ -450,7 +450,7 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 		}
 	}
 
-	fetchTools, err := M.McpHandler.FetchTools(ctx,mcpId)
+	fetchTools, err := M.McpHandler.FetchTools(ctx, mcpId)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +472,7 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 		Name:      req.ToolName,
 		Arguments: req.ToolArgs,
 	}
-	data, err := M.McpHandler.CallTool(ctx, req.MCPId, params)
+	data, err := M.McpHandler.CallTool(ctx, req.McpId, params)
 	if err != nil {
 		fmt.Println("Failed to call tool:", err)
 		return nil, err
