@@ -72,7 +72,7 @@ type ChatRequest struct {
 	Temperature float32             `json:"temperature,omitempty"`
 	MaxTokens   int                 `json:"max_tokens,omitempty"`
 	Stream      bool                `json:"stream,omitempty"`
-	Think       bool                `json:"think,omitempty"` 
+	Think       bool                `json:"think"`
 	Tools       []Tool              `json:"tools,omitempty"` // 新增，支持Ollama工具调用
 }
 
