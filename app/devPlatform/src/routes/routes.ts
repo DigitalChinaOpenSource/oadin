@@ -14,9 +14,9 @@ export interface RouteConfig {
   requireAuth?: boolean;
 }
 
-const AppManagementPage = lazy(() => import('../pages/AppManagement'));
-const UserCenterPage = lazy(() => import('../pages/UserCenter'));
-const LoginPage = lazy(() => import('../pages/Login'));
+const AppManagementPage = lazy(() => import('@/pages/AppManagement'));
+const UserCenterPage = lazy(() => import('@/pages/UserCenter'));
+const LoginPage = lazy(() => import('@/pages/Login'));
 
 const routes: RouteConfig[] = [
   {
