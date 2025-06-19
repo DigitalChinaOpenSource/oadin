@@ -20,7 +20,6 @@ import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import { copyMessageToClipboard } from '../useChatStream/utils';
-import { InputButton } from './input-button';
 import './index.scss';
 
 interface IChatViewProps {
@@ -90,10 +89,6 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   };
 
-  const onFileListChange = (fileList: UploadFile[]) => {
-    setUploadFileList(fileList);
-  };
-
   // 文件上传列表展示区域
   const headerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
@@ -125,11 +120,8 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   // 输入框底部功能区
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      {isUploadVisible ? (
-        <UploadTool
-          onFileListChange={onFileListChange}
-          uploadFileList={uploadFileList}
-        />
+      {!isUploadVisible ? (
+        <UploadTool />
       ) : (
         <Tooltip
           arrow={false}

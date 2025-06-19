@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { MessageType } from '@res-utiles/ui-components';
 import type { UploadFile } from 'antd';
 import { persist } from 'zustand/middleware';
-import { generateUniqueId } from '../useChatStream/utils';
+import { IUploadFile } from '../types';
 
 // 用于 localStorage 中的 key
 const STORAGE_KEY = 'vanta-chat-store';
