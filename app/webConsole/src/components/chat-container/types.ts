@@ -6,3 +6,13 @@ export interface IPlaygroundSession {
   ragEnabled?: boolean; // 是否启用 RAG
   fileIds?: string[]; // RAG 场景下关联文件
 }
+
+export interface IUploadFile {
+  created_at: string;
+  id: string;
+  name: string;
+  session_id: string;
+  size: number;
+  type: any;
+  status: 'error' | 'progress' | 'success'; // 文件状态
+}

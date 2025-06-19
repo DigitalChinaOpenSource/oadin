@@ -5,9 +5,9 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import '@res-utiles/ui-components/dist/index.css';
 import { Button, Tooltip, message } from 'antd';
-import type { UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
 import { FolderIcon, XCircleIcon, CopyIcon, ArrowClockwiseIcon, StopIcon } from '@phosphor-icons/react';
+import rollingSvg from '@/components/icons/rolling.svg';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import StreamingMessage from '../streaming-message';
@@ -20,7 +20,6 @@ import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import { copyMessageToClipboard } from '../useChatStream/utils';
-import { InputButton } from './input-button';
 import './index.scss';
 
 interface IChatViewProps {
@@ -90,10 +89,6 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   };
 
-  const onFileListChange = (fileList: UploadFile[]) => {
-    setUploadFileList(fileList);
-  };
-
   // 文件上传列表展示区域
   const headerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
@@ -102,6 +97,34 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           key={file.uid}
           className="upload-file-item"
         >
+          {file.status === 'uploading' && (
+            <div className="file-icon uploading-icon">
+              <img
+                src={rollingSvg}
+                alt=""
+              />
+            </div>
+          )}
+          {file.status === 'error' && (
+            <div className="file-icon error-icon">
+              <XCircleIcon
+                width={16}
+                height={16}
+                weight="fill"
+                fill="#e85951"
+              />
+            </div>
+          )}
+          {file.status === 'done' && (
+            <div className="file-icon done-icon">
+              <FolderIcon
+                width={16}
+                height={16}
+                fill="#ffffff"
+              />
+            </div>
+          )}
+
           {file.name}
           <div
             className="upload-file-remove"
@@ -125,11 +148,8 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   // 输入框底部功能区
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      {isUploadVisible ? (
-        <UploadTool
-          onFileListChange={onFileListChange}
-          uploadFileList={uploadFileList}
-        />
+      {!isUploadVisible ? (
+        <UploadTool />
       ) : (
         <Tooltip
           arrow={false}

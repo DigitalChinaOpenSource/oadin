@@ -33,7 +33,7 @@ const healthBaseURL = import.meta.env.VITE_HEALTH_API_URL ?? (import.meta.env.MO
 const createApiInstance = (baseURL: string) => {
   const instance = axios.create({
     baseURL,
-    timeout: 60000,
+    timeout: 120000,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
