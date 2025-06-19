@@ -18,4 +18,7 @@ export default {
   modelInfo: {
     noSelectModel: '请先选择模型，再体验。',
   },
+  mcpInfo: {
+    maxSelectMcp: '为保障服务稳定运行与优质体验，建议您选择的MCP工具不要超过5个。',
+  },
 };
