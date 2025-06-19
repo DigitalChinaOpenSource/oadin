@@ -23,6 +23,7 @@ export interface IStreamData {
   thinking?: string;
   tool_calls?: IToolCall[];
   total_duration?: number;
+  tool_group_id?: string;
 }
 
 // 工具调用接口
@@ -59,10 +60,11 @@ export interface IToolCallData {
   id: string;
   inputParams: string;
   logo: string;
-  mcpId: string;
+  mcpId?: string;
   name: string;
   outputParams?: string;
   status: 'success' | 'error' | 'loading' | string;
+  duration?: number;
 }
 
 // 请求参数接口
@@ -91,6 +93,7 @@ export interface IToolCall {
 
 // 工具调用参数接口
 export interface IRunToolParams {
+  messageId: string;
   mcpId: string;
   toolName: string;
   toolArgs: Record<string, any>;
@@ -107,6 +110,5 @@ export interface StreamCallbacks {
 export interface IMcpToolChatData {
   status: 'success' | 'error' | 'progress';
   data: IToolCallData[];
-  toolCallNums: number;
-  toolCallTimes: number;
+  totalDuration: number;
 }

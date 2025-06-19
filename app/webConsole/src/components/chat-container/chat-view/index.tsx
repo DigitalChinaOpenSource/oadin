@@ -20,6 +20,7 @@ import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import { copyMessageToClipboard } from '../useChatStream/utils';
+import { InputButton } from './input-button';
 import './index.scss';
 
 interface IChatViewProps {
@@ -275,7 +276,10 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                         fill="#4f4dff"
                       />
                     }
-                    onClick={() => cancelRequest()}
+                    onClick={() => {
+                      console.log('stop');
+                      cancelRequest();
+                    }}
                   />
                 ) : (
                   <Button

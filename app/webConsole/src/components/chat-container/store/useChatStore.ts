@@ -35,7 +35,7 @@ const useChatStore = create<ChatState>()(
       setMessages: (messages) => set({ messages }),
       addMessage: (message: MessageType, isReplace?: boolean): string => {
         // 生成消息ID
-        const messageId = message.id || generateUniqueId('msg');
+        const messageId = message.id;
         message.id = messageId;
 
         set((state) => {
