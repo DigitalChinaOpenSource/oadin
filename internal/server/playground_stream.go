@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -116,6 +117,48 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			chatRequest.Tools = request.Tools
 		}
 
+		sessionCheck := &types.ChatSession{ID: request.SessionID}
+		err = p.Ds.Get(ctx, sessionCheck)
+		if err == nil && sessionCheck.Title == "" {
+			genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
+			payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`, session.ModelName, genTitlePrompt)
+			slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
+			client := &http.Client{}
+			req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
+			if err == nil {
+				req.Header.Set("Content-Type", "application/json")
+				resp, err := client.Do(req)
+				title := "新对话 " + time.Now().Format("2006-01-02")
+				if err == nil && resp != nil {
+					defer resp.Body.Close()
+					var result struct {
+						Content string `json:"content"`
+						Message struct {
+							Content string `json:"content"`
+						} `json:"message"`
+					}
+					decodeErr := json.NewDecoder(resp.Body).Decode(&result)
+					slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
+					if decodeErr == nil {
+						if len(result.Content) > 0 {
+							title = result.Content
+						} else if len(result.Message.Content) > 0 {
+							title = result.Message.Content
+						}
+						if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
+							re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+							title = re.ReplaceAllString(title, "")
+							title = strings.TrimSpace(title)
+						}
+						runes := []rune(title)
+						title = string(runes)
+					}
+				}
+				slog.Info("[DEBUG] TitleGen final title", "title", title)
+				sessionCheck.Title = title
+				_ = p.Ds.Put(context.Background(), sessionCheck)
+			}
+		}
 		// 调用流式API
 		responseStream, streamErrChan := modelEngine.ChatStream(ctx, chatRequest)
 
@@ -129,14 +172,12 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			case resp, ok := <-responseStream:
 				if !ok { // 流结束
 					// 因为有可能最后一个块是完成标记但内容为空
-					slog.Info("流式输出结束，准备保存助手回复",
-						"content_length", len(fullContent))
+					slog.Info("流式输出结束，准备保存助手回复", "content_length", len(fullContent))
 
 					// 显示预览（如果有内容）
 					if len(fullContent) > 0 {
 						previewLen := min(100, len(fullContent))
-						slog.Info("回复内容预览",
-							"content_preview", fullContent[:previewLen])
+						slog.Info("回复内容预览", "content_preview", fullContent[:previewLen])
 					} else {
 						slog.Warn("助手回复内容为空！")
 					}
@@ -155,47 +196,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					if err != nil {
 						slog.Error("Failed to save assistant message", "error", err)
 					}
-					// 如果是第一条消息，更新会话标题
-					if len(messages) == 0 {
-						genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
-						// 构造 HTTP 请求体
-						payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`,
-							session.ModelName, genTitlePrompt)
-						slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
-						client := &http.Client{Timeout: 15 * time.Second}
-						req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
-						if err == nil {
-							req.Header.Set("Content-Type", "application/json")
-							resp, err := client.Do(req)
-							title := "新对话 " + time.Now().Format("2006-01-02")
-							if err == nil && resp != nil {
-								defer resp.Body.Close()
-								var result struct {
-									Content string `json:"content"`
-									Message struct {
-										Content string `json:"content"`
-									} `json:"message"`
-								}
-								decodeErr := json.NewDecoder(resp.Body).Decode(&result)
-								slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
-								if decodeErr == nil {
-									if len(result.Content) > 0 {
-										title = result.Content
-									} else if len(result.Message.Content) > 0 {
-										title = result.Message.Content
-									}
-									runes := []rune(title)
-									title = string(runes)
-								}
-							}
-							slog.Info("[DEBUG] TitleGen final title", "title", title)
-							session.Title = title
-							err = p.Ds.Put(context.Background(), session)
-							if err != nil {
-								slog.Error("Failed to update session title", "error", err)
-							}
-						}
-					} // 保存思考内容（如果有）
+					// 保存思考内容（如果有）
 					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 						thoughtsMsg := &types.ChatMessage{
 							ID:            uuid.New().String(),
@@ -231,9 +232,8 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						"content_length", len(originalContent),
 						"accumulated_content_length", len(fullContent))
 
-					// 如果最后一块有内容，需要累积
-					if len(originalContent) > 0 {
-						fullContent += resp.Content
+					if len(fullContent) == 0 && len(originalContent) > 0 {
+						fullContent = originalContent
 					}
 
 					// 如果没有内容但有工具调用，构建提示信息
