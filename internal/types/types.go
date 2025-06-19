@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -148,9 +149,11 @@ type EngineRecommendConfig struct {
 type MCPServerConfig struct {
 	Id      string            `json:"id"`
 	Name    string            `json:"name"`
+	Logo    string            `json:"logo"` // MCP图标
 	Args    []string          `json:"args"`
 	Command string            `json:"command"`
 	Env     map[string]string `json:"env"` // 使用map存储动态环境变量
+	Tools   []mcp.Tool        `json:"tools"`
 }
 
 type ClientMcpStartRequest struct {
@@ -166,9 +169,17 @@ type ClientMcpStopRequest struct {
 }
 
 type ClientRunToolRequest struct {
-	MCPId    string         `json:"mcpId"`
+	McpId    string         `json:"mcpId"` // 工具调用的MCP ID
 	ToolName string         `json:"toolName"`
 	ToolArgs map[string]any `json:"toolArgs"`
+
+	MessageId string `json:"messageId"` // 关联的消息ID
+}
+
+type ClientRunToolResponset struct {
+	*mcp.CallToolResult
+	Logo     string `json:"logo"`     // 工具调用的MCP图标
+	ToolDesc string `json:"toolDesc"` // 工具描述
 }
 
 type ClientGetToolsRequest struct {
