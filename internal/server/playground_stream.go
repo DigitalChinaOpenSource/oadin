@@ -74,30 +74,40 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			slog.Info("未找到相关上下文，使用通用对话模式", "session_id", session.ID)
 		}
 
-		// 添加当前用户消息
-		userMessage := map[string]string{
-			"role":    "user",
-			"content": enhancedContent,
-		}
-		history = append(history, userMessage)
-
 		// 保存用户消息到数据库（保存原始消息，不含上下文）
-		userMsg := &types.ChatMessage{
-			ID:        uuid.New().String(),
-			SessionID: request.SessionID,
-			Role:      "user",
-			Content:   request.Content,
-			Order:     len(messages),
-			CreatedAt: time.Now(),
-			ModelID:   session.ModelID,
-			ModelName: session.ModelName,
+		var userMsg *types.ChatMessage
+		if request.Content != "" {
+			// 添加当前用户消息
+			userMessage := map[string]string{
+				"role":    "user",
+				"content": enhancedContent,
+			}
+			history = append(history, userMessage)
+
+			userMsg = &types.ChatMessage{
+				ID:        uuid.New().String(),
+				SessionID: request.SessionID,
+				Role:      "user",
+				Content:   request.Content,
+				Order:     len(messages),
+				CreatedAt: time.Now(),
+				ModelID:   session.ModelID,
+				ModelName: session.ModelName,
+			}
+			err = p.Ds.Add(ctx, userMsg)
+			if err != nil {
+				slog.Error("Failed to save user message", "error", err)
+				errChan <- err
+				return
+			}
 		}
-		err = p.Ds.Add(ctx, userMsg)
-		if err != nil {
-			slog.Error("Failed to save user message", "error", err)
-			errChan <- err
-			return
+
+		// 处理多轮工具调用
+		if request.ToolGroupID != "" {
+			toolList := p.HandleToolCalls(ctx, request.SessionID, request.ToolGroupID)
+			history = append(history, toolList...)
 		}
+
 		// 调用模型获取流式回复
 		// 获取统一的聊天引擎
 		modelEngine := engine.NewEngine() // 构建聊天请求
@@ -166,6 +176,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		assistantMsgID := uuid.New().String()
 		var fullContent string
 		var thoughts string
+		var totalDuration int64
 		// 转发流式响应
 		for {
 			select {
@@ -207,7 +218,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 							CreatedAt:     time.Now(),
 							ModelID:       session.ModelID,
 							ModelName:     session.ModelName,
-							TotalDuration: resp.TotalDuration / int64(time.Second),
+							TotalDuration: totalDuration,
 						}
 						err = p.Ds.Add(ctx, thoughtsMsg)
 						if err != nil {
@@ -236,38 +247,46 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						fullContent = originalContent
 					}
 
-					// 如果没有内容但有工具调用，构建提示信息
-					if fullContent == "" && len(resp.ToolCalls) > 0 {
-						for _, toolCall := range resp.ToolCalls {
-							// toolCall.Function.Argument 是map[string]interface{}, 转为json字符串
-							arguments, err := json.Marshal(toolCall.Function.Arguments)
-							if err != nil {
-								slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
-							}
-							fullContent += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
+					resp.TotalDuration = resp.TotalDuration / int64(time.Second)
+					// 确保完整内容被保存和返回给客户端
+					if fullContent != "" {
+						assistantMsg := &types.ChatMessage{
+							ID:            assistantMsgID,
+							SessionID:     request.SessionID,
+							Role:          "assistant",
+							Content:       fullContent,
+							Order:         len(messages) + 1,
+							CreatedAt:     time.Now(),
+							ModelID:       session.ModelID,
+							ModelName:     session.ModelName,
+							TotalDuration: resp.TotalDuration,
+						}
+						err = p.Ds.Add(ctx, assistantMsg)
+						if err != nil {
+							slog.Error("Failed to save assistant message on complete", "error", err)
 						}
 					}
 
-					// 确保完整内容被保存和返回给客户端
-					assistantMsg := &types.ChatMessage{
-						ID:            assistantMsgID,
-						SessionID:     request.SessionID,
-						Role:          "assistant",
-						Content:       fullContent,
-						Order:         len(messages) + 1,
-						CreatedAt:     time.Now(),
-						ModelID:       session.ModelID,
-						ModelName:     session.ModelName,
-						TotalDuration: resp.TotalDuration / int64(time.Second),
-					}
-					err = p.Ds.Add(ctx, assistantMsg)
-					if err != nil {
-						slog.Error("Failed to save assistant message on complete", "error", err)
+					// 处理多轮工具调用
+					if fullContent == "" && len(resp.ToolCalls) > 0 {
+						if request.ToolGroupID == "" {
+							if userMsg != nil {
+								p.AddToolCall(ctx, request.SessionID, userMsg.ID, assistantMsgID, resp.TotalDuration)
+							}
+						} else {
+							p.AddToolCall(ctx, request.SessionID, request.ToolGroupID, assistantMsgID, resp.TotalDuration)
+						}
 					}
 
 					// 发送全部内容作为响应
 					resp.Content = fullContent
 					resp.ID = assistantMsgID
+					if userMsg != nil && len(resp.ToolCalls) > 0 && request.ToolGroupID == "" {
+						resp.ToolGroupID = userMsg.ID
+					}
+					if userMsg == nil && len(resp.ToolCalls) > 0 && request.ToolGroupID != "" {
+						resp.ToolGroupID = request.ToolGroupID
+					}
 					respChan <- resp
 				} else if len(originalContent) > 0 {
 					slog.Info("收到非空流式输出块",
@@ -301,4 +320,164 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 	}()
 
 	return respChan, errChan
+}
+
+// 处理工具调用，作为历史消息请求大模型
+func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]string {
+	messageQuery := &types.ToolMessage{SessionID: sessionId, MessageId: messageId}
+	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
+		SortBy: []datastore.SortOption{
+			{Key: "updated_at", Order: 1},
+		},
+	})
+	if err != nil {
+		slog.Error("Failed to list chat messages", "error", err)
+		return nil
+	}
+	con := new(types.ChatMessage)
+	con.ID = messageId
+	_ = p.Ds.Get(ctx, con)
+
+	history := make([]map[string]string, 0)
+	for _, m := range messages {
+		msg := m.(*types.ToolMessage)
+		// 反转义 InputParams 和 OutputParams 字符串
+		inputParams := msg.InputParams
+		outputParams := msg.OutputParams
+
+		// 尝试将转义的 JSON 字符串还原为原始 JSON
+		var inputObj interface{}
+		var outputObj interface{}
+		if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
+			// 重新格式化为缩进后的 JSON 字符串
+			if pretty, err := json.MarshalIndent(inputObj, "", "  "); err == nil {
+				inputParams = string(pretty)
+			}
+		}
+		if err := json.Unmarshal([]byte(outputParams), &outputObj); err == nil {
+			if pretty, err := json.MarshalIndent(outputObj, "", "  "); err == nil {
+				outputParams = string(pretty)
+			}
+		}
+
+		history = append(history, map[string]string{
+			"role":    "assistant",
+			"content": fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>", msg.Name, inputParams),
+		})
+		history = append(history, map[string]string{
+			"role":    "user",
+			"content": fmt.Sprintf("<tool_result>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_result>", msg.Name, outputParams),
+		})
+	}
+	return history
+}
+
+// 更新工具调用的逻辑
+func (p *PlaygroundImpl) UpdateToolCall(ctx context.Context, toolMessage *types.ToolMessage) error {
+	con := new(types.ToolMessage)
+	con.ID = toolMessage.ID
+	err := p.Ds.Get(ctx, con)
+
+	if err != nil {
+		return err
+	}
+	if con == nil || con.ID == "" {
+		return err
+	}
+
+	// 保存工具调用状态
+	con.McpId = toolMessage.McpId
+	con.Logo = toolMessage.Logo
+	con.Name = toolMessage.Name
+	con.Desc = toolMessage.Desc
+	con.InputParams = toolMessage.InputParams
+	con.OutputParams = toolMessage.OutputParams
+	con.Status = toolMessage.Status
+	con.UpdatedAt = time.Now()
+
+	err = p.Ds.Put(ctx, con)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 新增工具调用的逻辑
+func (p *PlaygroundImpl) AddToolCall(ctx context.Context, sessionId, messageId string, id string, totalDuration int64) (string, error) {
+	// 1 判断McpIds以及MessageID 先存储一次工具调用逻辑
+	toolMessage := &types.ToolMessage{
+		ID:            id,
+		SessionID:     sessionId,
+		MessageId:     messageId,
+		ExecutionTime: totalDuration,
+	}
+
+	err := p.Ds.Add(ctx, toolMessage)
+	if err != nil {
+		fmt.Println("Failed to save tool message", "error", err, "session_id", sessionId, "message_id", messageId, "tool_id", id)
+		return "", fmt.Errorf("failed to save tool message: %w", err)
+	}
+
+	con := new(types.ChatMessage)
+	con.ID = messageId
+	err = p.Ds.Get(ctx, con)
+
+	if err != nil {
+		return "", err
+	}
+	if con == nil || con.ID == "" {
+		return "", fmt.Errorf("chat message not found")
+	}
+	con.IsToolGroupID = true // 标记为工具组ID
+	con.UpdatedAt = time.Now()
+	err = p.Ds.Put(ctx, con)
+
+	return toolMessage.ID, nil
+
+	// 1.1 当客户端发消息时，请求参数只有McpIds，没有messageId时，证明是第一次工具调用，此时生成mcpMessageId为后续工具调用的问题消息标识
+	// 1.2 当客户发消息时，请求参数只有mcpMessageId,就证明工具调用已经结束了
+	/*
+			   {
+				"SessionID": "917b68be-93b5-4893-a134-56bfc0fd2a00",
+				"content": "武汉中建星光城到大悦城的路线规划",
+				"mcpMessageId": ["683ec88241fa614eb1531fc4"]
+		       }
+
+			   {
+			    "SessionID": "917b68be-93b5-4893-a134-56bfc0fd2a00",
+				"content": "",
+				"mcpIds": ["683ec88241fa614eb1531fc4"]
+				"mcpMessageId": "0"
+			   }
+
+			   {
+			    "SessionID": "917b68be-93b5-4893-a134-56bfc0fd2a00",
+				"content": "",
+				"mcpMessageId": "0"
+			   }
+
+	*/
+
+	// 调用工具时补充
+	// 2.1 如果是第一次调用，生成一个新的工具调用ID
+	/*
+		{
+				ID            string `json:"id"`
+				SessionID     string `json:"session_id"`
+				MessageId     string `json:"message_id"`     // 关联的消息ID
+				McpId         string `json:"mcp_id"`         // 工具调用的MCP ID
+				Logo          string `json:"logo"`      // 工具调用的MCP图标
+				Name          string `json:"name"`           // 工具名称
+				Desc          string `json:"desc"`           // 工具描述
+				InputParams   string `json:"input_params"`   // 输入参数
+				OutputParams  string `json:"output_params"`  // 输出参数
+				Status        string `json:"status"`         // 工具调用状态
+
+		}
+	*/
+
+	// 请求大模型问答的时候，将工具调用的信息作为历史消息传入
+
+	// return nil
 }
