@@ -40,13 +40,15 @@ type ChatMessage struct {
 	Content       string    `json:"content"`
 	Order         int       `json:"order" gorm:"column:msg_order"`
 	CreatedAt     time.Time `json:"created_at"`
-	ModelID       string    `json:"model_id,omitempty"`       // 新增字段，模型ID
-	ModelName     string    `json:"model_name,omitempty"`     // 新增字段，模型名称
-	TotalDuration int64     `json:"total_duration,omitempty"` // 总耗时，单位秒
+	UpdatedAt     time.Time `json:"updated_at"`
+	ModelID       string    `json:"model_id,omitempty"`         // 新增字段，模型ID
+	ModelName     string    `json:"model_name,omitempty"`       // 新增字段，模型名称
+	TotalDuration int64     `json:"total_duration,omitempty"`   // 总耗时，单位秒
+	IsToolGroupID bool      `json:"is_tool_group_id,omitempty"` // 是否是工具组ID
 }
 
 func (m *ChatMessage) SetCreateTime(t time.Time) { m.CreatedAt = t }
-func (m *ChatMessage) SetUpdateTime(t time.Time) {}
+func (m *ChatMessage) SetUpdateTime(t time.Time) { m.UpdatedAt = t }
 func (m *ChatMessage) PrimaryKey() string        { return "id" }
 func (m *ChatMessage) TableName() string         { return "chat_messages" }
 func (m *ChatMessage) Index() map[string]interface{} {
@@ -63,6 +65,42 @@ func (m *ChatMessage) Index() map[string]interface{} {
 	}
 
 	return result
+}
+
+// 工具调用
+type ToolMessage struct {
+	ID            string    `json:"id"`
+	SessionID     string    `json:"session_id"`
+	MessageId     string    `json:"message_id"`     // 关联的消息ID
+	McpId         string    `json:"mcp_id"`         // 工具调用的MCP ID
+	Logo          string    `json:"mcp_image"`      // 工具调用的MCP图标
+	Name          string    `json:"name"`           // 工具名称
+	Desc          string    `json:"desc"`           // 工具描述
+	InputParams   string    `json:"input_params"`   // 输入参数
+	OutputParams  string    `json:"output_params"`  // 输出参数
+	Status        bool      `json:"status"`         // 工具调用状态
+	ExecutionTime int64     `json:"execution_time"` // 大模型选择工具的思考时间，单位为秒
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+func (m *ToolMessage) SetCreateTime(t time.Time) { m.CreatedAt = t }
+func (m *ToolMessage) SetUpdateTime(t time.Time) { m.UpdatedAt = t }
+
+func (m *ToolMessage) PrimaryKey() string {
+	return "id"
+}
+func (m *ToolMessage) TableName() string {
+	return "tool_messages"
+}
+
+func (m *ToolMessage) Index() map[string]interface{} {
+	index := make(map[string]interface{})
+	if m.ID != "" {
+		index["id"] = m.ID
+	}
+
+	return index
 }
 
 // 聊天请求模型
@@ -88,6 +126,7 @@ type ChatResponse struct {
 	Thoughts      string     `json:"thinking,omitempty"`       // 深度思考的结果
 	Type          string     `json:"type,omitempty"`           // "answer"、"thoughts"等
 	TotalDuration int64      `json:"total_duration,omitempty"` // 总耗时，单位秒
+	ToolGroupID   string     `json:"tool_group_id,omitempty"`  // 工具组ID，用于关联工具调用
 }
 type ToolCall struct {
 	Function struct {
