@@ -175,6 +175,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
         {isLoading && (
           <StreamingMessage
             content={streamingContent}
+            thinkingContent={streamingThinking}
             scroll={chattingMessageControlScroll}
           />
         )}

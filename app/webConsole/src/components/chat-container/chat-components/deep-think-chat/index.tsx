@@ -8,16 +8,16 @@ import arrowDown from '@/components/icons/arrow-down.svg';
 
 // interface IDeepThinkChatProps {}
 interface IDeepThinkChatProps {
-  dataSource: {
+  dataSource?: {
     data: string;
     status?: 'success' | 'error' | 'progress';
   };
+  streamContent?: string;
 }
 
 export default function DeepThinkChat(props: IDeepThinkChatProps) {
   console.log('DeepThinkChat dataSource=====>', props);
-  const { dataSource } = props;
-  const { data, status } = dataSource;
+  const { dataSource, streamContent } = props;
   // TODO 思考完毕之后自动收起
   const [isExpanded, setIsExpanded] = useState(true);
   return (
@@ -72,7 +72,7 @@ export default function DeepThinkChat(props: IDeepThinkChatProps) {
         </div>
       </div>
       <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
-        <div className={styles.resultText}>{data}</div>
+        <div className={styles.resultText}>{streamContent || dataSource?.data}</div>
       </div>
     </div>
   );
