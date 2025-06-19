@@ -133,6 +133,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		assistantMsgID := uuid.New().String()
 		var fullContent string
 		var thoughts string
+		var totalDuration int64
 		// 转发流式响应
 		for {
 			select {
@@ -202,7 +203,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 							CreatedAt:     time.Now(),
 							ModelID:       session.ModelID,
 							ModelName:     session.ModelName,
-							TotalDuration: resp.TotalDuration / int64(time.Second),
+							TotalDuration: totalDuration,
 						}
 						err = p.Ds.Add(ctx, thoughtsMsg)
 						if err != nil {
@@ -232,6 +233,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						fullContent += resp.Content
 					}
 
+					resp.TotalDuration = resp.TotalDuration / int64(time.Second)
 					// 确保完整内容被保存和返回给客户端
 					if fullContent != "" {
 						assistantMsg := &types.ChatMessage{
@@ -243,7 +245,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 							CreatedAt:     time.Now(),
 							ModelID:       session.ModelID,
 							ModelName:     session.ModelName,
-							TotalDuration: resp.TotalDuration / int64(time.Second),
+							TotalDuration: resp.TotalDuration,
 						}
 						err = p.Ds.Add(ctx, assistantMsg)
 						if err != nil {
@@ -255,10 +257,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					if fullContent == "" && len(resp.ToolCalls) > 0 {
 						if request.ToolGroupID == "" {
 							if userMsg != nil {
-								p.AddToolCall(ctx, request.SessionID, userMsg.ID, assistantMsgID)
+								p.AddToolCall(ctx, request.SessionID, userMsg.ID, assistantMsgID, resp.TotalDuration)
 							}
 						} else {
-							p.AddToolCall(ctx, request.SessionID, request.ToolGroupID, assistantMsgID)
+							p.AddToolCall(ctx, request.SessionID, request.ToolGroupID, assistantMsgID, resp.TotalDuration)
 						}
 					}
 
@@ -346,11 +348,11 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 
 		history = append(history, map[string]string{
 			"role":    "assistant",
-			"content": fmt.Sprintf("调用工具: %s, 参数: %s", msg.Name, inputParams),
+			"content": fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>", msg.Name, inputParams),
 		})
 		history = append(history, map[string]string{
 			"role":    "user",
-			"content": fmt.Sprintf("工具调用结果: %s", outputParams),
+			"content": fmt.Sprintf("<tool_result>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_result>", msg.Name, outputParams),
 		})
 	}
 	return history
@@ -378,7 +380,6 @@ func (p *PlaygroundImpl) UpdateToolCall(ctx context.Context, toolMessage *types.
 	con.OutputParams = toolMessage.OutputParams
 	con.Status = toolMessage.Status
 	con.UpdatedAt = time.Now()
-	con.ExecutionTime = toolMessage.ExecutionTime
 
 	err = p.Ds.Put(ctx, con)
 	if err != nil {
@@ -389,12 +390,13 @@ func (p *PlaygroundImpl) UpdateToolCall(ctx context.Context, toolMessage *types.
 }
 
 // 新增工具调用的逻辑
-func (p *PlaygroundImpl) AddToolCall(ctx context.Context, sessionId, messageId string, id string) (string, error) {
+func (p *PlaygroundImpl) AddToolCall(ctx context.Context, sessionId, messageId string, id string, totalDuration int64) (string, error) {
 	// 1 判断McpIds以及MessageID 先存储一次工具调用逻辑
 	toolMessage := &types.ToolMessage{
-		ID:        id,
-		SessionID: sessionId,
-		MessageId: messageId,
+		ID:            id,
+		SessionID:     sessionId,
+		MessageId:     messageId,
+		ExecutionTime: totalDuration,
 	}
 
 	err := p.Ds.Add(ctx, toolMessage)
