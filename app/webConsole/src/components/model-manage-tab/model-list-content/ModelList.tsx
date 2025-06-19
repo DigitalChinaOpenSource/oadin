@@ -7,8 +7,9 @@ import noDataSvg from '@/components/icons/no-data.svg';
 import { IUseViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import { IModelDataItem } from '@/types';
+import { ISelectedDialogProps } from '@/components/choose-model-dialog';
 
-export interface IModelList {
+export interface IModelList extends ISelectedDialogProps {
   pagination?: PaginationConfig | false;
   dataSource?: any[];
   grid?: ListGridType;
@@ -18,7 +19,7 @@ export interface IModelList {
 }
 
 export const ModelList = (props: IModelList) => {
-  const { vmContent, selectVms, dataSource } = props;
+  const { vmContent, selectVms, dataSource, selectedStateModel } = props;
   const { selectedModel } = useSelectedModelStore();
   const renderVmList = () => {
     let content = (
@@ -35,7 +36,7 @@ export const ModelList = (props: IModelList) => {
     if (vmContent && vmContent.pagenationData.length > 0) {
       content = (
         <Radio.Group
-          value={selectedModel?.id}
+          value={selectedStateModel?.id}
           style={{ width: '100%' }}
         >
           <List
@@ -45,6 +46,7 @@ export const ModelList = (props: IModelList) => {
             renderItem={(item) => (
               <List.Item>
                 <GeneralCard
+                  {...props}
                   mine={vmContent?.mine}
                   isSelectable={props.isSelectable}
                   modelData={item}

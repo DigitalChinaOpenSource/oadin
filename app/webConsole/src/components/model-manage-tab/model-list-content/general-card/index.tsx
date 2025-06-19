@@ -7,11 +7,11 @@ import { DOWNLOAD_STATUS } from '@/constants';
 import { DownloadSimpleIcon, GlobeIcon, ArrowClockwiseIcon, SpinnerIcon, GearSixIcon, TrashIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
-import useSelectedModelStore from '@/store/useSelectedModel';
 import React, { MouseEvent } from 'react';
 import recommendedIcon from '@/components/icons/recommendIcon.png';
+import { ISelectedDialogProps } from '@/components/choose-model-dialog';
 
-export interface IGeneralCardProps {
+export interface IGeneralCardProps extends ISelectedDialogProps {
   // 是否用于详情展示
   isDetail?: boolean;
   // 是否可选
@@ -29,11 +29,10 @@ export interface IGeneralCardProps {
 }
 
 export default function GeneralCard(props: IGeneralCardProps) {
-  const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData, mine } = props;
+  const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData, mine, setSelecteStatedModel, selectedStateModel } = props;
   const toolTipsText = props?.selectTooltip ?? '请先下载/授权，再体验';
 
   const { migratingStatus } = useModelPathChangeStore();
-  const { selectedModel, setSelectedModel } = useSelectedModelStore();
   const statusToText = (item: IModelDataItem) => {
     const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
     const { status, can_select } = item;
@@ -162,12 +161,11 @@ export default function GeneralCard(props: IGeneralCardProps) {
       </>
     );
   };
+
   const handleSelectModelData = (e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
-    const tempSelectedModel = selectedModel?.id && selectedModel?.id === modelData?.id ? ({} as IModelDataItem) : modelData;
-    setSelectedModel(tempSelectedModel);
-
-    console.log('handleSelectModelData', tempSelectedModel);
+    const tempSelectedModel = selectedStateModel?.id && selectedStateModel?.id === modelData?.id ? ({} as IModelDataItem) : modelData;
+    setSelecteStatedModel?.(tempSelectedModel);
   };
 
   const convertProviderName = (flavor: string): string => {

@@ -14,4 +14,7 @@ export default {
     network: '网络异常，请检查网络连接',
     byze_unavailable: '奥丁服务不可用，请确认奥丁服务启动状态',
   },
+  modelInfo: {
+    noSelectModel: '请先选择模型，再体验。',
+  },
 };

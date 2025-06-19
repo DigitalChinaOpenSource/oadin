@@ -15,4 +15,7 @@ export default {
     network: 'Network error, please check your network connection',
     byze_unavailable: 'Byze service unavailable, please confirm the status of the Byze service',
   },
+  modelInfo: {
+    noSelectModel: '请先选择模型，再体验。',
+  },
 };

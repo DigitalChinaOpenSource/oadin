@@ -7,16 +7,22 @@ import { useEffect, useMemo, useState } from 'react';
 import { useViewModel, IMyModelListViewModel } from './view-model.ts';
 import { ModelCheckingHasdata } from '@/components/model-checking/model-checking-data';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
+import { getMessageByModel } from '@/i18n';
 
 export default function ModelChecking() {
   const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
   const vm: IMyModelListViewModel = useViewModel();
   const [open, setOpen] = useState<boolean>(false);
+  /// 初始化选择模型
   const onOk = () => {
     if (selectedModel && Object.keys(selectedModel).length > 0) {
       setIsSelectedModel(true);
     } else {
-      message.warning('请先选择一个模型');
+      message.warning(
+        getMessageByModel('noSelectModel', {
+          msg: '请先选择模型，再体验。',
+        }),
+      );
     }
   };
   const isHasMedel = useMemo(() => {

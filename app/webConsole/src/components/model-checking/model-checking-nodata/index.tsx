@@ -8,10 +8,10 @@ export const ModelCheckingNodata = () => {
     modelSearchVal: '',
     modelSourceVal: 'local',
     onModelSearch: () => {},
+    pageType: 1,
   };
   // 获取当前的列表中的全部数据
   const vmContent: IUseViewModel = useViewModel(vmProps);
-  console.info(vmContent, 'vmvm');
   const filterModelList = useMemo(() => {
     return vmContent.pagenationData?.length > 0 ? vmContent.pagenationData.splice(0, 2) : [];
   }, [vmContent.pagenationData]);

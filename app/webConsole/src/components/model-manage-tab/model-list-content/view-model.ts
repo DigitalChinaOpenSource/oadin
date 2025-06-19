@@ -69,6 +69,7 @@ export interface IModelListContent {
   modelSourceVal: IModelSourceType;
   onModelSearch: (val: string) => void;
   mine?: boolean;
+  pageType?: number; // 1 体验中心选择
 }
 
 export function useViewModel(props: IModelListContent): IUseViewModel {
@@ -107,17 +108,20 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
   /// 可能还有问题， 下面的Effect的作用是当全局的list发生变化的时候更新本地的state
   const prevDownloadStatusMapRef = useRef<Record<string, any>>({});
-
   useEffect(() => {
     // 创建一个映射来跟踪当前的下载状态
     const currentDownloadStatusMap: Record<string, any> = {};
-
+    console.info(modelListData, '检查状态-----modelListData');
+    console.info(modelListStateData, '检查状态-----modelListStateData');
     // 从downloadList中提取status信息
     modelListData.forEach((item) => {
       if (item.id) {
         currentDownloadStatusMap[item.id] = item.status;
       }
     });
+
+    // 检查列表长度是否发生变化（添加或删除了模型）
+    const modelCountChanged = modelListData.length !== modelListStateData.length;
 
     // 检查是否有状态变化
     let hasStatusChanged = false;
@@ -140,24 +144,30 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       }
     }
 
-    // 如果状态有变化，更新modelListStateData
-    if (hasStatusChanged) {
-      console.info('下载状态发生变化，更新modelListStateData');
+    // 如果列表数量或状态有变化，更新modelListStateData
+    if (modelCountChanged || hasStatusChanged) {
+      console.info('模型列表或下载状态发生变化，更新modelListStateData');
 
-      const updatedList = modelListStateData.map((item) => {
-        const downItem = modelListData.find((_item) => _item.id === item.id);
-        if (downItem) {
-          return {
-            ...item,
-            status: downItem?.status,
-            can_select: downItem?.can_select,
-          };
+      if (modelCountChanged) {
+        // 列表数量变化，直接使用新列表
+        setModelListStateData(modelListData);
+      } else {
+        // 只是状态变化，更新现有项的状态
+        const updatedList = modelListStateData.map((item) => {
+          const downItem = modelListData.find((_item) => _item.id === item.id);
+          if (downItem) {
+            return {
+              ...item,
+              status: downItem?.status,
+              can_select: downItem?.can_select,
+            };
+          }
+          return item;
+        });
+        console.info('更新后的模型列表数据:', updatedList);
+        if (updatedList.length > 0) {
+          setModelListStateData(updatedList);
         }
-        return item;
-      });
-      console.info('更新后的模型列表数据:', updatedList);
-      if (updatedList.length > 0) {
-        setModelListStateData(updatedList);
       }
 
       // 更新记录的状态
@@ -194,6 +204,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
               currentDownload: 0,
             }) as any,
         );
+        console.info(dataWithSource, 'dataWithSourcedataWithSource');
         setListData(dataWithSource);
         setPagination({
           ...pagination,
@@ -274,16 +285,20 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       onFinally: async () => {
         // 保留当前页码，重新获取数据
         const currentPage = pagination.current;
+        // 等待获取新数据完成
         await fetchModelSupport({ service_source: modelSourceVal });
-
-        const filteredData = getFilteredData();
-        const totalPages = Math.ceil(filteredData.length / pagination.pageSize);
-        const newPage = currentPage > totalPages ? totalPages || 1 : currentPage;
-        setPagination({
-          ...pagination,
-          current: newPage,
-          total: filteredData.length,
-        });
+        // 等待React状态更新后再获取过滤数据
+        setTimeout(() => {
+          const filteredData = getFilteredData();
+          const totalPages = Math.ceil(filteredData.length / pagination.pageSize);
+          const newPage = currentPage > totalPages ? totalPages || 1 : currentPage;
+          console.info(filteredData, '删除后-过滤后的数据');
+          setPagination({
+            ...pagination,
+            current: newPage,
+            total: filteredData.length,
+          });
+        }, 0);
       },
     },
   );
@@ -352,30 +367,37 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   }, []);
 
   const onDownloadConfirm = (modelData: IModelDataItem) => {
-    confirm({
-      title: '确认下载此模型？',
-      okText: '确认下载',
-      centered: true,
-      okButtonProps: {
-        style: { backgroundColor: '#4f4dff' },
-      },
-      async onOk() {
-        const modelSizeMb = convertToMB(modelData.size || '0MB');
-        const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
-        if (modelSizeMb > freeSpaceMb) {
-          message.warning('当前路径下的磁盘空间不足，无法下载该模型');
-          return;
-        } else {
-          fetchDownloadStart({
-            ...modelData,
-            status: DOWNLOAD_STATUS.IN_PROGRESS,
-          });
-        }
-      },
-      onCancel() {
-        console.log('Cancel');
-      },
-    });
+    if (props.pageType === 1) {
+      startDownload(modelData);
+    } else {
+      confirm({
+        title: '确认下载此模型？',
+        okText: '确认下载',
+        centered: true,
+        okButtonProps: {
+          style: { backgroundColor: '#4f4dff' },
+        },
+        async onOk() {
+          startDownload(modelData);
+        },
+        onCancel() {
+          console.log('Cancel');
+        },
+      });
+    }
+  };
+  const startDownload = (modelData: IModelDataItem) => {
+    const modelSizeMb = convertToMB(modelData.size || '0MB');
+    const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
+    if (modelSizeMb > freeSpaceMb) {
+      message.warning('当前路径下的磁盘空间不足，无法下载该模型');
+      return;
+    } else {
+      fetchDownloadStart({
+        ...modelData,
+        status: DOWNLOAD_STATUS.IN_PROGRESS,
+      });
+    }
   };
 
   const onDeleteConfirm = (modelData: IModelDataItem) => {
