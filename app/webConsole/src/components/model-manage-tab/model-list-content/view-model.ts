@@ -69,6 +69,7 @@ export interface IModelListContent {
   modelSourceVal: IModelSourceType;
   onModelSearch: (val: string) => void;
   mine?: boolean;
+  pageType?: number; // 1 体验中心选择
 }
 
 export function useViewModel(props: IModelListContent): IUseViewModel {
@@ -121,7 +122,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
     // 检查列表长度是否发生变化（添加或删除了模型）
     const modelCountChanged = modelListData.length !== modelListStateData.length;
-    
+
     // 检查是否有状态变化
     let hasStatusChanged = false;
 
@@ -146,7 +147,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     // 如果列表数量或状态有变化，更新modelListStateData
     if (modelCountChanged || hasStatusChanged) {
       console.info('模型列表或下载状态发生变化，更新modelListStateData');
-      
+
       if (modelCountChanged) {
         // 列表数量变化，直接使用新列表
         setModelListStateData(modelListData);
@@ -280,7 +281,8 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
           message.error('模型删除失败');
         }
         console.error('删除模型失败:', error);
-      },      onFinally: async () => {
+      },
+      onFinally: async () => {
         // 保留当前页码，重新获取数据
         const currentPage = pagination.current;
         // 等待获取新数据完成
@@ -365,30 +367,37 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   }, []);
 
   const onDownloadConfirm = (modelData: IModelDataItem) => {
-    confirm({
-      title: '确认下载此模型？',
-      okText: '确认下载',
-      centered: true,
-      okButtonProps: {
-        style: { backgroundColor: '#4f4dff' },
-      },
-      async onOk() {
-        const modelSizeMb = convertToMB(modelData.size || '0MB');
-        const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
-        if (modelSizeMb > freeSpaceMb) {
-          message.warning('当前路径下的磁盘空间不足，无法下载该模型');
-          return;
-        } else {
-          fetchDownloadStart({
-            ...modelData,
-            status: DOWNLOAD_STATUS.IN_PROGRESS,
-          });
-        }
-      },
-      onCancel() {
-        console.log('Cancel');
-      },
-    });
+    if (props.pageType === 1) {
+      startDownload(modelData);
+    } else {
+      confirm({
+        title: '确认下载此模型？',
+        okText: '确认下载',
+        centered: true,
+        okButtonProps: {
+          style: { backgroundColor: '#4f4dff' },
+        },
+        async onOk() {
+          startDownload(modelData);
+        },
+        onCancel() {
+          console.log('Cancel');
+        },
+      });
+    }
+  };
+  const startDownload = (modelData: IModelDataItem) => {
+    const modelSizeMb = convertToMB(modelData.size || '0MB');
+    const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
+    if (modelSizeMb > freeSpaceMb) {
+      message.warning('当前路径下的磁盘空间不足，无法下载该模型');
+      return;
+    } else {
+      fetchDownloadStart({
+        ...modelData,
+        status: DOWNLOAD_STATUS.IN_PROGRESS,
+      });
+    }
   };
 
   const onDeleteConfirm = (modelData: IModelDataItem) => {
