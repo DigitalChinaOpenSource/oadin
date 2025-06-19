@@ -6,6 +6,7 @@ import { ModelSquare } from '@/components/choose-model-dialog/modelSquare.tsx';
 import { MyModel } from '@/components/choose-model-dialog/myModel.tsx';
 import useChatStore from '@/components/chat-container/store/useChatStore';
 import { useViewModel } from './view-model';
+import { getMessageByModel } from '@/i18n';
 
 export interface IChooseModelDialog {
   onCancel: () => void;
@@ -37,7 +38,11 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
       fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedStateModel.id) });
       props.onCancel();
     } else {
-      message.warning('请先选择模型，再体验。');
+      message.warning(
+        getMessageByModel('noSelectModel', {
+          msg: '请先选择模型，再体验。',
+        }),
+      );
     }
   };
   const items: TabsProps['items'] = [
