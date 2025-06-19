@@ -11,20 +11,20 @@ interface IDeepThinkChatProps {
   dataSource?: {
     data: string;
     status?: 'success' | 'error' | 'progress';
+    coastTime?: number;
   };
-  streamContent?: string;
 }
 
 export default function DeepThinkChat(props: IDeepThinkChatProps) {
   console.log('DeepThinkChat dataSource=====>', props);
-  const { dataSource, streamContent } = props;
+  const { dataSource } = props;
   // TODO 思考完毕之后自动收起
   const [isExpanded, setIsExpanded] = useState(true);
   return (
     <div className={styles.deepThinkChat}>
       <div className={styles.header}>
         <div className={styles.chatStatus}>
-          {status === 'progress' && (
+          {dataSource?.status === 'progress' && (
             <>
               <img
                 src={deepThinkSvg}
@@ -33,7 +33,7 @@ export default function DeepThinkChat(props: IDeepThinkChatProps) {
               <div className={styles.thinkingText}>深度思考中...</div>
             </>
           )}
-          {status === 'error' && (
+          {dataSource?.status === 'error' && (
             <>
               <img
                 src={deepThinkSvg}
@@ -42,7 +42,7 @@ export default function DeepThinkChat(props: IDeepThinkChatProps) {
               <div className={styles.statusText}>思考已停止</div>
             </>
           )}
-          {status === 'success' && (
+          {dataSource?.status === 'success' && (
             <>
               <CheckCircleIcon
                 width={16}
@@ -50,7 +50,7 @@ export default function DeepThinkChat(props: IDeepThinkChatProps) {
                 fill="#4f4dff"
               />
               <div className={styles.statusText}>已深度思考</div>
-              <div className={styles.coastTime}>（用时 baba 秒）</div>
+              {dataSource?.coastTime && <div className={styles.coastTime}>（用时 {dataSource?.coastTime} 秒）</div>}
             </>
           )}
         </div>
@@ -72,7 +72,7 @@ export default function DeepThinkChat(props: IDeepThinkChatProps) {
         </div>
       </div>
       <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
-        <div className={styles.resultText}>{streamContent || dataSource?.data}</div>
+        <div className={styles.resultText}>{dataSource?.data}</div>
       </div>
     </div>
   );

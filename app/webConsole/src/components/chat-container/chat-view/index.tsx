@@ -50,11 +50,10 @@ interface ChatMessage extends MessageType {
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages, uploadFileList, setUploadFileList } = useChatStore();
-  const currentSessionId = useChatStore((state) => state.currentSessionId);
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
 
-  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream(currentSessionId);
+  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
   useEffect(() => {
     // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部

@@ -14,8 +14,8 @@ import { buildMessageWithThinkContent, handleTextContent } from './thinkContentU
 import { IRunToolParams, IToolCall, StreamCallbacks, ChatRequestParams, ChatResponseData } from './types';
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
 
-export function useChatStream(currentSessionId: string) {
-  const { addMessage, setCurrentSessionId } = useChatStore();
+export function useChatStream() {
+  const { addMessage, setCurrentSessionId, currentSessionId } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
@@ -400,10 +400,6 @@ export function useChatStream(currentSessionId: string) {
                 requestState.current.timers.totalTimer = null;
               }
               const data = response.data;
-              // 保存会话ID
-              if (data.session_id && (!currentSessionId || currentSessionId !== data.session_id)) {
-                setCurrentSessionId(data.session_id);
-              }
               // 处理工具调用或文本内容
               if (data?.tool_calls && data.tool_calls.length > 0) {
                 await handleToolCalls(data.tool_calls, localResponseContent);
@@ -522,7 +518,6 @@ export function useChatStream(currentSessionId: string) {
         const API_BASE_URL = import.meta.env.VITE_HEALTH_API_URL || '';
         // 设置总超时
         requestState.current.timers.totalTimer = setTimeout(() => {
-          console.log('总超时触发');
           handleError(ERROR_MESSAGES.TIMEOUT.TOTAL, null, ErrorType.TIMEOUT, { shouldCancel: true, appendToContent: true });
         }, TIMEOUT_CONFIG.TOTAL);
         // 在收到第一个数据前启动无数据超时计时器
@@ -538,14 +533,12 @@ export function useChatStream(currentSessionId: string) {
             openWhenHidden: true,
             signal,
             onerror: (error) => {
-              console.error('流式请求错误:', error);
               setError(`请求失败: ${error.message}`);
               clearTimers();
               setIsLoading(false);
             },
             onclose: () => {
               clearTimers();
-
               // 如果连接关闭但未完成且有内容，保存部分回复
               if (isLoading && (requestState.current.content.response || responseContent)) {
                 // 创建部分AI回复消息
@@ -564,17 +557,9 @@ export function useChatStream(currentSessionId: string) {
                 requestState.current.timers.totalTimer = null;
               }
               const data = response.data;
-
-              // 保存会话ID
-              if (data.session_id && (!currentSessionId || currentSessionId !== data.session_id)) {
-                setCurrentSessionId(data.session_id);
-              }
-
               if (data?.tool_calls && data.tool_calls.length > 0) {
-                // 处理工具调用
                 await handleToolCalls(data.tool_calls, responseContent);
               } else if (data.content) {
-                // 使用 handleTextContent 处理文本内容
                 responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestState);
                 requestState.current.content.response = responseContent;
               }

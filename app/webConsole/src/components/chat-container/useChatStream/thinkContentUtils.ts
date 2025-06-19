@@ -1,21 +1,25 @@
 import { generateUniqueId } from './utils';
 import { MessageType } from '@res-utiles/ui-components';
 
+interface ParsedContent {
+  type: 'think' | 'plain';
+  content: string | { data: string; status: 'progress' | 'success' | 'error' };
+}
 /**
  * 解析包含 <think> 标签的内容
  * @param content 原始内容
  * @returns 解析后的内容数组
  */
-export const parseThinkContent = (content: string): Array<{ type: 'think' | 'plain'; content: string }> => {
-  const result: Array<{ type: 'think' | 'plain'; content: string }> = [];
+export const parseThinkContent = (content: string): Array<ParsedContent> => {
+  const result: Array<ParsedContent> = [];
 
-  // 正则表达式匹配 <think> 标签
+  // 正则表达式匹配 <think> 和 </think> 标签
   const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
   let lastIndex = 0;
   let match;
 
   while ((match = thinkRegex.exec(content)) !== null) {
-    // 添加 <think> 标签之前的内容（如果有）
+    // 添加 <think> 标签之前的内容
     if (match.index > lastIndex) {
       const beforeContent = content.substring(lastIndex, match.index).trim();
       if (beforeContent) {
@@ -26,19 +30,22 @@ export const parseThinkContent = (content: string): Array<{ type: 'think' | 'pla
       }
     }
 
-    // 添加 <think> 标签内的内容
+    // 添加 <think> 标签内的内容，使用新格式
     const thinkContent = match[1].trim();
     if (thinkContent) {
       result.push({
         type: 'think',
-        content: thinkContent,
+        content: {
+          data: thinkContent,
+          status: 'success',
+        },
       });
     }
 
     lastIndex = match.index + match[0].length;
   }
 
-  // 添加最后一个 </think> 之后的内容（如果有）
+  // 添加最后一个 </think> 之后的内容
   if (lastIndex < content.length) {
     const afterContent = content.substring(lastIndex).trim();
     if (afterContent) {
@@ -117,27 +124,54 @@ export const handleTextContent = (
     }
   }
 
-  // 检查是否包含 think 标签
-  if (responseContent.includes('<think>')) {
-    // 解析完整内容
-    const parsedContents = parseThinkContent(responseContent);
+  // 检查是否有未闭合的 <think> 标签
+  const openTagCount = (responseContent.match(/<think>/g) || []).length;
+  const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
+  const hasUnfinishedThink = openTagCount > closeTagCount;
 
-    // 累积 thinking 内容（只包含 think 标签内的内容）
+  // 解析内容，处理完整的 <think>...</think> 块
+  const parsedContents = parseThinkContent(responseContent);
+
+  if (hasUnfinishedThink) {
+    // 找到最后一个未闭合的 <think> 标签内容
+    const lastThinkMatch = responseContent.lastIndexOf('<think>');
+    if (lastThinkMatch !== -1) {
+      const thinkContent = responseContent.substring(lastThinkMatch + 7); // +7 是 <think> 的长度
+      if (thinkContent.trim()) {
+        // 将未完成的思考内容加入解析结果，并标记为 progress 状态
+        parsedContents.push({
+          type: 'think',
+          content: {
+            data: thinkContent,
+            status: 'progress', // 未闭合标签使用 progress 状态
+          },
+        });
+      }
+    }
+  }
+
+  if (responseContent.includes('<think>') || hasUnfinishedThink) {
+    // 从解析内容中提取 thinking 文本
     const thinkContents = parsedContents
       .filter((item) => item.type === 'think')
-      .map((item) => item.content)
+      .map((item) => {
+        if (typeof item.content === 'object') {
+          return item.content.data;
+        }
+        return '';
+      })
       .join('\n\n');
 
-    // 更新 thinking 内容的流式显示
+    // 更新思考内容
     setStreamingThinking(thinkContents);
-    if (requestStateRef) {
-      requestStateRef.current.thinkingContent = thinkContents;
+    if (requestStateRef && requestStateRef.current) {
+      requestStateRef.current.content.thinking = thinkContents;
     }
 
-    // 累积显示内容（只包含 plain 内容）
+    // 提取纯文本内容
     const plainContents = parsedContents
       .filter((item) => item.type === 'plain')
-      .map((item) => item.content)
+      .map((item) => (typeof item.content === 'string' ? item.content : ''))
       .join('\n\n');
 
     setStreamingContent(plainContents);
