@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Modal, Tabs, TabsProps, message } from 'antd';
 import styles from './index.module.scss';
-import useSelectedModelStore from '@/store/useSelectedModel';
+import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedModel';
 import { ModelSquare } from '@/components/choose-model-dialog/modelSquare.tsx';
 import { MyModel } from '@/components/choose-model-dialog/myModel.tsx';
 import useChatStore from '@/components/chat-container/store/useChatStore';
@@ -12,19 +12,29 @@ export interface IChooseModelDialog {
   open?: boolean;
 }
 
+export interface ISelectedDialogProps {
+  isDialog?: boolean;
+  selectedStateModel?: selectedModelType;
+  setSelecteStatedModel?: Dispatch<SetStateAction<selectedModelType>>;
+}
+
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
-  const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
+  const { selectedModel, setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
+  const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const [activeKey, setActiveKey] = useState<string>('model-square');
   const onChange = (activeKey: string) => {
     setActiveKey(activeKey);
   };
   const { currentSessionId } = useChatStore();
   const { fetchChangeModel } = useViewModel();
-
+  useEffect(() => {
+    setSelecteStatedModel(selectedModel);
+  }, [selectedModel]);
   const onOk = () => {
-    if (selectedModel && Object.keys(selectedModel).length > 0) {
+    if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
       setIsSelectedModel(true);
-      fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedModel.id) });
+      setSelectedModel(selectedStateModel);
+      fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedStateModel.id) });
       props.onCancel();
     } else {
       message.warning('请先选择一个模型');
@@ -34,12 +44,24 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
     {
       key: 'model-square',
       label: '模型广场',
-      children: <ModelSquare isDialog={true} />,
+      children: (
+        <ModelSquare
+          selectedStateModel={selectedStateModel}
+          setSelecteStatedModel={setSelecteStatedModel}
+          isDialog={true}
+        />
+      ),
     },
     {
       key: 'my-models',
       label: '我的模型',
-      children: <MyModel isDialog={true} />,
+      children: (
+        <MyModel
+          selectedStateModel={selectedStateModel}
+          setSelecteStatedModel={setSelecteStatedModel}
+          isDialog={true}
+        />
+      ),
     },
   ];
 
