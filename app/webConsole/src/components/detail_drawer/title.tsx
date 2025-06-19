@@ -1,11 +1,18 @@
 import TagsRender from '@/components/tags-render';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
-import { GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
+import { GlobeIcon, HardDrivesIcon, XIcon } from '@phosphor-icons/react';
 import styles from './index.module.scss';
 import defaultPng from '@/assets/favicon.png';
+import * as React from 'react';
+import { IDetailDrawer } from '@/components/detail_drawer/index.tsx';
 
-export default function DrawerDetailTitle(props: { mcpDetail: McpDetailType }) {
+interface IDetailDrawerTitle extends IDetailDrawer {
+  mcpDetail: McpDetailType;
+}
+
+export default function DrawerDetailTitle(props: IDetailDrawerTitle) {
   const { logo, tags, name, hosted } = props.mcpDetail;
+  const { onClose } = props;
 
   return (
     <div className={styles.detailDescMain}>
@@ -44,6 +51,17 @@ export default function DrawerDetailTitle(props: { mcpDetail: McpDetailType }) {
         <div className={styles.tags}>
           <TagsRender tags={tags || []} />
         </div>
+      </div>
+      <div
+        className={styles.detailClose}
+        onClick={(e) => {
+          onClose?.(e);
+        }}
+      >
+        <XIcon
+          size={18}
+          color="#9DAABB"
+        />
       </div>
     </div>
   );

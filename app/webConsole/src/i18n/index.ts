@@ -22,5 +22,9 @@ export const getMessageByModel = (key: string, options: I18nOptions) => {
   console.info(options);
   return i18n.t(`modelInfo.${key}`);
 };
+export const getMessageByMcp = (key: string, options: I18nOptions) => {
+  console.info(options);
+  return i18n.t(`mcpInfo.${key}`);
+};
 
 export default i18n;

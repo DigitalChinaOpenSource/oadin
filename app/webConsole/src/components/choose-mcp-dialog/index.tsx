@@ -1,4 +1,4 @@
-import { Checkbox, Modal, ModalProps, Space, Tabs, TabsProps } from 'antd';
+import { Checkbox, message, Modal, ModalProps, Space, Tabs, TabsProps } from 'antd';
 import React, { useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
@@ -6,6 +6,7 @@ import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { useSelectRemoteHelper, updateMcp } from '@/components/select-mcp/lib/useSelectMcpHelper';
+import { getMessageByMcp } from '@/i18n';
 
 export type IChooseMcpDialog = ModalProps & {
   onCancelProps: () => void;
@@ -29,27 +30,31 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
     setSelectTemporaryMcpItems(selectMcpList);
   }, [selectMcpList]);
   const onSelectMcpOk = () => {
-    /// 启用关闭模型
-    const { startList, stopList } = updateMcp(selectMcpList, selectTemporaryMcpItems);
+    if (selectTemporaryMcpItems.length > 0) {
+      /// 启用关闭模型
+      const { startList, stopList } = updateMcp(selectMcpList, selectTemporaryMcpItems);
 
-    // 仅当有需要启动的MCP时调用startMcps
-    if (startList.length > 0) {
-      startMcps({
-        ids: startList.map((item) => item.id.toString()),
-      });
-    }
+      // 仅当有需要启动的MCP时调用startMcps
+      if (startList.length > 0) {
+        startMcps({
+          ids: startList.map((item) => item.id.toString()),
+        });
+      }
 
-    // 仅当有需要停止的MCP时调用stopMcps
-    if (stopList.length > 0) {
-      stopMcps({
-        ids: stopList.map((item) => item.id.toString()),
-      });
-    }
-    // // 更新全局状态
-    setSelectMcpList(selectTemporaryMcpItems);
-    // 关闭模态框
-    if (options.onSelectMcpOkProps) {
-      options.onSelectMcpOkProps();
+      // 仅当有需要停止的MCP时调用stopMcps
+      if (stopList.length > 0) {
+        stopMcps({
+          ids: stopList.map((item) => item.id.toString()),
+        });
+      }
+      // // 更新全局状态
+      setSelectMcpList(selectTemporaryMcpItems);
+      // 关闭模态框
+      if (options.onSelectMcpOkProps) {
+        options.onSelectMcpOkProps();
+      }
+    } else {
+      message.warning(getMessageByMcp('requiredMcp', { msg: '暂无添加好的MCP，请添加后，再体验' }));
     }
   };
   const mcpDialogTabItems: TabsProps['items'] = [
