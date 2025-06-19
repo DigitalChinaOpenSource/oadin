@@ -11,7 +11,7 @@ import { DotsThreeCircleIcon } from '@phosphor-icons/react';
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
-import EllipsisTooltip from '@/components/ellipsis-tooltip';
+import EllipsisTooltip from '@vanta/ellipsis-tooltip';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 import { checkMcpLength } from '@/components/select-mcp/lib/useSelectMcpHelper';
 

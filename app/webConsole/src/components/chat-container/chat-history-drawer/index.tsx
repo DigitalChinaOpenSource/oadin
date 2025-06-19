@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
 import { TrashIcon } from '@phosphor-icons/react';
 import noHistorySvg from '@/components/icons/no-history.svg';
-import EllipsisTooltip from '@/components/ellipsis-tooltip';
+import EllipsisTooltip from '@vanta/ellipsis-tooltip';
 import { CloseOutlined } from '@ant-design/icons';
 
 export interface IChatHistoryDrawerProps {

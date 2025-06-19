@@ -30,7 +30,7 @@ importers:
         specifier: ^3.5.3
         version: 3.5.3
       typescript:
-        specifier: ~5.7.2
+        specifier: ^5.7.2
         version: 5.7.3
       typescript-eslint:
         specifier: ^8.26.1
@@ -53,6 +53,9 @@ importers:
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
+      '@vanta/ellipsis-tooltip':
+        specifier: workspace:^
+        version: link:../../packages/ellipsis-tooltip
       ahooks:
         specifier: ^3.8.4
         version: 3.8.5(react@18.3.1)
@@ -135,6 +138,8 @@ importers:
       vite:
         specifier: ^6.3.1
         version: 6.3.5(@types/node@22.15.32)(sass@1.89.2)
+
+  packages/ellipsis-tooltip: {}
 
   packages/test: {}
 

@@ -6,7 +6,7 @@ import { GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import defaultPng from '@/assets/favicon.png';
-import EllipsisTooltip from '@/components/ellipsis-tooltip';
+import EllipsisTooltip from '@vanta/ellipsis-tooltip';
 
 export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
   const { logo, tags, name, abstract, updatedAt, supplier, hosted } = props.mcpDetail;
