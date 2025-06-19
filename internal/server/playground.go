@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"strings"
 	"time"
 
 	"byze/config"
@@ -29,6 +28,7 @@ type Playground interface {
 	ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error)
 
 	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
+	UpdateToolCall(ctx context.Context, toolMessage *types.ToolMessage) error
 
 	UploadFile(ctx context.Context, request *dto.UploadFileRequest, fileHeader io.Reader, filename string, filesize int64) (*dto.UploadFileResponse, error)
 	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
@@ -336,7 +336,6 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		Type:      "answer",
 		ModelId:   session.ModelID,
 		ModelName: session.ModelName,
-		ToolCalls: chatResp.ToolCalls, // 新增工具调用支持
 	}}
 	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		resultMessages = append(resultMessages, dto.Message{
@@ -383,8 +382,27 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			typeStr = "thoughts"
 		}
 
-		if msg.Role == "assistant" && len(msg.Content) > 0 && strings.Contains(msg.Content, "<tool_use>") {
+		var toolMessages []types.ToolMessage
+		if msg.Role == "user" && msg.IsToolGroupID {
 			typeStr = "mcp"
+			toolMsgQuery := new(types.ToolMessage)
+			toolMsgQuery.MessageId = msg.ID
+			toolMsgResults, err := p.Ds.List(ctx, toolMsgQuery, &datastore.ListOptions{
+				SortBy: []datastore.SortOption{
+					{Key: "updated_at", Order: datastore.SortOrderAscending},
+				},
+			})
+			if err != nil {
+				slog.Error("Failed to list tool messages", "error", err)
+				return nil, err
+			}
+			for _, tm := range toolMsgResults {
+				if tmsg, ok := tm.(*types.ToolMessage); ok {
+					if tmsg.MessageId == msg.ID {
+						toolMessages = append(toolMessages, *tmsg)
+					}
+				}
+			}
 		}
 		messageDTOs = append(messageDTOs, dto.Message{
 			Id:        msg.ID,
@@ -395,6 +413,7 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			Type:      typeStr,
 			ModelId:   msg.ModelID,
 			ModelName: msg.ModelName,
+			ToolCalls: toolMessages,
 		})
 	}
 
