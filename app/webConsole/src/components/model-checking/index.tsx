@@ -6,18 +6,21 @@ import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { useViewModel, IMyModelListViewModel } from './view-model.ts';
 import { ModelCheckingHasdata } from '@/components/model-checking/model-checking-data';
-import useSelectedModelStore from '@/store/useSelectedModel.ts';
+import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedModel.ts';
 import { getMessageByModel } from '@/i18n';
 
 export default function ModelChecking() {
-  const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
+  const { setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
+
+  const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const vm: IMyModelListViewModel = useViewModel();
   const { modelSupportLoading, fetchModelSupport, modelListData } = vm;
   const [open, setOpen] = useState<boolean>(false);
   /// 初始化选择模型
   const onOk = () => {
-    if (selectedModel && Object.keys(selectedModel).length > 0) {
+    if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
       setIsSelectedModel(true);
+      setSelectedModel(selectedStateModel);
     } else {
       message.warning(
         getMessageByModel('noSelectModel', {
@@ -44,7 +47,15 @@ export default function ModelChecking() {
             </h2>
             <p>体验不同模型和MCP工具的能力组合</p>
           </div>
-          {isHasMedel ? <ModelCheckingHasdata vm={vm} /> : <ModelCheckingNodata />}
+          {isHasMedel ? (
+            <ModelCheckingHasdata
+              vm={vm}
+              selectedStateModel={selectedStateModel}
+              setSelecteStatedModel={setSelecteStatedModel}
+            />
+          ) : (
+            <ModelCheckingNodata />
+          )}
           <div
             className={styles.more_model_warp}
             onClick={() => {

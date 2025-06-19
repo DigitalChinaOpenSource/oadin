@@ -165,6 +165,8 @@ export default function GeneralCard(props: IGeneralCardProps) {
   const handleSelectModelData = (e: MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     const tempSelectedModel = selectedStateModel?.id && selectedStateModel?.id === modelData?.id ? ({} as IModelDataItem) : modelData;
+    console.info(tempSelectedModel, '当前选中的模型');
+    console.info(setSelecteStatedModel, '当前选中的模型');
     setSelecteStatedModel?.(tempSelectedModel);
   };
 
