@@ -8,33 +8,12 @@ import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
-import { generateUniqueId } from './utils';
+import { generateUniqueId, formatErrorMessage } from './utils';
 import { findExistingToolMessage, findProgressToolMessage, extractToolCallData, createMcpContent, updateContentListWithMcp, buildToolCallData, handleToolCallErrorMessage } from './mcpContentUtils';
 import { buildMessageWithThinkContent, handleTextContent } from './thinkContentUtils';
 import { IRunToolParams, IToolCall, StreamCallbacks, ChatRequestParams, ChatResponseData } from './types';
+import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
 
-// 错误消息常量
-const ERROR_MESSAGES = {
-  NO_MODEL_SELECTED: '未选择模型，请先选择一个模型',
-  NO_DATA_TIMEOUT: '请求超时：60秒未收到数据',
-  TOTAL_TIMEOUT: '请求超时：120秒内未收到任何数据',
-  PARSE_ERROR: '解析响应数据失败',
-  CONNECTION_INTERRUPTED: '\n\n[消息传输中断]',
-  EMPTY_RESPONSE: '服务器响应异常，未能获取到有效数据',
-  NON_STREAMING: '服务器未返回流式数据',
-  TOOL_EXECUTION_FAILED: '工具执行失败',
-  RESPONSE_INTERRUPTED: '\n\n[回复已中断]',
-};
-
-// 超时设置（毫秒）
-const TIMEOUT_CONFIG = {
-  NO_DATA: 60000, // 60秒无数据超时
-  TOTAL: 120000, // 120秒总超时
-};
-
-/**
- * 流式聊天Hook
- */
 export function useChatStream(currentSessionId: string) {
   const { addMessage, setCurrentSessionId } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
@@ -46,9 +25,10 @@ export function useChatStream(currentSessionId: string) {
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 请求控制
+  // 流式请求控制器
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // 请求状态统一处理
   const requestState = useRef({
     content: {
       response: '',
@@ -63,7 +43,6 @@ export function useChatStream(currentSessionId: string) {
       totalTimer: null as NodeJS.Timeout | null,
     },
   });
-
   // 上下文保存
   const lastUserMessageRef = useRef<string | null>(null);
   const toolCallHandlersRef = useRef<{
@@ -85,20 +64,41 @@ export function useChatStream(currentSessionId: string) {
     }
   }, []);
 
-  /**
-   * 重置无数据超时定时器
-   */
+  const handleError = (
+    message: string,
+    originalError?: any,
+    errorType: ErrorType = ErrorType.INTERNAL,
+    options: {
+      shouldCancel?: boolean;
+      appendToContent?: boolean;
+    } = {},
+  ) => {
+    const { shouldCancel = true, appendToContent = false } = options;
+
+    // 设置错误状态
+    setError(message);
+    if (appendToContent && (requestState.current.content.response || streamingContent)) {
+      const currentContent = requestState.current.content.response || streamingContent;
+      const contentWithError = `${currentContent}\n\n[${message}]`;
+
+      requestState.current.content.response = contentWithError;
+      setStreamingContent(contentWithError);
+    }
+
+    if (shouldCancel) {
+      cancelRequest(`错误: ${message}`);
+    }
+  };
+
   const resetNoDataTimer = useCallback(() => {
     if (requestState.current.timers.noDataTimer) {
       clearTimeout(requestState.current.timers.noDataTimer);
     }
 
     requestState.current.timers.noDataTimer = setTimeout(() => {
-      console.log('无数据超时触发');
-      setError(ERROR_MESSAGES.NO_DATA_TIMEOUT);
-      cancelRequest('无数据超时');
+      handleError(ERROR_MESSAGES.TIMEOUT.NO_DATA, null, ErrorType.TIMEOUT, { shouldCancel: true, appendToContent: true });
     }, TIMEOUT_CONFIG.NO_DATA);
-  }, []);
+  }, [handleError]);
 
   // 清除流式状态
   const clearStreamingState = useCallback(() => {
@@ -147,7 +147,7 @@ export function useChatStream(currentSessionId: string) {
     (reason?: string) => {
       // 如果有生成的内容，保存为消息
       if (isLoading && (streamingContent || requestState.current.content.response)) {
-        const finalContent = (requestState.current.content.response || streamingContent) + ERROR_MESSAGES.RESPONSE_INTERRUPTED;
+        const finalContent = (requestState.current.content.response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
         const aiMessage = buildMessageWithThinkContent(finalContent);
         addMessage(aiMessage);
       }
@@ -179,7 +179,7 @@ export function useChatStream(currentSessionId: string) {
         if (!contentType || !contentType.includes('text/event-stream')) {
           console.warn(`服务器未返回正确的流式数据类型，当前Content-Type: ${contentType}`);
           await callbacks.onFallbackResponse(response);
-          throw new Error(ERROR_MESSAGES.NON_STREAMING);
+          throw new Error(ERROR_MESSAGES.RESPONSE.NON_STREAMING);
         }
       },
 
@@ -207,16 +207,13 @@ export function useChatStream(currentSessionId: string) {
         }
       },
       onerror: (err) => {
-        console.error('流式请求错误:', err);
-        let errorMessage = '请求发送错误';
+        const errorMessage = err.message ? formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, err.message) : '请求发送错误';
 
-        if (err.message) {
-          errorMessage = `请求发送错误: ${err.message}`;
-        }
+        handleError(errorMessage, err, ErrorType.REQUEST, { shouldCancel: false });
 
-        setError(errorMessage);
         clearTimers();
         setIsLoading(false);
+
         if (options.onerror) {
           options.onerror(err);
         }
@@ -303,7 +300,7 @@ export function useChatStream(currentSessionId: string) {
         // 8. 执行工具调用
         const data = await httpRequest.post('/mcp/client/runTool', toolResponse as IRunToolParams);
         const isToolError = data?.content?.isError === true;
-        const toolErrorMessage = isToolError && Array.isArray(data.content) && data.content.length > 0 ? data.content[0]?.text || ERROR_MESSAGES.TOOL_EXECUTION_FAILED : '';
+        const toolErrorMessage = isToolError && Array.isArray(data.content) && data.content.length > 0 ? data.content[0]?.text || ERROR_MESSAGES.TOOL.EXECUTION_FAILED : '';
 
         setStreamingContent(currentContent);
         requestState.current.content.response = currentContent;
@@ -346,13 +343,8 @@ export function useChatStream(currentSessionId: string) {
           setError('工具调用处理失败: 内部错误');
         }
       } catch (error: any) {
-        // 13. 错误处理
-        console.error('工具调用失败:', error);
         const errorMessage = error.message || '未知错误';
-        const updatedContent = currentContent + `\n\n[工具调用失败: ${errorMessage}]`;
-        // 使用 handleTextContent 处理错误内容
-        handleTextContent({ content: updatedContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState);
-        requestState.current.content.response = updatedContent;
+        handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.EXECUTION_FAILED, errorMessage), error, ErrorType.TOOL, { shouldCancel: false, appendToContent: true });
 
         // 更新错误消息
         handleToolCallErrorMessage(toolCallResults, currentContentList, currentToolMessageId, errorMessage, addMessage);
@@ -360,8 +352,6 @@ export function useChatStream(currentSessionId: string) {
         // 14. 清理状态
         if (allToolCallsCompleted) {
           requestState.current.status.isToolCallActive = false;
-        } else {
-          console.log('工具调用未全部完成，保持活跃状态');
         }
       }
     },
@@ -456,34 +446,26 @@ export function useChatStream(currentSessionId: string) {
                 try {
                   const fullResponse = JSON.parse(fullResponseText);
                   if (fullResponse.error) {
-                    console.error('工具调用返回错误:', fullResponse.error);
-                    const errorContent = (requestState.current.content.response || streamingContent) + `\n\n[工具调用失败: ${fullResponse.error}]`;
-                    // 使用 handleTextContent 处理错误内容
-                    handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState);
-                    requestState.current.content.response = errorContent;
+                    handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.EXECUTION_FAILED, fullResponse.error), { error: fullResponse.error }, ErrorType.TOOL, {
+                      shouldCancel: false,
+                      appendToContent: true,
+                    });
                   } else if (fullResponse?.data?.content) {
                     // 使用 handleTextContent 处理响应内容
                     const processedContent = handleTextContent({ content: fullResponse.data.content, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState);
                     requestState.current.content.response = processedContent;
                   }
                 } catch (parseError) {
-                  console.error('解析工具调用响应失败:', parseError);
-                  const errorContent = (requestState.current.content.response || streamingContent) + '\n\n[解析工具调用响应失败]';
-                  handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState);
-                  requestState.current.content.response = errorContent;
+                  handleError(ERROR_MESSAGES.PARSING.TOOL_RESPONSE, parseError, ErrorType.PARSING, { shouldCancel: false, appendToContent: true });
                 }
               } catch (readError) {
-                console.error('读取工具调用响应失败:', readError);
-                const errorContent = (requestState.current.content.response || streamingContent) + '\n\n[读取工具调用响应失败]';
-                handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState);
-                requestState.current.content.response = errorContent;
+                handleError(formatErrorMessage(ERROR_MESSAGES.CONNECTION.READ_FAILED, '读取工具调用响应失败'), readError, ErrorType.CONNECTION, { shouldCancel: false, appendToContent: true });
               }
             },
           },
         );
       } catch (error: any) {
-        console.error('继续对话失败:', error);
-        setError(`继续对话失败: ${error.message}`);
+        handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.CONTINUE_FAILED, error.message || '未知错误'), error, ErrorType.TOOL);
       }
     },
     [createStreamRequest, currentSessionId, selectedMcpIds, resetNoDataTimer, setCurrentSessionId, setError, setStreamingContent, setStreamingThinking, streamingContent, handleToolCalls],
@@ -498,7 +480,7 @@ export function useChatStream(currentSessionId: string) {
       clearStreamingState();
       // 模型检查
       if (!selectedModel) {
-        setError(ERROR_MESSAGES.NO_MODEL_SELECTED);
+        handleError(ERROR_MESSAGES.REQUEST.NO_MODEL_SELECTED, null, ErrorType.REQUEST, { shouldCancel: false });
         return;
       }
       // 记录最后一条消息用于重发
@@ -541,8 +523,7 @@ export function useChatStream(currentSessionId: string) {
         // 设置总超时
         requestState.current.timers.totalTimer = setTimeout(() => {
           console.log('总超时触发');
-          setError(ERROR_MESSAGES.TOTAL_TIMEOUT);
-          cancelRequest('总超时');
+          handleError(ERROR_MESSAGES.TIMEOUT.TOTAL, null, ErrorType.TIMEOUT, { shouldCancel: true, appendToContent: true });
         }, TIMEOUT_CONFIG.TOTAL);
         // 在收到第一个数据前启动无数据超时计时器
         resetNoDataTimer();
@@ -568,7 +549,7 @@ export function useChatStream(currentSessionId: string) {
               // 如果连接关闭但未完成且有内容，保存部分回复
               if (isLoading && (requestState.current.content.response || responseContent)) {
                 // 创建部分AI回复消息
-                const finalContent = (requestState.current.content.response || responseContent) + ERROR_MESSAGES.CONNECTION_INTERRUPTED;
+                const finalContent = (requestState.current.content.response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
                 const aiMessage = buildMessageWithThinkContent(finalContent);
                 addMessage(aiMessage);
               }
@@ -624,9 +605,7 @@ export function useChatStream(currentSessionId: string) {
 
                   // 检查是否包含错误信息
                   if (fullResponse.error) {
-                    console.error('接收到错误响应:', fullResponse.error);
-                    setError(`服务器返回错误: ${fullResponse.error}`);
-                    cancelRequest('服务器错误');
+                    handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.SERVER_ERROR, fullResponse.error), { error: fullResponse.error }, ErrorType.REQUEST, { shouldCancel: true });
                     return;
                   }
 
@@ -635,15 +614,13 @@ export function useChatStream(currentSessionId: string) {
                     const aiMessage = buildMessageWithThinkContent(fullResponse.data.content);
                     addMessage(aiMessage);
                   } else {
-                    setError('服务器返回了非流式数据，但无法解析内容');
+                    handleError(ERROR_MESSAGES.RESPONSE.CANNOT_PARSE, null, ErrorType.PARSING, { shouldCancel: true });
                   }
                 } catch (parseError) {
-                  console.error('解析非流式响应失败:', parseError);
-                  setError('服务器返回了非流式数据，但解析失败');
+                  handleError(ERROR_MESSAGES.PARSING.JSON_FAILED.replace('{0}', ''), parseError, ErrorType.PARSING, { shouldCancel: true });
                 }
               } catch (readError) {
-                console.error('读取响应内容失败:', readError);
-                setError('无法读取服务器响应');
+                handleError(formatErrorMessage(ERROR_MESSAGES.CONNECTION.READ_FAILED, ''), readError, ErrorType.CONNECTION, { shouldCancel: true });
               }
 
               // 停止请求
@@ -652,10 +629,7 @@ export function useChatStream(currentSessionId: string) {
           },
         );
       } catch (error: any) {
-        console.error('发送聊天请求失败:', error);
-        setError(`发送请求失败: ${error.message}`);
-        setIsLoading(false);
-        clearTimers();
+        handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, error.message || '未知错误'), error, ErrorType.REQUEST);
       }
     },
     [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, setCurrentSessionId, createStreamRequest, clearTimers, resetNoDataTimer, handleToolCalls],
@@ -715,8 +689,7 @@ export function useChatStream(currentSessionId: string) {
 
       await sendChatMessageInternal(lastMessage, true);
     } catch (error: any) {
-      console.error('重发消息失败:', error);
-      setError(`重发消息失败: ${error.message || '未知错误'}`);
+      handleError(formatErrorMessage('重发消息失败: {0}', error.message || '未知错误'), error, ErrorType.REQUEST);
     } finally {
       setIsResending(false);
     }

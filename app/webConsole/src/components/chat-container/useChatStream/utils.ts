@@ -15,3 +15,14 @@ export const copyMessageToClipboard = (content: string) => {
     return false;
   }
 };
+
+/**
+ * 格式化错误消息
+ * @param template 包含占位符的消息模板
+ * @param args 要替换的参数
+ */
+export const formatErrorMessage = (template: string, ...args: any[]): string => {
+  return template.replace(/{(\d+)}/g, (match, index) => {
+    return args[index] !== undefined ? String(args[index]) : match;
+  });
+};
