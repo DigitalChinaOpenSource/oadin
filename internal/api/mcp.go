@@ -197,6 +197,30 @@ func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "500", "message": err.Error()})
 		return
 	}
+	inputParamsStr := ""
+	if req.ToolArgs != nil {
+		if b, err := json.Marshal(req.ToolArgs); err == nil {
+			inputParamsStr = string(b)
+		}
+	}
+	outputParamsStr := ""
+	if resp != nil {
+		if b, err := json.Marshal(resp); err == nil {
+			outputParamsStr = string(b)
+		}
+	}
+	toolMessage := &types.ToolMessage{
+		ID:            req.MessageId,
+		McpId:         req.McpId,
+		Logo:          req.Logo,
+		Name:          req.ToolName,
+		Desc:          req.Desc,
+		InputParams:   inputParamsStr,
+		OutputParams:  outputParamsStr,
+		Status:        !resp.IsError,
+		ExecutionTime: req.ExecutionTime,
+	}
+	t.Playground.UpdateToolCall(c, toolMessage)
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": resp})
 }
 
