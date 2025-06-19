@@ -12,7 +12,7 @@ export type IChooseMcpDialog = ModalProps & {
   onSelectMcpOkProps: () => void;
 };
 
-interface ITemporaryMcpListItem extends IMcpListItem {
+export interface ITemporaryMcpListItem extends IMcpListItem {
   checked?: boolean;
 }
 

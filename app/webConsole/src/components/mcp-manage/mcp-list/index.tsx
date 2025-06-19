@@ -7,6 +7,7 @@ import { IMcpCommonProps } from '@/components/mcp-manage/mcp-common';
 import type { ListGridType } from 'antd/es/list';
 import { useEffect, useState } from 'react';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import { ITemporaryMcpListItem } from '@/components/choose-mcp-dialog';
 
 interface IMcpListProps extends IMcpCommonProps {
   mcpListData: IMcpListItem[];
@@ -41,8 +42,8 @@ export default function McpList(props: IMcpListProps) {
     isMyMcp = false,
   } = props;
 
-  const { selectMcpList, setDrawerOpenId } = useSelectMcpStore();
-  const [filteredData, setFilteredData] = useState<IMcpListItem[]>([]);
+  const { setDrawerOpenId } = useSelectMcpStore();
+  const [filteredData, setFilteredData] = useState<ITemporaryMcpListItem[]>([]);
   const handleDetail = (id: string) => {
     if (isDialog) {
       setDrawerOpenId(id as string);
@@ -54,14 +55,14 @@ export default function McpList(props: IMcpListProps) {
     if (activeKey === 'myMcp') {
       if (showOnlySelectedMyMcp) {
         // 根据筛选状态和搜索值过滤数据
-        setFilteredData(selectMcpList);
+        setFilteredData(selectTemporaryMcpItems || []);
       } else {
         setFilteredData(mcpListData);
       }
     } else {
       if (showOnlySelectedMcpList) {
         // 根据筛选状态和搜索值过滤数据
-        setFilteredData(selectMcpList);
+        setFilteredData(selectTemporaryMcpItems || []);
       } else {
         setFilteredData(mcpListData);
       }
