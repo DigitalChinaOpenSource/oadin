@@ -12,11 +12,12 @@ export default function ModelChecking() {
   const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
   const vm: IMyModelListViewModel = useViewModel();
   const [open, setOpen] = useState<boolean>(false);
+  /// 初始化选择模型
   const onOk = () => {
     if (selectedModel && Object.keys(selectedModel).length > 0) {
       setIsSelectedModel(true);
     } else {
-      message.warning('请先选择一个模型');
+      message.warning('请先选择模型，再体验。');
     }
   };
   const isHasMedel = useMemo(() => {

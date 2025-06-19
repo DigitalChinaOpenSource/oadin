@@ -37,7 +37,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
       fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedStateModel.id) });
       props.onCancel();
     } else {
-      message.warning('请先选择一个模型');
+      message.warning('请先选择模型，再体验。');
     }
   };
   const items: TabsProps['items'] = [
