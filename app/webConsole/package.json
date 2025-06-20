@@ -19,7 +19,6 @@
     "@res-utiles/ui-components": "^0.0.10",
     "@types/lodash-es": "^4.17.12",
     "ahooks": "^3.8.4",
-    "antd": "5.25.0",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
     "i18next": "^25.2.1",
@@ -36,7 +35,6 @@
   },
   "devDependencies": {
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@vitejs/plugin-react": "^4.3.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",

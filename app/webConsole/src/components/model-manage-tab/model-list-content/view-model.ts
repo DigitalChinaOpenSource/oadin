@@ -88,14 +88,20 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
-
   const setListData = (list: IModelDataItem[]) => {
     setModelListData(list);
+    // 初始化或重新设置数据时，都更新本地状态
     setModelListStateData(list);
+    // 重置实例ID标识，确保可以追踪当前组件实例
+    instanceIdRef.current = `${modelSourceVal}-${mine ? 'mine' : 'all'}`;
   };
-
-  /// 可能还有问题， 下面的Effect的作用是当全局的list发生变化的时候更新本地的state
+  /// 监听全局的list变化并更新本地的state
   const prevDownloadStatusMapRef = useRef<Record<string, any>>({});
+  // 使用一个ref记录当前实例的模型源和mine类型，用于识别实例身份
+  const instanceIdRef = useRef<string>(`${modelSourceVal}-${mine ? 'mine' : 'all'}`);
+  // 使用一个ref记录是否刚删除了模型
+  const justDeletedRef = useRef<boolean>(false);
+
   useEffect(() => {
     // 创建一个映射来跟踪当前的下载状态
     const currentDownloadStatusMap: Record<string, any> = {};
@@ -106,8 +112,14 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       }
     });
 
-    // 检查列表长度是否发生变化（添加或删除了模型）
-    const modelCountChanged = modelListData.length !== modelListStateData.length;
+    // 如果是刚删除模型的情况，我们需要强制更新列表
+    if (justDeletedRef.current) {
+      console.info('检测到模型刚被删除，强制更新modelListStateData');
+      setModelListStateData(modelListData);
+      justDeletedRef.current = false;
+      prevDownloadStatusMapRef.current = { ...currentDownloadStatusMap };
+      return;
+    }
 
     // 检查是否有状态变化
     let hasStatusChanged = false;
@@ -130,30 +142,26 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       }
     }
 
-    // 如果列表数量或状态有变化，更新modelListStateData
-    if (modelCountChanged || hasStatusChanged) {
-      console.info('模型列表或下载状态发生变化，更新modelListStateData');
+    // 如果有状态变化，更新modelListStateData
+    if (hasStatusChanged) {
+      console.info('下载状态发生变化，更新modelListStateData');
 
-      if (modelCountChanged) {
-        // 列表数量变化，直接使用新列表
-        setModelListStateData(modelListData);
-      } else {
-        // 只是状态变化，更新现有项的状态
-        const updatedList = modelListStateData.map((item) => {
-          const downItem = modelListData.find((_item) => _item.id === item.id);
-          if (downItem) {
-            return {
-              ...item,
-              status: downItem?.status,
-              can_select: downItem?.can_select,
-            };
-          }
-          return item;
-        });
-        console.info('更新后的模型列表数据:', updatedList);
-        if (updatedList.length > 0) {
-          setModelListStateData(updatedList);
+      // 只更新现有项的状态，不处理列表长度变化
+      const updatedList = modelListStateData.map((item) => {
+        const downItem = modelListData.find((_item) => _item.id === item.id);
+        if (downItem) {
+          return {
+            ...item,
+            status: downItem?.status,
+            can_select: downItem?.can_select,
+          };
         }
+        return item;
+      });
+
+      console.info('更新后的模型列表数据:', updatedList);
+      if (updatedList.length > 0) {
+        setModelListStateData(updatedList);
       }
 
       // 更新记录的状态
@@ -167,8 +175,10 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       const paramsTemp = {
         ...params,
         page_size: 999,
-        mine,
+        // 只有在params中没有指定mine的情况下才使用props.mine
+        mine: params.mine !== undefined ? params.mine : mine,
       };
+      console.info('fetchModelSupport params:', paramsTemp);
       if (params?.service_source === 'remote') {
         paramsTemp.env_type = 'product';
       }
@@ -208,11 +218,17 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   useEffect(() => {
     fetchModelPath();
   }, []);
-
   useEffect(() => {
     onModelSearch('');
     setPagination({ ...pagination, current: 1, total: 0 });
-    fetchModelSupport({ service_source: modelSourceVal });
+    // 当数据源或mine发生变化时，更新实例ID标识
+    instanceIdRef.current = `${modelSourceVal}-${mine ? 'mine' : 'all'}`;
+    // 重置下载状态映射
+    prevDownloadStatusMapRef.current = {};
+    fetchModelSupport({
+      service_source: modelSourceVal,
+      mine: mine,
+    });
   }, [modelSourceVal, mine]);
 
   // 获取模型存储路径
@@ -271,8 +287,13 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       onFinally: async () => {
         // 保留当前页码，重新获取数据
         const currentPage = pagination.current;
-        // 等待获取新数据完成
-        await fetchModelSupport({ service_source: modelSourceVal });
+        // 标记刚刚删除了模型
+        justDeletedRef.current = true;
+        // 等待获取新数据完成 - 传递mine参数保持当前上下文
+        await fetchModelSupport({
+          service_source: modelSourceVal,
+          mine: mine,
+        });
         // 等待React状态更新后再获取过滤数据
         setTimeout(() => {
           const filteredData = getFilteredData();
@@ -407,10 +428,12 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
     });
   };
-
   // 授权成功刷新列表
   const onModelAuthSuccess = async () => {
-    await fetchModelSupport({ service_source: modelSourceVal });
+    await fetchModelSupport({
+      service_source: modelSourceVal,
+      mine: mine,
+    });
     const filteredData = getFilteredData();
     setPagination({
       ...pagination,
