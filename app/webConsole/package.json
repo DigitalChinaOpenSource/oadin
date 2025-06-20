@@ -16,7 +16,7 @@
     "@ant-design/icons": "^6.0.0",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@phosphor-icons/react": "^2.1.10",
-    "@res-utiles/ui-components": "^0.0.9",
+    "@res-utiles/ui-components": "^0.0.10",
     "@types/lodash-es": "^4.17.12",
     "ahooks": "^3.8.4",
     "antd": "5.25.0",

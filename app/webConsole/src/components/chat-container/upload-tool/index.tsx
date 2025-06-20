@@ -91,11 +91,7 @@ export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      // 提取 data 部分数据 - 确保只获取 data 中的内容
       const responseData = response.data?.data || response.data || response;
-
-      // 上传成功，更新文件状态
       const successFile: UploadFile = {
         ...uploadingFile,
         status: 'done',
@@ -107,7 +103,7 @@ export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
       // 获取当前最新的文件列表状态
       const currentFileList = useChatStore.getState().uploadFileList;
 
-      // 更新列表中的文件状态 - 使用最新的状态替换对应的文件
+      // 更新列表中的文件状态
       const newFileList = currentFileList
         .map((item) => (item.uid === uploadingFile.uid ? successFile : item))
         .filter(
@@ -116,53 +112,21 @@ export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
             self.findIndex((f) => f.uid === item.uid) === index,
         );
 
-      // 通知父组件更新
       setUploadFileList(newFileList);
-
-      // 通知Upload组件成功
       onSuccess?.(responseData);
 
       message.success(`文件 ${fileObj.name} 上传成功`);
     } catch (error: Error | any) {
-      // 获取当前最新的文件列表状态
       const currentFileList = useChatStore.getState().uploadFileList;
-
-      // 上传失败
       const failedFile: UploadFile = {
         ...uploadingFile,
         status: 'error',
         error: error as Error,
       };
-
-      // 使用最新状态更新
       const newFileList = currentFileList.map((item) => (item.uid === uploadingFile.uid ? failedFile : item));
-
       setUploadFileList(newFileList);
       onError?.(error as Error);
       message.error(`文件 ${fileObj.name} 上传失败: ${error?.message || '未知错误'}`);
-    }
-  };
-
-  const handleRemove = async (file: UploadFile) => {
-    try {
-      // 如果文件已上传成功（有服务器返回的file_id），则调用删除接口
-      // 需要从 response.data 或直接从 response 获取 file_id
-      const fileId = file.status === 'done' && (file.response?.file_id || (file.response?.data && file.response.data.file_id));
-
-      if (fileId) {
-        await httpRequest.del('/playground/file', {
-          data: { file_id: fileId, sessionId: currentSessionId },
-        });
-      }
-
-      // 无论是否调用接口，都从列表中移除
-      setUploadFileList(uploadFileList.filter((f) => f.uid !== file.uid));
-      message.success(`已删除文件: ${file.name}`);
-
-      return true;
-    } catch (error: Error | any) {
-      message.error(`删除文件失败: ${error?.message || '未知错误'}`);
-      return false;
     }
   };
 
@@ -172,7 +136,7 @@ export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
       fileList={uploadFileList}
       beforeUpload={handleBeforeUpload}
       customRequest={customUploadRequest}
-      onRemove={handleRemove}
+      // onRemove={handleRemove}
       multiple={false}
       accept=".txt,.html,.htm,.md,.markdown,.pdf,.doc,.docx,.xls,.xlsx,.mp4,.mp3,.avi,.wmv"
     >

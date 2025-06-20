@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { API_PREFIX, API_HEALTH_ENDPOINT } from './src/constants';
 
+const TESTURL = 'http://10.3.73.149:16688'; // 'http://10.3.74.123:16688'
 export default defineConfig({
   base: './',
   build: {
@@ -21,8 +22,8 @@ export default defineConfig({
     strictPort: true, // 如果端口已被占用，则会直接退出而不是尝试下一个可用端口
     proxy: {
       [API_PREFIX]: {
-        target: 'http://127.0.0.1:16688',
-        // target: 'http://10.3.73.149:16688',
+        // target: 'http://127.0.0.1:16688',
+        target: TESTURL,
         changeOrigin: true,
         rewrite: (path) => path.replace(new RegExp(`^${API_PREFIX}`), API_PREFIX),
         configure: (proxy, options) => {
@@ -35,8 +36,8 @@ export default defineConfig({
         },
       },
       [API_HEALTH_ENDPOINT]: {
-        target: 'http://127.0.0.1:16688',
-        // target: 'http://10.3.73.149:16688',
+        // target: 'http://127.0.0.1:16688',
+        target: TESTURL,
         changeOrigin: true,
         rewrite: (path) => path.replace(new RegExp(`^${API_HEALTH_ENDPOINT}`), API_HEALTH_ENDPOINT),
         configure: (proxy, options) => {

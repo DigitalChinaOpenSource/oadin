@@ -79,8 +79,8 @@ importers:
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@res-utiles/ui-components':
-        specifier: ^0.0.9
-        version: 0.0.9(@floating-ui/dom@1.7.1)(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: ^0.0.10
+        version: 0.0.10(@floating-ui/dom@1.7.1)(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -1025,8 +1025,8 @@ packages:
   '@remirror/core-constants@3.0.0':
     resolution: {integrity: sha512-42aWfPrimMfDKDi4YegyS7x+/0tlzaqwPQCULLanv3DMIlu96KTJR0fM5isWX2UViOqlGnX6YFgqWepcX+XMNg==}
 
-  '@res-utiles/ui-components@0.0.9':
-    resolution: {integrity: sha512-0ULDpYjlXRRpCphfP+yuhD3065Md8udQvGvoUIbgL23SOV7+2a8Ypm6eQQ7wIBsx0+HdiLquRWPeUEnvL1Of2w==}
+  '@res-utiles/ui-components@0.0.10':
+    resolution: {integrity: sha512-4KMKX7oJNDtGUEPOuaFbW5o+V5Lrk2GX4V5ror30n4qPMzrXDtFNydLx8jd0bUmgzYhDI/X1s3fcYQOVB7wuPg==}
     peerDependencies:
       react: ^19.1.0
       react-dom: ^19.1.0
@@ -1206,6 +1206,11 @@ packages:
     resolution: {integrity: sha512-IGpl4qLBM237H/JV957bO76nJvzoXqJwOti8QVyJzSGF39gCD51yfHNXhb4iv7EAHaszB+fHCBQYE7CvToZ97w==}
     peerDependencies:
       '@tiptap/extensions': 3.0.0-beta.7
+
+  '@tiptap/extension-hard-break@2.14.0':
+    resolution: {integrity: sha512-A8c8n8881iBq3AusNqibh6Hloybr+FgYdg4Lg4jNxbbEaL0WhyLFge1bWlGVpbHXFqdv5YldMUAu6Rop3FhNvw==}
+    peerDependencies:
+      '@tiptap/core': ^2.7.0
 
   '@tiptap/extension-hard-break@3.0.0-beta.7':
     resolution: {integrity: sha512-54gzVTcIlP4B6t8zeHqpBjhfOWG8NIyZGCr8N8nyYiza9TNYMJPTmv+W9isW0LVN++8OVsdjuV3FpHthxegTjg==}
@@ -4356,13 +4361,14 @@ snapshots:
 
   '@remirror/core-constants@3.0.0': {}
 
-  '@res-utiles/ui-components@0.0.9(@floating-ui/dom@1.7.1)(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@res-utiles/ui-components@0.0.10(@floating-ui/dom@1.7.1)(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@radix-ui/react-dropdown-menu': 2.1.15(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@radix-ui/react-select': 2.2.5(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@radix-ui/react-slot': 1.2.3(@types/react@19.1.8)(react@19.1.0)
       '@tiptap/core': 3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7)
       '@tiptap/extension-document': 3.0.0-beta.7(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))
+      '@tiptap/extension-hard-break': 2.14.0(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))
       '@tiptap/extension-image': 3.0.0-beta.7(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))
       '@tiptap/extension-paragraph': 3.0.0-beta.7(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))
       '@tiptap/extension-table': 3.0.0-beta.7(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))(@tiptap/pm@3.0.0-beta.7)
@@ -4502,6 +4508,10 @@ snapshots:
   '@tiptap/extension-gapcursor@3.0.0-beta.7(@tiptap/extensions@3.0.0-beta.7(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))(@tiptap/pm@3.0.0-beta.7))':
     dependencies:
       '@tiptap/extensions': 3.0.0-beta.7(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))(@tiptap/pm@3.0.0-beta.7)
+
+  '@tiptap/extension-hard-break@2.14.0(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))':
+    dependencies:
+      '@tiptap/core': 3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7)
 
   '@tiptap/extension-hard-break@3.0.0-beta.7(@tiptap/core@3.0.0-beta.7(@tiptap/pm@3.0.0-beta.7))':
     dependencies:
