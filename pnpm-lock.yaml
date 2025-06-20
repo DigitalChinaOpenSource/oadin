@@ -14,6 +14,15 @@ importers:
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      ahooks:
+        specifier: ^3.8.4
+        version: 3.8.5(react@18.3.1)
+      axios:
+        specifier: ^1.8.4
+        version: 1.10.0
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
       react:
         specifier: ^18.3.0
         version: 18.3.1
@@ -96,15 +105,6 @@ importers:
       '@vanta/ellipsis-tooltip':
         specifier: workspace:^
         version: link:../../packages/ellipsis-tooltip
-      ahooks:
-        specifier: ^3.8.4
-        version: 3.8.5(react@19.1.0)
-      axios:
-        specifier: ^1.8.4
-        version: 1.10.0
-      dayjs:
-        specifier: ^1.11.13
-        version: 1.11.13
       i18next:
         specifier: ^25.2.1
         version: 25.2.1(typescript@5.8.3)
@@ -4882,14 +4882,14 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  ahooks@3.8.5(react@19.1.0):
+  ahooks@3.8.5(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.27.6
       dayjs: 1.11.13
       intersection-observer: 0.12.2
       js-cookie: 3.0.5
       lodash: 4.17.21
-      react: 19.1.0
+      react: 18.3.1
       react-fast-compare: 3.2.2
       resize-observer-polyfill: 1.5.1
       screenfull: 5.2.0

@@ -12,15 +12,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAuth =
   const location = useLocation();
 
   // 如果需要认证但未登录，重定向到登录页面
-  if (requireAuth && !isAuthenticated) {
-    return (
-      <Navigate
-        to="/login"
-        state={{ from: location.pathname }}
-        replace
-      />
-    );
-  }
+  // if (requireAuth && !isAuthenticated) {
+  //   return (
+  //     <Navigate
+  //       to="/login"
+  //       state={{ from: location.pathname }}
+  //       replace
+  //     />
+  //   );
+  // }
 
   // 如果已登录且访问登录页，重定向到应用管理
   if (isAuthenticated && location.pathname === '/login') {
