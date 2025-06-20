@@ -1,38 +1,35 @@
 import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
-import { IChatDetailItem, IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
-import { chatHistoryData } from './mock-data.ts';
 import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 import { message } from 'antd';
-import { IModelDataItem, ModelData } from '@/types';
+import { ModelData } from '@/types';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
 import { MessageType } from '@res-utiles/ui-components';
-import { IModelSquareParams } from '@/components/model-manage-tab/model-list-content/view-model.ts';
+import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDrawerProps } from './types';
+import { IModelSquareParams } from '@/types';
+import dayjs from 'dayjs';
 
-export function useChatHistoryDrawer() {
+export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
+  const { onHistorySelect, onHistoryDrawerClose } = props;
   // 获取对话store
-  const { setHistoryVisible, createNewChat, setCurrentSessionId, setMessages } = useChatStore();
-  const currentSessionId = useChatStore((state) => state.currentSessionId);
+  const { setHistoryVisible, createNewChat, setCurrentSessionId, setMessages, currentSessionId } = useChatStore();
 
-  // 获取模型store
   const { setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
-  // 历史对话记录
   const [chatHistory, setChatHistory] = useState<IChatHistoryItem[]>([]);
-
-  // 用于记录当前显示 Popconfirm 的卡片 id 并设置是否显示确认弹窗
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
 
   // 获取历史对话记录
   const { loading: historyLoading, run: fetchChatHistory } = useRequest(
     async () => {
+      if (!currentSessionId) return;
       const data = await httpRequest.get<IChatHistoryItem[]>('/playground/sessions');
       return data || {};
     },
     {
       manual: true,
       onSuccess: (data: any) => {
-        if (!data) return;
+        if (!data || !data.length) return;
         setChatHistory(data);
       },
       onError: (error) => {
@@ -130,9 +127,71 @@ export function useChatHistoryDrawer() {
     }
   };
 
+  const handleHistoryClick = async (id: string) => {
+    if (delHistoryLoading) {
+      return;
+    }
+
+    try {
+      // 获取详细对话内容
+      const historyDetail = await fetchChatHistoryDetail(id);
+
+      // 如果提供了选择回调，则调用
+      if (onHistorySelect && historyDetail) {
+        onHistorySelect(id, historyDetail);
+      }
+    } catch (error) {
+      console.error('加载历史对话失败:', error);
+      // 可以添加错误提示
+    }
+  };
+
+  /**
+   * 按日期对聊天历史记录进行分组
+   * @param history 聊天历史记录数组
+   * @returns 分组后的聊天历史记录对象
+   */
+  function groupChatHistoryByDate(history: IChatHistoryItem[]): GroupedChatHistory {
+    const now = dayjs();
+    const todayStart = now.startOf('day');
+    const yesterdayStart = now.subtract(1, 'day').startOf('day');
+    const last7DaysStart = now.subtract(7, 'day').startOf('day');
+
+    return history.reduce<GroupedChatHistory>(
+      (groups, item) => {
+        const itemDate = dayjs(item.createdAt);
+
+        if (itemDate.isSame(todayStart, 'day')) {
+          groups.today.push(item);
+        } else if (itemDate.isSame(yesterdayStart, 'day')) {
+          groups.yesterday.push(item);
+        } else if (itemDate.isAfter(last7DaysStart) && itemDate.isBefore(yesterdayStart)) {
+          groups.last7Days.push(item);
+        } else {
+          groups.earlier.push(item);
+        }
+
+        return groups;
+      },
+      { today: [], yesterday: [], last7Days: [], earlier: [] },
+    );
+  }
+
   useEffect(() => {
     fetchChatHistory();
   }, []);
 
-  return { historyLoading, fetchChatHistory, chatHistory, delHistoryLoading, deleteChatHistory, showDeleteId, setShowDeleteId, fetchChatHistoryDetail };
+  return {
+    historyLoading,
+    fetchChatHistory,
+    chatHistory,
+    delHistoryLoading,
+    deleteChatHistory,
+    showDeleteId,
+    setShowDeleteId,
+    fetchChatHistoryDetail,
+    groupChatHistoryByDate,
+    handleHistoryClick,
+    onHistoryDrawerClose,
+  };
 }

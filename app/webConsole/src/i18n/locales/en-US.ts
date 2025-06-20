@@ -15,4 +15,11 @@ export default {
     network: 'Network error, please check your network connection',
     byze_unavailable: 'Byze service unavailable, please confirm the status of the Byze service',
   },
+  modelInfo: {
+    noSelectModel: '请先选择模型，再体验。',
+  },
+  mcpInfo: {
+    maxSelectMcp: '为保障服务稳定运行与优质体验，建议您选择的MCP工具不要超过5个。',
+    requiredMcp: '暂无添加好的MCP，请添加后，再体验',
+  },
 };

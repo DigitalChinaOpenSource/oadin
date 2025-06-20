@@ -24,15 +24,14 @@ interface IMcpToolChatData {
   dataSource: {
     data: IDataSourceItem[];
     status?: 'success' | 'error' | 'progress';
+    totalDuration?: number;
   };
 }
 
 export default memo(function McpToolChat(props: IMcpToolChatData) {
-  console.log('McpToolChat dataSource=====>', props);
-  const { data, status } = props.dataSource;
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { data, status, totalDuration } = props.dataSource;
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  // 计算已完成的工具调用
   const completedCalls = data.filter((item) => item.status === 'success' || item.status === 'error');
   const inProgressCalls = data.filter((item) => item.status === 'progress');
 
@@ -163,7 +162,7 @@ export default memo(function McpToolChat(props: IMcpToolChatData) {
                 fill="#4f4dff"
               />
               <div className={styles.statusText}>工具调用已完成，共执行 {data.length} 次</div>
-              {/* <div className={styles.coastTime}>（总用时）</div> */}
+              {totalDuration && <div className={styles.coastTime}>(用时 {totalDuration} 秒)</div>}
             </>
           )}
         </div>

@@ -87,3 +87,16 @@ export interface IRequestModelParams {
   // 服务提供商
   provider_name?: string;
 }
+
+export type ModelSourceType = 'local' | 'remote';
+
+export interface IModelSquareParams {
+  flavor?: string;
+  // remote时需要传
+  // 'dev' | 'product'
+  env_type?: string;
+  service_source: ModelSourceType;
+  page_size?: number;
+  page?: number;
+  mine?: boolean;
+}

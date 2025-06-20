@@ -1,3 +1,5 @@
+import type { MessageType } from '@res-utiles/ui-components';
+
 export interface IChatHistoryItem {
   id: string | number;
   title: string;
@@ -18,4 +20,16 @@ export interface IChatDetailItem {
   updatedAt?: string;
   modelId?: string;
   modelName?: string;
+}
+
+export interface GroupedChatHistory {
+  today: IChatHistoryItem[];
+  yesterday: IChatHistoryItem[];
+  last7Days: IChatHistoryItem[];
+  earlier: IChatHistoryItem[];
+}
+
+export interface IChatHistoryDrawerProps {
+  onHistoryDrawerClose?: () => void;
+  onHistorySelect?: (historyId: string, historyMessages: MessageType[]) => void;
 }

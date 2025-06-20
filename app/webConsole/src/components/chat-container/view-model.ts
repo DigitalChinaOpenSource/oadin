@@ -11,7 +11,7 @@ export default function useViewModel() {
   const [isUploadVisible, setIsUploadVisible] = useState(false);
   // TODO 获取当前是否下载词嵌入模型
   const { selectedModel } = useSelectedModelStore();
-  const { setCurrentSessionId, createNewChat, messages } = useChatStore();
+  const { setCurrentSessionId, createNewChat, messages, setUploadFileList } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 
   const currentSessionId = useChatStore((state) => state.currentSessionId);
@@ -22,6 +22,13 @@ export default function useViewModel() {
       fetchCreateChat({ modelId: selectedModel.id });
     }
   }, [currentSessionId, selectedModel]);
+
+  useEffect(() => {
+    return () => {
+      setUploadFileList([]);
+      setSelectMcpList([]);
+    };
+  }, []);
 
   const { run: fetchCreateChat } = useRequest(
     async (params: IPlaygroundSession) => {

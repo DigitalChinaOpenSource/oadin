@@ -5,12 +5,14 @@ interface ParsedContent {
   type: 'think' | 'plain';
   content: string | { data: string; status: 'progress' | 'success' | 'error' };
 }
+
 /**
  * 解析包含 <think> 标签的内容
  * @param content 原始内容
+ * @param hasUnfinishedThink 是否有未闭合的 think 标签
  * @returns 解析后的内容数组
  */
-export const parseThinkContent = (content: string): Array<ParsedContent> => {
+export const parseThinkContent = (content: string, hasUnfinishedThink: boolean = false): Array<ParsedContent> => {
   const result: Array<ParsedContent> = [];
 
   // 正则表达式匹配 <think> 和 </think> 标签
@@ -45,8 +47,39 @@ export const parseThinkContent = (content: string): Array<ParsedContent> => {
     lastIndex = match.index + match[0].length;
   }
 
-  // 添加最后一个 </think> 之后的内容
-  if (lastIndex < content.length) {
+  // 处理未闭合的 <think> 标签
+  if (hasUnfinishedThink) {
+    const lastThinkIndex = content.lastIndexOf('<think>');
+    if (lastThinkIndex !== -1 && lastThinkIndex >= lastIndex) {
+      // 添加最后一个完整标签到未闭合标签之间的内容（如果有的话）
+      if (lastThinkIndex > lastIndex) {
+        const betweenContent = content.substring(lastIndex, lastThinkIndex).trim();
+        if (betweenContent) {
+          result.push({
+            type: 'plain',
+            content: betweenContent,
+          });
+        }
+      }
+
+      // 添加未闭合的 think 内容
+      const unfinishedThinkContent = content.substring(lastThinkIndex + 7).trim(); // +7 是 <think> 的长度
+      if (unfinishedThinkContent) {
+        result.push({
+          type: 'think',
+          content: {
+            data: unfinishedThinkContent,
+            status: 'progress',
+          },
+        });
+      }
+      // 更新 lastIndex 到内容末尾，避免重复处理
+      lastIndex = content.length;
+    }
+  }
+
+  // 添加最后一个标签之后的内容（只有在没有未闭合标签的情况下）
+  if (!hasUnfinishedThink && lastIndex < content.length) {
     const afterContent = content.substring(lastIndex).trim();
     if (afterContent) {
       result.push({
@@ -74,7 +107,12 @@ export const parseThinkContent = (content: string): Array<ParsedContent> => {
  * @returns MessageType 对象
  */
 export const buildMessageWithThinkContent = (responseContent: string, isComplete: boolean = false): MessageType => {
-  const parsedContents = parseThinkContent(responseContent);
+  // 检查是否有未闭合的 <think> 标签
+  const openTagCount = (responseContent.match(/<think>/g) || []).length;
+  const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
+  const hasUnfinishedThink = openTagCount > closeTagCount && !isComplete;
+
+  const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
 
   const contentList = parsedContents.map((item) => ({
     id: generateUniqueId('content'),
@@ -129,28 +167,10 @@ export const handleTextContent = (
   const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
   const hasUnfinishedThink = openTagCount > closeTagCount;
 
-  // 解析内容，处理完整的 <think>...</think> 块
-  const parsedContents = parseThinkContent(responseContent);
+  // 解析内容，统一处理完整和未完整的 <think> 块
+  const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
 
-  if (hasUnfinishedThink) {
-    // 找到最后一个未闭合的 <think> 标签内容
-    const lastThinkMatch = responseContent.lastIndexOf('<think>');
-    if (lastThinkMatch !== -1) {
-      const thinkContent = responseContent.substring(lastThinkMatch + 7); // +7 是 <think> 的长度
-      if (thinkContent.trim()) {
-        // 将未完成的思考内容加入解析结果，并标记为 progress 状态
-        parsedContents.push({
-          type: 'think',
-          content: {
-            data: thinkContent,
-            status: 'progress', // 未闭合标签使用 progress 状态
-          },
-        });
-      }
-    }
-  }
-
-  if (responseContent.includes('<think>') || hasUnfinishedThink) {
+  if (responseContent.includes('<think>')) {
     // 从解析内容中提取 thinking 文本
     const thinkContents = parsedContents
       .filter((item) => item.type === 'think')

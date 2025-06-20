@@ -3,11 +3,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { IModelDataItem } from '@/types';
 
 const STORAGE_KEY = 'selected_model_store';
-
+export type selectedModelType = IModelDataItem | null;
 export interface ISelectedModelStore {
-  selectedModel: IModelDataItem | null;
+  selectedModel: selectedModelType;
   isSelectedModel: boolean;
-  setSelectedModel: (model: IModelDataItem | null | ((currentModel: IModelDataItem | null) => IModelDataItem | null)) => void;
+  setSelectedModel: (model: selectedModelType | ((currentModel: selectedModelType) => selectedModelType)) => void;
   setIsSelectedModel: (isSelected: boolean) => void;
 }
 
@@ -19,7 +19,7 @@ const useSelectedModelStore = create<ISelectedModelStore>()(
       setIsSelectedModel: (isSelected: boolean) => {
         set({ isSelectedModel: isSelected });
       },
-      setSelectedModel: (model: IModelDataItem | null | ((currentModel: IModelDataItem | null) => IModelDataItem | null)) => {
+      setSelectedModel: (model: selectedModelType | ((currentModel: selectedModelType) => selectedModelType)) => {
         if (typeof model === 'function') {
           set((state) => ({ selectedModel: model(state.selectedModel) }));
         } else {

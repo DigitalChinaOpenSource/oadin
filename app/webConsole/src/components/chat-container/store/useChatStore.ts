@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { MessageType } from '@res-utiles/ui-components';
 import type { UploadFile } from 'antd';
 import { persist } from 'zustand/middleware';
-import { generateUniqueId } from '../useChatStream/utils';
+import { IUploadFile } from '../types';
 
 // 用于 localStorage 中的 key
 const STORAGE_KEY = 'vanta-chat-store';
@@ -35,7 +35,7 @@ const useChatStore = create<ChatState>()(
       setMessages: (messages) => set({ messages }),
       addMessage: (message: MessageType, isReplace?: boolean): string => {
         // 生成消息ID
-        const messageId = message.id || generateUniqueId('msg');
+        const messageId = message.id;
         message.id = messageId;
 
         set((state) => {
@@ -73,6 +73,7 @@ const useChatStore = create<ChatState>()(
       partialize: (state) => ({
         currentSessionId: state.currentSessionId,
         messages: state.messages,
+        uploadFileList: state.uploadFileList,
       }),
     },
   ),

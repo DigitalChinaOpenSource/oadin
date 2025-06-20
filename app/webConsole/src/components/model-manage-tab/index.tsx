@@ -3,9 +3,9 @@ import ModelSearch from './model-search';
 import ModallistContent from './model-list-content';
 import { IUseSearchViewModelReturn } from './view-model';
 import { IUseViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
+import { ISelectedDialogProps } from '@/components/choose-model-dialog';
 
-export interface ModelManageProps {
-  isDialog?: boolean;
+export interface ModelManageProps extends ISelectedDialogProps {
   vmContent: IUseViewModel;
   vmSearch: IUseSearchViewModelReturn;
 }
@@ -23,12 +23,14 @@ export default function ModelManageTab(props: ModelManageProps) {
       {isDialog ? (
         <div className={styles.chooseModelList}>
           <ModallistContent
+            {...props}
             vmContent={vmContent}
             isSelectable={isDialog}
           />
         </div>
       ) : (
         <ModallistContent
+          {...props}
           vmContent={vmContent}
           isSelectable={isDialog}
         />

@@ -1,0 +1,85 @@
+import { FolderIcon, XCircleIcon } from '@phosphor-icons/react';
+import type { UploadProps, UploadFile } from 'antd';
+import { message } from 'antd';
+import { httpRequest } from '@/utils/httpRequest';
+import useChatStore from '../store/useChatStore';
+import rollingSvg from '@/components/icons/rolling.svg';
+
+export const HeaderContent = () => {
+  const { uploadFileList, setUploadFileList, currentSessionId } = useChatStore();
+  const handleRemove = async (file: UploadFile) => {
+    try {
+      // 如果文件已上传成功（有服务器返回的file_id），则调用删除接口
+      const fileId = file.status === 'done' && file.response?.id;
+      console.log('handleRemove fileId:', file);
+      if (fileId) {
+        await httpRequest.del('/playground/file', {
+          data: { file_id: fileId, sessionId: currentSessionId },
+        });
+      }
+
+      // 无论是否调用接口，都从列表中移除
+      setUploadFileList(uploadFileList.filter((f) => f.uid !== file.uid));
+      // message.success(`已删除文件: ${file.name}`);
+
+      return true;
+    } catch (error: Error | any) {
+      message.error(`删除文件失败: ${error?.message || '未知错误'}`);
+      return false;
+    }
+  };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+      {uploadFileList.map((file) => (
+        <div
+          key={file.uid}
+          className="upload-file-item"
+        >
+          {file.status === 'uploading' && (
+            <div className="file-icon uploading-icon">
+              <img
+                src={rollingSvg}
+                alt=""
+              />
+            </div>
+          )}
+          {file.status === 'error' && (
+            <div className="file-icon error-icon">
+              <XCircleIcon
+                width={16}
+                height={16}
+                weight="fill"
+                fill="#e85951"
+              />
+            </div>
+          )}
+          {file.status === 'done' && (
+            <div className="file-icon done-icon">
+              <FolderIcon
+                width={16}
+                height={16}
+                fill="#ffffff"
+              />
+            </div>
+          )}
+
+          {file.name}
+          <div
+            className="upload-file-remove"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemove(file);
+            }}
+          >
+            <XCircleIcon
+              width={16}
+              height={16}
+              fill="#9ca3af"
+              weight="fill"
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};

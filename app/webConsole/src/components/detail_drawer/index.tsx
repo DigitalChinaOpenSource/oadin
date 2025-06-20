@@ -36,25 +36,21 @@ export const DetailDrawer: React.FC<IDetailDrawer> = (options: IDetailDrawer) =>
         />
       ),
     },
-    // {
-    //   key: 'presetInstructions',
-    //   label: '预设指令',
-    //   children: <McpInstructions />,
-    // },
   ];
-  console.info(mcpDetail, '详情数据');
   return (
     <Drawer
       size="large"
       zIndex={1500}
       closable={false}
-      open={true}
       {...options}
       destroyOnHidden={true}
     >
       {mcpDetail && (
         <div className={styles.mcpManageDetail}>
-          <DrawerDetailTitle mcpDetail={mcpDetail} />
+          <DrawerDetailTitle
+            {...options}
+            mcpDetail={mcpDetail}
+          />
           <Divider />
           <div className={styles.detailContent}>
             <Tabs

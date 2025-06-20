@@ -1,15 +1,15 @@
 import { MessageType } from '@res-utiles/ui-components';
-import { IToolCall } from './types';
+import { IToolCallData } from './types';
 import { generateUniqueId } from './utils';
 
 /**
- * 查找包含特定 mcpId 的工具调用消息
+ * 查找包含特定 mcp id 的工具调用消息
  */
-export const findExistingToolMessage = (messages: MessageType[], mcpId: string) => {
+export const findExistingToolMessage = (messages: MessageType[], id: string) => {
   return messages.find(
     (msg) =>
       msg.role === 'assistant' &&
-      msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.data?.some((tool: any) => tool.mcpId === mcpId)),
+      msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.data?.some((tool: any) => tool.id === id)),
   );
 };
 
@@ -23,15 +23,13 @@ export const findProgressToolMessage = (messages: MessageType[]) => {
 /**
  * 从消息中提取工具调用数据
  */
-export const extractToolCallData = (contentList: any[], mcpId?: string) => {
+export const extractToolCallData = (contentList: any[], id?: string) => {
   let toolCallResults: any[] = [];
   let mcpContentIndex = -1;
 
-  if (mcpId) {
-    // 查找包含特定 mcpId 的内容项
-    mcpContentIndex = contentList.findIndex((content) => content.type === 'mcp' && typeof content.content === 'object' && content.content.data?.some((tool: any) => tool.mcpId === mcpId));
+  if (id) {
+    mcpContentIndex = contentList.findIndex((content) => content.type === 'mcp' && typeof content.content === 'object' && content.content.data?.some((tool: any) => tool.id === id));
   } else {
-    // 查找 progress 状态的内容项
     mcpContentIndex = contentList.findIndex((content) => content.type === 'mcp' && typeof content.content === 'object' && content.content.status === 'progress');
   }
 
@@ -45,13 +43,14 @@ export const extractToolCallData = (contentList: any[], mcpId?: string) => {
 /**
  * 创建 MCP 内容对象
  */
-export const createMcpContent = (status: string, data: any[]) => {
+export const createMcpContent = (status: string, data: any[], totalDuration?: number) => {
   return {
     id: generateUniqueId('content'),
     type: 'mcp' as const,
     content: {
       status,
       data,
+      totalDuration,
     },
   };
 };
@@ -75,12 +74,11 @@ export const updateContentListWithMcp = (contentList: any[], mcpContent: any) =>
 /**
  * 构建工具调用数据对象
  */
-export const buildToolCallData = (toolResponse: any, toolCall: IToolCall, status: 'progress' | 'success' | 'error', outputParams?: string) => {
+export const buildToolCallData = (toolResponse: any, toolGroupId: string, status: 'progress' | 'success' | 'error', outputParams?: string): IToolCallData => {
+  if (!toolGroupId) return {} as IToolCallData;
   return {
-    mcpId: toolResponse.mcpId,
+    id: toolGroupId,
     name: toolResponse.toolName,
-    desc: toolResponse.toolDesc || '工具调用',
-    logo: '',
     inputParams: JSON.stringify(toolResponse.toolArgs),
     outputParams: outputParams || '',
     status,
@@ -128,7 +126,7 @@ export const handleToolCallErrorMessage = (
       contentList: [
         createMcpContent('error', [
           {
-            mcpId: '', // 这里原代码就是这样，保持不变
+            id: '',
             name: '',
             desc: '工具调用',
             logo: '',

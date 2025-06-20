@@ -1,4 +1,4 @@
-import { Button, message, Tooltip } from 'antd';
+import { Button, message, Skeleton, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import { ModelCheckingNodata } from './model-checking-nodata';
 import moreModel from '@/components/icons/moreModel.png';
@@ -6,71 +6,91 @@ import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { useViewModel, IMyModelListViewModel } from './view-model.ts';
 import { ModelCheckingHasdata } from '@/components/model-checking/model-checking-data';
-import useSelectedModelStore from '@/store/useSelectedModel.ts';
+import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedModel.ts';
+import { getMessageByModel } from '@/i18n';
 
 export default function ModelChecking() {
-  const { selectedModel, setIsSelectedModel } = useSelectedModelStore();
+  const { setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
+
+  const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const vm: IMyModelListViewModel = useViewModel();
+  const { modelSupportLoading, fetchModelSupport, modelListData } = vm;
   const [open, setOpen] = useState<boolean>(false);
+  /// 初始化选择模型
   const onOk = () => {
-    if (selectedModel && Object.keys(selectedModel).length > 0) {
+    if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
       setIsSelectedModel(true);
+      setSelectedModel(selectedStateModel);
     } else {
-      message.warning('请先选择一个模型');
+      message.warning(
+        getMessageByModel('noSelectModel', {
+          msg: '请先选择模型，再体验。',
+        }),
+      );
     }
   };
   const isHasMedel = useMemo(() => {
-    return vm.modelListData.length > 0;
-  }, [vm.modelListData]);
+    return modelListData.length > 0;
+  }, [modelListData]);
   useEffect(() => {
-    vm?.fetchModelSupport({
+    fetchModelSupport({
       service_source: 'local',
     });
   }, []);
   return (
-    <div>
-      <div className={styles.warp}>
-        <div className={styles.title}>
-          <h2>
-            <span>请选择模型</span> <span className={styles.title_weight}>立即体验</span>
-          </h2>
-          <p>体验不同模型和MCP工具的能力组合</p>
-        </div>
-        {isHasMedel ? <ModelCheckingHasdata vm={vm} /> : <ModelCheckingNodata />}
-        <div
-          className={styles.more_model_warp}
-          onClick={() => {
-            setOpen(true);
-          }}
-        >
-          <img
-            src={moreModel}
-            alt=""
-          />
-          更多模型
-        </div>
-        <div className={styles.button}>
+    <Skeleton loading={modelSupportLoading}>
+      <div>
+        <div className={styles.warp}>
+          <div className={styles.title}>
+            <h2>
+              <span>请选择模型</span> <span className={styles.title_weight}>立即体验</span>
+            </h2>
+            <p>体验不同模型和MCP工具的能力组合</p>
+          </div>
           {isHasMedel ? (
-            renderButton({
-              onOk,
-            })
+            <ModelCheckingHasdata
+              vm={vm}
+              selectedStateModel={selectedStateModel}
+              setSelecteStatedModel={setSelecteStatedModel}
+            />
           ) : (
-            <Tooltip
-              title="下载模型后即可开始体验"
-              color="#fff"
-            >
-              {renderButton({
-                onOk,
-              })}
-            </Tooltip>
+            <ModelCheckingNodata />
           )}
+          <div
+            className={styles.more_model_warp}
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            <img
+              src={moreModel}
+              alt=""
+            />
+            更多模型
+          </div>
+          <div className={styles.button}>
+            {isHasMedel ? (
+              renderButton({
+                onOk,
+              })
+            ) : (
+              <Tooltip
+                title="下载模型后即可开始体验"
+                color="#fff"
+              >
+                {renderButton({
+                  onOk,
+                })}
+              </Tooltip>
+            )}
+          </div>
         </div>
+        <ChooseModelDialog
+          open={open}
+          onCancel={() => setOpen(false)}
+        />
       </div>
-      <ChooseModelDialog
-        open={open}
-        onCancel={() => setOpen(false)}
-      />
-    </div>
+    </Skeleton>
   );
 }
 const renderButton = ({ onOk }: { onOk: () => void }) => {

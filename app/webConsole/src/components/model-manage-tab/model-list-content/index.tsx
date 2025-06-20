@@ -20,6 +20,7 @@ export default function ModelListContent(props: IModelList) {
           <div className={styles.modelListContent}>
             <div className={styles.contentContainer}>
               <ModelList
+                {...props}
                 isSelectable={props.isSelectable}
                 vmContent={vmContent}
                 pagination={

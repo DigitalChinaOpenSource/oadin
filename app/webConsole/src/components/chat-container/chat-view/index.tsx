@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
-import { ChatInput, MessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
+import { ChatInput, MessageList, ChatMessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import '@res-utiles/ui-components/dist/index.css';
 import { Button, Tooltip, message } from 'antd';
-import type { UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
-import { FolderIcon, XCircleIcon, CopyIcon, ArrowClockwiseIcon, StopIcon } from '@phosphor-icons/react';
+import { CopyIcon, ArrowClockwiseIcon, StopIcon } from '@phosphor-icons/react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import StreamingMessage from '../streaming-message';
@@ -20,6 +19,7 @@ import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import { copyMessageToClipboard } from '../useChatStream/utils';
+import { HeaderContent } from './header-content';
 import './index.scss';
 
 interface IChatViewProps {
@@ -49,7 +49,7 @@ interface ChatMessage extends MessageType {
 }
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
-  const { messages, uploadFileList, setUploadFileList } = useChatStore();
+  const { messages } = useChatStore();
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { fetchDownloadStart } = useDownLoad();
 
@@ -89,46 +89,11 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   };
 
-  const onFileListChange = (fileList: UploadFile[]) => {
-    setUploadFileList(fileList);
-  };
-
-  // 文件上传列表展示区域
-  const headerContent = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-      {uploadFileList.map((file) => (
-        <div
-          key={file.uid}
-          className="upload-file-item"
-        >
-          {file.name}
-          <div
-            className="upload-file-remove"
-            onClick={(e) => {
-              e.stopPropagation();
-              setUploadFileList(uploadFileList.filter((item) => item.uid !== file.uid));
-            }}
-          >
-            <XCircleIcon
-              width={16}
-              height={16}
-              fill="#9ca3af"
-              weight="fill"
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   // 输入框底部功能区
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      {isUploadVisible ? (
-        <UploadTool
-          onFileListChange={onFileListChange}
-          uploadFileList={uploadFileList}
-        />
+      {!isUploadVisible ? (
+        <UploadTool />
       ) : (
         <Tooltip
           arrow={false}
@@ -264,7 +229,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             placeholder="输入消息..."
             onSend={handleSendMessage}
             className="chat-input"
-            SendButtonComponent={({ onClick, inputValue }) => (
+            renderSendButton={({ onClick, inputValue }) => (
               <>
                 {isLoading ? (
                   <Button
@@ -275,7 +240,10 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                         fill="#4f4dff"
                       />
                     }
-                    onClick={() => cancelRequest()}
+                    onClick={() => {
+                      console.log('stop');
+                      cancelRequest();
+                    }}
                   />
                 ) : (
                   <Button
@@ -292,7 +260,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                 )}
               </>
             )}
-            header={headerContent}
+            header={<HeaderContent />}
             footer={footerContent}
           />
         </div>
