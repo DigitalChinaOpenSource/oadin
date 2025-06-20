@@ -27,7 +27,6 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 	// Debug log to trace model conversion
 	fmt.Printf("[ChatStream] Model conversion: %s -> %s\n", originalModel, modelName)
-	fmt.Printf("[ChatStream] Request body: %s\n", string(body))
 
 	// 打印即将发往Ollama的请求体内容，重点关注think参数
 	fmt.Printf("[ChatStream] Final request body to Ollama: %s\n", string(body))

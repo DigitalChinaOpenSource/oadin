@@ -149,9 +149,11 @@ type EngineRecommendConfig struct {
 type MCPServerConfig struct {
 	Id      string            `json:"id"`
 	Name    string            `json:"name"`
+	Logo    string            `json:"logo"` // MCP图标
 	Args    []string          `json:"args"`
 	Command string            `json:"command"`
 	Env     map[string]string `json:"env"` // 使用map存储动态环境变量
+	Tools   []mcp.Tool        `json:"tools"`
 }
 
 type ClientMcpStartRequest struct {
@@ -171,11 +173,15 @@ type ClientRunToolRequest struct {
 	ToolName string         `json:"toolName"`
 	ToolArgs map[string]any `json:"toolArgs"`
 
-	MessageId     string `json:"messageId"`     // 关联的消息ID
-	Logo          string `json:"logo"`          // 工具调用的MCP图标
-	Desc          string `json:"desc"`          // 工具描述
-	ExecutionTime int64  `json:"executionTime"` // 大模型选择工具的思考时间，单位为秒
+	MessageId string `json:"messageId"` // 关联的消息ID
 }
+
+type ClientRunToolResponset struct {
+	*mcp.CallToolResult
+	Logo     string `json:"logo"`     // 工具调用的MCP图标
+	ToolDesc string `json:"toolDesc"` // 工具描述
+}
+
 type ClientGetToolsRequest struct {
 	Ids []string `json:"ids"`
 }
