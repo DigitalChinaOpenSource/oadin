@@ -6,14 +6,16 @@ import uploadSvg from '@/components/icons/upload.svg';
 import useChatStore from '../store/useChatStore';
 
 interface UploadToolProps {
-  maxFiles?: number; // 最大上传文件数
+  maxFiles?: number;
+  maxFileSize?: number;
 }
 
 // 自定义文件状态类型
 export type FileStatus = 'error' | 'uploading' | 'done';
 
-export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
+export default function UploadTool({ maxFiles = 5, maxFileSize = 50 }: UploadToolProps) {
   const { currentSessionId, uploadFileList, setUploadFileList } = useChatStore();
+  const maxFileSizeBytes = maxFileSize * 1024 * 1024;
   const validateFile = (
     file: File,
   ): {
@@ -21,7 +23,7 @@ export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
     errorType?: 'format' | 'size';
     errorMessage?: string;
   } => {
-    const supportedFormats = ['txt', 'html', 'htm', 'md', 'markdown', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'mp4', 'mp3', 'avi', 'wmv'];
+    const supportedFormats = ['txt', 'html', 'md', 'markdown', 'pdf', 'doc', 'docx', 'xls', 'xlsx'];
     const fileName = file.name.toLowerCase();
     const fileExtension = fileName.slice(fileName.lastIndexOf('.') + 1);
     const isFormatValid = supportedFormats.includes(fileExtension);
@@ -33,13 +35,12 @@ export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
       };
     }
 
-    const maxSize = 50 * 1024 * 1024;
-    const isSizeValid = file.size <= maxSize;
+    const isSizeValid = file.size <= maxFileSizeBytes;
     if (!isSizeValid) {
       return {
         isValid: false,
         errorType: 'size',
-        errorMessage: '文件大小超过50MB限制',
+        errorMessage: `文件大小超过${maxFileSize}MB限制`,
       };
     }
 
@@ -58,7 +59,6 @@ export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
       message.error(validationResult.errorMessage);
       return false;
     }
-
     return true;
   };
 
@@ -136,11 +136,10 @@ export default function UploadTool({ maxFiles = 5 }: UploadToolProps) {
       fileList={uploadFileList}
       beforeUpload={handleBeforeUpload}
       customRequest={customUploadRequest}
-      // onRemove={handleRemove}
       multiple={false}
-      accept=".txt,.html,.htm,.md,.markdown,.pdf,.doc,.docx,.xls,.xlsx,.mp4,.mp3,.avi,.wmv"
+      accept=".txt,.html,.htm,.md,.markdown,.pdf,.doc,.docx,.xls,.xlsx"
     >
-      <Tooltip title="文件格式支持 txt、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX、MP4、MP3、AVI、WMV，单个文件限制 50MB">
+      <Tooltip title="文件格式支持 txt、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX，单个文件限制 50MB">
         <Button
           icon={
             <img

@@ -3,17 +3,6 @@ import { IToolCallData } from './types';
 import { generateUniqueId } from './utils';
 
 /**
- * 查找包含特定 mcp id 的工具调用消息
- */
-export const findExistingToolMessage = (messages: MessageType[], id: string) => {
-  return messages.find(
-    (msg) =>
-      msg.role === 'assistant' &&
-      msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.data?.some((tool: any) => tool.id === id)),
-  );
-};
-
-/**
  * 查找进行中的工具调用消息
  */
 export const findProgressToolMessage = (messages: MessageType[]) => {

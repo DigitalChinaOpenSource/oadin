@@ -12,6 +12,7 @@ interface ChatState {
   uploadFileList: UploadFile[];
   historyVisible: boolean;
   currentSessionId: string;
+  isLoading?: boolean;
 
   // 操作方法
   setMessages: (messages: MessageType[]) => void;
@@ -20,6 +21,7 @@ interface ChatState {
   setHistoryVisible: (visible: boolean) => void;
   setCurrentSessionId: (sessionId: string) => void;
   createNewChat: () => void;
+  setIsLoading: (isLoading: boolean) => void;
 }
 
 const useChatStore = create<ChatState>()(
@@ -67,6 +69,7 @@ const useChatStore = create<ChatState>()(
           uploadFileList: [],
         }),
       setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
+      setIsLoading: (isLoading) => set({ isLoading: isLoading ?? false }),
     }),
     {
       name: STORAGE_KEY,

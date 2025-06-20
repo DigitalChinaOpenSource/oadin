@@ -15,13 +15,13 @@ import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToo
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
 
 export function useChatStream() {
-  const { addMessage, setCurrentSessionId, currentSessionId } = useChatStore();
+  const { addMessage, setCurrentSessionId, currentSessionId, isLoading, setIsLoading } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -208,7 +208,6 @@ export function useChatStream() {
   // 创建流式请求
   const createStreamRequest = useCallback(async (url: string, options: FetchEventSourceInit, callbacks: StreamCallbacks) => {
     requestState.current.status.hasReceivedData = false;
-    console.log('创建流请求，信号状态:', options.signal ? 'present' : 'missing');
     const enhancedOptions: FetchEventSourceInit = {
       ...options,
       async onopen(response) {
@@ -329,8 +328,8 @@ export function useChatStream() {
           }
 
           // 提取现有的工具调用结果
-          const { toolCallResults: progressResults } = extractToolCallData(currentContentList);
-          toolCallResults = progressResults;
+          const { toolCallResults: _toolCallResults } = extractToolCallData(currentContentList);
+          toolCallResults = _toolCallResults;
         }
         // 累加当前的调用时间
         if (total_duration) {
@@ -450,6 +449,7 @@ export function useChatStream() {
           },
           {
             onDataReceived: async (response) => {
+              console.log('continue的====>', response);
               // 重置超时定时器
               resetNoDataTimer();
               if (requestState.current.timers.totalTimer) {
@@ -621,6 +621,7 @@ export function useChatStream() {
           },
           {
             onDataReceived: async (response) => {
+              console.log('send的====>', response);
               resetNoDataTimer();
               if (requestState.current.timers.totalTimer) {
                 clearTimeout(requestState.current.timers.totalTimer);
