@@ -19,6 +19,8 @@ export interface IModelList extends ISelectedDialogProps {
 
 export const ModelList = (props: IModelList) => {
   const { vmContent, selectVms, dataSource, selectedStateModel } = props;
+  console.info(dataSource, '渲染列表 ======================== > dataSource');
+  console.info(vmContent, '渲染列表 ======================== > vmContent');
   const renderVmList = () => {
     let content = (
       <div className={styles.noData}>
