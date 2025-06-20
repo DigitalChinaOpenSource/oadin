@@ -4,7 +4,6 @@ import { Layout, Spin } from 'antd';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import routes from './routes/routes';
-import useAuthStore from './store/authStore';
 import styles from './index.module.scss';
 import TopHeader from './components/top-header';
 const { Header, Content, Footer } = Layout;
