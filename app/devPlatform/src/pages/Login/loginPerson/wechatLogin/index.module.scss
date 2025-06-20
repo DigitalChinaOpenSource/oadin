@@ -1,0 +1,80 @@
+// 手机验证码登录组件样式
+.wechatLogin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  align-self: stretch;
+  width: 100%;
+  .wechatLoginContainer {
+ 
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 4px 12px 0px rgba(33, 25, 71, 0.12);
+    overflow: hidden;
+    .login_content{
+      width: 156px;
+      height: 156px;
+    }
+    .wechatContainer {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      img{
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+}
+
+.headerSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabContainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.tabItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tabTitle {
+  align-self: stretch;
+  color: #27272a;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0px;
+}
+
+.tabActive {
+  color: #4f4dff;
+  border-bottom: 2px solid #4f4dff;
+  padding-bottom: 8px;
+}
+
+.subTitle {
+  color: #71717d;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0px;
+}
