@@ -8,6 +8,7 @@ import useSelectedModelStore from '@/store/useSelectedModel.ts';
 import { MessageType } from '@res-utiles/ui-components';
 import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDrawerProps } from './types';
 import { IModelSquareParams } from '@/types';
+import { convertMessageFormat } from '../utils/historyMessageFormat';
 import dayjs from 'dayjs';
 
 export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
@@ -76,8 +77,8 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
       manual: true,
       onSuccess: (data: any) => {
         if (!data || !data.length) return message.error('获取历史对话记录失败');
-
-        fetchModelDetail(data[data.length - 1].modelId, data, data[data.length - 1].sessionId);
+        const tempData = convertMessageFormat(data);
+        fetchModelDetail(data[data.length - 1].modelId, tempData, data[data.length - 1].sessionId);
       },
       onError: () => {
         message.error('获取历史对话记录失败');
@@ -120,6 +121,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
       setSelectedModel(res);
       setIsSelectedModel(true);
       setCurrentSessionId(sessionId);
+      console.log('获取:', messages);
       setMessages(messages);
       setHistoryVisible(false);
     } else {
@@ -189,7 +191,6 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
     deleteChatHistory,
     showDeleteId,
     setShowDeleteId,
-    fetchChatHistoryDetail,
     groupChatHistoryByDate,
     handleHistoryClick,
     onHistoryDrawerClose,

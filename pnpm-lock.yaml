@@ -8,12 +8,24 @@ importers:
 
   .:
     dependencies:
+      '@ant-design/icons':
+        specifier: ^6.0.0
+        version: 6.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@phosphor-icons/react':
+        specifier: ^2.1.10
+        version: 2.1.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.3.0
         version: 18.3.1
       react-dom:
         specifier: ^18.3.0
         version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^7.5.2
+        version: 7.6.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      zustand:
+        specifier: ^5.0.3
+        version: 5.0.5(@types/react@18.3.1)(immer@10.1.1)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1))
     devDependencies:
       '@eslint/js':
         specifier: ^9.22.0
@@ -72,15 +84,9 @@ importers:
 
   app/webConsole:
     dependencies:
-      '@ant-design/icons':
-        specifier: ^6.0.0
-        version: 6.0.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
-      '@phosphor-icons/react':
-        specifier: ^2.1.10
-        version: 2.1.10(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@res-utiles/ui-components':
         specifier: ^0.0.10
         version: 0.0.10(@floating-ui/dom@1.7.1)(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -111,9 +117,6 @@ importers:
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.1.8)(react@19.1.0)
-      react-router-dom:
-        specifier: ^7.5.2
-        version: 7.6.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react-syntax-highlighter:
         specifier: ^15.6.1
         version: 15.6.1(react@19.1.0)
@@ -132,9 +135,6 @@ importers:
       use-immer:
         specifier: ^0.11.0
         version: 0.11.0(immer@10.1.1)(react@19.1.0)
-      zustand:
-        specifier: ^5.0.3
-        version: 5.0.5(@types/react@19.1.8)(immer@10.1.1)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
     devDependencies:
       '@types/react-syntax-highlighter':
         specifier: ^15.5.13
@@ -3626,14 +3626,14 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@ant-design/icons@6.0.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@ant-design/icons@6.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@ant-design/colors': 8.0.0
       '@ant-design/icons-svg': 4.4.2
-      '@rc-component/util': 1.2.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@rc-component/util': 1.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       classnames: 2.5.1
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   '@ant-design/react-slick@1.1.2(react@18.3.1)':
     dependencies:
@@ -4005,10 +4005,10 @@ snapshots:
       '@parcel/watcher-win32-x64': 2.5.1
     optional: true
 
-  '@phosphor-icons/react@2.1.10(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@phosphor-icons/react@2.1.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   '@radix-ui/number@1.1.1': {}
 
@@ -4365,10 +4365,10 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@rc-component/util@1.2.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@rc-component/util@1.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       react-is: 18.3.1
 
   '@remirror/core-constants@3.0.0': {}
@@ -7055,19 +7055,19 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.8
 
-  react-router-dom@7.6.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  react-router-dom@7.6.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      react-router: 7.6.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-router: 7.6.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
-  react-router@7.6.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  react-router@7.6.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       cookie: 1.0.2
-      react: 19.1.0
+      react: 18.3.1
       set-cookie-parser: 2.7.1
     optionalDependencies:
-      react-dom: 19.1.0(react@19.1.0)
+      react-dom: 18.3.1(react@18.3.1)
 
   react-style-singleton@2.2.3(@types/react@19.1.8)(react@19.1.0):
     dependencies:
@@ -7559,6 +7559,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.8
 
+  use-sync-external-store@1.5.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+    optional: true
+
   use-sync-external-store@1.5.0(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -7656,11 +7661,11 @@ snapshots:
     dependencies:
       tslib: 2.3.0
 
-  zustand@5.0.5(@types/react@19.1.8)(immer@10.1.1)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0)):
+  zustand@5.0.5(@types/react@18.3.1)(immer@10.1.1)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1)):
     optionalDependencies:
-      '@types/react': 19.1.8
+      '@types/react': 18.3.1
       immer: 10.1.1
-      react: 19.1.0
-      use-sync-external-store: 1.5.0(react@19.1.0)
+      react: 18.3.1
+      use-sync-external-store: 1.5.0(react@18.3.1)
 
   zwitch@2.0.4: {}

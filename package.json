@@ -12,7 +12,11 @@
   "packageManager": "pnpm@10.12.1",
   "dependencies": {
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "@ant-design/icons": "^6.0.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "zustand": "^5.0.3",
+    "react-router-dom": "^7.5.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

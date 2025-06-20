@@ -39,7 +39,6 @@ export default function ChatHistoryDrawer(props: IChatHistoryDrawerProps) {
                 >
                   {item.title || '新对话'}
                 </EllipsisTooltip>
-                {/* 修改：仅溢出时显示Tooltip */}
                 <EllipsisTooltip
                   title={item.modelName}
                   className={styles.modelName}
