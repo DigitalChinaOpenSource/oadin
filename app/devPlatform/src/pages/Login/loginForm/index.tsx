@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Input, InputNumber, Button, Form, Checkbox } from 'antd';
 import styles from './index.module.scss';
 
-interface LoginFormValues {
+export interface LoginFormValues {
   phoneNumber: string;
   code: string;
   agreed?: boolean;
@@ -117,6 +117,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ type = 'login', onOk, showAgreed 
         <Input
           style={{ width: '100%', height: '40px' }}
           prefix={PhoneBefore}
+          allowClear
           maxLength={11}
           placeholder="请输入手机号"
           onChange={(e) => handleInputChange(e, 'phoneNumber')} // 控制输入
@@ -144,6 +145,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ type = 'login', onOk, showAgreed 
           maxLength={6}
           placeholder="请输入验证码"
           suffix={<CodeAfter />}
+          allowClear
           onChange={(e) => handleInputChange(e, 'code')} // 控制输入
         />
       </Form.Item>

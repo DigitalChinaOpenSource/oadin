@@ -5,9 +5,11 @@ import styles from './index.module.scss';
 import loginBg from '@/assets/login-bg.svg';
 import loginDescIcon from '@/assets/login-desc-icon.svg';
 import PersonLogin from './loginPerson';
-import { Tabs, message } from 'antd';
+import { Tabs, message, Button } from 'antd';
 import type { TabsProps } from 'antd';
 import { useLoginView } from './useLoginView';
+import LoginEnterprise from '@/pages/Login/loginEnterprise';
+import ForgetPassword from '@/pages/Login/loginEnterprise/forgetPassword';
 
 interface LoginFormValues {
   username: string;
@@ -23,7 +25,7 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
-  const { loginAccount, setLoginAccount } = useLoginView();
+  const { loginAccount, setLoginAccount, showStep, setShowStep } = useLoginView();
 
   // 个人账号-企业账号
   const items: TabsProps['items'] = [
@@ -35,7 +37,7 @@ const LoginPage: React.FC = () => {
     {
       key: 'enterpriseAccount',
       label: '企业账号',
-      children: <div>企业账号登录功能正在开发中</div>,
+      children: <LoginEnterprise />,
     },
   ];
   // 获取重定向来源
@@ -66,6 +68,7 @@ const LoginPage: React.FC = () => {
             <div className={styles.secondTitle}>
               <div className={styles.secondTag}></div>
               <span>低门槛，高效率开发体验</span>
+              <Button onClick={() => setShowStep('forgetPassword')}>测试按钮</Button>
             </div>
           </div>
           {/*左侧描述图片*/}
@@ -81,12 +84,15 @@ const LoginPage: React.FC = () => {
         {/* 登录卡片 */}
         <div className={styles.loginCard}>
           <div className={styles.loginCardContent}>
-            <Tabs
-              items={items}
-              defaultActiveKey={loginAccount}
-              onChange={(activeKey) => setLoginAccount(activeKey as 'personAccount' | 'enterpriseAccount')}
-              tabBarGutter={24}
-            />
+            {showStep === 'loginTab' && (
+              <Tabs
+                items={items}
+                defaultActiveKey={loginAccount}
+                onChange={(activeKey) => setLoginAccount(activeKey as 'personAccount' | 'enterpriseAccount')}
+                tabBarGutter={24}
+              />
+            )}
+            {showStep === 'forgetPassword' && <ForgetPassword />}
           </div>
         </div>
       </div>
