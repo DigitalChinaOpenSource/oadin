@@ -23,12 +23,14 @@ type MessageChunk struct {
 	ModelName     string           `json:"model_name,omitempty"`     // 新增字段
 	ToolCalls     []types.ToolCall `json:"tool_calls,omitempty"`     // 新增，支持Ollama工具调用
 	TotalDuration int64            `json:"total_duration,omitempty"` // 新增总耗时
+	ToolGroupID   string           `json:"tool_group_id,omitempty"`  // 新增工具组ID
 }
 
 // 发送流式消息请求
 type SendStreamMessageRequest struct {
-	SessionID string       `json:"SessionID" binding:"required"`
-	Content   string       `json:"content" binding:"required"`
-	McpIds    []string     `json:"mcpIds,omitempty"`
-	Tools     []types.Tool `json:"tools,omitempty"`
+	SessionID   string       `json:"SessionID" binding:"required"`
+	Content     string       `json:"content"`
+	ToolGroupID string       `json:"toolGroupID,omitempty"` // 关联的消息ID
+	McpIds      []string     `json:"mcpIds,omitempty"`
+	Tools       []types.Tool `json:"tools,omitempty"`
 }
