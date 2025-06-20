@@ -1,5 +1,6 @@
 import styles from './index.module.scss';
 import { Button, Checkbox, Form, Input } from 'antd';
+import useLoginStore from '@/store/loginStore.ts';
 
 export interface IEnterpriseFormValues {
   email: string;
@@ -17,6 +18,7 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
     console.log('Received values of form: ', values);
     onOk?.(values);
   };
+  const { setCurrentStep } = useLoginStore();
   return (
     <div className={styles.loginEnterprise}>
       {/* 头部标题区 */}
@@ -55,7 +57,6 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
           >
             <Input
               style={{ width: '100%', height: '40px' }}
-              maxLength={11}
               placeholder="请输入邮箱地址"
             />
           </Form.Item>
@@ -123,7 +124,12 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
           </Form.Item>
         </Form>
       </div>
-      <div className={styles.forgetPassword}>忘记密码</div>
+      <div
+        className={styles.forgetPassword}
+        onClick={() => setCurrentStep('forgetPassword')}
+      >
+        忘记密码
+      </div>
       <div className={styles.createNewAccount}>
         <span>没有账号？</span>
         <span className={styles.createDesc}>创建一个账号</span>

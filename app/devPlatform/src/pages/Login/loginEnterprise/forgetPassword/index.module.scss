@@ -1,4 +1,53 @@
 .forgetPassword {
   width: 100%;
   height: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  .goBack {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: pointer;
+    color: #344054;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px;
+  }
+  .header {
+    width: 100%;
+    text-align: center;
+    color: #27272a;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+  }
+  .formContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    align-self: stretch;
+    width: 100%;
+  }
+  .loginForm {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    .loginButton {
+      width: 100%;
+      height: 100%;
+      padding: 12px 0;
+      border-radius: 8px;
+      box-sizing: border-box;
+      cursor: pointer;
+      font-size: 14px;
+      color: #ffffff;
+      background-color: rgba(84, 41, 255, 0.6);
+      &:hover {
+        background-color: rgba(84, 41, 255, 1) !important;
+      }
+    }
+  }
 }

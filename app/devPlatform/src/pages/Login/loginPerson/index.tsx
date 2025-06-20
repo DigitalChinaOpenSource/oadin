@@ -4,14 +4,15 @@ import styles from './index.module.scss';
 import WechatLogin from '@/pages/Login/loginPerson/wechatLogin';
 import phoneSvg from '@/assets/phone.svg';
 import wechatSvg from '@/assets/wechat.svg';
+import useLoginStore from '@/store/loginStore.ts';
 
 const LoginPerson = () => {
-  const [loginType, setLoginType] = useState<'wechat' | 'phone'>('phone');
+  const { currentStep, setCurrentStep } = useLoginStore();
 
   return (
     <div className={styles.personLogin}>
-      {loginType === 'wechat' && <WechatLogin />}
-      {loginType === 'phone' && <MobileLogin onLogin={() => {}} />}
+      {currentStep === 'personWechat' && <WechatLogin />}
+      {currentStep === 'personPhone' && <MobileLogin onLogin={() => {}} />}
       <div className={styles.loginOperate}>
         <div className={styles.desc}>
           <div className={styles.line}></div>
@@ -19,10 +20,10 @@ const LoginPerson = () => {
           <div className={styles.line}></div>
         </div>
         <div className={styles.operateType}>
-          {loginType === 'phone' && (
+          {currentStep === 'personPhone' && (
             <div
               className={styles.wechatType}
-              onClick={() => setLoginType('wechat')}
+              onClick={() => setCurrentStep('personWechat')}
             >
               <img
                 src={wechatSvg}
@@ -30,10 +31,10 @@ const LoginPerson = () => {
               />
             </div>
           )}
-          {loginType === 'wechat' && (
+          {currentStep === 'personWechat' && (
             <div
               className={styles.phoneType}
-              onClick={() => setLoginType('phone')}
+              onClick={() => setCurrentStep('personPhone')}
             >
               <img
                 src={phoneSvg}
