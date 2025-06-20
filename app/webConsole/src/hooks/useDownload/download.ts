@@ -64,7 +64,6 @@ async function modelDownloadStream(data: IRequestModelParams, { onmessage, onerr
       totalsize: lastUsefulDataObj ? lastUsefulDataObj.totalsize : 0,
     };
     onmessage?.(finalDataObj);
-    console.log('模型下载完成:', finalDataObj);
   };
 
   const processProgressData = (part: IProgressData) => {

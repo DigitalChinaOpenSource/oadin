@@ -15,13 +15,13 @@ import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToo
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
 
 export function useChatStream() {
-  const { addMessage, setCurrentSessionId, currentSessionId } = useChatStore();
+  const { addMessage, setCurrentSessionId, currentSessionId, isLoading, setIsLoading } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

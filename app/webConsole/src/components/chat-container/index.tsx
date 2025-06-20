@@ -8,7 +8,7 @@ import useViewModel from './view-model';
 import styles from './index.module.scss';
 
 export default function ChatContainer() {
-  const { historyVisible, setHistoryVisible } = useChatStore();
+  const { historyVisible, setHistoryVisible, isLoading } = useChatStore();
   const vm = useViewModel();
 
   return (
@@ -27,6 +27,7 @@ export default function ChatContainer() {
                 />
               }
               onClick={() => {
+                if (isLoading) return;
                 setHistoryVisible(true);
               }}
             />
@@ -41,6 +42,7 @@ export default function ChatContainer() {
               />
             }
             onClick={() => {
+              if (isLoading) return;
               vm.handleCreateNewChat();
             }}
           />
