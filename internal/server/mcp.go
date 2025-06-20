@@ -34,7 +34,7 @@ type MCPServer interface {
 	ClientMcpStart(ctx context.Context, id string) error
 	ClientMcpStop(ctx context.Context, ids []string) error
 	ClientGetTools(ctx context.Context, mcpId string) ([]mcp.Tool, error)
-	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error)
+	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponset, error)
 }
 
 type MCPServerImpl struct {
@@ -382,6 +382,7 @@ func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.
 	mcpServerConfig := types.MCPServerConfig{
 		Id:   mcpId,
 		Name: mcpConfig.Data.ServerName,
+		Logo: mcpConfig.Data.Logo,
 	}
 	for _, y := range mcpServers {
 		commandBuilder := hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
@@ -450,7 +451,7 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 		}
 	}
 
-	fetchTools, err := M.McpHandler.FetchTools(ctx,mcpId)
+	fetchTools, err := M.McpHandler.FetchTools(ctx, mcpId)
 	if err != nil {
 		return nil, err
 	}
@@ -467,15 +468,33 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 	return tools, nil
 }
 
-func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*mcp.CallToolResult, error) {
+func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponset, error) {
 	params := mcp.CallToolParams{
 		Name:      req.ToolName,
 		Arguments: req.ToolArgs,
 	}
-	data, err := M.McpHandler.CallTool(ctx, req.MCPId, params)
+
+	data, err := M.McpHandler.CallTool(ctx, req.McpId, params)
 	if err != nil {
 		fmt.Println("Failed to call tool:", err)
 		return nil, err
 	}
-	return data, nil
+
+	var logo string
+	var toolDesc string
+	config := M.McpHandler.Pending[req.McpId]
+	for i := range config.Tools {
+		tool := config.Tools[i]
+		if tool.Name == req.ToolName {
+			toolDesc = tool.Description
+			logo = config.Logo
+			break
+		}
+	}
+
+	return &types.ClientRunToolResponset{
+		CallToolResult: data,
+		Logo:           logo,
+		ToolDesc:       toolDesc,
+	}, nil
 }

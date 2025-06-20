@@ -17,14 +17,14 @@ import (
 
 type StdioTransport struct {
 	clients map[string]*client.Client
-	pending map[string]int
+	Pending map[string]*types.MCPServerConfig
 	mu      sync.Mutex
 }
 
 var (
 	stdioTransportInstance = StdioTransport{
 		clients: make(map[string]*client.Client),
-		pending: make(map[string]int),
+		Pending: make(map[string]*types.MCPServerConfig),
 	}
 	stdioTransportOnce sync.Once
 )
@@ -83,7 +83,8 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 
 	// 检查是否有正在初始化的客户端
 	s.mu.Lock()
-	if s.pending[serverKey] > 0 {
+	_, exists := s.Pending[serverKey]
+	if exists {
 		s.mu.Unlock()
 		log.Printf("[MCP] Client for server %s is already pending initialization", serverKey)
 		return nil
@@ -99,10 +100,10 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 		}
 		s.Stop(serverKey)
 		delete(s.clients, serverKey)
-		delete(s.pending, serverKey)
+		delete(s.Pending, serverKey)
 	}
 
-	s.pending[serverKey] = 1
+	s.Pending[serverKey] = config
 	s.mu.Unlock()
 
 	// 异步初始化客户端
@@ -116,6 +117,8 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 		s.mu.Lock()
 		s.clients[serverKey] = cli
 		s.mu.Unlock()
+
+		s.FetchTools(context.Background(), serverKey)
 	}()
 
 	return nil
@@ -131,7 +134,7 @@ func (s *StdioTransport) Stop(serverKey string) error {
 	}
 	// 先从map删除，防止并发重复关闭
 	delete(s.clients, serverKey)
-	delete(s.pending, serverKey)
+	delete(s.Pending, serverKey)
 	s.mu.Unlock()
 
 	// 关闭客户端
@@ -144,17 +147,39 @@ func (s *StdioTransport) Stop(serverKey string) error {
 }
 
 func (s *StdioTransport) FetchTools(ctx context.Context, serverKey string) ([]mcp.Tool, error) {
-	cli, exists := s.clients[serverKey]
+	config, exists := s.Pending[serverKey]
 	if !exists {
-		return nil, errors.New("client not found")
+		cli, exists := s.clients[serverKey]
+		if !exists {
+			return nil, errors.New("client not found")
+		}
+
+		toolsRequest := mcp.ListToolsRequest{}
+		tools, err := cli.ListTools(ctx, toolsRequest)
+		if err != nil {
+			return nil, err
+		}
+
+		config.Tools = tools.Tools
+		return tools.Tools, nil
 	}
 
-	toolsRequest := mcp.ListToolsRequest{}
-	tools, err := cli.ListTools(ctx, toolsRequest)
-	if err != nil {
-		return nil, err
+	if len(config.Tools) == 0 {
+		cli, exists := s.clients[serverKey]
+		if !exists {
+			return nil, errors.New("client not found")
+		}
+
+		toolsRequest := mcp.ListToolsRequest{}
+		tools, err := cli.ListTools(ctx, toolsRequest)
+		if err != nil {
+			return nil, err
+		}
+		config.Tools = tools.Tools
+		return tools.Tools, nil
 	}
-	return tools.Tools, nil
+
+	return config.Tools, nil
 }
 
 func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.CallToolParams) (*mcp.CallToolResult, error) {
