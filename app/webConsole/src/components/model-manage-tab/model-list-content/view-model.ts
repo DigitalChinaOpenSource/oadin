@@ -111,8 +111,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   useEffect(() => {
     // 创建一个映射来跟踪当前的下载状态
     const currentDownloadStatusMap: Record<string, any> = {};
-    console.info(modelListData, '检查状态-----modelListData');
-    console.info(modelListStateData, '检查状态-----modelListStateData');
     // 从downloadList中提取status信息
     modelListData.forEach((item) => {
       if (item.id) {
