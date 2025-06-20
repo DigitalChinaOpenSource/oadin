@@ -35,7 +35,9 @@ build_mac:
     - echo "--------- 🛠️ 制品构建与签名 ----------"
     - go mod tidy
     - echo "$ENV active"
-    - CGO_ENABLED=1 GOOS=darwin GOARCH=arm64  go build -o byze -tags "$ENV" -ldflags="-s -w"  cmd/cli/main.go
+    - CURRENT_DIR=$(pwd)
+    - echo "Current directory: $CURRENT_DIR"
+    - CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 CGO_CFLAGS="-I$CURRENT_DIR/internal/datastore/sqlite/sqlite-vec" go build -o byze -tags "$ENV" -ldflags="-s -w"  cmd/cli/main.go
     - export APPLE_ID="it@digitalchina.com"
     - export APPLE_APP_SPECIFIC_PASSWORD="yyzx-tium-divi-iors"
     - export APPLE_TEAM_ID="US7ZG73N89"
@@ -151,6 +153,9 @@ build_win:
     - $env:CGO_ENABLED= 1
     - $env:GOOS= "windows"
     - $env:GOARCH= "amd64"
+    - $currentPath = (Get-Location).Path
+    - $env:CGO_CFLAGS= "-I$currentPath\internal\datastore\sqlite\sqlite-vec"
+    - Write-Host "CGO_CFLAGS set to: $env:CGO_CFLAGS"
     - echo "$env:ENV active"
     - go build -o byze.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
     - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "byze.exe"
