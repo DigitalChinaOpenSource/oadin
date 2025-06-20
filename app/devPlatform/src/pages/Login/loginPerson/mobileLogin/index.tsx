@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './index.module.scss';
 import LoginForm from '../../loginForm';
+import useLoginStore from '@/store/loginStore.ts';
 
 interface MobileLoginProps {
   onLogin: (phone: string, verificationCode: string) => void;

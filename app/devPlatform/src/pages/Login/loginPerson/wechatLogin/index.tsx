@@ -8,8 +8,6 @@ const WechatLogin: React.FC = () => {
   const redirect_uri = `${window.location.origin}/login`;
 
   useEffect(() => {
-    console.log(11111);
-
     initializeWeixinLogin(redirect_uri);
   }, []);
 
