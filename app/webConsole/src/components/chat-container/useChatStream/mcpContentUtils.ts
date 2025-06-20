@@ -1,5 +1,5 @@
 import { MessageType } from '@res-utiles/ui-components';
-import { IToolCall, IToolCallData } from './types';
+import { IToolCallData } from './types';
 import { generateUniqueId } from './utils';
 
 /**
@@ -74,13 +74,11 @@ export const updateContentListWithMcp = (contentList: any[], mcpContent: any) =>
 /**
  * 构建工具调用数据对象
  */
-export const buildToolCallData = (toolResponse: any, toolCall: IToolCall, toolGroupId: string, status: 'progress' | 'success' | 'error', outputParams?: string): IToolCallData => {
+export const buildToolCallData = (toolResponse: any, toolGroupId: string, status: 'progress' | 'success' | 'error', outputParams?: string): IToolCallData => {
   if (!toolGroupId) return {} as IToolCallData;
   return {
     id: toolGroupId,
     name: toolResponse.toolName,
-    desc: toolResponse.toolDesc || '工具调用',
-    logo: toolResponse.toolLogo || '',
     inputParams: JSON.stringify(toolResponse.toolArgs),
     outputParams: outputParams || '',
     status,

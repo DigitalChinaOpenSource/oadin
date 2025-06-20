@@ -9,11 +9,10 @@ import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
 import { generateUniqueId, formatErrorMessage } from './utils';
-import { findExistingToolMessage, findProgressToolMessage, extractToolCallData, createMcpContent, updateContentListWithMcp, buildToolCallData, handleToolCallErrorMessage } from './mcpContentUtils';
+import { findProgressToolMessage, extractToolCallData, createMcpContent, updateContentListWithMcp, buildToolCallData, handleToolCallErrorMessage } from './mcpContentUtils';
 import { buildMessageWithThinkContent, handleTextContent } from './thinkContentUtils';
-import { IRunToolParams, IStreamData, IToolCall, StreamCallbacks, ChatRequestParams, ChatResponseData } from './types';
+import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToolCallData } from './types';
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
-import { message } from 'antd';
 
 export function useChatStream() {
   const { addMessage, setCurrentSessionId, currentSessionId } = useChatStore();
@@ -49,6 +48,7 @@ export function useChatStream() {
   const toolCallHandlersRef = useRef<{
     continueConversation: ((result: string) => Promise<void>) | null;
   }>({ continueConversation: null });
+  const functionIdCacheRef = useRef<Record<string, any>>({});
 
   /**
    * 清除所有定时器
@@ -166,6 +166,7 @@ export function useChatStream() {
         totalTimer: null,
       },
     };
+    functionIdCacheRef.current = {};
   }, []);
 
   const cleanupResources = useCallback(() => {
@@ -296,11 +297,21 @@ export function useChatStream() {
       let currentTotalDuration = 0;
       try {
         // 3. 设置工具调用状态
-        const _function = tool_calls?.[0].function;
         setStreamingContent(currentContent);
-
+        const _function = tool_calls?.[0].function;
         // 4. 获取工具响应
-        const toolResponse = await getIdByFunction({ toolName: _function.name, toolArgs: _function.arguments }, selectedMcpIds());
+        let toolResponse;
+
+        // 检查缓存中是否已有此函数的id
+        if (_function.name && functionIdCacheRef.current[_function.name]) {
+          toolResponse = functionIdCacheRef.current[_function.name];
+        } else {
+          toolResponse = await getIdByFunction({ toolName: _function.name, toolArgs: _function.arguments }, selectedMcpIds());
+
+          if (_function.name) {
+            functionIdCacheRef.current[_function.name] = toolResponse;
+          }
+        }
 
         // 5. 查找已存在的消息
         const messages = useChatStore.getState().messages;
@@ -327,7 +338,7 @@ export function useChatStream() {
         }
 
         // 6. 添加当前工具调用到结果数组
-        toolCallResults.push(buildToolCallData(toolResponse, tool_calls?.[0], tool_group_id || '', 'progress'));
+        toolCallResults.push(buildToolCallData(toolResponse, tool_group_id || '', 'progress'));
 
         // 7. 构建并更新消息
         const mcpContent = createMcpContent('progress', toolCallResults, currentTotalDuration);
@@ -353,9 +364,12 @@ export function useChatStream() {
         const lastIndex = toolCallResults.length - 1;
         toolCallResults[lastIndex] = {
           ...toolCallResults[lastIndex],
+
           outputParams: isToolError ? toolErrorMessage : data.content[0]?.text || '',
+          logo: data.logo,
+          desc: data.toolDesc,
           status: isToolError ? 'error' : 'success',
-        };
+        } as IToolCallData;
 
         // 10. 检查所有工具是否完成,但仍保持整体状态为进行中
         const keepInProgress = !isToolError || (isToolError && toolCallHandlersRef.current.continueConversation);

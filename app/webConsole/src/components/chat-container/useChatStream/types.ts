@@ -56,12 +56,12 @@ export interface IContentItem {
 }
 
 export interface IToolCallData {
-  desc: string;
   id: string;
-  inputParams: string;
-  logo: string;
   mcpId?: string;
+  desc?: string;
+  logo?: string;
   name: string;
+  inputParams: string;
   outputParams?: string;
   status: 'success' | 'error' | 'loading' | string;
   duration?: number;

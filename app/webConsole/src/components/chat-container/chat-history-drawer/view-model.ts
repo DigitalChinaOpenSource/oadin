@@ -15,12 +15,8 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   // 获取对话store
   const { setHistoryVisible, createNewChat, setCurrentSessionId, setMessages, currentSessionId } = useChatStore();
 
-  // 获取模型store
   const { setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
-  // 历史对话记录
   const [chatHistory, setChatHistory] = useState<IChatHistoryItem[]>([]);
-
-  // 用于记录当前显示 Popconfirm 的卡片 id 并设置是否显示确认弹窗
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
 
   // 获取历史对话记录

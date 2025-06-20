@@ -174,16 +174,12 @@ export const getIdByFunction = async (functionParams: IToolParams, ids: string[]
       mcpId,
       toolName: functionParams.toolName,
       toolArgs: functionParams.toolArgs,
-      toolDesc: toolDesc,
-      toolLogo: toolLogo,
     };
   } else {
     return {
       mcpId: '',
       toolName: functionParams.toolName,
       toolArgs: functionParams.toolArgs,
-      toolDesc: toolDesc,
-      toolLogo: '',
     };
   }
 };
