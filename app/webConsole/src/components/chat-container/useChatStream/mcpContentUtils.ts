@@ -10,6 +10,23 @@ export const findProgressToolMessage = (messages: MessageType[]) => {
 };
 
 /**
+ * 从消息中提取指定 tool_group_id 的工具调用数据
+ */
+export const extractToolCallDataByGroupId = (contentList: any[], toolGroupId: string) => {
+  let toolCallResults: any[] = [];
+  let mcpContentIndex = -1;
+
+  // 查找指定 tool_group_id 对应的 contentList 项
+  mcpContentIndex = contentList.findIndex((content) => content.type === 'mcp' && content.id === toolGroupId && typeof content.content === 'object');
+
+  if (mcpContentIndex >= 0) {
+    toolCallResults = [...(contentList[mcpContentIndex].content.data || [])];
+  }
+
+  return { toolCallResults, mcpContentIndex };
+};
+
+/**
  * 从消息中提取工具调用数据
  */
 export const extractToolCallData = (contentList: any[], id?: string) => {
@@ -32,6 +49,21 @@ export const extractToolCallData = (contentList: any[], id?: string) => {
 /**
  * 创建 MCP 内容对象
  */
+export const createMcpContentWithGroupId = (toolGroupId: string, status: string, data: any[], totalDuration?: number) => {
+  return {
+    id: toolGroupId,
+    type: 'mcp' as const,
+    content: {
+      status,
+      data,
+      totalDuration,
+    },
+  };
+};
+
+/**
+ * 创建 MCP 内容对象
+ */
 export const createMcpContent = (status: string, data: any[], totalDuration?: number) => {
   return {
     id: generateUniqueId('content'),
@@ -42,6 +74,24 @@ export const createMcpContent = (status: string, data: any[], totalDuration?: nu
       totalDuration,
     },
   };
+};
+
+/**
+ * 更新内容列表中指定 tool_group_id 的 MCP 项
+ */
+export const updateContentListWithMcpByGroupId = (contentList: any[], mcpContent: any, toolGroupId: string) => {
+  const updatedList = [...contentList];
+  const mcpIndex = updatedList.findIndex((item) => item.type === 'mcp' && item.id === toolGroupId);
+
+  if (mcpIndex >= 0) {
+    // 更新现有项
+    updatedList[mcpIndex] = mcpContent;
+  } else {
+    // 添加新项
+    updatedList.push(mcpContent);
+  }
+
+  return updatedList;
 };
 
 /**
@@ -63,11 +113,12 @@ export const updateContentListWithMcp = (contentList: any[], mcpContent: any) =>
 /**
  * 构建工具调用数据对象
  */
-export const buildToolCallData = (toolResponse: any, toolGroupId: string, status: 'progress' | 'success' | 'error', outputParams?: string): IToolCallData => {
-  if (!toolGroupId) return {} as IToolCallData;
+export const buildToolCallData = (toolResponse: any, mcpId: string, status: 'progress' | 'success' | 'error', outputParams?: string): IToolCallData => {
   return {
-    id: toolGroupId,
+    id: mcpId,
     name: toolResponse.toolName,
+    desc: toolResponse.desc || '',
+    logo: toolResponse.logo || '',
     inputParams: JSON.stringify(toolResponse.toolArgs),
     outputParams: outputParams || '',
     status,
@@ -81,6 +132,7 @@ export const handleToolCallErrorMessage = (
   toolCallResults: any[],
   currentContentList: any[],
   currentToolMessageId: string,
+  toolGroupId: string,
   errorMessage: string,
   addMessage: (msg: MessageType, isUpdate?: boolean) => string,
 ) => {
@@ -94,10 +146,10 @@ export const handleToolCallErrorMessage = (
     };
 
     // 创建错误状态的 MCP 内容
-    const errorMcpContent = createMcpContent(toolCallResults.every((t) => t.status === 'error' || t.status === 'success') ? 'error' : 'progress', toolCallResults);
+    const errorMcpContent = createMcpContentWithGroupId(toolGroupId, toolCallResults.every((t) => t.status === 'error' || t.status === 'success') ? 'error' : 'progress', toolCallResults);
 
     // 更新内容列表
-    const errorContentList = updateContentListWithMcp(currentContentList, errorMcpContent);
+    const errorContentList = updateContentListWithMcpByGroupId(currentContentList, errorMcpContent, toolGroupId);
 
     // 构建错误消息
     const errorMsg: MessageType = {
@@ -113,15 +165,17 @@ export const handleToolCallErrorMessage = (
       id: generateUniqueId('mcp_error_msg'),
       role: 'assistant',
       contentList: [
-        createMcpContent('error', [
+        createMcpContentWithGroupId(toolGroupId, 'error', [
           {
-            id: '',
+            id: generateUniqueId('error_tool'),
             name: '',
             desc: '工具调用',
             logo: '',
             inputParams: '',
             outputParams: errorMessage,
             status: 'error',
+            startTime: Date.now(),
+            executionTime: 0,
           },
         ]),
       ],
