@@ -210,15 +210,14 @@ func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
 		}
 	}
 	toolMessage := &types.ToolMessage{
-		ID:            req.MessageId,
-		McpId:         req.McpId,
-		Logo:          req.Logo,
-		Name:          req.ToolName,
-		Desc:          req.Desc,
-		InputParams:   inputParamsStr,
-		OutputParams:  outputParamsStr,
-		Status:        !resp.IsError,
-		ExecutionTime: req.ExecutionTime,
+		ID:           req.MessageId,
+		McpId:        req.McpId,
+		Name:         req.ToolName,
+		InputParams:  inputParamsStr,
+		OutputParams: outputParamsStr,
+		Status:       !resp.IsError,
+		Logo:         resp.Logo,
+		Desc:         resp.ToolDesc,
 	}
 	t.Playground.UpdateToolCall(c, toolMessage)
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": resp})
