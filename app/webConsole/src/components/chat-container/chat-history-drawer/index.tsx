@@ -1,84 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Drawer, Button, Tooltip, Popconfirm, Space } from 'antd';
-import { useChatHistoryDrawer } from '@/components/chat-container/chat-history-drawer/view-module';
-import type { MessageType } from '@res-utiles/ui-components';
+import { useMemo } from 'react';
+import { Drawer, Popconfirm } from 'antd';
+import { useChatHistoryDrawer } from '@/components/chat-container/chat-history-drawer/view-model';
 import styles from './index.module.scss';
-import dayjs from 'dayjs';
-import { IChatHistoryItem } from '@/components/chat-container/chat-history-drawer/types.ts';
 import { TrashIcon } from '@phosphor-icons/react';
 import noHistorySvg from '@/components/icons/no-history.svg';
 import EllipsisTooltip from '@vanta/ellipsis-tooltip';
 import { CloseOutlined } from '@ant-design/icons';
-
-export interface IChatHistoryDrawerProps {
-  onHistoryDrawerClose?: () => void;
-  onHistorySelect?: (historyId: string, historyMessages: MessageType[]) => void;
-}
-
-// 定义分组结果接口
-interface GroupedChatHistory {
-  today: IChatHistoryItem[];
-  yesterday: IChatHistoryItem[];
-  last7Days: IChatHistoryItem[];
-  earlier: IChatHistoryItem[];
-}
-
-/**
- * 按日期对聊天历史记录进行分组
- * @param history 聊天历史记录数组
- * @returns 分组后的聊天历史记录对象
- */
-function groupChatHistoryByDate(history: IChatHistoryItem[]): GroupedChatHistory {
-  const now = dayjs();
-  const todayStart = now.startOf('day');
-  const yesterdayStart = now.subtract(1, 'day').startOf('day');
-  const last7DaysStart = now.subtract(7, 'day').startOf('day');
-
-  return history.reduce<GroupedChatHistory>(
-    (groups, item) => {
-      const itemDate = dayjs(item.createdAt);
-
-      if (itemDate.isSame(todayStart, 'day')) {
-        groups.today.push(item);
-      } else if (itemDate.isSame(yesterdayStart, 'day')) {
-        groups.yesterday.push(item);
-      } else if (itemDate.isAfter(last7DaysStart) && itemDate.isBefore(yesterdayStart)) {
-        groups.last7Days.push(item);
-      } else {
-        groups.earlier.push(item);
-      }
-
-      return groups;
-    },
-    { today: [], yesterday: [], last7Days: [], earlier: [] },
-  );
-}
+import { IChatHistoryDrawerProps } from './types';
 
 export default function ChatHistoryDrawer(props: IChatHistoryDrawerProps) {
-  const { onHistorySelect, onHistoryDrawerClose } = props;
-  const { historyLoading, fetchChatHistory, fetchChatHistoryDetail, chatHistory, delHistoryLoading, deleteChatHistory, setShowDeleteId, showDeleteId } = useChatHistoryDrawer();
+  const { historyLoading, chatHistory, delHistoryLoading, deleteChatHistory, setShowDeleteId, showDeleteId, groupChatHistoryByDate, handleHistoryClick, onHistoryDrawerClose } =
+    useChatHistoryDrawer(props);
 
   const grouped = useMemo(() => groupChatHistoryByDate(chatHistory), [chatHistory]);
-
-  const handleHistoryClick = async (id: string) => {
-    if (delHistoryLoading) {
-      return;
-    }
-
-    try {
-      // 获取详细对话内容
-      const historyDetail = await fetchChatHistoryDetail(id);
-
-      // 如果提供了选择回调，则调用
-      if (onHistorySelect && historyDetail) {
-        onHistorySelect(id, historyDetail);
-      }
-    } catch (error) {
-      console.error('加载历史对话失败:', error);
-      // 可以添加错误提示
-    }
-  };
-
   const renderGroup = (title: string, list: any[]) => {
     if (!list.length) return null;
 
@@ -92,10 +26,8 @@ export default function ChatHistoryDrawer(props: IChatHistoryDrawerProps) {
               key={item.id}
               onClick={() => {
                 if (delHistoryLoading) {
-                  // setShowDeleteId(null);
                   return;
                 }
-                // fetchChatHistoryDetail(item.id);
                 handleHistoryClick(item.id);
               }}
             >

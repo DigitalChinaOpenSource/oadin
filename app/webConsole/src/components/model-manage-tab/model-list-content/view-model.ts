@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IModelAuth, IModelAuthType, IModelPathSpaceRes } from '../types';
-import { IModelDataItem, IModelPathRes, IModelSourceType, IRequestModelParams, ModelData } from '@/types';
+import { IModelDataItem, IModelPathRes, IModelSourceType, IRequestModelParams, ModelData, IModelSquareParams, ModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
@@ -12,22 +12,10 @@ import { convertToMB } from '@/utils';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
 import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 
-export type ModelSourceType = 'local' | 'remote';
-
 interface IPagenation {
   current: number;
   pageSize: number;
   total: number;
-}
-export interface IModelSquareParams {
-  flavor?: string;
-  // remote时需要传
-  // 'dev' | 'product'
-  env_type?: string;
-  service_source: ModelSourceType;
-  page_size?: number;
-  page?: number;
-  mine?: boolean;
 }
 
 export interface IUseViewModel {
