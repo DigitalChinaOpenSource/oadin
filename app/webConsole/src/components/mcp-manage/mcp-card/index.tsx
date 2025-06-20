@@ -1,13 +1,12 @@
-import React, { useRef, useEffect, useState, Dispatch, SetStateAction } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import { Button, Checkbox, Popover } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
-import { GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
+import { DotsThreeCircleIcon, GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
 import dayjs from 'dayjs';
 import defaultPng from '@/assets/favicon.png';
 import { ExclamationCircleOutlined, PlusCircleOutlined } from '@ant-design/icons';
-import { DotsThreeCircleIcon } from '@phosphor-icons/react';
 import McpAuthModal from '@/components/mcp-manage/mcp-detail/mcp-auth-modal';
 import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
