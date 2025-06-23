@@ -22,7 +22,7 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, th
   return (
     <div className="chat-message-bubble ai-bubble">
       {thinkingContent && <DeepThinkChat dataSource={{ data: thinkingContent, status: 'progress' }} />}
-
+      {/* @ts-ignore */}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}

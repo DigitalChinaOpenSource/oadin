@@ -13,6 +13,7 @@ type markDownDataType =
 export default function McpOverview({ markDownData }: { markDownData: markDownDataType }) {
   return (
     <div className={styles.mcpOverview}>
+      {/* @ts-ignore */}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}

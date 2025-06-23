@@ -4,6 +4,7 @@ import type { UploadProps, UploadFile } from 'antd';
 import { httpRequest } from '@/utils/httpRequest';
 import uploadSvg from '@/components/icons/upload.svg';
 import useChatStore from '../store/useChatStore';
+import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
 
 interface UploadToolProps {
   maxFiles?: number;
@@ -14,7 +15,9 @@ interface UploadToolProps {
 export type FileStatus = 'error' | 'uploading' | 'done';
 
 export default function UploadTool({ maxFiles = 5, maxFileSize = 50 }: UploadToolProps) {
-  const { currentSessionId, uploadFileList, setUploadFileList } = useChatStore();
+  const { uploadFileList, setUploadFileList } = useChatStore();
+  // 从URL中获取当前会话ID
+  const currentSessionId = getSessionIdFromUrl();
   const maxFileSizeBytes = maxFileSize * 1024 * 1024;
   const validateFile = (
     file: File,

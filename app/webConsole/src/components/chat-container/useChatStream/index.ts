@@ -23,10 +23,11 @@ import {
 import { buildMessageWithThinkContent, handleTextContent } from './thinkContentUtils';
 import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToolCallData } from './types';
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
+import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
 
 export function useChatStream() {
   const { addMessage, isLoading, setIsLoading } = useChatStore();
-  const currentSessionId = useChatStore((state) => state.currentSessionId);
+  const currentSessionId = getSessionIdFromUrl();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
