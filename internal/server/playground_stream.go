@@ -296,6 +296,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
 				} else if len(originalContent) > 0 {
+					// slog.Info("收到非空流式输出块",
+					// 	"content_length", len(originalContent),
+					// 	"is_complete", resp.IsComplete)
+
 					fullContent += resp.Content
 
 					respChan <- resp
