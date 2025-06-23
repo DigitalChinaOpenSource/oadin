@@ -14,13 +14,13 @@ const WechatLogin: React.FC = () => {
   return (
     <div className={styles.wechatLogin}>
       {/* 头部标题区 */}
-      <div className={styles.headerSection}>
-        <div className={styles.tabContainer}>
-          <div className={styles.tabItem}>
-            <span className={`${styles.tabTitle} `}>微信扫码登录</span>
+      <div className="headerSection">
+        <div className="tabContainer">
+          <div className="tabItem">
+            <span className="tabTitle">微信扫码登录</span>
           </div>
         </div>
-        <span className={styles.subTitle}>未注册的微信号将自动创建 OADIN 账号</span>
+        <span className="subTitle">未注册的微信号将自动创建 OADIN 账号</span>
       </div>
       <div className={styles.wechatLoginContainer}>
         <div

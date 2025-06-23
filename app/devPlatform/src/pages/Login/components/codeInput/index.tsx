@@ -2,7 +2,7 @@ import { Form, Input } from 'antd';
 import React, { useRef, useState } from 'react';
 import styles from '@/pages/Login/loginForm/index.module.scss';
 
-const CodeInput = ({ form, validateFiled, codeFiled }: { form: any; validateFiled: string; codeFiled: string }) => {
+const CodeInput = ({ form, validateFiled, codeFiled, placeHolder }: { form: any; validateFiled: string; codeFiled: string; placeHolder?: string }) => {
   // 60s倒计时
   const [countTime, setCountTime] = useState(60);
   const [showTimeStatus, setShowTimeStatus] = useState<1 | 2 | 3>(1); // 1 显示获取验证码 2 显示倒计时 3显示重新获取
@@ -84,7 +84,7 @@ const CodeInput = ({ form, validateFiled, codeFiled }: { form: any; validateFile
       <Input
         style={{ width: '100%', height: '40px' }}
         maxLength={6}
-        placeholder="请输入验证码"
+        placeholder={placeHolder ? placeHolder : '请输入验证码'}
         suffix={<CodeAfter />}
         allowClear
         onChange={(e) => handleInputChange(e, codeFiled)} // 控制输入
