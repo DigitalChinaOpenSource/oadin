@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 )
 
 func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan *types.ChatResponse, <-chan error) {
@@ -30,6 +31,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 	// 打印即将发往Ollama的请求体内容，重点关注think参数
 	fmt.Printf("[ChatStream] Final request body to Ollama: %s\n", string(body))
+	slog.Info("[ChatStream] Final request body to Ollama: ", string(body))
 
 	serviceReq := &types.ServiceRequest{
 		Service:       "chat",
@@ -110,9 +112,11 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				if ollamaResp.Message != nil && ollamaResp.Message.ToolCalls != nil && len(ollamaResp.Message.ToolCalls) > 0 {
 					toolCalls = ollamaResp.Message.ToolCalls
 					fmt.Printf("[ChatStream] 提取到工具调用，数量: %d\n", len(toolCalls))
+					slog.Info("[ChatStream] 从message中提取到工具调用", "数量", len(toolCalls))
 				} else if ollamaResp.ToolCalls != nil && len(ollamaResp.ToolCalls) > 0 {
 					toolCalls = ollamaResp.ToolCalls
 					fmt.Printf("[ChatStream] 提取到工具调用，数量: %d\n", len(toolCalls))
+					slog.Info("[ChatStream] 从message中提取到工具调用", "数量", len(toolCalls))
 				}
 			} else {
 				// 如果标准解析失败，尝试使用通用map解析
@@ -157,6 +161,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 						if tc, ok := msg["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
 							toolCalls = tc
 							fmt.Printf("[ChatStream] 提取到工具调用，数量: %d\n", len(toolCalls))
+							slog.Info("[ChatStream] 从message中提取到工具调用", "数量", len(toolCalls))
 						}
 					}
 
