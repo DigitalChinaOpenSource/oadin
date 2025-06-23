@@ -5,7 +5,7 @@ import { httpRequest } from '@/utils/httpRequest';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
-import { IModelPathSpaceRes } from '../types';
+import { IModelPathSpaceRes } from '../model-manage-tab/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import styles from './index.module.scss';
 
@@ -20,7 +20,7 @@ interface IModelPathModalProps {
 export default memo(function ModelPathModal(props: IModelPathModalProps) {
   const { modalPath, onModelPathVisible, onChangeModelPath, updateModelPath } = props;
 
-  const { downloadList } = useModelDownloadStore();
+  const downloadList = useModelDownloadStore((state) => state.downloadList);
   const { IN_PROGRESS } = DOWNLOAD_STATUS;
   const { setMigratingStatus } = useModelPathChangeStore();
   const { checkByzeStatus, setCheckByzeServerLoading } = useByzeServerCheckStore();

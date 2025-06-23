@@ -1,0 +1,91 @@
+.uploadContainer {
+  width: 100%;
+}
+
+.idCardUpload {
+  width: 100%;
+  height: 100%;
+  :global(.ant-upload.ant-upload-select) {
+    width: 100% !important;
+    height: 100% !important;
+    background: #f5f8ff;
+    border: 1px dashed #c3d2ff;
+    border-radius: 4px;
+    margin-right: 0;
+    margin-bottom: 0;
+  }
+}
+
+.uploadButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4f4dff;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.uploadText {
+  margin-left: 4px;
+}
+
+.previewContainer {
+  position: relative;
+  width: 100%;
+  height: 112px;
+  border: 1px dashed #c3d2ff;
+  border-radius: 4px;
+  overflow: hidden;
+
+  &:hover .previewOverlay {
+    opacity: 1;
+  }
+}
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.previewOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.actionButton {
+  color: white;
+  border: 1px solid white;
+  background: transparent;
+  height: 32px;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    color: #4f4dff;
+    background: white;
+    border-color: white;
+  }
+
+  :global {
+    .anticon {
+      margin-right: 4px;
+    }
+  }
+}

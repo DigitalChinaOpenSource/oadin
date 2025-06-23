@@ -5,8 +5,8 @@ import { message } from 'antd';
 import { IModelDataItem } from '@/types';
 export function useViewModel() {
   const { fetchDownLoadAbort, fetchDownloadStart } = useDownLoad();
-  const { downloadList, setDownloadList } = useModelDownloadStore();
-
+  const setDownloadList = useModelDownloadStore((state) => state.setDownloadList);
+  const downloadList = useModelDownloadStore((state) => state.downloadList);
   const fetchCancelModel = async (data: IModelDataItem) => {
     await fetchDownLoadAbort({ model_name: data.name }, { id: data.id });
   };
