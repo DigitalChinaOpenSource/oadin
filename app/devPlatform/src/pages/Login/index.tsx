@@ -13,6 +13,9 @@ import ForgetPassword from '@/pages/Login/loginEnterprise/forgetPassword';
 import useLoginStore, { LoginType } from '@/store/loginStore.ts';
 import CreateNewAccount from '@/pages/Login/loginEnterprise/createNewAccount';
 import './common.css';
+import BindPhone from '@/pages/Login/bindPhone';
+import AuthPerson from '@/pages/Login/loginPerson/authPerson';
+import AuthEnterprise from '@/pages/Login/loginEnterprise/authEnterprise';
 
 interface LoginFormValues {
   username: string;
@@ -95,6 +98,7 @@ const LoginPage: React.FC = () => {
             <div className={styles.secondTitle}>
               <div className={styles.secondTag}></div>
               <span>低门槛，高效率开发体验</span>
+              <Button onClick={() => setCurrentStep('enterpriseAuth')}>测试按钮</Button>
             </div>
           </div>
           {/*左侧描述图片*/}
@@ -120,6 +124,9 @@ const LoginPage: React.FC = () => {
             )}
             {currentStep === 'forgetPassword' && <ForgetPassword />}
             {currentStep === 'createAccount' && <CreateNewAccount />}
+            {currentStep === 'bindPhone' && <BindPhone />}
+            {currentStep === 'personAuth' && <AuthPerson />}
+            {currentStep === 'enterpriseAuth' && <AuthEnterprise />}
           </div>
         </div>
       </div>

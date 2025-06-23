@@ -94,3 +94,32 @@
     background-color: rgba(84, 41, 255, 1) !important;
   }
 }
+.authOperate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  .operateBtn {
+    flex: 1;
+    height: 40px;
+    padding: 12px 0;
+    border-radius: 8px;
+    box-sizing: border-box;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .sureBtn {
+    flex: 1;
+    height: 40px;
+    padding: 12px 0;
+    border-radius: 8px;
+    box-sizing: border-box;
+    cursor: pointer;
+    font-size: 14px;
+    color: #ffffff;
+    background-color: rgba(84, 41, 255, 0.6);
+    &:hover {
+      background-color: rgba(84, 41, 255, 1) !important;
+    }
+  }
+}
