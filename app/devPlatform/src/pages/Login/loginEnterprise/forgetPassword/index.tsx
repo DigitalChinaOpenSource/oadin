@@ -2,7 +2,7 @@ import styles from './index.module.scss';
 import { Button, Checkbox, Form, Input } from 'antd';
 import useLoginStore from '@/store/loginStore.ts';
 import CodeInput from '@/pages/Login/components/codeInput';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import EmailInput from '@/pages/Login/components/emailInput';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
@@ -11,8 +11,80 @@ interface IForgetPasswordProp {
   code: string;
 }
 
+interface ISetNewFormProps {
+  password: string;
+  surePassword: string;
+}
+
 const SetNewPassword = () => {
-  return <div>123</div>;
+  const [form] = Form.useForm();
+  const onFinish = (values: ISetNewFormProps) => {
+    console.log('Received values of form: ', values);
+  };
+  return (
+    <Form
+      noValidate={true}
+      name="setNewPasswordForm"
+      form={form}
+      autoComplete="off"
+      onFinish={onFinish}
+      className="loginForm"
+    >
+      <Form.Item
+        name={'password'}
+        validateTrigger={['onBlur']}
+        rules={[
+          { required: true, message: '请输入新的登录密码' },
+          {
+            pattern: /^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z!@#$%^&*()_+]{8,16}$/,
+            message: '密码必须是8-16位英文字母、数字、字符组合',
+          },
+        ]}
+        extra={<span className={styles.passwordDesc}>密码必须是8-16位英文字母、数字、字符组合(不能是纯数字)</span>}
+      >
+        <Input.Password
+          className="formInput"
+          placeholder={'请设置新的登录密码'}
+          minLength={8}
+          maxLength={16}
+          allowClear
+        />
+      </Form.Item>
+      <Form.Item
+        name={'surePassword'}
+        dependencies={['password']}
+        validateTrigger={['onBlur', 'onChange']}
+        rules={[
+          { required: true, message: '请确认新的登录密码' },
+          ({ getFieldValue }) => ({
+            validator(_, value) {
+              if (!value || getFieldValue('password') === value) {
+                return Promise.resolve();
+              }
+              return Promise.reject(new Error('两次输入的密码不一致'));
+            },
+          }),
+        ]}
+      >
+        <Input.Password
+          className="formInput"
+          placeholder={'请再次输入登录密码'}
+          minLength={8}
+          maxLength={16}
+          allowClear
+        />
+      </Form.Item>
+      <Form.Item style={{ marginBottom: 0 }}>
+        <Button
+          htmlType="submit"
+          type="primary"
+          className="loginButton"
+        >
+          确认
+        </Button>
+      </Form.Item>
+    </Form>
+  );
 };
 
 const ForgetPassword = () => {
@@ -33,7 +105,7 @@ const ForgetPassword = () => {
         <ArrowLeftOutlined size={24} />
         <div>返回</div>
       </div>
-      <div className="header">找回密码</div>
+      <div className="header">{showForget ? '找回密码' : '设置新密码'}</div>
       <div className="formContainer">
         {showForget ? (
           <Form

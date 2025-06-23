@@ -2,7 +2,7 @@ import { Form, Input } from 'antd';
 import React from 'react';
 import styles from '@/pages/Login/loginForm/index.module.scss';
 
-const PhoneNumberInput = ({ form, codeFiled }: { form: any; codeFiled: string }) => {
+const PhoneNumberInput = ({ form, codeFiled, placeholder }: { form: any; codeFiled: string; placeholder?: string }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const value = e.target.value.replace(/\D/g, ''); // 移除非数字字符
     form.setFieldsValue({ [type]: value });
@@ -31,11 +31,11 @@ const PhoneNumberInput = ({ form, codeFiled }: { form: any; codeFiled: string })
       ]}
     >
       <Input
-        style={{ width: '100%', height: '40px' }}
+        className="formInput"
         prefix={PhoneBefore}
         allowClear
         maxLength={11}
-        placeholder="请输入手机号"
+        placeholder={placeholder ? placeholder : '请输入手机号'}
         onChange={(e) => handleInputChange(e, 'phoneNumber')} // 控制输入
       />
     </Form.Item>

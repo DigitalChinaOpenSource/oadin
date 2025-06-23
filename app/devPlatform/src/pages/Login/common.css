@@ -76,6 +76,10 @@
   display: flex;
   flex-direction: column;
 }
+.formInput {
+  width: 100%;
+  height: 40px;
+}
 .loginButton {
   width: 100%;
   height: 100%;
