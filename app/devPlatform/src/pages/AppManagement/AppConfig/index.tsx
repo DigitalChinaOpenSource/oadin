@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Card, Form, Input, message, Space, Spin, Tabs } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Button, Checkbox, Form, message, Spin, Tooltip } from 'antd';
+import { ArrowLeftOutlined, CopyOutlined, EditOutlined, EyeOutlined, InfoCircleOutlined, RobotOutlined, SyncOutlined } from '@ant-design/icons';
 import styles from './index.module.scss';
 
 interface AppConfigProps {}
@@ -11,7 +11,7 @@ const fetchAppDetail = async (id: string) => {
   console.log('Fetching app details for:', id);
   // 模拟API调用延迟
   await new Promise((resolve) => setTimeout(resolve, 1000));
-  
+
   // 模拟返回数据
   return {
     id,
@@ -23,17 +23,24 @@ const fetchAppDetail = async (id: string) => {
     osCount: 1,
     updatedAt: new Date().toISOString(),
     description: '这是应用的详细描述信息',
+    supportedModels: ['gpt-3.5-turbo', 'gpt-4'],
+    supportedMcps: ['mcp-1', 'mcp-2'],
+    supportedOs: {
+      windows: true,
+      macos: false,
+      ubuntu: true,
+    },
     configs: {
       modelSettings: {
         defaultModel: 'gpt-4',
         temperature: 0.7,
-        maxTokens: 2048
+        maxTokens: 2048,
       },
       apiSettings: {
         rateLimit: 100,
-        timeout: 30
-      }
-    }
+        timeout: 30,
+      },
+    },
   };
 };
 
@@ -50,8 +57,14 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [appDetail, setAppDetail] = useState<any>(null);
+  const [osSelection, setOsSelection] = useState({
+    windows: false,
+    macos: false,
+    ubuntu: false,
+  });
+  const [agreement, setAgreement] = useState(false);
   const [form] = Form.useForm();
-  
+
   // 获取应用详情
   useEffect(() => {
     if (!id) {
@@ -59,16 +72,29 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       navigate('/app-management');
       return;
     }
-    
+
     const loadAppDetail = async () => {
       try {
         setLoading(true);
         const data = await fetchAppDetail(id);
         setAppDetail(data);
+
+        // 设置操作系统选择状态
+        if (data.supportedOs) {
+          setOsSelection({
+            windows: data.supportedOs.windows || false,
+            macos: data.supportedOs.macos || false,
+            ubuntu: data.supportedOs.ubuntu || false,
+          });
+        }
+
+        // 设置表单字段
         form.setFieldsValue({
           name: data.name,
           description: data.description,
-          ...data.configs
+          supportedModels: data.supportedModels,
+          supportedMcps: data.supportedMcps,
+          ...data.configs,
         });
       } catch (error) {
         message.error('获取应用详情失败');
@@ -77,36 +103,37 @@ const AppConfig: React.FC<AppConfigProps> = () => {
         setLoading(false);
       }
     };
-    
+
     loadAppDetail();
   }, [id, navigate, form]);
-  
+
   const handleBack = () => {
     navigate('/app-management');
   };
-  
+
   const handleSave = async () => {
+    // 验证协议是否勾选
+    if (!agreement) {
+      message.error('请阅读并同意相关协议');
+      return;
+    }
+
+    // 验证是否选择了至少一个操作系统
+    if (!osSelection.windows && !osSelection.macos && !osSelection.ubuntu) {
+      message.error('请至少选择一个操作系统');
+      return;
+    }
+
     try {
-      const values = await form.validateFields();
       setSaving(true);
-      
+
       const result = await updateApp(id!, {
         ...appDetail,
-        name: values.name,
-        description: values.description,
-        configs: {
-          modelSettings: {
-            defaultModel: values.modelSettings?.defaultModel,
-            temperature: values.modelSettings?.temperature,
-            maxTokens: values.modelSettings?.maxTokens
-          },
-          apiSettings: {
-            rateLimit: values.apiSettings?.rateLimit,
-            timeout: values.apiSettings?.timeout
-          }
-        }
+        supportedOs: osSelection,
+        supportedModels: appDetail.supportedModels,
+        supportedMcps: appDetail.supportedMcps,
       });
-      
+
       if (result.success) {
         message.success('保存成功');
       } else {
@@ -114,12 +141,12 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       }
     } catch (error) {
       console.error('Save error:', error);
-      message.error('表单验证失败');
+      message.error('保存失败');
     } finally {
       setSaving(false);
     }
   };
-  
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -127,123 +154,188 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       </div>
     );
   }
-  
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <Button 
-          type="text" 
-          icon={<ArrowLeftOutlined />} 
-          onClick={handleBack}
-          className={styles.backButton}
-        >
-          返回
-        </Button>
-        <h1 className={styles.title}>配置应用</h1>
-      </div>
-      
-      <div className={styles.content}>
-        <Form
-          form={form}
-          layout="vertical"
-          className={styles.form}
-        >
-          <Card className={styles.card}>
-            <h2 className={styles.sectionTitle}>基本信息</h2>
-            <Form.Item 
-              name="name" 
-              label="应用名称" 
-              rules={[
-                { required: true, message: '请输入应用名称' },
-                { max: 50, message: '应用名称不能超过50个字符' }
-              ]}
+      <div className={styles.contentArea}>
+        {/* 固定标题栏 */}
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={handleBack}
+              className={styles.backButton}
             >
-              <Input placeholder="请输入应用名称" maxLength={50} />
-            </Form.Item>
-            
-            <Form.Item
-              name="description"
-              label="应用描述"
-              rules={[{ max: 200, message: '应用描述不能超过200个字符' }]}
-            >
-              <Input.TextArea 
-                placeholder="请输入应用描述" 
-                rows={4} 
-                maxLength={200}
-              />
-            </Form.Item>
-          </Card>
-
-          <Tabs
-            defaultActiveKey="modelConfig"
-            className={styles.tabs}
-            items={[
-              {
-                key: 'modelConfig',
-                label: '模型配置',
-                children: (
-                  <Card className={styles.card}>
-                    <Form.Item
-                      name={['modelSettings', 'defaultModel']}
-                      label="默认模型"
-                      rules={[{ required: true, message: '请选择默认模型' }]}
-                    >
-                      <Input placeholder="请选择默认模型" />
-                    </Form.Item>
-                    
-                    <Form.Item
-                      name={['modelSettings', 'temperature']}
-                      label="温度"
-                      rules={[{ required: true, message: '请输入温度值' }]}
-                    >
-                      <Input type="number" placeholder="请输入温度值" min={0} max={1} step={0.1} />
-                    </Form.Item>
-                    
-                    <Form.Item
-                      name={['modelSettings', 'maxTokens']}
-                      label="最大Token数"
-                      rules={[{ required: true, message: '请输入最大Token数' }]}
-                    >
-                      <Input type="number" placeholder="请输入最大Token数" min={1} />
-                    </Form.Item>
-                  </Card>
-                )
-              },
-              {
-                key: 'apiConfig',
-                label: 'API配置',
-                children: (
-                  <Card className={styles.card}>
-                    <Form.Item
-                      name={['apiSettings', 'rateLimit']}
-                      label="速率限制(请求/分钟)"
-                      rules={[{ required: true, message: '请设置速率限制' }]}
-                    >
-                      <Input type="number" placeholder="请设置速率限制" min={1} />
-                    </Form.Item>
-                    
-                    <Form.Item
-                      name={['apiSettings', 'timeout']}
-                      label="超时时间(秒)"
-                      rules={[{ required: true, message: '请设置超时时间' }]}
-                    >
-                      <Input type="number" placeholder="请设置超时时间" min={1} />
-                    </Form.Item>
-                  </Card>
-                )
-              }
-            ]}
-          />
-          
-          <div className={styles.footer}>
-            <Space>
-              <Button onClick={handleBack}>取消</Button>
-              <Button type="primary" onClick={handleSave} loading={saving}>
-                保存
-              </Button>
-            </Space>
+              返回
+            </Button>
+            <span className={styles.title}>配置应用</span>
           </div>
-        </Form>
+        </div>
+        <div>
+          {/* 应用信息卡片 */}
+          <div className={styles.appInfoCard}>
+            <div className={styles.appInfoContent}>
+              <div className={styles.appIconContainer}>
+                <RobotOutlined className={styles.appIcon} />
+              </div>
+
+              <div className={styles.appDetails}>
+                <div className={styles.appNameRow}>
+                  <Tooltip
+                    title={appDetail?.name}
+                    placement="topLeft"
+                  >
+                    <div className={styles.appName}>{appDetail?.name || '应用名称'}</div>
+                  </Tooltip>
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    className={styles.editNameButton}
+                    onClick={() => {
+                      // 编辑名称的逻辑
+                      message.info('点击编辑应用名称');
+                    }}
+                  />
+                </div>
+
+                <div className={styles.appInfoRow}>
+                  <div className={styles.appInfoItem}>
+                    <span>APP ID：{appDetail?.appId}</span>
+                    <CopyOutlined
+                      className={styles.copyIcon}
+                      onClick={() => {
+                        navigator.clipboard.writeText(appDetail?.appId || '');
+                        message.success('已复制 APP ID');
+                      }}
+                    />
+                  </div>
+
+                  <div className={styles.appInfoItem}>
+                    <span>Secret Key：****************</span>
+                    <div className={styles.secretKeyActions}>
+                      <EyeOutlined
+                        className={styles.actionIcon}
+                        onClick={() => message.info('查看密钥')}
+                      />
+                      <div className={styles.divider} />
+                      <SyncOutlined
+                        className={styles.actionIcon}
+                        onClick={() => message.info('更新密钥')}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 配置面板 */}
+          <div className={styles.configPanel}>
+            <div className={styles.configContent}>
+              <Form
+                form={form}
+                layout="vertical"
+                className={styles.form}
+              >
+                {/* 配置台标题 */}
+                <div className={styles.sectionTitleRow}>
+                  <div className={styles.sectionTitle}>
+                    <div className={styles.titleIndicator} />
+                    <span>配置台</span>
+                  </div>
+                </div>
+
+                {/* 支持的模型 */}
+                <div className={styles.configSection}>
+                  <div className={styles.configItemRow}>
+                    <div className={styles.configLabel}>
+                      <span className={styles.requiredMark}>*</span>
+                      <span>支持的模型</span>
+                    </div>
+                    <Button
+                      className={styles.modelSelectButton}
+                      onClick={() => message.info('选择模型')}
+                    >
+                      <span className={styles.modelSelectIcon} />
+                      <span className={styles.modelSelectText}>选择模型</span>
+                    </Button>
+                  </div>
+
+                  {/* 支持的MCP服务 */}
+                  <div className={styles.configItemRow}>
+                    <div className={styles.configLabel}>
+                      <span>支持的MCP服务</span>
+                    </div>
+                    <Button
+                      className={styles.mcpSelectButton}
+                      onClick={() => message.info('选择MCP')}
+                    >
+                      <span className={styles.mcpSelectIcon} />
+                      <span className={styles.mcpSelectText}>选择MCP</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 操作系统 */}
+                <div className={styles.osSection}>
+                  <div className={styles.configLabel}>
+                    <span className={styles.requiredMark}>*</span>
+                    <span>操作系统</span>
+                  </div>
+
+                  <div className={styles.osCheckboxGroup}>
+                    <Checkbox
+                      checked={osSelection.windows}
+                      onChange={(e) => setOsSelection({ ...osSelection, windows: e.target.checked })}
+                    >
+                      Windows
+                    </Checkbox>
+                    <Checkbox
+                      checked={osSelection.macos}
+                      onChange={(e) => setOsSelection({ ...osSelection, macos: e.target.checked })}
+                    >
+                      MacOS
+                    </Checkbox>
+                    <Checkbox
+                      checked={osSelection.ubuntu}
+                      onChange={(e) => setOsSelection({ ...osSelection, ubuntu: e.target.checked })}
+                    >
+                      Ubuntu
+                    </Checkbox>
+                  </div>
+
+                  <div className={styles.tipsBox}>
+                    <InfoCircleOutlined />
+                    <span className={styles.tipsText}>点击获取 快速入门手册 ，您也可以在"文档-安装SDK"路径下查看</span>
+                  </div>
+                </div>
+
+                {/* 协议勾选 */}
+                <div className={styles.agreementSection}>
+                  <Checkbox
+                    className={styles.agreementCheckbox}
+                    checked={agreement}
+                    onChange={(e) => setAgreement(e.target.checked)}
+                  >
+                    <span className={styles.agreementText}>阅读并同意《腾讯位置服务开放API服务协议》和《腾讯位置服务隐私协议》</span>
+                  </Checkbox>
+                </div>
+
+                {/* 底部按钮 */}
+                <div className={styles.footerButtons}>
+                  <Button
+                    type="primary"
+                    onClick={handleSave}
+                    loading={saving}
+                  >
+                    确认
+                  </Button>
+                  <Button onClick={handleBack}>取消</Button>
+                </div>
+              </Form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
