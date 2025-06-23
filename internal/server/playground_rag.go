@@ -274,7 +274,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 
 	// 使用VEC搜索所有查询变体的相似块（聚合所有结果，去重，排序）
 	allChunks := make([]ChunkScore, 0)
-	chunkMap := make(map[int64]ChunkScore) // rowid为key
+	chunkMap := make(map[string]ChunkScore) // UUID为key
 	startTime := time.Now()
 	slog.Info("RAG: 开始VEC检索", "sessionID", session.ID, "embedCount", len(queryEmbeddings), "maxChunks", options.MaxChunks*3)
 	for i, embedding := range queryEmbeddings { // 尝试向量搜索
@@ -296,62 +296,25 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 			if _, exists := chunkMap[id]; exists {
 				continue
 			}
-			// 从向量搜索返回的是 rowid，需要通过直接 SQL 查询获取对应的内容
-			// 或者尝试使用 ID 字段查询
 			chunkContent := ""
 			chunkID := ""
 
-			// 尝试方法1：假设返回的 id 是 chunk ID 的数字形式
+			// 直接用 uuid 作为主键加载实体
 			chunkQuery := &types.FileChunk{}
-			chunkQuery.ID = fmt.Sprint(id)
+			chunkQuery.ID = id
 			if err := p.Ds.Get(ctx, chunkQuery); err == nil && chunkQuery.Content != "" {
-				// 成功获取
 				chunkContent = chunkQuery.Content
 				chunkID = chunkQuery.ID
-				slog.Debug("RAG: 方法1成功检索到chunk", "rowid", id, "chunkID", chunkID)
+				slog.Debug("RAG: 成功检索到chunk", "uuid", id, "chunkID", chunkID)
 			} else {
-				// 方法1失败，记录警告
-				slog.Warn("RAG: 方法1获取文档块失败", "error", err, "rowid", id)
-				// 尝试方法2: 尝试查找其他可能的匹配
-				// 使用数字格式ID
-				chunkQuery = &types.FileChunk{}
-				chunkQuery.ID = fmt.Sprintf("%d", id) // 尝试使用数字ID格式
-				if err := p.Ds.Get(ctx, chunkQuery); err == nil && chunkQuery.Content != "" {
-					chunkContent = chunkQuery.Content
-					chunkID = chunkQuery.ID
-					slog.Debug("RAG: 方法2成功检索到chunk", "id", id, "chunkID", chunkID)
-				} else { // 尝试方法3：模糊查询
-					chunkListOpts := &datastore.ListOptions{
-						FilterOptions: datastore.FilterOptions{
-							Queries: []datastore.FuzzyQueryOption{
-								{Key: "id", Query: fmt.Sprintf("%d", id)},
-							},
-						},
-					}
-					if chunksEntities, err := p.Ds.List(ctx, &types.FileChunk{}, chunkListOpts); err == nil && len(chunksEntities) > 0 {
-						for _, entity := range chunksEntities {
-							if chunk, ok := entity.(*types.FileChunk); ok && chunk.Content != "" {
-								chunkContent = chunk.Content
-								chunkID = chunk.ID
-								slog.Debug("RAG: 方法3成功检索到chunk", "fuzzyID", id, "chunkID", chunkID)
-								break
-							}
-						}
-					}
-
-					if chunkContent == "" {
-						// 所有方法均失败，跳过
-						slog.Error("RAG: 所有方法获取文档块均失败", "id/rowid", id)
-						continue
-					}
-				}
+				slog.Warn("RAG: 获取文档块失败", "error", err, "uuid", id)
+				continue
 			}
 
-			// 添加到结果映射
 			chunkMap[id] = ChunkScore{
 				ChunkID:    chunkID,
 				Content:    chunkContent,
-				Similarity: float32(1.0 - dists[i]), // 距离转为相似度
+				Similarity: float32(1.0 - dists[i]),
 			}
 		}
 	}
