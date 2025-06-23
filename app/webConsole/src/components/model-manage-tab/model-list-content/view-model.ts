@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IModelAuth, IModelAuthType, IModelPathSpaceRes } from '../types';
-import { IModelDataItem, IModelPathRes, IModelSourceType, IRequestModelParams, ModelData, IModelSquareParams, ModelSourceType } from '@/types';
+import { IModelDataItem, IModelPathRes, IModelSourceType, IModelSquareParams, IRequestModelParams, ModelData, ModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
@@ -105,7 +105,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   useEffect(() => {
     // 创建一个映射来跟踪当前的下载状态
     const currentDownloadStatusMap: Record<string, any> = {};
-    // 从downloadList中提取status信息
     modelListData.forEach((item) => {
       if (item.id) {
         currentDownloadStatusMap[item.id] = item.status;

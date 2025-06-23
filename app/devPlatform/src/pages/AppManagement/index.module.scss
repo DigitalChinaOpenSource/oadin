@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 // SCSS变量定义 - 基于Figma设计稿
 $primary-color: #4f4dff; // 主色调
 $primary-color-weak: #5429ff;
@@ -25,13 +27,20 @@ $line-height-lg: 24px;
 .app-card-wrapper {
   display: flex;
   padding: 20px;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-start;
   gap: 10px;
   align-self: stretch;
   border-radius: $border-radius-200;
   border: 1px solid $border-color;
   background: $bg-white;
+}
+.app-card-wrapper-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .card-main-row {
@@ -117,7 +126,7 @@ $line-height-lg: 24px;
 .app-card-icon {
   width: 40px;
   height: 40px;
-  background: lighten($primary-color, 40%);
+  background: color.scale($primary-color, $lightness: 40%);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -164,7 +173,7 @@ $line-height-lg: 24px;
   }
 
   &:hover {
-    background: lighten($primary-color, 45%) !important;
+    background: color.scale($primary-color, $lightness: 45%) !important;
   }
 }
 
@@ -271,7 +280,7 @@ $line-height-lg: 24px;
         border: none;
 
         &:hover {
-          background: darken(#f4f4f5, 5%);
+          background: color.scale(#f4f4f5, $lightness: -5%);
         }
       }
     }
@@ -315,13 +324,6 @@ $line-height-lg: 24px;
 // 页面容器样式
 .page-container {
   min-height: 100vh;
-  background-color: $bg-gray-50;
-}
-
-.content-container {
-  padding: 0 1rem; // px-4
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .header-row {
@@ -411,7 +413,6 @@ $line-height-lg: 24px;
 .app-info-item {
   display: flex;
   align-items: center;
-  gap: 8px;
   color: $text-normal;
   font-family: $font-family;
   font-size: $font-size-md;
