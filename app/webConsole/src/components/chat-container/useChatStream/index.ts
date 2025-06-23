@@ -323,8 +323,10 @@ export function useChatStream() {
   const handleToolCalls = useCallback(
     async (data: IStreamData, currentContent: any) => {
       const { tool_calls, tool_group_id, id, total_duration } = data;
+      console.log('tool_group_id====>', tool_group_id);
       // 如果返回的 content 为空且有 tool_calls，保存 tool_group_id 用于下一次请求
-      if ((!currentContent || currentContent.trim() === '') && tool_calls && tool_calls.length > 0 && tool_group_id) {
+      // (!currentContent || currentContent.trim() === '') &&
+      if (tool_calls && tool_calls.length > 0 && tool_group_id) {
         requestState.current.lastToolGroupIdRef = tool_group_id;
       }
       if (!tool_calls || tool_calls.length === 0) {
@@ -511,6 +513,7 @@ export function useChatStream() {
         if (selectedMcpIds().length > 0) {
           continueRequestData.mcpIds = selectedMcpIds();
         }
+        console.log('继续对话使用上次的toolGroupId:', requestState.current.lastToolGroupIdRef);
         if (requestState.current.lastToolGroupIdRef) {
           continueRequestData.toolGroupID = requestState.current.lastToolGroupIdRef;
         }

@@ -49,12 +49,22 @@ export const checkIsMaxDownloadCount = ({ modelList, downList, id }: any) => {
  * 同时更新下载列表和模型列表中的下载状态
  * @param id 模型ID
  * @param updates 要更新的属性
- * @param noList 是否不更新模型列表
  */
-export function updateDownloadStatus(id: string, updates: any, noList?: boolean) {
+export function updateDownloadStatus(id: string, updates: any) {
   // 获取两个 store 的状态更新函数
-  const { setDownloadList } = useModelDownloadStore.getState();
+  const { setDownloadList, downloadList } = useModelDownloadStore.getState();
   const { setModelListData } = useModelListStore.getState();
+
+  // 查找要更新的项目
+  const itemToUpdate = downloadList?.find((item) => item.id === id);
+
+  // 检查status字段是否发生变化
+  let statusChanged = false;
+  if (itemToUpdate && 'status' in updates) {
+    console.log('当前下载状态', itemToUpdate.status, '更新状态', updates.status);
+    statusChanged = itemToUpdate.status !== updates.status;
+  }
+
   // 更新下载列表
   setDownloadList((draft: any[]): any[] => {
     if (!draft || !Array.isArray(draft) || draft?.length === 0) {
@@ -68,17 +78,19 @@ export function updateDownloadStatus(id: string, updates: any, noList?: boolean)
     });
   });
 
-  if (noList) return;
-  // 更新模型列表
-  setModelListData((draft: any[]): any[] => {
-    if (!Array.isArray(draft) || draft.length === 0) {
-      return [];
-    }
-    return draft.map((item) => {
-      if (item.id === id) {
-        return { ...item, ...updates };
+  // 只有当status状态发生变化时才更新模型列表
+  if (statusChanged) {
+    console.log('更新模型列表中的下载状态', id, updates);
+    setModelListData((draft: any[]): any[] => {
+      if (!Array.isArray(draft) || draft.length === 0) {
+        return [];
       }
-      return item;
+      return draft.map((item) => {
+        if (item.id === id) {
+          return { ...item, ...updates };
+        }
+        return item;
+      });
     });
-  });
+  }
 }

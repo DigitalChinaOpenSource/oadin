@@ -25,7 +25,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   const location = useLocation();
   // 是否展示下载列表弹窗
   const [isDownloadListOpen, setIsDownloadListOpen] = useState(false);
-  const { downloadList } = useModelDownloadStore();
+  const downloadList = useModelDownloadStore((state) => state.downloadList);
 
   // 当前选中的菜单项和展开的菜单项
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -117,7 +117,6 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
     }
   }, [mcpDownloadList]);
 
-  console.log('downloadList', downloadList);
   return (
     <div className={styles.sidebar}>
       <div className={styles.menuContainer}>

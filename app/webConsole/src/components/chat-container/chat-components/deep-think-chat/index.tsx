@@ -16,7 +16,6 @@ interface IDeepThinkChatProps {
 }
 
 export default function DeepThinkChat(props: IDeepThinkChatProps) {
-  console.log('DeepThinkChat dataSource=====>', props);
   const { dataSource } = props;
   // TODO 思考完毕之后自动收起
   const [isExpanded, setIsExpanded] = useState(true);
