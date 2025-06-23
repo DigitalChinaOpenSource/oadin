@@ -18,7 +18,6 @@ interface IChatModelManageProps {
 
 export default function ChatModelManage(props: IChatModelManageProps) {
   const { selectedModel } = useSelectedModelStore();
-  const { setCurrentSessionId, currentSessionId } = useChatStore();
   const [open, setOpen] = useState<boolean>(false);
   const [isThinking, setIsThinking] = useState<boolean>(true);
   return (
