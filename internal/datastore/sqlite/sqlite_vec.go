@@ -182,7 +182,7 @@ func (vdb *VectorDBVec) printDiagnosticInfo() {
 }
 
 // SearchSimilarChunks 在 file_chunks 表的 embedding 字段做向量检索
-func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32, limit int, sessionID ...string) ([]int64, []float64, error) {
+func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32, limit int, sessionID ...string) ([]string, []float64, error) {
 	startTime := time.Now()
 	fmt.Printf("开始向量搜索，维度: %d, 限制: %d\n", len(query), limit)
 
@@ -193,12 +193,12 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 		return nil, nil, fmt.Errorf("没有可用的向量搜索方法，sqlite-vec扩展可能未正确加载")
 	}
 
-	var ids []int64
+	var ids []string
 	var dists []float64
 	var err error
 	var method string
 	var rows *sql.Rows
-	var id int64
+	var idStr string
 	var dist float64
 	var duration time.Duration
 
@@ -219,7 +219,7 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 	if contains(vdb.availableDistanceFuncs, "vec_distance_cosine") {
 		distFunc = "vec_distance_cosine"
 		sqlQuery = fmt.Sprintf(`
-			SELECT id, vec_distance_cosine(embedding, ?) as distance
+			SELECT rowid AS rowid, id AS uuid, vec_distance_cosine(embedding, ?) as distance
 			FROM file_chunks
 			WHERE %s
 			ORDER BY distance
@@ -228,7 +228,7 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 	} else if contains(vdb.availableDistanceFuncs, "vec_distance_L2") {
 		distFunc = "vec_distance_L2"
 		sqlQuery = fmt.Sprintf(`
-			SELECT id, vec_distance_L2(embedding, ?) as distance
+			SELECT rowid AS rowid, id AS uuid, vec_distance_L2(embedding, ?) as distance
 			FROM file_chunks
 			WHERE %s
 			ORDER BY distance
@@ -236,6 +236,14 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 		`, whereClause)
 	}
 
+	type chunkResult struct {
+		rowid int64
+		uuid  string
+		dist  float64
+	}
+	var results []chunkResult
+	// 检查SQL语句
+	fmt.Println("生成的SQL语句:", sqlQuery)
 	if sqlQuery != "" {
 		if len(sessionID) > 0 && sessionID[0] != "" {
 			rows, err = vdb.db.QueryContext(ctx, sqlQuery, qBlob, sessionID[0], limit)
@@ -245,14 +253,23 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 		if err == nil {
 			defer rows.Close()
 			for rows.Next() {
-				if err := rows.Scan(&id, &dist); err == nil {
-					ids = append(ids, id)
-					dists = append(dists, dist)
+				var rowid int64
+				var uuid string
+				var dist float64
+				if err := rows.Scan(&rowid, &uuid, &dist); err == nil {
+					results = append(results, chunkResult{rowid, uuid, dist})
 				}
 			}
-			if len(ids) > 0 {
+			if len(results) > 0 {
 				method = "距离函数 " + distFunc
 				duration = time.Since(startTime)
+				// 拆分结果
+				ids := make([]string, 0, len(results))
+				dists := make([]float64, 0, len(results))
+				for _, r := range results {
+					ids = append(ids, r.uuid)
+					dists = append(dists, r.dist)
+				}
 				fmt.Printf("向量搜索成功，使用方法: %s, 结果数: %d, 耗时: %v\n",
 					method, len(ids), duration)
 				return ids, dists, nil
@@ -262,7 +279,7 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 	// 降级文本检索
 	fmt.Println("尝试降级到简单文本搜索...")
 	simpleQuery := `
-	SELECT id, 0.5 as distance
+	SELECT rowid AS id, 0.5 as distance
 	FROM file_chunks
 	WHERE embedding IS NOT NULL AND length(embedding) > 0`
 	if len(sessionID) > 0 && sessionID[0] != "" {
@@ -277,8 +294,8 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
-			if err := rows.Scan(&id, &dist); err == nil {
-				ids = append(ids, id)
+			if err := rows.Scan(&idStr, &dist); err == nil {
+				ids = append(ids, idStr)
 				dists = append(dists, dist)
 			}
 		}
@@ -299,7 +316,7 @@ func (vdb *VectorDBVec) SearchSimilarChunks(ctx context.Context, query []float32
 }
 
 // SearchSimilarChunksBatch 批量处理多个查询向量，合并结果，提高性能
-func (vdb *VectorDBVec) SearchSimilarChunksBatch(ctx context.Context, queryEmbeddings [][]float32, limit int, sessionID ...string) (map[int64]float64, error) {
+func (vdb *VectorDBVec) SearchSimilarChunksBatch(ctx context.Context, queryEmbeddings [][]float32, limit int, sessionID ...string) (map[string]float64, error) {
 	totalQueries := len(queryEmbeddings)
 	fmt.Printf("开始批量向量搜索，查询数量: %d, 每查询限制: %d\n", totalQueries, limit)
 
@@ -311,7 +328,7 @@ func (vdb *VectorDBVec) SearchSimilarChunksBatch(ctx context.Context, queryEmbed
 	}
 
 	startTime := time.Now()
-	resultMap := make(map[int64]float64)
+	resultMap := make(map[string]float64)
 	successCount := 0
 
 	// 计算每个查询应分配的限额
@@ -322,7 +339,7 @@ func (vdb *VectorDBVec) SearchSimilarChunksBatch(ctx context.Context, queryEmbed
 
 	// 依次执行每个查询并合并结果
 	for i, embedding := range queryEmbeddings {
-		var ids []int64
+		var ids []string
 		var dists []float64
 		var err error
 
@@ -359,7 +376,7 @@ func (vdb *VectorDBVec) SearchSimilarChunksBatch(ctx context.Context, queryEmbed
 }
 
 // SearchSimilarChunksByText 使用文本搜索作为向量搜索的备选方案
-func (vdb *VectorDBVec) SearchSimilarChunksByText(ctx context.Context, queryText string, limit int, sessionID ...string) ([]int64, []float64, error) {
+func (vdb *VectorDBVec) SearchSimilarChunksByText(ctx context.Context, queryText string, limit int, sessionID ...string) ([]string, []float64, error) {
 	startTime := time.Now()
 	fmt.Printf("开始文本搜索降级，查询文本: %s, 限制: %d\n", queryText, limit)
 
@@ -430,14 +447,14 @@ func (vdb *VectorDBVec) SearchSimilarChunksByText(ctx context.Context, queryText
 	}
 	defer rows.Close()
 
-	var ids []int64
+	var ids []string
 	var dists []float64
 
 	for rows.Next() {
-		var id int64
+		var idStr string
 		var dist float64
-		if err := rows.Scan(&id, &dist); err == nil {
-			ids = append(ids, id)
+		if err := rows.Scan(&idStr, &dist); err == nil {
+			ids = append(ids, idStr)
 			dists = append(dists, dist)
 		}
 	}
