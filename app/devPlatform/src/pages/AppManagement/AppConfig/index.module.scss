@@ -1,27 +1,40 @@
-@use "sass:color";
+@use 'sass:color';
 
+// 变量定义
 $primary-color: #4f4dff;
 $text-color: #27272a;
+$text-secondary: #344054;
 $border-color: #e4e4e7;
 $bg-gray-50: #f9fafb;
+$bg-blue-light: #f5f8ff;
+$bg-blue-lighter: #ebf0ff;
+$error-color: #f5222d;
 
+// 容器样式
 .container {
-  padding: 24px;
-  background-color: $bg-gray-50;
-  min-height: 100vh;
 }
 
+// 头部样式
 .header {
   display: flex;
   align-items: center;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .backButton {
-  margin-right: 16px;
-  color: $text-color;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $text-secondary;
   padding: 0;
-  
+
   &:hover {
     color: $primary-color;
     background: transparent;
@@ -29,64 +42,320 @@ $bg-gray-50: #f9fafb;
 }
 
 .title {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-  color: $text-color;
+  color: #000;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
 }
 
-.content {
-  max-width: 900px;
-  margin: 0 auto;
+// 应用信息卡片
+.appInfoCard {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 16px;
 }
 
-.card {
-  margin-bottom: 24px;
+.appInfoContent {
+  display: flex;
+  padding: 24px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+  align-self: stretch;
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: #fff;
+  width: 100%;
+}
+
+.appIconContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background-color: $bg-blue-light;
+}
+
+.appIcon {
+  font-size: 24px;
+  color: $primary-color;
+}
+
+.appDetails {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.appNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: stretch;
+}
+
+.appName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+  color: $text-color;
+  text-overflow: ellipsis;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.editNameButton {
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $text-secondary;
+
+  &:hover {
+    color: $primary-color;
+    background: transparent;
+  }
+}
+
+.appInfoRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.appInfoItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $text-color;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.copyIcon {
+  cursor: pointer;
+  color: $text-secondary;
+
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+.secretKeyActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionIcon {
+  cursor: pointer;
+  color: $text-secondary;
+
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background-color: $border-color;
+}
+
+// 配置面板
+.configPanel {
+  display: flex;
+  padding: 24px;
+  margin-top: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.configContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 40px;
+  width: 100%;
+}
+
+.form {
+  width: 100%;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  align-self: stretch;
+  margin-bottom: 16px;
 }
 
 .sectionTitle {
-  font-size: 16px;
-  font-weight: 500;
-  margin-top: 0;
-  margin-bottom: 24px;
-  color: $text-color;
-}
-
-.tabs {
-  margin-bottom: 24px;
-}
-
-.footer {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 24px;
+  align-items: center;
+  gap: 4px;
 }
 
+.titleIndicator {
+  width: 4px;
+  height: 16px;
+  background: $primary-color;
+}
+
+// 配置项样式
+.configSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  align-self: stretch;
+  margin-bottom: 40px;
+}
+
+.configItemRow {
+  display: flex;
+  padding: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  align-self: stretch;
+  border-radius: 8px;
+  background: $bg-blue-light;
+
+  &:first-child {
+    margin-bottom: 16px;
+  }
+}
+
+.configLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.requiredMark {
+  color: $error-color;
+  font-family: SimSong;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.modelSelectButton,
+.mcpSelectButton {
+  display: flex;
+  padding: 2px 8px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  background: #dee7ff;
+  color: $primary-color;
+  border: none;
+
+  &:hover {
+    background: darken(#dee7ff, 5%);
+  }
+}
+
+// 操作系统部分
+.osSection {
+  display: flex;
+  width: 468px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.osCheckboxGroup {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.tipsBox {
+  display: flex;
+  padding: 5px 16px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  background: $bg-blue-lighter;
+}
+
+.tipsText {
+  color: $primary-color;
+  font-size: 12px;
+}
+
+// 协议部分
+.agreementSection {
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.agreementCheckbox {
+  color: $primary-color;
+}
+
+.agreementText {
+  color: $primary-color;
+}
+
+// 底部按钮
+.footerButtons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+
+  button {
+    padding: 5px 16px;
+
+    &:first-child {
+      background-color: $primary-color;
+
+      &:hover {
+        background-color: darken($primary-color, 10%);
+      }
+    }
+
+    &:last-child {
+      background-color: #f4f4f5;
+      color: $text-secondary;
+
+      &:hover {
+        background-color: darken(#f4f4f5, 5%);
+      }
+    }
+  }
+}
+
+// 内容区域
+.contentArea {
+  margin-top: 0;
+  width: 100%;
+  position: relative;
+  padding-bottom: 24px;
+}
+
+// 加载中容器
 .loadingContainer {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-}
-
-:global(.ant-form-item-label) label {
-  font-weight: 500;
-}
-
-:global(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
-  color: $primary-color;
-}
-
-:global(.ant-tabs-ink-bar) {
-  background-color: $primary-color;
-}
-
-:global(.ant-btn-primary) {
-  background-color: $primary-color;
-  
-  &:hover {
-    background-color: color.scale($primary-color, $lightness: -10%);
-  }
 }

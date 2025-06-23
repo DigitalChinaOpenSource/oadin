@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Form, Input, Tooltip, Button, Space } from 'antd';
 import styles from './index.module.scss';
-import ModelPathModal from '@/components/model-manage-tab/modelpath-modal';
+import ModelPathModal from '@/components/modelpath-modal';
 import { useModelSetting } from '@/components/settings/model-setting/viem-model.ts';
 import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';

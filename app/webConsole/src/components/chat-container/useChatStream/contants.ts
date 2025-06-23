@@ -7,8 +7,8 @@ export const ERROR_MESSAGES = {
   },
   // 超时错误
   TIMEOUT: {
-    NO_DATA: '请求超时：120秒未收到数据',
-    TOTAL: '请求超时：240秒内未收到任何数据',
+    NO_DATA: '请求超时：240秒未收到数据',
+    TOTAL: '请求超时：360秒内未收到任何数据',
   },
   // 解析错误
   PARSING: {
@@ -37,7 +37,7 @@ export const ERROR_MESSAGES = {
 
 // 超时设置（毫秒）
 export const TIMEOUT_CONFIG = {
-  NO_DATA: 120000, // 12秒无数据超时
+  NO_DATA: 240000, // 240秒无数据超时
   TOTAL: 360000, // 360秒总超时
 };
 

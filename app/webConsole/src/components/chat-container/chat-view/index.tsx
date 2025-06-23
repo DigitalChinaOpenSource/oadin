@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import { ChatInput, MessageList, ChatMessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
+import { ChatInput, MessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import '@res-utiles/ui-components/dist/index.css';
-import { Button, Tooltip, message } from 'antd';
+import { Button, message } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
 import { CopyIcon, ArrowClockwiseIcon, StopIcon } from '@phosphor-icons/react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
@@ -13,13 +13,13 @@ import StreamingMessage from '../streaming-message';
 import UploadTool from '../upload-tool';
 import useChatStore from '../store/useChatStore';
 import sendSvg from '@/components/icons/send.svg';
-import uploadSvg from '@/components/icons/upload.svg';
 import realLoading from '@/components/icons/real-loading.svg';
 import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import { copyMessageToClipboard } from '../useChatStream/utils';
 import { HeaderContent } from './header-content';
+import EmbedDownloadButton from '../enbed-download-btn';
 import './index.scss';
 
 interface IChatViewProps {
@@ -51,7 +51,6 @@ interface ChatMessage extends MessageType {
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages } = useChatStore();
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
-  const { fetchDownloadStart } = useDownLoad();
 
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
@@ -92,40 +91,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   // 输入框底部功能区
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      {!isUploadVisible ? (
-        <UploadTool />
-      ) : (
-        <Tooltip
-          arrow={false}
-          title={
-            <>
-              该功能需先下载词嵌入模型
-              <a
-                onClick={() => {
-                  fetchDownloadStart({
-                    name: 'quentinz/bge-large-zh-v1.5:f16',
-                    service_name: 'embed',
-                    source: 'local',
-                    service_provider_name: 'local_ollama_embed',
-                    id: 'bc8ca0995fcd651',
-                  } as any);
-                }}
-              >
-                【立即下载】
-              </a>
-            </>
-          }
-        >
-          <Button
-            icon={
-              <img
-                src={uploadSvg}
-                alt="上传"
-              />
-            }
-          />
-        </Tooltip>
-      )}
+      {!isUploadVisible ? <UploadTool /> : <EmbedDownloadButton />}
 
       <SelectMcp />
     </div>
@@ -214,14 +180,14 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           />
 
           {/* 错误消息展示 */}
-          {error && !isLoading && !isResending && (
+          {/* {error && !isLoading && !isResending && (
             <div
               className="error-message"
               style={{ color: '#e85951', padding: '8px 16px', margin: '8px 0' }}
             >
               {error}
             </div>
-          )}
+          )} */}
         </div>
 
         <div className="chat-input-area chat-width">
