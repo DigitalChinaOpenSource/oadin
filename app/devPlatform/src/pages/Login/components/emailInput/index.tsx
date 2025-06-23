@@ -1,6 +1,6 @@
 import { Form, Input } from 'antd';
 
-const EmailInput = ({ form, codeFiled, placeHolder }: { form: any; codeFiled: string; placeHolder?: string }) => {
+const EmailInput = ({ form, codeFiled, placeholder }: { form: any; codeFiled: string; placeholder?: string }) => {
   return (
     <Form.Item
       name={codeFiled}
@@ -21,8 +21,8 @@ const EmailInput = ({ form, codeFiled, placeHolder }: { form: any; codeFiled: st
       ]}
     >
       <Input
-        style={{ width: '100%', height: '40px' }}
-        placeholder={placeHolder ? placeHolder : '请输入邮箱地址'}
+        className="formInput"
+        placeholder={placeholder ? placeholder : '请输入邮箱地址'}
         onChange={(e) => form.setFieldsValue({ [codeFiled]: e.target.value })} // 控制输入
       />
     </Form.Item>

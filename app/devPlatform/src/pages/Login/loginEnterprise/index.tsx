@@ -1,6 +1,8 @@
 import styles from './index.module.scss';
 import { Button, Checkbox, Form, Input } from 'antd';
 import useLoginStore from '@/store/loginStore.ts';
+import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
+import EmailInput from '@/pages/Login/components/emailInput';
 
 export interface IEnterpriseFormValues {
   email: string;
@@ -37,29 +39,10 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
           onFinish={onFinish}
           className={styles.loginForm}
         >
-          <Form.Item
-            name="email"
-            validateTrigger={['onChange', 'onBlur']}
-            rules={[
-              {
-                validator: (_: unknown, value: string) => {
-                  if (!value) {
-                    return Promise.reject(new Error('请输入邮箱地址'));
-                  }
-                  if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value)) {
-                    return Promise.reject(new Error('邮箱格式错误，请重新输入！'));
-                  }
-                  return Promise.resolve();
-                },
-                validateTrigger: ['onBlur'],
-              },
-            ]}
-          >
-            <Input
-              style={{ width: '100%', height: '40px' }}
-              placeholder="请输入邮箱地址"
-            />
-          </Form.Item>
+          <EmailInput
+            form={form}
+            codeFiled={'email'}
+          />
           <Form.Item
             name="password"
             validateTrigger={['onBlur']}
@@ -75,43 +58,16 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
             ]}
           >
             <Input.Password
-              style={{ width: '100%', height: '40px' }}
+              className="formInput"
               placeholder="请输入密码"
             />
           </Form.Item>
           {/* 同意协议复选框 */}
           {showAgreed && (
-            <Form.Item
-              name="agreed"
-              valuePropName="checked"
-              initialValue={false}
-              rules={[
-                {
-                  validator: (_, value) => {
-                    return value ? Promise.resolve() : Promise.reject(new Error('请阅读并同意用户协议和隐私政策'));
-                  },
-                },
-              ]}
-            >
-              <Checkbox>
-                我已阅读并同意 OADIN{' '}
-                <a
-                  href={'#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  用户协议
-                </a>{' '}
-                和{' '}
-                <a
-                  href={'#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  隐私政策
-                </a>
-              </Checkbox>
-            </Form.Item>
+            <AgreedCheckBox
+              form={form}
+              codeFiled={'agreed'}
+            />
           )}
           <Form.Item style={{ marginBottom: 0 }}>
             <Button
