@@ -280,7 +280,6 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                 <div className={styles.configSection}>
                   <div className={styles.configItemRow}>
                     <div className={styles.configLabel}>
-                      <span className={styles.requiredMark}>*</span>
                       <span>支持的模型</span>
                     </div>
                     <Button

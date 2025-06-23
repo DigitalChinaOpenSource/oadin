@@ -120,12 +120,6 @@ $error-color: #f5222d;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: $text-secondary;
-
-  &:hover {
-    color: $primary-color;
-    background: transparent;
-  }
 }
 
 .appInfoRow {
@@ -230,8 +224,7 @@ $error-color: #f5222d;
 .configItemRow {
   display: flex;
   padding: 16px;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
   gap: 16px;
   align-self: stretch;
   border-radius: 8px;
@@ -248,28 +241,8 @@ $error-color: #f5222d;
   gap: 4px;
 }
 
-.requiredMark {
-  color: $error-color;
-  font-family: SimSong;
-  font-size: 14px;
-  line-height: 22px;
-}
-
 .modelSelectButton,
 .mcpSelectButton {
-  display: flex;
-  padding: 2px 8px;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  border-radius: 4px;
-  background: #dee7ff;
-  color: $primary-color;
-  border: none;
-
-  &:hover {
-    background: darken(#dee7ff, 5%);
-  }
 }
 
 // 操作系统部分
@@ -321,27 +294,6 @@ $error-color: #f5222d;
   justify-content: center;
   align-items: center;
   gap: 24px;
-
-  button {
-    padding: 5px 16px;
-
-    &:first-child {
-      background-color: $primary-color;
-
-      &:hover {
-        background-color: darken($primary-color, 10%);
-      }
-    }
-
-    &:last-child {
-      background-color: #f4f4f5;
-      color: $text-secondary;
-
-      &:hover {
-        background-color: darken(#f4f4f5, 5%);
-      }
-    }
-  }
 }
 
 // 内容区域
