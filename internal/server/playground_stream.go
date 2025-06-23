@@ -127,48 +127,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			chatRequest.Tools = request.Tools
 		}
 
-		sessionCheck := &types.ChatSession{ID: request.SessionID}
-		err = p.Ds.Get(ctx, sessionCheck)
-		if err == nil && sessionCheck.Title == "" {
-			genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
-			payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`, session.ModelName, genTitlePrompt)
-			slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
-			client := &http.Client{}
-			req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
-			if err == nil {
-				req.Header.Set("Content-Type", "application/json")
-				resp, err := client.Do(req)
-				title := "新对话 " + time.Now().Format("2006-01-02")
-				if err == nil && resp != nil {
-					defer resp.Body.Close()
-					var result struct {
-						Content string `json:"content"`
-						Message struct {
-							Content string `json:"content"`
-						} `json:"message"`
-					}
-					decodeErr := json.NewDecoder(resp.Body).Decode(&result)
-					slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
-					if decodeErr == nil {
-						if len(result.Content) > 0 {
-							title = result.Content
-						} else if len(result.Message.Content) > 0 {
-							title = result.Message.Content
-						}
-						if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
-							re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
-							title = re.ReplaceAllString(title, "")
-							title = strings.TrimSpace(title)
-						}
-						runes := []rune(title)
-						title = string(runes)
-					}
-				}
-				slog.Info("[DEBUG] TitleGen final title", "title", title)
-				sessionCheck.Title = title
-				_ = p.Ds.Put(context.Background(), sessionCheck)
-			}
-		}
+		// 异步增加会话标题
+		go p.AddSessionTitle(ctx, request)
+
 		// 调用流式API
 		responseStream, streamErrChan := modelEngine.ChatStream(ctx, chatRequest)
 
@@ -325,6 +286,53 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 	return respChan, errChan
 }
 
+// 增加会话的标题
+func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendStreamMessageRequest) error {
+	sessionCheck := &types.ChatSession{ID: request.SessionID}
+	err := p.Ds.Get(ctx, sessionCheck)
+	if err == nil && sessionCheck.Title == "" {
+		genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
+		payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`, sessionCheck.ModelName, genTitlePrompt)
+		slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
+		client := &http.Client{}
+		req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
+		if err == nil {
+			req.Header.Set("Content-Type", "application/json")
+			resp, err := client.Do(req)
+			title := "新对话 " + time.Now().Format("2006-01-02")
+			if err == nil && resp != nil {
+				defer resp.Body.Close()
+				var result struct {
+					Content string `json:"content"`
+					Message struct {
+						Content string `json:"content"`
+					} `json:"message"`
+				}
+				decodeErr := json.NewDecoder(resp.Body).Decode(&result)
+				slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
+				if decodeErr == nil {
+					if len(result.Content) > 0 {
+						title = result.Content
+					} else if len(result.Message.Content) > 0 {
+						title = result.Message.Content
+					}
+					if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
+						re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+						title = re.ReplaceAllString(title, "")
+						title = strings.TrimSpace(title)
+					}
+					runes := []rune(title)
+					title = string(runes)
+				}
+			}
+			slog.Info("[DEBUG] TitleGen final title", "title", title)
+			sessionCheck.Title = title
+			_ = p.Ds.Put(context.Background(), sessionCheck)
+		}
+	}
+	return err
+}
+
 // 处理工具调用，作为历史消息请求大模型
 func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]string {
 	messageQuery := &types.ToolMessage{SessionID: sessionId, MessageId: messageId}
@@ -344,7 +352,6 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 	history := make([]map[string]string, 0)
 	for _, m := range messages {
 		msg := m.(*types.ToolMessage)
-		fmt.Println("处理工具调用消息", "sessionId", sessionId, "messageId", messageId)
 		if msg.MessageId == messageId && msg.SessionID == sessionId {
 			// 反转义 InputParams 和 OutputParams 字符串
 			inputParams := msg.InputParams
