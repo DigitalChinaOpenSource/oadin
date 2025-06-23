@@ -1,14 +1,15 @@
 import styles from './index.module.scss';
 import useLoginStore from '@/store/loginStore.ts';
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { Button, Form, Input } from 'antd';
+import { App, Button, Form, Input, message } from 'antd';
 import React from 'react';
 import EmailInput from '@/pages/Login/components/emailInput';
 import CodeInput from '@/pages/Login/components/codeInput';
 import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
+import { useLoginView } from '@/pages/Login/useLoginView.ts';
 
-interface EnterpriseFormValues {
+export interface IEnterpriseFormValues {
   name: string;
   password: string;
   surePassword: string;
@@ -21,9 +22,20 @@ interface EnterpriseFormValues {
 
 const CreateNewAccount = () => {
   const { setCurrentStep } = useLoginStore();
+  const { createNewAccount } = useLoginView();
   const [form] = Form.useForm();
+  const { message } = App.useApp();
 
-  const onFinish = () => {};
+  const onFinish = async (values: IEnterpriseFormValues) => {
+    console.log('Received values of form: ', values);
+    // 这里可以添加提交表单的逻辑
+    // 比如调用API注册新账户
+    // onOk?.(values);
+    const createRes = await createNewAccount(values);
+    if (createRes) {
+      message.success('企业账户创建成功');
+    }
+  };
 
   return (
     <div className={styles.createNewAccount}>

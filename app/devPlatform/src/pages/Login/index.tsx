@@ -49,7 +49,7 @@ const LoginPage: React.FC = () => {
     },
   ];
   // 获取重定向来源
-  const from = (location.state as { from?: string })?.from || '/app-management';
+  // const from = (location.state as { from?: string })?.from || '/app-management';
 
   const [searchParams] = useSearchParams();
   console.log('searchParams:', searchParams.get('needBindPhone'));
@@ -77,6 +77,16 @@ const LoginPage: React.FC = () => {
       setLoginAccount('enterpriseAccount');
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    const needBindPhone = searchParams.get('needBindPhone');
+    const loginFrom = searchParams.get('loginFrom');
+    if (needBindPhone === 'true' && loginFrom === 'personWechat') {
+      setCurrentStep('bindPhone');
+    } else if (needBindPhone === 'false') {
+      navigate('/');
+    }
+  }, []);
 
   return (
     <div className={styles.loginPage}>
