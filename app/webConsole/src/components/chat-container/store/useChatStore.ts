@@ -74,9 +74,8 @@ const useChatStore = create<ChatState>()(
     {
       name: STORAGE_KEY,
       partialize: (state) => ({
-        currentSessionId: state.currentSessionId,
-        messages: state.messages,
-        uploadFileList: state.uploadFileList,
+        // currentSessionId: state.currentSessionId,
+        // messages: state.messages,
       }),
     },
   ),

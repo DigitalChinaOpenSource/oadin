@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { XIcon, DownloadIcon } from '@phosphor-icons/react';
 import DownloadItem from './download-item';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
@@ -9,7 +10,7 @@ export interface IDownloadListBoxProps {
   handleDownload: () => void;
 }
 
-export default function DownloadListBox(props: IDownloadListBoxProps) {
+const DownloadListBox = memo((props: IDownloadListBoxProps) => {
   const { className = '', handleDownload } = props;
   const { downloadList } = useModelDownloadStore();
   return (
@@ -46,4 +47,6 @@ export default function DownloadListBox(props: IDownloadListBoxProps) {
       </div>
     </div>
   );
-}
+});
+
+export default DownloadListBox;
