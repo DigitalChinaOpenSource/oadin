@@ -1,8 +1,10 @@
 import styles from './index.module.scss';
 import { Button, Checkbox, Form, Input } from 'antd';
 import useLoginStore from '@/store/loginStore.ts';
-import CodeInput from '@/pages/Login/codeInput';
+import CodeInput from '@/pages/Login/components/codeInput';
 import { useState } from 'react';
+import EmailInput from '@/pages/Login/components/emailInput';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 
 interface IForgetPasswordProp {
   email: string;
@@ -25,44 +27,26 @@ const ForgetPassword = () => {
   return (
     <div className={styles.forgetPassword}>
       <div
-        className={styles.goBack}
+        className="goBack"
         onClick={() => setCurrentStep('enterpriseAccount')}
       >
-        返回
+        <ArrowLeftOutlined size={24} />
+        <div>返回</div>
       </div>
-      <div className={styles.header}>找回密码</div>
-      <div className={styles.formContainer}>
+      <div className="header">找回密码</div>
+      <div className="formContainer">
         {showForget ? (
           <Form
             form={form}
             name="emailForm"
             autoComplete="off"
             onFinish={onFinish}
-            className={styles.loginForm}
+            className="loginForm"
           >
-            <Form.Item
-              name="email"
-              validateTrigger={['onChange', 'onBlur']}
-              rules={[
-                {
-                  validator: (_: unknown, value: string) => {
-                    if (!value) {
-                      return Promise.reject(new Error('请输入邮箱地址'));
-                    }
-                    if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value)) {
-                      return Promise.reject(new Error('邮箱格式错误，请重新输入！'));
-                    }
-                    return Promise.resolve();
-                  },
-                  validateTrigger: ['onBlur'],
-                },
-              ]}
-            >
-              <Input
-                style={{ width: '100%', height: '40px' }}
-                placeholder="请输入邮箱地址"
-              />
-            </Form.Item>
+            <EmailInput
+              form={form}
+              codeFiled={'email'}
+            />
             <CodeInput
               form={form}
               validateFiled={'email'}
@@ -72,7 +56,7 @@ const ForgetPassword = () => {
               <Button
                 htmlType="submit"
                 type="primary"
-                className={styles.loginButton}
+                className="loginButton"
               >
                 下一步
               </Button>

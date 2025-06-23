@@ -132,7 +132,12 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
       </div>
       <div className={styles.createNewAccount}>
         <span>没有账号？</span>
-        <span className={styles.createDesc}>创建一个账号</span>
+        <span
+          className={styles.createDesc}
+          onClick={() => setCurrentStep('createAccount')}
+        >
+          创建一个账号
+        </span>
       </div>
     </div>
   );

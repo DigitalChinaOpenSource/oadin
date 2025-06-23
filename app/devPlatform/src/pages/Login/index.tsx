@@ -11,6 +11,8 @@ import { useLoginView } from './useLoginView';
 import LoginEnterprise from '@/pages/Login/loginEnterprise';
 import ForgetPassword from '@/pages/Login/loginEnterprise/forgetPassword';
 import useLoginStore, { LoginType } from '@/store/loginStore.ts';
+import CreateNewAccount from '@/pages/Login/loginEnterprise/createNewAccount';
+import './common.css';
 
 interface LoginFormValues {
   username: string;
@@ -68,6 +70,9 @@ const LoginPage: React.FC = () => {
       setLoginAccount('personAccount');
       oldStep.current = currentStep;
     }
+    if (currentStep === 'enterpriseAccount') {
+      setLoginAccount('enterpriseAccount');
+    }
   }, [currentStep]);
 
   return (
@@ -115,6 +120,7 @@ const LoginPage: React.FC = () => {
               />
             )}
             {currentStep === 'forgetPassword' && <ForgetPassword />}
+            {currentStep === 'createAccount' && <CreateNewAccount />}
           </div>
         </div>
       </div>
