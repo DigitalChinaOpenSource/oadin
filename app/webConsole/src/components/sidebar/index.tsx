@@ -17,6 +17,7 @@ import type { MenuProps } from 'antd';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 import McpDownloadBox from '@/components/mcp-download-box';
 import mcpAddSvg from '@/components/icons/mcpAdd.svg';
+import DownloadSection from './download-section.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -154,48 +155,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
           </div>
         </Popover>
       )}
-      {downloadList.length > 0 && (
-        <Popover
-          style={{ padding: 0 }}
-          zIndex={1300}
-          content={
-            <DownloadListBox
-              className={styles.downloadListWrapper}
-              handleDownload={() => handleDownload(false)}
-            />
-          }
-          trigger={'click'}
-          placement={'rightTop'}
-          arrow={false}
-          open={isDownloadListOpen}
-          onOpenChange={(visible) => {
-            handleDownload(visible);
-          }}
-        >
-          <div className={styles.mcpDownloadBox}>
-            <div className={styles.mpcDownloadBoxContent}>
-              <Tooltip title={collapsed ? '正在下载' : ''}>
-                <div className={styles.downloadBtnBox}>
-                  <Badge
-                    count={downloadList?.length}
-                    showZero={false}
-                    className={styles.badge}
-                  >
-                    <div className={styles.downloadBtn}>
-                      <DownloadIcon
-                        width={14}
-                        height={14}
-                        fill="#ffffff"
-                      />
-                    </div>
-                  </Badge>
-                </div>
-              </Tooltip>
-              {!collapsed && <div>正在下载</div>}
-            </div>
-          </div>
-        </Popover>
-      )}
+      <DownloadSection collapsed={collapsed} />
     </div>
   );
 }

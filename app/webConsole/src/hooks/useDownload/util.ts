@@ -61,7 +61,6 @@ export function updateDownloadStatus(id: string, updates: any) {
   // 检查status字段是否发生变化
   let statusChanged = false;
   if (itemToUpdate && 'status' in updates) {
-    console.log('当前下载状态', itemToUpdate.status, '更新状态', updates.status);
     statusChanged = itemToUpdate.status !== updates.status;
   }
 

@@ -25,7 +25,8 @@ import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToo
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
 
 export function useChatStream() {
-  const { addMessage, currentSessionId, isLoading, setIsLoading } = useChatStore();
+  const { addMessage, isLoading, setIsLoading } = useChatStore();
+  const currentSessionId = useChatStore((state) => state.currentSessionId);
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
@@ -323,7 +324,6 @@ export function useChatStream() {
   const handleToolCalls = useCallback(
     async (data: IStreamData, currentContent: any) => {
       const { tool_calls, tool_group_id, id, total_duration } = data;
-      console.log('tool_group_id====>', tool_group_id);
       // 如果返回的 content 为空且有 tool_calls，保存 tool_group_id 用于下一次请求
       // (!currentContent || currentContent.trim() === '') &&
       if (tool_calls && tool_calls.length > 0 && tool_group_id) {

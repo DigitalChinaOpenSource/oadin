@@ -23,7 +23,6 @@ export default function ModelChecking() {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
       setIsSelectedModel(true);
       setSelectedModel(selectedStateModel);
-      vm.fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedStateModel.id) });
 
       const tempParams = { service_name: selectedStateModel.service_name } as any;
       if (selectedStateModel.source === 'local') {
