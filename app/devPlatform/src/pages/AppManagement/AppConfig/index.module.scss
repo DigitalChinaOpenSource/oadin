@@ -1,0 +1,92 @@
+@use "sass:color";
+
+$primary-color: #4f4dff;
+$text-color: #27272a;
+$border-color: #e4e4e7;
+$bg-gray-50: #f9fafb;
+
+.container {
+  padding: 24px;
+  background-color: $bg-gray-50;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.backButton {
+  margin-right: 16px;
+  color: $text-color;
+  padding: 0;
+  
+  &:hover {
+    color: $primary-color;
+    background: transparent;
+  }
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: $text-color;
+}
+
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: $text-color;
+}
+
+.tabs {
+  margin-bottom: 24px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+:global(.ant-form-item-label) label {
+  font-weight: 500;
+}
+
+:global(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: $primary-color;
+}
+
+:global(.ant-tabs-ink-bar) {
+  background-color: $primary-color;
+}
+
+:global(.ant-btn-primary) {
+  background-color: $primary-color;
+  
+  &:hover {
+    background-color: color.scale($primary-color, $lightness: -10%);
+  }
+}
