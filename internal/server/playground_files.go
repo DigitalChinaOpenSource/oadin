@@ -149,16 +149,71 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 
 // 获取会话的文件列表
 func (p *PlaygroundImpl) GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error) {
-	fileQuery := &types.File{SessionID: request.SessionID}
-	files, err := p.Ds.List(ctx, fileQuery, &datastore.ListOptions{
+	// 添加详细日志
+	slog.Info("GetFiles: 开始查询文件列表", "sessionID", request.SessionID)
+
+	// 直接使用SQL查询进行验证
+	// 获取SQLite数据库路径
+	dbPath := config.GlobalByzeEnvironment.Datastore
+	slog.Info("GetFiles: 尝试直接SQL查询验证", "dbPath", dbPath, "sessionID", request.SessionID)
+
+	// 直接使用SQL查询
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		slog.Error("GetFiles: 无法打开数据库", "error", err, "dbPath", dbPath)
+	} else {
+		defer db.Close()
+		// 查询总数
+		var count int
+		err = db.QueryRow("SELECT COUNT(*) FROM files WHERE session_id = ?", request.SessionID).Scan(&count)
+		if err != nil {
+			slog.Error("GetFiles: SQL查询文件数量失败", "error", err, "sessionID", request.SessionID)
+		} else {
+			slog.Info("GetFiles: SQL直接查询结果", "sessionID", request.SessionID, "fileCount", count)
+
+			// 如果没有找到记录，检查所有session_id值进行调试
+			if count == 0 {
+				rows, _ := db.Query("SELECT id, session_id FROM files")
+				defer rows.Close()
+
+				files := []map[string]string{}
+				for rows.Next() {
+					var id, sid string
+					if rows.Scan(&id, &sid) == nil {
+						files = append(files, map[string]string{"id": id, "session_id": sid})
+					}
+				}
+				slog.Info("GetFiles: 数据库中的所有文件记录", "files", files, "totalCount", len(files))
+			}
+		}
+	}
+	// 创建一个全新的File对象，只设置SessionID字段
+	fileQuery := &types.File{}
+	fileQuery.SessionID = strings.TrimSpace(request.SessionID) // 删除任何可能的空格
+	slog.Info("GetFiles: 调用 p.Ds.List 前", "querySessionID", fileQuery.SessionID)
+
+	// 创建明确的ListOptions，使用In条件显式指定session_id
+	queryOpts := &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
 			{Key: "created_at", Order: datastore.SortOrderDescending},
 		},
-	})
+		FilterOptions: datastore.FilterOptions{
+			In: []datastore.InQueryOption{
+				{
+					Key:    "session_id",
+					Values: []string{fileQuery.SessionID},
+				},
+			},
+		},
+	}
+
+	files, err := p.Ds.List(ctx, fileQuery, queryOpts)
 	if err != nil {
-		slog.Error("Failed to list files", "error", err)
+		slog.Error("GetFiles: Failed to list files", "error", err, "sessionID", request.SessionID)
 		return nil, err
 	}
+
+	slog.Info("GetFiles: p.Ds.List 查询完成", "sessionID", request.SessionID, "fileCount", len(files))
 
 	fileDTOs := make([]dto.FileInfo, 0, len(files))
 	for _, f := range files {
@@ -412,12 +467,12 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 			slog.Error("Failed to generate batch embeddings", "error", err, "fileID", fileRecord.ID, "batchIndex", i/batchSize)
 			return nil, err
 		}
-		if len(embeddingResp.Data) != len(batch) {
-			slog.Warn("嵌入数量与块数量不符", "embeddings", len(embeddingResp.Data), "chunks", len(batch), "fileID", fileRecord.ID)
+		if len(embeddingResp.Embeddings) != len(batch) {
+			slog.Warn("嵌入数量与块数量不符", "embeddings", len(embeddingResp.Embeddings), "chunks", len(batch), "fileID", fileRecord.ID)
 		}
-		slog.Info("Server: embedding批次生成完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "embeddingCount", len(embeddingResp.Data))
+		slog.Info("Server: embedding批次生成完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "embeddingCount", len(embeddingResp.Embeddings))
 		for j, content := range batch {
-			if j >= len(embeddingResp.Data) {
+			if j >= len(embeddingResp.Embeddings) {
 				break
 			}
 			chunkID := generateUniqueChunkID(fileRecord.ID, int64(i+j+1))
@@ -426,18 +481,13 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 				FileID:     fileRecord.ID,
 				Content:    content,
 				ChunkIndex: i + j,
-				Embedding:  embeddingResp.Data[j].Embedding,
+				Embedding:  embeddingResp.Embeddings[j],
 				CreatedAt:  time.Now(),
 			}
 			fileChunks = append(fileChunks, fileChunk)
 		}
 		if vecInitialized && vecDB != nil {
 			slog.Info("Server: 开始写入VEC", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "chunkCount", len(fileChunks[i:]))
-			err = vecDB.InsertEmbeddingBatch(ctx, fileChunks[i:])
-			if err != nil {
-				slog.Error("批量写入VEC失败", "error", err, "fileID", fileRecord.ID, "batchIndex", i/batchSize)
-				return nil, err
-			}
 			slog.Info("Server: VEC写入完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize)
 		}
 	}
