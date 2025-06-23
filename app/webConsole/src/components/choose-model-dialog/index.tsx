@@ -26,7 +26,6 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
   const onChange = (activeKey: string) => {
     setActiveKey(activeKey);
   };
-  const { currentSessionId } = useChatStore();
   const { fetchChooseModelNotify } = useViewModel();
   useEffect(() => {
     setSelecteStatedModel(selectedModel);

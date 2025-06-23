@@ -4,9 +4,12 @@ import { message } from 'antd';
 import { httpRequest } from '@/utils/httpRequest';
 import useChatStore from '../store/useChatStore';
 import rollingSvg from '@/components/icons/rolling.svg';
+import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
 
 export const HeaderContent = () => {
-  const { uploadFileList, setUploadFileList, currentSessionId } = useChatStore();
+  const { uploadFileList, setUploadFileList } = useChatStore();
+  // 从URL中获取当前会话ID
+  const currentSessionId = getSessionIdFromUrl();
   const handleRemove = async (file: UploadFile) => {
     try {
       // 如果文件已上传成功（有服务器返回的file_id），则调用删除接口

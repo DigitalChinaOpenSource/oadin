@@ -8,12 +8,9 @@ import { useViewModel, IMyModelListViewModel } from './view-model.ts';
 import { ModelCheckingHasdata } from '@/components/model-checking/model-checking-data';
 import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedModel.ts';
 import { getMessageByModel } from '@/i18n';
-import useChatStore from '@/components/chat-container/store/useChatStore';
 
 export default function ModelChecking() {
   const { setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
-  const { currentSessionId } = useChatStore();
-
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const vm: IMyModelListViewModel = useViewModel();
   const { modelSupportLoading, fetchModelSupport, modelListData } = vm;

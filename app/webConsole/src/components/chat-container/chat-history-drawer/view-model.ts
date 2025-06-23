@@ -10,11 +10,14 @@ import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDraw
 import { IModelSquareParams } from '@/types';
 import { convertMessageFormat } from '../utils/historyMessageFormat';
 import dayjs from 'dayjs';
+import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
 
 export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   const { onHistorySelect, onHistoryDrawerClose } = props;
   // 获取对话store
-  const { setHistoryVisible, createNewChat, setCurrentSessionId, setMessages, currentSessionId } = useChatStore();
+  const { setHistoryVisible, createNewChat, setMessages } = useChatStore();
+  // 从URL获取当前会话ID
+  const currentSessionId = getSessionIdFromUrl();
 
   const { setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
   const [chatHistory, setChatHistory] = useState<IChatHistoryItem[]>([]);
@@ -57,6 +60,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
         message.success('删除对话历史记录成功');
         // 如果删除的是当前会话的历史记录，则清空当前会话(能否新建一个对话)
         if (params[0] === currentSessionId) {
+          setSessionIdToUrl(''); // 清除URL中的sessionId
           createNewChat();
         }
         if (!data) return;
@@ -120,7 +124,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
     if (res) {
       setSelectedModel(res);
       setIsSelectedModel(true);
-      setCurrentSessionId(sessionId);
+      setSessionIdToUrl(sessionId);
       setMessages(messages);
       setHistoryVisible(false);
     } else {

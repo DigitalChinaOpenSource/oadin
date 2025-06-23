@@ -72,7 +72,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const [modelAuthType, setModelAuthType] = useState<IModelAuthType>('config');
   // 模型/问学列表全量数据
   const { setModelListData, modelListData } = useModelListStore();
-  const { setCurrentSessionId } = useChatStore();
 
   // 本地缓存的模型数据
   const [modelListStateData, setModelListStateData] = useState<IModelDataItem[]>([]);
@@ -274,7 +273,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         if (params[0].model_name === selectedModel?.name) {
           setIsSelectedModel(false);
           setSelectedModel(null);
-          setCurrentSessionId('');
         }
       },
       onError: (error: Error & { handled?: boolean }) => {

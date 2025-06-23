@@ -6,15 +6,17 @@ import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import { IPlaygroundSession } from './types';
 import { message } from 'antd';
+import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
 
 export default function useViewModel() {
   const [isUploadVisible, setIsUploadVisible] = useState(false);
   // TODO 获取当前是否下载词嵌入模型
   const { selectedModel } = useSelectedModelStore();
-  const { setCurrentSessionId, createNewChat, messages, setUploadFileList } = useChatStore();
+  const { createNewChat, messages, setUploadFileList } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 
-  const currentSessionId = useChatStore((state) => state.currentSessionId);
+  // 从URL中获取当前会话ID
+  const currentSessionId = getSessionIdFromUrl();
 
   // 保存上一次使用的模型ID，用于检测模型是否变化
   const prevSelectedModelIdRef = useRef<string | undefined>(selectedModel?.id);
@@ -48,7 +50,7 @@ export default function useViewModel() {
       manual: true,
       onSuccess: (data) => {
         if (data.id) {
-          setCurrentSessionId(data.id);
+          setSessionIdToUrl(data.id);
           setSelectMcpList([]);
           createNewChat();
         }
