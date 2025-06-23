@@ -69,19 +69,20 @@ func (m *ChatMessage) Index() map[string]interface{} {
 
 // 工具调用
 type ToolMessage struct {
-	ID            string    `json:"id"`
-	SessionID     string    `json:"session_id"`
-	MessageId     string    `json:"message_id"`     // 关联的消息ID
-	McpId         string    `json:"mcp_id"`         // 工具调用的MCP ID
-	Logo          string    `json:"mcp_image"`      // 工具调用的MCP图标
-	Name          string    `json:"name"`           // 工具名称
-	Desc          string    `json:"desc"`           // 工具描述
-	InputParams   string    `json:"input_params"`   // 输入参数
-	OutputParams  string    `json:"output_params"`  // 输出参数
-	Status        bool      `json:"status"`         // 工具调用状态
-	ExecutionTime int64     `json:"execution_time"` // 大模型选择工具的思考时间，单位为秒
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID             string    `json:"id"`
+	SessionID      string    `json:"session_id"`
+	MessageId      string    `json:"message_id"`       // 关联的用户消息ID
+	AssistantMsgID string    `json:"assistant_msg_id"` // 关联的大模型回复消息ID
+	McpId          string    `json:"mcp_id"`           // 工具调用的MCP ID
+	Logo           string    `json:"mcp_image"`        // 工具调用的MCP图标
+	Name           string    `json:"name"`             // 工具名称
+	Desc           string    `json:"desc"`             // 工具描述
+	InputParams    string    `json:"input_params"`     // 输入参数
+	OutputParams   string    `json:"output_params"`    // 输出参数
+	Status         bool      `json:"status"`           // 工具调用状态
+	ExecutionTime  int64     `json:"execution_time"`   // 大模型选择工具的思考时间，单位为秒
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 func (m *ToolMessage) SetCreateTime(t time.Time) { m.CreatedAt = t }
