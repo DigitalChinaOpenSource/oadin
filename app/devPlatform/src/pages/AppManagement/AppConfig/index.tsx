@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Checkbox, Form, message, Spin, Tooltip } from 'antd';
 import { ArrowLeftOutlined, CopyOutlined, EditOutlined, EyeOutlined, InfoCircleOutlined, RobotOutlined, SyncOutlined } from '@ant-design/icons';
 import styles from './index.module.scss';
+import CreateAppModal from '../CreateAppModal';
 
 interface AppConfigProps {}
 
@@ -64,6 +65,10 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   });
   const [agreement, setAgreement] = useState(false);
   const [form] = Form.useForm();
+
+  // 编辑应用名称相关状态
+  const [editNameModalVisible, setEditNameModalVisible] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   // 获取应用详情
   useEffect(() => {
@@ -147,6 +152,35 @@ const AppConfig: React.FC<AppConfigProps> = () => {
     }
   };
 
+  // 处理编辑应用名称
+  const handleEditName = () => {
+    setEditNameModalVisible(true);
+  };
+
+  // 处理编辑应用名称的提交
+  const handleEditNameSubmit = async (values: { name: string }) => {
+    try {
+      setEditLoading(true);
+
+      // 模拟API调用
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 更新本地状态
+      setAppDetail({
+        ...appDetail,
+        name: values.name,
+      });
+
+      message.success('应用名称更新成功');
+      setEditNameModalVisible(false);
+    } catch (error) {
+      console.error('Edit name error:', error);
+      message.error('更新应用名称失败');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -186,15 +220,12 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                     placement="topLeft"
                   >
                     <div className={styles.appName}>{appDetail?.name || '应用名称'}</div>
-                  </Tooltip>
+                  </Tooltip>{' '}
                   <Button
                     type="text"
                     icon={<EditOutlined />}
                     className={styles.editNameButton}
-                    onClick={() => {
-                      // 编辑名称的逻辑
-                      message.info('点击编辑应用名称');
-                    }}
+                    onClick={handleEditName}
                   />
                 </div>
 
@@ -337,6 +368,16 @@ const AppConfig: React.FC<AppConfigProps> = () => {
           </div>
         </div>
       </div>
+
+      {/* 编辑应用名称弹窗 */}
+      <CreateAppModal
+        open={editNameModalVisible}
+        onCancel={() => setEditNameModalVisible(false)}
+        onFinish={handleEditNameSubmit}
+        confirmLoading={editLoading}
+        initialValues={{ name: appDetail?.name || '' }}
+        title="编辑名称"
+      />
     </div>
   );
 };

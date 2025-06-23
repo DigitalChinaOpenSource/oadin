@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC, useEffect } from 'react';
 import { Form, Input, Modal } from 'antd';
 
 export interface CreateAppModalProps {
@@ -10,8 +10,22 @@ export interface CreateAppModalProps {
   title?: string;
 }
 
-const CreateAppModal: React.FC<CreateAppModalProps> = ({ open, onCancel, onFinish, confirmLoading = false }) => {
+const CreateAppModal: FC<CreateAppModalProps> = ({ open, onCancel, onFinish, confirmLoading = false, initialValues, title = '创建应用' }) => {
   const [form] = Form.useForm();
+
+  // 当初始值发生变化时更新表单
+  useEffect(() => {
+    if (initialValues && open) {
+      form.setFieldsValue(initialValues);
+    }
+  }, [initialValues, form, open]);
+
+  // 当弹窗关闭时重置表单
+  useEffect(() => {
+    if (!open) {
+      form.resetFields();
+    }
+  }, [open, form]);
 
   const handleSubmit = async () => {
     try {
@@ -21,10 +35,9 @@ const CreateAppModal: React.FC<CreateAppModalProps> = ({ open, onCancel, onFinis
       console.error('Form validation failed:', error);
     }
   };
-
   return (
     <Modal
-      title={'创建表单'}
+      title={title}
       open={open}
       onCancel={onCancel}
       width={480}
