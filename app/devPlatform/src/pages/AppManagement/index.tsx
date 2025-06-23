@@ -1,9 +1,11 @@
 /* eslint-disable no-promise-executor-return */
 import React, { useState } from 'react';
-import { Button, Input, message, Modal, Pagination, Spin } from 'antd';
+import { Button, Input, message, Pagination, Spin } from 'antd';
 import AppCard from './AppCard';
 import { useRequest } from 'ahooks';
 import { PlusOutlined } from '@ant-design/icons';
+import CreateAppModal from './CreateAppModal';
+import DeleteAppModal from './DeleteAppModal.tsx';
 import styles from './index.module.scss';
 
 // 模拟删除接口
@@ -48,9 +50,9 @@ const updateApp = async (id: string, values: { name: string }) => {
 const mockApps = [
   // 超长名称测试数据
   {
-    id: 'app-long-1',
+    id: 'long-1',
     name: '这是一个非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常长的应用名称1',
-    appId: 'app_long1',
+    appId: 'long1',
     secretKey: 'sk_long1',
     modelCount: 2,
     mcpCount: 1,
@@ -61,7 +63,7 @@ const mockApps = [
   ...Array.from({ length: 23 }).map((_, index) => ({
     id: `app-${index + 1}`,
     name: `测试应用${index + 1}`,
-    appId: `app_${Math.random().toString(36).substring(2, 10)}`,
+    appId: `${Math.random().toString(36).substring(2, 10)}`,
     secretKey: `sk_${Math.random().toString(36).substring(2, 15)}`,
     modelCount: Math.floor(Math.random() * 5) + 1,
     mcpCount: Math.floor(Math.random() * 3) + 1,
@@ -106,13 +108,12 @@ const AppManage: React.FC = () => {
       refreshDeps: [current, searchText],
     },
   );
-
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deletingApp, setDeletingApp] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [editingApp, setEditingApp] = useState<any>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [formLoading, setFormLoading] = useState(false);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -131,14 +132,12 @@ const AppManage: React.FC = () => {
       message.error('删除失败');
     } finally {
       setDeleteLoading(false);
-      setDeleteModalVisible(false);
       setDeletingApp(null);
     }
   };
 
   const showDeleteModal = (app: any) => {
     setDeletingApp(app);
-    setDeleteModalVisible(true);
   };
 
   const showCreateModal = () => {
@@ -152,8 +151,8 @@ const AppManage: React.FC = () => {
     setEditingApp(app);
     setFormModalVisible(true);
   };
-
-  const handleFormSubmit = async (values: { name: string }) => {
+  const handleFormSubmit = async (values: { name: string }): Promise<void> => {
+    setFormLoading(true);
     try {
       if (formMode === 'create') {
         const res = await createApp(values);
@@ -161,7 +160,6 @@ const AppManage: React.FC = () => {
           message.success('创建成功');
           refresh();
           setFormModalVisible(false);
-          return true;
         }
       } else {
         const res = await updateApp(editingApp.id, values);
@@ -169,13 +167,12 @@ const AppManage: React.FC = () => {
           message.success('更新成功');
           refresh();
           setFormModalVisible(false);
-          return true;
         }
       }
-      return false;
     } catch (error) {
       message.error(formMode === 'create' ? '创建失败' : '更新失败');
-      return false;
+    } finally {
+      setFormLoading(false);
     }
   };
 
@@ -252,90 +249,18 @@ const AppManage: React.FC = () => {
           )}
         </Spin>
       </div>
-
-      {/*<ModalForm*/}
-      {/*  title={formMode === 'create' ? '创建应用' : '配置应用'}*/}
-      {/*  open={formModalVisible}*/}
-      {/*  onOpenChange={setFormModalVisible}*/}
-      {/*  modalProps={{*/}
-      {/*    width: 480,*/}
-      {/*    className: 'create-modal',*/}
-      {/*    destroyOnHidden: true,*/}
-      {/*    onCancel: handleFormCancel,*/}
-      {/*  }}*/}
-      {/*  colon*/}
-      {/*  layout="horizontal"*/}
-      {/*  labelCol={{ span: 6 }}*/}
-      {/*  wrapperCol={{ span: 18 }}*/}
-      {/*  onFinish={handleFormSubmit}*/}
-      {/*  submitTimeout={2000}*/}
-      {/*  initialValues={editingApp ? { name: editingApp.name } : undefined}*/}
-      {/*>*/}
-      {/*  <ProFormText*/}
-      {/*    name="name"*/}
-      {/*    label="应用名称"*/}
-      {/*    placeholder="请输入应用名称"*/}
-      {/*    rules={[*/}
-      {/*      { required: true, message: '请输入应用名称' },*/}
-      {/*      {*/}
-      {/*        pattern: /^[\u4e00-\u9fa5a-zA-Z0-9]+$/,*/}
-      {/*        message: '支持汉字、数字、字母',*/}
-      {/*      },*/}
-      {/*      {*/}
-      {/*        max: 50,*/}
-      {/*        message: '不超过50个字符',*/}
-      {/*      },*/}
-      {/*    ]}*/}
-      {/*    fieldProps={{*/}
-      {/*      maxLength: 50,*/}
-      {/*    }}*/}
-      {/*  />*/}
-      {/*</ModalForm>*/}
-
-      <Modal
-        title="删除应用"
-        open={deleteModalVisible}
-        onCancel={() => {
-          setDeleteModalVisible(false);
-          setDeletingApp(null);
-        }}
-        footer={[
-          <Button
-            key="cancel"
-            onClick={() => {
-              setDeleteModalVisible(false);
-              setDeletingApp(null);
-            }}
-          >
-            取消
-          </Button>,
-          <Button
-            key="delete"
-            type="primary"
-            loading={deleteLoading}
-            onClick={handleDelete}
-          >
-            删除
-          </Button>,
-        ]}
-        width={480}
-        className={styles['delete-modal']}
-      >
-        <div className={styles['delete-modal-content']}>
-          <p>
-            <strong>删除操作将同时移除以下所有关联数据：</strong>
-          </p>
-          <ul>
-            <li>应用配置文件（含模型参数与 MCP 配置）</li>
-            <li>APPID 与 Secret Key 凭证信息</li>
-            <li>日志、统计与调用记录等应用数据</li>
-          </ul>
-          <p>一旦删除，基于该应用构建的服务将停止运行，且数据将无法恢复。</p>
-          <p>
-            <strong>此操作为不可逆，请谨慎操作。</strong>
-          </p>
-        </div>
-      </Modal>
+      <CreateAppModal
+        open={formModalVisible}
+        onCancel={handleFormCancel}
+        onFinish={handleFormSubmit}
+        confirmLoading={formLoading}
+      />
+      <DeleteAppModal
+        deleteLoading={deleteLoading}
+        deleteApp={deletingApp}
+        setDeletingApp={setDeletingApp}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };

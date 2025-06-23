@@ -1,11 +1,13 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Layout, Spin } from 'antd';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { ConfigProvider, Layout, Spin } from 'antd';
 import Sidebar from './components/Sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import routes from './routes/routes';
 import styles from './index.module.scss';
 import TopHeader from './components/top-header';
+import zhCN from 'antd/locale/zh_CN';
+
 const { Header, Content, Footer } = Layout;
 
 // 主布局组件
@@ -27,7 +29,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Sidebar />
         <Layout>
           <Content className={styles.content}>{children}</Content>
-          <Footer style={{ textAlign: 'center' }}>DevPlatform ©{new Date().getFullYear()} Created by Vanta</Footer>
+          {/*<Footer style={{ textAlign: 'center' }}>DevPlatform ©{new Date().getFullYear()} Created by Vanta</Footer>*/}
         </Layout>
       </Layout>
     </Layout>
@@ -44,29 +46,34 @@ const App: React.FC = () => {
           </div>
         }
       >
-        <MainLayout>
-          <Routes>
-            {/* 根路由重定向到应用管理 */}
-            <Route
-              path="/"
-              element={
-                <Navigate
-                  to="/app-management"
-                  replace
-                />
-              }
-            />
+        <ConfigProvider
+          locale={zhCN}
+          theme={{ token: { colorPrimary: '#4f4dff', colorLink: '#4f4dff' } }}
+        >
+          <MainLayout>
+            <Routes>
+              {/* 根路由重定向到应用管理 */}
+              <Route
+                path="/"
+                element={
+                  <Navigate
+                    to="/app-management"
+                    replace
+                  />
+                }
+              />
 
-            {/* 动态生成路由 */}
-            {renderRoutes(routes)}
+              {/* 动态生成路由 */}
+              {renderRoutes(routes)}
 
-            {/* 404页面 */}
-            <Route
-              path="*"
-              element={<div>404 Not Found</div>}
-            />
-          </Routes>
-        </MainLayout>
+              {/* 404页面 */}
+              <Route
+                path="*"
+                element={<div>404 Not Found</div>}
+              />
+            </Routes>
+          </MainLayout>
+        </ConfigProvider>
       </Suspense>
     </BrowserRouter>
   );

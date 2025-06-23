@@ -19,6 +19,7 @@
     flex: 1;
     padding: 24px;
     overflow-y: auto;
+    min-width: 880px;
   }
   :global(.ant-layout) {
     background: none;
