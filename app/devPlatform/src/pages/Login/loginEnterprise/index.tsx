@@ -35,10 +35,10 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ showAgreed = true }) => {
   return (
     <div className={styles.loginEnterprise}>
       {/* 头部标题区 */}
-      <div className={styles.headerSection}>
-        <div className={styles.tabContainer}>
-          <div className={styles.tabItem}>
-            <span className={`${styles.tabTitle} `}>邮箱登录</span>
+      <div className="headerSection">
+        <div className="tabContainer">
+          <div className="tabItem">
+            <span className="tabTitle">邮箱登录</span>
           </div>
         </div>
       </div>

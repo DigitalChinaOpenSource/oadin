@@ -1,5 +1,6 @@
 .uploadContainer {
   width: 100%;
+  //height: 112px;
 }
 
 .idCardUpload {
@@ -13,6 +14,7 @@
     border-radius: 4px;
     margin-right: 0;
     margin-bottom: 0;
+    box-sizing: content-box;
   }
 }
 
@@ -24,6 +26,11 @@
   font-size: 14px;
   line-height: 22px;
   font-weight: 400;
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+  }
 }
 
 .uploadText {

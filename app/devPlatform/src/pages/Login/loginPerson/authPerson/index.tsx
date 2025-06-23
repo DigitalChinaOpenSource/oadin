@@ -3,6 +3,8 @@ import ImageUpload from '@/pages/Login/components/ImageUpload';
 import { Form, Button, message } from 'antd';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LoginFrontedIcon from '@/assets/login-fronted-icon.svg';
+import LoginBackIcon from '@/assets/login-back-icon.svg';
 
 const AuthPerson = () => {
   const [form] = Form.useForm();
@@ -45,6 +47,7 @@ const AuthPerson = () => {
         >
           {/* 上传人像面区域 */}
           <ImageUpload
+            bgIcon={LoginFrontedIcon}
             title="上传人像面"
             name="frontImage"
             rules={[{ required: true, message: '请上传身份证人像面照片' }]}
@@ -53,6 +56,7 @@ const AuthPerson = () => {
 
           {/* 上传国徽面区域 */}
           <ImageUpload
+            bgIcon={LoginBackIcon}
             title="上传国徽面"
             name="backImage"
             rules={[{ required: true, message: '请上传身份证国徽面照片' }]}
