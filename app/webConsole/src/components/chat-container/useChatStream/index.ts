@@ -25,7 +25,7 @@ import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToo
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
 
 export function useChatStream() {
-  const { addMessage, setCurrentSessionId, currentSessionId, isLoading, setIsLoading } = useChatStore();
+  const { addMessage, currentSessionId, isLoading, setIsLoading } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
@@ -495,6 +495,7 @@ export function useChatStream() {
   const continueConversationWithResult = useCallback(
     async (toolResult: string) => {
       try {
+        if (!currentSessionId) return;
         // 中止旧的请求控制器，避免状态混乱
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
@@ -628,12 +629,13 @@ export function useChatStream() {
         handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.CONTINUE_FAILED, error.message || '未知错误'), error, ErrorType.TOOL);
       }
     },
-    [createStreamRequest, currentSessionId, selectedMcpIds, resetNoDataTimer, setCurrentSessionId, setError, setStreamingContent, setStreamingThinking, handleToolCalls],
+    [createStreamRequest, currentSessionId, selectedMcpIds, resetNoDataTimer, setError, setStreamingContent, setStreamingThinking, handleToolCalls],
   );
 
   const sendChatMessageInternal = useCallback(
     async (userMessage: string, isResend = false) => {
       if (!userMessage.trim()) return;
+      if (!currentSessionId) return;
       // 取消之前的请求
       cancelRequest();
       // 清除流状态
@@ -715,7 +717,6 @@ export function useChatStream() {
           },
           {
             onDataReceived: async (response) => {
-              console.log('send的====>', response);
               resetNoDataTimer();
               if (requestState.current.timers.totalTimer) {
                 clearTimeout(requestState.current.timers.totalTimer);
@@ -825,7 +826,7 @@ export function useChatStream() {
         handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, error.message || '未知错误'), error, ErrorType.REQUEST);
       }
     },
-    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, setCurrentSessionId, createStreamRequest, clearTimers, resetNoDataTimer, handleToolCalls],
+    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, createStreamRequest, clearTimers, resetNoDataTimer, handleToolCalls],
   );
 
   const sendChatMessage = useCallback(

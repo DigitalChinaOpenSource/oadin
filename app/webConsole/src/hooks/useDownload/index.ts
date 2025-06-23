@@ -182,19 +182,12 @@ export const useDownLoad = () => {
     if (!hasCompletedItems) return;
     // 创建定时器，定期检查并清理已完成的下载项
     intervalRef.current = setInterval(() => {
-      console.log('2 秒执行定时器，处理已完成的下载项');
       setDownloadList((currentList) => {
-        const hasCompletedItems = currentList.some((item) => item.status === COMPLETED);
-        // 如果所有项目都已完成，清空列表并停止定时器
-        if (currentList.length > 0 && currentList.every((item) => item.status === COMPLETED)) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-          return [];
-        }
-        if (hasCompletedItems) {
-          return currentList.filter((item) => item.status !== COMPLETED);
-        }
-        return currentList;
+        const completedItems = currentList.filter((item) => item.status === COMPLETED);
+        if (completedItems.length === 0) return currentList; // 没有变化，返回原列表
+
+        const newList = currentList.filter((item) => item.status !== COMPLETED);
+        return newList.length === currentList.length ? currentList : newList;
       });
     }, 2000);
 

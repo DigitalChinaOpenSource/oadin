@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import useSelectedModelStore from '@/store/useSelectedModel';
@@ -16,11 +16,18 @@ export default function useViewModel() {
 
   const currentSessionId = useChatStore((state) => state.currentSessionId);
 
+  // 保存上一次使用的模型ID，用于检测模型是否变化
+  const prevSelectedModelIdRef = useRef<string | undefined>(selectedModel?.id);
+
   useEffect(() => {
-    // 如果当前会话ID不存在且已选择模型，则创建新的会话
-    if (!currentSessionId && selectedModel?.id) {
+    // 场景1: 如果当前会话ID不存在且已选择模型，则创建新的会话
+    // 场景2: 如果会话ID存在，但选择的模型发生变化，也创建新的会话
+    if (selectedModel?.id && (!currentSessionId || prevSelectedModelIdRef.current !== selectedModel.id)) {
       fetchCreateChat({ modelId: selectedModel.id });
     }
+
+    // 更新上一次使用的模型ID引用
+    prevSelectedModelIdRef.current = selectedModel?.id;
   }, [currentSessionId, selectedModel]);
 
   useEffect(() => {
