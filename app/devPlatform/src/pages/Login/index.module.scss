@@ -2,7 +2,7 @@
 .loginPage {
   width: 100%;
   min-width: 1080px;
-  height: 100vh;
+  min-height: 100vh;
 
   background: linear-gradient(180deg, #f5f5ff 0%, #e6effb 100%);
   display: flex;
@@ -44,11 +44,26 @@
   flex-direction: column;
   flex: 1 0 0;
   :global(.ant-tabs) {
+    :global(.ant-tabs-nav-wrap) {
+      height: 32px;
+    }
     :global(.ant-tabs-nav::before) {
       border: none;
     }
     :global(.ant-tabs-tab) {
       padding: 0;
+    }
+    :global(.ant-tabs-tab-btn) {
+      font-size: 20px;
+      line-height: 28px;
+      font-weight: 400;
+      color: #898ea3 !important;
+    }
+    :global(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+      color: #4f4dff !important; /* 激活状态的标签颜色 */
+      font-weight: 600;
+      font-size: 24px;
+      line-height: 32px;
     }
     :global(.ant-tabs-ink-bar) {
       display: none; /* 隐藏下划线 */

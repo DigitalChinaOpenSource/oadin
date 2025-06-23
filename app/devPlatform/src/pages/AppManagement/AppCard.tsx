@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Button, Tooltip } from 'antd';
 import { CopyOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, RobotOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 // import { useIsOverflowed } from '@/hooks/useIsOverflowed';
 import styles from './index.module.scss';
@@ -12,9 +13,10 @@ interface AppCardProps {
   onCopy: (text: string) => void;
 }
 
-const AppCard: React.FC<AppCardProps> = ({ app, onEdit, onDelete, onCopy }) => {
+const AppCard: React.FC<AppCardProps> = ({ app, onDelete, onCopy }) => {
   const nameRef = useRef<HTMLDivElement>(null);
   const isOverflowed = true;
+  const navigate = useNavigate();
   return (
     <div
       className={styles['app-card-wrapper']}
@@ -68,10 +70,11 @@ const AppCard: React.FC<AppCardProps> = ({ app, onEdit, onDelete, onCopy }) => {
 
           {/* 操作按钮 */}
           <div className={styles['card-actions']}>
+            {' '}
             <Button
               type="text"
               className={styles['action-button']}
-              onClick={() => onEdit(app)}
+              onClick={() => navigate(`/app-management/config/${app.id}`)}
               icon={<EditOutlined className={styles['button-icon']} />}
             >
               <span className={styles['button-text']}>配置应用</span>
