@@ -211,7 +211,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		return result, nil
 	}
 
-	for i := range 5 {
+	for i := range 10 {
 		result, err := try()
 		if err == nil {
 			return result, nil
@@ -219,5 +219,5 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		fmt.Printf("Retrying to call tool for MCP %s, attempt %d\n", mcpId, i+1)
 		time.Sleep(100 * time.Millisecond)
 	}
-	return nil, fmt.Errorf("failed to call tool after 5 attempts for MCP %s", mcpId)
+	return nil, fmt.Errorf("failed to call tool after 10 attempts for MCP %s", mcpId)
 }
