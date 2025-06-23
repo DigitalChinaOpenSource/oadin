@@ -72,6 +72,7 @@ export interface ChatRequestParams {
   content: string;
   SessionID?: string;
   mcpIds?: string[];
+  toolGroupID?: string;
 }
 
 // 响应数据接口

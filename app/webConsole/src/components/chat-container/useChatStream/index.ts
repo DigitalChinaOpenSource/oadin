@@ -9,7 +9,17 @@ import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
 import { generateUniqueId, formatErrorMessage } from './utils';
-import { findProgressToolMessage, extractToolCallData, createMcpContent, updateContentListWithMcp, buildToolCallData, handleToolCallErrorMessage } from './mcpContentUtils';
+import {
+  findProgressToolMessage,
+  extractToolCallData,
+  extractToolCallDataByGroupId,
+  createMcpContent,
+  createMcpContentWithGroupId,
+  updateContentListWithMcp,
+  updateContentListWithMcpByGroupId,
+  buildToolCallData,
+  handleToolCallErrorMessage,
+} from './mcpContentUtils';
 import { buildMessageWithThinkContent, handleTextContent } from './thinkContentUtils';
 import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToolCallData } from './types';
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
@@ -42,6 +52,7 @@ export function useChatStream() {
       noDataTimer: null as NodeJS.Timeout | null,
       totalTimer: null as NodeJS.Timeout | null,
     },
+    lastToolGroupIdRef: null as string | null,
   });
   // 上下文保存
   const lastUserMessageRef = useRef<string | null>(null);
@@ -73,9 +84,10 @@ export function useChatStream() {
       shouldCancel?: boolean;
       appendToContent?: boolean;
       updateMcpStatus?: boolean;
+      toolGroupId?: string; // 新增：指定要更新的工具组ID
     } = {},
   ) => {
-    const { shouldCancel = true, appendToContent = false, updateMcpStatus = true } = options;
+    const { shouldCancel = true, appendToContent = false, updateMcpStatus = true, toolGroupId } = options;
 
     // 设置错误状态
     setError(message);
@@ -86,26 +98,57 @@ export function useChatStream() {
       const progressToolMessage = findProgressToolMessage(allMessages) as any;
 
       if (progressToolMessage) {
-        const { toolCallResults, mcpContentIndex } = extractToolCallData(progressToolMessage.contentList);
+        const updatedContentList = [...progressToolMessage.contentList];
+        let hasUpdates = false;
 
-        if (toolCallResults.length > 0 && mcpContentIndex >= 0) {
-          // 将最后一个工具调用标记为错误
-          const lastIndex = toolCallResults.length - 1;
-          if (toolCallResults[lastIndex].status === 'progress') {
-            toolCallResults[lastIndex] = {
-              ...toolCallResults[lastIndex],
-              outputParams: message,
-              status: 'error',
-            };
+        if (toolGroupId) {
+          // 如果指定了 toolGroupId，只更新该工具组
+          const { toolCallResults, mcpContentIndex } = extractToolCallDataByGroupId(progressToolMessage.contentList, toolGroupId);
+
+          if (toolCallResults.length > 0 && mcpContentIndex >= 0) {
+            // 将最后一个工具调用标记为错误
+            const lastIndex = toolCallResults.length - 1;
+            if (toolCallResults[lastIndex].status === 'progress') {
+              toolCallResults[lastIndex] = {
+                ...toolCallResults[lastIndex],
+                outputParams: message,
+                status: 'error',
+              };
+
+              // 更新消息状态
+              const currentTotalDuration = progressToolMessage.contentList[mcpContentIndex].content.totalDuration || 0;
+              const updatedMcpContent = createMcpContentWithGroupId(toolGroupId, 'error', toolCallResults, currentTotalDuration);
+              updatedContentList[mcpContentIndex] = updatedMcpContent;
+              hasUpdates = true;
+            }
           }
+        } else {
+          // 如果没有指定 toolGroupId，将所有进行中的工具组标记为错误
+          updatedContentList.forEach((contentItem, index) => {
+            if (contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress') {
+              const toolCallResults = [...(contentItem.content.data || [])];
 
-          // 更新消息状态
-          const updatedContentList = [...progressToolMessage.contentList];
-          const currentTotalDuration = progressToolMessage.contentList[mcpContentIndex].content.totalDuration || 0;
-          const updatedMcpContent = createMcpContent('error', toolCallResults, currentTotalDuration);
-          updatedContentList[mcpContentIndex] = updatedMcpContent;
+              // 将所有进行中的工具调用标记为错误
+              toolCallResults.forEach((tool, toolIndex) => {
+                if (tool.status === 'progress') {
+                  toolCallResults[toolIndex] = {
+                    ...tool,
+                    outputParams: message,
+                    status: 'error',
+                  };
+                }
+              });
 
-          // 更新消息
+              // 更新工具组状态
+              const updatedMcpContent = createMcpContentWithGroupId(contentItem.id, 'error', toolCallResults, contentItem.content.totalDuration || 0);
+              updatedContentList[index] = updatedMcpContent;
+              hasUpdates = true;
+            }
+          });
+        }
+
+        // 如果有更新，保存消息
+        if (hasUpdates) {
           const errorMessage: MessageType = {
             id: progressToolMessage.id,
             role: 'assistant',
@@ -165,6 +208,7 @@ export function useChatStream() {
         noDataTimer: null,
         totalTimer: null,
       },
+      lastToolGroupIdRef: null,
     };
     functionIdCacheRef.current = {};
   }, []);
@@ -279,9 +323,15 @@ export function useChatStream() {
   const handleToolCalls = useCallback(
     async (data: IStreamData, currentContent: any) => {
       const { tool_calls, tool_group_id, id, total_duration } = data;
+      // 如果返回的 content 为空且有 tool_calls，保存 tool_group_id 用于下一次请求
+      if ((!currentContent || currentContent.trim() === '') && tool_calls && tool_calls.length > 0 && tool_group_id) {
+        requestState.current.lastToolGroupIdRef = tool_group_id;
+      }
       if (!tool_calls || tool_calls.length === 0) {
+        requestState.current.lastToolGroupIdRef = null;
         return;
       }
+
       // 1. 检查是否已在处理中
       if (requestState.current.status.isToolCallActive) {
         console.log('工具调用已在处理中，忽略新请求');
@@ -317,19 +367,22 @@ export function useChatStream() {
         // 查找进行中的工具调用消息
         const progressToolMessage = findProgressToolMessage(messages);
         if (progressToolMessage) {
-          // currentToolMessageId = progressToolMessage.id;
           currentContentList = [...(progressToolMessage.contentList || [])];
 
-          // 提取现有的 totalDuration
-          const mcpContentIndex = currentContentList.findIndex((content) => content.type === 'mcp' && typeof content.content === 'object');
+          if (tool_group_id) {
+            // 查找指定 tool_group_id 的现有数据
+            const { toolCallResults: existingResults, mcpContentIndex } = extractToolCallDataByGroupId(currentContentList, tool_group_id);
 
-          if (mcpContentIndex >= 0 && currentContentList[mcpContentIndex]?.content?.totalDuration) {
-            currentTotalDuration = currentContentList[mcpContentIndex].content.totalDuration;
+            if (mcpContentIndex >= 0) {
+              // 如果找到现有的 tool_group_id，使用其数据
+              toolCallResults = existingResults;
+              currentTotalDuration = currentContentList[mcpContentIndex]?.content?.totalDuration || 0;
+            }
+          } else {
+            // 兼容没有 tool_group_id 的情况
+            const { toolCallResults: _toolCallResults } = extractToolCallData(currentContentList);
+            toolCallResults = _toolCallResults;
           }
-
-          // 提取现有的工具调用结果
-          const { toolCallResults: _toolCallResults } = extractToolCallData(currentContentList);
-          toolCallResults = _toolCallResults;
         }
         // 累加当前的调用时间
         if (total_duration) {
@@ -337,11 +390,18 @@ export function useChatStream() {
         }
 
         // 6. 添加当前工具调用到结果数组
-        toolCallResults.push(buildToolCallData(toolResponse, tool_group_id || '', 'progress'));
+        const mcpId = toolResponse.mcpId || generateUniqueId('mcp');
+        toolCallResults.push(buildToolCallData(toolResponse, mcpId, 'progress'));
 
         // 7. 构建并更新消息
-        const mcpContent = createMcpContent('progress', toolCallResults, currentTotalDuration);
-        currentContentList = currentContentList.length > 0 ? updateContentListWithMcp(currentContentList, mcpContent) : [mcpContent];
+        let mcpContent;
+        if (tool_group_id) {
+          mcpContent = createMcpContentWithGroupId(tool_group_id, 'progress', toolCallResults, currentTotalDuration);
+          currentContentList = updateContentListWithMcpByGroupId(currentContentList, mcpContent, tool_group_id);
+        } else {
+          mcpContent = createMcpContent('progress', toolCallResults, currentTotalDuration);
+          currentContentList = currentContentList.length > 0 ? updateContentListWithMcp(currentContentList, mcpContent) : [mcpContent];
+        }
 
         const mcpMessage: MessageType = {
           id: id,
@@ -363,7 +423,6 @@ export function useChatStream() {
         const lastIndex = toolCallResults.length - 1;
         toolCallResults[lastIndex] = {
           ...toolCallResults[lastIndex],
-
           outputParams: isToolError ? toolErrorMessage : data.content[0]?.text || '',
           logo: data.logo,
           desc: data.toolDesc,
@@ -375,8 +434,15 @@ export function useChatStream() {
         const finalStatus = keepInProgress ? 'progress' : 'error';
 
         // 11. 更新最终消息
-        const updatedMcpContent = createMcpContent(finalStatus, toolCallResults);
-        const updatedContentList = updateContentListWithMcp(currentContentList, updatedMcpContent);
+        let updatedMcpContent;
+        let updatedContentList;
+        if (tool_group_id) {
+          updatedMcpContent = createMcpContentWithGroupId(tool_group_id, finalStatus, toolCallResults);
+          updatedContentList = updateContentListWithMcpByGroupId(currentContentList, updatedMcpContent, tool_group_id);
+        } else {
+          updatedMcpContent = createMcpContent(finalStatus, toolCallResults);
+          updatedContentList = updateContentListWithMcp(currentContentList, updatedMcpContent);
+        }
 
         const updatedMessage: MessageType = {
           id: id,
@@ -401,10 +467,20 @@ export function useChatStream() {
         }
       } catch (error: any) {
         const errorMessage = error.message || '未知错误';
-        handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.EXECUTION_FAILED, errorMessage), error, ErrorType.TOOL, { shouldCancel: false, appendToContent: true, updateMcpStatus: true });
+        handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.EXECUTION_FAILED, errorMessage), error, ErrorType.TOOL, {
+          shouldCancel: false,
+          appendToContent: true,
+          updateMcpStatus: true,
+          toolGroupId: tool_group_id,
+        });
 
         // 更新错误消息
-        handleToolCallErrorMessage(toolCallResults, currentContentList, id, errorMessage, addMessage);
+        if (tool_group_id) {
+          handleToolCallErrorMessage(toolCallResults, currentContentList, id, tool_group_id, errorMessage, addMessage);
+        } else {
+          // 兼容旧版本错误处理
+          handleToolCallErrorMessage(toolCallResults, currentContentList, id, '', errorMessage, addMessage);
+        }
       } finally {
         // 14. 清理状态 - 只在确认对话继续或出错无法继续时才重置工具调用状态
         if (!toolCallHandlersRef.current.continueConversation) {
@@ -434,6 +510,9 @@ export function useChatStream() {
         if (selectedMcpIds().length > 0) {
           continueRequestData.mcpIds = selectedMcpIds();
         }
+        if (requestState.current.lastToolGroupIdRef) {
+          continueRequestData.toolGroupID = requestState.current.lastToolGroupIdRef;
+        }
         const API_BASE_URL = import.meta.env.VITE_HEALTH_API_URL || '';
         // 保持当前的响应内容，用于累加
         let localResponseContent = requestState.current.content.response;
@@ -449,7 +528,6 @@ export function useChatStream() {
           },
           {
             onDataReceived: async (response) => {
-              console.log('continue的====>', response);
               // 重置超时定时器
               resetNoDataTimer();
               if (requestState.current.timers.totalTimer) {
@@ -471,21 +549,37 @@ export function useChatStream() {
 
               // 如果有进行中的工具调用，将其标记为完成
               if (progressToolMessage && !requestState.current.status.isToolCallActive) {
-                const { toolCallResults, mcpContentIndex } = extractToolCallData(progressToolMessage.contentList);
+                const updatedContentList = [...progressToolMessage.contentList];
+                let hasUpdates = false;
 
-                if (toolCallResults.length > 0 && mcpContentIndex >= 0) {
-                  // 检查所有工具是否已完成
-                  const allComplete = toolCallResults.every((tool) => tool.status === 'success' || tool.status === 'error');
-                  const finalStatus = allComplete ? (toolCallResults.some((t) => t.status === 'error') ? 'error' : 'success') : 'progress';
+                // 遍历所有 MCP 类型的内容项
+                updatedContentList.forEach((contentItem, index) => {
+                  if (contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress') {
+                    const toolCallResults = contentItem.content.data || [];
 
-                  const currentTotalDuration = progressToolMessage.contentList[mcpContentIndex].content.totalDuration || 0;
+                    // 检查当前工具组是否已完成
+                    const allComplete = toolCallResults.every((tool: any) => tool.status === 'success' || tool.status === 'error');
 
-                  // 更新最终状态
-                  const updatedContentList = [...progressToolMessage.contentList];
-                  const updatedMcpContent = createMcpContent(finalStatus, toolCallResults, currentTotalDuration);
-                  updatedContentList[mcpContentIndex] = updatedMcpContent;
+                    if (allComplete) {
+                      const hasError = toolCallResults.some((tool: any) => tool.status === 'error');
+                      const finalStatus = hasError ? 'error' : 'success';
 
-                  // 更新消息
+                      // 更新工具组状态 - 使用新的函数
+                      const updatedMcpContent = createMcpContentWithGroupId(
+                        contentItem.id, // tool_group_id
+                        finalStatus,
+                        toolCallResults,
+                        contentItem.content.totalDuration || 0,
+                      );
+
+                      updatedContentList[index] = updatedMcpContent;
+                      hasUpdates = true;
+                    }
+                  }
+                });
+
+                // 如果有更新，保存消息
+                if (hasUpdates) {
                   const finalMessage: MessageType = {
                     id: progressToolMessage.id,
                     role: 'assistant',
@@ -636,6 +730,53 @@ export function useChatStream() {
               }
             },
             onComplete: () => {
+              // 检查是否有进行中的工具调用
+              const allMessages = useChatStore.getState().messages;
+              const progressToolMessage = findProgressToolMessage(allMessages) as any;
+
+              // 如果有进行中的工具调用，将其标记为完成
+              if (progressToolMessage && !requestState.current.status.isToolCallActive) {
+                const updatedContentList = [...progressToolMessage.contentList];
+                let hasUpdates = false;
+
+                // 遍历所有 MCP 类型的内容项
+                updatedContentList.forEach((contentItem, index) => {
+                  if (contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress') {
+                    const toolCallResults = contentItem.content.data || [];
+
+                    // 检查当前工具组是否已完成
+                    const allComplete = toolCallResults.every((tool: any) => tool.status === 'success' || tool.status === 'error');
+
+                    if (allComplete) {
+                      const hasError = toolCallResults.some((tool: any) => tool.status === 'error');
+                      const finalStatus = hasError ? 'error' : 'success';
+
+                      // 更新工具组状态 - 使用新的函数
+                      const updatedMcpContent = createMcpContentWithGroupId(
+                        contentItem.id, // tool_group_id
+                        finalStatus,
+                        toolCallResults,
+                        contentItem.content.totalDuration || 0,
+                      );
+
+                      updatedContentList[index] = updatedMcpContent;
+                      hasUpdates = true;
+                    }
+                  }
+                });
+
+                // 如果有更新，保存消息
+                if (hasUpdates) {
+                  const finalMessage: MessageType = {
+                    id: progressToolMessage.id,
+                    role: 'assistant',
+                    contentList: updatedContentList,
+                  };
+
+                  addMessage(finalMessage, true);
+                }
+              }
+
               if (!requestState.current.status.isToolCallActive && (requestState.current.content.response || responseContent)) {
                 const finalContent = requestState.current.content.response || responseContent;
                 const aiMessage = buildMessageWithThinkContent(finalContent);
