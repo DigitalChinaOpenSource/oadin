@@ -12,7 +12,7 @@ const LoginPerson = () => {
   return (
     <div className={styles.personLogin}>
       {currentStep === 'personWechat' && <WechatLogin />}
-      {currentStep === 'personPhone' && <MobileLogin onLogin={() => {}} />}
+      {currentStep === 'personPhone' && <MobileLogin />}
       <div className={styles.loginOperate}>
         <div className={styles.desc}>
           <div className={styles.line}></div>

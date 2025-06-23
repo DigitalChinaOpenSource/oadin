@@ -1,10 +1,11 @@
 import styles from './index.module.scss';
-import { Button, Checkbox, Form, Input } from 'antd';
+import { Button, Checkbox, Form, Input, message } from 'antd';
 import useLoginStore from '@/store/loginStore.ts';
 import CodeInput from '@/pages/Login/components/codeInput';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import EmailInput from '@/pages/Login/components/emailInput';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import { useLoginView } from '@/pages/Login/useLoginView.ts';
 
 interface IForgetPasswordProp {
   email: string;
@@ -16,10 +17,16 @@ interface ISetNewFormProps {
   surePassword: string;
 }
 
-const SetNewPassword = () => {
+const SetNewPassword = ({ email }: { email: string }) => {
   const [form] = Form.useForm();
-  const onFinish = (values: ISetNewFormProps) => {
-    console.log('Received values of form: ', values);
+  const { resetPassword } = useLoginView();
+
+  const onFinish = async (values: ISetNewFormProps) => {
+    console.log('Received values of form: ', values, email);
+    const res = await resetPassword(email, values.password);
+    if (res) {
+      message.success('密码重置成功，请使用新密码登录');
+    }
   };
   return (
     <Form
@@ -90,11 +97,17 @@ const SetNewPassword = () => {
 const ForgetPassword = () => {
   const { setCurrentStep } = useLoginStore();
   const [form] = Form.useForm<IForgetPasswordProp>();
-  const onFinish = (values: IForgetPasswordProp) => {
-    setShowForget(false);
+  const { getPassWordWithEmailCode } = useLoginView();
+  const onFinish = async (values: IForgetPasswordProp) => {
+    const res = await getPassWordWithEmailCode(values.email, values.code);
+    emailRef.current = values.email;
+    if (res) {
+      setShowForget(false);
+    }
   };
 
   const [showForget, setShowForget] = useState<boolean>(true);
+  const emailRef: any = useRef(null);
 
   return (
     <div className={styles.forgetPassword}>
@@ -135,7 +148,7 @@ const ForgetPassword = () => {
             </Form.Item>
           </Form>
         ) : (
-          <SetNewPassword />
+          <SetNewPassword email={emailRef.current} />
         )}
       </div>
     </div>

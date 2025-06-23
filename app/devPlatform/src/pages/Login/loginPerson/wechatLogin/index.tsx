@@ -5,7 +5,7 @@ import wechatIcon from '@/assets/wechatIcon.svg';
 
 const WechatLogin: React.FC = () => {
   const { initializeWeixinLogin } = useLoginView();
-  const redirect_uri = `${window.location.origin}/login`;
+  const redirect_uri = `${window.location.origin}/login?loginFrom='personWechat'`;
 
   useEffect(() => {
     initializeWeixinLogin(redirect_uri);

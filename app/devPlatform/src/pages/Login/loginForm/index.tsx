@@ -1,14 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Input, InputNumber, Button, Form, Checkbox } from 'antd';
 import styles from './index.module.scss';
 import CodeInput from '@/pages/Login/components/codeInput';
 import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
+import { useLoginView } from '@/pages/Login/useLoginView.ts';
+import useLoginStore from '@/store/loginStore.ts';
 
 export interface LoginFormValues {
   phoneNumber: string;
   code: string;
-  agreed?: boolean;
+  agreed: boolean;
 }
 
 interface LoginFormProps {
@@ -17,12 +19,26 @@ interface LoginFormProps {
   showAgreed?: boolean;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ type = 'login', onOk, showAgreed = true }) => {
+const LoginForm: React.FC<LoginFormProps> = () => {
   const [form] = Form.useForm<LoginFormValues>();
-  const onFinish = (values: LoginFormValues) => {
+  const { setPersonPhoneData, personPhoneData } = useLoginStore();
+  const { loginWithPhone } = useLoginView();
+  const onFinish = async (values: LoginFormValues) => {
     console.log('Received values of form: ', values);
-    onOk?.(values);
+    await loginWithPhone(values.phoneNumber, values.code, values.agreed);
   };
+
+  // 处理表单值变化的函数
+  const handleValuesChange = (_: any, allValues: LoginFormValues) => {
+    console.log('Form values changed: ', allValues);
+    setPersonPhoneData(allValues);
+  };
+
+  useEffect(() => {
+    if (personPhoneData) {
+      form.setFieldsValue(personPhoneData);
+    }
+  }, []);
 
   return (
     <Form
@@ -30,6 +46,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ type = 'login', onOk, showAgreed 
       name="loginForm"
       autoComplete="off"
       onFinish={onFinish}
+      onValuesChange={handleValuesChange}
       className="loginForm"
     >
       <PhoneNumberInput
@@ -41,19 +58,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ type = 'login', onOk, showAgreed 
         validateFiled={'phoneNumber'}
         codeFiled={'code'}
       />
-      {showAgreed && (
-        <AgreedCheckBox
-          form={form}
-          codeFiled={'agreed'}
-        />
-      )}
+
+      <AgreedCheckBox
+        form={form}
+        codeFiled={'agreed'}
+      />
+
       <Form.Item style={{ marginBottom: 0 }}>
         <Button
           htmlType="submit"
           type="primary"
           className="loginButton"
         >
-          {type === 'login' ? '登录/注册' : '确认绑定'}
+          登录/注册
         </Button>
       </Form.Item>
     </Form>
