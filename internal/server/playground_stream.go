@@ -238,6 +238,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				resp.ModelName = session.ModelName
 
 				if resp.IsComplete {
+					fmt.Println("收到流式输出完成标记，内容长度:", len(originalContent))
 					slog.Info("收到流式输出完成标记",
 						"is_complete", resp.IsComplete,
 						"content_length", len(originalContent),
@@ -287,12 +288,14 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					if userMsg == nil && len(resp.ToolCalls) > 0 && request.ToolGroupID != "" {
 						resp.ToolGroupID = request.ToolGroupID
 					}
+					if len(resp.ToolCalls) == 0 && request.ToolGroupID != "" {
+						p.MarkToolCallEnd(ctx, request.SessionID, request.ToolGroupID, assistantMsgID)
+					}
+
+					fmt.Println("流式输出完成，保存助手回复", resp)
+					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
 				} else if len(originalContent) > 0 {
-					slog.Info("收到非空流式输出块",
-						"content_length", len(originalContent),
-						"is_complete", resp.IsComplete)
-
 					fullContent += resp.Content
 
 					respChan <- resp
@@ -419,65 +422,47 @@ func (p *PlaygroundImpl) AddToolCall(ctx context.Context, sessionId, messageId s
 		return "", fmt.Errorf("failed to save tool message: %w", err)
 	}
 
+	return toolMessage.ID, nil
+}
+
+// 标识一轮工具调用结束，批量更新所有匹配 SessionID 和 MessageId 的 ToolMessage 的 AssistantMsgID
+func (p *PlaygroundImpl) MarkToolCallEnd(ctx context.Context, sessionId, messageId, assistantMsgID string) error {
+	// 查询所有匹配的 ToolMessage
+	query := &types.ToolMessage{
+		SessionID: sessionId,
+		MessageId: messageId,
+	}
+	messages, err := p.Ds.List(ctx, query, nil)
+	if err != nil {
+		return err
+	}
+	if len(messages) == 0 {
+		return nil // 没有需要更新的记录
+	}
+
+	for _, m := range messages {
+		toolMsg := m.(*types.ToolMessage)
+		if toolMsg.MessageId == messageId {
+			toolMsg.AssistantMsgID = assistantMsgID
+			if err := p.Ds.Put(ctx, toolMsg); err != nil {
+				return err
+			}
+		}
+	}
+
 	con := new(types.ChatMessage)
-	con.ID = messageId
+	con.ID = assistantMsgID
 	err = p.Ds.Get(ctx, con)
 
 	if err != nil {
-		return "", err
+		return err
 	}
 	if con == nil || con.ID == "" {
-		return "", fmt.Errorf("chat message not found")
+		return fmt.Errorf("chat message not found")
 	}
 	con.IsToolGroupID = true // 标记为工具组ID
 	con.UpdatedAt = time.Now()
 	err = p.Ds.Put(ctx, con)
 
-	return toolMessage.ID, nil
-
-	// 1.1 当客户端发消息时，请求参数只有McpIds，没有messageId时，证明是第一次工具调用，此时生成mcpMessageId为后续工具调用的问题消息标识
-	// 1.2 当客户发消息时，请求参数只有mcpMessageId,就证明工具调用已经结束了
-	/*
-			   {
-				"SessionID": "917b68be-93b5-4893-a134-56bfc0fd2a00",
-				"content": "武汉中建星光城到大悦城的路线规划",
-				"mcpMessageId": ["683ec88241fa614eb1531fc4"]
-		       }
-
-			   {
-			    "SessionID": "917b68be-93b5-4893-a134-56bfc0fd2a00",
-				"content": "",
-				"mcpIds": ["683ec88241fa614eb1531fc4"]
-				"mcpMessageId": "0"
-			   }
-
-			   {
-			    "SessionID": "917b68be-93b5-4893-a134-56bfc0fd2a00",
-				"content": "",
-				"mcpMessageId": "0"
-			   }
-
-	*/
-
-	// 调用工具时补充
-	// 2.1 如果是第一次调用，生成一个新的工具调用ID
-	/*
-		{
-				ID            string `json:"id"`
-				SessionID     string `json:"session_id"`
-				MessageId     string `json:"message_id"`     // 关联的消息ID
-				McpId         string `json:"mcp_id"`         // 工具调用的MCP ID
-				Logo          string `json:"logo"`      // 工具调用的MCP图标
-				Name          string `json:"name"`           // 工具名称
-				Desc          string `json:"desc"`           // 工具描述
-				InputParams   string `json:"input_params"`   // 输入参数
-				OutputParams  string `json:"output_params"`  // 输出参数
-				Status        string `json:"status"`         // 工具调用状态
-
-		}
-	*/
-
-	// 请求大模型问答的时候，将工具调用的信息作为历史消息传入
-
-	// return nil
+	return nil
 }

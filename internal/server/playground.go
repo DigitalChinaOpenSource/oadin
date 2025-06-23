@@ -383,10 +383,10 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 		}
 
 		var toolMessages []types.ToolMessage
-		if msg.Role == "user" && msg.IsToolGroupID {
+		if msg.IsToolGroupID {
 			typeStr = "mcp"
 			toolMsgQuery := new(types.ToolMessage)
-			toolMsgQuery.MessageId = msg.ID
+			toolMsgQuery.AssistantMsgID = msg.ID
 			toolMsgResults, err := p.Ds.List(ctx, toolMsgQuery, &datastore.ListOptions{
 				SortBy: []datastore.SortOption{
 					{Key: "updated_at", Order: datastore.SortOrderAscending},
@@ -398,7 +398,7 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			}
 			for _, tm := range toolMsgResults {
 				if tmsg, ok := tm.(*types.ToolMessage); ok {
-					if tmsg.MessageId == msg.ID {
+					if tmsg.AssistantMsgID == msg.ID {
 						toolMessages = append(toolMessages, *tmsg)
 					}
 				}

@@ -75,7 +75,14 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	// 等待一小段时间后重试一次
 	time.Sleep(1 * time.Second)
 	log.Printf("initTransportClient: retrying after failure for server %s", config.Id)
-	return try()
+
+	c, err = try()
+	if err == nil {
+		return c, nil
+	} else {
+		delete(s.Pending, config.Id)
+		return nil, err
+	}
 }
 
 func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
@@ -128,6 +135,7 @@ func (s *StdioTransport) Stop(serverKey string) error {
 	s.mu.Lock()
 	cli, exists := s.clients[serverKey]
 	if !exists {
+		delete(s.Pending, serverKey)
 		s.mu.Unlock()
 		fmt.Printf("MCP Client for server %s does not exist, cannot stop\n", serverKey)
 		return nil
