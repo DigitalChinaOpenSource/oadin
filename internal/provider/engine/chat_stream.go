@@ -31,7 +31,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 	// 打印即将发往Ollama的请求体内容，重点关注think参数
 	fmt.Printf("[ChatStream] Final request body to Ollama: %s\n", string(body))
-	// slog.Info("[ChatStream] Final request body to Ollama: ", string(body))
+	slog.Info("[ChatStream] Final request body to Ollama: ", string(body))
 
 	serviceReq := &types.ServiceRequest{
 		Service:       "chat",
