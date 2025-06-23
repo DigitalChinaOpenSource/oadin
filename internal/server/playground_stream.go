@@ -344,33 +344,36 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 	history := make([]map[string]string, 0)
 	for _, m := range messages {
 		msg := m.(*types.ToolMessage)
-		// 反转义 InputParams 和 OutputParams 字符串
-		inputParams := msg.InputParams
-		outputParams := msg.OutputParams
+		fmt.Println("处理工具调用消息", "sessionId", sessionId, "messageId", messageId)
+		if msg.MessageId == messageId && msg.SessionID == sessionId {
+			// 反转义 InputParams 和 OutputParams 字符串
+			inputParams := msg.InputParams
+			outputParams := msg.OutputParams
 
-		// 尝试将转义的 JSON 字符串还原为原始 JSON
-		var inputObj interface{}
-		var outputObj interface{}
-		if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
-			// 重新格式化为缩进后的 JSON 字符串
-			if pretty, err := json.MarshalIndent(inputObj, "", "  "); err == nil {
-				inputParams = string(pretty)
+			// 尝试将转义的 JSON 字符串还原为原始 JSON
+			var inputObj interface{}
+			var outputObj types.ClientRunToolResponset
+			if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
+				// 重新格式化为缩进后的 JSON 字符串
+				if pretty, err := json.MarshalIndent(inputObj, "", "  "); err == nil {
+					inputParams = string(pretty)
+				}
 			}
-		}
-		if err := json.Unmarshal([]byte(outputParams), &outputObj); err == nil {
-			if pretty, err := json.MarshalIndent(outputObj, "", "  "); err == nil {
-				outputParams = string(pretty)
+			if err := json.Unmarshal([]byte(outputParams), &outputObj); err == nil {
+				if pretty, err := json.MarshalIndent(outputObj.Content, "", "  "); err == nil {
+					outputParams = string(pretty)
+				}
 			}
-		}
 
-		history = append(history, map[string]string{
-			"role":    "assistant",
-			"content": fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>", msg.Name, inputParams),
-		})
-		history = append(history, map[string]string{
-			"role":    "user",
-			"content": fmt.Sprintf("<tool_result>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_result>", msg.Name, outputParams),
-		})
+			history = append(history, map[string]string{
+				"role":    "assistant",
+				"content": fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", msg.Name, inputParams),
+			})
+			history = append(history, map[string]string{
+				"role":    "user",
+				"content": outputParams,
+			})
+		}
 	}
 	return history
 }
