@@ -37,7 +37,6 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   useEffect(() => {
     // 根据当前路由设置选中菜单项和展开的菜单项
     const pathSegments = location.pathname.split('/').filter(Boolean);
-    console.log('location.pathname', location.pathname);
     if (location.pathname.startsWith('/mcp-detail')) return;
     if (pathSegments.length > 0) {
       const curPath = location.pathname.endsWith('/') ? location.pathname.slice(0, -1) : location.pathname;
@@ -118,6 +117,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
     }
   }, [mcpDownloadList]);
 
+  console.log('downloadList', downloadList);
   return (
     <div className={styles.sidebar}>
       <div className={styles.menuContainer}>
@@ -178,7 +178,6 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
               <Tooltip title={collapsed ? '正在下载' : ''}>
                 <div className={styles.downloadBtnBox}>
                   <Badge
-                    // dot={!!downloadList?.length}
                     count={downloadList?.length}
                     showZero={false}
                     className={styles.badge}
@@ -198,33 +197,6 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
           </div>
         </Popover>
       )}
-      {/*{!!downloadList?.length && (*/}
-      {/*  <div className={styles.downloadBtnBox}>*/}
-      {/*    <Badge*/}
-      {/*      // dot={!!downloadList?.length}*/}
-      {/*      count={downloadList?.length}*/}
-      {/*      showZero={false}*/}
-      {/*      className={styles.badge}*/}
-      {/*    >*/}
-      {/*      <div*/}
-      {/*        className={styles.downloadBtn}*/}
-      {/*        onClick={() => handleDownload(true)}*/}
-      {/*      >*/}
-      {/*        <DownloadIcon*/}
-      {/*          width={18}*/}
-      {/*          height={18}*/}
-      {/*          fill="#ffffff"*/}
-      {/*        />*/}
-      {/*      </div>*/}
-      {/*    </Badge>*/}
-      {/*    {isDownloadListOpen && downloadList.length > 0 && (*/}
-      {/*      <DownloadListBox*/}
-      {/*        className={styles.downloadListWrapper}*/}
-      {/*        handleDownload={() => handleDownload(false)}*/}
-      {/*      />*/}
-      {/*    )}*/}
-      {/*  </div>*/}
-      {/*)}*/}
     </div>
   );
 }

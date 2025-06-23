@@ -5,7 +5,6 @@ import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
 import { IModelDataItem } from '@/types';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelListStore from '@/store/useModelListStore';
-import { getLocalStorageDownList } from '@/utils';
 import { IDownParseData } from './types';
 /**
  * 下载操作
@@ -139,10 +138,9 @@ export const useDownLoad = () => {
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {
     const timeout = setTimeout(() => {
-      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.DOWN_LIST);
-      if (downListLocal.length > 0) {
+      if (downloadList.length > 0) {
         // 将所有 IN_PROGRESS 状态的项目更新为 PAUSED
-        const updatedList = downListLocal.map((item: IModelDataItem) => ({
+        const updatedList = downloadList.map((item: IModelDataItem) => ({
           ...item,
           status: item.status === IN_PROGRESS ? PAUSED : item.status,
         }));

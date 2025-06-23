@@ -35,7 +35,6 @@ const ModelSetting: React.FC = () => {
 
   // 表单提交处理
   const onFinish = (values: ModelSettingFormValues) => {
-    // TODO: 调用API保存配置
     changeModelDownUrl(values.modelDownloadUrl);
   };
 
