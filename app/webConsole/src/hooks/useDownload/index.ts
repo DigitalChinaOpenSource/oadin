@@ -5,7 +5,6 @@ import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
 import { IModelDataItem } from '@/types';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelListStore from '@/store/useModelListStore';
-import { getLocalStorageDownList } from '@/utils';
 import { IDownParseData } from './types';
 /**
  * 下载操作
@@ -31,7 +30,6 @@ export const useDownLoad = () => {
     (params: IModelDataItem) => {
       const { id, source, service_provider_name, service_name, name } = params;
 
-      // TODO: 根据bug单上https://jira.digitalchina.com/browse/PAP-1635?jql=project%20%3D%20PAP%20AND%20Sprint%20%3D%201579%20AND%20assignee%20in%20(currentUser()%2C%20wangfjf%2C%20liuchangaq)%20ORDER%20BY%20created%20DESC
       // TODO: BUG单上要求不限制下载数量（是否还需在确认）
       // 最大下载数量
       // const isMaxNum = checkIsMaxDownloadCount({
@@ -108,10 +106,14 @@ export const useDownLoad = () => {
               status: FAILED,
             });
           } else {
-            updateDownloadStatus(id, {
-              ...baseUpdates,
-              status: IN_PROGRESS,
-            });
+            updateDownloadStatus(
+              id,
+              {
+                ...baseUpdates,
+                status: IN_PROGRESS,
+              },
+              true,
+            );
           }
         },
         onerror: (error: Error) => {
@@ -139,10 +141,9 @@ export const useDownLoad = () => {
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {
     const timeout = setTimeout(() => {
-      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.DOWN_LIST);
-      if (downListLocal.length > 0) {
+      if (downloadList.length > 0) {
         // 将所有 IN_PROGRESS 状态的项目更新为 PAUSED
-        const updatedList = downListLocal.map((item: IModelDataItem) => ({
+        const updatedList = downloadList.map((item: IModelDataItem) => ({
           ...item,
           status: item.status === IN_PROGRESS ? PAUSED : item.status,
         }));
@@ -182,19 +183,12 @@ export const useDownLoad = () => {
     if (!hasCompletedItems) return;
     // 创建定时器，定期检查并清理已完成的下载项
     intervalRef.current = setInterval(() => {
-      console.log('2 秒执行定时器，处理已完成的下载项');
       setDownloadList((currentList) => {
-        const hasCompletedItems = currentList.some((item) => item.status === COMPLETED);
-        // 如果所有项目都已完成，清空列表并停止定时器
-        if (currentList.length > 0 && currentList.every((item) => item.status === COMPLETED)) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-          return [];
-        }
-        if (hasCompletedItems) {
-          return currentList.filter((item) => item.status !== COMPLETED);
-        }
-        return currentList;
+        const completedItems = currentList.filter((item) => item.status === COMPLETED);
+        if (completedItems.length === 0) return currentList; // 没有变化，返回原列表
+
+        const newList = currentList.filter((item) => item.status !== COMPLETED);
+        return newList.length === currentList.length ? currentList : newList;
       });
     }, 2000);
 

@@ -121,7 +121,6 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
       setSelectedModel(res);
       setIsSelectedModel(true);
       setCurrentSessionId(sessionId);
-      console.log('获取:', messages);
       setMessages(messages);
       setHistoryVisible(false);
     } else {

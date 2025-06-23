@@ -16,7 +16,7 @@ export default function ChatContainer() {
       <div className={styles.header}>
         <div className={styles.title}>模型体验</div>
         <div className={styles.actions}>
-          <Tooltip title={'对话历史'}>
+          <Tooltip title={isLoading ? '对话中不可查看历史记录' : '对话历史'}>
             <Button
               type="text"
               className={styles.chatHistory}
@@ -32,20 +32,22 @@ export default function ChatContainer() {
               }}
             />
           </Tooltip>
-          <Button
-            type="text"
-            className={styles.createChat}
-            icon={
-              <PlusIcon
-                size={16}
-                fill="#27272a"
-              />
-            }
-            onClick={() => {
-              if (isLoading) return;
-              vm.handleCreateNewChat();
-            }}
-          />
+          <Tooltip title={isLoading ? '对话中不可新建对话' : '新建对话'}>
+            <Button
+              type="text"
+              className={styles.createChat}
+              icon={
+                <PlusIcon
+                  size={16}
+                  fill="#27272a"
+                />
+              }
+              onClick={() => {
+                if (isLoading) return;
+                vm.handleCreateNewChat();
+              }}
+            />
+          </Tooltip>
         </div>
       </div>
       <Row>

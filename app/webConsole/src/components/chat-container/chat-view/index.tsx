@@ -192,7 +192,6 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     );
   };
 
-  console.log('history - Message===>', messages);
   return (
     <div className="chat-layout">
       <div className="chat-body">

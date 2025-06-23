@@ -12,7 +12,6 @@ export function useViewModel() {
   };
 
   const fetchRemoveModel = async (data: IModelDataItem) => {
-    console.log('fetchRemoveModel', data, downloadList);
     if (!downloadList.some((item) => item.name === data.name)) {
       message.warning('未找到匹配的模型进行移除');
       return;

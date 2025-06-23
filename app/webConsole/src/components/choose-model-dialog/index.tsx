@@ -27,7 +27,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
     setActiveKey(activeKey);
   };
   const { currentSessionId } = useChatStore();
-  const { fetchChangeModel } = useViewModel();
+  const { fetchChangeModel, fetchChooseModelNotify } = useViewModel();
   useEffect(() => {
     setSelecteStatedModel(selectedModel);
   }, [selectedModel]);
@@ -36,6 +36,15 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
       setIsSelectedModel(true);
       setSelectedModel(selectedStateModel);
       fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedStateModel.id) });
+
+      const tempParams = { service_name: selectedStateModel.service_name } as any;
+      if (selectedStateModel.source === 'local') {
+        tempParams.local_provider = selectedStateModel.service_provider_name;
+      } else if (selectedStateModel.source === 'remote') {
+        tempParams.remote_provider = selectedStateModel.service_provider_name;
+      }
+      fetchChooseModelNotify(tempParams);
+
       props.onCancel();
     } else {
       message.warning(

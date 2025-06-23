@@ -8,7 +8,6 @@ import ServiceProviderManage from '@/components/service-provider-tab';
 import ModelSetting from '@/components/settings/model-setting';
 import AgentSetting from '@/components/settings/agent-setting';
 import AboutUs from '@/components/settings/about-us';
-import ModelManageTab from '@/components/model-manage-tab';
 import { ModelSquare } from '@/components/choose-model-dialog/modelSquare.tsx';
 import { MyModel } from '@/components/choose-model-dialog/myModel.tsx';
 

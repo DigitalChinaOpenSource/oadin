@@ -8,9 +8,11 @@ import { useViewModel, IMyModelListViewModel } from './view-model.ts';
 import { ModelCheckingHasdata } from '@/components/model-checking/model-checking-data';
 import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedModel.ts';
 import { getMessageByModel } from '@/i18n';
+import useChatStore from '@/components/chat-container/store/useChatStore';
 
 export default function ModelChecking() {
   const { setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
+  const { currentSessionId } = useChatStore();
 
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const vm: IMyModelListViewModel = useViewModel();
@@ -21,6 +23,15 @@ export default function ModelChecking() {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
       setIsSelectedModel(true);
       setSelectedModel(selectedStateModel);
+      vm.fetchChangeModel({ sessionId: currentSessionId, modelId: String(selectedStateModel.id) });
+
+      const tempParams = { service_name: selectedStateModel.service_name } as any;
+      if (selectedStateModel.source === 'local') {
+        tempParams.local_provider = selectedStateModel.service_provider_name;
+      } else if (selectedStateModel.source === 'remote') {
+        tempParams.remote_provider = selectedStateModel.service_provider_name;
+      }
+      vm.fetchChooseModelNotify(tempParams);
     } else {
       message.warning(
         getMessageByModel('noSelectModel', {

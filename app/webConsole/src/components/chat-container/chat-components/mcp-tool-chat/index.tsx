@@ -123,11 +123,11 @@ export default memo(function McpToolChat(props: IMcpToolChatData) {
       children: inputoutParams(item),
     })),
     // 显示进行中的调用
-    ...inProgressCalls.map((item, index) => ({
-      key: `progress-${index}`,
-      label: mcpToolHeader(item),
-      children: inputoutParams(item),
-    })),
+    // ...inProgressCalls.map((item, index) => ({
+    //   key: `progress-${index}`,
+    //   label: mcpToolHeader(item),
+    //   children: inputoutParams(item),
+    // })),
   ];
 
   return (
@@ -162,7 +162,7 @@ export default memo(function McpToolChat(props: IMcpToolChatData) {
                 fill="#4f4dff"
               />
               <div className={styles.statusText}>工具调用已完成，共执行 {data.length} 次</div>
-              {totalDuration && <div className={styles.coastTime}>(用时 {totalDuration} 秒)</div>}
+              {!!totalDuration && <div className={styles.coastTime}>(用时 {totalDuration} 秒)</div>}
             </>
           )}
         </div>

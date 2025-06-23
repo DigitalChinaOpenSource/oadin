@@ -49,8 +49,9 @@ export const checkIsMaxDownloadCount = ({ modelList, downList, id }: any) => {
  * 同时更新下载列表和模型列表中的下载状态
  * @param id 模型ID
  * @param updates 要更新的属性
+ * @param noList 是否不更新模型列表
  */
-export function updateDownloadStatus(id: string, updates: any) {
+export function updateDownloadStatus(id: string, updates: any, noList?: boolean) {
   // 获取两个 store 的状态更新函数
   const { setDownloadList } = useModelDownloadStore.getState();
   const { setModelListData } = useModelListStore.getState();
@@ -67,6 +68,7 @@ export function updateDownloadStatus(id: string, updates: any) {
     });
   });
 
+  if (noList) return;
   // 更新模型列表
   setModelListData((draft: any[]): any[] => {
     if (!Array.isArray(draft) || draft.length === 0) {

@@ -1,23 +1,7 @@
 import { useState } from 'react';
-// 定义登录步骤类型，包含以下可能的步骤：
-// - 'loginTab': 登录选项卡
-// - 'forgetPassword': 忘记密码
-// - 'personAuth': 个人认证
-// - 'enterpriseAuth': 企业认证
-// - 'bindPhone': 绑定手机
-// - 'createAccount': 创建账号
-type ILoginStep = 'loginTab' | 'forgetPassword' | 'personAuth' | 'enterpriseAuth' | 'bindPhone' | 'createAccount';
+import useLoginStore from '@/store/loginStore.ts';
 
 export const useLoginView = () => {
-  const [loginAccount, setLoginAccount] = useState<'personAccount' | 'enterpriseAccount'>('personAccount');
-
-  const [showStep, setShowStep] = useState<ILoginStep>('loginTab');
-
-  // 登录方式切换函数
-  const toggleLoginType = (loginAccount: 'personAccount' | 'enterpriseAccount') => {
-    setLoginAccount(loginAccount);
-  };
-
   // 微信登录初始化
   const initializeWeixinLogin = (redirect_uri: string) => {
     const wxApiBase = 'https://api-aipc.dcclouds.com/api';
@@ -40,11 +24,6 @@ export const useLoginView = () => {
   };
 
   return {
-    loginAccount,
-    setLoginAccount,
-    toggleLoginType,
     initializeWeixinLogin,
-    showStep,
-    setShowStep,
   };
 };

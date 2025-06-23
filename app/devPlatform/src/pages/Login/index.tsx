@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 import styles from './index.module.scss';
@@ -10,6 +10,9 @@ import type { TabsProps } from 'antd';
 import { useLoginView } from './useLoginView';
 import LoginEnterprise from '@/pages/Login/loginEnterprise';
 import ForgetPassword from '@/pages/Login/loginEnterprise/forgetPassword';
+import useLoginStore, { LoginType } from '@/store/loginStore.ts';
+import CreateNewAccount from '@/pages/Login/loginEnterprise/createNewAccount';
+import './common.css';
 
 interface LoginFormValues {
   username: string;
@@ -25,7 +28,9 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthStore();
-  const { loginAccount, setLoginAccount, showStep, setShowStep } = useLoginView();
+  const [loginAccount, setLoginAccount] = useState<'personAccount' | 'enterpriseAccount'>('personAccount');
+  const { currentStep, setCurrentStep } = useLoginStore();
+  const oldStep: any = useRef(null);
 
   // 个人账号-企业账号
   const items: TabsProps['items'] = [
@@ -48,6 +53,28 @@ const LoginPage: React.FC = () => {
 
   // 如果需要绑定手机号，则显示手机号绑定页面
 
+  // 处理tab切换
+  const handleTabChange = (activeKey: LoginType) => {
+    console.log(1111111);
+    if (activeKey === 'enterpriseAccount') {
+      setCurrentStep(activeKey);
+    } else {
+      setCurrentStep(oldStep.current);
+    }
+    setLoginAccount(activeKey);
+  };
+
+  useEffect(() => {
+    if (!currentStep) setCurrentStep('personPhone');
+    if (currentStep === 'personPhone' || currentStep === 'personWechat') {
+      setLoginAccount('personAccount');
+      oldStep.current = currentStep;
+    }
+    if (currentStep === 'enterpriseAccount') {
+      setLoginAccount('enterpriseAccount');
+    }
+  }, [currentStep]);
+
   return (
     <div className={styles.loginPage}>
       {/* 背景图片 */}
@@ -68,7 +95,6 @@ const LoginPage: React.FC = () => {
             <div className={styles.secondTitle}>
               <div className={styles.secondTag}></div>
               <span>低门槛，高效率开发体验</span>
-              <Button onClick={() => setShowStep('forgetPassword')}>测试按钮</Button>
             </div>
           </div>
           {/*左侧描述图片*/}
@@ -84,15 +110,16 @@ const LoginPage: React.FC = () => {
         {/* 登录卡片 */}
         <div className={styles.loginCard}>
           <div className={styles.loginCardContent}>
-            {showStep === 'loginTab' && (
+            {(currentStep === 'personWechat' || currentStep === 'personPhone' || currentStep === 'enterpriseAccount') && (
               <Tabs
                 items={items}
-                defaultActiveKey={loginAccount}
-                onChange={(activeKey) => setLoginAccount(activeKey as 'personAccount' | 'enterpriseAccount')}
+                onChange={(activeKey) => handleTabChange(activeKey as LoginType)}
                 tabBarGutter={24}
+                activeKey={loginAccount}
               />
             )}
-            {showStep === 'forgetPassword' && <ForgetPassword />}
+            {currentStep === 'forgetPassword' && <ForgetPassword />}
+            {currentStep === 'createAccount' && <CreateNewAccount />}
           </div>
         </div>
       </div>

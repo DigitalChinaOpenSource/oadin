@@ -14,6 +14,13 @@ export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
   const filterModelList = useMemo(() => {
     return vm.modelListData?.length > 0 ? vm.modelListData.splice(0, 2) : [];
   }, [vm.modelListData]);
+
+  const grid = () => {
+    if (filterModelList?.length > 1) {
+      return { gutter: 16, column: 2 };
+    }
+    return { gutter: 16, column: 1 };
+  };
   return (
     <>
       <div className={styles.recommendText}>为你推荐以下模型</div>
@@ -21,7 +28,7 @@ export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
         {...props}
         selectVms={vm}
         isSelectable={true}
-        grid={{ gutter: 16, column: 2 }}
+        grid={grid()}
         dataSource={filterModelList}
         pagination={false}
       />
