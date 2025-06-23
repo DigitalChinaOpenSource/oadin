@@ -48,7 +48,7 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 			config.Args...,
 		)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		if err := stdioTransport.Start(ctx); err != nil {
@@ -66,16 +66,24 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 		}
 		return c, nil
 	}
-	// 第一次尝试
+
+	for i := range 3 {
+		c, err := try()
+		if err == nil {
+			return c, nil
+		}
+		log.Printf("initTransportClient: retrying after failure for server %s, attempt %d", config.Id, i+1)
+		time.Sleep(1 * time.Second)
+	}
+
+	// 如果重试失败，删除Pending状态
 	c, err := try()
 	if err == nil {
 		return c, nil
+	} else {
+		delete(s.Pending, config.Id)
+		return nil, err
 	}
-
-	// 等待一小段时间后重试一次
-	time.Sleep(1 * time.Second)
-	log.Printf("initTransportClient: retrying after failure for server %s", config.Id)
-	return try()
 }
 
 func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
@@ -128,6 +136,7 @@ func (s *StdioTransport) Stop(serverKey string) error {
 	s.mu.Lock()
 	cli, exists := s.clients[serverKey]
 	if !exists {
+		delete(s.Pending, serverKey)
 		s.mu.Unlock()
 		fmt.Printf("MCP Client for server %s does not exist, cannot stop\n", serverKey)
 		return nil
@@ -203,7 +212,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		return result, nil
 	}
 
-	for i := range 5 {
+	for i := range 10 {
 		result, err := try()
 		if err == nil {
 			return result, nil
@@ -211,5 +220,5 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		fmt.Printf("Retrying to call tool for MCP %s, attempt %d\n", mcpId, i+1)
 		time.Sleep(100 * time.Millisecond)
 	}
-	return nil, fmt.Errorf("failed to call tool after 5 attempts for MCP %s", mcpId)
+	return nil, fmt.Errorf("failed to call tool after 10 attempts for MCP %s", mcpId)
 }
