@@ -12,7 +12,7 @@ export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
   const { vm } = props;
 
   const filterModelList = useMemo(() => {
-    return vm.modelListData?.length > 0 ? vm.modelListData.splice(0, 1) : [];
+    return vm.modelListData?.length > 0 ? vm.modelListData.splice(0, 2) : [];
   }, [vm.modelListData]);
 
   const grid = () => {
