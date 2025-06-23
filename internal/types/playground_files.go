@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strings"
 	"time"
 )
 
@@ -41,12 +42,17 @@ func (f *File) SetUpdateTime(t time.Time) { f.UpdatedAt = t }
 func (f *File) PrimaryKey() string        { return f.ID }
 func (f *File) TableName() string         { return "files" }
 func (f *File) Index() map[string]interface{} {
-	index := map[string]interface{}{
-		"id": f.ID,
+	index := map[string]interface{}{}
+
+	if f.ID != "" {
+		index["id"] = f.ID
 	}
 	if f.SessionID != "" {
-		index["session_id"] = f.SessionID
+		// 确保session_id完全一致
+		// 添加trim防止空格问题，sqlite查询是大小写敏感的
+		index["session_id"] = strings.TrimSpace(f.SessionID)
 	}
+
 	return index
 }
 
@@ -56,10 +62,10 @@ type EmbeddingRequest struct {
 }
 
 type EmbeddingResponse struct {
-	Object string          `json:"object"`
-	Data   []EmbeddingData `json:"data"`
-	Model  string          `json:"model"`
-	Usage  EmbeddingUsage  `json:"usage"`
+	Object     string         `json:"object"`
+	Embeddings [][]float32    `json:"embeddings"`
+	Model      string         `json:"model"`
+	Usage      EmbeddingUsage `json:"usage"`
 }
 
 type EmbeddingData struct {
