@@ -11,6 +11,9 @@
     border-top: 1px solid #e4e6eb;
   }
 }
+:global(.ant-layout-sider-children) {
+  background: rgba(255, 255, 255, 0.5);
+}
 :global(.ant-layout-sider-trigger) {
-  background: transparent !important;
+  background: rgba(255, 255, 255, 0.5) !important;
 }
