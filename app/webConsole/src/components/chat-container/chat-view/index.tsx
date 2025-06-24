@@ -52,7 +52,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages } = useChatStore();
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
 
-  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage, setStreamingContent } = useChatStream();
+  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
   useEffect(() => {
     // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部
@@ -86,7 +86,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   };
   // 复制消息
-  const handleCopyMessage = (content: string) => {
+  const handleCopyMessage = (content?: string) => {
     if (copyMessageToClipboard(content)) {
       message.success('已复制到剪贴板');
     } else {
@@ -143,7 +143,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                 <Button
                   type="link"
                   icon={<CopyIcon width={16} />}
-                  onClick={() => handleCopyMessage(streamingContent)}
+                  onClick={() => handleCopyMessage()}
                 >
                   复制
                 </Button>

@@ -11,11 +11,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "test": "workspace:^",
-    "@vanta/ellipsis-tooltip": "workspace:^",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@res-utiles/ui-components": "^0.0.10",
     "@types/lodash-es": "^4.17.12",
+    "@vanta/ellipsis-tooltip": "workspace:^",
     "i18next": "^25.2.1",
     "immer": "^10.1.1",
     "react-i18next": "^15.5.2",
@@ -24,6 +23,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "sass": "^1.87.0",
+    "test": "workspace:^",
     "use-immer": "^0.11.0"
   },
   "devDependencies": {
