@@ -176,7 +176,7 @@ type ClientRunToolRequest struct {
 	MessageId string `json:"messageId"` // 关联的消息ID
 }
 
-type ClientRunToolResponset struct {
+type ClientRunToolResponse struct {
 	*mcp.CallToolResult
 	Logo     string `json:"logo"`     // 工具调用的MCP图标
 	ToolDesc string `json:"toolDesc"` // 工具描述
