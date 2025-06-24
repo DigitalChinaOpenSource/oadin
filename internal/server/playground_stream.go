@@ -50,10 +50,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		}
 
 		// 构建历史对话
-		history := make([]map[string]string, 0, len(messages)+1)
+		history := make([]map[string]interface{}, 0, len(messages)+1)
 		for _, m := range messages {
 			msg := m.(*types.ChatMessage)
-			history = append(history, map[string]string{
+			history = append(history, map[string]interface{}{
 				"role":    msg.Role,
 				"content": msg.Content,
 			})
@@ -78,7 +78,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		var userMsg *types.ChatMessage
 		if request.Content != "" {
 			// 添加当前用户消息
-			userMessage := map[string]string{
+			userMessage := map[string]interface{}{
 				"role":    "user",
 				"content": enhancedContent,
 			}
@@ -127,48 +127,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			chatRequest.Tools = request.Tools
 		}
 
-		sessionCheck := &types.ChatSession{ID: request.SessionID}
-		err = p.Ds.Get(ctx, sessionCheck)
-		if err == nil && sessionCheck.Title == "" {
-			genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
-			payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`, session.ModelName, genTitlePrompt)
-			slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
-			client := &http.Client{}
-			req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
-			if err == nil {
-				req.Header.Set("Content-Type", "application/json")
-				resp, err := client.Do(req)
-				title := "新对话 " + time.Now().Format("2006-01-02")
-				if err == nil && resp != nil {
-					defer resp.Body.Close()
-					var result struct {
-						Content string `json:"content"`
-						Message struct {
-							Content string `json:"content"`
-						} `json:"message"`
-					}
-					decodeErr := json.NewDecoder(resp.Body).Decode(&result)
-					slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
-					if decodeErr == nil {
-						if len(result.Content) > 0 {
-							title = result.Content
-						} else if len(result.Message.Content) > 0 {
-							title = result.Message.Content
-						}
-						if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
-							re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
-							title = re.ReplaceAllString(title, "")
-							title = strings.TrimSpace(title)
-						}
-						runes := []rune(title)
-						title = string(runes)
-					}
-				}
-				slog.Info("[DEBUG] TitleGen final title", "title", title)
-				sessionCheck.Title = title
-				_ = p.Ds.Put(context.Background(), sessionCheck)
-			}
-		}
+		// 异步增加会话标题
+		go p.AddSessionTitle(ctx, request)
+
 		// 调用流式API
 		responseStream, streamErrChan := modelEngine.ChatStream(ctx, chatRequest)
 
@@ -329,8 +290,55 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 	return respChan, errChan
 }
 
+// 增加会话的标题
+func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendStreamMessageRequest) error {
+	sessionCheck := &types.ChatSession{ID: request.SessionID}
+	err := p.Ds.Get(ctx, sessionCheck)
+	if err == nil && sessionCheck.Title == "" {
+		genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
+		payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`, sessionCheck.ModelName, genTitlePrompt)
+		slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
+		client := &http.Client{}
+		req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
+		if err == nil {
+			req.Header.Set("Content-Type", "application/json")
+			resp, err := client.Do(req)
+			title := "新对话 " + time.Now().Format("2006-01-02")
+			if err == nil && resp != nil {
+				defer resp.Body.Close()
+				var result struct {
+					Content string `json:"content"`
+					Message struct {
+						Content string `json:"content"`
+					} `json:"message"`
+				}
+				decodeErr := json.NewDecoder(resp.Body).Decode(&result)
+				slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
+				if decodeErr == nil {
+					if len(result.Content) > 0 {
+						title = result.Content
+					} else if len(result.Message.Content) > 0 {
+						title = result.Message.Content
+					}
+					if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
+						re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+						title = re.ReplaceAllString(title, "")
+						title = strings.TrimSpace(title)
+					}
+					runes := []rune(title)
+					title = string(runes)
+				}
+			}
+			slog.Info("[DEBUG] TitleGen final title", "title", title)
+			sessionCheck.Title = title
+			_ = p.Ds.Put(context.Background(), sessionCheck)
+		}
+	}
+	return err
+}
+
 // 处理工具调用，作为历史消息请求大模型
-func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]string {
+func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]interface{} {
 	messageQuery := &types.ToolMessage{SessionID: sessionId, MessageId: messageId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
@@ -345,38 +353,34 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 	con.ID = messageId
 	_ = p.Ds.Get(ctx, con)
 
-	history := make([]map[string]string, 0)
+	history := make([]map[string]interface{}, 0)
 	for _, m := range messages {
 		msg := m.(*types.ToolMessage)
-		fmt.Println("处理工具调用消息", "sessionId", sessionId, "messageId", messageId)
 		if msg.MessageId == messageId && msg.SessionID == sessionId {
 			// 反转义 InputParams 和 OutputParams 字符串
 			inputParams := msg.InputParams
 			outputParams := msg.OutputParams
 
-			// 尝试将转义的 JSON 字符串还原为原始 JSON
-			var inputObj interface{}
-			var outputObj types.ClientRunToolResponset
-			if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
-				// 重新格式化为缩进后的 JSON 字符串
-				if pretty, err := json.MarshalIndent(inputObj, "", "  "); err == nil {
-					inputParams = string(pretty)
+			if inputParams != "" && inputParams != "" {
+				// 尝试将转义的 JSON 字符串还原为原始 JSON
+				var inputObj interface{}
+				var outputObj types.ClientRunToolResponse
+				if err := json.Unmarshal([]byte(inputParams), &inputObj); err != nil {
+					continue
 				}
-			}
-			if err := json.Unmarshal([]byte(outputParams), &outputObj); err == nil {
-				if pretty, err := json.MarshalIndent(outputObj.Content, "", "  "); err == nil {
-					outputParams = string(pretty)
+				if err := json.Unmarshal([]byte(outputParams), &outputObj); err != nil {
+					continue
 				}
-			}
 
-			history = append(history, map[string]string{
-				"role":    "assistant",
-				"content": fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", msg.Name, inputParams),
-			})
-			history = append(history, map[string]string{
-				"role":    "user",
-				"content": outputParams,
-			})
+				history = append(history, map[string]interface{}{
+					"role":    "assistant",
+					"content": inputObj,
+				})
+				history = append(history, map[string]interface{}{
+					"role":    "user",
+					"content": outputObj.CallToolResult,
+				})
+			}
 		}
 	}
 	return history
