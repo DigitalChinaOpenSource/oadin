@@ -4,7 +4,7 @@ import type { MenuProps } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import routes, { RouteConfig } from '@/routes/routes';
 import styles from './index.module.scss';
-import { CaretDoubleLeftIcon, CaretDoubleRightIcon } from '@phosphor-icons/react';
+import { ArrowLineLeftIcon, ArrowLineRightIcon } from '@phosphor-icons/react';
 
 const { Sider } = Layout;
 
@@ -112,7 +112,7 @@ const Sidebar: React.FC = () => {
           >
             {collapsed ? (
               <>
-                <CaretDoubleRightIcon
+                <ArrowLineRightIcon
                   width={20}
                   height={20}
                   fill="#71717D"
@@ -120,7 +120,7 @@ const Sidebar: React.FC = () => {
               </>
             ) : (
               <>
-                <CaretDoubleLeftIcon
+                <ArrowLineLeftIcon
                   width={20}
                   height={20}
                   fill="#71717D"
