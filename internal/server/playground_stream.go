@@ -377,7 +377,7 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 			if inputParams != "" && inputParams != "" {
 				// 尝试将转义的 JSON 字符串还原为原始 JSON
 				var inputObj interface{}
-				var outputObj types.ClientRunToolResponse
+				var outputObj interface{}
 				if err := json.Unmarshal([]byte(inputParams), &inputObj); err != nil {
 					continue
 				}
@@ -391,7 +391,7 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 				})
 				history = append(history, map[string]interface{}{
 					"role":    "user",
-					"content": outputObj.CallToolResult,
+					"content": outputObj,
 				})
 			}
 		}
