@@ -51,7 +51,6 @@ export function useChatStream() {
       isToolCallActive: false,
     },
     timers: {
-      noDataTimer: null as NodeJS.Timeout | null,
       totalTimer: null as NodeJS.Timeout | null,
     },
     lastToolGroupIdRef: null as string | null,
@@ -67,11 +66,6 @@ export function useChatStream() {
    * 清除所有定时器
    */
   const clearTimers = useCallback(() => {
-    if (requestState.current.timers.noDataTimer) {
-      clearTimeout(requestState.current.timers.noDataTimer);
-      requestState.current.timers.noDataTimer = null;
-    }
-
     if (requestState.current.timers.totalTimer) {
       clearTimeout(requestState.current.timers.totalTimer);
       requestState.current.timers.totalTimer = null;
@@ -176,20 +170,6 @@ export function useChatStream() {
     }
   };
 
-  const resetNoDataTimer = useCallback(() => {
-    if (requestState.current.timers.noDataTimer) {
-      clearTimeout(requestState.current.timers.noDataTimer);
-    }
-
-    requestState.current.timers.noDataTimer = setTimeout(() => {
-      handleError(ERROR_MESSAGES.TIMEOUT.NO_DATA, null, ErrorType.TIMEOUT, {
-        shouldCancel: true,
-        appendToContent: true,
-        updateMcpStatus: true,
-      });
-    }, TIMEOUT_CONFIG.NO_DATA);
-  }, [handleError]);
-
   // 清除流式状态
   const clearStreamingState = useCallback(() => {
     setStreamingContent('');
@@ -207,7 +187,6 @@ export function useChatStream() {
         isToolCallActive: false,
       },
       timers: {
-        noDataTimer: null,
         totalTimer: null,
       },
       lastToolGroupIdRef: null,
@@ -223,11 +202,6 @@ export function useChatStream() {
     }
 
     // 清理定时器
-    if (requestState.current.timers.noDataTimer) {
-      clearTimeout(requestState.current.timers.noDataTimer);
-      requestState.current.timers.noDataTimer = null;
-    }
-
     if (requestState.current.timers.totalTimer) {
       clearTimeout(requestState.current.timers.totalTimer);
       requestState.current.timers.totalTimer = null;
@@ -326,8 +300,7 @@ export function useChatStream() {
     async (data: IStreamData, currentContent: any) => {
       const { tool_calls, tool_group_id, id, total_duration } = data;
       // 如果返回的 content 为空且有 tool_calls，保存 tool_group_id 用于下一次请求
-      // (!currentContent || currentContent.trim() === '') &&
-      if (tool_calls && tool_calls.length > 0 && tool_group_id) {
+      if ((!currentContent || currentContent.trim() === '') && tool_calls && tool_calls.length > 0 && tool_group_id) {
         requestState.current.lastToolGroupIdRef = tool_group_id;
       }
       if (!tool_calls || tool_calls.length === 0) {
@@ -533,8 +506,7 @@ export function useChatStream() {
           },
           {
             onDataReceived: async (response) => {
-              // 重置超时定时器
-              resetNoDataTimer();
+              // 清除总超时定时器
               if (requestState.current.timers.totalTimer) {
                 clearTimeout(requestState.current.timers.totalTimer);
                 requestState.current.timers.totalTimer = null;
@@ -633,7 +605,7 @@ export function useChatStream() {
         handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.CONTINUE_FAILED, error.message || '未知错误'), error, ErrorType.TOOL);
       }
     },
-    [createStreamRequest, currentSessionId, selectedMcpIds, resetNoDataTimer, setError, setStreamingContent, setStreamingThinking, handleToolCalls],
+    [createStreamRequest, currentSessionId, selectedMcpIds, setError, setStreamingContent, setStreamingThinking, handleToolCalls],
   );
 
   const sendChatMessageInternal = useCallback(
@@ -690,8 +662,6 @@ export function useChatStream() {
         requestState.current.timers.totalTimer = setTimeout(() => {
           handleError(ERROR_MESSAGES.TIMEOUT.TOTAL, null, ErrorType.TIMEOUT, { shouldCancel: true, appendToContent: true, updateMcpStatus: true });
         }, TIMEOUT_CONFIG.TOTAL);
-        // 在收到第一个数据前启动无数据超时计时器
-        resetNoDataTimer();
         // 初始化响应内容
         let responseContent = '';
         await createStreamRequest(
@@ -721,7 +691,6 @@ export function useChatStream() {
           },
           {
             onDataReceived: async (response) => {
-              resetNoDataTimer();
               if (requestState.current.timers.totalTimer) {
                 clearTimeout(requestState.current.timers.totalTimer);
                 requestState.current.timers.totalTimer = null;
@@ -830,7 +799,7 @@ export function useChatStream() {
         handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, error.message || '未知错误'), error, ErrorType.REQUEST);
       }
     },
-    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, createStreamRequest, clearTimers, resetNoDataTimer, handleToolCalls],
+    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, createStreamRequest, clearTimers, handleToolCalls],
   );
 
   const sendChatMessage = useCallback(
