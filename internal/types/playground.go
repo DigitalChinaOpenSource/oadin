@@ -106,13 +106,13 @@ func (m *ToolMessage) Index() map[string]interface{} {
 
 // 聊天请求模型
 type ChatRequest struct {
-	Model       string              `json:"model"`
-	Messages    []map[string]string `json:"messages"`
-	Temperature float32             `json:"temperature,omitempty"`
-	MaxTokens   int                 `json:"max_tokens,omitempty"`
-	Stream      bool                `json:"stream,omitempty"`
-	Think       bool                `json:"think"`
-	Tools       []Tool              `json:"tools,omitempty"` // 新增，支持Ollama工具调用
+	Model       string                   `json:"model"`
+	Messages    []map[string]interface{} `json:"messages"`
+	Temperature float32                  `json:"temperature,omitempty"`
+	MaxTokens   int                      `json:"max_tokens,omitempty"`
+	Stream      bool                     `json:"stream,omitempty"`
+	Think       bool                     `json:"think"`
+	Tools       []Tool                   `json:"tools,omitempty"` // 新增，支持Ollama工具调用
 }
 
 // 聊天响应模型

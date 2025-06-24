@@ -50,10 +50,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		}
 
 		// 构建历史对话
-		history := make([]map[string]string, 0, len(messages)+1)
+		history := make([]map[string]interface{}, 0, len(messages)+1)
 		for _, m := range messages {
 			msg := m.(*types.ChatMessage)
-			history = append(history, map[string]string{
+			history = append(history, map[string]interface{}{
 				"role":    msg.Role,
 				"content": msg.Content,
 			})
@@ -78,7 +78,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		var userMsg *types.ChatMessage
 		if request.Content != "" {
 			// 添加当前用户消息
-			userMessage := map[string]string{
+			userMessage := map[string]interface{}{
 				"role":    "user",
 				"content": enhancedContent,
 			}
@@ -338,7 +338,7 @@ func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendS
 }
 
 // 处理工具调用，作为历史消息请求大模型
-func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]string {
+func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]interface{} {
 	messageQuery := &types.ToolMessage{SessionID: sessionId, MessageId: messageId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
@@ -353,7 +353,7 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 	con.ID = messageId
 	_ = p.Ds.Get(ctx, con)
 
-	history := make([]map[string]string, 0)
+	history := make([]map[string]interface{}, 0)
 	for _, m := range messages {
 		msg := m.(*types.ToolMessage)
 		if msg.MessageId == messageId && msg.SessionID == sessionId {
@@ -361,29 +361,31 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 			inputParams := msg.InputParams
 			outputParams := msg.OutputParams
 
-			// 尝试将转义的 JSON 字符串还原为原始 JSON
-			var inputObj interface{}
-			var outputObj types.ClientRunToolResponset
-			if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
-				// 重新格式化为缩进后的 JSON 字符串
-				if pretty, err := json.MarshalIndent(inputObj, "", "  "); err == nil {
-					inputParams = string(pretty)
+			if inputParams != "" && inputParams != "" {
+				// 尝试将转义的 JSON 字符串还原为原始 JSON
+				var inputObj interface{}
+				var outputObj types.ClientRunToolResponse
+				if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
+					// // 重新格式化为缩进后的 JSON 字符串
+					// if pretty, err := json.MarshalIndent(inputObj, "", "  "); err == nil {
+					// 	inputParams = string(pretty)
+					// }
 				}
-			}
-			if err := json.Unmarshal([]byte(outputParams), &outputObj); err == nil {
-				if pretty, err := json.MarshalIndent(outputObj.Content, "", "  "); err == nil {
-					outputParams = string(pretty)
+				if err := json.Unmarshal([]byte(outputParams), &outputObj); err == nil {
+					// if pretty, err := json.MarshalIndent(outputObj.Content, "", "  "); err == nil {
+					// 	outputParams = string(pretty)
+					// }
 				}
-			}
 
-			history = append(history, map[string]string{
-				"role":    "assistant",
-				"content": fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", msg.Name, inputParams),
-			})
-			history = append(history, map[string]string{
-				"role":    "user",
-				"content": outputParams,
-			})
+				history = append(history, map[string]interface{}{
+					"role":    "assistant",
+					"content": inputObj,
+				})
+				history = append(history, map[string]interface{}{
+					"role":    "user",
+					"content": outputObj.CallToolResult,
+				})
+			}
 		}
 	}
 	return history
