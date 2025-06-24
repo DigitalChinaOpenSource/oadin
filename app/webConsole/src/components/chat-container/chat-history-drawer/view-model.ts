@@ -36,7 +36,9 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
       manual: true,
       onSuccess: (data: any) => {
         if (!data || !data.length) return;
-        setChatHistory(data);
+        // 过滤空对话
+        const tempData = data.filter((item: IChatHistoryItem) => item.title);
+        setChatHistory(tempData);
       },
       onError: (error) => {
         console.error('获取历史对话记录失败:', error);
@@ -78,7 +80,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
       const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
-      return data || {};
+      return data || [];
     },
     {
       manual: true,

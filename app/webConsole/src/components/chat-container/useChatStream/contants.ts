@@ -7,7 +7,7 @@ export const ERROR_MESSAGES = {
   },
   // 超时错误
   TIMEOUT: {
-    TOTAL: '请求超时：360秒内未完成响应',
+    TOTAL: '请求超时：5 分钟内未完成响应',
   },
   // 解析错误
   PARSING: {
@@ -17,7 +17,7 @@ export const ERROR_MESSAGES = {
   // 连接错误
   CONNECTION: {
     INTERRUPTED: '\n\n[消息传输中断]',
-    RESPONSE_INTERRUPTED: '\n\n[回复已中断]',
+    RESPONSE_INTERRUPTED: '\n\n「回复已中断」',
     READ_FAILED: '读取响应内容失败: {0}',
   },
   // 服务器响应错误
@@ -36,7 +36,7 @@ export const ERROR_MESSAGES = {
 
 // 超时设置（毫秒）
 export const TIMEOUT_CONFIG = {
-  TOTAL: 360000, // 360秒总超时
+  TOTAL: 500000, // 5 分钟总超时
 };
 
 export enum ErrorType {

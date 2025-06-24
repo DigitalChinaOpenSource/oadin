@@ -14,7 +14,6 @@ import UploadTool from '../upload-tool';
 import useChatStore from '../store/useChatStore';
 import sendSvg from '@/components/icons/send.svg';
 import realLoading from '@/components/icons/real-loading.svg';
-import { useDownLoad } from '@/hooks/useDownload';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import { copyMessageToClipboard } from '../useChatStream/utils';
@@ -97,7 +96,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   // 输入框底部功能区
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      {!isUploadVisible ? <UploadTool /> : <EmbedDownloadButton />}
+      {isUploadVisible ? <UploadTool /> : <EmbedDownloadButton />}
 
       <SelectMcp />
     </div>
