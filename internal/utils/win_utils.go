@@ -132,7 +132,7 @@ func ModifySystemUserVariables(envInfo *EnvVariables) error {
 
 func SetCmdSysProcAttr(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: syscall.CRYPT_NEWKEYSET | syscall.CREATE_NEW_PROCESS_GROUP,
+		CreationFlags: syscall.CERT_TRUST_HAS_NOT_SUPPORTED_CRITICAL_EXT | syscall.CREATE_NEW_PROCESS_GROUP,
 		HideWindow:    true,
 	}
 }
