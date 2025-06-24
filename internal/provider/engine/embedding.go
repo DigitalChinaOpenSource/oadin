@@ -76,21 +76,11 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 		}
 		// 兼容 data 字段
 		for _, d := range apiResp.Data {
-			resp.Data = append(resp.Data, types.EmbeddingData{
-				Object:     d.Object,
-				Embedding:  d.Embedding,
-				EmbedIndex: d.Index,
-			})
+			resp.Embeddings = append(resp.Embeddings, d.Embedding)
 		}
 
-		if len(resp.Data) == 0 && len(apiResp.Embeddings) > 0 {
-			for i, emb := range apiResp.Embeddings {
-				resp.Data = append(resp.Data, types.EmbeddingData{
-					Object:     "embedding",
-					Embedding:  emb,
-					EmbedIndex: i,
-				})
-			}
+		if len(resp.Embeddings) == 0 && len(apiResp.Embeddings) > 0 {
+			resp.Embeddings = append(resp.Embeddings, apiResp.Embeddings...)
 		}
 		return resp, nil
 	case <-ctx.Done():
