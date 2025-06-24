@@ -13,6 +13,8 @@
     "params_size": 0.6,
     "service_name": "chat",
     "service_source": "local",
+    "think": true,
+    "think_switch": true,
     "size": "523MB"
   },
   {
@@ -29,7 +31,9 @@
     "params_size": 1.7,
     "service_name": "chat",
     "service_source": "local",
-    "size": "1.4GB"
+    "size": "1.4GB",
+    "think": true,
+    "think_switch": true
   },
   {
     "id": "6746afb6-4b39-42d1-bab6-eeeb2f67aeca",
@@ -45,7 +49,9 @@
     "params_size": 4,
     "service_name": "chat",
     "service_source": "local",
-    "size": "2.6GB"
+    "size": "2.6GB",
+    "think": true,
+    "think_switch": true
   },
   {
     "id": "43aeb3d7-314c-4323-86ee-aaa7e8c03110",
@@ -61,7 +67,9 @@
     "params_size": 8,
     "service_name": "chat",
     "service_source": "local",
-    "size": "5.2GB"
+    "size": "5.2GB",
+    "think": true,
+    "think_switch": true
   },
   {
     "id": "9721e8b8-9d6f-4b72-97ab-6f76924ed3db",
@@ -77,7 +85,9 @@
     "params_size": 14,
     "service_name": "chat",
     "service_source": "local",
-    "size": "9.3GB"
+    "size": "9.3GB",
+    "think": true,
+    "think_switch": true
   },
   {
     "api_flavor": "ollama",
