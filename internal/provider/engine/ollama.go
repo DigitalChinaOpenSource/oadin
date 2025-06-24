@@ -348,6 +348,17 @@ func (o *OllamaProvider) InitEnv() error {
 		return fmt.Errorf("failed to set OLLAMA_MODELS: %w", err)
 	}
 
+	if utils.IpexOllamaSupportGPUStatus() {
+		err = os.Setenv("ZES_ENABLE_SYSMAN", "1")
+		if err != nil {
+			return fmt.Errorf("failed to set ZES_ENABLE_SYSMAN: %w", err)
+		}
+		err = os.Setenv("SYCL_CACHE_PERSISTENT", "1")
+		if err != nil {
+			return fmt.Errorf("failed to set SYCL_CACHE_PERSISTENT: %w", err)
+		}
+	}
+
 	return nil
 }
 
