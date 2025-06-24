@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"unsafe"
+
+	vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
 )
 
 type StringList []string
@@ -26,11 +28,10 @@ type Float32List []float32
 // Value converts a Float32List to a value for SQL storage
 func (f Float32List) Value() (driver.Value, error) {
 	if len(f) == 0 {
-		return "[]", nil // Return empty JSON array string instead of nil
+		return []byte{}, nil // 空向量存空BLOB
 	}
-
-	// Use JSON for GORM compatibility - this is more reliable for database operations
-	return json.Marshal(f)
+	// 只用sqlite-vec-go-bindings的SerializeFloat32写入BLOB
+	return vec.SerializeFloat32([]float32(f))
 }
 
 // Scan converts a database value to a Float32List
