@@ -163,13 +163,16 @@ func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
 	}
+	var message string
 	for _, id := range req.Ids {
 		err := t.MCP.ClientMcpStart(c, id)
 		if err != nil {
-			fmt.Printf("output of command execution: %s", err.Error())
+			message = message + fmt.Sprintf("MCP %s 启动失败: %s", id, err.Error())
+		} else {
+			message = message + fmt.Sprintf("MCP %s 启动成功", id)
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success"})
+	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success", "data": message})
 }
 
 func (t *ByzeCoreServer) ClientMcpStop(c *gin.Context) {
@@ -199,13 +202,13 @@ func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
 	}
 	inputParamsStr := ""
 	if req.ToolArgs != nil {
-		if b, err := json.Marshal(req.ToolArgs); err == nil {
+		if b, err := json.Marshal(map[string]interface{}{"name": req.ToolName, "arguments": req.ToolArgs}); err == nil {
 			inputParamsStr = string(b)
 		}
 	}
 	outputParamsStr := ""
 	if resp != nil {
-		if b, err := json.Marshal(resp); err == nil {
+		if b, err := json.Marshal(resp.CallToolResult); err == nil {
 			outputParamsStr = string(b)
 		}
 	}
