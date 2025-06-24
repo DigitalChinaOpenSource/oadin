@@ -1,0 +1,23 @@
+.userCenter {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  
+}
+
+.accountOperate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    :global {
+        .ant-btn {
+            color: #4F4DFF;
+            height: 24px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            gap: 0;
+        }
+    }
+    
+}

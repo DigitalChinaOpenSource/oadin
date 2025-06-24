@@ -1,8 +1,5 @@
 import { ReactNode, lazy, createElement } from 'react';
-import { 
-  AppstoreOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { AppstoreOutlined, UserOutlined } from '@ant-design/icons';
 
 export interface RouteConfig {
   path: string;
@@ -38,7 +35,7 @@ const routes: RouteConfig[] = [
   },
   {
     path: '/user-center',
-    name: '用户中心',
+    name: '账号中心',
     icon: createElement(UserOutlined),
     component: UserCenterPage,
     requireAuth: true,
