@@ -523,9 +523,9 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 		model := &types.Model{ModelName: modelInfo.Name}
 		err := p.Ds.Get(ctx, model)
 		if err == nil {
-			session.ThinkingEnabled = model.ThinkingEnabled
+			session.ThinkingEnabled = modelInfo.Think
 			// 切换模型时，如果新模型支持思考，则保持当前思考状态；如果不支持，则关闭思考
-			if !model.ThinkingEnabled {
+			if !modelInfo.Think {
 				session.ThinkingActive = false
 			}
 		}
