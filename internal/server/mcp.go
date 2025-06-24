@@ -34,7 +34,7 @@ type MCPServer interface {
 	ClientMcpStart(ctx context.Context, id string) error
 	ClientMcpStop(ctx context.Context, ids []string) error
 	ClientGetTools(ctx context.Context, mcpId string) ([]mcp.Tool, error)
-	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponset, error)
+	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponse, error)
 }
 
 type MCPServerImpl struct {
@@ -468,7 +468,7 @@ func (M *MCPServerImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mcp
 	return tools, nil
 }
 
-func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponset, error) {
+func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponse, error) {
 	params := mcp.CallToolParams{
 		Name:      req.ToolName,
 		Arguments: req.ToolArgs,
@@ -492,7 +492,7 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 		}
 	}
 
-	return &types.ClientRunToolResponset{
+	return &types.ClientRunToolResponse{
 		CallToolResult: data,
 		Logo:           logo,
 		ToolDesc:       toolDesc,
