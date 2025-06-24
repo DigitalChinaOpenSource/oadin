@@ -133,5 +133,6 @@ func ModifySystemUserVariables(envInfo *EnvVariables) error {
 func SetCmdSysProcAttr(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		CreationFlags: syscall.CRYPT_NEWKEYSET | syscall.CREATE_NEW_PROCESS_GROUP,
+		HideWindow:    true,
 	}
 }

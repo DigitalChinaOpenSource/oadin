@@ -199,6 +199,15 @@ func (st *ServiceTask) Run() error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound && sp.Flavor == types.FlavorOllama {
+			m := new(types.Model)
+			m.ModelName = st.Target.Model
+			err := ds.Get(context.Background(), m)
+			if err == nil {
+				m.Status = "downloading"
+				_ = ds.Put(context.Background(), m)
+			}
+		}
 		var sbody string
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
