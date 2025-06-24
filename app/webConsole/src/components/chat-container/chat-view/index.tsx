@@ -243,13 +243,13 @@ const MarkdownContent = ({ dataSource }: { dataSource?: string }) => {
 
   return (
     <div className="markdown-content">
-      {/* @ts-ignore */}
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-      >
-        {dataSource}
-      </ReactMarkdown>
+      <>
+        {ReactMarkdown({
+          children: dataSource,
+          remarkPlugins: [remarkGfm],
+          rehypePlugins: [rehypeRaw],
+        })}
+      </>
     </div>
   );
 };
