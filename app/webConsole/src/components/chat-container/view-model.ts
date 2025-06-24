@@ -33,11 +33,14 @@ export default function useViewModel() {
     } else if (currentSessionId && !selectedModel?.id) {
       // 页面刷新时，如果存在会话ID但没有选择模型，则获取历史对话详情
       fetchChatHistoryDetail(currentSessionId);
+    } else if (currentSessionId && selectedModel?.id && messages.length === 0) {
+      // 页面刷新时，如果sessionId和selectedModel都存在但messages为空，则获取历史对话详情
+      fetchChatHistoryDetail(currentSessionId);
     }
 
     // 更新上一次使用的模型ID引用
     prevSelectedModelIdRef.current = selectedModel?.id;
-  }, [currentSessionId, selectedModel]);
+  }, [currentSessionId, selectedModel, messages.length]);
 
   useEffect(() => {
     return () => {
