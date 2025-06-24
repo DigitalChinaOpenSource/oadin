@@ -142,8 +142,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
     // 如果有状态变化，更新modelListStateData
     if (hasStatusChanged) {
-      console.info('下载状态发生变化，更新modelListStateData');
-
       // 只更新现有项的状态，不处理列表长度变化
       const updatedList = modelListStateData.map((item) => {
         const downItem = modelListData.find((_item) => _item.id === item.id);
@@ -198,7 +196,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
               currentDownload: 0,
             }) as any,
         );
-        console.info(dataWithSource, 'dataWithSourcedataWithSource');
         setListData(dataWithSource);
         setPagination({
           ...pagination,

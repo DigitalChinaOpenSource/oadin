@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ConfigProvider, Layout, Spin } from 'antd';
-import Sidebar from './components/Sidebar';
+import Sidebar from '@/components/sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import routes from './routes/routes';
 import styles from './index.module.scss';

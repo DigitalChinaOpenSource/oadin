@@ -32,6 +32,7 @@ export interface IModelDataItem {
   completedsize?: number;
   totalsize?: number;
   think?: boolean; // 是否支持深度思考
+  think_switch?: boolean; // 深度思考是否支持开关
 }
 // 模型列表数据类型
 export interface ModelData {

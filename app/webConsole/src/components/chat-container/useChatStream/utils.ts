@@ -1,14 +1,47 @@
+import useChatStore from '@/components/chat-container/store/useChatStore';
+
 // 生成唯一ID的工具函数
 export function generateUniqueId(prefix: string = 'id'): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
-// 复制消息到剪贴板
-export const copyMessageToClipboard = (content: string) => {
-  if (!content) return false;
-
+/**
+ * 复制消息到剪贴板
+ * 复制最后一条用户消息及之后的所有对话，转换为JSON格式
+ * @param content 可选参数，如果提供则直接复制该内容，否则从聊天存储获取
+ * @returns 复制是否成功
+ */
+export const copyMessageToClipboard = (content?: string) => {
   try {
-    navigator.clipboard.writeText(content);
+    // 如果提供了具体内容，直接复制
+    if (content) {
+      navigator.clipboard.writeText(content);
+      return true;
+    }
+
+    // 否则，从聊天存储获取最后一条用户消息及之后的对话
+    const messages = useChatStore.getState().messages;
+    if (!messages || messages.length === 0) return false;
+
+    // 找到最后一条用户消息的索引
+    let lastUserMsgIndex = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        lastUserMsgIndex = i;
+        break;
+      }
+    }
+
+    if (lastUserMsgIndex === -1) return false;
+
+    // 获取最后一条用户消息及之后的所有消息
+    const relevantMessages = messages.slice(lastUserMsgIndex);
+
+    // 转换为JSON格式
+    const jsonData = JSON.stringify(relevantMessages, null, 2);
+
+    // 复制到剪贴板
+    navigator.clipboard.writeText(jsonData);
     return true;
   } catch (err) {
     console.error('复制到剪贴板失败:', err);

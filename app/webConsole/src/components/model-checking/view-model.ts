@@ -66,7 +66,7 @@ export function useViewModel(): IMyModelListViewModel {
 
   // 切换会话模型
   const { run: fetchChangeModel } = useRequest(async (params: { sessionId: string; modelId: string }) => {
-    if (!params.sessionId || !params.modelId) {
+    if (!params?.sessionId || !params.modelId) {
       return {};
     }
     const data = await httpRequest.post('/playground/session/model', {

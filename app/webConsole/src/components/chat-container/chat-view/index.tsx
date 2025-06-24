@@ -61,6 +61,12 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   }, [messages.length, getIsNearBottom, scrollToBottom]);
 
+  useEffect(() => {
+    if (messages.length === 0 && streamingContent) {
+      cancelRequest();
+    }
+  }, [messages.length, streamingContent, cancelRequest]);
+
   /**
    * 正在生成的消息控制滚动
    */
@@ -80,7 +86,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   };
   // 复制消息
-  const handleCopyMessage = (content: string) => {
+  const handleCopyMessage = (content?: string) => {
     if (copyMessageToClipboard(content)) {
       message.success('已复制到剪贴板');
     } else {
@@ -102,7 +108,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     return (
       <div className="bottom-panel-container">
         {/* 流式生成的消息 */}
-        {isLoading && (
+        {isLoading && messages.length > 0 && (
           <StreamingMessage
             content={streamingContent}
             thinkingContent={streamingThinking}
@@ -110,7 +116,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           />
         )}
 
-        {(error || isLoading || streamingContent) && (
+        {messages.length > 0 && (error || isLoading || streamingContent) && (
           <div className="message-control-buttons">
             {isLoading && (
               <img
@@ -132,13 +138,12 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
               </Button>
             )}
 
-            {/* 流式输出结束后显示复制和重新发送按钮 */}
-            {!isLoading && !error && streamingContent && (
+            {!isLoading && streamingContent && messages.length > 0 && (
               <>
                 <Button
                   type="link"
                   icon={<CopyIcon width={16} />}
-                  onClick={() => handleCopyMessage(streamingContent)}
+                  onClick={() => handleCopyMessage()}
                 >
                   复制
                 </Button>
@@ -147,6 +152,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                   icon={<ArrowClockwiseIcon width={16} />}
                   onClick={resendLastMessage}
                   loading={isResending}
+                  disabled={isResending}
                 >
                   重新发送
                 </Button>
@@ -243,13 +249,13 @@ const MarkdownContent = ({ dataSource }: { dataSource?: string }) => {
 
   return (
     <div className="markdown-content">
-      {/* @ts-ignore */}
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-      >
-        {dataSource}
-      </ReactMarkdown>
+      <>
+        {ReactMarkdown({
+          children: dataSource,
+          remarkPlugins: [remarkGfm],
+          rehypePlugins: [rehypeRaw],
+        })}
+      </>
     </div>
   );
 };

@@ -1,0 +1,87 @@
+.realnameAuthContainer {
+  display: flex;
+  width: 100%;
+  padding: 24px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 8px;
+  border: 1px solid #E4E4E7;
+  background: linear-gradient(89.64deg, rgba(255, 255, 255, 0) 19.76%, #FFFFFF 100%);
+  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.15);
+&:hover {
+    box-shadow:  0px 1px 2px 0px rgba(0, 0, 0, 0.30);
+}
+}
+
+.contentWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  align-self: stretch;
+  width: 100%;
+}
+
+.infoSection {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.iconContainer {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+.textContainer {
+  display: flex;
+  width: 301px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.title {
+  align-self: stretch;
+  color: #18181A;
+  font-family: "PingFang SC";
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.description {
+  align-self: stretch;
+  color: #27272A;
+  font-family: "PingFang SC";
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.authButton {
+  display: flex;
+  padding: 5px 16px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  background: #5429FF;
+  color: #FFF;
+  font-family: "PingFang SC";
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  border: none;
+  cursor: pointer;
+  
+  &:hover {
+    background: #4F4DFF;
+  }
+}

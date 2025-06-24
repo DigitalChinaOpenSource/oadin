@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Tooltip } from 'antd';
+import { message, Tooltip } from 'antd';
+import { httpRequest } from '@/utils/httpRequest';
+import { useRequest } from 'ahooks';
 import thinkSvg from '@/components/icons/think.svg';
 import nothinkSvg from '@/components/icons/no-think.svg';
 import exchangeSvg from '@/components/icons/exchange.svg';
@@ -7,7 +9,7 @@ import TagsRender from '@/components/tags-render';
 import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import useChatStore from '../store/useChatStore';
-import { IPlaygroundSession } from '../types';
+import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 
 import styles from './index.module.scss';
 
@@ -18,8 +20,27 @@ interface IChatModelManageProps {
 
 export default function ChatModelManage(props: IChatModelManageProps) {
   const { selectedModel } = useSelectedModelStore();
+  const currentSessionId = getSessionIdFromUrl();
+  const { isLoading } = useChatStore();
   const [open, setOpen] = useState<boolean>(false);
   const [isThinking, setIsThinking] = useState<boolean>(true);
+
+  const { run: fetchThinkingEnable } = useRequest(
+    async (params: { sessionId: string; enabled: boolean }) => {
+      const data = await httpRequest.post('/playground/session/thinking', params);
+      return data || {};
+    },
+    {
+      manual: true,
+      onSuccess: (data: any) => {
+        console.log('思考状态更新成功:', data);
+      },
+      onError: (error: any) => {
+        console.log('思考状态更新失败:', error);
+      },
+    },
+  );
+
   return (
     <>
       <div className={styles.chatModelManage}>
@@ -45,8 +66,11 @@ export default function ChatModelManage(props: IChatModelManageProps) {
               <div
                 className={isThinking ? styles.think : styles.noThink}
                 onClick={() => {
-                  setIsThinking(!isThinking);
-                  // TODO 调接口去关闭
+                  if (!selectedModel.think_switch) return;
+                  fetchThinkingEnable({
+                    sessionId: currentSessionId,
+                    enabled: !isThinking,
+                  });
                 }}
               >
                 <img
@@ -59,10 +83,13 @@ export default function ChatModelManage(props: IChatModelManageProps) {
             </>
           )}
 
-          <Tooltip title="切换模型后，将开启新会话">
+          <Tooltip title={isLoading ? '对话中不可修改模型' : '切换模型后，将开启新会话'}>
             <div
               className={styles.changeModel}
-              onClick={() => setOpen(true)}
+              onClick={() => {
+                if (isLoading) return;
+                setOpen(true);
+              }}
             >
               <img
                 src={exchangeSvg}
