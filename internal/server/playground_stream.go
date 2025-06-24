@@ -190,9 +190,25 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					return
 				}
 				msgType := "answer"
-				if resp.Thoughts != "" {
-					msgType = "thoughts"
-				} // 保留原始的 Content
+				if resp.Thoughts != "" && thoughts != resp.Thoughts {
+					msgType = "thinking"
+					thoughts = resp.Thoughts
+					thoughtsMsg := &types.ChatMessage{
+						ID:        uuid.New().String(),
+						SessionID: request.SessionID,
+						Role:      "think",
+						Content:   resp.Thoughts,
+						Order:     len(messages) + 2,
+						CreatedAt: time.Now(),
+						ModelID:   session.ModelID,
+						ModelName: session.ModelName,
+					}
+					err = p.Ds.Add(ctx, thoughtsMsg)
+					if err != nil {
+						slog.Error("Failed to save thoughts message", "error", err)
+					}
+				}
+				// 保留原始的 Content
 				originalContent := resp.Content
 				resp.Type = msgType
 				resp.Model = session.ModelName
@@ -267,22 +283,6 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				} else {
 					slog.Debug("跳过空内容块")
 					continue
-				}
-				if resp.Thoughts != "" {
-					thoughtsMsg := &types.ChatMessage{
-						ID:        uuid.New().String(),
-						SessionID: request.SessionID,
-						Role:      "think",
-						Content:   resp.Thoughts,
-						Order:     len(messages) + 2,
-						CreatedAt: time.Now(),
-						ModelID:   session.ModelID,
-						ModelName: session.ModelName,
-					}
-					err = p.Ds.Add(ctx, thoughtsMsg)
-					if err != nil {
-						slog.Error("Failed to save thoughts message", "error", err)
-					}
 				}
 
 			case err, ok := <-streamErrChan:
