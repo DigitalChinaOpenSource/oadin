@@ -1,0 +1,119 @@
+.authModal {
+  :global {
+    .ant-modal-content {
+      padding: 24px;
+      border-radius: 8px;
+      width: 480px;
+    }
+
+    .ant-modal-footer {
+      margin-top: 16px;
+      padding: 0;
+      border-top: none;
+    }
+
+    .ant-modal-header {
+      padding: 0;
+      margin-bottom: 24px;
+    }
+
+    .ant-modal-title {
+      font-family: "PingFang SC";
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 28px;
+      color: #000115;
+    }
+
+    .ant-btn-default {
+      background: #F4F4F5;
+      color: #344054;
+
+      &:hover {
+        background: #E4E4E7;
+        border-color: #E4E4E7;
+      }
+    }
+
+    .ant-btn-primary {
+      background: #F5222D;
+      border-color: #F5222D;
+
+      &:hover {
+        background: #FF4D4F;
+        border-color: #FF4D4F;
+      }
+
+      &:disabled {
+        background: #FFCCC7;
+        border-color: #FFCCC7;
+        color: #FFF;
+        cursor: not-allowed;
+      }
+    }
+    
+    
+    .ant-form-item {
+      margin-bottom: 24px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.description {
+  align-self: stretch;
+  color: #71717D;
+  text-align: justify;
+  font-family: "PingFang SC";
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  margin-bottom: 24px;
+}
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+// .phonePrefix {
+//   display: flex;
+//   align-items: center;
+//   gap: 12px;
+//   color: #344054;
+// }
+
+// .divider {
+//   width: 1px;
+//   height: 14px;
+//   background: #EBEBEC;
+// }
+
+.buttonGroup {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.verifyCodeButton {
+  width: 76px !important;
+  min-width: 76px !important;
+  text-align: center;
+  padding: 0 !important;
+  color: #27272A;
+  
+  &:disabled {
+    color: #9E9FAA;
+  }
+}

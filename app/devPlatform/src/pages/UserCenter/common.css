@@ -8,3 +8,7 @@
     font-weight: 600;
     color: #000000;
 }
+.formInput {
+  width: 100%;
+  height: 40px;
+}
