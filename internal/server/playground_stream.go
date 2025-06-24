@@ -365,16 +365,11 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 				// 尝试将转义的 JSON 字符串还原为原始 JSON
 				var inputObj interface{}
 				var outputObj types.ClientRunToolResponse
-				if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
-					// // 重新格式化为缩进后的 JSON 字符串
-					// if pretty, err := json.MarshalIndent(inputObj, "", "  "); err == nil {
-					// 	inputParams = string(pretty)
-					// }
+				if err := json.Unmarshal([]byte(inputParams), &inputObj); err != nil {
+					continue
 				}
-				if err := json.Unmarshal([]byte(outputParams), &outputObj); err == nil {
-					// if pretty, err := json.MarshalIndent(outputObj.Content, "", "  "); err == nil {
-					// 	outputParams = string(pretty)
-					// }
+				if err := json.Unmarshal([]byte(outputParams), &outputObj); err != nil {
+					continue
 				}
 
 				history = append(history, map[string]interface{}{
