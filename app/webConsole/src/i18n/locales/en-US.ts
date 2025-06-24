@@ -10,6 +10,7 @@ export default {
     '40003': 'The folder under the current path is not empty',
     '40004': 'Model file migration failed',
     '40005': 'Path permission denied, please check',
+    '40006': 'mcp add failed, please retry!',
 
     service_error: 'Service error, please check the Byze service',
     network: 'Network error, please check your network connection',
