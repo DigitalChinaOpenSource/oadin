@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -122,6 +123,7 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 			return
 		}
 		fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
+		slog.Info("[MCP] Initialized client for server", "server_id", config.Id)
 		s.mu.Lock()
 		s.clients[serverKey] = cli
 		s.mu.Unlock()
@@ -206,7 +208,6 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		fetchRequest.Params.Arguments = params.Arguments
 		result, err := cli.CallTool(ctx, fetchRequest)
 		if err != nil {
-			fmt.Printf("Failed to call the tool: %v\n", err)
 			return nil, err
 		}
 		return result, nil
@@ -218,6 +219,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 			return result, nil
 		}
 		fmt.Printf("Retrying to call tool for MCP %s, attempt %d\n", mcpId, i+1)
+		slog.Info("Retrying to call tool for MCP, attempt ", mcpId, i+1)
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil, fmt.Errorf("failed to call tool after 10 attempts for MCP %s", mcpId)
