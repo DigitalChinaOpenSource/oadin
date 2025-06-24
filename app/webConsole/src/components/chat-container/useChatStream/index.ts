@@ -876,19 +876,6 @@ export function useChatStream() {
     [sendChatMessageInternal, isLoading],
   );
 
-  // 复制消息到剪贴板
-  const copyMessageToClipboard = useCallback((content: string) => {
-    if (!content) return false;
-
-    try {
-      navigator.clipboard.writeText(content);
-      return true;
-    } catch (err) {
-      console.error('复制到剪贴板失败:', err);
-      return false;
-    }
-  }, []);
-
   // 重发最后一条消息
   const resendLastMessage = useCallback(async () => {
     if (isResending) return;
@@ -949,6 +936,5 @@ export function useChatStream() {
     sendChatMessage,
     cancelRequest,
     resendLastMessage,
-    copyMessageToClipboard,
   };
 }
