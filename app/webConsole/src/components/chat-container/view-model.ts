@@ -68,7 +68,6 @@ export default function useViewModel() {
   }, [currentSessionId, selectedModel, messages.length]);
 
   useEffect(() => {
-    if (!isDownloadEmbed) return;
     fetchAllModels();
   }, [isDownloadEmbed]);
 

@@ -10,7 +10,6 @@ import { API_PREFIX } from '@/constants';
  * @param data - 请求体参数
  */
 async function abortDownload(data: { model_name: string }) {
-  console.log('abortDownload', data);
   await httpRequest
     .post('/model/stream/cancel', data)
     .then((res) => res)

@@ -5,6 +5,8 @@ import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
 import { IModelDataItem } from '@/types';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelListStore from '@/store/useModelListStore';
+import { getLocalStorageDownList } from '@/utils';
+
 import { IDownParseData } from './types';
 /**
  * 下载操作
@@ -56,7 +58,6 @@ export const useDownLoad = () => {
         // 如果不存在则添加新项
         ...(!downloadList.some((item) => item.id === id) ? [{ ...params, status: IN_PROGRESS }] : []),
       ]);
-
       // 同步更新模型列表中的状态
       const { setModelListData } = useModelListStore.getState();
       setModelListData((draft) => draft.map((item) => (item.id === id ? { ...item, status: IN_PROGRESS, currentDownload: 0 } : item)));
@@ -64,9 +65,9 @@ export const useDownLoad = () => {
       modelDownloadStream(paramsTemp, {
         onmessage: (parsedData: IDownParseData) => {
           const { completedsize, progress, status, totalsize, error } = parsedData;
-
           // 处理错误情况
           if (error) {
+            console.log('下载错误:', error);
             updateDownloadStatus(id, {
               status: error.includes('aborted') ? PAUSED : FAILED,
             });
@@ -139,9 +140,9 @@ export const useDownLoad = () => {
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (downloadList.length > 0) {
-        // 将所有 IN_PROGRESS 状态的项目更新为 PAUSED
-        const updatedList = downloadList.map((item: IModelDataItem) => ({
+      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.DOWN_LIST);
+      if (downListLocal.length > 0) {
+        const updatedList = downListLocal.map((item: IModelDataItem) => ({
           ...item,
           status: item.status === IN_PROGRESS ? PAUSED : item.status,
         }));
