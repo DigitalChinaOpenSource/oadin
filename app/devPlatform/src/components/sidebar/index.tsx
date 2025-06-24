@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
-import routes, { RouteConfig } from '../routes/routes';
+import routes, { RouteConfig } from '@/routes/routes';
+import styles from './index.module.scss';
+import { CaretDoubleLeftIcon, CaretDoubleRightIcon } from '@phosphor-icons/react';
 
 const { Sider } = Layout;
 
@@ -15,31 +17,33 @@ const Sidebar: React.FC = () => {
   // 当路径变化时更新选中的菜单项
   useEffect(() => {
     const pathKey = location.pathname;
-    
+
     // 查找当前路径匹配的路由配置
     const findMatchingRoute = (path: string): RouteConfig | null => {
       // 精确匹配
-      const exactMatch = routes.find(route => route.path === path);
+      const exactMatch = routes.find((route) => route.path === path);
       if (exactMatch) return exactMatch;
-      
+
       // 参数路径匹配 (如 /app-management/config/123)
-      return routes.find(route => {
-        if (!route.path) return false;
-        const routePathSegments = route.path.split('/');
-        const currentPathSegments = path.split('/');
-        
-        if (routePathSegments.length !== currentPathSegments.length) return false;
-        
-        for (let i = 0; i < routePathSegments.length; i++) {
-          if (routePathSegments[i].startsWith(':')) continue;
-          if (routePathSegments[i] !== currentPathSegments[i]) return false;
-        }
-        return true;
-      }) || null;
+      return (
+        routes.find((route) => {
+          if (!route.path) return false;
+          const routePathSegments = route.path.split('/');
+          const currentPathSegments = path.split('/');
+
+          if (routePathSegments.length !== currentPathSegments.length) return false;
+
+          for (let i = 0; i < routePathSegments.length; i++) {
+            if (routePathSegments[i].startsWith(':')) continue;
+            if (routePathSegments[i] !== currentPathSegments[i]) return false;
+          }
+          return true;
+        }) || null
+      );
     };
-    
+
     const matchedRoute = findMatchingRoute(pathKey);
-    
+
     // 如果找到匹配的路由，并且它有menuPath配置，则使用menuPath作为选中项
     if (matchedRoute && matchedRoute.menuPath) {
       setSelectedKeys([matchedRoute.menuPath]);
@@ -98,6 +102,37 @@ const Sidebar: React.FC = () => {
   // 准备菜单项
   const menuItems = getMenuItems(routes);
 
+  const TriggerIcon = () => {
+    return (
+      <div className={styles.triggerContent}>
+        <div className={styles.triggerIconContent}>
+          <Tooltip
+            title={collapsed ? '展开' : '收起'}
+            placement={'top'}
+          >
+            {collapsed ? (
+              <>
+                <CaretDoubleRightIcon
+                  width={20}
+                  height={20}
+                  fill="#71717D"
+                />
+              </>
+            ) : (
+              <>
+                <CaretDoubleLeftIcon
+                  width={20}
+                  height={20}
+                  fill="#71717D"
+                />
+              </>
+            )}
+          </Tooltip>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Sider
       collapsible
@@ -105,6 +140,7 @@ const Sidebar: React.FC = () => {
       onCollapse={(value) => setCollapsed(value)}
       theme="light"
       style={{ background: 'rgba(255, 255, 255, 0.5)' }}
+      trigger={<TriggerIcon />}
     >
       <Menu
         mode="inline"

@@ -56,7 +56,6 @@ export default function MainLayout() {
         </div>
       </div>
     );
-    // return collapsed ? <span className={styles.triggerIcon}>▶</span> : <span className={styles.triggerIcon}>◀</span>;
   };
 
   return (
