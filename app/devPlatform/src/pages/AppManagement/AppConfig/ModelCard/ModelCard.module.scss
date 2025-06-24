@@ -1,0 +1,38 @@
+.modelCard {
+  :global(.ant-card-body) {
+    padding: 12px 16px;
+  }
+}
+
+.headerContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.modelInfo {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+.modelName {
+  overflow: hidden;
+  color: var(--text-color-text-normal, #27272a);
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 22px; /* 157.143% */
+}
+.modelInfoImg {
+  display: flex;
+  align-items: center;
+  img {
+    width: 22px;
+    height: 22px;
+  }
+}
+.removeWarp {
+  cursor: pointer;
+}

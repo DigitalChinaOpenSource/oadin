@@ -1,8 +1,5 @@
-import { ReactNode, lazy, createElement } from 'react';
-import { 
-  AppstoreOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { createElement, lazy, ReactNode } from 'react';
+import { AppstoreOutlined, UserOutlined } from '@ant-design/icons';
 
 export interface RouteConfig {
   path: string;
@@ -15,7 +12,7 @@ export interface RouteConfig {
   menuPath?: string; // 用于在子路由中指定激活的菜单项
 }
 
-const AppManagementPage = lazy(() => import('../pages/AppManagement'));
+const AppManagementPage = lazy(() => import('../pages/AppManagement/AppList'));
 const AppConfigPage = lazy(() => import('../pages/AppManagement/AppConfig'));
 const UserCenterPage = lazy(() => import('../pages/UserCenter'));
 const LoginPage = lazy(() => import('../pages/Login/index'));
@@ -38,7 +35,7 @@ const routes: RouteConfig[] = [
   },
   {
     path: '/user-center',
-    name: '用户中心',
+    name: '账号中心',
     icon: createElement(UserOutlined),
     component: UserCenterPage,
     requireAuth: true,

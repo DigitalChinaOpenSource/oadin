@@ -1,0 +1,46 @@
+.container {
+  margin: 16px 0;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.filterLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tagsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: flex;
+  padding: 2px 8px;
+  align-items: center;
+  gap: 3px;
+  border-radius: 2px;
+  border: 1px solid #e4e4e7;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #4f4dff;
+  }
+}
+
+.tagSelected {
+  border-color: #4f4dff;
+
+  span {
+    color: #5429ff;
+  }
+}

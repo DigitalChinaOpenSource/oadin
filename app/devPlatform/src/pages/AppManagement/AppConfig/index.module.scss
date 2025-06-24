@@ -120,12 +120,6 @@ $error-color: #f5222d;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: $text-secondary;
-
-  &:hover {
-    color: $primary-color;
-    background: transparent;
-  }
 }
 
 .appInfoRow {
@@ -225,6 +219,17 @@ $error-color: #f5222d;
   gap: 24px;
   align-self: stretch;
   margin-bottom: 40px;
+
+  :global(.ant-select-selection-item) {
+    background-color: $bg-blue-lighter !important;
+    border-color: $primary-color !important;
+    color: $primary-color !important;
+  }
+
+  :global(.ant-form-item-label > label) {
+    height: auto;
+    margin-bottom: 8px;
+  }
 }
 
 .configItemRow {
@@ -232,44 +237,29 @@ $error-color: #f5222d;
   padding: 16px;
   flex-direction: column;
   align-items: flex-start;
-  gap: 16px;
   align-self: stretch;
   border-radius: 8px;
   background: $bg-blue-light;
 
-  &:first-child {
-    margin-bottom: 16px;
+  :global(.ant-form-item) {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  :global(.ant-form-item-label) {
+    padding: 0;
   }
 }
 
 .configLabel {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 24px;
 }
 
-.requiredMark {
-  color: $error-color;
-  font-family: SimSong;
-  font-size: 14px;
-  line-height: 22px;
-}
-
-.modelSelectButton,
-.mcpSelectButton {
-  display: flex;
-  padding: 2px 8px;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  border-radius: 4px;
-  background: #dee7ff;
-  color: $primary-color;
-  border: none;
-
-  &:hover {
-    background: darken(#dee7ff, 5%);
-  }
+// Custom styles for Select components
+:global(.ant-select-selector) {
+  background-color: #fff !important;
 }
 
 // 操作系统部分
@@ -321,27 +311,6 @@ $error-color: #f5222d;
   justify-content: center;
   align-items: center;
   gap: 24px;
-
-  button {
-    padding: 5px 16px;
-
-    &:first-child {
-      background-color: $primary-color;
-
-      &:hover {
-        background-color: darken($primary-color, 10%);
-      }
-    }
-
-    &:last-child {
-      background-color: #f4f4f5;
-      color: $text-secondary;
-
-      &:hover {
-        background-color: darken(#f4f4f5, 5%);
-      }
-    }
-  }
 }
 
 // 内容区域
@@ -358,4 +327,74 @@ $error-color: #f5222d;
   justify-content: center;
   align-items: center;
   height: 100vh;
+}
+
+.selectedItemsInfo {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: -8px;
+}
+
+// 模型选择样式
+.modelSelectArea {
+  width: 100%;
+}
+
+.modelSelectButton,
+.mcpSelectButton {
+  display: flex;
+  padding: 6px 16px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  background-color: #dee7ff;
+  color: $primary-color;
+  border: none;
+
+  &:hover {
+    background-color: darken(#dee7ff, 5%);
+    color: darken($primary-color, 5%);
+  }
+}
+
+.selectedModelsDisplay {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.selectedModelsInfo {
+  flex: 1;
+}
+
+.selectedCount {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-bottom: 8px;
+}
+
+.selectedModelsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selectedModelItem {
+  display: inline-flex;
+  padding: 4px 12px;
+  align-items: center;
+  border-radius: 16px;
+  background-color: #dee7ff;
+  color: $primary-color;
+  font-size: 14px;
+}
+
+.editModelsButton {
+  color: $primary-color;
+
+  &:hover {
+    background-color: transparent;
+    color: darken($primary-color, 10%);
+  }
 }
