@@ -7,7 +7,6 @@ import TagsRender from '@/components/tags-render';
 import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import useChatStore from '../store/useChatStore';
-import { IPlaygroundSession } from '../types';
 
 import styles from './index.module.scss';
 
@@ -18,6 +17,7 @@ interface IChatModelManageProps {
 
 export default function ChatModelManage(props: IChatModelManageProps) {
   const { selectedModel } = useSelectedModelStore();
+  const { isLoading } = useChatStore();
   const [open, setOpen] = useState<boolean>(false);
   const [isThinking, setIsThinking] = useState<boolean>(true);
   return (
@@ -59,10 +59,13 @@ export default function ChatModelManage(props: IChatModelManageProps) {
             </>
           )}
 
-          <Tooltip title="切换模型后，将开启新会话">
+          <Tooltip title={isLoading ? '对话中不可修改模型' : '切换模型后，将开启新会话'}>
             <div
               className={styles.changeModel}
-              onClick={() => setOpen(true)}
+              onClick={() => {
+                if (isLoading) return;
+                setOpen(true);
+              }}
             >
               <img
                 src={exchangeSvg}

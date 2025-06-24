@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown';
-import styles from './index.module.scss';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { Button, Tooltip, message, Radio } from 'antd';
 import { IModelAuth } from '../../types';
 import { IModelDataItem, IModelSourceType } from '@/types';
@@ -10,6 +11,7 @@ import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import React, { MouseEvent } from 'react';
 import recommendedIcon from '@/components/icons/recommendIcon.png';
 import { ISelectedDialogProps } from '@/components/choose-model-dialog';
+import styles from './index.module.scss';
 
 export interface IGeneralCardProps extends ISelectedDialogProps {
   // 是否用于详情展示
@@ -264,8 +266,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
 
       <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>
         {isDetail ? (
-          // @ts-ignore
-          <ReactMarkdown>{modelData?.desc}</ReactMarkdown>
+          <>{ReactMarkdown({ children: modelData?.desc, remarkPlugins: [remarkGfm], rehypePlugins: [rehypeRaw] })}</>
         ) : (
           <Tooltip title={<div style={{ maxHeight: '100px', overflow: 'auto' }}>{modelData?.desc}</div>}>{modelData?.desc || '暂无模型简介'}</Tooltip>
         )}
