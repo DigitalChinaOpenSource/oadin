@@ -269,7 +269,20 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					continue
 				}
 				if resp.Thoughts != "" {
-					thoughts = resp.Thoughts
+					thoughtsMsg := &types.ChatMessage{
+						ID:        uuid.New().String(),
+						SessionID: request.SessionID,
+						Role:      "think",
+						Content:   resp.Thoughts,
+						Order:     len(messages) + 2,
+						CreatedAt: time.Now(),
+						ModelID:   session.ModelID,
+						ModelName: session.ModelName,
+					}
+					err = p.Ds.Add(ctx, thoughtsMsg)
+					if err != nil {
+						slog.Error("Failed to save thoughts message", "error", err)
+					}
 				}
 
 			case err, ok := <-streamErrChan:
