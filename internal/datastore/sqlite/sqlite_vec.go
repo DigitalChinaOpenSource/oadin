@@ -500,3 +500,14 @@ func (vdb *VectorDBVec) DeleteChunks(ctx context.Context, chunkIDs []string) err
 
 	return nil
 }
+
+// GetChunkByID 通过主键 id 精确查询 file_chunks 内容
+func (vdb *VectorDBVec) GetChunkByID(ctx context.Context, id string) (content string, chunkID string, err error) {
+	var c string
+	var cid string
+	err = vdb.db.QueryRowContext(ctx, "SELECT id, content FROM file_chunks WHERE id = ? LIMIT 1", id).Scan(&cid, &c)
+	if err != nil {
+		return "", "", err
+	}
+	return c, cid, nil
+}
