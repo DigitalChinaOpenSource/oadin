@@ -299,16 +299,15 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 			chunkContent := ""
 			chunkID := ""
 
-			// 直接用 uuid 作为主键加载实体
-			chunkQuery := &types.FileChunk{}
-			chunkQuery.ID = id
-			if err := p.Ds.Get(ctx, chunkQuery); err == nil && chunkQuery.Content != "" {
-				chunkContent = chunkQuery.Content
-				chunkID = chunkQuery.ID
-				slog.Debug("RAG: 成功检索到chunk", "uuid", id, "chunkID", chunkID)
-			} else {
-				slog.Warn("RAG: 获取文档块失败", "error", err, "uuid", id)
-				continue
+			// 只用主键 id 查询 chunk 内容，避免 file_id 干扰
+			if vecDB != nil {
+				chunkContent, chunkID, err = vecDB.GetChunkByID(ctx, id)
+				if err == nil && chunkContent != "" {
+					slog.Debug("RAG: 成功检索到chunk", "uuid", id, "chunkID", chunkID)
+				} else {
+					slog.Warn("RAG: 获取文档块失败", "error", err, "uuid", id)
+					continue
+				}
 			}
 
 			chunkMap[id] = ChunkScore{
