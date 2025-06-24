@@ -21,6 +21,7 @@ type SupportModel struct {
 	CreatedAt     time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt     time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
 	Think         bool      `json:"think"`
+	ThinkSwitch   bool      `json:"think_switch"`
 }
 
 func (s *SupportModel) TableName() string {
