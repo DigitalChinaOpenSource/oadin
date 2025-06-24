@@ -52,7 +52,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   const { messages } = useChatStore();
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
 
-  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
+  const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage, setStreamingContent } = useChatStream();
 
   useEffect(() => {
     // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部
@@ -60,6 +60,12 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
       scrollToBottom();
     }
   }, [messages.length, getIsNearBottom, scrollToBottom]);
+
+  useEffect(() => {
+    if (messages.length === 0 && streamingContent) {
+      cancelRequest();
+    }
+  }, [messages.length, streamingContent, cancelRequest]);
 
   /**
    * 正在生成的消息控制滚动
@@ -102,7 +108,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     return (
       <div className="bottom-panel-container">
         {/* 流式生成的消息 */}
-        {isLoading && (
+        {isLoading && messages.length > 0 && (
           <StreamingMessage
             content={streamingContent}
             thinkingContent={streamingThinking}
@@ -110,7 +116,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           />
         )}
 
-        {(error || isLoading || streamingContent) && (
+        {messages.length > 0 && (error || isLoading || streamingContent) && (
           <div className="message-control-buttons">
             {isLoading && (
               <img
@@ -132,8 +138,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
               </Button>
             )}
 
-            {/* 流式输出结束后显示复制和重新发送按钮 */}
-            {!isLoading && streamingContent && (
+            {!isLoading && streamingContent && messages.length > 0 && (
               <>
                 <Button
                   type="link"

@@ -216,7 +216,10 @@ export function useChatStream() {
       const aiMessage = buildMessageWithThinkContent(finalContent);
       addMessage(aiMessage);
 
-      // 保留UI上的内容，但清除内部状态
+      // 保存当前的工具调用活动状态，但清除内部状态
+      const wasToolCallActive = requestState.current.status.isToolCallActive;
+      const savedToolGroupId = requestState.current.lastToolGroupIdRef;
+
       requestState.current = {
         content: {
           response: '',
@@ -224,24 +227,28 @@ export function useChatStream() {
         },
         status: {
           hasReceivedData: false,
-          isToolCallActive: false,
+          isToolCallActive: wasToolCallActive,
         },
         timers: {
           totalTimer: null,
         },
-        lastToolGroupIdRef: null,
+        lastToolGroupIdRef: savedToolGroupId,
       };
       functionIdCacheRef.current = {};
 
-      setIsLoading(false);
+      if (!wasToolCallActive) {
+        setIsLoading(false);
+      }
       cleanupResources();
     } else {
-      // 调用纯清理函数
+      const wasToolCallActive = requestState.current.status.isToolCallActive;
       cleanupResources();
-      // 清除流式状态
-      clearStreamingState();
-      // 更新加载状态
-      setIsLoading(false);
+
+      if (!wasToolCallActive) {
+        clearStreamingState();
+        // 更新加载状态
+        setIsLoading(false);
+      }
     }
   };
 
@@ -456,6 +463,9 @@ export function useChatStream() {
         if (!isToolError && toolCallHandlersRef.current.continueConversation) {
           // 保存当前的 tool_group_id 以便在继续对话时使用
           const currentToolGroupId = tool_group_id || requestState.current.lastToolGroupIdRef;
+          // 确保工具调用过程中保持加载状态
+          setIsLoading(true);
+          // 调用继续对话函数
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
           // 检查工具调用后是否重置了 lastToolGroupIdRef，如果是，则恢复它
           if (!requestState.current.lastToolGroupIdRef && currentToolGroupId) {
@@ -502,6 +512,8 @@ export function useChatStream() {
     async (toolResult: string) => {
       try {
         if (!currentSessionId) return;
+        // 设置加载状态，确保整个工具调用链中保持加载状态
+        setIsLoading(true);
         // 中止旧的请求控制器，避免状态混乱
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
@@ -622,10 +634,16 @@ export function useChatStream() {
                 };
                 functionIdCacheRef.current = {};
               } else {
-                clearStreamingState();
+                // 只有在没有活动的工具调用时才清除状态
+                if (!requestState.current.status.isToolCallActive) {
+                  clearStreamingState();
+                }
               }
 
-              setIsLoading(false);
+              // 只有在没有活动的工具调用时才关闭加载状态
+              if (!requestState.current.status.isToolCallActive) {
+                setIsLoading(false);
+              }
               clearTimers();
             },
             onFallbackResponse: async (response) => {
@@ -814,10 +832,16 @@ export function useChatStream() {
                 };
                 functionIdCacheRef.current = {};
               } else {
-                clearStreamingState();
+                // 只有在没有活动的工具调用时才清除状态
+                if (!requestState.current.status.isToolCallActive) {
+                  clearStreamingState();
+                }
               }
 
-              setIsLoading(false);
+              // 只有在没有活动的工具调用时才关闭加载状态
+              if (!requestState.current.status.isToolCallActive) {
+                setIsLoading(false);
+              }
               clearTimers();
             },
 
@@ -917,6 +941,7 @@ export function useChatStream() {
 
   return {
     streamingContent,
+    setStreamingContent,
     streamingThinking,
     isLoading,
     isResending,

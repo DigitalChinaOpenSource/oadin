@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
-import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 import { message } from 'antd';
 import { ModelData } from '@/types';
+import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
+import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { MessageType } from '@res-utiles/ui-components';
 import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDrawerProps } from './types';
 import { IModelSquareParams } from '@/types';
@@ -16,6 +17,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   const { onHistorySelect, onHistoryDrawerClose } = props;
   // 获取对话store
   const { setHistoryVisible, createNewChat, setMessages } = useChatStore();
+  const { setSelectMcpList } = useSelectMcpStore();
   // 从URL获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
 
@@ -62,6 +64,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
         if (params[0] === currentSessionId) {
           setSessionIdToUrl(''); // 清除URL中的sessionId
           createNewChat();
+          setSelectMcpList([]);
         }
         if (!data) return;
       },
