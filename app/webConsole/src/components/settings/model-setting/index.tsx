@@ -67,13 +67,17 @@ const ModelSetting: React.FC = () => {
           onFinish={onFinish}
         >
           <Form.Item
+            style={{ marginBottom: 0, height: '36px' }}
             label="模型下载源地址"
+            tooltip={'模型下载源地址，所有模型将统一从该入口进行模型的下载'}
+          ></Form.Item>
+          <Form.Item
+            label={<span style={{ color: '#344054', fontSize: '12px', lineHeight: '20px' }}>地址更新后，模型将统一从该地址进行下载</span>}
             name="modelDownloadUrl"
             rules={[{ required: false, message: '请输入模型下载源地址' }]}
-            tooltip={'模型下载源地址，所有模型将统一从该入口进行模型的下载'}
           >
             <Input
-              placeholder="请输入模型下载源地址，所有模型将统一从该入口进行模型的下载"
+              placeholder="请输入模型下载源地址"
               style={{ width: 500 }}
               allowClear={true}
               autoComplete={'off'}

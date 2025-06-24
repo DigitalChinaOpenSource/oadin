@@ -154,7 +154,8 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
                 />
               </div>
             }
-            onChange={(e) => setSearchValue(e.target.value)}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value.trim())}
             onPressEnter={() => handleSearch(searchValue)}
           />
         </div>
