@@ -11,7 +11,7 @@ const AccountSetting = ({ goBack }: { goBack: () => void }) => {
   // 控制身份验证弹窗的显示状态
   const [authModalVisible, setAuthModalVisible] = useState<boolean>(false);
 
-  // 确认注销
+  // 注销提示弹窗确认
   const handleConfirm = () => {
     console.log('用户确认注销账号');
     // 这里可以添加真实的注销逻辑

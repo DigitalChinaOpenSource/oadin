@@ -1,8 +1,9 @@
-.cancelModal {
+.authModal {
   :global {
     .ant-modal-content {
       padding: 24px;
       border-radius: 8px;
+      width: 480px;
     }
 
     .ant-modal-footer {
@@ -23,13 +24,11 @@
       color: #000115;
     }
 
-    .ant-btn-default {
-      background: #f4f4f5;
-      color: #344054;
+    .ant-form-item {
+      margin-bottom: 24px;
 
-      &:hover {
-        background: #e4e4e7;
-        border-color: #e4e4e7;
+      &:last-child {
+        margin-bottom: 0;
       }
     }
   }
@@ -41,41 +40,37 @@
   gap: 8px;
 }
 
-.contentText {
-  display: flex;
-  width: 100%;
-  height: auto;
-  overflow-y: auto;
-  flex-direction: column;
-  justify-content: center;
-  color: #344054;
+.description {
+  align-self: stretch;
+  color: #71717d;
   text-align: justify;
   font-size: 14px;
-  font-style: normal;
   font-weight: 400;
   line-height: 22px;
   margin-bottom: 24px;
+}
 
-  p {
-    margin-bottom: 12px;
-  }
-
-  strong {
-    font-weight: 600;
-  }
-
-  ul {
-    list-style-type: disc;
-    margin-left: 20px;
-    // margin-bottom: 12px;
-    li {
-      margin-bottom: 4px;
-    }
-  }
+.formContent {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .buttonGroup {
   display: flex;
   justify-content: flex-end;
   gap: 16px;
+  margin-top: 24px;
+}
+
+.verifyCodeButton {
+  width: 76px !important;
+  min-width: 76px !important;
+  text-align: center;
+  padding: 0 !important;
+  color: #27272a;
+
+  &:disabled {
+    color: #9e9faa;
+  }
 }
