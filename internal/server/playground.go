@@ -96,20 +96,22 @@ func (p *PlaygroundImpl) GetModelById(ctx context.Context, modelId string) *type
 
 // 创建对话会话
 func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateSessionRequest) (*dto.CreateSessionResponse, error) {
+	supportModel := p.GetModelById(ctx, request.ModelId)
+	if supportModel == nil || supportModel.Id == "" {
+		return nil, fmt.Errorf("模型不存在或未找到: %s", request.ModelId)
+	}
 	session := &types.ChatSession{
 		ID:           uuid.New().String(),
 		Title:        request.Title,
 		ModelID:      request.ModelId,
-		ModelName:    p.GetModelById(ctx, request.ModelId).Name,
+		ModelName:    supportModel.Name,
 		EmbedModelID: request.EmbedModelId,
 	}
-	supportModel := &types.SupportModel{Id: request.ModelId}
-	err := p.Ds.Get(ctx, supportModel)
-	if err == nil {
-		session.ThinkingEnabled = supportModel.Think
-		session.ThinkingActive = supportModel.Think // 默认情况下，如果支持深度思考，则启用它
-	}
-	err = p.Ds.Add(ctx, session)
+
+	session.ThinkingEnabled = supportModel.Think
+	session.ThinkingActive = supportModel.Think // 默认情况下，如果支持深度思考，则启用它
+
+	err := p.Ds.Add(ctx, session)
 	if err != nil {
 		slog.Error("Failed to create chat session", "error", err)
 		return nil, err
