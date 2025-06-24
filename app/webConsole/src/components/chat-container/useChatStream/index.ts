@@ -13,9 +13,7 @@ import {
   findProgressToolMessage,
   extractToolCallData,
   extractToolCallDataByGroupId,
-  createMcpContent,
   createMcpContentWithGroupId,
-  updateContentListWithMcp,
   updateContentListWithMcpByGroupId,
   buildToolCallData,
   handleToolCallErrorMessage,
@@ -216,10 +214,8 @@ export function useChatStream() {
       const aiMessage = buildMessageWithThinkContent(finalContent);
       addMessage(aiMessage);
 
-      // 保存当前的工具调用活动状态，但清除内部状态
-      const wasToolCallActive = requestState.current.status.isToolCallActive;
+      // 保存当前的工具调用活动状态和toolGroupId，但清除内部状态
       const savedToolGroupId = requestState.current.lastToolGroupIdRef;
-
       requestState.current = {
         content: {
           response: '',
@@ -227,28 +223,22 @@ export function useChatStream() {
         },
         status: {
           hasReceivedData: false,
-          isToolCallActive: wasToolCallActive,
+          isToolCallActive: false,
         },
         timers: {
           totalTimer: null,
         },
-        lastToolGroupIdRef: savedToolGroupId,
+        lastToolGroupIdRef: savedToolGroupId, // 保留原来的toolGroupId
       };
       functionIdCacheRef.current = {};
 
-      if (!wasToolCallActive) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
       cleanupResources();
     } else {
-      const wasToolCallActive = requestState.current.status.isToolCallActive;
       cleanupResources();
-
-      if (!wasToolCallActive) {
-        clearStreamingState();
-        // 更新加载状态
-        setIsLoading(false);
-      }
+      clearStreamingState();
+      // 更新加载状态
+      setIsLoading(false);
     }
   };
 
@@ -326,22 +316,17 @@ export function useChatStream() {
   const handleToolCalls = useCallback(
     async (data: IStreamData, currentContent: any) => {
       const { tool_calls, tool_group_id, id, total_duration } = data;
-      console.log('接收到工具调用，当前 tool_group_id:', tool_group_id, '当前 lastToolGroupIdRef:', requestState.current.lastToolGroupIdRef);
-
       // 如果返回的 content 为空且有 tool_calls，保存 tool_group_id 用于下一次请求
       if ((!currentContent || currentContent.trim() === '') && tool_calls && tool_calls.length > 0 && tool_group_id) {
-        console.log('设置 lastToolGroupIdRef =', tool_group_id);
         requestState.current.lastToolGroupIdRef = tool_group_id;
       }
       if (!tool_calls || tool_calls.length === 0) {
-        console.log('没有工具调用，重置 lastToolGroupIdRef = null');
         requestState.current.lastToolGroupIdRef = null;
         return;
       }
 
       // 1. 检查是否已在处理中
       if (requestState.current.status.isToolCallActive) {
-        console.log('工具调用已在处理中，忽略新请求');
         return;
       }
 
@@ -356,18 +341,7 @@ export function useChatStream() {
         setStreamingContent(currentContent);
         const _function = tool_calls?.[0].function;
         // 4. 获取工具响应
-        let toolResponse;
-
-        // 检查缓存中是否已有此函数的id
-        if (_function.name && functionIdCacheRef.current[_function.name]) {
-          toolResponse = functionIdCacheRef.current[_function.name];
-        } else {
-          toolResponse = await getIdByFunction({ toolName: _function.name, toolArgs: _function.arguments }, selectedMcpIds());
-
-          if (_function.name) {
-            functionIdCacheRef.current[_function.name] = toolResponse;
-          }
-        }
+        const toolResponse = await getIdByFunction({ toolName: _function.name, toolArgs: _function.arguments }, selectedMcpIds());
 
         // 5. 查找已存在的消息
         const messages = useChatStore.getState().messages;
@@ -377,7 +351,6 @@ export function useChatStream() {
           currentContentList = [...(progressToolMessage.contentList || [])];
 
           if (tool_group_id) {
-            // 查找指定 tool_group_id 的现有数据
             const { toolCallResults: existingResults, mcpContentIndex } = extractToolCallDataByGroupId(currentContentList, tool_group_id);
 
             if (mcpContentIndex >= 0) {
@@ -385,10 +358,6 @@ export function useChatStream() {
               toolCallResults = existingResults;
               currentTotalDuration = currentContentList[mcpContentIndex]?.content?.totalDuration || 0;
             }
-          } else {
-            // 兼容没有 tool_group_id 的情况
-            const { toolCallResults: _toolCallResults } = extractToolCallData(currentContentList);
-            toolCallResults = _toolCallResults;
           }
         }
         // 累加当前的调用时间
@@ -405,9 +374,6 @@ export function useChatStream() {
         if (tool_group_id) {
           mcpContent = createMcpContentWithGroupId(tool_group_id, 'progress', toolCallResults, currentTotalDuration);
           currentContentList = updateContentListWithMcpByGroupId(currentContentList, mcpContent, tool_group_id);
-        } else {
-          mcpContent = createMcpContent('progress', toolCallResults, currentTotalDuration);
-          currentContentList = currentContentList.length > 0 ? updateContentListWithMcp(currentContentList, mcpContent) : [mcpContent];
         }
 
         const mcpMessage: MessageType = {
@@ -415,7 +381,7 @@ export function useChatStream() {
           role: 'assistant',
           contentList: currentContentList,
         };
-
+        console.log('mcpMessage', mcpMessage);
         addMessage(mcpMessage, !!id);
 
         // 8. 执行工具调用
@@ -446,9 +412,6 @@ export function useChatStream() {
         if (tool_group_id) {
           updatedMcpContent = createMcpContentWithGroupId(tool_group_id, finalStatus, toolCallResults);
           updatedContentList = updateContentListWithMcpByGroupId(currentContentList, updatedMcpContent, tool_group_id);
-        } else {
-          updatedMcpContent = createMcpContent(finalStatus, toolCallResults);
-          updatedContentList = updateContentListWithMcp(currentContentList, updatedMcpContent);
         }
 
         const updatedMessage: MessageType = {
@@ -456,21 +419,12 @@ export function useChatStream() {
           role: 'assistant',
           contentList: updatedContentList,
         };
-
         addMessage(updatedMessage, true);
 
         // 12. 处理后续操作
         if (!isToolError && toolCallHandlersRef.current.continueConversation) {
-          // 保存当前的 tool_group_id 以便在继续对话时使用
-          const currentToolGroupId = tool_group_id || requestState.current.lastToolGroupIdRef;
-          // 确保工具调用过程中保持加载状态
-          setIsLoading(true);
           // 调用继续对话函数
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
-          // 检查工具调用后是否重置了 lastToolGroupIdRef，如果是，则恢复它
-          if (!requestState.current.lastToolGroupIdRef && currentToolGroupId) {
-            requestState.current.lastToolGroupIdRef = currentToolGroupId;
-          }
         } else if (isToolError) {
           console.error('工具调用失败:', toolErrorMessage);
           const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
@@ -512,8 +466,6 @@ export function useChatStream() {
     async (toolResult: string) => {
       try {
         if (!currentSessionId) return;
-        // 设置加载状态，确保整个工具调用链中保持加载状态
-        setIsLoading(true);
         // 中止旧的请求控制器，避免状态混乱
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
@@ -529,9 +481,9 @@ export function useChatStream() {
         if (selectedMcpIds().length > 0) {
           continueRequestData.mcpIds = selectedMcpIds();
         }
-        console.log('继续对话使用上次的toolGroupId:', requestState.current.lastToolGroupIdRef);
         if (requestState.current.lastToolGroupIdRef) {
           continueRequestData.toolGroupID = requestState.current.lastToolGroupIdRef;
+          continueRequestData.content = '';
         }
         const API_BASE_URL = import.meta.env.VITE_HEALTH_API_URL || '';
         // 保持当前的响应内容，用于累加
@@ -582,17 +534,14 @@ export function useChatStream() {
                     if (allComplete) {
                       const hasError = toolCallResults.some((tool: any) => tool.status === 'error');
                       const finalStatus = hasError ? 'error' : 'success';
-
+                      const savedToolGroupId = requestState.current.lastToolGroupIdRef;
                       // 更新工具组状态 - 使用新的函数
-                      const updatedMcpContent = createMcpContentWithGroupId(
-                        contentItem.id, // tool_group_id
-                        finalStatus,
-                        toolCallResults,
-                        contentItem.content.totalDuration || 0,
-                      );
+                      if (savedToolGroupId) {
+                        const updatedMcpContent = createMcpContentWithGroupId(savedToolGroupId, finalStatus, toolCallResults, contentItem.content.totalDuration || 0);
 
-                      updatedContentList[index] = updatedMcpContent;
-                      hasUpdates = true;
+                        updatedContentList[index] = updatedMcpContent;
+                        hasUpdates = true;
+                      }
                     }
                   }
                 });
@@ -604,7 +553,6 @@ export function useChatStream() {
                     role: 'assistant',
                     contentList: updatedContentList,
                   };
-
                   addMessage(finalMessage, true);
                 }
               }
@@ -613,9 +561,6 @@ export function useChatStream() {
                 const finalContent = requestState.current.content.response || localResponseContent;
                 const aiMessage = buildMessageWithThinkContent(finalContent);
                 addMessage(aiMessage);
-
-                // 保存当前的 lastToolGroupIdRef，以免在重置状态时丢失
-                const savedToolGroupId = requestState.current.lastToolGroupIdRef;
 
                 requestState.current = {
                   content: {
@@ -629,21 +574,16 @@ export function useChatStream() {
                   timers: {
                     totalTimer: null,
                   },
-                  // 保留 tool_group_id 以便后续工具调用链
-                  lastToolGroupIdRef: savedToolGroupId,
+                  lastToolGroupIdRef: requestState.current.lastToolGroupIdRef,
                 };
                 functionIdCacheRef.current = {};
               } else {
-                // 只有在没有活动的工具调用时才清除状态
-                if (!requestState.current.status.isToolCallActive) {
-                  clearStreamingState();
-                }
+                const savedToolGroupId = requestState.current.lastToolGroupIdRef;
+                clearStreamingState();
+                requestState.current.lastToolGroupIdRef = savedToolGroupId;
               }
 
-              // 只有在没有活动的工具调用时才关闭加载状态
-              if (!requestState.current.status.isToolCallActive) {
-                setIsLoading(false);
-              }
+              setIsLoading(false);
               clearTimers();
             },
             onFallbackResponse: async (response) => {
@@ -778,17 +718,14 @@ export function useChatStream() {
                     if (allComplete) {
                       const hasError = toolCallResults.some((tool: any) => tool.status === 'error');
                       const finalStatus = hasError ? 'error' : 'success';
-
+                      const savedToolGroupId = requestState.current.lastToolGroupIdRef;
                       // 更新工具组状态 - 使用新的函数
-                      const updatedMcpContent = createMcpContentWithGroupId(
-                        contentItem.id, // tool_group_id
-                        finalStatus,
-                        toolCallResults,
-                        contentItem.content.totalDuration || 0,
-                      );
+                      if (savedToolGroupId) {
+                        const updatedMcpContent = createMcpContentWithGroupId(savedToolGroupId, finalStatus, toolCallResults, contentItem.content.totalDuration || 0);
 
-                      updatedContentList[index] = updatedMcpContent;
-                      hasUpdates = true;
+                        updatedContentList[index] = updatedMcpContent;
+                        hasUpdates = true;
+                      }
                     }
                   }
                 });
@@ -804,17 +741,10 @@ export function useChatStream() {
                   addMessage(finalMessage, true);
                 }
               }
-
               if (!requestState.current.status.isToolCallActive && (requestState.current.content.response || responseContent)) {
                 const finalContent = requestState.current.content.response || responseContent;
                 const aiMessage = buildMessageWithThinkContent(finalContent);
                 addMessage(aiMessage);
-
-                // 保留最终响应内容以便复制和重发按钮可以显示
-                // 注意：我们只清除内部状态而不是UI状态
-                // 保存当前的 lastToolGroupIdRef，以免在重置状态时丢失
-                const savedToolGroupId = requestState.current.lastToolGroupIdRef;
-
                 requestState.current = {
                   content: {
                     response: '',
@@ -827,21 +757,15 @@ export function useChatStream() {
                   timers: {
                     totalTimer: null,
                   },
-                  // 如果正在进行工具调用链，保留 lastToolGroupIdRef
-                  lastToolGroupIdRef: savedToolGroupId,
+                  lastToolGroupIdRef: requestState.current.lastToolGroupIdRef,
                 };
                 functionIdCacheRef.current = {};
               } else {
-                // 只有在没有活动的工具调用时才清除状态
-                if (!requestState.current.status.isToolCallActive) {
-                  clearStreamingState();
-                }
+                const savedToolGroupId = requestState.current.lastToolGroupIdRef;
+                clearStreamingState();
+                requestState.current.lastToolGroupIdRef = savedToolGroupId;
               }
-
-              // 只有在没有活动的工具调用时才关闭加载状态
-              if (!requestState.current.status.isToolCallActive) {
-                setIsLoading(false);
-              }
+              setIsLoading(false);
               clearTimers();
             },
 
@@ -868,7 +792,6 @@ export function useChatStream() {
   const sendChatMessage = useCallback(
     (userMessage: string) => {
       if (isLoading) {
-        console.log('正在加载中，忽略发送请求');
         return;
       }
       sendChatMessageInternal(userMessage);

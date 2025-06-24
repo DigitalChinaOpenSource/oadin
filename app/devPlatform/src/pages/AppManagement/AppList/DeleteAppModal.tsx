@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from 'antd';
-import styles from '@/pages/AppManagement/index.module.scss';
+import styles from '@/pages/AppManagement/AppList/index.module.scss';
 
 export interface DeleteAppModalProps {
   setDeletingApp: (deleteApp?: any) => void;

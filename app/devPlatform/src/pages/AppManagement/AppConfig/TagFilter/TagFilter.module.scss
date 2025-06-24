@@ -1,0 +1,48 @@
+@use '../../../../variables' as *;
+
+.container {
+  margin: 16px 0;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.filterLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tagsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: flex;
+  padding: 2px 8px;
+  align-items: center;
+  gap: 3px;
+  border-radius: 2px;
+  border: 1px solid $border-color;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $primary-color;
+  }
+}
+
+.tagSelected {
+  border-color: $primary-color;
+
+  span {
+    color: $primary-color;
+  }
+}

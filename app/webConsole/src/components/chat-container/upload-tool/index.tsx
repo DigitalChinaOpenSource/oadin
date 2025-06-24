@@ -4,7 +4,7 @@ import type { UploadProps, UploadFile } from 'antd';
 import { httpRequest } from '@/utils/httpRequest';
 import uploadSvg from '@/components/icons/upload.svg';
 import useChatStore from '../store/useChatStore';
-import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
+import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 
 interface UploadToolProps {
   maxFiles?: number;
@@ -26,7 +26,7 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToo
     errorType?: 'format' | 'size';
     errorMessage?: string;
   } => {
-    const supportedFormats = ['txt', 'html', 'md', 'markdown', 'pdf', 'doc', 'docx', 'xls', 'xlsx'];
+    const supportedFormats = ['txt', 'html', 'md', 'markdown', 'pdf', 'doc', 'docx', 'pptx', 'xlsx'];
     const fileName = file.name.toLowerCase();
     const fileExtension = fileName.slice(fileName.lastIndexOf('.') + 1);
     const isFormatValid = supportedFormats.includes(fileExtension);
@@ -140,9 +140,9 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToo
       beforeUpload={handleBeforeUpload}
       customRequest={customUploadRequest}
       multiple={false}
-      accept=".txt,.html,.htm,.md,.markdown,.pdf,.doc,.docx,.xls,.xlsx"
+      accept=".txt,.html,.htm,.md,.markdown,.pdf,.doc,.docx,.pptx,.xlsx"
     >
-      <Tooltip title="文件格式支持 TXT、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX，单个文件限制 50MB">
+      <Tooltip title="文件格式支持 TXT、HTML、Markdown、PDF、DOC、DOCX、PPTX、XLSX，单个文件限制 50MB">
         <Button
           icon={
             <img

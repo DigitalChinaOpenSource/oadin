@@ -1,0 +1,49 @@
+@use '../../../../variables' as *;
+
+.modelCard {
+  :global(.ant-card-body) {
+    padding: 12px 16px;
+  }
+  transition: box-shadow 0.3s ease;
+  border-radius: var(--size-Radius-border-radius-100, 4px);
+
+  &:hover {
+    box-shadow: 0px 4px 8px 0px rgba(52, 64, 84, 0.2);
+    .modelName {
+      color: $primary-color;
+    }
+  }
+}
+
+.headerContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.modelInfo {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+.modelName {
+  overflow: hidden;
+  color: var(--text-color-text-normal, #27272a);
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 22px; /* 157.143% */
+}
+.modelInfoImg {
+  display: flex;
+  align-items: center;
+  img {
+    width: 22px;
+    height: 22px;
+  }
+}
+.removeWarp {
+  cursor: pointer;
+}

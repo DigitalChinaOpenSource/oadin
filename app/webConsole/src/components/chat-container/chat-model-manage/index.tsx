@@ -33,7 +33,7 @@ export default function ChatModelManage(props: IChatModelManageProps) {
     {
       manual: true,
       onSuccess: (data: any) => {
-        console.log('思考状态更新成功:', data);
+        setIsThinking(data.thinking_active);
       },
       onError: (error: any) => {
         console.log('思考状态更新失败:', error);
