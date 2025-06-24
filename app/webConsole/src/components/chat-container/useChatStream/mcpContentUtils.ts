@@ -50,23 +50,9 @@ export const extractToolCallData = (contentList: any[], id?: string) => {
  * 创建 MCP 内容对象
  */
 export const createMcpContentWithGroupId = (toolGroupId: string, status: string, data: any[], totalDuration?: number) => {
+  console.log('toolGroupId ===>', toolGroupId, totalDuration);
   return {
     id: toolGroupId,
-    type: 'mcp' as const,
-    content: {
-      status,
-      data,
-      totalDuration,
-    },
-  };
-};
-
-/**
- * 创建 MCP 内容对象
- */
-export const createMcpContent = (status: string, data: any[], totalDuration?: number) => {
-  return {
-    id: generateUniqueId('content'),
     type: 'mcp' as const,
     content: {
       status,
@@ -88,22 +74,6 @@ export const updateContentListWithMcpByGroupId = (contentList: any[], mcpContent
     updatedList[mcpIndex] = mcpContent;
   } else {
     // 添加新项
-    updatedList.push(mcpContent);
-  }
-
-  return updatedList;
-};
-
-/**
- * 更新内容列表中的 MCP 项
- */
-export const updateContentListWithMcp = (contentList: any[], mcpContent: any) => {
-  const updatedList = [...contentList];
-  const mcpIndex = updatedList.findIndex((item) => item.type === 'mcp');
-
-  if (mcpIndex >= 0) {
-    updatedList[mcpIndex] = mcpContent;
-  } else {
     updatedList.push(mcpContent);
   }
 

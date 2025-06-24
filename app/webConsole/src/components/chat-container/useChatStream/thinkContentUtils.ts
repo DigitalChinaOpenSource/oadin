@@ -69,7 +69,7 @@ export const parseThinkContent = (content: string, hasUnfinishedThink: boolean =
           type: 'think',
           content: {
             data: unfinishedThinkContent,
-            status: 'progress',
+            status: 'error',
           },
         });
       }

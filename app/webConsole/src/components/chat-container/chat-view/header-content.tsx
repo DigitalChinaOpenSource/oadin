@@ -17,7 +17,7 @@ export const HeaderContent = () => {
       console.log('handleRemove fileId:', file);
       if (fileId) {
         await httpRequest.del('/playground/file', {
-          data: { file_id: fileId, sessionId: currentSessionId },
+          data: { fileId: fileId },
         });
       }
 

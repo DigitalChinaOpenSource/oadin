@@ -4,9 +4,10 @@ import { httpRequest } from '@/utils/httpRequest';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
+import useModelDownloadStore from '@/store/useModelDownloadStore';
 import { IPlaygroundSession } from './types';
 import { message } from 'antd';
-import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
+import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
 import { MessageType } from '@res-utiles/ui-components';
 import { IModelSquareParams, ModelData } from '@/types';
@@ -14,33 +15,62 @@ import { convertMessageFormat } from './utils/historyMessageFormat';
 
 export default function useViewModel() {
   const [isUploadVisible, setIsUploadVisible] = useState(false);
-  // TODO 获取当前是否下载词嵌入模型
   const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
+  const isDownloadEmbed = useModelDownloadStore((state) => state.isDownloadEmbed);
   const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionIdFromUrl = urlParams.get('sessionId');
+    const sessionIdFromStorage = sessionStorage.getItem('currentSessionId');
+
+    // 如果URL中没有sessionId但sessionStorage中有，则从sessionStorage恢复到URL
+    if (!sessionIdFromUrl && sessionIdFromStorage) {
+      setSessionIdToUrl(sessionIdFromStorage);
+    }
+  }, []);
+
   // 从URL中获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
-
   // 保存上一次使用的模型ID，用于检测模型是否变化
   const prevSelectedModelIdRef = useRef<string | undefined>(selectedModel?.id);
+  // 用于标记是否是页面初始化加载
+  const isInitialLoad = useRef(true);
+
+  // 在组件卸载时保存会话ID到sessionStorage
+  useEffect(() => {
+    return () => {
+      saveSessionIdToStorage();
+    };
+  }, []);
 
   useEffect(() => {
-    // 场景1: 如果当前会话ID不存在且已选择模型，则创建新的会话
-    // 场景2: 如果会话ID存在，但选择的模型发生变化，也创建新的会话
-    if (selectedModel?.id && (!currentSessionId || prevSelectedModelIdRef.current !== selectedModel.id)) {
+    // 场景1: 如果有会话ID(URL或sessionStorage)，则尝试获取历史对话详情
+    if (currentSessionId) {
+      if ((!selectedModel?.id || messages.length === 0) && isInitialLoad.current) {
+        // 页面初始化加载时，如果存在会话ID，则获取历史对话详情
+        fetchChatHistoryDetail(currentSessionId);
+      } else if (prevSelectedModelIdRef.current !== selectedModel?.id && selectedModel?.id) {
+        // 如果选择的模型发生变化，则创建新的会话
+        fetchCreateChat({ modelId: selectedModel.id });
+      }
+    } else if (selectedModel?.id) {
+      // 场景2: 如果没有会话ID但已选择模型，则创建新的会话
       fetchCreateChat({ modelId: selectedModel.id });
-    } else if (currentSessionId && !selectedModel?.id) {
-      // 页面刷新时，如果存在会话ID但没有选择模型，则获取历史对话详情
-      fetchChatHistoryDetail(currentSessionId);
-    } else if (currentSessionId && selectedModel?.id && messages.length === 0) {
-      // 页面刷新时，如果sessionId和selectedModel都存在但messages为空，则获取历史对话详情
-      fetchChatHistoryDetail(currentSessionId);
     }
 
     // 更新上一次使用的模型ID引用
     prevSelectedModelIdRef.current = selectedModel?.id;
+
+    // 首次运行后将初始化标志设为 false
+    isInitialLoad.current = false;
   }, [currentSessionId, selectedModel, messages.length]);
+
+  useEffect(() => {
+    if (!isDownloadEmbed) return;
+    fetchAllModels();
+  }, [isDownloadEmbed]);
 
   useEffect(() => {
     return () => {
@@ -49,18 +79,18 @@ export default function useViewModel() {
     };
   }, []);
 
-  // 获取历史对话详情
+  // 获取所有白泽下载的模型
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
       const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
-      return data || {};
+      return data || [];
     },
     {
       manual: true,
       onSuccess: (data: IChatDetailItem[]) => {
-        if (!data || data.length === 0) return message.error('获取历史对话记录失败');
+        if (!data || data.length === 0) return;
         // 将 IChatDetailItem[] 转换为 InputMessage[]
-        const inputMessages = data.map((item) => ({
+        const inputMessages = (data || []).map((item) => ({
           ...item,
           id: typeof item.id === 'number' ? String(item.id) : item.id,
         }));
@@ -69,6 +99,31 @@ export default function useViewModel() {
       },
       onError: () => {
         message.error('获取历史对话记录失败');
+      },
+    },
+  );
+
+  // 定义模型数据接口
+  interface ModelItem {
+    model_name: string;
+    [key: string]: unknown;
+  }
+
+  // 获取历史对话详情
+  const { run: fetchAllModels } = useRequest(
+    async () => {
+      const data = await httpRequest.get<ModelItem[]>('/model');
+      return data || [];
+    },
+    {
+      manual: true,
+      onSuccess: (data: ModelItem[]) => {
+        if (!data || data?.length === 0) return;
+        const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16');
+        setIsUploadVisible(isEmbed);
+      },
+      onError: () => {
+        message.error('获取所有下载模型列表失败');
       },
     },
   );
