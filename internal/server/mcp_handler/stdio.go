@@ -118,20 +118,18 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	s.mu.Unlock()
 
 	// 异步初始化客户端
-	go func() {
-		cli, err := s.initTransportClient(config)
-		if err != nil {
-			log.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
-			return
-		}
-		fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
-		slog.Info("[MCP] Initialized client for server", "server_id", config.Id)
-		s.mu.Lock()
-		s.clients[serverKey] = cli
-		s.mu.Unlock()
+	cli, err := s.initTransportClient(config)
+	if err != nil {
+		log.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
+		return err
+	}
+	fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
+	slog.Info("[MCP] Initialized client for server", "server_id", config.Id)
+	s.mu.Lock()
+	s.clients[serverKey] = cli
+	s.mu.Unlock()
 
-		s.FetchTools(context.Background(), serverKey)
-	}()
+	s.FetchTools(context.Background(), serverKey)
 
 	return nil
 }
