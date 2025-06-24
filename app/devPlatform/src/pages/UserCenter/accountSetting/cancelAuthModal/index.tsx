@@ -75,6 +75,7 @@ const CancelAuthModal: React.FC<CancelAuthModalProps> = ({ visible, onCancel, on
       className={styles.cancelModal}
       width={480}
       maskClosable={false}
+      destroyOnHidden={true}
     >
       <div className={styles.contentText}>
         <strong>很遗憾即将与您告别！</strong>

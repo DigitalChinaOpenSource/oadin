@@ -1,7 +1,7 @@
 import styles from '@/pages/UserCenter/accountSetting/sureAuthModal/index.module.scss';
 import { CloseOutlined } from '@ant-design/icons';
 import { Button, Form, Modal } from 'antd';
-import React from 'react';
+import React, { useEffect } from 'react';
 import ImageUpload from '@/pages/Login/components/ImageUpload';
 import LoginEnterpriseIcon from '@/assets/login-enterprise-icon.svg';
 import LoginFrontedIcon from '@/assets/login-fronted-icon.svg';
@@ -17,10 +17,12 @@ interface IAuthUploadModalProps {
 const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person' }: IAuthUploadModalProps) => {
   const [form] = Form.useForm();
 
-  const handleSure = () => {
-    form.validateFields();
-    console.log(111111);
+  const handleSure = async () => {
+    await form.validateFields();
+    console.log(form.getFieldsValue());
+    onConfirm();
   };
+
   // 上传企业营业执照
   const renderEnterpriseForm = () => {
     return (
@@ -86,6 +88,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person' }: 
       width={480}
       maskClosable={false}
       onOk={handleSure}
+      destroyOnHidden={true}
     >
       <div className={styles.description}>{userType === 'person' ? '为了保障您的账号安全和数据互通，请完成实名认证' : '采集企业营业执照信息是为了进行资质核验与服务保障'}</div>
 

@@ -1,38 +1,4 @@
 .cancelModal {
-  :global {
-    .ant-modal-content {
-      padding: 24px;
-      border-radius: 8px;
-    }
-
-    .ant-modal-footer {
-      margin-top: 16px;
-      padding: 0;
-      border-top: none;
-    }
-
-    .ant-modal-header {
-      padding: 0;
-      margin-bottom: 24px;
-    }
-
-    .ant-modal-title {
-      font-size: 18px;
-      font-weight: 500;
-      line-height: 28px;
-      color: #000115;
-    }
-
-    .ant-btn-default {
-      background: #f4f4f5;
-      color: #344054;
-
-      &:hover {
-        background: #e4e4e7;
-        border-color: #e4e4e7;
-      }
-    }
-  }
 }
 
 .headerTitle {

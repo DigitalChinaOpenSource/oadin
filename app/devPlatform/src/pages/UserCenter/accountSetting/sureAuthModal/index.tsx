@@ -24,13 +24,6 @@ const SureAuthModal: React.FC<ISureAuthModalProps> = ({
 }) => {
   const [form] = Form.useForm();
 
-  // 重置表单和倒计时
-  useEffect(() => {
-    if (!visible) {
-      form.resetFields();
-    }
-  }, [visible, form]);
-
   // 提交表单
   const handleSubmit = async () => {
     await form.validateFields();
@@ -116,6 +109,7 @@ const SureAuthModal: React.FC<ISureAuthModalProps> = ({
       className={styles.authModal}
       width={480}
       maskClosable={false}
+      destroyOnHidden={true}
     >
       <div className={styles.description}>为确保账号安全，注销前需进行身份验证</div>
 
