@@ -73,7 +73,6 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   }; /// 通过mcp的分页数据的变化来对数据进行组装
   useEffect(() => {
     // 仅在分页时累加数据，避免重复添加
-    console.info(pagination, '分页数据');
     if (pagination.current > 1) {
       const _allList = allList.concat(mcpListData);
       setFilteredData(_allList);
