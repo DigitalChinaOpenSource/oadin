@@ -377,12 +377,12 @@ export function useChatStream() {
         }
 
         const mcpMessage: MessageType = {
-          id: id,
+          id: tool_group_id || id,
           role: 'assistant',
           contentList: currentContentList,
         };
-        console.log('mcpMessage', mcpMessage);
-        addMessage(mcpMessage, !!id);
+        console.log('mcpMessage==>', mcpMessage);
+        addMessage(mcpMessage, !!(tool_group_id || id));
 
         // 8. 执行工具调用
         const data = await httpRequest.post('/mcp/client/runTool', { messageId: id, ...toolResponse });
@@ -410,15 +410,16 @@ export function useChatStream() {
         let updatedMcpContent;
         let updatedContentList;
         if (tool_group_id) {
-          updatedMcpContent = createMcpContentWithGroupId(tool_group_id, finalStatus, toolCallResults);
+          updatedMcpContent = createMcpContentWithGroupId(tool_group_id, finalStatus, toolCallResults, currentTotalDuration);
           updatedContentList = updateContentListWithMcpByGroupId(currentContentList, updatedMcpContent, tool_group_id);
         }
 
         const updatedMessage: MessageType = {
-          id: id,
+          id: tool_group_id || id,
           role: 'assistant',
           contentList: updatedContentList,
         };
+        console.log('updatedMessage==>', updatedMessage);
         addMessage(updatedMessage, true);
 
         // 12. 处理后续操作
