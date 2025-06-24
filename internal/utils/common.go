@@ -445,6 +445,17 @@ func StopByzeServer(pidFilePath string) error {
 			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
 		}
 	}
+	if runtime.GOOS == "windows" && IpexOllamaSupportGPUStatus() {
+		extraProcessName := "ollama-lib.exe"
+		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+		_, err := extraCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", extraProcessName)
+			return nil
+		}
+
+		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+	}
 	return nil
 }
 
