@@ -1,3 +1,5 @@
+@use '../../../../variables' as *;
+
 .container {
   margin: 16px 0;
 }
@@ -27,20 +29,20 @@
   align-items: center;
   gap: 3px;
   border-radius: 2px;
-  border: 1px solid #e4e4e7;
+  border: 1px solid $border-color;
   background: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: #4f4dff;
+    border-color: $primary-color;
   }
 }
 
 .tagSelected {
-  border-color: #4f4dff;
+  border-color: $primary-color;
 
   span {
-    color: #5429ff;
+    color: $primary-color;
   }
 }

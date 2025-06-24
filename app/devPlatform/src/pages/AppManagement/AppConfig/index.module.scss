@@ -1,14 +1,5 @@
 @use 'sass:color';
-
-// 变量定义
-$primary-color: #4f4dff;
-$text-color: #27272a;
-$text-secondary: #344054;
-$border-color: #e4e4e7;
-$bg-gray-50: #f9fafb;
-$bg-blue-light: #f5f8ff;
-$bg-blue-lighter: #ebf0ff;
-$error-color: #f5222d;
+@use '../../../variables' as *;
 
 // 容器样式
 .container {
