@@ -1,28 +1,6 @@
 @use 'sass:color';
 
-// SCSS变量定义 - 基于Figma设计稿
-$primary-color: #4f4dff; // 主色调
-$primary-color-weak: #5429ff;
-$bg-white: #fff;
-$bg-gray-50: #f9fafb; // 浅灰色背景
-$bg-gray-100: #f4f4f5; // 稍深灰色背景
-$bg-gray-200: #e5e7eb; // 分割线颜色
-$border-color: #e4e4e7;
-$text-normal: #27272a;
-$text-weak: #9e9faa;
-$text-gray-400: #9e9faa; // 弱文本
-$text-gray-500: #71717a; // 次要文本
-$text-gray-800: #27272a; // 主要文本
-$text-gray-900: #18181b; // 页面标题
-$bg-primary-weak: #dee7ff;
-$border-radius-100: 4px;
-$border-radius-200: 8px;
-$font-family: 'PingFang SC';
-$font-size-md: 14px;
-$font-size-lg: 16px;
-$line-height-md: 22px;
-$line-height-lg: 24px;
-
+@use '../../../variables' as *;
 // App Card样式 - 基于Figma设计稿
 .app-card-wrapper {
   display: flex;
