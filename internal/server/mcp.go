@@ -390,12 +390,6 @@ func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.
 		if err != nil {
 			return nil, err
 		}
-		// 处理 macOS 下路径包含空格的情况
-		// 例如: /Users/aipc/Library/Application Support/Byze/runtime/bun
-		// 需要将带空格的路径用引号包裹
-		if strings.Contains(command, " ") && !strings.HasPrefix(command, "\"") && !strings.HasSuffix(command, "\"") {
-			command = fmt.Sprintf("\"%s\"", command)
-		}
 
 		mcpServerConfig.Command = command
 		mcpServerConfig.Args = args
