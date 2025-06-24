@@ -31,7 +31,7 @@ const EmbedDownloadButton = React.memo(() => {
 
   // 选择模型后需要将所选择的通知奥丁
   const { run: fetchChooseModelNotify } = useRequest(async (params: { service_name: string; local_provider?: string; remote_provider?: string }) => {
-    if (!params.service_name) return;
+    if (!params?.service_name) return;
     const data = await httpRequest.put('/service', {
       ...params,
     });

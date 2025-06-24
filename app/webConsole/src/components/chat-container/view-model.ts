@@ -7,7 +7,7 @@ import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import { IPlaygroundSession } from './types';
 import { message } from 'antd';
-import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
+import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
 import { MessageType } from '@res-utiles/ui-components';
 import { IModelSquareParams, ModelData } from '@/types';
@@ -20,6 +20,17 @@ export default function useViewModel() {
   const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionIdFromUrl = urlParams.get('sessionId');
+    const sessionIdFromStorage = sessionStorage.getItem('currentSessionId');
+
+    // 如果URL中没有sessionId但sessionStorage中有，则从sessionStorage恢复到URL
+    if (!sessionIdFromUrl && sessionIdFromStorage) {
+      setSessionIdToUrl(sessionIdFromStorage);
+    }
+  }, []);
+
   // 从URL中获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
   // 保存上一次使用的模型ID，用于检测模型是否变化
@@ -27,17 +38,26 @@ export default function useViewModel() {
   // 用于标记是否是页面初始化加载
   const isInitialLoad = useRef(true);
 
+  // 在组件卸载时保存会话ID到sessionStorage
   useEffect(() => {
-    // 场景1: 如果当前会话ID不存在且已选择模型，则创建新的会话
-    // 场景2: 如果会话ID存在，但选择的模型发生变化，也创建新的会话
-    if (selectedModel?.id && (!currentSessionId || prevSelectedModelIdRef.current !== selectedModel.id)) {
+    return () => {
+      saveSessionIdToStorage();
+    };
+  }, []);
+
+  useEffect(() => {
+    // 场景1: 如果有会话ID(URL或sessionStorage)，则尝试获取历史对话详情
+    if (currentSessionId) {
+      if ((!selectedModel?.id || messages.length === 0) && isInitialLoad.current) {
+        // 页面初始化加载时，如果存在会话ID，则获取历史对话详情
+        fetchChatHistoryDetail(currentSessionId);
+      } else if (prevSelectedModelIdRef.current !== selectedModel?.id && selectedModel?.id) {
+        // 如果选择的模型发生变化，则创建新的会话
+        fetchCreateChat({ modelId: selectedModel.id });
+      }
+    } else if (selectedModel?.id) {
+      // 场景2: 如果没有会话ID但已选择模型，则创建新的会话
       fetchCreateChat({ modelId: selectedModel.id });
-    } else if (currentSessionId && !selectedModel?.id) {
-      // 页面刷新时，如果存在会话ID但没有选择模型，则获取历史对话详情
-      fetchChatHistoryDetail(currentSessionId);
-    } else if (currentSessionId && selectedModel?.id && messages.length === 0 && isInitialLoad.current) {
-      // 仅在页面初始加载时，如果sessionId和selectedModel都存在但messages为空，则获取历史对话详情
-      fetchChatHistoryDetail(currentSessionId);
     }
 
     // 更新上一次使用的模型ID引用
@@ -68,7 +88,7 @@ export default function useViewModel() {
     {
       manual: true,
       onSuccess: (data: IChatDetailItem[]) => {
-        console.log('fetchChatHistoryDetail', data);
+        if (!data || data.length === 0) return;
         // 将 IChatDetailItem[] 转换为 InputMessage[]
         const inputMessages = (data || []).map((item) => ({
           ...item,
@@ -83,17 +103,23 @@ export default function useViewModel() {
     },
   );
 
+  // 定义模型数据接口
+  interface ModelItem {
+    model_name: string;
+    [key: string]: unknown;
+  }
+
   // 获取历史对话详情
   const { run: fetchAllModels } = useRequest(
     async () => {
-      const data = await httpRequest.get('/model');
+      const data = await httpRequest.get<ModelItem[]>('/model');
       return data || [];
     },
     {
       manual: true,
-      onSuccess: (data: any) => {
+      onSuccess: (data: ModelItem[]) => {
         if (!data || data?.length === 0) return;
-        const isEmbed = data.some((item: any) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16');
+        const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16');
         setIsUploadVisible(isEmbed);
       },
       onError: () => {
