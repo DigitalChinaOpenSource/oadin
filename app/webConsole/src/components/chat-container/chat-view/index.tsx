@@ -133,7 +133,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             )}
 
             {/* 流式输出结束后显示复制和重新发送按钮 */}
-            {!isLoading && !error && streamingContent && (
+            {!isLoading && streamingContent && (
               <>
                 <Button
                   type="link"
@@ -147,6 +147,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                   icon={<ArrowClockwiseIcon width={16} />}
                   onClick={resendLastMessage}
                   loading={isResending}
+                  disabled={isResending}
                 >
                   重新发送
                 </Button>

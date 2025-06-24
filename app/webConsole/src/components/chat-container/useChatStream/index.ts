@@ -80,7 +80,7 @@ export function useChatStream() {
       shouldCancel?: boolean;
       appendToContent?: boolean;
       updateMcpStatus?: boolean;
-      toolGroupId?: string; // 新增：指定要更新的工具组ID
+      toolGroupId?: string;
     } = {},
   ) => {
     const { shouldCancel = true, appendToContent = false, updateMcpStatus = true, toolGroupId } = options;
@@ -215,14 +215,34 @@ export function useChatStream() {
       const finalContent = (requestState.current.content.response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
       const aiMessage = buildMessageWithThinkContent(finalContent);
       addMessage(aiMessage);
-    }
 
-    // 调用纯清理函数
-    cleanupResources();
-    // 清除流式状态
-    clearStreamingState();
-    // 更新加载状态
-    setIsLoading(false);
+      // 保留UI上的内容，但清除内部状态
+      requestState.current = {
+        content: {
+          response: '',
+          thinking: '',
+        },
+        status: {
+          hasReceivedData: false,
+          isToolCallActive: false,
+        },
+        timers: {
+          totalTimer: null,
+        },
+        lastToolGroupIdRef: null,
+      };
+      functionIdCacheRef.current = {};
+
+      setIsLoading(false);
+      cleanupResources();
+    } else {
+      // 调用纯清理函数
+      cleanupResources();
+      // 清除流式状态
+      clearStreamingState();
+      // 更新加载状态
+      setIsLoading(false);
+    }
   };
 
   // 创建流式请求
@@ -571,33 +591,35 @@ export function useChatStream() {
                 const finalContent = requestState.current.content.response || localResponseContent;
                 const aiMessage = buildMessageWithThinkContent(finalContent);
                 addMessage(aiMessage);
+
+                requestState.current = {
+                  content: {
+                    response: '',
+                    thinking: '',
+                  },
+                  status: {
+                    hasReceivedData: false,
+                    isToolCallActive: false,
+                  },
+                  timers: {
+                    totalTimer: null,
+                  },
+                  lastToolGroupIdRef: null,
+                };
+                functionIdCacheRef.current = {};
+              } else {
+                clearStreamingState();
               }
 
-              clearStreamingState();
               setIsLoading(false);
               clearTimers();
             },
             onFallbackResponse: async (response) => {
-              try {
-                const fullResponseText = await response.text();
-                try {
-                  const fullResponse = JSON.parse(fullResponseText);
-                  if (fullResponse.error) {
-                    handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.EXECUTION_FAILED, fullResponse.error), { error: fullResponse.error }, ErrorType.TOOL, {
-                      shouldCancel: false,
-                      appendToContent: true,
-                    });
-                  } else if (fullResponse?.data?.content) {
-                    // 使用 handleTextContent 处理响应内容
-                    const processedContent = handleTextContent({ content: fullResponse.data.content, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState);
-                    requestState.current.content.response = processedContent;
-                  }
-                } catch (parseError) {
-                  handleError(ERROR_MESSAGES.PARSING.TOOL_RESPONSE, parseError, ErrorType.PARSING, { shouldCancel: false, appendToContent: true });
-                }
-              } catch (readError) {
-                handleError(formatErrorMessage(ERROR_MESSAGES.CONNECTION.READ_FAILED, '读取工具调用响应失败'), readError, ErrorType.CONNECTION, { shouldCancel: false, appendToContent: true });
-              }
+              // 简化处理方式，统一使用错误提示
+              handleError(ERROR_MESSAGES.RESPONSE.NON_STREAMING, null, ErrorType.PARSING, {
+                shouldCancel: false,
+                appendToContent: true,
+              });
             },
           },
         );
@@ -755,40 +777,39 @@ export function useChatStream() {
                 const finalContent = requestState.current.content.response || responseContent;
                 const aiMessage = buildMessageWithThinkContent(finalContent);
                 addMessage(aiMessage);
+
+                // 保留最终响应内容以便复制和重发按钮可以显示
+                // 注意：我们只清除内部状态而不是UI状态
+                requestState.current = {
+                  content: {
+                    response: '',
+                    thinking: '',
+                  },
+                  status: {
+                    hasReceivedData: false,
+                    isToolCallActive: false,
+                  },
+                  timers: {
+                    totalTimer: null,
+                  },
+                  lastToolGroupIdRef: null,
+                };
+                functionIdCacheRef.current = {};
+              } else {
+                clearStreamingState();
               }
-              clearStreamingState();
+
               setIsLoading(false);
               clearTimers();
             },
 
             // 非流式响应处理
             onFallbackResponse: async (response) => {
-              try {
-                const fullResponseText = await response.text();
-                console.log('接收到非流式响应');
-
-                try {
-                  const fullResponse = JSON.parse(fullResponseText);
-
-                  // 检查是否包含错误信息
-                  if (fullResponse.error) {
-                    handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.SERVER_ERROR, fullResponse.error), { error: fullResponse.error }, ErrorType.REQUEST, { shouldCancel: true });
-                    return;
-                  }
-
-                  // 处理正常的非流式响应
-                  if (fullResponse?.data?.content) {
-                    const aiMessage = buildMessageWithThinkContent(fullResponse.data.content);
-                    addMessage(aiMessage);
-                  } else {
-                    handleError(ERROR_MESSAGES.RESPONSE.CANNOT_PARSE, null, ErrorType.PARSING, { shouldCancel: true });
-                  }
-                } catch (parseError) {
-                  handleError(ERROR_MESSAGES.PARSING.JSON_FAILED.replace('{0}', ''), parseError, ErrorType.PARSING, { shouldCancel: true });
-                }
-              } catch (readError) {
-                handleError(formatErrorMessage(ERROR_MESSAGES.CONNECTION.READ_FAILED, ''), readError, ErrorType.CONNECTION, { shouldCancel: true });
-              }
+              // 简化处理方式，统一使用错误提示
+              handleError(ERROR_MESSAGES.RESPONSE.NON_STREAMING, null, ErrorType.PARSING, {
+                shouldCancel: true,
+                appendToContent: false,
+              });
 
               // 停止请求
               cancelRequest();
