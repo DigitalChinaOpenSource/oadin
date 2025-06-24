@@ -359,7 +359,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	}
 	var selectedChunks []ChunkScore
 	for i := 0; i < len(allChunks) && includedChunksCount < maxChunks; i++ {
-		if allChunks[i].Similarity < similarityThreshold {
+		if allChunks[i].Similarity < 0.3 {
 			slog.Debug("块相似度低于阈值，已跳过",
 				"chunk_id", allChunks[i].ChunkID,
 				"similarity", allChunks[i].Similarity,
