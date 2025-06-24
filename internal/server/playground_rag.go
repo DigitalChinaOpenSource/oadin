@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"byze/config"
+	"byze/internal/datastore"
 	"byze/internal/datastore/sqlite"
 	"byze/internal/provider/engine"
 	"byze/internal/types"
@@ -105,26 +107,44 @@ func initVecDB(dbPath string) error {
 func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session *types.ChatSession, query string, options RAGOptions) (string, error) {
 	// 日志：入口参数
 	slog.Info("[RAG] findRelevantContextWithVec called", "sessionID", session.ID, "embedModelID", session.EmbedModelID, "query", query, "options", options)
+
+	// 验证会话参数
+	if session == nil {
+		slog.Error("[RAG] 会话对象为空")
+		return "", fmt.Errorf("会话对象为空")
+	}
+
+	if session.ID == "" {
+		slog.Warn("[RAG] 会话ID为空")
+		return "", fmt.Errorf("会话ID为空")
+	}
+
 	// 如果未设置嵌入模型，无法使用RAG
 	if session.EmbedModelID == "" {
 		slog.Warn("[RAG] EmbedModelID 为空，跳过RAG检索", "sessionID", session.ID)
 		return "", fmt.Errorf("这个会话没有设置嵌入模型，无法使用RAG功能")
 	}
+
+	// 检查VEC数据库初始化状态
 	if !vecInitialized || vecDB == nil {
-		slog.Warn("[RAG] VEC未初始化，跳过RAG检索", "sessionID", session.ID)
-		return "", fmt.Errorf("VEC未初始化")
+		slog.Warn("[RAG] VEC未初始化，尝试初始化", "sessionID", session.ID) // 尝试初始化VEC数据库
+		dbPath := config.GlobalByzeEnvironment.Datastore
+		if err := initVecDB(dbPath); err != nil {
+			slog.Error("[RAG] VEC初始化失败", "error", err)
+			return "", fmt.Errorf("VEC初始化失败: %w", err)
+		}
+
+		// 再次检查初始化状态
+		if !vecInitialized || vecDB == nil {
+			slog.Error("[RAG] VEC初始化后仍无效", "sessionID", session.ID)
+			return "", fmt.Errorf("VEC未正确初始化")
+		}
 	}
 	modelEngine := engine.NewEngine()
 
 	// 查询扩展
 	var queries []string
-	if options.EnableQueryExpansion {
-		queries = expandQuery(query)
-	} else {
-		queries = []string{query}
-	}
-	// 日志：扩展后的 queries
-	slog.Debug("[RAG] queries after expansion", "queries", queries)
+	queries = []string{query}
 	// 为每个查询变体生成嵌入
 	var queryEmbeddings [][]float32
 	for _, q := range queries {
@@ -140,64 +160,160 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 			slog.Error("[RAG] 查询变体嵌入生成失败", "sessionID", session.ID, "query", q, "error", err)
 			return "", fmt.Errorf("RAG: 查询变体嵌入生成失败: %w", err)
 		}
-		if len(embeddingResp.Data) == 0 {
+		if len(embeddingResp.Embeddings) == 0 {
 			slog.Error("[RAG] 嵌入返回数据为空", "sessionID", session.ID, "query", q)
 			return "", fmt.Errorf("RAG: 嵌入返回数据为空")
 		}
-		embedding := embeddingResp.Data[0].Embedding
+		embedding := embeddingResp.Embeddings[0]
 		slog.Info("[RAG] Got embedding", "sessionID", session.ID, "query", q, "embeddingDim", len(embedding))
 		queryEmbeddings = append(queryEmbeddings, embedding)
 	}
 	// 日志：所有 embedding 生成完成
 	slog.Info("[RAG] 查询embedding生成完成", "sessionID", session.ID, "successCount", len(queryEmbeddings), "totalQueries", len(queries))
+	// 额外调试日志，排查 queryEmbeddings 为空的原因
+	slog.Info("DEBUG: queryEmbeddings after loop", "len", len(queryEmbeddings), "cap", cap(queryEmbeddings), "isNil", queryEmbeddings == nil)
 	if len(queryEmbeddings) == 0 {
 		slog.Error("[RAG] 所有查询embedding生成失败", "sessionID", session.ID)
 		return "", fmt.Errorf("failed to generate query embeddings")
+	} // 构造文件查询，确保 SessionID 没有空格
+	fileQuery := &types.File{}
+	fileQuery.SessionID = strings.TrimSpace(session.ID)
+	slog.Info("[RAG] 文件查询参数", "sessionID", fileQuery.SessionID)
+
+	// 使用 In 查询方式
+	queryOpts := &datastore.ListOptions{
+		FilterOptions: datastore.FilterOptions{
+			In: []datastore.InQueryOption{
+				{
+					Key:    "session_id",
+					Values: []string{fileQuery.SessionID},
+				},
+			},
+		},
 	}
 
-	// 获取会话中的所有文件
-	fileQuery := &types.File{SessionID: session.ID}
-	files, err := p.Ds.List(ctx, fileQuery, nil)
+	// 尝试查询文件
+	files, err := p.Ds.List(ctx, fileQuery, queryOpts)
 	if err != nil {
 		slog.Error("RAG: 无法获取会话文件列表", "sessionID", session.ID, "error", err)
 		return "", err
 	}
+
+	// 验证查询结果
+	if len(files) == 0 {
+		// 记录警告日志并尝试其他方式
+		slog.Warn("RAG: 未找到关联文件，尝试其他查询方式", "sessionID", session.ID)
+
+		// 尝试使用模糊查询
+		fuzzyOpts := &datastore.ListOptions{
+			FilterOptions: datastore.FilterOptions{
+				Queries: []datastore.FuzzyQueryOption{
+					{
+						Key:   "session_id",
+						Query: fileQuery.SessionID,
+					},
+				},
+			},
+		}
+
+		files, err = p.Ds.List(ctx, fileQuery, fuzzyOpts)
+		if err != nil {
+			slog.Error("RAG: 模糊查询文件失败", "sessionID", session.ID, "error", err)
+		}
+	}
+
+	// 进行额外验证，确保文件确实属于指定会话
+	var validFiles []datastore.Entity
+	for _, file := range files {
+		if f, ok := file.(*types.File); ok {
+			if f.SessionID == fileQuery.SessionID {
+				validFiles = append(validFiles, file)
+				slog.Debug("[RAG] 验证通过的文件", "fileID", f.ID, "sessionID", f.SessionID)
+			} else {
+				slog.Warn("[RAG] 文件会话ID不匹配",
+					"fileID", f.ID,
+					"file.SessionID", f.SessionID,
+					"expected", fileQuery.SessionID)
+			}
+		}
+	}
+
+	// 使用验证后的文件列表
+	files = validFiles
+
+	// 增加详细调试日志
+	slog.Info("[RAG] 文件查询结果", "fileCount", len(files))
+	if len(files) > 0 {
+		for i, file := range files {
+			if f, ok := file.(*types.File); ok {
+				slog.Debug("[RAG] 找到文件", "index", i, "fileID", f.ID, "sessionID", f.SessionID)
+			}
+		}
+	}
+
 	if len(files) == 0 {
 		// 没有上传文件，将使用通用对话模式
 		slog.Info("RAG: 没有找到关联文件，将使用通用对话模式", "sessionID", session.ID)
+		// 尝试用其他方式排查问题
+		slog.Info("[RAG] 排查数据库问题")
+
 		return "", nil
 	}
-
 	slog.Info("RAG: 找到关联文件", "sessionID", session.ID, "fileCount", len(files))
+
+	// 再次检查vecDB可用性
+	if !vecInitialized || vecDB == nil {
+		slog.Error("[RAG] VEC数据库无法使用，尝试重新初始化", "sessionID", session.ID)
+		// 尝试初始化VEC数据库
+		dbPath := config.GlobalByzeEnvironment.Datastore
+		if err := initVecDB(dbPath); err != nil || !vecInitialized || vecDB == nil {
+			slog.Error("[RAG] VEC初始化失败，无法执行检索", "error", err)
+			return "", fmt.Errorf("VEC数据库不可用: %w", err)
+		}
+	}
+
 	// 使用VEC搜索所有查询变体的相似块（聚合所有结果，去重，排序）
 	allChunks := make([]ChunkScore, 0)
-	chunkMap := make(map[int64]ChunkScore) // rowid为key
+	chunkMap := make(map[string]ChunkScore) // UUID为key
 	startTime := time.Now()
-
 	slog.Info("RAG: 开始VEC检索", "sessionID", session.ID, "embedCount", len(queryEmbeddings), "maxChunks", options.MaxChunks*3)
-	for i, embedding := range queryEmbeddings {
-		ids, dists, err := vecDB.SearchSimilarChunks(ctx, embedding, options.MaxChunks*3)
+	for i, embedding := range queryEmbeddings { // 尝试向量搜索
+		ids, dists, err := vecDB.SearchSimilarChunks(ctx, embedding, options.MaxChunks*3, session.ID)
 		if err != nil {
-			slog.Error("RAG: VEC搜索失败", "sessionID", session.ID, "queryIndex", i, "error", err)
-			return "", fmt.Errorf("RAG: VEC搜索失败: %w", err)
+			// 向量搜索失败，尝试使用文本搜索作为备选
+			slog.Warn("RAG: VEC搜索失败，尝试使用文本搜索", "sessionID", session.ID, "queryIndex", i, "error", err) // 使用原始查询文本进行文本搜索
+			textQuery := queries[i]
+			ids, dists, err = vecDB.SearchSimilarChunksByText(ctx, textQuery, options.MaxChunks*3, session.ID)
+			if err != nil {
+				// 两种搜索方式都失败
+				slog.Error("RAG: 所有搜索方法均失败", "sessionID", session.ID, "queryIndex", i, "error", err)
+				return "", fmt.Errorf("RAG: 检索失败: %w", err)
+			}
+			slog.Info("RAG: 降级使用文本搜索成功", "sessionID", session.ID, "queryIndex", i)
 		}
 		slog.Debug("RAG: 检索到相似块", "sessionID", session.ID, "queryIndex", i, "resultCount", len(ids))
-
 		for i, id := range ids {
 			if _, exists := chunkMap[id]; exists {
 				continue
 			}
-			chunkQuery := &types.FileChunk{}
-			chunkQuery.ID = fmt.Sprint(id)
-			if err := p.Ds.Get(ctx, chunkQuery); err != nil {
-				slog.Error("获取文档块内容失败", "error", err, "chunk_id", id)
-				return "", fmt.Errorf("获取文档块内容失败: %w", err)
+			chunkContent := ""
+			chunkID := ""
+
+			// 只用主键 id 查询 chunk 内容，避免 file_id 干扰
+			if vecDB != nil {
+				chunkContent, chunkID, err = vecDB.GetChunkByID(ctx, id)
+				if err == nil && chunkContent != "" {
+					slog.Debug("RAG: 成功检索到chunk", "uuid", id, "chunkID", chunkID)
+				} else {
+					slog.Warn("RAG: 获取文档块失败", "error", err, "uuid", id)
+					continue
+				}
 			}
-			slog.Debug("RAG: 检索到chunk", "rowid", id, "chunkID", chunkQuery.ID, "content", chunkQuery.Content)
+
 			chunkMap[id] = ChunkScore{
-				ChunkID:    chunkQuery.ID,
-				Content:    chunkQuery.Content,
-				Similarity: float32(1.0 - dists[i]), // 距离转为相似度
+				ChunkID:    chunkID,
+				Content:    chunkContent,
+				Similarity: float32(1.0 - dists[i]),
 			}
 		}
 	}
@@ -243,7 +359,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	}
 	var selectedChunks []ChunkScore
 	for i := 0; i < len(allChunks) && includedChunksCount < maxChunks; i++ {
-		if allChunks[i].Similarity < similarityThreshold {
+		if allChunks[i].Similarity < 0.3 {
 			slog.Debug("块相似度低于阈值，已跳过",
 				"chunk_id", allChunks[i].ChunkID,
 				"similarity", allChunks[i].Similarity,

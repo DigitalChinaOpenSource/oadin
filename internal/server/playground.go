@@ -191,10 +191,10 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 
 	// 构建历史对话
-	history := make([]map[string]string, 0, len(messages)+1)
+	history := make([]map[string]interface{}, 0, len(messages)+1)
 	for _, m := range messages {
 		msg := m.(*types.ChatMessage)
-		history = append(history, map[string]string{
+		history = append(history, map[string]interface{}{
 			"role":    msg.Role,
 			"content": msg.Content,
 		})
@@ -215,7 +215,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 
 	// 添加当前用户消息
-	userMessage := map[string]string{
+	userMessage := map[string]interface{}{
 		"role":    "user",
 		"content": enhancedContent,
 	}
@@ -523,9 +523,9 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 		model := &types.Model{ModelName: modelInfo.Name}
 		err := p.Ds.Get(ctx, model)
 		if err == nil {
-			session.ThinkingEnabled = model.ThinkingEnabled
+			session.ThinkingEnabled = modelInfo.Think
 			// 切换模型时，如果新模型支持思考，则保持当前思考状态；如果不支持，则关闭思考
-			if !model.ThinkingEnabled {
+			if !modelInfo.Think {
 				session.ThinkingActive = false
 			}
 		}
