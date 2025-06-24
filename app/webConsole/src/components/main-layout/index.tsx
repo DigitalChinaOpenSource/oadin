@@ -5,7 +5,7 @@ import styles from './index.module.scss';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
 import { Layout, Tooltip } from 'antd';
 import TopHeader from '@/components/main-layout/top-header';
-import { CaretDoubleLeftIcon, CaretDoubleRightIcon } from '@phosphor-icons/react';
+import { ArrowLineLeftIcon, ArrowLineRightIcon } from '@phosphor-icons/react';
 import ByzeErrorTip from '@/components/byze-error-tip';
 
 export default function MainLayout() {
@@ -37,18 +37,16 @@ export default function MainLayout() {
           >
             {collapsed ? (
               <>
-                <CaretDoubleRightIcon
-                  width={20}
-                  height={20}
-                  fill="#71717D"
+                <ArrowLineRightIcon
+                  size={20}
+                  fill={'#71717D'}
                 />
               </>
             ) : (
               <>
-                <CaretDoubleLeftIcon
-                  width={20}
-                  height={20}
-                  fill="#71717D"
+                <ArrowLineLeftIcon
+                  size={20}
+                  fill={'#71717D'}
                 />
               </>
             )}
