@@ -129,8 +129,14 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	s.clients[serverKey] = cli
 	s.mu.Unlock()
 
-	s.FetchTools(context.Background(), serverKey)
-
+	toolsRequest := mcp.ListToolsRequest{}
+	ctx := context.Background()
+	tools, err := cli.ListTools(ctx, toolsRequest)
+	if err != nil {
+		fmt.Println("err", err)
+		return nil
+	}
+	fmt.Println("tools", tools.Tools)
 	return nil
 }
 
