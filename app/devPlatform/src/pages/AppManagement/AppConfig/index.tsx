@@ -1,21 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Checkbox, Form, message, Spin, Tooltip } from 'antd';
+import { Button, Checkbox, Form, List, message, Spin, Tooltip } from 'antd';
 import { ArrowLeftOutlined, CopyOutlined, EditOutlined, EyeOutlined, InfoCircleOutlined, PlusOutlined, RobotOutlined, SyncOutlined } from '@ant-design/icons';
 import styles from './index.module.scss';
-import CreateAppModal from '../CreateAppModal';
-import ModelSelectModal from '../ModelSelectModal';
-
-// 模拟可用的模型
-const availableModels = [
-  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-  { value: 'gpt-4', label: 'GPT-4' },
-  { value: 'gpt-4o', label: 'GPT-4o' },
-  { value: 'claude-3-opus', label: 'Claude 3 Opus' },
-  { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
-  { value: 'llama-3', label: 'Llama 3' },
-  { value: 'gemini-pro', label: 'Gemini Pro' },
-];
+import CreateAppModal from '../AppList/CreateAppModal.tsx';
+import ModelSelectModal from './ModelSelectModal/ModelSelectModal.tsx';
+import ModelCard from '@/pages/AppManagement/AppConfig/ModelCard/ModelCard.tsx';
+import { availableModels } from '@/pages/AppManagement/AppConfig/mock.ts';
+import { transformedCard2Ids, transformedCard2Tags } from '@/pages/AppManagement/AppConfig/uitls.ts';
+import { IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
+import TagFilter, { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx'; // 模拟可用的MCP服务
 
 // 模拟可用的MCP服务
 const availableMcps = [
@@ -40,7 +34,6 @@ const fetchAppDetail = async (id: string) => {
     name: `应用${id}`,
     appId: `app_${id.slice(0, 8)}`,
     secretKey: `sk_${id.slice(0, 12)}`,
-    modelCount: 3,
     mcpCount: 2,
     osCount: 1,
     updatedAt: new Date().toISOString(),
@@ -51,17 +44,6 @@ const fetchAppDetail = async (id: string) => {
       windows: true,
       macos: false,
       ubuntu: true,
-    },
-    configs: {
-      modelSettings: {
-        defaultModel: 'gpt-4',
-        temperature: 0.7,
-        maxTokens: 2048,
-      },
-      apiSettings: {
-        rateLimit: 100,
-        timeout: 30,
-      },
     },
   };
 };
@@ -96,6 +78,9 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   const [mcpSelectVisible, setMcpSelectVisible] = useState(false);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [selectedMcps, setSelectedMcps] = useState<string[]>([]);
+  const [filterModelTags, setFilterModelTags] = useState<Tag[]>([]);
+  const [selectedModelTag, setSelectedModelTag] = useState<string>('全部');
+  const [filterModelList, setFilterModelList] = useState<IModelSelectCardItem[]>([]);
 
   // 获取应用详情
   useEffect(() => {
@@ -124,7 +109,6 @@ const AppConfig: React.FC<AppConfigProps> = () => {
           description: data.description,
           supportedModels: data.supportedModels || [],
           supportedMcps: data.supportedMcps || [],
-          ...data.configs,
         });
       } catch (error) {
         message.error('获取应用详情失败');
@@ -136,6 +120,15 @@ const AppConfig: React.FC<AppConfigProps> = () => {
 
     loadAppDetail();
   }, [id, navigate, form]);
+
+  /// 根据外层选择的模型数据生成tags
+  useEffect(() => {
+    if (appDetail?.supportedModels?.length > 0) {
+      const tags = transformedCard2Tags(appDetail?.supportedModels);
+      setFilterModelTags(tags);
+      setFilterModelList(appDetail?.supportedModels);
+    }
+  }, [appDetail?.supportedModels]);
 
   const handleBack = () => {
     navigate('/app-management');
@@ -169,8 +162,6 @@ const AppConfig: React.FC<AppConfigProps> = () => {
         setAppDetail({
           ...appDetail,
           ...formValues,
-          modelCount: formValues.supportedModels?.length || 0,
-          mcpCount: formValues.supportedMcps?.length || 0,
         });
         message.success('保存成功');
       } else {
@@ -203,7 +194,6 @@ const AppConfig: React.FC<AppConfigProps> = () => {
         name: values.name,
       });
 
-      message.success('应用名称更新成功');
       setEditNameModalVisible(false);
     } catch (error) {
       console.error('Edit name error:', error);
@@ -221,19 +211,20 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   };
 
   // 处理确认模型选择
-  const handleModelSelectConfirm = (models: string[]) => {
+  const handleModelSelectConfirm = (models: IModelSelectCardItem[]) => {
     // 更新表单中的模型数据
-    form.setFieldsValue({ supportedModels: models });
-
+    form.setFieldsValue({ supportedModels: transformedCard2Ids(models) });
     // 更新应用数据
     setAppDetail({
       ...appDetail,
       supportedModels: models,
-      modelCount: models.length,
     });
 
     // 关闭弹窗
     setModelSelectVisible(false);
+  };
+  const onRemove = (model: IModelSelectCardItem) => {
+    console.info(model, '当前删除的内容');
   };
 
   // 处理打开MCP选择弹窗
@@ -252,11 +243,22 @@ const AppConfig: React.FC<AppConfigProps> = () => {
     setAppDetail({
       ...appDetail,
       supportedMcps: mcps,
-      mcpCount: mcps.length,
     });
 
     // 关闭弹窗
     setMcpSelectVisible(false);
+  };
+
+  // 选择model标签筛选
+  const onModelTagSelect = (modelTagLabel: string) => {
+    setSelectedModelTag(modelTagLabel);
+    if (modelTagLabel !== '全部') {
+      console.info(modelTagLabel, '当前选择的标签');
+      const filteredModels = appDetail?.supportedModels?.filter((model: IModelSelectCardItem) => model.class?.includes(modelTagLabel)) || [];
+      setFilterModelList(filteredModels);
+    } else {
+      setFilterModelList(appDetail?.supportedModels);
+    }
   };
 
   if (loading) {
@@ -356,98 +358,46 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                 {/* 支持的模型 */}
                 <div className={styles.configSection}>
                   <div className={styles.configItemRow}>
-                    <Form.Item required>
-                      <div className={styles.configLabel}>
-                        <span>支持的模型</span>
-
-                        <Button
-                          className={styles.modelSelectButton}
-                          onClick={handleOpenModelSelect}
-                          icon={<PlusOutlined />}
-                        >
-                          选择模型
-                        </Button>
-                      </div>
-                      {appDetail?.supportedModels?.length > 0 ? (
-                        <div className={styles.selectedModelsDisplay}>
-                          <div className={styles.selectedModelsInfo}>
-                            <div className={styles.selectedCount}>已选择 {appDetail.supportedModels.length} 个模型</div>
-                            <div className={styles.selectedModelsList}>
-                              {appDetail.supportedModels.map((modelValue: string) => {
-                                const model = availableModels.find((m) => m.value === modelValue);
-                                return (
-                                  <div
-                                    key={modelValue}
-                                    className={styles.selectedModelItem}
-                                  >
-                                    {model?.label || modelValue}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      ) : null}
-                    </Form.Item>
-                  </div>
-
-                  {/* 支持的MCP服务 */}
-                  <div className={styles.configItemRow}>
                     <div className={styles.configLabel}>
-                      <span>支持的MCP服务</span>
-                    </div>
+                      <span>支持的模型</span>
 
-                    <div className={styles.modelSelectArea}>
-                      {/* 没有选择MCP时显示按钮 */}
-                      {!appDetail?.supportedMcps || appDetail.supportedMcps.length === 0 ? (
-                        <Button
-                          className={styles.mcpSelectButton}
-                          onClick={handleOpenMcpSelect}
-                          icon={<PlusOutlined />}
-                        >
-                          选择MCP服务
-                        </Button>
-                      ) : (
-                        <div className={styles.selectedModelsDisplay}>
-                          <div className={styles.selectedModelsInfo}>
-                            <div className={styles.selectedCount}>已选择 {appDetail.supportedMcps.length} 个MCP服务</div>
-                            <div className={styles.selectedModelsList}>
-                              {appDetail.supportedMcps.map((mcpValue: string) => {
-                                const mcp = availableMcps.find((m) => m.value === mcpValue);
-                                return (
-                                  <div
-                                    key={mcpValue}
-                                    className={styles.selectedModelItem}
-                                  >
-                                    {mcp?.label || mcpValue}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                          <Button
-                            type="text"
-                            onClick={handleOpenMcpSelect}
-                            className={styles.editModelsButton}
-                          >
-                            编辑
-                          </Button>
-                        </div>
-                      )}
+                      <Button
+                        className={styles.modelSelectButton}
+                        onClick={handleOpenModelSelect}
+                        icon={<PlusOutlined />}
+                      >
+                        选择模型
+                      </Button>
                     </div>
+                    {filterModelTags.length > 0 ? (
+                      <TagFilter
+                        onTagSelect={onModelTagSelect}
+                        selectedTag={selectedModelTag}
+                        tags={filterModelTags}
+                      />
+                    ) : null}
+
+                    {filterModelList?.length > 0 ? (
+                      <List
+                        style={{ width: '100%' }}
+                        grid={{ gutter: 16, column: 4 }}
+                        dataSource={filterModelList}
+                        renderItem={(model: IModelSelectCardItem) => (
+                          <List.Item>
+                            <ModelCard
+                              model={model}
+                              onRemove={onRemove}
+                            />
+                          </List.Item>
+                        )}
+                      />
+                    ) : null}
                   </div>
 
                   {/* 隐藏的表单项用于验证 */}
                   <Form.Item
                     name="supportedModels"
                     rules={[{ required: true, message: '请至少选择一个模型' }]}
-                    hidden
-                  >
-                    <input type="hidden" />
-                  </Form.Item>
-
-                  <Form.Item
-                    name="supportedMcps"
                     hidden
                   >
                     <input type="hidden" />
@@ -531,16 +481,6 @@ const AppConfig: React.FC<AppConfigProps> = () => {
         title="选择模型"
         modelOptions={availableModels}
         initialSelectedModels={selectedModels}
-      />
-
-      {/* MCP服务选择弹窗 */}
-      <ModelSelectModal
-        open={mcpSelectVisible}
-        onCancel={() => setMcpSelectVisible(false)}
-        onFinish={handleMcpSelectConfirm}
-        title="选择MCP服务"
-        modelOptions={availableMcps}
-        initialSelectedModels={selectedMcps}
       />
     </div>
   );

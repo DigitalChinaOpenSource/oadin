@@ -1,26 +1,22 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Checkbox, Typography, Space } from 'antd';
+import { Checkbox, Form, Modal, Space, Typography } from 'antd';
 import styles from './ModelSelectModal.module.scss';
+import { IModelDataItem } from '@/types/model.ts';
+import { transformedIds2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
+import { IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
 
+// 模型选择弹窗
 export interface ModelSelectModalProps {
   open: boolean;
   onCancel: () => void;
-  onFinish: (selectedModels: string[]) => void;
+  onFinish: (selectedModels: IModelSelectCardItem[]) => void;
   title: string;
   confirmLoading?: boolean;
-  modelOptions: { value: string; label: string }[];
+  modelOptions: IModelDataItem[];
   initialSelectedModels?: string[];
 }
 
-const ModelSelectModal: React.FC<ModelSelectModalProps> = ({
-  open,
-  onCancel,
-  onFinish,
-  title,
-  confirmLoading = false,
-  modelOptions,
-  initialSelectedModels = []
-}) => {
+const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ open, onCancel, onFinish, title, confirmLoading = false, modelOptions, initialSelectedModels = [] }) => {
   const [form] = Form.useForm();
   const [selectedModels, setSelectedModels] = React.useState<string[]>(initialSelectedModels);
 
@@ -35,7 +31,8 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      onFinish(values.models || []);
+      const cardList = transformedIds2Card(modelOptions, values.models);
+      onFinish(cardList || []);
     } catch (error) {
       console.error('表单验证失败:', error);
     }
@@ -55,19 +52,29 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({
       width={600}
     >
       <div className={styles.modalContent}>
-        <Form form={form} layout="vertical">
+        <Form
+          form={form}
+          layout="vertical"
+        >
           <Form.Item
             name="models"
             rules={[{ required: true, message: '请至少选择一个模型' }]}
           >
-            <Checkbox.Group 
-              onChange={handleCheckboxChange} 
+            <Checkbox.Group
+              onChange={handleCheckboxChange}
               className={styles.checkboxGroup}
             >
-              <Space direction="vertical" className={styles.modelList}>
+              <Space
+                direction="vertical"
+                className={styles.modelList}
+              >
                 {modelOptions.map((model) => (
-                  <Checkbox key={model.value} value={model.value} className={styles.modelOption}>
-                    <Typography.Text>{model.label}</Typography.Text>
+                  <Checkbox
+                    key={model.id}
+                    value={model.id}
+                    className={styles.modelOption}
+                  >
+                    <Typography.Text>{model.name}</Typography.Text>
                   </Checkbox>
                 ))}
               </Space>
@@ -77,9 +84,7 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({
 
         {selectedModels.length > 0 && (
           <div className={styles.selectedCount}>
-            <Typography.Text type="secondary">
-              已选择 {selectedModels.length} 个项目
-            </Typography.Text>
+            <Typography.Text type="secondary">已选择 {selectedModels.length} 个项目</Typography.Text>
           </div>
         )}
       </div>

@@ -1,10 +1,10 @@
 /* eslint-disable no-promise-executor-return */
 import React, { useState } from 'react';
 import { Button, Input, message, Pagination, Spin } from 'antd';
-import AppCard from './AppCard';
+import AppCard from './AppCard.tsx';
 import { useRequest } from 'ahooks';
 import { PlusOutlined } from '@ant-design/icons';
-import CreateAppModal from './CreateAppModal';
+import CreateAppModal from './CreateAppModal.tsx';
 import DeleteAppModal from './DeleteAppModal.tsx';
 import styles from './index.module.scss';
 

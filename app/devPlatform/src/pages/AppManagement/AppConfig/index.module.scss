@@ -237,14 +237,9 @@ $error-color: #f5222d;
   padding: 16px;
   flex-direction: column;
   align-items: flex-start;
-  gap: 16px;
   align-self: stretch;
   border-radius: 8px;
   background: $bg-blue-light;
-
-  &:first-child {
-    margin-bottom: 16px;
-  }
 
   :global(.ant-form-item) {
     width: 100%;
