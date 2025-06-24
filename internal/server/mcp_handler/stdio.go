@@ -49,6 +49,8 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 			config.Args...,
 		)
 
+		slog.Info("[MCP] Initializing stdio transport for server", "server_id", config.Id, "command", config.Command, "args", config.Args, "env", envVars)
+		fmt.Println("[MCP] Initializing stdio transport for server:", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
@@ -136,16 +138,15 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 
 func (s *StdioTransport) Stop(serverKey string) error {
 	s.mu.Lock()
+	delete(s.Pending, serverKey)
 	cli, exists := s.clients[serverKey]
 	if !exists {
-		delete(s.Pending, serverKey)
 		s.mu.Unlock()
 		fmt.Printf("MCP Client for server %s does not exist, cannot stop\n", serverKey)
 		return nil
 	}
 	// 先从map删除，防止并发重复关闭
 	delete(s.clients, serverKey)
-	delete(s.Pending, serverKey)
 	s.mu.Unlock()
 
 	// 关闭客户端
