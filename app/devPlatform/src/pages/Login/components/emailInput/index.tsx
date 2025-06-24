@@ -22,6 +22,7 @@ const EmailInput = ({ form, codeFiled, placeholder }: { form: any; codeFiled: st
     >
       <Input
         className="formInput"
+        allowClear
         placeholder={placeholder ? placeholder : '请输入邮箱地址'}
         onChange={(e) => form.setFieldsValue({ [codeFiled]: e.target.value })} // 控制输入
       />

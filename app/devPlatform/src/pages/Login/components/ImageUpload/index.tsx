@@ -15,6 +15,7 @@ interface ImageUploadProps {
   rules?: any[];
   action?: string; // 添加上传地址
   customRequest?: (options: any) => void; // 添加自定义上传方法
+  bgIcon?: string;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -28,6 +29,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   rules,
   action = '/api/upload', // 默认上传地址
   customRequest,
+  bgIcon,
 }) => {
   const [fileList, setFileList] = useState<UploadFile[]>(value || []);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -145,8 +147,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             customRequest={customRequest} // 添加自定义上传方法
           >
             <div className={styles.uploadButton}>
-              <PlusOutlined />
-              <div className={styles.uploadText}>{title}</div>
+              {bgIcon ? (
+                <img
+                  src={bgIcon || ''}
+                  alt=""
+                />
+              ) : (
+                <>
+                  <PlusOutlined />
+                  <div className={styles.uploadText}>{title}</div>
+                </>
+              )}
             </div>
           </Upload>
         )}

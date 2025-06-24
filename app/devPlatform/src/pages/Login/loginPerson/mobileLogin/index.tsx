@@ -4,11 +4,11 @@ import LoginForm from '../../loginForm';
 import useLoginStore from '@/store/loginStore.ts';
 
 interface MobileLoginProps {
-  onLogin: (phone: string, verificationCode: string) => void;
+  onLogin?: (phone: string, verificationCode: string) => void;
   loading?: boolean;
 }
 
-const MobileLogin: React.FC<MobileLoginProps> = ({ onLogin }) => {
+const MobileLogin: React.FC<MobileLoginProps> = () => {
   return (
     <div className={styles.mobileLoginContainer}>
       {/* 头部标题区 */}

@@ -3,6 +3,8 @@ import { Button, Checkbox, Form, Input } from 'antd';
 import useLoginStore from '@/store/loginStore.ts';
 import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
 import EmailInput from '@/pages/Login/components/emailInput';
+import { useLoginView } from '@/pages/Login/useLoginView.ts';
+import { useEffect } from 'react';
 
 export interface IEnterpriseFormValues {
   email: string;
@@ -14,20 +16,29 @@ interface LoginFormProps {
   showAgreed?: boolean;
 }
 
-const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) => {
+const LoginEnterprise: React.FC<LoginFormProps> = ({ showAgreed = true }) => {
   const [form] = Form.useForm<IEnterpriseFormValues>();
-  const onFinish = (values: IEnterpriseFormValues) => {
+  const { loginWithEnterprise } = useLoginView();
+  const { enterpriseAccountData, setEnterpriseAccountData, setCurrentStep } = useLoginStore();
+
+  const onFinish = async (values: IEnterpriseFormValues) => {
     console.log('Received values of form: ', values);
-    onOk?.(values);
+    await loginWithEnterprise(values.email, values.password);
   };
-  const { setCurrentStep } = useLoginStore();
+
+  useEffect(() => {
+    if (enterpriseAccountData) {
+      form.setFieldsValue(enterpriseAccountData);
+    }
+  }, []);
+
   return (
     <div className={styles.loginEnterprise}>
       {/* 头部标题区 */}
-      <div className={styles.headerSection}>
-        <div className={styles.tabContainer}>
-          <div className={styles.tabItem}>
-            <span className={`${styles.tabTitle} `}>邮箱登录</span>
+      <div className="headerSection">
+        <div className="tabContainer">
+          <div className="tabItem">
+            <span className="tabTitle">邮箱登录</span>
           </div>
         </div>
       </div>
@@ -37,7 +48,10 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
           name="emailForm"
           autoComplete="off"
           onFinish={onFinish}
-          className={styles.loginForm}
+          className="loginForm"
+          onValuesChange={(values: IEnterpriseFormValues) => {
+            setEnterpriseAccountData(values);
+          }}
         >
           <EmailInput
             form={form}
@@ -60,6 +74,7 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
             <Input.Password
               className="formInput"
               placeholder="请输入密码"
+              allowClear
             />
           </Form.Item>
           {/* 同意协议复选框 */}
@@ -73,7 +88,7 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ onOk, showAgreed = true }) 
             <Button
               htmlType="submit"
               type="primary"
-              className={styles.loginButton}
+              className="loginButton"
             >
               登录
             </Button>

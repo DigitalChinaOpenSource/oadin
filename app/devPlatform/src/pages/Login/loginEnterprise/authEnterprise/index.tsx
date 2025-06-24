@@ -4,6 +4,7 @@ import { Button, Form } from 'antd';
 import ImageUpload from '@/pages/Login/components/ImageUpload';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import LoginEnterpriseIcon from '@/assets/login-enterprise-icon.svg';
 
 const AuthEnterprise = () => {
   const [form] = Form.useForm();
@@ -37,6 +38,7 @@ const AuthEnterprise = () => {
         >
           <ImageUpload
             title={'上传营业执照'}
+            bgIcon={LoginEnterpriseIcon}
             name="enterpriseIcon"
             rules={[{ required: true, message: '请上传营业执照' }]}
             onChange={(value) => form.setFieldsValue({ enterpriseIcon: value })}
