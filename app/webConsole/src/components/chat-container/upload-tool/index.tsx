@@ -14,7 +14,7 @@ interface UploadToolProps {
 // 自定义文件状态类型
 export type FileStatus = 'error' | 'uploading' | 'done';
 
-export default function UploadTool({ maxFiles = 5, maxFileSize = 50 }: UploadToolProps) {
+export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToolProps) {
   const { uploadFileList, setUploadFileList } = useChatStore();
   // 从URL中获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
@@ -142,7 +142,7 @@ export default function UploadTool({ maxFiles = 5, maxFileSize = 50 }: UploadToo
       multiple={false}
       accept=".txt,.html,.htm,.md,.markdown,.pdf,.doc,.docx,.xls,.xlsx"
     >
-      <Tooltip title="文件格式支持 txt、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX，单个文件限制 50MB">
+      <Tooltip title="文件格式支持 TXT、HTML、Markdown、PDF、DOC、DOCX、XLS、XLSX，单个文件限制 50MB">
         <Button
           icon={
             <img

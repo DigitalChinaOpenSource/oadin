@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { API_PREFIX, API_HEALTH_ENDPOINT } from './src/constants';
 
-const TESTURL = 'http://10.3.73.149:16688'; // 'http://10.3.74.123:16688'
+const TESTURL = 'http://10.3.73.66:16688'; // 'http://10.3.74.123:16688'
 export default defineConfig({
   base: './',
   build: {
