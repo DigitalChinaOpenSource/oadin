@@ -129,14 +129,6 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	s.clients[serverKey] = cli
 	s.mu.Unlock()
 
-	toolsRequest := mcp.ListToolsRequest{}
-	ctx := context.Background()
-	tools, err := cli.ListTools(ctx, toolsRequest)
-	if err != nil {
-		fmt.Println("err", err)
-		return nil
-	}
-	fmt.Println("tools", tools.Tools)
 	return nil
 }
 
@@ -228,4 +220,47 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil, fmt.Errorf("failed to call tool after 10 attempts for MCP %s", mcpId)
+}
+
+func (s *StdioTransport) ClientMAC() error {
+	config := types.MCPServerConfig{
+		Id:      "mac",
+		Command: "/Users/aipc/Library/Application Support/Byze/runtime",
+		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
+		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
+	}
+	var envVars []string
+	for k, v := range config.Env {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
+	}
+	stdioTransport := transport.NewStdio(
+		config.Command,
+		envVars,
+		config.Args...,
+	)
+
+	fmt.Println("[MCP] params", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
+	ctx := context.Background()
+
+	if err := stdioTransport.Start(ctx); err != nil {
+		fmt.Printf("failed to start stdio transport: %v", err)
+		return err
+	}
+
+	c := client.NewClient(stdioTransport)
+	initRequest := mcp.InitializeRequest{}
+	_, err := c.Initialize(ctx, initRequest)
+	if err != nil {
+		_ = stdioTransport.Close()
+		fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Id, err)
+		return err
+	}
+	toolsRequest := mcp.ListToolsRequest{}
+	tools, err := c.ListTools(ctx, toolsRequest)
+	if err != nil {
+		fmt.Println("failed to ListTools err", err)
+		return err
+	}
+	fmt.Println("tools", tools.Tools)
+	return nil
 }
