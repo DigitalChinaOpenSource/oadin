@@ -46,6 +46,7 @@ export default function useViewModel() {
   }, []);
 
   useEffect(() => {
+    if (messages.length > 0) return;
     // 场景1: 如果有会话ID(URL或sessionStorage)，则尝试获取历史对话详情
     if (currentSessionId) {
       if ((!selectedModel?.id || messages.length === 0) && isInitialLoad.current) {
