@@ -22,6 +22,8 @@ const availableMcps = [
 
 interface AppConfigProps {}
 
+export const defaultTag = '全部';
+
 // 模拟获取应用详情的接口
 const fetchAppDetail = async (id: string) => {
   console.log('Fetching app details for:', id);
@@ -76,10 +78,11 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   // 模型和MCP选择弹窗状态
   const [modelSelectVisible, setModelSelectVisible] = useState(false);
   const [mcpSelectVisible, setMcpSelectVisible] = useState(false);
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  // 当前选中的模型
+  const [selectedModels, setSelectedModels] = useState<IModelSelectCardItem[]>([]);
   const [selectedMcps, setSelectedMcps] = useState<string[]>([]);
   const [filterModelTags, setFilterModelTags] = useState<Tag[]>([]);
-  const [selectedModelTag, setSelectedModelTag] = useState<string>('全部');
+  const [selectedModelTag, setSelectedModelTag] = useState<string>(defaultTag);
   const [filterModelList, setFilterModelList] = useState<IModelSelectCardItem[]>([]);
 
   // 获取应用详情
@@ -121,18 +124,31 @@ const AppConfig: React.FC<AppConfigProps> = () => {
     loadAppDetail();
   }, [id, navigate, form]);
 
-  /// 根据外层选择的模型数据生成tags
+  /// 根据详情数据初始化内部是否已选中数据
   useEffect(() => {
     if (appDetail?.supportedModels?.length > 0) {
-      const tags = transformedCard2Tags(appDetail?.supportedModels);
-      setFilterModelTags(tags);
-      setFilterModelList(appDetail?.supportedModels);
+      setSelectModelsToForm(appDetail?.supportedModels);
     }
   }, [appDetail?.supportedModels]);
+
+  /// 根据选中的模型初始化需要显示的模型
+  useEffect(() => {
+    console.info(selectedModels, 'selectedModelsselectedModels');
+
+    const tags = transformedCard2Tags(selectedModels);
+    setFilterModelTags(tags);
+    setFilterModelList(selectedModels);
+  }, [selectedModels]);
+
+  const setSelectModelsToForm = (models: IModelSelectCardItem[]) => {
+    setSelectedModels(models);
+    form.setFieldsValue({ supportedModels: transformedCard2Ids(models) });
+  };
 
   const handleBack = () => {
     navigate('/app-management');
   };
+  //  保存
   const handleSave = async () => {
     // 验证协议是否勾选
     if (!agreement) {
@@ -159,10 +175,6 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       });
       if (result.success) {
         // 更新本地状态
-        setAppDetail({
-          ...appDetail,
-          ...formValues,
-        });
         message.success('保存成功');
       } else {
         message.error('保存失败');
@@ -205,26 +217,25 @@ const AppConfig: React.FC<AppConfigProps> = () => {
 
   // 处理打开模型选择弹窗
   const handleOpenModelSelect = () => {
-    // 初始化选中的模型
-    setSelectedModels(form.getFieldValue('supportedModels') || []);
     setModelSelectVisible(true);
   };
 
   // 处理确认模型选择
   const handleModelSelectConfirm = (models: IModelSelectCardItem[]) => {
     // 更新表单中的模型数据
-    form.setFieldsValue({ supportedModels: transformedCard2Ids(models) });
-    // 更新应用数据
-    setAppDetail({
-      ...appDetail,
-      supportedModels: models,
-    });
-
+    setSelectModelsToForm(models);
+    setSelectedModelTag(defaultTag);
     // 关闭弹窗
     setModelSelectVisible(false);
   };
-  const onRemove = (model: IModelSelectCardItem) => {
+  // 删除模型
+  const onRemoveModel = (model: IModelSelectCardItem) => {
     console.info(model, '当前删除的内容');
+    const filterList = selectedModels.filter((item) => {
+      return item.id !== model.id;
+    });
+    console.info(filterList, 'filterListfilterListfilterList');
+    setSelectModelsToForm(filterList);
   };
 
   // 处理打开MCP选择弹窗
@@ -252,12 +263,12 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   // 选择model标签筛选
   const onModelTagSelect = (modelTagLabel: string) => {
     setSelectedModelTag(modelTagLabel);
-    if (modelTagLabel !== '全部') {
+    if (modelTagLabel !== defaultTag) {
       console.info(modelTagLabel, '当前选择的标签');
-      const filteredModels = appDetail?.supportedModels?.filter((model: IModelSelectCardItem) => model.class?.includes(modelTagLabel)) || [];
+      const filteredModels = selectedModels?.filter((model: IModelSelectCardItem) => model.class?.includes(modelTagLabel)) || [];
       setFilterModelList(filteredModels);
     } else {
-      setFilterModelList(appDetail?.supportedModels);
+      setFilterModelList(selectedModels);
     }
   };
 
@@ -360,7 +371,6 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                   <div className={styles.configItemRow}>
                     <div className={styles.configLabel}>
                       <span>支持的模型</span>
-
                       <Button
                         className={styles.modelSelectButton}
                         onClick={handleOpenModelSelect}
@@ -386,7 +396,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                           <List.Item>
                             <ModelCard
                               model={model}
-                              onRemove={onRemove}
+                              onRemove={onRemoveModel}
                             />
                           </List.Item>
                         )}
