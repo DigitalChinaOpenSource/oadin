@@ -8,3 +8,7 @@
   font-weight: 600;
   color: #000000;
 }
+
+.ant-modal-header {
+  margin-bottom: 24px !important;
+}

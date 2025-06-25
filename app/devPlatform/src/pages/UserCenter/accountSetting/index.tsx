@@ -4,6 +4,7 @@ import styles from './index.module.scss';
 import { Button } from 'antd';
 import CancelAuthModal from './cancelAuthModal';
 import SureAuthModal from './sureAuthModal';
+import { IUserType } from '../types';
 
 const AccountSetting = ({ goBack }: { goBack: () => void }) => {
   // 控制注销弹窗的显示状态
@@ -59,7 +60,7 @@ const AccountSetting = ({ goBack }: { goBack: () => void }) => {
         visible={authModalVisible}
         onCancel={() => setAuthModalVisible(false)}
         onConfirm={handleAuthConfirm}
-        userType="enterprise"
+        userType={'enterprise'}
       />
     </div>
   );

@@ -5,23 +5,24 @@ import styles from './index.module.scss';
 import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import CodeInput from '@/pages/Login/components/codeInput';
 import EmailInput from '@/pages/Login/components/emailInput';
+import { IUserType } from '@/pages/UserCenter/types';
 
 interface ISureAuthModalProps {
   visible: boolean;
   onCancel: () => void;
   onConfirm: () => void;
-  userType: 'person' | 'enterprise';
+  userType: IUserType;
 }
 
 /**
  * 身份验证弹窗组件
  */
-const SureAuthModal: React.FC<ISureAuthModalProps> = ({
+const SureAuthModal = ({
   visible,
   onCancel,
   onConfirm,
   userType = 'person', // 默认为个人用户
-}) => {
+}: ISureAuthModalProps) => {
   const [form] = Form.useForm();
 
   // 提交表单
