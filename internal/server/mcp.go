@@ -502,6 +502,6 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 }
 
 func (M *MCPServerImpl) ClientMAC(ctx context.Context) error {
-	err := M.McpHandler.ClientMAC()
+	_, err := M.McpHandler.ClientMAC(nil)
 	return err
 }
