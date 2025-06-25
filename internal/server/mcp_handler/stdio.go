@@ -163,31 +163,14 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	if !exist {
 		return nil, fmt.Errorf("client for MCP %s not found", mcpId)
 	}
-
-	try := func() (*mcp.CallToolResult, error) {
-		ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
-		defer cancel()
-
-		fetchRequest := mcp.CallToolRequest{}
-		fetchRequest.Params.Name = params.Name
-		fetchRequest.Params.Arguments = params.Arguments
-		result, err := cli.CallTool(ctx, fetchRequest)
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
+	fetchRequest := mcp.CallToolRequest{}
+	fetchRequest.Params.Name = params.Name
+	fetchRequest.Params.Arguments = params.Arguments
+	result, err := cli.CallTool(ctx, fetchRequest)
+	if err != nil {
+		return nil, err
 	}
-
-	for i := range 3 {
-		result, err := try()
-		if err == nil {
-			return result, nil
-		}
-		fmt.Printf("Retrying to call tool for MCP %s, attempt %d\n", mcpId, i+1)
-		slog.Info("Retrying to call tool for MCP, attempt ", mcpId, i+1)
-		time.Sleep(100 * time.Millisecond)
-	}
-	return nil, fmt.Errorf("failed to call tool after 10 attempts for MCP %s", mcpId)
+	return result, nil
 }
 
 func (s *StdioTransport) ClientStart(config *types.MCPServerConfig) (*client.Client, error) {
