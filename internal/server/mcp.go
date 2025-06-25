@@ -35,6 +35,7 @@ type MCPServer interface {
 	ClientMcpStop(ctx context.Context, ids []string) error
 	ClientGetTools(ctx context.Context, mcpId string) ([]mcp.Tool, error)
 	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponse, error)
+	ClientMAC(ctx context.Context) error
 }
 
 type MCPServerImpl struct {
@@ -498,4 +499,9 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 		Logo:           logo,
 		ToolDesc:       toolDesc,
 	}, nil
+}
+
+func (M *MCPServerImpl) ClientMAC(ctx context.Context) error {
+	err := M.McpHandler.ClientMAC()
+	return err
 }
