@@ -56,6 +56,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
     if (can_select || status === COMPLETED || mine)
       return (
         <Button
+          disabled={props.isSelectable}
           className={styles.downloadedBtn}
           onClick={(e) => {
             e.stopPropagation();
@@ -183,7 +184,7 @@ export default function GeneralCard(props: IGeneralCardProps) {
 
   return (
     <div
-      className={`${styles.generalCard} ${!isDetail ? styles.generalCardHover : styles.generalCardDetail} `}
+      className={`${styles.generalCard} ${!isDetail ? styles.generalCardHover : styles.generalCardDetail}`}
       onClick={(e) => {
         if (props.isSelectable) {
           if (modelData?.can_select) {

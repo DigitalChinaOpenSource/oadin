@@ -22,7 +22,7 @@ export interface ISelectedDialogProps {
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
   const { selectedModel, setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
-  const [activeKey, setActiveKey] = useState<string>('my-models');
+  const [activeKey, setActiveKey] = useState<string>('model-square');
   const onChange = (activeKey: string) => {
     setActiveKey(activeKey);
   };
