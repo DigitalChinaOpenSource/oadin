@@ -51,7 +51,6 @@ export default function useViewModel() {
 
     // 如果来源是history，历史记录已经在chat-history-drawer组件中处理，这里不做任何操作
     if (source === 'history') {
-      console.log('初始化：从历史记录加载的会话，已处理:', sessionId);
       setPrevSessionId(sessionId);
       setInitialized(true);
       return;
@@ -59,43 +58,32 @@ export default function useViewModel() {
 
     if (sessionId && selectedModel?.id) {
       // 有会话ID且有模型，加载历史记录
-      console.log('初始化：加载历史会话', sessionId);
       fetchChatHistoryDetail(sessionId);
       setPrevSessionId(sessionId);
     } else if (selectedModel?.id) {
       // 无会话ID但有模型，创建新会话
-      console.log('初始化：创建新会话');
       fetchCreateChat({ modelId: selectedModel.id });
       setPrevModelId(selectedModel.id);
     }
-    // 没有模型ID的情况，会自动切换到选择模型页面，不需要处理
-
     setInitialized(true);
   }, [initialized, selectedModel]);
 
-  // 处理会话ID变化
   useEffect(() => {
     if (!initialized) return;
-
     // 如果会话ID变化了
     if (currentSessionId !== prevSessionId) {
       const source = getSessionSource();
-      console.log('会话ID变化:', currentSessionId, '来源:', source);
-
       // 来自历史记录的会话变更，已在chat-history-drawer中处理，这里仅更新状态
       if (source === 'history') {
-        console.log('从历史记录加载的会话，已处理:', currentSessionId);
         setPrevSessionId(currentSessionId);
       }
       // 其他来源（如URL直接修改或分享链接）且有会话ID，需要加载历史记录
       else if (currentSessionId && source !== 'new') {
-        console.log('其他来源的会话ID变化，加载历史记录:', currentSessionId);
         fetchChatHistoryDetail(currentSessionId);
         setPrevSessionId(currentSessionId);
       }
       // 新建会话的情况，只更新状态
       else if (source === 'new') {
-        console.log('新建会话:', currentSessionId);
         setPrevSessionId(currentSessionId);
       }
     }
@@ -109,7 +97,6 @@ export default function useViewModel() {
 
     // 如果模型变了且不是来自历史记录，创建新会话
     if (selectedModel.id !== prevModelId && source !== 'history') {
-      console.log('模型变化，创建新会话:', selectedModel.id);
       fetchCreateChat({ modelId: selectedModel.id });
       setPrevModelId(selectedModel.id);
     }
@@ -141,7 +128,7 @@ export default function useViewModel() {
     return data || {};
   });
 
-  // 获取所有白泽下载的模型
+  // 获取所有奥丁下载的模型
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
       const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
@@ -231,7 +218,7 @@ export default function useViewModel() {
       if (data && data.data && data.data.length) {
         return data.data.find((item) => item.id === modelId);
       } else {
-        return undefined; // 返回undefined表示没有找到对应模型
+        return undefined;
       }
     } catch (error) {
       return undefined;
@@ -254,7 +241,6 @@ export default function useViewModel() {
           setSelectMcpList([]);
           createNewChat();
 
-          // 更新prevSessionId避免重复创建
           setPrevSessionId(data.id);
         }
       },

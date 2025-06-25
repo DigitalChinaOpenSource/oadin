@@ -18,6 +18,9 @@ interface RequestState {
     content: {
       response: string;
       thinking: string;
+      // 新增：thinking 字段的累加状态
+      thinkingFromField: string;
+      isThinkingActive: boolean;
     };
     [key: string]: unknown;
   };
@@ -121,10 +124,11 @@ export const parseThinkContent = (content: string, hasUnfinishedThink: boolean =
  * 构建包含 think 内容的消息
  * @param responseContent 响应内容
  * @param isComplete 是否完成
- * @param thinkingContent 额外的思考内容
+ * @param thinkingContent 额外的思考内容（来自 thinking 字段或 <think> 标签）
+ * @param thinkingFromField 来自 thinking 字段的思考内容
  * @returns MessageType 对象
  */
-export const buildMessageWithThinkContent = (responseContent: string, isComplete: boolean = false, thinkingContent?: string): MessageType => {
+export const buildMessageWithThinkContent = (responseContent: string, isComplete: boolean = false, thinkingContent?: string, thinkingFromField?: string): MessageType => {
   // 检查是否有未闭合的 <think> 标签
   const openTagCount = (responseContent.match(/<think>/g) || []).length;
   const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
@@ -132,8 +136,19 @@ export const buildMessageWithThinkContent = (responseContent: string, isComplete
 
   const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
 
-  // 如果有额外的思考内容，添加到解析结果中
-  if (thinkingContent && thinkingContent.trim()) {
+  // 如果有来自 thinking 字段的思考内容，添加到解析结果的开头
+  if (thinkingFromField && thinkingFromField.trim()) {
+    parsedContents.unshift({
+      type: 'think',
+      content: {
+        data: thinkingFromField.trim(),
+        status: 'success',
+      },
+    });
+  }
+
+  // 如果有额外的思考内容（向后兼容），添加到解析结果中
+  if (thinkingContent && thinkingContent.trim() && thinkingContent !== thinkingFromField) {
     parsedContents.push({
       type: 'think',
       content: {
@@ -174,13 +189,31 @@ export const handleTextContent = (
 ): string => {
   let responseContent = currentResponseContent;
 
-  // 优先处理 thinking 字段
+  // 处理 thinking 字段的深度思考
   if (data.thinking !== undefined) {
-    // 直接更新思考内容
-    setStreamingThinking(data.thinking);
-    if (requestStateRef && requestStateRef.current) {
-      requestStateRef.current.content.thinking = data.thinking;
+    const isThinkingEnd = data.thinking === '' || data.thinking === null;
+
+    if (!requestStateRef.current.content.isThinkingActive && !isThinkingEnd) {
+      // 开始深度思考
+      requestStateRef.current.content.isThinkingActive = true;
+      requestStateRef.current.content.thinkingFromField = data.thinking;
+    } else if (requestStateRef.current.content.isThinkingActive && !isThinkingEnd) {
+      // 累加深度思考内容
+      requestStateRef.current.content.thinkingFromField += data.thinking;
+    } else if (requestStateRef.current.content.isThinkingActive && isThinkingEnd) {
+      // 结束深度思考 - 保持累加的内容，但标记为结束
+      requestStateRef.current.content.isThinkingActive = false;
     }
+
+    // 更新流式思考显示内容
+    let displayThinkingContent = requestStateRef.current.content.thinkingFromField || '';
+
+    // 如果还有其他来源的思考内容，合并显示
+    if (requestStateRef.current.content.thinking) {
+      displayThinkingContent = displayThinkingContent ? `${displayThinkingContent}\n\n${requestStateRef.current.content.thinking}` : requestStateRef.current.content.thinking;
+    }
+
+    setStreamingThinking(displayThinkingContent);
 
     // 如果同时也有 content 字段，作为普通内容处理
     if (data.content) {
@@ -228,11 +261,19 @@ export const handleTextContent = (
       })
       .join('\n\n');
 
-    // 更新思考内容
-    setStreamingThinking(thinkContents);
-    if (requestStateRef && requestStateRef.current) {
-      requestStateRef.current.content.thinking = thinkContents;
+    // 更新来自 <think> 标签的思考内容
+    requestStateRef.current.content.thinking = thinkContents;
+
+    // 合并所有思考内容进行显示
+    let displayThinkingContent = '';
+    if (requestStateRef.current.content.thinkingFromField) {
+      displayThinkingContent = requestStateRef.current.content.thinkingFromField;
     }
+    if (thinkContents) {
+      displayThinkingContent = displayThinkingContent ? `${displayThinkingContent}\n\n${thinkContents}` : thinkContents;
+    }
+
+    setStreamingThinking(displayThinkingContent);
 
     // 提取纯文本内容
     const plainContents = parsedContents
@@ -242,7 +283,15 @@ export const handleTextContent = (
 
     setStreamingContent(plainContents);
   } else {
-    // 没有 think 标签，正常设置
+    // 没有 <think> 标签时，只更新来自 <think> 标签的思考内容为空
+    requestStateRef.current.content.thinking = '';
+
+    // 但仍需要显示来自 thinking 字段的内容
+    if (requestStateRef.current.content.thinkingFromField) {
+      setStreamingThinking(requestStateRef.current.content.thinkingFromField);
+    }
+
+    // 正常设置响应内容
     setStreamingContent(responseContent);
   }
 
