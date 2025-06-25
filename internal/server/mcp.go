@@ -1,6 +1,7 @@
 package server
 
 import (
+	ConfigRoot "byze/config"
 	"byze/internal/datastore"
 	"byze/internal/hardware"
 	"byze/internal/hardware/installer"
@@ -241,6 +242,9 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 					commandBuilder.WithEnv(key, value)
 				}
 			}
+			commandBuilder.WithEnv("NPM_CONFIG_REGISTRY", ConfigRoot.ConfigRootInstance.Registry.Npm)
+			commandBuilder.WithEnv("PIP_INDEX_URL", ConfigRoot.ConfigRootInstance.Registry.Pip)
+			commandBuilder.WithEnv("UV_DEFAULT_INDEX", ConfigRoot.ConfigRootInstance.Registry.Pip)
 			slog.Info("执行mcp 安装命令: ", y.Command, " args: ", y.Args, " env: ", y.Env)
 			// 执行安装命令
 			output, errOut, err := commandBuilder.WithTimeout(time.Minute).Execute()
