@@ -1,0 +1,21 @@
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.description {
+  align-self: stretch;
+  color: #71717d;
+  text-align: justify;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  margin-bottom: 24px;
+}

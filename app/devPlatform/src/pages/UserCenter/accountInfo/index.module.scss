@@ -6,10 +6,10 @@
   gap: 24px;
   align-self: stretch;
   border-radius: 8px;
-  background: #FFF;
+  background: #fff;
   box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.15);
   &:hover {
-    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
+    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -26,7 +26,6 @@
   align-items: center;
   gap: 16px;
 }
-
 
 .userInfo {
   display: flex;
@@ -61,7 +60,7 @@
 .divider {
   height: 1px;
   width: 100%;
-  background-color: #E4E4E7;
+  background-color: #e4e4e7;
 }
 
 .infoRow {
@@ -100,19 +99,19 @@
 }
 
 .bindingText {
-  color: #00CC39;
+  color: #00cc39;
   font-size: 11px;
   font-weight: 400;
   line-height: 20px;
 }
 .noBindingText {
-    color: #ff9300;
+  color: #ff9300;
   font-size: 11px;
   font-weight: 400;
   line-height: 20px;
 }
 
-.wechatRow {
+.commonRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -127,8 +126,8 @@
   align-items: center;
   gap: 4px;
   border-radius: 4px;
-  border: 1px solid #D4D4D9;
-  color: #27272A;
+  border: 1px solid #d4d4d9;
+  color: #27272a;
   font-size: 14px;
   font-weight: 400;
   line-height: 22px;

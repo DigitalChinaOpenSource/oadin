@@ -52,7 +52,7 @@ const RealNameAuth = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
         visible={authModalVisible}
         onCancel={() => setAuthModalVisible(false)}
         onConfirm={handleConfirm}
-        userType="person"
+        userType={userType}
         title={haveAuth ? '变更实名信息' : '实名认证'}
       />
     </div>
