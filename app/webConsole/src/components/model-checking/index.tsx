@@ -36,14 +36,21 @@ export default function ModelChecking() {
       );
     }
   };
+
+  const handleAutoSetModel = (data: selectedModelType) => {
+    setSelecteStatedModel(data);
+  };
+
   const isHasMedel = useMemo(() => {
     return modelListData.length > 0;
   }, [modelListData]);
+
   useEffect(() => {
     fetchModelSupport({
       service_source: 'local',
     });
   }, []);
+
   return (
     <Skeleton loading={modelSupportLoading}>
       <div>
@@ -59,6 +66,7 @@ export default function ModelChecking() {
               vm={vm}
               selectedStateModel={selectedStateModel}
               setSelecteStatedModel={setSelecteStatedModel}
+              handleAutoSetModel={handleAutoSetModel}
             />
           ) : (
             <ModelCheckingNodata />
