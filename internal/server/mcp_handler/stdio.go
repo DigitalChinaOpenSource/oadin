@@ -71,7 +71,7 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	// }
 
 	for i := range 3 {
-		c, err := s.ClientMAC(config)
+		c, err := s.ClientStart(config)
 		if err == nil {
 			return c, nil
 		}
@@ -80,7 +80,7 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	}
 
 	// 如果重试失败，删除Pending状态
-	c, err := s.ClientMAC(config)
+	c, err := s.ClientStart(config)
 	if err == nil {
 		return c, nil
 	} else {
@@ -222,14 +222,9 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	return nil, fmt.Errorf("failed to call tool after 10 attempts for MCP %s", mcpId)
 }
 
-func (s *StdioTransport) ClientMAC(config *types.MCPServerConfig) (*client.Client, error) {
+func (s *StdioTransport) ClientStart(config *types.MCPServerConfig) (*client.Client, error) {
 	if config == nil {
-		config = &types.MCPServerConfig{
-			Id:      "mac",
-			Command: "/Users/aipc/Library/Application Support/Byze/runtime/bun",
-			Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
-			Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
-		}
+		return nil, errors.New("config cannot be nil")
 	}
 	var envVars []string
 	for k, v := range config.Env {
