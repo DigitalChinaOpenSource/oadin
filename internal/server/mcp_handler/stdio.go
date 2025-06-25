@@ -223,9 +223,6 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 }
 
 func (s *StdioTransport) ClientStart(config *types.MCPServerConfig) (*client.Client, error) {
-	if config == nil {
-		return nil, errors.New("config cannot be nil")
-	}
 	var envVars []string
 	for k, v := range config.Env {
 		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))

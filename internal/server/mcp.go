@@ -502,6 +502,12 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 }
 
 func (M *MCPServerImpl) ClientMAC(ctx context.Context) error {
-	_, err := M.McpHandler.ClientStart(nil)
+	config := &types.MCPServerConfig{
+		Id:      "mac",
+		Command: "/Users/aipc/Library/Application Support/Byze/runtime/bun",
+		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
+		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
+	}
+	_, err := M.McpHandler.ClientStart(config)
 	return err
 }
