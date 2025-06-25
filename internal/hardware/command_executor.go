@@ -93,6 +93,7 @@ func (cb *CommandBuilder) Execute() (string, string, error) {
 	cmd := exec.CommandContext(ctx, cmdExec, cmdArgs...)
 	// 配置环境变量
 	cmd.Env = cb.envVars
+
 	// 设置工作目录
 	if cb.workingDir != "" {
 		cmd.Dir = cb.workingDir
