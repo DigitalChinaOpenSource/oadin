@@ -75,10 +75,10 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 		bcode.ReturnError(c, err)
 		return
 	}
-	// c.Writer.Header().Set("Content-Type", "text/event-stream")
-	// c.Writer.Header().Set("Cache-Control", "no-cache")
-	// c.Writer.Header().Set("Connection", "keep-alive")
-	// c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 
 	ctx := c.Request.Context()
 
@@ -103,15 +103,15 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 						return
 					}
 				}
-				// 数据通道关闭，发送结束标记
-
-				// fmt.Fprintf(w, "\n[DONE]\n\n")
-				// flusher.Flush()
-				// 通道中没有数据，再结束推送
+				//通道中没有数据，再结束推送
 				if data == nil {
 					fmt.Fprintf(w, "data: {\"status\": \"success\"}\n\n")
 					return
 				}
+				//数据通道关闭，发送结束标记
+				fmt.Fprintf(w, "\n[DONE]\n\n")
+				flusher.Flush()
+
 			}
 
 			// 解析Ollama响应
@@ -149,6 +149,10 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 
 		case <-ctx.Done():
 			fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"timeout\"}\n\n")
+			flusher.Flush()
+			return
+		default:
+			fmt.Fprintf(w, "data: {\"status\": \"success\"}\n\n")
 			flusher.Flush()
 			return
 		}
