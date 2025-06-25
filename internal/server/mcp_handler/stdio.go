@@ -225,7 +225,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 func (s *StdioTransport) ClientMAC() error {
 	config := types.MCPServerConfig{
 		Id:      "mac",
-		Command: "/Users/aipc/Library/Application Support/Byze/runtime",
+		Command: "/Users/aipc/Library/Application Support/Byze/runtime/bun",
 		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
 		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
 	}
