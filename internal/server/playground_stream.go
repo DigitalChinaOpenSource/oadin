@@ -127,9 +127,6 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			chatRequest.Tools = request.Tools
 		}
 
-		// 异步增加会话标题
-		go p.AddSessionTitle(ctx, request)
-
 		// 调用流式API
 		responseStream, streamErrChan := modelEngine.ChatStream(ctx, chatRequest)
 
@@ -166,7 +163,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 					err = p.Ds.Add(ctx, assistantMsg)
 					if err != nil {
-						slog.Error("Failed to save assistant message", "error", err)
+						slog.Error("Failed to save assistant message", "error", err, assistantMsgID)
 					}
 					// 保存思考内容（如果有）
 					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
@@ -269,6 +266,8 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						p.MarkToolCallEnd(ctx, request.SessionID, request.ToolGroupID, assistantMsgID)
 					}
 
+					// 异步增加会话标题
+					go p.AddSessionTitle(ctx, request)
 					fmt.Println("流式输出完成，保存助手回复", resp)
 					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
@@ -377,17 +376,31 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 			if inputParams != "" && inputParams != "" {
 				// 尝试将转义的 JSON 字符串还原为原始 JSON
 				var inputObj interface{}
-				var outputObj interface{}
 				if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
 					// 重新格式化为缩进后的 JSON 字符串
 					if pretty, err := json.MarshalIndent(inputObj, "", "  "); err == nil {
 						inputParams = string(pretty)
 					}
 				}
+
+				// 解析 outputParams，获取嵌套的 text 字段
+				type ContentItem struct {
+					Type string `json:"type"`
+					Text string `json:"text"`
+				}
+				type OutputContent struct {
+					Content []ContentItem `json:"content"`
+				}
+				var outputObj OutputContent
 				if err := json.Unmarshal([]byte(outputParams), &outputObj); err == nil {
-					if pretty, err := json.MarshalIndent(outputObj, "", "  "); err == nil {
-						outputParams = string(pretty)
+					// 提取所有 text 字段拼接
+					var texts []string
+					for _, item := range outputObj.Content {
+						texts = append(texts, item.Text)
 					}
+					outputParams = strings.Join(texts, "\n")
+				} else {
+					fmt.Println(err)
 				}
 
 				history = append(history, map[string]string{
@@ -396,11 +409,14 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 				})
 				history = append(history, map[string]string{
 					"role":    "user",
-					"content": outputParams,
+					"content": fmt.Sprintf("我的问题是：%s\n  Here is the result of mcp tool use `%s`:", con.Content, msg.Name, outputParams),
 				})
 			}
 		}
 	}
+
+	systemPrompt := "你刚才多次调用了不同的工具，请结合所有工具调用的结果，给出综合性的总结和建议，不要只关注最后一次工具调用。"
+	history = append([]map[string]string{{"role": "system", "content": systemPrompt}}, history...)
 	return history
 }
 
