@@ -91,7 +91,14 @@ export default function useViewModel() {
 
   // 处理模型变化
   useEffect(() => {
-    if (!initialized || !selectedModel) return;
+    if (!initialized) return;
+
+    // 如果没有选定模型，清除URL中的sessionId和source参数
+    if (!selectedModel) {
+      setSessionIdToUrl(''); // 传入空字符串会清除sessionId和source参数
+      setPrevSessionId(null);
+      return;
+    }
 
     // 当模型变化时，只更新prevModelId的状态，不自动创建新会话
     if (selectedModel.id !== prevModelId) {
