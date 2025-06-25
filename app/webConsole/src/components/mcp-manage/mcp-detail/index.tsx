@@ -100,7 +100,7 @@ export default function McpDetail() {
                     <Button
                       type="default"
                       loading={cancelMcpLoading}
-                      onClick={() => handleCancelMcp}
+                      onClick={() => handleCancelMcp()}
                       disabled={downMcpLoading || authMcpLoading}
                     >
                       取消添加
