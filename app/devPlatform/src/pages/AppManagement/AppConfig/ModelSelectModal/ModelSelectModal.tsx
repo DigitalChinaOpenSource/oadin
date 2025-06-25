@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Checkbox, Form, Modal, Space, Typography } from 'antd';
 import styles from './ModelSelectModal.module.scss';
 import { IModelDataItem } from '@/types/model.ts';
-import { transformedIds2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
+import { transformedCard2Ids, transformedIds2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
 import { IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
 
 // 模型选择弹窗
@@ -13,18 +13,18 @@ export interface ModelSelectModalProps {
   title: string;
   confirmLoading?: boolean;
   modelOptions: IModelDataItem[];
-  initialSelectedModels?: string[];
+  initialSelectedModels?: IModelSelectCardItem[];
 }
 
 const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ open, onCancel, onFinish, title, confirmLoading = false, modelOptions, initialSelectedModels = [] }) => {
   const [form] = Form.useForm();
-  const [selectedModels, setSelectedModels] = React.useState<string[]>(initialSelectedModels);
+  const [selectedModels, setSelectedModels] = useState<IModelSelectCardItem[]>(initialSelectedModels || []);
 
   // 当初始值或弹窗打开状态变化时更新选中的模型
   useEffect(() => {
     if (open) {
       setSelectedModels(initialSelectedModels);
-      form.setFieldsValue({ models: initialSelectedModels });
+      form.setFieldsValue({ models: transformedCard2Ids(initialSelectedModels) });
     }
   }, [initialSelectedModels, open, form]);
 

@@ -1,6 +1,7 @@
 import { IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
 import { IModelDataItem } from '@/types/model.ts';
 import { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
+import { defaultTag } from '@/pages/AppManagement/AppConfig/index.tsx';
 
 export const transformedAll2Card = (allList: IModelDataItem[]): IModelSelectCardItem[] => {
   return allList.map((item) => {
@@ -64,7 +65,7 @@ export const transformedCard2Tags = (cardList: IModelSelectCardItem[]): Tag[] =>
 
   // 添加"全部"标签，计数为所有卡片的数量
   const allTag: Tag = {
-    label: '全部',
+    label: defaultTag,
     count: cardList.length,
   };
 
