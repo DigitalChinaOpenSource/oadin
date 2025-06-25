@@ -38,40 +38,40 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	if config.Command == "" {
 		return nil, errors.New("command must be provided")
 	}
-	try := func() (*client.Client, error) {
-		var envVars []string
-		for k, v := range config.Env {
-			envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
-		}
-		stdioTransport := transport.NewStdio(
-			config.Command,
-			envVars,
-			config.Args...,
-		)
+	// try := func() (*client.Client, error) {
+	// 	var envVars []string
+	// 	for k, v := range config.Env {
+	// 		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
+	// 	}
+	// 	stdioTransport := transport.NewStdio(
+	// 		config.Command,
+	// 		envVars,
+	// 		config.Args...,
+	// 	)
 
-		slog.Info("[MCP] Initializing stdio transport for server", "server_id", config.Id, "command", config.Command, "args", config.Args, "env", envVars)
-		fmt.Println("[MCP] Initializing stdio transport for server:", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+	// 	slog.Info("[MCP] Initializing stdio transport for server", "server_id", config.Id, "command", config.Command, "args", config.Args, "env", envVars)
+	// 	fmt.Println("[MCP] Initializing stdio transport for server:", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
+	// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 	defer cancel()
 
-		if err := stdioTransport.Start(ctx); err != nil {
-			log.Printf("failed to start stdio transport: %v", err)
-			return nil, err
-		}
+	// 	if err := stdioTransport.Start(ctx); err != nil {
+	// 		log.Printf("failed to start stdio transport: %v", err)
+	// 		return nil, err
+	// 	}
 
-		c := client.NewClient(stdioTransport)
-		initRequest := mcp.InitializeRequest{}
-		_, err := c.Initialize(ctx, initRequest)
-		if err != nil {
-			_ = stdioTransport.Close()
-			fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Id, err)
-			return nil, err
-		}
-		return c, nil
-	}
+	// 	c := client.NewClient(stdioTransport)
+	// 	initRequest := mcp.InitializeRequest{}
+	// 	_, err := c.Initialize(ctx, initRequest)
+	// 	if err != nil {
+	// 		_ = stdioTransport.Close()
+	// 		fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Id, err)
+	// 		return nil, err
+	// 	}
+	// 	return c, nil
+	// }
 
 	for i := range 3 {
-		c, err := try()
+		c, err := s.ClientMAC(config)
 		if err == nil {
 			return c, nil
 		}
@@ -80,7 +80,7 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	}
 
 	// 如果重试失败，删除Pending状态
-	c, err := try()
+	c, err := s.ClientMAC(config)
 	if err == nil {
 		return c, nil
 	} else {
@@ -222,12 +222,14 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	return nil, fmt.Errorf("failed to call tool after 10 attempts for MCP %s", mcpId)
 }
 
-func (s *StdioTransport) ClientMAC() error {
-	config := types.MCPServerConfig{
-		Id:      "mac",
-		Command: "/Users/aipc/Library/Application Support/Byze/runtime/bun",
-		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
-		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
+func (s *StdioTransport) ClientMAC(config *types.MCPServerConfig) (*client.Client, error) {
+	if config == nil {
+		config = &types.MCPServerConfig{
+			Id:      "mac",
+			Command: "/Users/aipc/Library/Application Support/Byze/runtime/bun",
+			Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
+			Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
+		}
 	}
 	var envVars []string
 	for k, v := range config.Env {
@@ -244,7 +246,7 @@ func (s *StdioTransport) ClientMAC() error {
 
 	if err := stdioTransport.Start(ctx); err != nil {
 		fmt.Printf("failed to start stdio transport: %v", err)
-		return err
+		return nil, err
 	}
 
 	c := client.NewClient(stdioTransport)
@@ -253,14 +255,14 @@ func (s *StdioTransport) ClientMAC() error {
 	if err != nil {
 		_ = stdioTransport.Close()
 		fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Id, err)
-		return err
+		return nil, err
 	}
 	toolsRequest := mcp.ListToolsRequest{}
 	tools, err := c.ListTools(ctx, toolsRequest)
 	if err != nil {
 		fmt.Println("failed to ListTools err", err)
-		return err
+		return nil, err
 	}
 	fmt.Println("tools", tools.Tools)
-	return nil
+	return c, nil
 }
