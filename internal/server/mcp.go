@@ -28,13 +28,14 @@ type MCPServer interface {
 	GetCategories(ctx context.Context) (*rpc.CategoryListResponse, error)
 	GetMyMCPList(ctx context.Context, request *rpc.MCPListRequest) (*rpc.MCPListResponse, error)
 	DownloadMCP(ctx context.Context, id string) error
-	AuthorizeMCP(ctx context.Context, id string, auth string) error
+	Configuration(ctx context.Context, id string, auth string) error
 	ReverseStatus(c *gin.Context, id string) error
 	SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest) error
 	ClientMcpStart(ctx context.Context, id string) error
 	ClientMcpStop(ctx context.Context, ids []string) error
 	ClientGetTools(ctx context.Context, mcpId string) ([]mcp.Tool, error)
 	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponse, error)
+	ClientMAC(ctx context.Context) error
 }
 
 type MCPServerImpl struct {
@@ -212,6 +213,12 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 	// 执行mcp安装命令
 	installCMD := mcp.Data.ServerConfig
 
+	// 命令校验
+	if len(installCMD) == 0 {
+		slog.Error("无安装命令, 不支持stdio模型")
+		return bcode.ControlPanelAddMcpError
+	}
+
 	for _, item := range installCMD {
 		for _, y := range item.McpServers {
 			// 传递args
@@ -234,10 +241,14 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 					commandBuilder.WithEnv(key, value)
 				}
 			}
+			slog.Info("执行mcp 安装命令: ", y.Command, " args: ", y.Args, " env: ", y.Env)
 			// 执行安装命令
 			output, errOut, err := commandBuilder.WithTimeout(time.Minute).Execute()
 			fmt.Printf("output of command execution: %s", output)
 			fmt.Printf("error output of command execution: %s", errOut)
+			//执行结果
+			slog.Info("output of command execution: ", output)
+			slog.Info("errout of command execution: ", errOut)
 			if err != nil {
 				slog.Error("执行mcp 安装失败: ", err.Error())
 				return bcode.ControlPanelAddMcpError
@@ -254,7 +265,7 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 
 }
 
-func (M *MCPServerImpl) AuthorizeMCP(ctx context.Context, id string, auth string) error {
+func (M *MCPServerImpl) Configuration(ctx context.Context, id string, config string) error {
 	con := new(types.McpUserConfig)
 	con.MCPID = id
 	err := M.Ds.Get(ctx, con)
@@ -263,13 +274,13 @@ func (M *MCPServerImpl) AuthorizeMCP(ctx context.Context, id string, auth string
 		// 初始化个人配置
 		con.MCPID = id
 		con.Status = 0
-		con.Auth = auth
+		con.Auth = config
 		con.Kits = ""
 		M.Ds.Add(ctx, con)
 	}
 
 	// 保存授权配置项
-	con.Auth = auth
+	con.Auth = config
 	err = M.Ds.Put(ctx, con)
 	if err != nil {
 		return err
@@ -390,12 +401,6 @@ func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.
 		if err != nil {
 			return nil, err
 		}
-		// 处理 macOS 下路径包含空格的情况
-		// 例如: /Users/aipc/Library/Application Support/Byze/runtime/bun
-		// 需要将带空格的路径用引号包裹
-		if strings.Contains(command, " ") && !strings.HasPrefix(command, "\"") && !strings.HasSuffix(command, "\"") {
-			command = fmt.Sprintf("\"%s\"", command)
-		}
 
 		mcpServerConfig.Command = command
 		mcpServerConfig.Args = args
@@ -504,4 +509,15 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 		Logo:           logo,
 		ToolDesc:       toolDesc,
 	}, nil
+}
+
+func (M *MCPServerImpl) ClientMAC(ctx context.Context) error {
+	config := &types.MCPServerConfig{
+		Id:      "mac",
+		Command: "/Users/aipc/Library/Application Support/Byze/runtime/bun",
+		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
+		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
+	}
+	_, err := M.McpHandler.ClientStart(config)
+	return err
 }

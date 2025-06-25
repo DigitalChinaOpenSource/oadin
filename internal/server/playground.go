@@ -193,10 +193,10 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 
 	// 构建历史对话
-	history := make([]map[string]interface{}, 0, len(messages)+1)
+	history := make([]map[string]string, 0, len(messages)+1)
 	for _, m := range messages {
 		msg := m.(*types.ChatMessage)
-		history = append(history, map[string]interface{}{
+		history = append(history, map[string]string{
 			"role":    msg.Role,
 			"content": msg.Content,
 		})
@@ -229,7 +229,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 
 	// 添加当前用户消息
-	userMessage := map[string]interface{}{
+	userMessage := map[string]string{
 		"role":    "user",
 		"content": enhancedContent,
 	}
