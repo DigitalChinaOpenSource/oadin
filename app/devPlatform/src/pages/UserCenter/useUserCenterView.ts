@@ -17,7 +17,7 @@ export const useUserCenterView = () => {
       companyName: 'testCompany',
       email: '123@456.com',
       phoneNumber: '1234567890',
-      userType: 'enterprise', // 个人账号
+      userType: 'person', // 个人账号
       wechatBind: false,
       wechatInfo: {
         openId: 'wx-123456',

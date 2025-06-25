@@ -7,6 +7,7 @@ import { IAccountInfo } from '@/pages/UserCenter/types';
 import DefaultUserIcon from '@/assets/userIcon.svg';
 import CompanyIcon from '@/assets/companyIcon.svg';
 import ChangePasswordModal from '@/pages/UserCenter/accountInfo/changePasswordModal';
+import WechatBind from '@/pages/UserCenter/accountInfo/wechatBind';
 
 /**
  * 用户中心账号信息组件
@@ -18,6 +19,9 @@ const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
 
   // 修改密码的弹框
   const [changePasswordShow, setChangePasswordShow] = useState<boolean>(false);
+
+  // 绑定微信的弹窗
+  const [wechatBindShow, setWechatBindShow] = useState<boolean>(false);
 
   const isPerson = userType === 'person';
 
@@ -145,7 +149,14 @@ const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
               <div className={styles.bindingStatus}>{renderBindStatus(wechatBind as boolean)}</div>
             </>
           ),
-          action: <Button className={styles.changeButton}>{wechatBind ? '更换' : '绑定'}</Button>,
+          action: !wechatBind && (
+            <Button
+              className={styles.changeButton}
+              onClick={() => setWechatBindShow(true)}
+            >
+              {wechatBind ? '更换' : '绑定'}
+            </Button>
+          ),
         })}
       {/* 企业- 企业邮箱*/}
       {!isPerson &&
@@ -193,6 +204,11 @@ const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
         visible={changePasswordShow}
         onCancel={() => setChangePasswordShow(false)}
         onConfirm={() => setChangePasswordShow(false)}
+      />
+      {/*绑定微信的弹窗*/}
+      <WechatBind
+        visible={wechatBindShow}
+        onCancel={() => setWechatBindShow(false)}
       />
     </div>
   );

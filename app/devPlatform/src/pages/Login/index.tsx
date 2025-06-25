@@ -79,12 +79,13 @@ const LoginPage: React.FC = () => {
   }, [currentStep]);
 
   useEffect(() => {
+    setCurrentStep('personPhone');
     const needBindPhone = searchParams.get('needBindPhone');
     const loginFrom = searchParams.get('loginFrom');
     if (needBindPhone === 'true' && loginFrom === 'personWechat') {
       setCurrentStep('bindPhone');
-    } else if (needBindPhone === 'false') {
-      navigate('/');
+    } else if (needBindPhone === 'false' && loginFrom !== 'personWechat') {
+      navigate(`/${loginFrom}`);
     }
   }, []);
 
