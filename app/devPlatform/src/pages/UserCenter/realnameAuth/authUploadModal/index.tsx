@@ -6,15 +6,17 @@ import ImageUpload from '@/pages/Login/components/ImageUpload';
 import LoginEnterpriseIcon from '@/assets/login-enterprise-icon.svg';
 import LoginFrontedIcon from '@/assets/login-fronted-icon.svg';
 import LoginBackIcon from '@/assets/login-back-icon.svg';
+import { IUserType } from '@/pages/UserCenter/types';
 
 interface IAuthUploadModalProps {
   visible: boolean;
   onCancel: () => void;
   onConfirm: () => void;
-  userType: 'person' | 'enterprise';
+  userType: IUserType;
+  title?: string;
 }
 
-const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person' }: IAuthUploadModalProps) => {
+const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', title }: IAuthUploadModalProps) => {
   const [form] = Form.useForm();
 
   const handleSure = async () => {
@@ -77,7 +79,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person' }: 
     <Modal
       title={
         <div className={styles.headerTitle}>
-          <span>实名认证</span>
+          <span>{title || '实名认证'}</span>
         </div>
       }
       open={visible}

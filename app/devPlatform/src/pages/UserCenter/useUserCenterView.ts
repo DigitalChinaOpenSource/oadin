@@ -1,59 +1,55 @@
-import { useState } from "react";
-
-interface IUserInfo {
-  id: string;
-  username: string;
-  // 账号类型，个人账号或企业账号
-  accountType: 'person' | 'enterprise';
-  
-  email: string;
-  phoneNumber: string;
-  wechatInfo:Record<string, any>;
-  wechatBind: boolean; // 是否绑定微信
-  isHaveAuth: boolean;
-  authInfo: Record<string, any>;
-}
+import { useState } from 'react';
+import { IAccountInfo } from '@/pages/UserCenter/types';
 
 export const useUserCenterView = () => {
+  const [userInfo, setUserInfo] = useState<IAccountInfo>();
 
-    const [userInfo, setUserInfo] = useState<IUserInfo | null>(null);
+  // 获取用户信息
+  const getUserInfo = async () => {
+    console.log(222);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 2000);
+    });
+    console.log(1111);
+    const testData = {
+      id: 'user-123',
+      userName: 'testUser',
+      companyName: 'testCompany',
+      email: '123@456.com',
+      phoneNumber: '1234567890',
+      userType: 'enterprise', // 个人账号
+      wechatBind: false,
+      wechatInfo: {
+        openId: 'wx-123456',
+        unionId: 'wx-union-123456',
+        nickname: 'Test WeChat User',
+        avatarUrl: 'https://example.com/avatar.jpg',
+      },
+      isRealNameAuth: false,
+      isEnterpriseAuth: false,
+      authInfo: {},
+    };
+    setUserInfo(testData as IAccountInfo);
+  };
 
-    // 获取用户信息
-    const getUserInfo = async () => {
-        await new Promise((resolve) => {setTimeout(resolve, 2000)});
-        return {
-            id: 'user-123',
-            username: 'testuser',
-            email: '',
-            phoneNumber: '1234567890',
-            accountType: 'person', // 个人账号
-            wechatBind:false,
-            wechatInfo: {
-                openId: 'wx-123456',
-                unionId: 'wx-union-123456',
-                nickname: 'Test WeChat User',
-                avatarUrl: 'https://example.com/avatar.jpg',
-            },
-            isHaveAuth: false,
-            authInfo: {}
-        } 
-    }
+  // 修改用户名
+  const changeUsername = async (newUsername: string, phoneNumber: string, email?: string) => {
+    // 模拟 API 调用
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // 修改用户名
-    const changeUsername = async (newUsername: string,phoneNumber:string,email?:string) => {
-        // 模拟 API 调用
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        
-        // 更新用户信息
-        setUserInfo((prev) => ({
-            ...prev,
-            username: newUsername
-        } as IUserInfo));
-    }
+    // 更新用户信息
+    setUserInfo(
+      (prev) =>
+        ({
+          ...prev,
+          username: newUsername,
+        }) as IAccountInfo,
+    );
+  };
 
-    return {
-        userInfo,
-        getUserInfo,
-        changeUsername
-    }
-}
+  return {
+    userInfo,
+    getUserInfo,
+    changeUsername,
+  };
+};

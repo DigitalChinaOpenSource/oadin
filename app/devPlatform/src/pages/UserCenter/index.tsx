@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import './common.css';
-import { Button } from 'antd';
+import { Button, Spin } from 'antd';
 import { CaretRightIcon } from '@phosphor-icons/react';
 import AccountInfo from './accountInfo';
-import RealnameAuth from './realnameAuth';
+import RealNameAuth from './realnameAuth';
 import ServiceAgreement from './serviceAgreement';
 import AccountSetting from './accountSetting';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
+import { IAccountInfo } from '@/pages/UserCenter/types';
 
 const UserCenter: React.FC = () => {
   const [showSetting, setShowSetting] = useState<boolean>(false);
+
+  const { userInfo, getUserInfo } = useUserCenterView();
+
+  useEffect(() => {
+    getUserInfo();
+  }, []);
+
+  if (!userInfo)
+    return (
+      <div className={styles.pageLoading}>
+        <Spin />
+      </div>
+    );
 
   return (
     <div className={styles.userCenter}>
@@ -37,9 +52,10 @@ const UserCenter: React.FC = () => {
               </Button>
             </div>
           </div>
-          <AccountInfo />
+          <AccountInfo accountInfo={userInfo as IAccountInfo} />
           <div className="header">实名认证</div>
-          <RealnameAuth /> <div className="header">服务协议</div>
+          <RealNameAuth accountInfo={userInfo as IAccountInfo} />
+          <div className="header">服务协议</div>
           <ServiceAgreement />
         </>
       )}
