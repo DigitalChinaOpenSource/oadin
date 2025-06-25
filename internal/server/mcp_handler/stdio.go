@@ -197,7 +197,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	}
 
 	try := func() (*mcp.CallToolResult, error) {
-		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 		defer cancel()
 
 		fetchRequest := mcp.CallToolRequest{}
@@ -210,7 +210,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		return result, nil
 	}
 
-	for i := range 10 {
+	for i := range 3 {
 		result, err := try()
 		if err == nil {
 			return result, nil
