@@ -923,14 +923,15 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				ThinkSwitch:     smInfo.ThinkSwitch,
 			}
 			resultList = append(resultList, modelData)
-			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
-			if request.Mine {
-				myModelFilter(&resultList)
-				resData.Total = len(resultList)
-				resData.TotalPage = len(resultList) / pageSize
-				if resData.TotalPage == 0 {
-					resData.TotalPage = 1
-				}
+
+		}
+		// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+		if request.Mine {
+			myModelFilter(&resultList)
+			resData.Total = len(resultList)
+			resData.TotalPage = len(resultList) / pageSize
+			if resData.TotalPage == 0 {
+				resData.TotalPage = 1
 			}
 		}
 	} else {
