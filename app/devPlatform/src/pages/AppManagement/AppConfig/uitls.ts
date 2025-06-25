@@ -2,6 +2,7 @@ import { IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
 import { IModelDataItem } from '@/types/model.ts';
 import { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
 import { defaultTag } from '@/pages/AppManagement/AppConfig/index.tsx';
+import { message } from 'antd';
 
 export const transformedAll2Card = (allList: IModelDataItem[]): IModelSelectCardItem[] => {
   return allList.map((item) => {
@@ -71,4 +72,17 @@ export const transformedCard2Tags = (cardList: IModelSelectCardItem[]): Tag[] =>
 
   // 将"全部"标签添加到列表最前面
   return sortedTags.length > 0 ? [allTag, ...sortedTags] : [];
+};
+
+/**
+ * 检查MCP列表长度是否超过限制
+ * @param mcpListLength MCP列表长度
+ * @returns 如果长度小于等于4则返回true，否则返回false
+ */
+export const checkMcpLength = (mcpListLength: number): boolean => {
+  if (mcpListLength > 4) {
+    message.warning('为保障服务稳定运行与优质体验，建议您选择的MCP工具不要超过5个。');
+    return false;
+  }
+  return true;
 };

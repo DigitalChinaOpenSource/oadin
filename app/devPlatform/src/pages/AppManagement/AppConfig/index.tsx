@@ -8,8 +8,9 @@ import ModelSelectModal from './ModelSelectModal/ModelSelectModal.tsx';
 import ModelCard from '@/pages/AppManagement/AppConfig/ModelCard/ModelCard.tsx';
 import { availableModels } from '@/pages/AppManagement/AppConfig/mock.ts';
 import { transformedCard2Ids, transformedCard2Tags } from '@/pages/AppManagement/AppConfig/uitls.ts';
-import { IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
-import TagFilter, { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx'; // 模拟可用的MCP服务
+import { IModelSelectCardItem, searchFunc, SearchParams } from '@/pages/AppManagement/AppConfig/types.ts';
+import TagFilter, { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
+import { IModelDataItem } from '@/types/model.ts'; // 模拟可用的MCP服务
 
 // 模拟可用的MCP服务
 const availableMcps = [
@@ -84,6 +85,10 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   const [filterModelTags, setFilterModelTags] = useState<Tag[]>([]);
   const [selectedModelTag, setSelectedModelTag] = useState<string>(defaultTag);
   const [filterModelList, setFilterModelList] = useState<IModelSelectCardItem[]>([]);
+  /// 搜索条件
+  const [searchParamsState, setSearchParamsState] = useState<SearchParams>({});
+  /// 搜索结果
+  const [searchList, setSearchList] = useState<IModelDataItem[]>([]);
 
   // 获取应用详情
   useEffect(() => {
@@ -270,6 +275,15 @@ const AppConfig: React.FC<AppConfigProps> = () => {
     } else {
       setFilterModelList(selectedModels);
     }
+  };
+
+  const onSearch: searchFunc = async (params?: SearchParams) => {
+    const _searchParams = { ...searchParamsState, ...params };
+    setSearchParamsState(_searchParams);
+    message.info(`搜索条件为:${JSON.stringify(params)}`);
+    /// TODO 接口调用
+    setSearchList(availableModels);
+    return availableModels;
   };
 
   if (loading) {
@@ -484,14 +498,17 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       />
 
       {/* 模型选择弹窗 */}
-      <ModelSelectModal
-        open={modelSelectVisible}
-        onCancel={() => setModelSelectVisible(false)}
-        onFinish={handleModelSelectConfirm}
-        title="选择模型"
-        modelOptions={availableModels}
-        initialSelectedModels={selectedModels}
-      />
+      {modelSelectVisible ? (
+        <ModelSelectModal
+          open={modelSelectVisible}
+          onCancel={() => setModelSelectVisible(false)}
+          onFinish={handleModelSelectConfirm}
+          title="选择模型"
+          onSearch={onSearch}
+          searchList={searchList}
+          initialSelectedModels={selectedModels}
+        />
+      ) : null}
     </div>
   );
 };

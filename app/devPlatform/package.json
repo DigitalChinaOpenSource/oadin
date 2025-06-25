@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+
+    "i18next": "^25.2.1",
+    "react-i18next": "^15.5.2"
   },
   "devDependencies": {
     "eslint-plugin-react-hooks": "^5.2.0",

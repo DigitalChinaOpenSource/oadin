@@ -26,3 +26,78 @@
   text-align: right;
   padding: 0 8px;
 }
+
+.choose_model {
+  :global(.ant-modal-content) {
+    background: linear-gradient(180deg, #dee7ff 0%, #fff 25%, #fff 100%);
+  }
+  :global(.ant-modal-header) {
+    background: none;
+  }
+  :global(.ant-modal-body) {
+    height: 70vh;
+    display: flex;
+  }
+}
+.choose_model_footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mcp_common {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.searchIcon {
+  cursor: pointer;
+  position: relative;
+  right: 0;
+  height: 22px;
+  padding-top: 3px;
+}
+.mcp_common_content {
+  width: 100%;
+  padding: 24px;
+}
+.mcp_common_content_dialog {
+  width: 100%;
+  padding: 0;
+}
+
+.searchInput {
+  display: flex;
+  align-items: center;
+}
+.expandIcon {
+  cursor: pointer;
+  margin-left: 16px;
+  padding: 2px;
+}
+.modalWarp {
+  display: flex;
+  flex-direction: column;
+}
+.mcpCardList {
+  width: 100%;
+  height: calc(70vh - 52px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  .loading {
+    position: relative;
+    top: 300px;
+    width: 100%;
+    text-align: center;
+    img {
+      width: 60px;
+    }
+  }
+}
+.seacrchWarp {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 16px;
+}
