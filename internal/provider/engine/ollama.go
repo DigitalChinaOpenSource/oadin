@@ -349,6 +349,10 @@ func (o *OllamaProvider) InitEnv() error {
 	}
 
 	if utils.IpexOllamaSupportGPUStatus() {
+		err = os.Setenv("OLLAMA_NUM_GPU", "999")
+		if err != nil {
+			return fmt.Errorf("failed to set OLLAMA_NUM_GPU: %w", err)
+		}
 		err = os.Setenv("ZES_ENABLE_SYSMAN", "1")
 		if err != nil {
 			return fmt.Errorf("failed to set ZES_ENABLE_SYSMAN: %w", err)
