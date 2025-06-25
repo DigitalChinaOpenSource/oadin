@@ -151,10 +151,6 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 			fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"timeout\"}\n\n")
 			flusher.Flush()
 			return
-		default:
-			fmt.Fprintf(w, "data: {\"status\": \"success\"}\n\n")
-			flusher.Flush()
-			return
 		}
 	}
 }
