@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	ConfigRoot "byze/config"
 	"byze/internal/types"
 
 	"github.com/mark3labs/mcp-go/client"
@@ -38,37 +39,6 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	if config.Command == "" {
 		return nil, errors.New("command must be provided")
 	}
-	// try := func() (*client.Client, error) {
-	// 	var envVars []string
-	// 	for k, v := range config.Env {
-	// 		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
-	// 	}
-	// 	stdioTransport := transport.NewStdio(
-	// 		config.Command,
-	// 		envVars,
-	// 		config.Args...,
-	// 	)
-
-	// 	slog.Info("[MCP] Initializing stdio transport for server", "server_id", config.Id, "command", config.Command, "args", config.Args, "env", envVars)
-	// 	fmt.Println("[MCP] Initializing stdio transport for server:", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
-	// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	// 	defer cancel()
-
-	// 	if err := stdioTransport.Start(ctx); err != nil {
-	// 		log.Printf("failed to start stdio transport: %v", err)
-	// 		return nil, err
-	// 	}
-
-	// 	c := client.NewClient(stdioTransport)
-	// 	initRequest := mcp.InitializeRequest{}
-	// 	_, err := c.Initialize(ctx, initRequest)
-	// 	if err != nil {
-	// 		_ = stdioTransport.Close()
-	// 		fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Id, err)
-	// 		return nil, err
-	// 	}
-	// 	return c, nil
-	// }
 
 	for i := range 3 {
 		c, err := s.ClientStart(config)
@@ -84,7 +54,6 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	if err == nil {
 		return c, nil
 	} else {
-		delete(s.Pending, config.Id)
 		return nil, err
 	}
 }
@@ -110,8 +79,6 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 			return nil
 		}
 		s.Stop(serverKey)
-		delete(s.clients, serverKey)
-		delete(s.Pending, serverKey)
 	}
 
 	s.Pending[serverKey] = config
@@ -120,7 +87,8 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	// 异步初始化客户端
 	cli, err := s.initTransportClient(config)
 	if err != nil {
-		log.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
+		fmt.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
+		delete(s.Pending, serverKey)
 		return err
 	}
 	fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
@@ -197,7 +165,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	}
 
 	try := func() (*mcp.CallToolResult, error) {
-		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 		defer cancel()
 
 		fetchRequest := mcp.CallToolRequest{}
@@ -210,7 +178,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		return result, nil
 	}
 
-	for i := range 10 {
+	for i := range 3 {
 		result, err := try()
 		if err == nil {
 			return result, nil
@@ -227,6 +195,10 @@ func (s *StdioTransport) ClientStart(config *types.MCPServerConfig) (*client.Cli
 	for k, v := range config.Env {
 		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
 	}
+
+	envVars = append(envVars, fmt.Sprintf("%s=%s", "NPM_CONFIG_REGISTRY", ConfigRoot.ConfigRootInstance.Registry.Npm))
+	envVars = append(envVars, fmt.Sprintf("%s=%s", "PIP_INDEX_URL", ConfigRoot.ConfigRootInstance.Registry.Pip))
+	envVars = append(envVars, fmt.Sprintf("%s=%s", "UV_DEFAULT_INDEX", ConfigRoot.ConfigRootInstance.Registry.Pip))
 	stdioTransport := transport.NewStdio(
 		config.Command,
 		envVars,

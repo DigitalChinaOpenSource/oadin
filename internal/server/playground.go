@@ -29,6 +29,7 @@ type Playground interface {
 
 	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
 	UpdateToolCall(ctx context.Context, toolMessage *types.ToolMessage) error
+	HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]string
 
 	UploadFile(ctx context.Context, request *dto.UploadFileRequest, fileHeader io.Reader, filename string, filesize int64) (*dto.UploadFileResponse, error)
 	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
