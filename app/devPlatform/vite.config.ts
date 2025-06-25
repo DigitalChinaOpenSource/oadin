@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { API_PREFIX, API_HEALTH_ENDPOINT } from './src/constants';
 
 export default defineConfig({
   base: './',

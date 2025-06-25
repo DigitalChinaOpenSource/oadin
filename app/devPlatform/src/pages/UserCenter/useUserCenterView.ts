@@ -6,11 +6,9 @@ export const useUserCenterView = () => {
 
   // 获取用户信息
   const getUserInfo = async () => {
-    console.log(222);
     await new Promise((resolve) => {
       setTimeout(resolve, 2000);
     });
-    console.log(1111);
     const testData = {
       id: 'user-123',
       userName: 'testUser',

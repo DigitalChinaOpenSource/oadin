@@ -3,15 +3,25 @@ import { Modal } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
 import { ScanIcon } from '@phosphor-icons/react';
 import { useLoginView } from '@/pages/Login/useLoginView.ts';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const WechatBind = ({ visible, title, onCancel }: { visible: boolean; title?: string; onCancel: () => void }) => {
   const { initializeWeixinLogin } = useLoginView();
+  const containerMounted = useRef(false);
 
   useEffect(() => {
-    const redirect_uri = `${window.location.origin}/login?loginFrom='user-center'`;
-    initializeWeixinLogin(redirect_uri, 'login_container_bind');
-  }, []);
+    if (visible) {
+      // 使用setTimeout确保DOM元素已经渲染
+      setTimeout(() => {
+        const loginContainer = document.getElementById('login_container_bind');
+        if (loginContainer) {
+          containerMounted.current = true;
+          const redirect_uri = `${window.location.origin}/login?loginFrom='user-center'`;
+          initializeWeixinLogin(redirect_uri, 'login_container_bind');
+        }
+      }, 100);
+    }
+  }, [visible]);
 
   return (
     <Modal
