@@ -141,6 +141,15 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 	// Call engin to delete model.
 	if m.Status == "downloaded" {
 		modelEngine := provider.GetModelEngine(sp.Flavor)
+		runningModelList, err := modelEngine.GetRunModels(ctx)
+		if err != nil {
+			return nil, bcode.ErrEngineDeleteModel
+		}
+		for _, runningModel := range runningModelList.Models {
+			if runningModel.Name == m.ModelName {
+				return nil, bcode.ErrModelIsRunning
+			}
+		}
 		deleteReq := &types.DeleteRequest{
 			Model: request.ModelName,
 		}
@@ -427,11 +436,15 @@ func AsyncPullModel(ctx context.Context, sp *types.ServiceProvider, m *types.Mod
 	slog.Info("Pull model %s completed ..." + m.ModelName)
 
 	m.Status = "downloaded"
+	// 查service是否有模型，没有是否自动将第一个设为默认模型（待确认）
 	err := ds.Put(newCtx, m)
 	if err != nil {
 		slog.Error("[Pull model] Update model error:", err.Error())
 		return
 	}
+	// service model list
+	// 如果有默认模型，仅校验默认模型即可
+	// 如果没有，则需依次校验每个模型，直到有可用模型
 
 	if sp.Status == 0 {
 		checkServer := ChooseCheckServer(*sp, m.ModelName)
