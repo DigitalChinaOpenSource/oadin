@@ -38,40 +38,40 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	if config.Command == "" {
 		return nil, errors.New("command must be provided")
 	}
-	try := func() (*client.Client, error) {
-		var envVars []string
-		for k, v := range config.Env {
-			envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
-		}
-		stdioTransport := transport.NewStdio(
-			config.Command,
-			envVars,
-			config.Args...,
-		)
+	// try := func() (*client.Client, error) {
+	// 	var envVars []string
+	// 	for k, v := range config.Env {
+	// 		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
+	// 	}
+	// 	stdioTransport := transport.NewStdio(
+	// 		config.Command,
+	// 		envVars,
+	// 		config.Args...,
+	// 	)
 
-		slog.Info("[MCP] Initializing stdio transport for server", "server_id", config.Id, "command", config.Command, "args", config.Args, "env", envVars)
-		fmt.Println("[MCP] Initializing stdio transport for server:", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+	// 	slog.Info("[MCP] Initializing stdio transport for server", "server_id", config.Id, "command", config.Command, "args", config.Args, "env", envVars)
+	// 	fmt.Println("[MCP] Initializing stdio transport for server:", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
+	// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// 	defer cancel()
 
-		if err := stdioTransport.Start(ctx); err != nil {
-			log.Printf("failed to start stdio transport: %v", err)
-			return nil, err
-		}
+	// 	if err := stdioTransport.Start(ctx); err != nil {
+	// 		log.Printf("failed to start stdio transport: %v", err)
+	// 		return nil, err
+	// 	}
 
-		c := client.NewClient(stdioTransport)
-		initRequest := mcp.InitializeRequest{}
-		_, err := c.Initialize(ctx, initRequest)
-		if err != nil {
-			_ = stdioTransport.Close()
-			fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Id, err)
-			return nil, err
-		}
-		return c, nil
-	}
+	// 	c := client.NewClient(stdioTransport)
+	// 	initRequest := mcp.InitializeRequest{}
+	// 	_, err := c.Initialize(ctx, initRequest)
+	// 	if err != nil {
+	// 		_ = stdioTransport.Close()
+	// 		fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Id, err)
+	// 		return nil, err
+	// 	}
+	// 	return c, nil
+	// }
 
 	for i := range 3 {
-		c, err := try()
+		c, err := s.ClientStart(config)
 		if err == nil {
 			return c, nil
 		}
@@ -80,7 +80,7 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	}
 
 	// 如果重试失败，删除Pending状态
-	c, err := try()
+	c, err := s.ClientStart(config)
 	if err == nil {
 		return c, nil
 	} else {
@@ -128,8 +128,6 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	s.mu.Lock()
 	s.clients[serverKey] = cli
 	s.mu.Unlock()
-
-	s.FetchTools(context.Background(), serverKey)
 
 	return nil
 }
@@ -199,7 +197,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	}
 
 	try := func() (*mcp.CallToolResult, error) {
-		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 		defer cancel()
 
 		fetchRequest := mcp.CallToolRequest{}
@@ -212,7 +210,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		return result, nil
 	}
 
-	for i := range 10 {
+	for i := range 3 {
 		result, err := try()
 		if err == nil {
 			return result, nil
@@ -222,4 +220,41 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil, fmt.Errorf("failed to call tool after 10 attempts for MCP %s", mcpId)
+}
+
+func (s *StdioTransport) ClientStart(config *types.MCPServerConfig) (*client.Client, error) {
+	var envVars []string
+	for k, v := range config.Env {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
+	}
+	stdioTransport := transport.NewStdio(
+		config.Command,
+		envVars,
+		config.Args...,
+	)
+
+	fmt.Println("[MCP] params", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
+	ctx := context.Background()
+
+	if err := stdioTransport.Start(ctx); err != nil {
+		fmt.Printf("failed to start stdio transport: %v", err)
+		return nil, err
+	}
+
+	c := client.NewClient(stdioTransport)
+	initRequest := mcp.InitializeRequest{}
+	_, err := c.Initialize(ctx, initRequest)
+	if err != nil {
+		_ = stdioTransport.Close()
+		fmt.Printf("failed to initialize stdio client for server %s: %v\n", config.Id, err)
+		return nil, err
+	}
+	toolsRequest := mcp.ListToolsRequest{}
+	tools, err := c.ListTools(ctx, toolsRequest)
+	if err != nil {
+		fmt.Println("failed to ListTools err", err)
+		return nil, err
+	}
+	fmt.Println("tools", tools.Tools)
+	return c, nil
 }
