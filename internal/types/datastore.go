@@ -136,13 +136,13 @@ func (t *ServiceProvider) Index() map[string]interface{} {
 
 // Model  table structure
 type Model struct {
-	ID           int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`
-	ModelName    string    `gorm:"column:model_name;not null" json:"model_name"`
-	ProviderName string    `gorm:"column:provider_name" json:"provider_name"`
-	Status       string    `gorm:"column:status;not null" json:"status"`
-	CreatedAt    time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt    time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
-	ThinkingEnabled bool   `gorm:"column:thinking_enabled;default:false" json:"thinkingEnabled"`
+	ID              int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`
+	ModelName       string    `gorm:"column:model_name;not null" json:"model_name"`
+	ProviderName    string    `gorm:"column:provider_name" json:"provider_name"`
+	Status          string    `gorm:"column:status;not null" json:"status"`
+	CreatedAt       time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt       time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
+	ThinkingEnabled bool      `gorm:"column:thinking_enabled;default:false" json:"thinkingEnabled"`
 }
 
 func (t *Model) SetCreateTime(time time.Time) {
@@ -215,7 +215,7 @@ type McpUserConfig struct {
 	MCPID     string    `json:"mcp_id" gorm:"column:mcp_id;not null;"`                         // 关联的MCP主键
 	Kits      string    `json:"kits" gorm:"column:kits;"`                                      // 禁用的工具集合（JSON数组存储）
 	UserID    string    `json:"user_id" gorm:"column:user_id;"`                                // 关联用户
-	Status    int       `json:"status" gorm:"column:status;default:1"`                         // 启用状态：0-禁用，1-启用
+	Status    int       `json:"status" gorm:"column:status;default:0"`                         // 启用状态：0-禁用，1-启用
 	Auth      string    `json:"auth" gorm:"column:auth;"`                                      // 认证授权码
 	CreatedAt time.Time `json:"created_at" gorm:"column:created_at;default:CURRENT_TIMESTAMP"` // 创建时间
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`            // 修改时间
