@@ -46,6 +46,7 @@ export default function useViewModel() {
   }, []);
 
   useEffect(() => {
+    if (messages.length > 0) return;
     // 场景1: 如果有会话ID(URL或sessionStorage)，则尝试获取历史对话详情
     if (currentSessionId) {
       if ((!selectedModel?.id || messages.length === 0) && isInitialLoad.current) {
@@ -68,8 +69,13 @@ export default function useViewModel() {
   }, [currentSessionId, selectedModel, messages.length]);
 
   useEffect(() => {
-    if (!isDownloadEmbed) return;
     fetchAllModels();
+    if (isDownloadEmbed) {
+      fetchChooseModelNotify({
+        service_name: 'embed',
+        local_provider: 'local_ollama_embed',
+      });
+    }
   }, [isDownloadEmbed]);
 
   useEffect(() => {
@@ -78,6 +84,15 @@ export default function useViewModel() {
       setSelectMcpList([]);
     };
   }, []);
+
+  // 选择模型后需要将所选择的通知奥丁
+  const { run: fetchChooseModelNotify } = useRequest(async (params: { service_name: string; local_provider?: string; remote_provider?: string }) => {
+    if (!params?.service_name) return;
+    const data = await httpRequest.put('/service', {
+      ...params,
+    });
+    return data || {};
+  });
 
   // 获取所有白泽下载的模型
   const { run: fetchChatHistoryDetail } = useRequest(

@@ -211,7 +211,8 @@ export function useChatStream() {
     // 如果有生成的内容，保存为消息
     if (isLoading && (streamingContent || requestState.current.content.response)) {
       const finalContent = (requestState.current.content.response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
-      const aiMessage = buildMessageWithThinkContent(finalContent);
+      // 将 thinking 内容也传入构建消息的函数
+      const aiMessage = buildMessageWithThinkContent(finalContent, false, requestState.current.content.thinking || streamingThinking);
       addMessage(aiMessage);
 
       // 保存当前的工具调用活动状态和toolGroupId，但清除内部状态
@@ -377,12 +378,12 @@ export function useChatStream() {
         }
 
         const mcpMessage: MessageType = {
-          id: id,
+          id: tool_group_id || id,
           role: 'assistant',
           contentList: currentContentList,
         };
-        console.log('mcpMessage', mcpMessage);
-        addMessage(mcpMessage, !!id);
+        console.log('mcpMessage==>', mcpMessage);
+        addMessage(mcpMessage, !!(tool_group_id || id));
 
         // 8. 执行工具调用
         const data = await httpRequest.post('/mcp/client/runTool', { messageId: id, ...toolResponse });
@@ -410,15 +411,16 @@ export function useChatStream() {
         let updatedMcpContent;
         let updatedContentList;
         if (tool_group_id) {
-          updatedMcpContent = createMcpContentWithGroupId(tool_group_id, finalStatus, toolCallResults);
+          updatedMcpContent = createMcpContentWithGroupId(tool_group_id, finalStatus, toolCallResults, currentTotalDuration);
           updatedContentList = updateContentListWithMcpByGroupId(currentContentList, updatedMcpContent, tool_group_id);
         }
 
         const updatedMessage: MessageType = {
-          id: id,
+          id: tool_group_id || id,
           role: 'assistant',
           contentList: updatedContentList,
         };
+        console.log('updatedMessage==>', updatedMessage);
         addMessage(updatedMessage, true);
 
         // 12. 处理后续操作
@@ -559,7 +561,7 @@ export function useChatStream() {
 
               if (!requestState.current.status.isToolCallActive && (requestState.current.content.response || localResponseContent)) {
                 const finalContent = requestState.current.content.response || localResponseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent);
+                const aiMessage = buildMessageWithThinkContent(finalContent, true, requestState.current.content.thinking || streamingThinking);
                 addMessage(aiMessage);
 
                 requestState.current = {
@@ -677,7 +679,7 @@ export function useChatStream() {
               if (isLoading && (requestState.current.content.response || responseContent)) {
                 // 创建部分AI回复消息
                 const finalContent = (requestState.current.content.response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
-                const aiMessage = buildMessageWithThinkContent(finalContent);
+                const aiMessage = buildMessageWithThinkContent(finalContent, false, requestState.current.content.thinking || streamingThinking);
                 addMessage(aiMessage);
               }
               setIsLoading(false);
@@ -743,7 +745,7 @@ export function useChatStream() {
               }
               if (!requestState.current.status.isToolCallActive && (requestState.current.content.response || responseContent)) {
                 const finalContent = requestState.current.content.response || responseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent);
+                const aiMessage = buildMessageWithThinkContent(finalContent, true, requestState.current.content.thinking || streamingThinking);
                 addMessage(aiMessage);
                 requestState.current = {
                   content: {

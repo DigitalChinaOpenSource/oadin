@@ -23,3 +23,28 @@ code {
 .ant-modal-body {
   overflow: hidden;
 }
+
+.loginForm {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.formInput {
+  width: 100%;
+  height: 40px;
+}
+.loginButton {
+  width: 100%;
+  height: 100%;
+  padding: 12px 0;
+  border-radius: 8px;
+  box-sizing: border-box;
+  cursor: pointer;
+  font-size: 14px;
+  color: #ffffff;
+  background-color: rgba(84, 41, 255, 0.6);
+  &:hover {
+    background-color: rgba(84, 41, 255, 1) !important;
+  }
+}

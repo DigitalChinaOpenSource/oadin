@@ -16,8 +16,8 @@ export const extractToolCallDataByGroupId = (contentList: any[], toolGroupId: st
   let toolCallResults: any[] = [];
   let mcpContentIndex = -1;
 
-  // 查找指定 tool_group_id 对应的 contentList 项
-  mcpContentIndex = contentList.findIndex((content) => content.type === 'mcp' && content.id === toolGroupId && typeof content.content === 'object');
+  // 查找指定 tool_group_id 对应的 contentList 项，使用 content.groupId 字段
+  mcpContentIndex = contentList.findIndex((content) => content.type === 'mcp' && typeof content.content === 'object' && content.content.groupId === toolGroupId);
 
   if (mcpContentIndex >= 0) {
     toolCallResults = [...(contentList[mcpContentIndex].content.data || [])];
@@ -50,11 +50,11 @@ export const extractToolCallData = (contentList: any[], id?: string) => {
  * 创建 MCP 内容对象
  */
 export const createMcpContentWithGroupId = (toolGroupId: string, status: string, data: any[], totalDuration?: number) => {
-  console.log('toolGroupId ===>', toolGroupId, totalDuration);
   return {
-    id: toolGroupId,
+    id: generateUniqueId('mcp_content'),
     type: 'mcp' as const,
     content: {
+      groupId: toolGroupId, // 添加 groupId 字段用于标识和分组
       status,
       data,
       totalDuration,
@@ -67,14 +67,27 @@ export const createMcpContentWithGroupId = (toolGroupId: string, status: string,
  */
 export const updateContentListWithMcpByGroupId = (contentList: any[], mcpContent: any, toolGroupId: string) => {
   const updatedList = [...contentList];
-  const mcpIndex = updatedList.findIndex((item) => item.type === 'mcp' && item.id === toolGroupId);
+  // 使用 tool_group_id 作为唯一标识查找 MCP 内容项
+  const mcpIndex = updatedList.findIndex((item) => item.type === 'mcp' && item.content && item.content.groupId === toolGroupId);
 
   if (mcpIndex >= 0) {
     // 更新现有项
-    updatedList[mcpIndex] = mcpContent;
+    updatedList[mcpIndex] = {
+      ...updatedList[mcpIndex],
+      content: {
+        ...mcpContent.content,
+        groupId: toolGroupId, // 保留 groupId 以便后续查找
+      },
+    };
   } else {
-    // 添加新项
-    updatedList.push(mcpContent);
+    // 添加新项，并附加 groupId 属性
+    updatedList.push({
+      ...mcpContent,
+      content: {
+        ...mcpContent.content,
+        groupId: toolGroupId, // 添加 groupId 属性
+      },
+    });
   }
 
   return updatedList;
@@ -115,39 +128,51 @@ export const handleToolCallErrorMessage = (
       status: 'error',
     };
 
+    // 查找原有内容中的 totalDuration，使用 content.groupId 字段
+    const existingContent = currentContentList.find((item) => item.type === 'mcp' && item.content?.groupId === toolGroupId)?.content || {};
+    const existingTotalDuration = existingContent.totalDuration || 0;
+
     // 创建错误状态的 MCP 内容
-    const errorMcpContent = createMcpContentWithGroupId(toolGroupId, toolCallResults.every((t) => t.status === 'error' || t.status === 'success') ? 'error' : 'progress', toolCallResults);
+    const errorMcpContent = createMcpContentWithGroupId(
+      toolGroupId,
+      toolCallResults.every((t) => t.status === 'error' || t.status === 'success') ? 'error' : 'progress',
+      toolCallResults,
+      existingTotalDuration,
+    );
 
     // 更新内容列表
     const errorContentList = updateContentListWithMcpByGroupId(currentContentList, errorMcpContent, toolGroupId);
 
-    // 构建错误消息
+    // 构建错误消息，使用 toolGroupId 作为消息 ID
     const errorMsg: MessageType = {
-      id: currentToolMessageId || generateUniqueId('mcp_error_msg'),
+      id: toolGroupId || generateUniqueId('mcp_error_msg'),
       role: 'assistant',
       contentList: errorContentList,
     };
 
-    addMessage(errorMsg, !!currentToolMessageId);
+    addMessage(errorMsg, !!toolGroupId);
   } else {
-    // 创建新的错误消息
+    // 创建新的错误消息，使用 toolGroupId 作为消息 ID
     const mcpErrorMessage: MessageType = {
-      id: generateUniqueId('mcp_error_msg'),
+      id: toolGroupId || generateUniqueId('mcp_error_msg'),
       role: 'assistant',
       contentList: [
-        createMcpContentWithGroupId(toolGroupId, 'error', [
-          {
-            id: generateUniqueId('error_tool'),
-            name: '',
-            desc: '工具调用',
-            logo: '',
-            inputParams: '',
-            outputParams: errorMessage,
-            status: 'error',
-            startTime: Date.now(),
-            executionTime: 0,
-          },
-        ]),
+        createMcpContentWithGroupId(
+          toolGroupId,
+          'error',
+          [
+            {
+              id: generateUniqueId('error_tool'),
+              name: '',
+              desc: '工具调用',
+              logo: '',
+              inputParams: '',
+              outputParams: errorMessage,
+              status: 'error',
+            },
+          ],
+          0,
+        ),
       ],
     };
 

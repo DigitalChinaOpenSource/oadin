@@ -1,0 +1,47 @@
+.cancelModal {
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contentText {
+  display: flex;
+  width: 100%;
+  height: auto;
+  overflow-y: auto;
+  flex-direction: column;
+  justify-content: center;
+  color: #344054;
+  text-align: justify;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 22px;
+  margin-bottom: 24px;
+
+  p {
+    margin-bottom: 12px;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    // margin-bottom: 12px;
+    li {
+      margin-bottom: 4px;
+    }
+  }
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}

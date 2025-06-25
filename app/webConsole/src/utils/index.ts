@@ -1,5 +1,15 @@
 import { AUTH_TOKEN } from '../constants';
 
+export function getLocalStorageDownList(key: string) {
+  try {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error(`Failed to parse ${key} from localStorage:`, error);
+    return [];
+  }
+}
+
 export function baseHeaders(providedToken = null) {
   const token = providedToken || window.localStorage.getItem(AUTH_TOKEN);
   return {

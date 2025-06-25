@@ -1,6 +1,6 @@
 .uploadContainer {
   width: 100%;
-  //height: 112px;
+  min-height: 112px;
 }
 
 .idCardUpload {
@@ -8,17 +8,19 @@
   height: 100%;
   :global(.ant-upload.ant-upload-select) {
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
     background: #f5f8ff;
-    border: 1px dashed #c3d2ff;
+    //border: 1px dashed #c3d2ff;
     border-radius: 4px;
     margin-right: 0;
     margin-bottom: 0;
-    box-sizing: content-box;
+    box-sizing: border-box;
   }
 }
 
 .uploadButton {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -41,6 +43,7 @@
   position: relative;
   width: 100%;
   height: 112px;
+  min-height: 112px;
   border: 1px dashed #c3d2ff;
   border-radius: 4px;
   overflow: hidden;

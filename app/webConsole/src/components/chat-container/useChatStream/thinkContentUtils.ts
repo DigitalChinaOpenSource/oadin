@@ -6,6 +6,23 @@ interface ParsedContent {
   content: string | { data: string; status: 'progress' | 'success' | 'error' };
 }
 
+interface StreamData {
+  content?: string;
+  thinking?: string;
+  is_complete?: boolean;
+  type?: string;
+}
+
+interface RequestState {
+  current: {
+    content: {
+      response: string;
+      thinking: string;
+    };
+    [key: string]: unknown;
+  };
+}
+
 /**
  * 解析包含 <think> 标签的内容
  * @param content 原始内容
@@ -104,15 +121,27 @@ export const parseThinkContent = (content: string, hasUnfinishedThink: boolean =
  * 构建包含 think 内容的消息
  * @param responseContent 响应内容
  * @param isComplete 是否完成
+ * @param thinkingContent 额外的思考内容
  * @returns MessageType 对象
  */
-export const buildMessageWithThinkContent = (responseContent: string, isComplete: boolean = false): MessageType => {
+export const buildMessageWithThinkContent = (responseContent: string, isComplete: boolean = false, thinkingContent?: string): MessageType => {
   // 检查是否有未闭合的 <think> 标签
   const openTagCount = (responseContent.match(/<think>/g) || []).length;
   const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
   const hasUnfinishedThink = openTagCount > closeTagCount && !isComplete;
 
   const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
+
+  // 如果有额外的思考内容，添加到解析结果中
+  if (thinkingContent && thinkingContent.trim()) {
+    parsedContents.push({
+      type: 'think',
+      content: {
+        data: thinkingContent.trim(),
+        status: 'success',
+      },
+    });
+  }
 
   const contentList = parsedContents.map((item) => ({
     id: generateUniqueId('content'),
@@ -128,7 +157,7 @@ export const buildMessageWithThinkContent = (responseContent: string, isComplete
 };
 
 /**
- * 处理包含 think 标签的文本内容
+ * 处理包含 think 标签或 thinking 字段的文本内容
  * @param data 响应数据
  * @param currentResponseContent 当前累积的响应内容
  * @param setStreamingContent 设置流式内容的函数
@@ -137,27 +166,44 @@ export const buildMessageWithThinkContent = (responseContent: string, isComplete
  * @returns 更新后的响应内容
  */
 export const handleTextContent = (
-  data: any,
+  data: StreamData,
   currentResponseContent: string,
   setStreamingContent: (content: string) => void,
   setStreamingThinking: (content: string) => void,
-  requestStateRef: any,
+  requestStateRef: RequestState,
 ): string => {
   let responseContent = currentResponseContent;
 
+  // 优先处理 thinking 字段
+  if (data.thinking !== undefined) {
+    // 直接更新思考内容
+    setStreamingThinking(data.thinking);
+    if (requestStateRef && requestStateRef.current) {
+      requestStateRef.current.content.thinking = data.thinking;
+    }
+
+    // 如果同时也有 content 字段，作为普通内容处理
+    if (data.content) {
+      setStreamingContent(data.content);
+      return data.content;
+    }
+    // 如果只有 thinking 字段，保持当前内容不变
+    return currentResponseContent;
+  }
+
   // 根据不同的数据类型处理内容累积
   if (data.is_complete) {
-    responseContent = data.content;
+    responseContent = data.content || '';
   } else if (data.type === 'answer') {
     if (responseContent.length === 0) {
-      responseContent = data.content;
+      responseContent = data.content || '';
     } else {
-      responseContent += data.content;
+      responseContent += data.content || '';
     }
   } else {
-    if (data.content.length > responseContent.length || !responseContent.includes(data.content.trim())) {
-      responseContent += data.content;
-    } else {
+    if (data.content && (data.content.length > responseContent.length || !responseContent.includes(data.content.trim()))) {
+      responseContent += data.content || '';
+    } else if (data.content) {
       responseContent = data.content;
     }
   }
