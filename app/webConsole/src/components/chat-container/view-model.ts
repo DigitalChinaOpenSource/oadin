@@ -93,11 +93,8 @@ export default function useViewModel() {
   useEffect(() => {
     if (!initialized || !selectedModel) return;
 
-    const source = getSessionSource();
-
-    // 如果模型变了且不是来自历史记录，创建新会话
-    if (selectedModel.id !== prevModelId && source !== 'history') {
-      fetchCreateChat({ modelId: selectedModel.id });
+    // 当模型变化时，只更新prevModelId的状态，不自动创建新会话
+    if (selectedModel.id !== prevModelId) {
       setPrevModelId(selectedModel.id);
     }
   }, [selectedModel, initialized, prevModelId]);

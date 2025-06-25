@@ -393,7 +393,7 @@ export function useChatStream() {
 
         // 8. 执行工具调用
         const data = await httpRequest.post('/mcp/client/runTool', { messageId: id, ...toolResponse });
-        const isToolError = data?.content?.isError === true;
+        const isToolError = data?.isError === true;
         const toolErrorMessage = isToolError && Array.isArray(data.content) && data.content.length > 0 ? data.content[0]?.text || ERROR_MESSAGES.TOOL.EXECUTION_FAILED : '';
 
         setStreamingContent(currentContent);
