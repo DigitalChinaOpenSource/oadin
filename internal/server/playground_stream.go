@@ -414,9 +414,6 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 			}
 		}
 	}
-
-	systemPrompt := "你刚才多次调用了不同的工具，请结合所有工具调用的结果，给出综合性的总结和建议，不要只关注最后一次工具调用。"
-	history = append([]map[string]string{{"role": "system", "content": systemPrompt}}, history...)
 	return history
 }
 
