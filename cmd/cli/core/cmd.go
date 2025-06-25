@@ -68,11 +68,19 @@ func (sm *ServerManager) StopServer(serverType string) error {
 		return fmt.Errorf("server %s is not running", serverType)
 	}
 
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	log.Println("Shutting down server...")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	srv.SetKeepAlivesEnabled(false)
 	if err := srv.Shutdown(ctx); err != nil {
-		return fmt.Errorf("failed to stop %s server: %v", serverType, err)
+		if err := srv.Close(); err != nil {
+			return fmt.Errorf("failed to stop %s server: %v", serverType, err)
+		}
 	}
 
 	switch serverType {

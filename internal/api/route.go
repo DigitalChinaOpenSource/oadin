@@ -74,13 +74,14 @@ func InjectRouter(e *ByzeCoreServer) {
 	mcpApi.GET("/categories", e.GetCategories)
 	mcpApi.PUT("/:id/download", e.DownloadMCP)
 	mcpApi.POST("/mine", e.GetMyMCPList)
-	mcpApi.PUT("/:id/auth", e.AuthorizeMCP)
+	mcpApi.PUT("/:id/configuration", e.Configuration)
 	mcpApi.PUT("/:id/reverse", e.ReverseStatus)
 	mcpApi.PUT("/setup", e.SetupFunTool)
 	mcpApi.POST("/client/start", e.ClientMcpStart)
 	mcpApi.POST("/client/stop", e.ClientMcpStop)
 	mcpApi.POST("/client/getTools", e.ClientGetTools)
 	mcpApi.POST("/client/runTool", e.ClientRunTool)
+	mcpApi.POST("/client/mac", e.ClientMAC)
 
 	// Apis related to system
 	systemApi := r.Group("system")

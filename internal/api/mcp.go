@@ -89,16 +89,16 @@ func (t *ByzeCoreServer) DownloadMCP(c *gin.Context) {
 
 }
 
-func (t *ByzeCoreServer) AuthorizeMCP(c *gin.Context) {
+func (t *ByzeCoreServer) Configuration(c *gin.Context) {
 
 	id := c.Param("id")
 
-	auth := map[string]string{}
+	config := map[string]string{}
 
-	err := c.BindJSON(&auth)
-	authStr, err := json.Marshal(auth)
+	err := c.BindJSON(&config)
+	conStr, err := json.Marshal(config)
 
-	err = t.MCP.AuthorizeMCP(c, id, string(authStr))
+	err = t.MCP.Configuration(c, id, string(conStr))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
 		return
@@ -249,4 +249,13 @@ func (t *ByzeCoreServer) ClientGetTools(c *gin.Context) {
 	}
 	res.Tools = mcpTools
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": res})
+}
+
+func (t *ByzeCoreServer) ClientMAC(c *gin.Context) {
+	err := t.MCP.ClientMAC(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "500", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
 }
