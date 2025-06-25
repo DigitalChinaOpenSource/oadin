@@ -4,8 +4,11 @@ import { persist } from 'zustand/middleware';
 interface User {
   id: string;
   name: string;
-  email: string;
-  token: string;
+  phoneNumber: string;
+  wechatBind?: boolean;
+  wechatInfo?: Record<string, any>;
+  email?: string;
+  token?: string;
 }
 
 interface AuthState {
@@ -25,8 +28,8 @@ const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage', // localStorage 中的键名
-    }
-  )
+    },
+  ),
 );
 
 export default useAuthStore;

@@ -1,0 +1,48 @@
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.wechatContent {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 24px;
+  .top,
+  .bottom {
+    font-size: 14px;
+    line-height: 22px;
+    color: #898ea3;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .bottom {
+    margin-bottom: 24px;
+  }
+  .descFlag {
+    color: #5429ff;
+  }
+  .wechatBindContainer {
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 4px 12px 0px rgba(33, 25, 71, 0.12);
+    overflow: hidden;
+    .login_content {
+      width: 156px;
+      height: 156px;
+    }
+  }
+}
