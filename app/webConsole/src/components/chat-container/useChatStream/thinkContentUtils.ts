@@ -124,11 +124,18 @@ export const parseThinkContent = (content: string, hasUnfinishedThink: boolean =
  * 构建包含 think 内容的消息
  * @param responseContent 响应内容
  * @param isComplete 是否完成
- * @param thinkingContent 额外的思考内容（来自 thinking 字段或 <think> 标签）
+ * @param thinkingContent 来自 <think> 标签的思考内容
  * @param thinkingFromField 来自 thinking 字段的思考内容
+ * @param isThinkingActive thinking 字段是否还在活跃状态
  * @returns MessageType 对象
  */
-export const buildMessageWithThinkContent = (responseContent: string, isComplete: boolean = false, thinkingContent?: string, thinkingFromField?: string): MessageType => {
+export const buildMessageWithThinkContent = (
+  responseContent: string,
+  isComplete: boolean = false,
+  thinkingContent?: string,
+  thinkingFromField?: string,
+  isThinkingActive: boolean = false,
+): MessageType => {
   // 检查是否有未闭合的 <think> 标签
   const openTagCount = (responseContent.match(/<think>/g) || []).length;
   const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
@@ -136,27 +143,21 @@ export const buildMessageWithThinkContent = (responseContent: string, isComplete
 
   const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
 
-  // 如果有来自 thinking 字段的思考内容，添加到解析结果的开头
+  // 只处理来自 thinking 字段的思考内容（两种方式互斥）
   if (thinkingFromField && thinkingFromField.trim()) {
+    // 根据是否还在思考中来设置状态
+    const thinkingStatus = isThinkingActive ? 'progress' : 'success';
+
     parsedContents.unshift({
       type: 'think',
       content: {
         data: thinkingFromField.trim(),
-        status: 'success',
+        status: thinkingStatus,
       },
     });
   }
-
-  // 如果有额外的思考内容（向后兼容），添加到解析结果中
-  if (thinkingContent && thinkingContent.trim() && thinkingContent !== thinkingFromField) {
-    parsedContents.push({
-      type: 'think',
-      content: {
-        data: thinkingContent.trim(),
-        status: 'success',
-      },
-    });
-  }
+  // 注意：这里不再处理 thinkingContent，因为它来自 <think> 标签
+  // <think> 标签的内容已经在 parseThinkContent 中被处理了
 
   const contentList = parsedContents.map((item) => ({
     id: generateUniqueId('content'),
@@ -189,7 +190,7 @@ export const handleTextContent = (
 ): string => {
   let responseContent = currentResponseContent;
 
-  // 处理 thinking 字段的深度思考
+  // 处理 thinking 字段的深度思考（与 <think> 标签互斥）
   if (data.thinking !== undefined) {
     const isThinkingEnd = data.thinking === '' || data.thinking === null;
 
@@ -205,15 +206,8 @@ export const handleTextContent = (
       requestStateRef.current.content.isThinkingActive = false;
     }
 
-    // 更新流式思考显示内容
-    let displayThinkingContent = requestStateRef.current.content.thinkingFromField || '';
-
-    // 如果还有其他来源的思考内容，合并显示
-    if (requestStateRef.current.content.thinking) {
-      displayThinkingContent = displayThinkingContent ? `${displayThinkingContent}\n\n${requestStateRef.current.content.thinking}` : requestStateRef.current.content.thinking;
-    }
-
-    setStreamingThinking(displayThinkingContent);
+    // 更新流式思考显示内容（只显示 thinking 字段的内容）
+    setStreamingThinking(requestStateRef.current.content.thinkingFromField || '');
 
     // 如果同时也有 content 字段，作为普通内容处理
     if (data.content) {
@@ -241,15 +235,16 @@ export const handleTextContent = (
     }
   }
 
-  // 检查是否有未闭合的 <think> 标签
-  const openTagCount = (responseContent.match(/<think>/g) || []).length;
-  const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
-  const hasUnfinishedThink = openTagCount > closeTagCount;
-
-  // 解析内容，统一处理完整和未完整的 <think> 块
-  const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
-
+  // 处理 <think> 标签（与 thinking 字段互斥）
   if (responseContent.includes('<think>')) {
+    // 检查是否有未闭合的 <think> 标签
+    const openTagCount = (responseContent.match(/<think>/g) || []).length;
+    const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
+    const hasUnfinishedThink = openTagCount > closeTagCount;
+
+    // 解析内容，统一处理完整和未完整的 <think> 块
+    const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
+
     // 从解析内容中提取 thinking 文本
     const thinkContents = parsedContents
       .filter((item) => item.type === 'think')
@@ -263,17 +258,7 @@ export const handleTextContent = (
 
     // 更新来自 <think> 标签的思考内容
     requestStateRef.current.content.thinking = thinkContents;
-
-    // 合并所有思考内容进行显示
-    let displayThinkingContent = '';
-    if (requestStateRef.current.content.thinkingFromField) {
-      displayThinkingContent = requestStateRef.current.content.thinkingFromField;
-    }
-    if (thinkContents) {
-      displayThinkingContent = displayThinkingContent ? `${displayThinkingContent}\n\n${thinkContents}` : thinkContents;
-    }
-
-    setStreamingThinking(displayThinkingContent);
+    setStreamingThinking(thinkContents);
 
     // 提取纯文本内容
     const plainContents = parsedContents
@@ -283,15 +268,17 @@ export const handleTextContent = (
 
     setStreamingContent(plainContents);
   } else {
-    // 没有 <think> 标签时，只更新来自 <think> 标签的思考内容为空
+    // 没有 <think> 标签，正常设置
+    // 清除来自 <think> 标签的思考内容
     requestStateRef.current.content.thinking = '';
 
-    // 但仍需要显示来自 thinking 字段的内容
+    // 如果有来自 thinking 字段的内容，继续显示
     if (requestStateRef.current.content.thinkingFromField) {
       setStreamingThinking(requestStateRef.current.content.thinkingFromField);
+    } else {
+      setStreamingThinking('');
     }
 
-    // 正常设置响应内容
     setStreamingContent(responseContent);
   }
 

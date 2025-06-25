@@ -212,11 +212,13 @@ export function useChatStream() {
 
   // 取消请求并保存已生成内容
   const cancelRequest = () => {
+    const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
     // 如果有生成的内容，保存为消息
-    if (isLoading && (streamingContent || requestState.current.content.response)) {
-      const finalContent = (requestState.current.content.response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
+    if (isLoading && (streamingContent || response)) {
+      const finalContent = (response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
       // 将 thinking 内容也传入构建消息的函数 - 更新调用方式
-      const aiMessage = buildMessageWithThinkContent(finalContent, false, requestState.current.content.thinking || streamingThinking, requestState.current.content.thinkingFromField);
+
+      const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || streamingThinking, thinkingFromField, isThinkingActive);
       addMessage(aiMessage);
 
       // 保存当前的工具调用活动状态和toolGroupId，但清除内部状态
@@ -393,7 +395,7 @@ export function useChatStream() {
 
         // 8. 执行工具调用
         const data = await httpRequest.post('/mcp/client/runTool', { messageId: id, ...toolResponse });
-        const isToolError = data?.content?.isError === true;
+        const isToolError = data?.isError === true;
         const toolErrorMessage = isToolError && Array.isArray(data.content) && data.content.length > 0 ? data.content[0]?.text || ERROR_MESSAGES.TOOL.EXECUTION_FAILED : '';
 
         setStreamingContent(currentContent);
@@ -564,10 +566,10 @@ export function useChatStream() {
                   addMessage(finalMessage, true);
                 }
               }
-
-              if (!requestState.current.status.isToolCallActive && (requestState.current.content.response || localResponseContent)) {
-                const finalContent = requestState.current.content.response || localResponseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent, true, requestState.current.content.thinking || streamingThinking, requestState.current.content.thinkingFromField);
+              const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
+              if (!requestState.current.status.isToolCallActive && (response || localResponseContent)) {
+                const finalContent = response || localResponseContent;
+                const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || streamingThinking, thinkingFromField, isThinkingActive);
                 addMessage(aiMessage);
 
                 requestState.current = {
@@ -683,11 +685,12 @@ export function useChatStream() {
             },
             onclose: () => {
               clearTimers();
+              const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
               // 如果连接关闭但未完成且有内容，保存部分回复
-              if (isLoading && (requestState.current.content.response || responseContent)) {
+              if (isLoading && (response || responseContent)) {
                 // 创建部分AI回复消息
-                const finalContent = (requestState.current.content.response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
-                const aiMessage = buildMessageWithThinkContent(finalContent, false, requestState.current.content.thinking || streamingThinking, requestState.current.content.thinkingFromField);
+                const finalContent = (response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
+                const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || streamingThinking, thinkingFromField, isThinkingActive);
                 addMessage(aiMessage);
               }
               setIsLoading(false);
@@ -751,9 +754,10 @@ export function useChatStream() {
                   addMessage(finalMessage, true);
                 }
               }
-              if (!requestState.current.status.isToolCallActive && (requestState.current.content.response || responseContent)) {
-                const finalContent = requestState.current.content.response || responseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent, true, requestState.current.content.thinking || streamingThinking, requestState.current.content.thinkingFromField);
+              const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
+              if (!requestState.current.status.isToolCallActive && (response || responseContent)) {
+                const finalContent = response || responseContent;
+                const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || streamingThinking, thinkingFromField, isThinkingActive);
                 addMessage(aiMessage);
 
                 requestState.current = {
