@@ -17,6 +17,7 @@ declare module 'axios' {
     needMcpStore?: boolean;
     addMcpDownloadItem?: (item: { id: string; error: string; downStatus: string }) => void;
     mcpId?: string;
+    skipHealthCheck?: boolean; // 添加跳过健康检查的标识
   }
 }
 
@@ -119,24 +120,49 @@ const createApiInstance = (baseURL: string) => {
 
 const byzeInstance = createApiInstance(apiBaseURL);
 
-// 健康检查包装器
-async function withHealthCheck<T>(requestFn: () => Promise<T>): Promise<T> {
-  const { fetchByzeServerStatus } = useByzeServerCheckStore.getState();
-  await fetchByzeServerStatus();
-  if (!useByzeServerCheckStore.getState().checkByzeStatus) {
-    message.destroy();
-    message.error('奥丁服务不可用，请确认奥丁服务启动状态');
-    // 返回一个永远 pending 的 Promise，阻断后续 then/catch
-    return new Promise(() => {});
+// 防止无限循环的标志
+let isHealthChecking = false;
+
+// 健康检查包装器 - 修复无限循环问题
+async function withHealthCheck<T>(requestFn: () => Promise<T>, config?: any): Promise<T> {
+  // 如果配置中指定跳过健康检查，直接执行请求
+  if (config?.skipHealthCheck) {
+    return requestFn();
   }
-  return requestFn();
+
+  // 如果正在进行健康检查，直接执行请求，避免无限递归
+  if (isHealthChecking) {
+    return requestFn();
+  }
+
+  try {
+    isHealthChecking = true;
+
+    // 获取当前状态，避免重复调用 getState()
+    const storeState = useByzeServerCheckStore.getState();
+
+    // 执行健康检查
+    await storeState.fetchByzeServerStatus();
+
+    // 检查服务状态
+    if (!useByzeServerCheckStore.getState().checkByzeStatus) {
+      message.destroy();
+      message.error('奥丁服务不可用，请确认奥丁服务启动状态');
+      // 返回一个永远 pending 的 Promise，阻断后续 then/catch
+      return new Promise(() => {});
+    }
+
+    return requestFn();
+  } finally {
+    isHealthChecking = false;
+  }
 }
 
 const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) => ({
-  get: <T = any>(url: string, params?: any, config?: any) => withHealthCheck(() => instance.get<any, T>(url, { ...config, params })),
-  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => withHealthCheck(() => instance.post<any, T>(url, data, config)),
-  put: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.put<any, T>(url, data, config)),
-  del: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.delete<any, T>(url, { ...config, data })),
+  get: <T = any>(url: string, params?: any, config?: any) => withHealthCheck(() => instance.get<any, T>(url, { ...config, params }), config),
+  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => withHealthCheck(() => instance.post<any, T>(url, data, config), config),
+  put: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.put<any, T>(url, data, config), config),
+  del: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.delete<any, T>(url, { ...config, data }), config),
 });
 
 export const httpRequest = createRequestFunctions(byzeInstance);
