@@ -35,6 +35,7 @@ type MCPServer interface {
 	ClientMcpStop(ctx context.Context, ids []string) error
 	ClientGetTools(ctx context.Context, mcpId string) ([]mcp.Tool, error)
 	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponse, error)
+	ClientMAC(ctx context.Context) error
 }
 
 type MCPServerImpl struct {
@@ -508,4 +509,15 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 		Logo:           logo,
 		ToolDesc:       toolDesc,
 	}, nil
+}
+
+func (M *MCPServerImpl) ClientMAC(ctx context.Context) error {
+	config := &types.MCPServerConfig{
+		Id:      "mac",
+		Command: "/Users/aipc/Library/Application Support/Byze/runtime/bun",
+		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
+		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
+	}
+	_, err := M.McpHandler.ClientStart(config)
+	return err
 }
