@@ -36,7 +36,7 @@ type GetFilesResponse struct {
 
 // 删除文件请求
 type DeleteFileRequest struct {
-	FileID string `json:"file_id"`
+	FileID string `json:"fileId"`
 }
 
 // 删除文件响应
