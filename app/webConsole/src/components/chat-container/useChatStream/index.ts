@@ -43,6 +43,8 @@ export function useChatStream() {
     content: {
       response: '',
       thinking: '',
+      thinkingFromField: '',
+      isThinkingActive: false,
     },
     status: {
       hasReceivedData: false,
@@ -174,11 +176,13 @@ export function useChatStream() {
     setStreamingThinking('');
     setError(null);
 
-    // 重置请求状态
+    // 重置请求状态 - 添加新的 thinking 相关字段
     requestState.current = {
       content: {
         response: '',
         thinking: '',
+        thinkingFromField: '',
+        isThinkingActive: false,
       },
       status: {
         hasReceivedData: false,
@@ -211,8 +215,8 @@ export function useChatStream() {
     // 如果有生成的内容，保存为消息
     if (isLoading && (streamingContent || requestState.current.content.response)) {
       const finalContent = (requestState.current.content.response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
-      // 将 thinking 内容也传入构建消息的函数
-      const aiMessage = buildMessageWithThinkContent(finalContent, false, requestState.current.content.thinking || streamingThinking);
+      // 将 thinking 内容也传入构建消息的函数 - 更新调用方式
+      const aiMessage = buildMessageWithThinkContent(finalContent, false, requestState.current.content.thinking || streamingThinking, requestState.current.content.thinkingFromField);
       addMessage(aiMessage);
 
       // 保存当前的工具调用活动状态和toolGroupId，但清除内部状态
@@ -221,6 +225,8 @@ export function useChatStream() {
         content: {
           response: '',
           thinking: '',
+          thinkingFromField: '',
+          isThinkingActive: false,
         },
         status: {
           hasReceivedData: false,
@@ -561,13 +567,15 @@ export function useChatStream() {
 
               if (!requestState.current.status.isToolCallActive && (requestState.current.content.response || localResponseContent)) {
                 const finalContent = requestState.current.content.response || localResponseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent, true, requestState.current.content.thinking || streamingThinking);
+                const aiMessage = buildMessageWithThinkContent(finalContent, true, requestState.current.content.thinking || streamingThinking, requestState.current.content.thinkingFromField);
                 addMessage(aiMessage);
 
                 requestState.current = {
                   content: {
                     response: '',
                     thinking: '',
+                    thinkingFromField: '',
+                    isThinkingActive: false,
                   },
                   status: {
                     hasReceivedData: false,
@@ -679,7 +687,7 @@ export function useChatStream() {
               if (isLoading && (requestState.current.content.response || responseContent)) {
                 // 创建部分AI回复消息
                 const finalContent = (requestState.current.content.response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
-                const aiMessage = buildMessageWithThinkContent(finalContent, false, requestState.current.content.thinking || streamingThinking);
+                const aiMessage = buildMessageWithThinkContent(finalContent, false, requestState.current.content.thinking || streamingThinking, requestState.current.content.thinkingFromField);
                 addMessage(aiMessage);
               }
               setIsLoading(false);
@@ -745,12 +753,15 @@ export function useChatStream() {
               }
               if (!requestState.current.status.isToolCallActive && (requestState.current.content.response || responseContent)) {
                 const finalContent = requestState.current.content.response || responseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent, true, requestState.current.content.thinking || streamingThinking);
+                const aiMessage = buildMessageWithThinkContent(finalContent, true, requestState.current.content.thinking || streamingThinking, requestState.current.content.thinkingFromField);
                 addMessage(aiMessage);
+
                 requestState.current = {
                   content: {
                     response: '',
                     thinking: '',
+                    thinkingFromField: '',
+                    isThinkingActive: false,
                   },
                   status: {
                     hasReceivedData: false,

@@ -23,19 +23,45 @@ export const getSessionIdFromUrl = (): string => {
  * 设置会话ID到URL中并保存到sessionStorage
  * @param sessionId 要设置的会话ID
  */
-export const setSessionIdToUrl = (sessionId: string): void => {
+export const setSessionIdToUrl = (sessionId: string, source?: string): void => {
   const url = new URL(window.location.href);
+
   if (sessionId) {
+    // 设置会话ID
     url.searchParams.set('sessionId', sessionId);
+
+    // 处理source参数
+    if (source) {
+      // 明确设置source参数
+      url.searchParams.set('source', source);
+    } else {
+      // 如果没有提供source参数，保留当前URL中的source参数(如果有)
+      const currentSource = url.searchParams.get('source');
+      if (!currentSource) {
+        // 如果当前URL中没有source，则移除它
+        url.searchParams.delete('source');
+      }
+      // 如果有，则保持不变
+    }
+
     // 同时保存到sessionStorage
     sessionStorage.setItem('currentSessionId', sessionId);
   } else {
     url.searchParams.delete('sessionId');
-    // 清除sessionStorage中的会话ID
+    url.searchParams.delete('source');
     sessionStorage.removeItem('currentSessionId');
   }
-  // 使用history.replaceState来更新URL而不重新加载页面
+
   window.history.replaceState({}, '', url);
+};
+
+/**
+ * 获取会话来源标识
+ * @returns 当前会话来源标识，如果不存在则返回空字符串
+ */
+export const getSessionSource = (): string => {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('source') || '';
 };
 
 /**

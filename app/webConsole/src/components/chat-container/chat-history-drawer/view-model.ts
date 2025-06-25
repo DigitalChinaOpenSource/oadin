@@ -129,7 +129,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
     if (res) {
       setSelectedModel(res);
       setIsSelectedModel(true);
-      setSessionIdToUrl(sessionId);
+      setSessionIdToUrl(sessionId, 'history');
       setMessages(messages);
       setHistoryVisible(false);
     } else {

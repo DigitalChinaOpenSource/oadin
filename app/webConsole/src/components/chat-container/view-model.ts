@@ -7,18 +7,22 @@ import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import { IPlaygroundSession } from './types';
 import { message } from 'antd';
-import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage } from '@/utils/sessionParamUtils';
+import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage, getSessionSource } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
 import { MessageType } from '@res-utiles/ui-components';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
 
 export default function useViewModel() {
-  const [isUploadVisible, setIsUploadVisible] = useState(false);
   const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
   const isDownloadEmbed = useModelDownloadStore((state) => state.isDownloadEmbed);
   const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
+
+  const [isUploadVisible, setIsUploadVisible] = useState(false);
+  const [prevModelId, setPrevModelId] = useState<string | undefined>(selectedModel?.id);
+  const [prevSessionId, setPrevSessionId] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -29,44 +33,74 @@ export default function useViewModel() {
     if (!sessionIdFromUrl && sessionIdFromStorage) {
       setSessionIdToUrl(sessionIdFromStorage);
     }
-  }, []);
 
-  // 从URL中获取当前会话ID
-  const currentSessionId = getSessionIdFromUrl();
-  // 保存上一次使用的模型ID，用于检测模型是否变化
-  const prevSelectedModelIdRef = useRef<string | undefined>(selectedModel?.id);
-  // 用于标记是否是页面初始化加载
-  const isInitialLoad = useRef(true);
-
-  // 在组件卸载时保存会话ID到sessionStorage
-  useEffect(() => {
+    // 在组件卸载时保存会话ID到sessionStorage
     return () => {
       saveSessionIdToStorage();
     };
   }, []);
 
+  // 从URL中获取当前会话ID
+  const currentSessionId = getSessionIdFromUrl();
+
   useEffect(() => {
-    if (messages.length > 0) return;
-    // 场景1: 如果有会话ID(URL或sessionStorage)，则尝试获取历史对话详情
-    if (currentSessionId) {
-      if ((!selectedModel?.id || messages.length === 0) && isInitialLoad.current) {
-        // 页面初始化加载时，如果存在会话ID，则获取历史对话详情
-        fetchChatHistoryDetail(currentSessionId);
-      } else if (prevSelectedModelIdRef.current !== selectedModel?.id && selectedModel?.id) {
-        // 如果选择的模型发生变化，则创建新的会话
-        fetchCreateChat({ modelId: selectedModel.id });
-      }
-    } else if (selectedModel?.id) {
-      // 场景2: 如果没有会话ID但已选择模型，则创建新的会话
-      fetchCreateChat({ modelId: selectedModel.id });
+    if (initialized) return;
+
+    const sessionId = getSessionIdFromUrl();
+    const source = getSessionSource();
+
+    // 如果来源是history，历史记录已经在chat-history-drawer组件中处理，这里不做任何操作
+    if (source === 'history') {
+      setPrevSessionId(sessionId);
+      setInitialized(true);
+      return;
     }
 
-    // 更新上一次使用的模型ID引用
-    prevSelectedModelIdRef.current = selectedModel?.id;
+    if (sessionId && selectedModel?.id) {
+      // 有会话ID且有模型，加载历史记录
+      fetchChatHistoryDetail(sessionId);
+      setPrevSessionId(sessionId);
+    } else if (selectedModel?.id) {
+      // 无会话ID但有模型，创建新会话
+      fetchCreateChat({ modelId: selectedModel.id });
+      setPrevModelId(selectedModel.id);
+    }
+    setInitialized(true);
+  }, [initialized, selectedModel]);
 
-    // 首次运行后将初始化标志设为 false
-    isInitialLoad.current = false;
-  }, [currentSessionId, selectedModel, messages.length]);
+  useEffect(() => {
+    if (!initialized) return;
+    // 如果会话ID变化了
+    if (currentSessionId !== prevSessionId) {
+      const source = getSessionSource();
+      // 来自历史记录的会话变更，已在chat-history-drawer中处理，这里仅更新状态
+      if (source === 'history') {
+        setPrevSessionId(currentSessionId);
+      }
+      // 其他来源（如URL直接修改或分享链接）且有会话ID，需要加载历史记录
+      else if (currentSessionId && source !== 'new') {
+        fetchChatHistoryDetail(currentSessionId);
+        setPrevSessionId(currentSessionId);
+      }
+      // 新建会话的情况，只更新状态
+      else if (source === 'new') {
+        setPrevSessionId(currentSessionId);
+      }
+    }
+  }, [currentSessionId, initialized, prevSessionId]);
+
+  // 处理模型变化
+  useEffect(() => {
+    if (!initialized || !selectedModel) return;
+
+    const source = getSessionSource();
+
+    // 如果模型变了且不是来自历史记录，创建新会话
+    if (selectedModel.id !== prevModelId && source !== 'history') {
+      fetchCreateChat({ modelId: selectedModel.id });
+      setPrevModelId(selectedModel.id);
+    }
+  }, [selectedModel, initialized, prevModelId]);
 
   useEffect(() => {
     fetchAllModels();
@@ -94,7 +128,7 @@ export default function useViewModel() {
     return data || {};
   });
 
-  // 获取所有白泽下载的模型
+  // 获取所有奥丁下载的模型
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
       const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
@@ -162,10 +196,16 @@ export default function useViewModel() {
       res = await getModelList(remoteParams, modelId);
     }
     if (res) {
+      // 保存来源信息，防止被覆盖
+      const source = getSessionSource();
+
       setSelectedModel(res);
       setIsSelectedModel(true);
-      setSessionIdToUrl(sessionId);
+
       setMessages(messages);
+
+      // 更新prevModelId，避免模型变化触发新建会话
+      setPrevModelId(res.id);
     } else {
       message.error('获取历史记录详情失败，未找到对应模型');
     }
@@ -178,7 +218,7 @@ export default function useViewModel() {
       if (data && data.data && data.data.length) {
         return data.data.find((item) => item.id === modelId);
       } else {
-        return undefined; // 返回undefined表示没有找到对应模型
+        return undefined;
       }
     } catch (error) {
       return undefined;
@@ -196,9 +236,12 @@ export default function useViewModel() {
       manual: true,
       onSuccess: (data) => {
         if (data.id) {
-          setSessionIdToUrl(data.id);
+          // 创建新会话时，设置source=new参数
+          setSessionIdToUrl(data.id, 'new');
           setSelectMcpList([]);
           createNewChat();
+
+          setPrevSessionId(data.id);
         }
       },
     },
