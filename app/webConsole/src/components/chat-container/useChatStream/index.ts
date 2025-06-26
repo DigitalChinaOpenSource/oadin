@@ -11,7 +11,6 @@ import { httpRequest } from '@/utils/httpRequest';
 import { generateUniqueId, formatErrorMessage } from './utils';
 import {
   findProgressToolMessage,
-  extractToolCallData,
   extractToolCallDataByGroupId,
   createMcpContentWithGroupId,
   updateContentListWithMcpByGroupId,
@@ -31,7 +30,6 @@ export function useChatStream() {
 
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string>('');
-
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -595,7 +593,9 @@ export function useChatStream() {
                 requestState.current.lastToolGroupIdRef = savedToolGroupId;
               }
 
-              setIsLoading(false);
+              if (!requestState.current.status.isToolCallActive) {
+                setIsLoading(false);
+              }
               clearTimers();
             },
             onFallbackResponse: async (response) => {
@@ -693,7 +693,9 @@ export function useChatStream() {
                 const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || streamingThinking, thinkingFromField, isThinkingActive);
                 addMessage(aiMessage);
               }
-              setIsLoading(false);
+              if (!requestState.current.status.isToolCallActive) {
+                setIsLoading(false);
+              }
             },
           },
           {
@@ -782,7 +784,9 @@ export function useChatStream() {
                 clearStreamingState();
                 requestState.current.lastToolGroupIdRef = savedToolGroupId;
               }
-              setIsLoading(false);
+              if (!requestState.current.status.isToolCallActive) {
+                setIsLoading(false);
+              }
               clearTimers();
             },
 
