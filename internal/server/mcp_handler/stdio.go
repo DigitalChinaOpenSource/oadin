@@ -39,17 +39,6 @@ func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*cl
 	if config.Command == "" {
 		return nil, errors.New("command must be provided")
 	}
-
-	for i := range 3 {
-		c, err := s.ClientStart(config)
-		if err == nil {
-			return c, nil
-		}
-		log.Printf("initTransportClient: retrying after failure for server %s, attempt %d", config.Id, i+1)
-		time.Sleep(1 * time.Second)
-	}
-
-	// 如果重试失败，删除Pending状态
 	c, err := s.ClientStart(config)
 	if err == nil {
 		return c, nil
@@ -63,24 +52,28 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 
 	// 检查是否有正在初始化的客户端
 	s.mu.Lock()
-	_, exists := s.Pending[serverKey]
-	if exists {
+	pendingConfig, exists := s.Pending[serverKey]
+	if exists && pendingConfig.StartCacheTime.Add(10*time.Second).After(time.Now()) {
 		s.mu.Unlock()
 		log.Printf("[MCP] Client for server %s is already pending initialization", serverKey)
+		fmt.Printf("[MCP] Client for server %s is already pending initialization\n", serverKey)
 		return nil
 	}
 
 	// 检查是否已有客户端实例
+	fmt.Printf("[MCP] check Starting client for server: %s\n", config.Id)
 	if cli, exists := s.clients[serverKey]; exists {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := cli.Ping(ctx); err == nil {
 			s.mu.Unlock()
 			return nil
+		} else {
+			s.Stop(serverKey)
 		}
-		s.Stop(serverKey)
 	}
 
+	config.StartCacheTime = time.Now()
 	s.Pending[serverKey] = config
 	s.mu.Unlock()
 
