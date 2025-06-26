@@ -4,12 +4,9 @@ import { message } from 'antd';
 import { httpRequest } from '@/utils/httpRequest';
 import useChatStore from '../store/useChatStore';
 import rollingSvg from '@/components/icons/rolling.svg';
-import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
 
 export const HeaderContent = () => {
   const { uploadFileList, setUploadFileList } = useChatStore();
-  // 从URL中获取当前会话ID
-  const currentSessionId = getSessionIdFromUrl();
   const handleRemove = async (file: UploadFile) => {
     try {
       const fileId = file.status === 'done' && file.response?.id;
