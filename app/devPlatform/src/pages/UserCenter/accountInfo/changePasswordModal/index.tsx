@@ -1,6 +1,6 @@
 import { CloseOutlined } from '@ant-design/icons';
 import { Form, Input, Modal } from 'antd';
-import React from 'react';
+import React, { useEffect } from 'react';
 import styles from './index.module.scss';
 
 interface IChangePasswordProps {
@@ -16,6 +16,10 @@ const ChangePasswordModal = ({ title, onCancel, onConfirm, visible }: IChangePas
     await form.validateFields();
     onConfirm();
   };
+
+  useEffect(() => {
+    form.resetFields();
+  }, [visible]);
 
   return (
     <Modal

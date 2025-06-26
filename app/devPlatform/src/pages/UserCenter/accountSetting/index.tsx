@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import styles from './index.module.scss';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import CancelAuthModal from './cancelAuthModal';
 import SureAuthModal from './sureAuthModal';
 import { IUserType } from '../types';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 
 const AccountSetting = ({ goBack }: { goBack: () => void }) => {
   // 控制注销弹窗的显示状态
@@ -12,19 +13,25 @@ const AccountSetting = ({ goBack }: { goBack: () => void }) => {
   // 控制身份验证弹窗的显示状态
   const [authModalVisible, setAuthModalVisible] = useState<boolean>(false);
 
+  const { sureDeleteAccount } = useUserCenterView();
+
   // 注销提示弹窗确认
   const handleConfirm = () => {
-    console.log('用户确认注销账号');
-    // 这里可以添加真实的注销逻辑
     setModalVisible(false);
     setAuthModalVisible(true);
   };
 
   //   身份验证弹窗确认
-  const handleAuthConfirm = () => {
+  const handleAuthConfirm = async () => {
     console.log('身份验证成功');
     // 这里可以添加身份验证成功后的逻辑
-    setAuthModalVisible(false);
+    const res: any = await sureDeleteAccount();
+    if (res) {
+      message.success('账号注销成功');
+      setAuthModalVisible(false);
+    } else {
+      message.error('账号注销失败');
+    }
   };
 
   return (

@@ -16,10 +16,10 @@ export const useUserCenterView = () => {
     const testData = {
       id: 'user-123',
       userName: 'testUser',
-      companyName: 'testCompany',
+      enterpriseName: 'testCompany',
       email: '123@456.com',
-      phoneNumber: '1234567890',
-      userType: 'enterprise', // 个人账号
+      phone: '1234567890',
+      type: 'enterprise', // 个人账号
       wechatBind: false,
       wechatInfo: {
         openId: 'wx-123456',
@@ -59,10 +59,19 @@ export const useUserCenterView = () => {
     setCurrentStep('personPhone');
   };
 
+  // 绑定/更改实名认证
+  const bindRealNameAuth = async (values: any) => {};
+
+  // 获取用户协议与隐私政策
+  const getUserAgreement = async () => {};
+
   return {
     userInfo,
     getUserInfo,
     changeUsername,
     sureDeleteAccount,
+    bindRealNameAuth,
+    setUserInfo,
+    getUserAgreement,
   };
 };

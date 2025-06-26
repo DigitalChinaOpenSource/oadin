@@ -3,19 +3,31 @@ import { Button } from 'antd';
 import styles from './index.module.scss';
 import RealAuthIcon from '@/assets/realAuthIcon.svg';
 import AuthUploadModal from '@/pages/UserCenter/realnameAuth/authUploadModal';
-import { IAccountInfo, IUserType } from '../types';
+import { IAccountInfo, IAccountInfoProps } from '../types';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 
 /**
  * 实名认证模块
  */
-const RealNameAuth = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
-  const { userType, isRealNameAuth, isEnterpriseAuth } = accountInfo;
+const RealNameAuth = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
+  const { type: userType, isRealNameAuth, isEnterpriseAuth } = accountInfo;
+  const { bindRealNameAuth } = useUserCenterView();
 
   const haveAuth = userType === 'person' ? isRealNameAuth : isEnterpriseAuth;
   // 控制实名认证弹窗的显示状态
   const [authModalVisible, setAuthModalVisible] = useState<boolean>(false);
 
-  const handleConfirm = () => {
+  const handleConfirm = async (values: any) => {
+    const authRes: any = await bindRealNameAuth(values);
+    // TODO  需要根据返回结果更新用户信息
+    // if (authRes) {
+    //   setUserInfo({
+    //     ...accountInfo,
+    //     isRealNameAuth: authRes,
+    //     isEnterpriseAuth: authRes,
+    //   });
+    //   setAuthModalVisible(false);
+    // }
     setAuthModalVisible(false);
   };
 

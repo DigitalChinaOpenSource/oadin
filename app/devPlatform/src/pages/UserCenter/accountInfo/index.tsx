@@ -3,7 +3,7 @@ import { Avatar, Button, Input } from 'antd';
 import { PencilSimpleLineIcon, UserIcon, CheckIcon, CheckCircleIcon, WarningCircleIcon, BuildingOfficeIcon } from '@phosphor-icons/react';
 import styles from './index.module.scss';
 import UserNameModal from './userNameModal';
-import { IAccountInfo } from '@/pages/UserCenter/types';
+import { IAccountInfo, IAccountInfoProps } from '@/pages/UserCenter/types';
 import DefaultUserIcon from '@/assets/userIcon.svg';
 import CompanyIcon from '@/assets/companyIcon.svg';
 import ChangePasswordModal from '@/pages/UserCenter/accountInfo/changePasswordModal';
@@ -13,19 +13,17 @@ import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 /**
  * 用户中心账号信息组件
  */
-const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
-  const { userType, userName, companyName, email, phoneNumber, avatarUrl, wechatInfo, wechatBind } = accountInfo;
+const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
+  const { type: userType, userName, enterpriseName, email, phone, avatarUrl, wechatInfo, wechatBind } = accountInfo;
 
-  const { sureDeleteAccount } = useUserCenterView();
+  const { changeUsername, userInfo } = useUserCenterView();
   // 修改用户名的弹窗
   const [userEditShow, setUserEditShow] = useState<boolean>(false);
-
   // 修改密码的弹框
   const [changePasswordShow, setChangePasswordShow] = useState<boolean>(false);
-
   // 绑定微信的弹窗
   const [wechatBindShow, setWechatBindShow] = useState<boolean>(false);
-
+  // 是否是个人账户
   const isPerson = userType === 'person';
 
   // 渲染绑定状态
@@ -87,6 +85,20 @@ const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
     );
   };
 
+  // 修改用户名
+  const handleChangeUserName = async (newUserName: string) => {
+    console.log('handleChangeUserName:', newUserName);
+    const changeRes: any = await changeUsername(newUserName, accountInfo.phone);
+    // TODO 需要根据实际接口修改
+    if (changeRes) {
+      setUserInfo({
+        ...accountInfo,
+        [isPerson ? 'userName' : 'enterpriseName']: newUserName,
+      });
+      setUserEditShow(false);
+    }
+  };
+
   return (
     <div className={styles.accountInfoContainer}>
       {/* 用户头像和名称部分 */}
@@ -100,7 +112,7 @@ const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
           {/* 用户名和编辑按钮 */}
           <div className={styles.userInfo}>
             <div className={styles.userNameBlock}>
-              <span className={styles.userName}>{isPerson ? userName : companyName}</span>
+              <span className={styles.userName}>{isPerson ? userName : enterpriseName}</span>
 
               <Button
                 type="text"
@@ -132,8 +144,8 @@ const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
         label: '手机号码',
         content: (
           <>
-            <span className={styles.infoText}>{phoneNumber}</span>
-            <div className={styles.bindingStatus}>{renderBindStatus(Boolean(phoneNumber))}</div>
+            <span className={styles.infoText}>{phone}</span>
+            <div className={styles.bindingStatus}>{renderBindStatus(Boolean(phone))}</div>
           </>
         ),
         // action: <Button className={styles.changeButton}>{phoneNumber ? '更换' : '绑定'}</Button>,
@@ -200,7 +212,7 @@ const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
         title={isPerson ? '用户名修改' : '企业名称修改'}
         userType="person"
         onCancel={() => setUserEditShow(false)}
-        onConfirm={() => setUserEditShow(false)}
+        onConfirm={(newUserName) => handleChangeUserName(newUserName)}
       />
       {/*修改密码的弹框*/}
       <ChangePasswordModal

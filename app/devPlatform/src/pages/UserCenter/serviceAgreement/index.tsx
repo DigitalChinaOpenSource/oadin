@@ -1,12 +1,18 @@
-import React from 'react';
-import { ArrowUpRightIcon } from '@phosphor-icons/react';
+import React, { useEffect } from 'react';
 import styles from './index.module.scss';
 import { ExportOutlined } from '@ant-design/icons';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 
 /**
  * 服务协议和隐私政策组件
  */
 const ServiceAgreement: React.FC = () => {
+  const { getUserAgreement } = useUserCenterView();
+
+  useEffect(() => {
+    getUserAgreement();
+  }, []);
+
   const openAgreement = (type: 'user' | 'privacy') => {
     // 这里可以根据实际需求打开对应的协议页面或弹窗
     if (type === 'user') {

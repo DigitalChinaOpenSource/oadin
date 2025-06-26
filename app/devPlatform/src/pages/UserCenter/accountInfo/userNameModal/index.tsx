@@ -2,13 +2,14 @@ import { Form, Input, Modal } from 'antd';
 import styles from './index.module.scss';
 import { CloseOutlined } from '@ant-design/icons';
 import { IUserType } from '@/pages/UserCenter/types';
+import { useEffect } from 'react';
 
 interface IUserNameModalProps {
   visible: boolean;
   title?: string;
   userType: IUserType;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (newUserName: string) => void;
 }
 
 const UserNameModal = ({ title, userType, onCancel, onConfirm, visible }: IUserNameModalProps) => {
@@ -16,11 +17,15 @@ const UserNameModal = ({ title, userType, onCancel, onConfirm, visible }: IUserN
 
   const handleOk = async () => {
     await form.validateFields();
-    const formData = form.getFieldsValue();
-    console.log('提交的表单数据:', formData);
-    onConfirm();
+    const userName = form.getFieldValue('userName');
+    console.log('提交的表单数据:', userName);
+    onConfirm(userName);
     form.resetFields();
   };
+
+  useEffect(() => {
+    form.resetFields();
+  }, [visible]);
 
   return (
     <Modal

@@ -13,7 +13,7 @@ import { IAccountInfo } from '@/pages/UserCenter/types';
 const UserCenter: React.FC = () => {
   const [showSetting, setShowSetting] = useState<boolean>(false);
 
-  const { userInfo, getUserInfo } = useUserCenterView();
+  const { userInfo, getUserInfo, setUserInfo } = useUserCenterView();
 
   useEffect(() => {
     getUserInfo();
@@ -52,9 +52,15 @@ const UserCenter: React.FC = () => {
               </Button>
             </div>
           </div>
-          <AccountInfo accountInfo={userInfo as IAccountInfo} />
+          <AccountInfo
+            accountInfo={userInfo as IAccountInfo}
+            setUserInfo={setUserInfo}
+          />
           <div className="header">实名认证</div>
-          <RealNameAuth accountInfo={userInfo as IAccountInfo} />
+          <RealNameAuth
+            accountInfo={userInfo as IAccountInfo}
+            setUserInfo={setUserInfo}
+          />
           <div className="header">服务协议</div>
           <ServiceAgreement />
         </>

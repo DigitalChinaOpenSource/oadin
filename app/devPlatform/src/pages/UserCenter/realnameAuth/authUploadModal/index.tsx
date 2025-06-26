@@ -1,7 +1,6 @@
 import styles from '@/pages/UserCenter/accountSetting/sureAuthModal/index.module.scss';
 import { CloseOutlined } from '@ant-design/icons';
-import { Button, Form, Modal } from 'antd';
-import React, { useEffect } from 'react';
+import { Form, Modal } from 'antd';
 import ImageUpload from '@/pages/Login/components/ImageUpload';
 import LoginEnterpriseIcon from '@/assets/login-enterprise-icon.svg';
 import LoginFrontedIcon from '@/assets/login-fronted-icon.svg';
@@ -11,7 +10,7 @@ import { IUserType } from '@/pages/UserCenter/types';
 interface IAuthUploadModalProps {
   visible: boolean;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (formData: any) => void;
   userType: IUserType;
   title?: string;
 }
@@ -22,7 +21,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', ti
   const handleSure = async () => {
     await form.validateFields();
     console.log(form.getFieldsValue());
-    onConfirm();
+    onConfirm(form.getFieldsValue());
   };
 
   // 上传企业营业执照
