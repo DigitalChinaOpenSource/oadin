@@ -186,6 +186,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 					return
 				}
+
 				msgType := "answer"
 				if resp.Thoughts != "" && thoughts != resp.Thoughts {
 					msgType = "thinking"
@@ -278,6 +279,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 
 					fullContent += resp.Content
 
+					respChan <- resp
+				} else if resp.Thoughts != "" {
+					// 处理思考内容
+					thoughts += resp.Thoughts
 					respChan <- resp
 				} else {
 					slog.Debug("跳过空内容块")
@@ -409,7 +414,7 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 				})
 				history = append(history, map[string]string{
 					"role":    "user",
-					"content": fmt.Sprintf("我的问题是：%s\n  Here is the result of mcp tool use `%s`:", con.Content, msg.Name, outputParams),
+					"content": outputParams,
 				})
 			}
 		}
