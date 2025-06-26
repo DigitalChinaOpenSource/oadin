@@ -12,7 +12,7 @@ export interface IDownloadListBoxProps {
 
 const DownloadListBox = memo((props: IDownloadListBoxProps) => {
   const { className = '', handleDownload } = props;
-  const downloadList = useModelDownloadStore((state) => state.downloadList);
+  const downloadList = useModelDownloadStore.getState().downloadList;
   return (
     <div className={`${className} ${styles.downloadListBox}`}>
       <div className={styles.header}>

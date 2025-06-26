@@ -73,15 +73,10 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   };
 
-  const handleSendMessage = async (message: string) => {
-    console.log('handleSendMessage==>', message);
-    if (!message.trim() || isLoading) return;
+  const handleSendMessage = (message: string) => {
+    if (!message.trim() || isLoading || isUploading) return;
 
-    // try {
-    //   await sendChatMessage(message);
-    // } catch (err) {
-    //   console.error('发送消息失败:', err);
-    // }
+    sendChatMessage(message);
   };
   // 复制消息
   const handleCopyMessage = (content?: string) => {

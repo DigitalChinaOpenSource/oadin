@@ -21,24 +21,11 @@ export const copyMessageToClipboard = (content?: string) => {
 
     // 否则，从聊天存储获取最后一条用户消息及之后的对话
     const messages = useChatStore.getState().messages;
-    if (!messages || messages.length === 0) return false;
-
-    // 找到最后一条用户消息的索引
-    let lastUserMsgIndex = -1;
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'user') {
-        lastUserMsgIndex = i;
-        break;
-      }
-    }
-
-    if (lastUserMsgIndex === -1) return false;
-
-    // 获取最后一条用户消息及之后的所有消息
-    const relevantMessages = messages.slice(lastUserMsgIndex);
+    const lastMessage = messages[messages.length - 1];
+    const relevantContent = lastMessage?.contentList?.[lastMessage.contentList.length - 1]?.content || '';
 
     // 转换为JSON格式
-    const jsonData = JSON.stringify(relevantMessages, null, 2);
+    const jsonData = JSON.stringify(relevantContent, null, 2);
 
     // 复制到剪贴板
     navigator.clipboard.writeText(jsonData);
