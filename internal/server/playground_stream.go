@@ -187,28 +187,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					return
 				}
 
-				msgType := "answer"
-				if resp.Thoughts != "" && thoughts != resp.Thoughts {
-					msgType = "thinking"
-					thoughts = resp.Thoughts
-					thoughtsMsg := &types.ChatMessage{
-						ID:        uuid.New().String(),
-						SessionID: request.SessionID,
-						Role:      "think",
-						Content:   resp.Thoughts,
-						Order:     len(messages) + 2,
-						CreatedAt: time.Now(),
-						ModelID:   session.ModelID,
-						ModelName: session.ModelName,
-					}
-					err = p.Ds.Add(ctx, thoughtsMsg)
-					if err != nil {
-						slog.Error("Failed to save thoughts message", "error", err)
-					}
-				}
 				// 保留原始的 Content
 				originalContent := resp.Content
-				resp.Type = msgType
+				resp.Type = "answer"
 				resp.Model = session.ModelName
 				resp.ModelName = session.ModelName
 
@@ -218,6 +199,25 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						"is_complete", resp.IsComplete,
 						"content_length", len(originalContent),
 						"accumulated_content_length", len(fullContent))
+
+					// 保存思考内容（如果有）
+					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+						thoughts = thoughts + resp.Thoughts
+						thoughtsMsg := &types.ChatMessage{
+							ID:        uuid.New().String(),
+							SessionID: request.SessionID,
+							Role:      "think",
+							Content:   thoughts,
+							Order:     len(messages) + 1,
+							CreatedAt: time.Now(),
+							ModelID:   session.ModelID,
+							ModelName: session.ModelName,
+						}
+						err = p.Ds.Add(ctx, thoughtsMsg)
+						if err != nil {
+							slog.Error("Failed to save thoughts message", "error", err)
+						}
+					}
 
 					if len(fullContent) == 0 && len(originalContent) > 0 {
 						fullContent = originalContent
@@ -231,7 +231,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 							SessionID:     request.SessionID,
 							Role:          "assistant",
 							Content:       fullContent,
-							Order:         len(messages) + 1,
+							Order:         len(messages) + 2,
 							CreatedAt:     time.Now(),
 							ModelID:       session.ModelID,
 							ModelName:     session.ModelName,
@@ -268,7 +268,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 
 					// 异步增加会话标题
-					go p.AddSessionTitle(ctx, request)
+					go p.AddSessionTitle(request)
 					fmt.Println("流式输出完成，保存助手回复", resp)
 					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
@@ -276,9 +276,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					// slog.Info("收到非空流式输出块",
 					// 	"content_length", len(originalContent),
 					// 	"is_complete", resp.IsComplete)
-
 					fullContent += resp.Content
-
 					respChan <- resp
 				} else if resp.Thoughts != "" {
 					// 处理思考内容
@@ -308,11 +306,12 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 }
 
 // 增加会话的标题
-func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendStreamMessageRequest) error {
+func (p *PlaygroundImpl) AddSessionTitle(request *dto.SendStreamMessageRequest) error {
 	sessionCheck := &types.ChatSession{ID: request.SessionID}
+	ctx := context.Background()
 	err := p.Ds.Get(ctx, sessionCheck)
 	if err == nil && sessionCheck.Title == "" {
-		genTitlePrompt := fmt.Sprintf("请为以下用户问题生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
+		genTitlePrompt := fmt.Sprintf("请为以下用户问题迅速生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
 		payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`, sessionCheck.ModelName, genTitlePrompt)
 		slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
 		client := &http.Client{}
