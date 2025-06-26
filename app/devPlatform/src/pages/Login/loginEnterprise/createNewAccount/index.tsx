@@ -8,33 +8,24 @@ import CodeInput from '@/pages/Login/components/codeInput';
 import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
 import { useLoginView } from '@/pages/Login/useLoginView.ts';
+import { IEnterpriseCreateFormValues } from '@/pages/Login/types';
 
-export interface IEnterpriseFormValues {
-  name: string;
-  password: string;
-  surePassword: string;
-  email: string;
-  emailCode: string;
-  phoneNumber: string;
-  phoneCode: string;
-  agreed: boolean;
-}
-
-const CreateNewAccount = () => {
+const CreateNewAccount = ({ onConfirm }: { onConfirm?: (values: IEnterpriseCreateFormValues) => void }) => {
   const { setCurrentStep } = useLoginStore();
-  const { createNewAccount } = useLoginView();
+  // const { createNewAccount } = useLoginView();
   const [form] = Form.useForm();
   const { message } = App.useApp();
 
-  const onFinish = async (values: IEnterpriseFormValues) => {
+  const onFinish = async (values: IEnterpriseCreateFormValues) => {
     console.log('Received values of form: ', values);
     // 这里可以添加提交表单的逻辑
     // 比如调用API注册新账户
     // onOk?.(values);
-    const createRes = await createNewAccount(values);
-    if (createRes) {
-      message.success('企业账户创建成功');
-    }
+    // const createRes = await createNewAccount(values);
+    // if (createRes) {
+    //   message.success('企业账户创建成功');
+    // }
+    onConfirm?.(values);
   };
 
   return (
@@ -57,7 +48,7 @@ const CreateNewAccount = () => {
           noValidate={true}
         >
           <Form.Item
-            name={'name'}
+            name={'enterpriseName'}
             rules={[{ required: true, message: '请输入企业名称' }]}
           >
             <Input
@@ -121,13 +112,13 @@ const CreateNewAccount = () => {
           />
           <PhoneNumberInput
             form={form}
-            codeFiled={'phoneNumber'}
+            codeFiled={'phone'}
             placeholder="请输入手机号"
           />
           <CodeInput
             form={form}
-            validateFiled={'phoneNumber'}
-            codeFiled={'phoneCode'}
+            validateFiled={'phone'}
+            codeFiled={'smsCode'}
             placeholder="请输入手机验证码"
           />
           <AgreedCheckBox

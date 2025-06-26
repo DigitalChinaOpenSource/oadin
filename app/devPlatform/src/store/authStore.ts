@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface User {
-  id: string;
-  name: string;
-  phoneNumber: string;
+export interface User {
+  username?: string;
+  nickname?: string;
+  phone: string;
   wechatBind?: boolean;
+  phoneBind?: boolean;
   wechatInfo?: Record<string, any>;
   email?: string;
-  token?: string;
+  token: string;
 }
 
 interface AuthState {
