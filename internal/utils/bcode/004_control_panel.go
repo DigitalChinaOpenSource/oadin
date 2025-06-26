@@ -17,4 +17,6 @@ var (
 
 	// ControlPanelAddMcpError mcp 添加失败
 	ControlPanelAddMcpError = NewBcode(http.StatusInternalServerError, 40006, "mcp add failed, please retry!")
+
+	ControlPanelSystemError = NewBcode(http.StatusInternalServerError, 40007, "system error, please retry!")
 )
