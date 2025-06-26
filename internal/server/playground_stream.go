@@ -151,38 +151,27 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						slog.Warn("助手回复内容为空！")
 					}
 
+					// 将思考内容包装在<think></think>标签中并添加到assistant响应
+					finalContent := fullContent
+					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+						// 在正文前添加思考内容，使用<think>标签包装
+						finalContent = fmt.Sprintf("<think>\n%s\n</think>\n\n%s", thoughts, fullContent)
+					}
+
 					assistantMsg := &types.ChatMessage{
-						ID:        assistantMsgID,
-						SessionID: request.SessionID,
-						Role:      "assistant",
-						Content:   fullContent, // 即使为空也保存
-						Order:     len(messages) + 1,
-						CreatedAt: time.Now(),
-						ModelID:   session.ModelID,
-						ModelName: session.ModelName,
+						ID:            assistantMsgID,
+						SessionID:     request.SessionID,
+						Role:          "assistant",
+						Content:       finalContent, // 包含思考内容的完整内容
+						Order:         len(messages) + 1,
+						CreatedAt:     time.Now(),
+						ModelID:       session.ModelID,
+						ModelName:     session.ModelName,
+						TotalDuration: totalDuration,
 					}
 					err = p.Ds.Add(ctx, assistantMsg)
 					if err != nil {
 						slog.Error("Failed to save assistant message", "error", err, assistantMsgID)
-					}
-					// 保存思考内容（如果有）
-					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
-						thoughtsMsg := &types.ChatMessage{
-							ID:            uuid.New().String(),
-							SessionID:     request.SessionID,
-							Role:          "think",
-							Content:       thoughts,
-							Order:         len(messages) + 2,
-							CreatedAt:     time.Now(),
-							ModelID:       session.ModelID,
-							ModelName:     session.ModelName,
-							TotalDuration: totalDuration,
-						}
-						err = p.Ds.Add(ctx, thoughtsMsg)
-						if err != nil {
-							slog.Error("Failed to save thoughts message", "error", err)
-							// 非致命错误，继续执行
-						}
 					}
 					return
 				}
@@ -200,23 +189,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						"content_length", len(originalContent),
 						"accumulated_content_length", len(fullContent))
 
-					// 保存思考内容（如果有）
-					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+					// 收集思考内容（如果有）
+					if resp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 						thoughts = thoughts + resp.Thoughts
-						thoughtsMsg := &types.ChatMessage{
-							ID:        uuid.New().String(),
-							SessionID: request.SessionID,
-							Role:      "think",
-							Content:   thoughts,
-							Order:     len(messages) + 1,
-							CreatedAt: time.Now(),
-							ModelID:   session.ModelID,
-							ModelName: session.ModelName,
-						}
-						err = p.Ds.Add(ctx, thoughtsMsg)
-						if err != nil {
-							slog.Error("Failed to save thoughts message", "error", err)
-						}
 					}
 
 					if len(fullContent) == 0 && len(originalContent) > 0 {
@@ -224,14 +199,23 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 
 					resp.TotalDuration = resp.TotalDuration / int64(time.Second)
+					totalDuration = resp.TotalDuration
+
+					// 将思考内容包装在<think></think>标签中并添加到assistant响应
+					finalContent := fullContent
+					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+						// 在正文前添加思考内容，使用<think>标签包装
+						finalContent = fmt.Sprintf("<think>%s\n</think>\n%s", thoughts, fullContent)
+					}
+
 					// 确保完整内容被保存和返回给客户端
 					if fullContent != "" {
 						assistantMsg := &types.ChatMessage{
 							ID:            assistantMsgID,
 							SessionID:     request.SessionID,
 							Role:          "assistant",
-							Content:       fullContent,
-							Order:         len(messages) + 2,
+							Content:       finalContent,
+							Order:         len(messages) + 1,
 							CreatedAt:     time.Now(),
 							ModelID:       session.ModelID,
 							ModelName:     session.ModelName,
@@ -255,7 +239,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 
 					// 发送全部内容作为响应
-					resp.Content = fullContent
+					resp.Content = fullContent // 注意：UI显示仍使用原始内容，不包含思考部分
 					resp.ID = assistantMsgID
 					if userMsg != nil && len(resp.ToolCalls) > 0 && request.ToolGroupID == "" {
 						resp.ToolGroupID = userMsg.ID
@@ -279,7 +263,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					fullContent += resp.Content
 					respChan <- resp
 				} else if resp.Thoughts != "" {
-					// 处理思考内容
+					// 收集思考内容，但不再单独存储
 					thoughts += resp.Thoughts
 					respChan <- resp
 				} else {
