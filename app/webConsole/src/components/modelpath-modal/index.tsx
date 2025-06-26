@@ -5,6 +5,7 @@ import { httpRequest } from '@/utils/httpRequest';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
+import useChatStore from '../chat-container/store/useChatStore';
 import { IModelPathSpaceRes } from '../model-manage-tab/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import styles from './index.module.scss';
@@ -24,6 +25,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
   const { IN_PROGRESS } = DOWNLOAD_STATUS;
   const { setMigratingStatus } = useModelPathChangeStore();
   const { checkByzeStatus, setCheckByzeServerLoading } = useByzeServerCheckStore();
+  const isChatLoading = useChatStore((state) => state.isLoading);
   const [form] = Form.useForm();
   const formValues = Form.useWatch([], form);
   const modelPathValue = Form.useWatch('modelPath', form);
@@ -109,7 +111,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
       width={480}
       open
       okButtonProps={{
-        disabled: !isFormValid,
+        disabled: !isFormValid || isChatLoading,
       }}
       onOk={handleToSavePath}
       onCancel={onModelPathVisible}

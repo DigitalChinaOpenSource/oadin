@@ -19,7 +19,7 @@ export const ModelSquare = (props: ISelectedDialogProps) => {
       {...props}
       vmContent={vmContent}
       vmSearch={vmSearch}
-      key="model-square"
+      currentTab="model-square"
       isDialog={props.isDialog}
     />
   );

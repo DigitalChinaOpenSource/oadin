@@ -18,7 +18,7 @@ export const MyModel = (props: ISelectedDialogProps) => {
       {...props}
       vmContent={vmContent}
       vmSearch={vmSearch}
-      key="my-models"
+      currentTab="my-models"
       isDialog={props.isDialog}
     />
   );

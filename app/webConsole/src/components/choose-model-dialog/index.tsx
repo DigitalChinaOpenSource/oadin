@@ -1,10 +1,9 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import { Modal, Tabs, TabsProps, message } from 'antd';
+import { message, Modal, Tabs, TabsProps } from 'antd';
 import styles from './index.module.scss';
 import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedModel';
 import { ModelSquare } from '@/components/choose-model-dialog/modelSquare.tsx';
 import { MyModel } from '@/components/choose-model-dialog/myModel.tsx';
-import useChatStore from '@/components/chat-container/store/useChatStore';
 import { useViewModel } from './view-model';
 import { getMessageByModel } from '@/i18n';
 
@@ -22,7 +21,7 @@ export interface ISelectedDialogProps {
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
   const { selectedModel, setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
-  const [activeKey, setActiveKey] = useState<string>('my-models');
+  const [activeKey, setActiveKey] = useState<string>('model-square');
   const onChange = (activeKey: string) => {
     setActiveKey(activeKey);
   };

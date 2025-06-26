@@ -91,7 +91,14 @@ export default function useViewModel() {
 
   // 处理模型变化
   useEffect(() => {
-    if (!initialized || !selectedModel) return;
+    if (!initialized) return;
+
+    // 如果没有选定模型，清除URL中的sessionId和source参数
+    if (!selectedModel) {
+      setSessionIdToUrl(''); // 传入空字符串会清除sessionId和source参数
+      setPrevSessionId(null);
+      return;
+    }
 
     // 当模型变化时，只更新prevModelId的状态，不自动创建新会话
     if (selectedModel.id !== prevModelId) {
@@ -105,6 +112,11 @@ export default function useViewModel() {
       fetchChooseModelNotify({
         service_name: 'embed',
         local_provider: 'local_ollama_embed',
+      });
+      fetchChangeModel({
+        sessionId: currentSessionId,
+        modelId: selectedModel?.id || '',
+        embedModelId: 'bc8ca0995fcd651',
       });
     }
   }, [isDownloadEmbed]);
@@ -123,6 +135,17 @@ export default function useViewModel() {
       ...params,
     });
     return data || {};
+  });
+
+  // 切换会话模型，用于在对话过程中下载完词嵌入后，通知后端
+  const { run: fetchChangeModel } = useRequest(async (params: { sessionId: string; modelId: string; embedModelId: string }) => {
+    if (!params?.sessionId || !params.modelId || !params.embedModelId) {
+      return {};
+    }
+    const data = await httpRequest.post('/playground/session/model', {
+      ...params,
+    });
+    return data?.data || {};
   });
 
   // 获取所有奥丁下载的模型
@@ -254,6 +277,7 @@ export default function useViewModel() {
     }
     fetchCreateChat({
       modelId: selectedModel?.id || '',
+      embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : '',
     });
   };
   return {

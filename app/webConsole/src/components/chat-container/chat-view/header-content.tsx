@@ -12,12 +12,11 @@ export const HeaderContent = () => {
   const currentSessionId = getSessionIdFromUrl();
   const handleRemove = async (file: UploadFile) => {
     try {
-      // 如果文件已上传成功（有服务器返回的file_id），则调用删除接口
       const fileId = file.status === 'done' && file.response?.id;
       console.log('handleRemove fileId:', file);
       if (fileId) {
         await httpRequest.del('/playground/file', {
-          data: { fileId: fileId },
+          file_id: fileId,
         });
       }
 

@@ -8,6 +8,7 @@ import { ISelectedDialogProps } from '@/components/choose-model-dialog';
 export interface ModelManageProps extends ISelectedDialogProps {
   vmContent: IUseViewModel;
   vmSearch: IUseSearchViewModelReturn;
+  currentTab?: string;
 }
 export default function ModelManageTab(props: ModelManageProps) {
   const { vmContent, isDialog, vmSearch } = props;
