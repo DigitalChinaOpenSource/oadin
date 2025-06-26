@@ -74,13 +74,14 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   };
 
   const handleSendMessage = async (message: string) => {
+    console.log('handleSendMessage==>', message);
     if (!message.trim() || isLoading) return;
 
-    try {
-      await sendChatMessage(message);
-    } catch (err) {
-      console.error('发送消息失败:', err);
-    }
+    // try {
+    //   await sendChatMessage(message);
+    // } catch (err) {
+    //   console.error('发送消息失败:', err);
+    // }
   };
   // 复制消息
   const handleCopyMessage = (content?: string) => {
@@ -136,7 +137,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           </Button>
         )}
         {!isLoading && messages.length > 0 && (
-          <>
+          <div className="message-control-buttons">
             <Button
               type="link"
               icon={<CopyIcon width={16} />}
@@ -153,7 +154,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             >
               重新发送
             </Button>
-          </>
+          </div>
         )}
       </div>
     );
