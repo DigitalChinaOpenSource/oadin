@@ -256,8 +256,7 @@ export default function useViewModel() {
       manual: true,
       onSuccess: (data) => {
         if (data.id) {
-          // 创建新会话时，设置source=new参数
-          setSessionIdToUrl(data.id, 'new');
+          setSessionIdToUrl(data.id);
           setSelectMcpList([]);
           createNewChat();
 

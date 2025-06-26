@@ -20,7 +20,7 @@ export interface IStreamData {
   content: string;
   is_complete: boolean;
   type: string;
-  thinking?: string;
+  thoughts?: string;
   tool_calls?: IToolCall[];
   total_duration?: number;
   tool_group_id?: string;

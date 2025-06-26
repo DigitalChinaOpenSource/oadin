@@ -8,7 +8,7 @@ import useViewModel from './view-model';
 import styles from './index.module.scss';
 
 export default function ChatContainer() {
-  const { historyVisible, setHistoryVisible, isLoading } = useChatStore();
+  const { historyVisible, setHistoryVisible, isLoading, createNewChat } = useChatStore();
   const vm = useViewModel();
 
   return (
@@ -44,7 +44,8 @@ export default function ChatContainer() {
               }
               onClick={() => {
                 if (isLoading) return;
-                vm.handleCreateNewChat();
+                // vm.handleCreateNewChat();
+                createNewChat();
               }}
             />
           </Tooltip>
@@ -61,7 +62,7 @@ export default function ChatContainer() {
           </div>
         </Col>
       </Row>
-      {historyVisible && <ChatHistoryDrawer onHistoryDrawerClose={() => setHistoryVisible(false)} />}
+      {/* {historyVisible && <ChatHistoryDrawer onHistoryDrawerClose={() => setHistoryVisible(false)} />} */}
     </div>
   );
 }
