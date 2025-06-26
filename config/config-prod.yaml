@@ -3,3 +3,7 @@ vega:
 
 oss:
   endpoint: https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com
+
+registry:
+  npm: https://registry.npmmirror.com
+  pip: http://mirrors.aliyun.com/pypi/simple/
