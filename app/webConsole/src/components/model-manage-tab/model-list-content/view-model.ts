@@ -10,7 +10,6 @@ import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
 import { convertToMB } from '@/utils';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
-import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 
 interface IPagenation {
   current: number;
@@ -100,7 +99,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const instanceIdRef = useRef<string>(`${modelSourceVal}-${mine ? 'mine' : 'all'}`);
   // 使用一个ref记录是否刚删除了模型
   const justDeletedRef = useRef<boolean>(false);
-
   useEffect(() => {
     // 创建一个映射来跟踪当前的下载状态
     const currentDownloadStatusMap: Record<string, any> = {};
@@ -110,11 +108,28 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       }
     });
 
-    // 如果是刚删除模型的情况，我们需要强制更新列表
-    if (justDeletedRef.current) {
-      console.info('检测到模型刚被删除，强制更新modelListStateData');
+    // 检查数据源实例是否变化（remote/local切换）
+    const currentInstanceId = `${modelSourceVal}-${mine ? 'mine' : 'all'}`;
+    const isInstanceChanged = instanceIdRef.current !== currentInstanceId;
+    
+    // 如果是刚删除模型的情况或者数据源变化，我们需要强制更新列表
+    if (justDeletedRef.current || isInstanceChanged) {
+      console.info('检测到模型刚被删除或数据源变化，强制更新modelListStateData');
       setModelListStateData(modelListData);
       justDeletedRef.current = false;
+      // 如果是数据源变化，更新实例ID
+      if (isInstanceChanged) {
+        instanceIdRef.current = currentInstanceId;
+      }
+      prevDownloadStatusMapRef.current = { ...currentDownloadStatusMap };
+      return;
+    }
+
+    // 检查列表长度是否变化
+    const isLengthChanged = modelListData.length !== modelListStateData.length;
+    if (isLengthChanged) {
+      console.info('检测到列表长度变化，强制更新modelListStateData');
+      setModelListStateData(modelListData);
       prevDownloadStatusMapRef.current = { ...currentDownloadStatusMap };
       return;
     }
@@ -139,7 +154,8 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         }
       }
     }
-
+    console.info(hasStatusChanged, 'hasStatusChanged');
+    console.info(modelListStateData, 'modelListStateData');
     // 如果有状态变化，更新modelListStateData
     if (hasStatusChanged) {
       // 只更新现有项的状态，不处理列表长度变化
@@ -196,6 +212,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
               currentDownload: 0,
             }) as any,
         );
+        console.info(dataWithSource, '返回了数据');
         setListData(dataWithSource);
         setPagination({
           ...pagination,
@@ -212,18 +229,17 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 必须，下载时需要获取当前路径的存储空间
   useEffect(() => {
     fetchModelPath();
-  }, []);
-  useEffect(() => {
+  }, []);  useEffect(() => {
     onModelSearch('');
     setPagination({ ...pagination, current: 1, total: 0 });
-    // 当数据源或mine发生变化时，更新实例ID标识
-    instanceIdRef.current = `${modelSourceVal}-${mine ? 'mine' : 'all'}`;
     // 重置下载状态映射
     prevDownloadStatusMapRef.current = {};
     fetchModelSupport({
       service_source: modelSourceVal,
       mine: mine,
     });
+    // 注意：instanceIdRef.current 的更新已移至监视 modelListData 的 useEffect 中，
+    // 确保数据和 ID 的更新一致
   }, [modelSourceVal, mine]);
 
   // 获取模型存储路径

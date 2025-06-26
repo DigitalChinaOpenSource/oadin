@@ -6,26 +6,34 @@ import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
 import { useLoginView } from '@/pages/Login/useLoginView.ts';
 import useLoginStore from '@/store/loginStore.ts';
+import useAuthStore, { User } from '@/store/authStore.ts';
+import { useNavigate } from 'react-router-dom';
 
 export interface LoginFormValues {
-  phoneNumber: string;
-  code: string;
+  phone: string;
+  verifyCode: string;
   agreed: boolean;
 }
 
-interface LoginFormProps {
-  type?: 'login' | 'bind';
-  onOk?: (values: LoginFormValues) => void;
-  showAgreed?: boolean;
-}
-
-const LoginForm: React.FC<LoginFormProps> = () => {
+const LoginForm = () => {
   const [form] = Form.useForm<LoginFormValues>();
-  const { setPersonPhoneData, personPhoneData } = useLoginStore();
+  const { setPersonPhoneData, personPhoneData, setCurrentStep } = useLoginStore();
+  const navigate = useNavigate();
   const { loginWithPhone } = useLoginView();
+  const { login } = useAuthStore();
   const onFinish = async (values: LoginFormValues) => {
     console.log('Received values of form: ', values);
-    await loginWithPhone(values.phoneNumber, values.code, values.agreed);
+    const userRes: any = await loginWithPhone(values.phone, values.verifyCode, values.agreed);
+    console.log('userRes', userRes);
+
+    if (userRes.data) {
+      login(userRes as User);
+      if (userRes.needRealName) {
+        setCurrentStep('personAuth');
+      } else {
+        navigate('/app-management');
+      }
+    }
   };
 
   // 处理表单值变化的函数
@@ -51,12 +59,12 @@ const LoginForm: React.FC<LoginFormProps> = () => {
     >
       <PhoneNumberInput
         form={form}
-        codeFiled={'phoneNumber'}
+        codeFiled={'phone'}
       />
       <CodeInput
         form={form}
-        validateFiled={'phoneNumber'}
-        codeFiled={'code'}
+        validateFiled={'phone'}
+        codeFiled={'verifyCode'}
       />
 
       <AgreedCheckBox

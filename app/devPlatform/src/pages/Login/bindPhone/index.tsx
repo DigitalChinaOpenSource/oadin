@@ -5,17 +5,15 @@ import React from 'react';
 import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import CodeInput from '@/pages/Login/components/codeInput';
 import useLoginStore from '@/store/loginStore.ts';
-
-interface IBindPhoneFormValues {
-  phoneNumber: string;
-  code: string;
-}
+import { useNavigate } from 'react-router-dom';
+import { IBasePhoneFormProps } from '@/pages/Login/types';
 
 const BindPhone = () => {
   const [form] = Form.useForm();
   const { setCurrentStep } = useLoginStore();
+  const navigate = useNavigate();
 
-  const onFinish = (values: IBindPhoneFormValues) => {
+  const onFinish = (values: IBasePhoneFormProps) => {
     console.log('Received values of form: ', values);
   };
 
@@ -23,7 +21,11 @@ const BindPhone = () => {
     <div className={styles.bindPhone}>
       <div
         className="goBack"
-        onClick={() => setCurrentStep('personWechat')}
+        onClick={() => {
+          // 清除浏览器地址到登录页
+          navigate('/login');
+          setCurrentStep('personWechat');
+        }}
       >
         <ArrowLeftOutlined size={24} />
         <div>返回</div>
@@ -45,12 +47,12 @@ const BindPhone = () => {
         >
           <PhoneNumberInput
             form={form}
-            codeFiled={'phoneNumber'}
+            codeFiled={'phone'}
           />
           <CodeInput
             form={form}
-            validateFiled={'phoneNumber'}
-            codeFiled={'code'}
+            validateFiled={'phone'}
+            codeFiled={'verifyCode'}
           />
           <Form.Item style={{ marginBottom: 0 }}>
             <Button

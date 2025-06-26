@@ -8,12 +8,15 @@ import DefaultUserIcon from '@/assets/userIcon.svg';
 import CompanyIcon from '@/assets/companyIcon.svg';
 import ChangePasswordModal from '@/pages/UserCenter/accountInfo/changePasswordModal';
 import WechatBind from '@/pages/UserCenter/accountInfo/wechatBind';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 
 /**
  * 用户中心账号信息组件
  */
 const AccountInfo = ({ accountInfo }: { accountInfo: IAccountInfo }) => {
   const { userType, userName, companyName, email, phoneNumber, avatarUrl, wechatInfo, wechatBind } = accountInfo;
+
+  const { sureDeleteAccount } = useUserCenterView();
   // 修改用户名的弹窗
   const [userEditShow, setUserEditShow] = useState<boolean>(false);
 

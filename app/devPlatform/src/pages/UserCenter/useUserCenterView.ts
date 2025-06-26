@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { IAccountInfo } from '@/pages/UserCenter/types';
+import useAuthStore from '@/store/authStore.ts';
+import useLoginStore from '@/store/loginStore.ts';
 
 export const useUserCenterView = () => {
   const [userInfo, setUserInfo] = useState<IAccountInfo>();
+  const { logout } = useAuthStore();
+  const { setCurrentStep } = useLoginStore();
 
   // 获取用户信息
   const getUserInfo = async () => {
@@ -15,7 +19,7 @@ export const useUserCenterView = () => {
       companyName: 'testCompany',
       email: '123@456.com',
       phoneNumber: '1234567890',
-      userType: 'person', // 个人账号
+      userType: 'enterprise', // 个人账号
       wechatBind: false,
       wechatInfo: {
         openId: 'wx-123456',
@@ -45,9 +49,20 @@ export const useUserCenterView = () => {
     );
   };
 
+  // 确认注销
+  const sureDeleteAccount = async () => {
+    // 模拟 API 调用
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 清除用户信息
+    setUserInfo(undefined);
+    logout();
+    setCurrentStep('personPhone');
+  };
+
   return {
     userInfo,
     getUserInfo,
     changeUsername,
+    sureDeleteAccount,
   };
 };

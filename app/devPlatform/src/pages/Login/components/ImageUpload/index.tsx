@@ -3,22 +3,9 @@ import { Upload, message, Image, Button, Form } from 'antd';
 import { PlusOutlined, EyeOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import type { UploadFile, UploadProps } from 'antd';
+import { IImageUploadProps } from '@/pages/Login/types';
 
-interface ImageUploadProps {
-  title?: string;
-  maxSize?: number; // 单位：MB
-  accept?: string[];
-  height?: number | string;
-  value?: UploadFile[];
-  onChange?: (fileList: UploadFile[]) => void;
-  name?: string;
-  rules?: any[];
-  action?: string; // 添加上传地址
-  customRequest?: (options: any) => void; // 添加自定义上传方法
-  bgIcon?: string;
-}
-
-const ImageUpload: React.FC<ImageUploadProps> = ({
+const ImageUpload = ({
   title = '上传图片',
   maxSize = 1,
   accept = ['image/jpeg', 'image/png'],
@@ -30,7 +17,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   action = '/api/upload', // 默认上传地址
   customRequest,
   bgIcon,
-}) => {
+}: IImageUploadProps) => {
   const [fileList, setFileList] = useState<UploadFile[]>(value || []);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
