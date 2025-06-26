@@ -341,10 +341,9 @@
   background-color: #dee7ff;
   color: $primary-color;
   border: none;
-
   &:hover {
-    background-color: darken(#dee7ff, 5%);
-    color: darken($primary-color, 5%);
+    background-color: color.adjust(#dee7ff, $lightness: -5%);
+    color: color.adjust($primary-color, $lightness: -5%);
   }
 }
 
@@ -383,9 +382,8 @@
 
 .editModelsButton {
   color: $primary-color;
-
   &:hover {
     background-color: transparent;
-    color: darken($primary-color, 10%);
+    color: color.adjust($primary-color, $lightness: -10%);
   }
 }
