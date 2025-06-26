@@ -29,6 +29,7 @@ type Playground interface {
 
 	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
 	UpdateToolCall(ctx context.Context, toolMessage *types.ToolMessage) error
+	HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]string
 
 	UploadFile(ctx context.Context, request *dto.UploadFileRequest, fileHeader io.Reader, filename string, filesize int64) (*dto.UploadFileResponse, error)
 	GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error)
@@ -200,20 +201,32 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 			"role":    msg.Role,
 			"content": msg.Content,
 		})
-	} // 添加RAG上下文
-	enhancedContent := request.Content
-	slog.Info("开始查找相关RAG上下文", "session_id", session.ID, "question", request.Content)
-	relevantContext, err := p.findRelevantContext(ctx, session, request.Content)
-	if err != nil {
-		slog.Warn("查找相关上下文失败", "error", err, "session_id", session.ID)
 	}
 
-	if relevantContext != "" {
-		// 添加RAG上下文到用户消息中
-		slog.Info("找到相关上下文，使用RAG增强对话", "session_id", session.ID, "context_length", len(relevantContext))
-		enhancedContent = fmt.Sprintf("我的问题是: %s\n\n参考以下信息回答我的问题:\n\n%s", request.Content, relevantContext)
+	// 检查当前会话是否有上传文件，只有有文件时才查找RAG上下文
+	fileQuery := &types.File{SessionID: request.SessionId}
+	files, err := p.Ds.List(ctx, fileQuery, nil)
+	if err != nil {
+		slog.Warn("查找会话文件失败，跳过RAG上下文查找", "error", err, "session_id", session.ID)
+	}
+
+	enhancedContent := request.Content
+	if err == nil && len(files) > 0 {
+		slog.Info("开始查找相关RAG上下文", "session_id", session.ID, "question", request.Content)
+		relevantContext, err := p.findRelevantContext(ctx, session, request.Content)
+		if err != nil {
+			slog.Warn("查找相关上下文失败", "error", err, "session_id", session.ID)
+		}
+
+		if relevantContext != "" {
+			// 添加RAG上下文到用户消息中
+			slog.Info("找到相关上下文，使用RAG增强对话", "session_id", session.ID, "context_length", len(relevantContext))
+			enhancedContent = fmt.Sprintf("我的问题是: %s\n\n参考以下信息回答我的问题:\n\n%s", request.Content, relevantContext)
+		} else {
+			slog.Info("未找到相关上下文，使用通用对话模式", "session_id", session.ID)
+		}
 	} else {
-		slog.Info("未找到相关上下文，使用通用对话模式", "session_id", session.ID)
+		slog.Info("当前会话无上传文件，跳过RAG上下文查找", "session_id", session.ID)
 	}
 
 	// 添加当前用户消息
