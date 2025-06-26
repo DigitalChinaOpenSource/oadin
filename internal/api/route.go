@@ -75,7 +75,6 @@ func InjectRouter(e *ByzeCoreServer) {
 	mcpApi.PUT("/:id/download", e.DownloadMCP)
 	mcpApi.POST("/mine", e.GetMyMCPList)
 	mcpApi.PUT("/:id/auth", e.AuthorizeMCP)
-	mcpApi.PUT("/:id/auth", e.AuthorizeMCP)
 	mcpApi.PUT("/:id/reverse", e.ReverseStatus)
 	mcpApi.PUT("/setup", e.SetupFunTool)
 	mcpApi.POST("/client/start", e.ClientMcpStart)

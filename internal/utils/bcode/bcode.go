@@ -107,3 +107,12 @@ func ReturnError(c *gin.Context, err error) {
 		Message:      err.Error(),
 	})
 }
+
+func HttpError(err *Bcode, msg string) error {
+	if err == nil {
+		return ErrServer
+	}
+
+	err.Message = msg
+	return err
+}
