@@ -10,6 +10,7 @@ import { availableMcps, availableModels } from '@/pages/AppManagement/AppConfig/
 import { transformedCard2Ids, transformedCard2Tags, transformedMcp2Card, transformedModel2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
 import { ICardDeatilItem, IModelSelectCardItem, searchFunc, SearchParams } from '@/pages/AppManagement/AppConfig/types.ts';
 import TagFilter, { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
+import { DetailDrawer } from '@/components/detail_drawer';
 
 interface AppConfigProps {}
 
@@ -61,6 +62,8 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   });
   const [agreement, setAgreement] = useState(false);
   const [form] = Form.useForm();
+  // 当前打开的抽屉详情ID
+  const [drawerOpenId, setDrawerOpenId] = useState<string>('');
 
   // 编辑应用名称相关状态
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
@@ -587,6 +590,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       {/* MCP选择弹窗 */}
       {mcpSelectVisible ? (
         <ModelSelectModal
+          setDrawerOpenId={setDrawerOpenId}
           open={mcpSelectVisible}
           onCancel={() => setMcpSelectVisible(false)}
           onFinish={handleMcpSelectConfirm}
@@ -596,6 +600,14 @@ const AppConfig: React.FC<AppConfigProps> = () => {
           initialSelectedModels={selectedMcps}
         />
       ) : null}
+
+      {/*  抽屉详情 */}
+
+      <DetailDrawer
+        id={drawerOpenId}
+        open={!!(drawerOpenId && drawerOpenId !== '')}
+        onClose={() => setDrawerOpenId('')}
+      />
     </div>
   );
 };

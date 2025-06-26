@@ -13,9 +13,9 @@ import { ICardDeatilItem } from '@/pages/AppManagement/AppConfig/types.ts';
 export interface IMcpCardProps {
   // 模型数据
   deatilData: ICardDeatilItem;
-  handelMcpCardClick: (mcpId: string | number) => void;
   selectedModelIds?: string[];
   setSelectedModelIds?: Dispatch<SetStateAction<string[]>>;
+  setDrawerOpenId?: Dispatch<SetStateAction<string>>;
 }
 
 const formatUnixTime = (unixTime: number) => {
@@ -23,7 +23,7 @@ const formatUnixTime = (unixTime: number) => {
   return date.format('YYYY-MM-DD');
 };
 export default function McpCard(props: IMcpCardProps) {
-  const { deatilData, handelMcpCardClick, setSelectedModelIds, selectedModelIds = [] } = props;
+  const { deatilData, setSelectedModelIds, selectedModelIds = [], setDrawerOpenId } = props;
   // 处理单个项目的选择
   const handleItemSelect = (item: ICardDeatilItem, checked: boolean) => {
     if (checked) {
@@ -99,15 +99,18 @@ export default function McpCard(props: IMcpCardProps) {
         <div className={styles.dot}>·</div>
         <div className={styles.updateName}>{deatilData?.update_time && formatUnixTime(deatilData?.update_time) + '更新'}</div>
       </div>
-      <div className={styles.cardOperate}>
-        <Button
-          type={'text'}
-          icon={<ExclamationCircleOutlined />}
-          onClick={() => handelMcpCardClick(deatilData?.id)}
-        >
-          查看详情
-        </Button>
-      </div>
+      {setDrawerOpenId ? (
+        <div className={styles.cardOperate}>
+          <Button
+            block
+            type={'text'}
+            icon={<ExclamationCircleOutlined />}
+            onClick={() => setDrawerOpenId(deatilData?.id)}
+          >
+            查看详情
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
