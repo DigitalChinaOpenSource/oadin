@@ -29,8 +29,8 @@ const apiBaseURL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.MODE ==
 
 const createApiInstance = (baseURL: string) => {
   const instance = axios.create({
-    baseURL,
-    timeout: 120000,
+    baseURL: '/api',
+    timeout: 60000,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
@@ -50,40 +50,17 @@ const createApiInstance = (baseURL: string) => {
 
   // 响应拦截器
   instance.interceptors.response.use(
-    (response: AxiosResponse<ResponseData>) => {
+    (response: AxiosResponse) => {
       const { data, config } = response;
-      // 处理响应成功时，检查是否需要更新 MCP 下载状态
-      if (config.needMcpStore && config.addMcpDownloadItem && config.mcpId) {
-        config.addMcpDownloadItem({
-          id: config.mcpId,
-          error: '成功',
-          downStatus: 'success',
-        });
-      }
-      // 处理响应成功时，模型迁移状态
-      if (config.needModelChangeStore && config.setMigratingStatus) {
-        config.setMigratingStatus('init');
-      }
-      if (data?.data) {
-        return data.data;
-      } else {
-        return data;
-      }
+      return data;
+      // if (data?.data) {
+      //   return data.data;
+      // } else {
+      //   return data;
+      // }
     },
     (error) => {
-      const { config } = error;
-      // 处理错误时，检查是否需要更新 MCP 下载状态
-      if (config.needMcpStore) {
-        config.addMcpDownloadItem({
-          id: config.mcpId,
-          error: error.message,
-          downStatus: 'error',
-        });
-      }
-      // 处理错误时，模型迁移状态
-      if (config.needModelChangeStore) {
-        config.setMigratingStatus('failed');
-      }
+      console.log('HTTP Error:', error);
       message.destroy();
       if (error?.response) {
         const { data } = error.response;

@@ -33,3 +33,15 @@ export interface IImageUploadProps {
   customRequest?: (options: any) => void; // 添加自定义上传方法
   bgIcon?: string;
 }
+
+export interface IWechatInfoProps {
+  valid: boolean;
+  user: Record<string, any>;
+  token: string;
+}
+
+export interface IBaseRequestResProps {
+  code: number;
+  message: string;
+  data: any;
+}

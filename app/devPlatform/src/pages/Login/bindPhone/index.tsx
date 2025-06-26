@@ -8,13 +8,18 @@ import useLoginStore from '@/store/loginStore.ts';
 import { useNavigate } from 'react-router-dom';
 import { IBasePhoneFormProps } from '@/pages/Login/types';
 
-const BindPhone = () => {
+interface IBindPhoneProps {
+  onConfirm: (values: IBasePhoneFormProps) => void;
+}
+
+const BindPhone = ({ onConfirm }: IBindPhoneProps) => {
   const [form] = Form.useForm();
   const { setCurrentStep } = useLoginStore();
   const navigate = useNavigate();
 
   const onFinish = (values: IBasePhoneFormProps) => {
     console.log('Received values of form: ', values);
+    onConfirm(values);
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLoginView } from '../../useLoginView';
 import styles from './index.module.scss';
 import wechatIcon from '@/assets/wechatIcon.svg';

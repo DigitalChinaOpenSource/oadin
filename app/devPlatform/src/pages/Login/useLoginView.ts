@@ -1,4 +1,5 @@
-import { IBaseEnterpriseFormProps } from '@/pages/Login/types';
+import { IBaseEnterpriseFormProps, IBaseRequestResProps } from '@/pages/Login/types';
+import { httpRequest } from '@/utils/httpRequest.ts';
 
 export const useLoginView = () => {
   // 微信登录初始化
@@ -23,17 +24,11 @@ export const useLoginView = () => {
   };
 
   // 获取手机验证码
-  const getPhoneCode = async (phoneNumber: string) => {
-    return new Promise((resolve, reject) => {
-      // 模拟获取验证码的 API 调用
-      setTimeout(() => {
-        if (phoneNumber) {
-          resolve({ data: true, message: '验证码已发送' });
-        } else {
-          reject(new Error('手机号不能为空'));
-        }
-      }, 1000);
-    });
+  const getPhoneCode = async (params: { phone: string }) => {
+    console.log('获取手机验证码params', params);
+    const res = await httpRequest.post<IBaseRequestResProps>('/individual-login/phone/send-code', params);
+    console.log('手机验证码res', res);
+    return res;
   };
 
   // 获取邮箱验证码
@@ -44,17 +39,10 @@ export const useLoginView = () => {
   };
 
   // 手机号登录/注册
-  const loginWithPhone = async (phone: string, verificationCode: string, agreed: boolean) => {
-    return new Promise((resolve, reject) => {
-      // 模拟登录的 API 调用
-      setTimeout(() => {
-        if (phone && verificationCode) {
-          resolve({ data: true, message: '登录成功', needRealName: true });
-        } else {
-          reject(new Error('手机号或验证码不能为空'));
-        }
-      }, 1000);
-    });
+  const loginWithPhone = async (params: { phone: string; verifyCode: string; agreed: boolean }) => {
+    const res = await httpRequest.post<IBaseRequestResProps>('/individual-login/phone/login', params);
+    console.log('手机号登录/注册res', res);
+    return res;
   };
 
   // 微信扫码之后，绑定手机号
@@ -101,6 +89,13 @@ export const useLoginView = () => {
 
   // 保存个人认证照片
 
+  // 根据token获取用户信息
+  const getUserInfo = async (params: { token: string }) => {
+    const res = await httpRequest.post<IBaseRequestResProps>('/auth/user-info', params);
+    console.log('获取微信扫码信息res', res);
+    return res.data || null;
+  };
+
   return {
     initializeWeixinLogin,
     getPhoneCode,
@@ -111,5 +106,6 @@ export const useLoginView = () => {
     getPassWordWithEmailCode,
     resetPassword,
     createNewAccount,
+    getUserInfo,
   };
 };

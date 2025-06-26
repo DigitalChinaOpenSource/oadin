@@ -24,7 +24,7 @@ const UserNameModal = ({ title, userType, onCancel, onConfirm, visible }: IUserN
   };
 
   useEffect(() => {
-    form.resetFields();
+    if (visible) form.resetFields();
   }, [visible]);
 
   return (

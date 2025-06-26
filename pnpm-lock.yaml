@@ -86,7 +86,7 @@ importers:
         version: 25.2.1(typescript@5.8.3)
       react-i18next:
         specifier: ^15.5.2
-        version: 15.5.3(i18next@25.2.1(typescript@5.8.3))(react-dom@18.3.1(react@18.3.1))(react@19.1.0)(typescript@5.8.3)
+        version: 15.5.3(i18next@25.2.1(typescript@5.8.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
     devDependencies:
       eslint-plugin-react-hooks:
         specifier: ^5.2.0
