@@ -406,7 +406,7 @@
     "id": "0ce77296-e636-4794-af32-613663656161343664383131",
     "name": "glm4:9b",
     "ollama_id": "5b699761eca5",
-    "think": true,
+    "think": false,
     "params_size": 9,
     "service_name": "chat",
     "service_source": "local",
