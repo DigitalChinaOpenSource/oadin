@@ -1,6 +1,7 @@
 package server
 
 import (
+	ConfigRoot "byze/config"
 	"byze/internal/datastore"
 	"byze/internal/hardware"
 	"byze/internal/hardware/installer"
@@ -213,6 +214,12 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 	// 执行mcp安装命令
 	installCMD := mcp.Data.ServerConfig
 
+	// 命令校验
+	if len(installCMD) == 0 {
+		slog.Error("无安装命令, 不支持stdio模型")
+		return bcode.ControlPanelAddMcpError
+	}
+
 	for _, item := range installCMD {
 		for _, y := range item.McpServers {
 			// 传递args
@@ -235,10 +242,17 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 					commandBuilder.WithEnv(key, value)
 				}
 			}
+			commandBuilder.WithEnv("NPM_CONFIG_REGISTRY", ConfigRoot.ConfigRootInstance.Registry.Npm)
+			commandBuilder.WithEnv("PIP_INDEX_URL", ConfigRoot.ConfigRootInstance.Registry.Pip)
+			commandBuilder.WithEnv("UV_DEFAULT_INDEX", ConfigRoot.ConfigRootInstance.Registry.Pip)
+			slog.Info("执行mcp 安装命令: ", y.Command, " args: ", y.Args, " env: ", y.Env)
 			// 执行安装命令
 			output, errOut, err := commandBuilder.WithTimeout(time.Minute).Execute()
 			fmt.Printf("output of command execution: %s", output)
 			fmt.Printf("error output of command execution: %s", errOut)
+			//执行结果
+			slog.Info("output of command execution: ", output)
+			slog.Info("errout of command execution: ", errOut)
 			if err != nil {
 				slog.Error("执行mcp 安装失败: ", err.Error())
 				return bcode.ControlPanelAddMcpError

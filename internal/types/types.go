@@ -147,13 +147,14 @@ type EngineRecommendConfig struct {
 }
 
 type MCPServerConfig struct {
-	Id      string            `json:"id"`
-	Name    string            `json:"name"`
-	Logo    string            `json:"logo"` // MCP图标
-	Args    []string          `json:"args"`
-	Command string            `json:"command"`
-	Env     map[string]string `json:"env"` // 使用map存储动态环境变量
-	Tools   []mcp.Tool        `json:"tools"`
+	Id             string            `json:"id"`
+	Name           string            `json:"name"`
+	Logo           string            `json:"logo"` // MCP图标
+	Args           []string          `json:"args"`
+	Command        string            `json:"command"`
+	Env            map[string]string `json:"env"` // 使用map存储动态环境变量
+	Tools          []mcp.Tool        `json:"tools"`
+	StartCacheTime time.Time         // 缓存时间
 }
 
 type ClientMcpStartRequest struct {
