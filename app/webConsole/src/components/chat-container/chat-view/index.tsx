@@ -113,7 +113,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           />
         )}
 
-        {messages.length > 0 && (error || isLoading || streamingContent) && (
+        {(isLoading || streamingContent) && (
           <div className="message-control-buttons">
             {isLoading && (
               <img
@@ -122,40 +122,38 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                 style={{ width: 24, height: 24 }}
               />
             )}
-            {/* 出现错误时显示重试按钮 */}
-            {error && (
-              <Button
-                type="link"
-                icon={<ArrowClockwiseIcon width={16} />}
-                onClick={resendLastMessage}
-                loading={isResending}
-                disabled={isLoading && !isResending}
-              >
-                重试
-              </Button>
-            )}
-
-            {!isLoading && streamingContent && messages.length > 0 && (
-              <>
-                <Button
-                  type="link"
-                  icon={<CopyIcon width={16} />}
-                  onClick={() => handleCopyMessage()}
-                >
-                  复制
-                </Button>
-                <Button
-                  type="link"
-                  icon={<ArrowClockwiseIcon width={16} />}
-                  onClick={resendLastMessage}
-                  loading={isResending}
-                  disabled={isResending}
-                >
-                  重新发送
-                </Button>
-              </>
-            )}
           </div>
+        )}
+        {error && (
+          <Button
+            type="link"
+            icon={<ArrowClockwiseIcon width={16} />}
+            onClick={resendLastMessage}
+            loading={isResending}
+            disabled={isLoading && !isResending}
+          >
+            重试
+          </Button>
+        )}
+        {!isLoading && streamingContent && messages.length > 0 && (
+          <>
+            <Button
+              type="link"
+              icon={<CopyIcon width={16} />}
+              onClick={() => handleCopyMessage()}
+            >
+              复制
+            </Button>
+            <Button
+              type="link"
+              icon={<ArrowClockwiseIcon width={16} />}
+              onClick={resendLastMessage}
+              loading={isResending}
+              disabled={isResending}
+            >
+              重新发送
+            </Button>
+          </>
         )}
       </div>
     );
