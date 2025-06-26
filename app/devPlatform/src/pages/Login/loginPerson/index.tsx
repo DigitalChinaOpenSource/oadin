@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import MobileLogin from '@/pages/Login/loginPerson/mobileLogin';
 import styles from './index.module.scss';
 import WechatLogin from '@/pages/Login/loginPerson/wechatLogin';

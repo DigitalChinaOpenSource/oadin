@@ -109,7 +109,6 @@ const LoginPage: React.FC = () => {
             <div className={styles.secondTitle}>
               <div className={styles.secondTag}></div>
               <span>低门槛，高效率开发体验</span>
-              <Button onClick={() => setCurrentStep('enterpriseAuth')}>测试按钮</Button>
             </div>
           </div>
           {/*左侧描述图片*/}

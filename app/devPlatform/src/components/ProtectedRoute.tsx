@@ -23,14 +23,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAuth =
   // }
 
   // 如果已登录且访问登录页，重定向到应用管理
-  if (isAuthenticated && location.pathname === '/login') {
-    return (
-      <Navigate
-        to="/app-management"
-        replace
-      />
-    );
-  }
+  // if (isAuthenticated && location.pathname === '/login') {
+  //   return (
+  //     <Navigate
+  //       to="/app-management"
+  //       replace
+  //     />
+  //   );
+  // }
 
   return <>{children}</>;
 };

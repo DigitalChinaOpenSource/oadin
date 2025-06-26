@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
-import useLoginStore from '@/store/loginStore.ts';
-import { IEnterpriseFormValues } from '@/pages/Login/loginEnterprise';
+import { IBaseEnterpriseFormProps } from '@/pages/Login/types';
 
 export const useLoginView = () => {
   // 微信登录初始化
@@ -51,7 +49,7 @@ export const useLoginView = () => {
       // 模拟登录的 API 调用
       setTimeout(() => {
         if (phone && verificationCode) {
-          resolve({ data: true, message: '登录成功' });
+          resolve({ data: true, message: '登录成功', needRealName: true });
         } else {
           reject(new Error('手机号或验证码不能为空'));
         }
@@ -60,7 +58,7 @@ export const useLoginView = () => {
   };
 
   // 微信扫码之后，绑定手机号
-  const bindPhone = async (phone: string, verificationCode: string, wechatData: any) => {};
+  const bindPhone = async (phone: string, verificationCode: string, wechatInfo: any) => {};
 
   // 企业账号登录
   const loginWithEnterprise = async (email: string, password: string) => {
@@ -96,7 +94,7 @@ export const useLoginView = () => {
   };
 
   // 企业邮箱注册
-  const createNewAccount = async (data: IEnterpriseFormValues) => {
+  const createNewAccount = async (data: IBaseEnterpriseFormProps) => {
     console.log('Creating new account with data:', data);
     return true;
   };

@@ -9,7 +9,7 @@ import { useLoginView } from '@/pages/Login/useLoginView.ts';
 
 interface IForgetPasswordProp {
   email: string;
-  code: string;
+  emailCode: string;
 }
 
 interface ISetNewFormProps {
@@ -99,7 +99,7 @@ const ForgetPassword = () => {
   const [form] = Form.useForm<IForgetPasswordProp>();
   const { getPassWordWithEmailCode } = useLoginView();
   const onFinish = async (values: IForgetPasswordProp) => {
-    const res = await getPassWordWithEmailCode(values.email, values.code);
+    const res = await getPassWordWithEmailCode(values.email, values.emailCode);
     emailRef.current = values.email;
     if (res) {
       setShowForget(false);
@@ -135,7 +135,7 @@ const ForgetPassword = () => {
             <CodeInput
               form={form}
               validateFiled={'email'}
-              codeFiled={'code'}
+              codeFiled={'emailCode'}
             />
             <Form.Item style={{ marginBottom: 0 }}>
               <Button
