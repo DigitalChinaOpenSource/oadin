@@ -135,7 +135,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             重试
           </Button>
         )}
-        {!isLoading && streamingContent && messages.length > 0 && (
+        {!isLoading && messages.length > 0 && (
           <>
             <Button
               type="link"
