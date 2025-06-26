@@ -3,6 +3,7 @@ package api
 import (
 	"byze/internal/api/dto"
 	"byze/internal/rpc"
+	"byze/internal/utils/bcode"
 	"github.com/gin-gonic/gin"
 	"log/slog"
 	"net/http"
@@ -25,12 +26,12 @@ func (t *ByzeCoreServer) ModifyRepositoryURL(c *gin.Context) {
 		Url string `json:"url"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数异常"})
+		bcode.ReturnError(c, err)
 		return
 	}
 	err := t.System.ModifyRegistry(c.Request.Context(), body.Url)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "修改仓库地址失败"})
+		bcode.ReturnError(c, err)
 		return
 	}
 
@@ -42,13 +43,13 @@ func (t *ByzeCoreServer) SetProxy(c *gin.Context) {
 	var req dto.ProxyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		slog.Error("Invalid request body", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数异常"})
+		bcode.ReturnError(c, err)
 		return
 	}
 	err := t.System.SetProxy(c.Request.Context(), req)
 	if err != nil {
 		slog.Error("Failed to set proxy", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "设置代理失败"})
+		bcode.ReturnError(c, err)
 		return
 	}
 
@@ -62,13 +63,13 @@ func (t *ByzeCoreServer) ProxySwitch(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		slog.Error("Invalid request body", "error", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数异常"})
+		bcode.ReturnError(c, err)
 		return
 	}
 	err := t.System.SwitchProxy(c.Request.Context(), body.Enabled)
 	if err != nil {
 		slog.Error("Failed to switch proxy", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "代理切换失败"})
+		bcode.ReturnError(c, err)
 		return
 	}
 
@@ -82,7 +83,7 @@ func (t *ByzeCoreServer) SystemSettings(c *gin.Context) {
 	res, err := t.System.GetSystemSettings(c.Request.Context())
 	if err != nil {
 		slog.Error("Failed to submit feedback", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取系统设置失败"})
+		bcode.ReturnError(c, err)
 		return
 	}
 
