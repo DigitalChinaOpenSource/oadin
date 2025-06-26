@@ -7,12 +7,12 @@ import dayjs from 'dayjs';
 import defaultPng from '@/assets/favicon.png';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { checkMcpLength } from '@/pages/AppManagement/AppConfig/uitls.ts';
-import { IModelDataItem } from '@/types/model.ts';
 import EllipsisTooltip from '@/pages/AppManagement/AppConfig/ModelDeatilCard/ellipsisTooltip.tsx';
+import { ICardDeatilItem } from '@/pages/AppManagement/AppConfig/types.ts';
 
 export interface IMcpCardProps {
   // 模型数据
-  deatilData: IModelDataItem;
+  deatilData: ICardDeatilItem;
   handelMcpCardClick: (mcpId: string | number) => void;
   selectedModelIds?: string[];
   setSelectedModelIds?: Dispatch<SetStateAction<string[]>>;
@@ -25,7 +25,7 @@ const formatUnixTime = (unixTime: number) => {
 export default function McpCard(props: IMcpCardProps) {
   const { deatilData, handelMcpCardClick, setSelectedModelIds, selectedModelIds = [] } = props;
   // 处理单个项目的选择
-  const handleItemSelect = (item: IModelDataItem, checked: boolean) => {
+  const handleItemSelect = (item: ICardDeatilItem, checked: boolean) => {
     if (checked) {
       if (checkMcpLength(selectedModelIds.length)) {
         setSelectedModelIds?.([...(selectedModelIds ?? []), item.id]);
@@ -88,7 +88,7 @@ export default function McpCard(props: IMcpCardProps) {
       </div>
       {/* 修改：使用 EllipsisTooltip 组件 */}
       <EllipsisTooltip
-        title={deatilData?.desc}
+        title={deatilData?.desc || ''}
         className={styles.contentWrapper}
         maxWidth={400}
       >

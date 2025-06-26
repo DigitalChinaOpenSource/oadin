@@ -1,10 +1,10 @@
-import { IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
-import { IModelDataItem } from '@/types/model.ts';
+import { ICardDeatilItem, IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
 import { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
 import { defaultTag } from '@/pages/AppManagement/AppConfig/index.tsx';
 import { message } from 'antd';
+import { IMcpListItem, IModelDataItem } from '@/types/model.ts';
 
-export const transformedAll2Card = (allList: IModelDataItem[]): IModelSelectCardItem[] => {
+export const transformedAll2Card = (allList: ICardDeatilItem[]): IModelSelectCardItem[] => {
   return allList.map((item) => {
     return {
       id: item.id,
@@ -15,12 +15,12 @@ export const transformedAll2Card = (allList: IModelDataItem[]): IModelSelectCard
   });
 };
 
-export const transformedAll2Ids = (allList: IModelDataItem[]): string[] => {
+export const transformedAll2Ids = (allList: ICardDeatilItem[]): string[] => {
   return allList.map((item) => {
     return item.id;
   });
 };
-export const transformedIds2Card = (allList: IModelDataItem[], ids: string[]): IModelSelectCardItem[] => {
+export const transformedIds2Card = (allList: ICardDeatilItem[], ids: string[]): IModelSelectCardItem[] => {
   return allList
     .filter((item) => {
       return ids.includes(item.id);
@@ -85,4 +85,36 @@ export const checkMcpLength = (mcpListLength: number): boolean => {
     return false;
   }
   return true;
+};
+
+// 后端的模型列表的数据转换成卡片展示的数据
+export const transformedModel2Card = (modalLists: IModelDataItem[]): ICardDeatilItem[] => {
+  return modalLists.map((item) => {
+    return {
+      id: item.id,
+      name: item.name,
+      avatar: item.avatar || 'https://byzer.ai/byzer-logo.png',
+      class: item.class || [],
+      desc: item.desc,
+      source: item?.source || 'local',
+      update_time: item?.update_time || 0,
+      flavor: item.flavor || '',
+    };
+  });
+};
+
+// 后端的Mcp列表的数据转换成卡片展示的数据
+export const transformedMcp2Card = (modalLists: IMcpListItem[]): ICardDeatilItem[] => {
+  return modalLists.map((item) => {
+    return {
+      id: item.id as string,
+      name: item.name.zh,
+      avatar: item.logo || 'https://byzer.ai/byzer-logo.png',
+      class: item.tags || [],
+      desc: item.abstract.zh,
+      source: 'remote',
+      update_time: item.updatedAt || 0,
+      flavor: item.supplier || '',
+    };
+  });
 };

@@ -1,13 +1,12 @@
 import React, { Dispatch, FC, SetStateAction } from 'react';
 import { List } from 'antd';
-import { searchFunc } from '@/pages/AppManagement/AppConfig/types.ts';
-import { IModelDataItem } from '@/types/model.ts';
+import { ICardDeatilItem, searchFunc } from '@/pages/AppManagement/AppConfig/types.ts';
 import styles from './ModelSelectModal.module.scss';
 import ModelDeatilCard from '@/pages/AppManagement/AppConfig/ModelDeatilCard';
 
 interface IModelContentProps {
   onSearch: searchFunc;
-  filterSearchList: IModelDataItem[];
+  filterSearchList: ICardDeatilItem[];
   showOnlySelecte?: boolean;
   selectedModelIds?: string[];
   setSelectedModelIds?: Dispatch<SetStateAction<string[]>>;
