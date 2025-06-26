@@ -1,5 +1,6 @@
 import { Checkbox } from 'antd';
-import { ITagsDataItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
+import { ITagsDataItem } from '@/types/model.ts';
+
 interface ITagsCheck {
   tagsData?: ITagsDataItem[];
   checkedValues?: Record<string, any>;

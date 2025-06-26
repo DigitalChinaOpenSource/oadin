@@ -15,7 +15,7 @@ import { convertMessageFormat } from './utils/historyMessageFormat';
 
 export default function useViewModel() {
   const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
-  const isDownloadEmbed = useModelDownloadStore((state) => state.isDownloadEmbed);
+  const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
   const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 

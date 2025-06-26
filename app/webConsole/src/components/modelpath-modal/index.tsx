@@ -21,11 +21,11 @@ interface IModelPathModalProps {
 export default memo(function ModelPathModal(props: IModelPathModalProps) {
   const { modalPath, onModelPathVisible, onChangeModelPath, updateModelPath } = props;
 
-  const downloadList = useModelDownloadStore((state) => state.downloadList);
+  const downloadList = useModelDownloadStore.getState().downloadList;
   const { IN_PROGRESS } = DOWNLOAD_STATUS;
   const { setMigratingStatus } = useModelPathChangeStore();
   const { checkByzeStatus, setCheckByzeServerLoading } = useByzeServerCheckStore();
-  const isChatLoading = useChatStore((state) => state.isLoading);
+  const isChatLoading = useChatStore.getState().isLoading;
   const [form] = Form.useForm();
   const formValues = Form.useWatch([], form);
   const modelPathValue = Form.useWatch('modelPath', form);

@@ -7,7 +7,7 @@ import useModelDownloadStore from '../../store/useModelDownloadStore';
 
 const DownloadSection = ({ collapsed }: { collapsed: boolean }) => {
   const [isDownloadListOpen, setIsDownloadListOpen] = React.useState(false);
-  const downloadList = useModelDownloadStore((state) => state.downloadList);
+  const downloadList = useModelDownloadStore.getState().downloadList;
 
   const handleDownload = (visible: boolean) => {
     setIsDownloadListOpen(visible);

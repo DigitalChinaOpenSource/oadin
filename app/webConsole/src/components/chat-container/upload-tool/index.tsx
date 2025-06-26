@@ -15,7 +15,7 @@ interface UploadToolProps {
 export type FileStatus = 'error' | 'uploading' | 'done';
 
 export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToolProps) {
-  const { uploadFileList, setUploadFileList } = useChatStore();
+  const { uploadFileList, setUploadFileList, setIsUploading } = useChatStore();
   // 从URL中获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
   const maxFileSizeBytes = maxFileSize * 1024 * 1024;
@@ -83,6 +83,7 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToo
     // 立即更新父组件状态，显示正在上传
     const initialFileList = [...uploadFileList, uploadingFile];
     setUploadFileList(initialFileList);
+    setIsUploading(true);
 
     const formData = new FormData();
     formData.append('file', fileObj);
@@ -116,9 +117,8 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToo
         );
 
       setUploadFileList(newFileList);
+      setIsUploading(false);
       onSuccess?.(responseData);
-
-      message.success(`文件 ${fileObj.name} 上传成功`);
     } catch (error: Error | any) {
       const currentFileList = useChatStore.getState().uploadFileList;
       const failedFile: UploadFile = {
@@ -128,6 +128,7 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToo
       };
       const newFileList = currentFileList.map((item) => (item.uid === uploadingFile.uid ? failedFile : item));
       setUploadFileList(newFileList);
+      setIsUploading(false);
       onError?.(error as Error);
       message.error(`文件 ${fileObj.name} 上传失败: ${error?.message || '未知错误'}`);
     }

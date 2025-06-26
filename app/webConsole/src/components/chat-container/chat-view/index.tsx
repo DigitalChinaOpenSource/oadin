@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChatInput, MessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -48,7 +48,7 @@ interface ChatMessage extends MessageType {
 }
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
-  const { messages } = useChatStore();
+  const { messages, isUploading } = useChatStore();
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
 
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
@@ -66,23 +66,17 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   }, [messages.length, streamingContent, cancelRequest]);
 
-  /**
-   * 正在生成的消息控制滚动
-   */
+  // 正在生成的消息控制滚动
   const chattingMessageControlScroll = () => {
     if (getIsNearBottom()) {
       scrollToBottom();
     }
   };
 
-  const handleSendMessage = async (message: string) => {
-    if (!message.trim() || isLoading) return;
+  const handleSendMessage = (message: string) => {
+    if (!message.trim() || isLoading || isUploading) return;
 
-    try {
-      await sendChatMessage(message);
-    } catch (err) {
-      console.error('发送消息失败:', err);
-    }
+    sendChatMessage(message);
   };
   // 复制消息
   const handleCopyMessage = (content?: string) => {
@@ -115,7 +109,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
           />
         )}
 
-        {messages.length > 0 && (error || isLoading || streamingContent) && (
+        {(isLoading || streamingContent) && (
           <div className="message-control-buttons">
             {isLoading && (
               <img
@@ -124,39 +118,37 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
                 style={{ width: 24, height: 24 }}
               />
             )}
-            {/* 出现错误时显示重试按钮 */}
-            {error && (
-              <Button
-                type="link"
-                icon={<ArrowClockwiseIcon width={16} />}
-                onClick={resendLastMessage}
-                loading={isResending}
-                disabled={isLoading && !isResending}
-              >
-                重试
-              </Button>
-            )}
-
-            {!isLoading && streamingContent && messages.length > 0 && (
-              <>
-                <Button
-                  type="link"
-                  icon={<CopyIcon width={16} />}
-                  onClick={() => handleCopyMessage()}
-                >
-                  复制
-                </Button>
-                <Button
-                  type="link"
-                  icon={<ArrowClockwiseIcon width={16} />}
-                  onClick={resendLastMessage}
-                  loading={isResending}
-                  disabled={isResending}
-                >
-                  重新发送
-                </Button>
-              </>
-            )}
+          </div>
+        )}
+        {error && (
+          <Button
+            type="link"
+            icon={<ArrowClockwiseIcon width={16} />}
+            onClick={resendLastMessage}
+            loading={isResending}
+            disabled={isLoading && !isResending}
+          >
+            重试
+          </Button>
+        )}
+        {!isLoading && messages.length > 0 && (
+          <div className="message-control-buttons">
+            <Button
+              type="link"
+              icon={<CopyIcon width={16} />}
+              onClick={() => handleCopyMessage()}
+            >
+              复制
+            </Button>
+            <Button
+              type="link"
+              icon={<ArrowClockwiseIcon width={16} />}
+              onClick={resendLastMessage}
+              loading={isResending}
+              disabled={isResending}
+            >
+              重新发送
+            </Button>
           </div>
         )}
       </div>
@@ -202,7 +194,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             className="chat-input"
             renderSendButton={({ onClick, inputValue }) => (
               <>
-                {isLoading ? (
+                {isLoading || isUploading ? (
                   <Button
                     icon={
                       <StopIcon

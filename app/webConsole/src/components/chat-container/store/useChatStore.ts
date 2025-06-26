@@ -7,7 +7,8 @@ interface ChatState {
   messages: MessageType[];
   uploadFileList: UploadFile[];
   historyVisible: boolean;
-  isLoading?: boolean;
+  isLoading: boolean;
+  isUploading: boolean;
 
   // 操作方法
   setMessages: (messages: MessageType[]) => void;
@@ -16,6 +17,7 @@ interface ChatState {
   setHistoryVisible: (visible: boolean) => void;
   createNewChat: () => void;
   setIsLoading: (isLoading: boolean) => void;
+  setIsUploading: (isUploading: boolean) => void;
 }
 
 const useChatStore = create<ChatState>((set, get) => ({
@@ -23,6 +25,8 @@ const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   uploadFileList: [],
   historyVisible: false,
+  isLoading: false,
+  isUploading: false,
 
   // 操作方法
   setMessages: (messages) => set({ messages }),
@@ -60,6 +64,7 @@ const useChatStore = create<ChatState>((set, get) => ({
       uploadFileList: [],
     }),
   setIsLoading: (isLoading) => set({ isLoading: isLoading ?? false }),
+  setIsUploading: (isUploading) => set({ isUploading: isUploading ?? false }),
 }));
 
 export default useChatStore;
