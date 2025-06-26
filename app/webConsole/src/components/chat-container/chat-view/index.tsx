@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChatInput, MessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -48,7 +48,7 @@ interface ChatMessage extends MessageType {
 }
 
 export default function ChatView({ isUploadVisible }: IChatViewProps) {
-  const { messages } = useChatStore();
+  const { messages, isUploading } = useChatStore();
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
 
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
@@ -66,9 +66,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
     }
   }, [messages.length, streamingContent, cancelRequest]);
 
-  /**
-   * 正在生成的消息控制滚动
-   */
+  // 正在生成的消息控制滚动
   const chattingMessageControlScroll = () => {
     if (getIsNearBottom()) {
       scrollToBottom();
@@ -202,7 +200,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             className="chat-input"
             renderSendButton={({ onClick, inputValue }) => (
               <>
-                {isLoading ? (
+                {isLoading || isUploading ? (
                   <Button
                     icon={
                       <StopIcon
