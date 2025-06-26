@@ -89,6 +89,7 @@ export interface IMcpListItem {
   popularity: number;
   tags: string[];
   hosted: boolean;
+  authorized: number;
   updatedAt: number;
   envSchema?: Record<string, Record<string, any>>;
 }
@@ -140,33 +141,6 @@ export interface IMcpListRequestParams {
   page?: number;
   /**  每页条数，默认 10 */
   size?: number;
-}
-
-export interface IMcpListItem {
-  id: string | number;
-  // 0 未添加未启用；1 已添加已启用
-  status: number;
-  envRequired: number;
-  name: {
-    src: string;
-    zh: string;
-  };
-  abstract: {
-    src: string;
-    zh: string;
-  };
-  supplier: string;
-  logo: string;
-  popularity: number;
-  tags: string[];
-  hosted: boolean;
-  updatedAt: number;
-  envSchema?: Record<string, Record<string, any>>;
-}
-
-export interface IMcpListData {
-  total: number;
-  list: IMcpListItem[];
 }
 
 export type cardType = {
