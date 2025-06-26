@@ -55,6 +55,7 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ searchList, onSearc
           acc[item.category] = [];
           return acc;
         }, {});
+        console.info(initData, 'initData');
         setCheckedValues(initData);
       },
 
@@ -103,7 +104,15 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ searchList, onSearc
     }
   };
   const handleClearTags = () => {};
-  const handleTagsChange = () => {};
+  const handleTagsChange = (category: string, list: any[]) => {
+    const updatedCheckedValues = {
+      ...checkedValues,
+      [category]: list,
+    };
+    setCheckedValues(updatedCheckedValues);
+    // TODO 搜索
+    onSearch();
+  };
 
   return (
     <Modal
