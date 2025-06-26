@@ -37,7 +37,7 @@
     transition: all 0.3s ease-in-out;
   }
   .content.expanded {
-    max-height: 180px;
+    max-height: auto;
     overflow-y: auto;
     opacity: 1;
     visibility: visible;
