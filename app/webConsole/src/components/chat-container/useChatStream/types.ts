@@ -3,6 +3,7 @@ export interface ChatRequestParams {
   content: string;
   SessionID?: string;
   mcpIds?: string[];
+  embedModelId?: string;
 }
 
 // 响应数据接口

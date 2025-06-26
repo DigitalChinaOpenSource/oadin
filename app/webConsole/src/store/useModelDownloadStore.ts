@@ -48,7 +48,6 @@ const useModelDownloadStore = create<IModelDownloadStore>()(
           set({ downloadList: uniqueList });
         }
       },
-      isDownloadEmbed: false,
       setIsDownloadEmbed: (isDownloadEmbed: boolean) => {
         set({ isDownloadEmbed });
       },
@@ -56,6 +55,7 @@ const useModelDownloadStore = create<IModelDownloadStore>()(
     {
       name: 'model_download_store',
       partialize: (state: any) => ({
+        isDownloadEmbed: state.isDownloadEmbed,
         downloadList: state.downloadList,
       }),
     },

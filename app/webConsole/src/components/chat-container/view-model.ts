@@ -16,6 +16,7 @@ import { convertMessageFormat } from './utils/historyMessageFormat';
 export default function useViewModel() {
   const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
   const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
+  const setIsDownloadEmbed = useModelDownloadStore((state) => state.setIsDownloadEmbed);
   const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 
@@ -187,9 +188,10 @@ export default function useViewModel() {
     {
       manual: true,
       onSuccess: (data: ModelItem[]) => {
+        console.log('获取所有下载模型列表', data);
         if (!data || data?.length === 0) return;
         const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16');
-        setIsUploadVisible(isEmbed);
+        setIsDownloadEmbed(isEmbed);
       },
       onError: () => {
         message.error('获取所有下载模型列表失败');
@@ -276,7 +278,7 @@ export default function useViewModel() {
     }
     fetchCreateChat({
       modelId: selectedModel?.id || '',
-      embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : '',
+      embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
     });
   };
   return {

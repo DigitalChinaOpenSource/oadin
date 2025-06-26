@@ -77,7 +77,7 @@ export default memo(function McpToolChat(props: IMcpToolChatData) {
         <div className={styles.mcpLeft}>
           <div className={styles.mcpLogo}>
             <img
-              src={amap}
+              src={item.logo}
               alt={item.name}
             />
           </div>
@@ -162,7 +162,7 @@ export default memo(function McpToolChat(props: IMcpToolChatData) {
                 fill="#4f4dff"
               />
               <div className={styles.statusText}>工具调用已完成，共执行 {data.length} 次</div>
-              {!!totalDuration && <div className={styles.coastTime}>(用时 {totalDuration} 秒)</div>}
+              {!!totalDuration && <div className={styles.coastTime}>（用时 {totalDuration} 秒）</div>}
             </>
           )}
         </div>

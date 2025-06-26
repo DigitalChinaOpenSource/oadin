@@ -1,14 +1,19 @@
+import React, { useState } from 'react';
 import { Button, Col, Row, Tooltip } from 'antd';
 import ChatModelManage from './chat-model-manage';
 import { PlusIcon, ClockCounterClockwiseIcon } from '@phosphor-icons/react';
 import ChatHistoryDrawer from './chat-history-drawer';
 import ChatView from './chat-view';
 import useChatStore from './store/useChatStore';
+import exchangeSvg from '@/components/icons/exchange.svg';
 import useViewModel from './view-model';
+import { ChooseModelDialog } from '@/components/choose-model-dialog';
+
 import styles from './index.module.scss';
 
 export default function ChatContainer() {
   const { historyVisible, setHistoryVisible, isLoading, createNewChat } = useChatStore();
+  const [open, setOpen] = useState<boolean>(false);
   const vm = useViewModel();
 
   return (
@@ -44,10 +49,23 @@ export default function ChatContainer() {
               }
               onClick={() => {
                 if (isLoading) return;
-                // vm.handleCreateNewChat();
-                createNewChat();
+                vm.handleCreateNewChat();
               }}
             />
+          </Tooltip>
+          <Tooltip title={isLoading ? '对话中不可修改模型' : '切换模型后，将开启新会话'}>
+            <div
+              className={styles.changeModel}
+              onClick={() => {
+                if (isLoading) return;
+                setOpen(true);
+              }}
+            >
+              <img
+                src={exchangeSvg}
+                alt="切换模型图标"
+              />
+            </div>
           </Tooltip>
         </div>
       </div>
@@ -58,11 +76,17 @@ export default function ChatContainer() {
         >
           <div className={styles.chatContent}>
             <ChatModelManage />
-            <ChatView isUploadVisible={vm.isUploadVisible} />
+            <ChatView />
           </div>
         </Col>
       </Row>
-      {/* {historyVisible && <ChatHistoryDrawer onHistoryDrawerClose={() => setHistoryVisible(false)} />} */}
+      {historyVisible && <ChatHistoryDrawer onHistoryDrawerClose={() => setHistoryVisible(false)} />}
+      {open && (
+        <ChooseModelDialog
+          open={true}
+          onCancel={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }

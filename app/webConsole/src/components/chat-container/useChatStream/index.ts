@@ -5,6 +5,7 @@ import { API_PREFIX } from '@/constants';
 import { MessageType } from '@res-utiles/ui-components';
 import useChatStore from '@/components/chat-container/store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
+import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
@@ -20,13 +21,14 @@ import {
 import { buildMessageWithThinkContent, handleTextContent } from './thinkContentUtils';
 import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToolCallData } from './types';
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
-import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
+import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 
 export function useChatStream() {
   const { addMessage, isLoading, setIsLoading } = useChatStore();
   const currentSessionId = getSessionIdFromUrl();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
+  const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
 
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string | { data: string; status: string }>('');
@@ -210,8 +212,8 @@ export function useChatStream() {
   const cancelRequest = () => {
     const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
     // 如果有生成的内容，保存为消息
-    if (isLoading && (streamingContent || response)) {
-      const finalContent = (response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
+    if (isLoading && (streamingContent || response || streamingThinking)) {
+      const finalContent = (response || streamingContent || streamingThinking) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
 
       // 如果正在进行深度思考，标记为用户取消（错误状态）
       if (isThinkingActive && thinkingFromField) {
@@ -330,6 +332,26 @@ export function useChatStream() {
   const handleToolCalls = useCallback(
     async (data: IStreamData, currentContent: any) => {
       const { tool_calls, tool_group_id, id, total_duration } = data;
+
+      // 检查是否有深度思考内容需要先保存 - 工具调用时才将思考独立为一条消息
+      // 因为这里是 handleToolCalls 函数，我们知道这里一定是工具调用，所以可以直接保存思考内容
+      if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
+        // 将深度思考内容作为单独的消息保存
+        const thinkingMessage = buildMessageWithThinkContent(
+          '', // 正文内容为空
+          true, // 标记为完成
+          '', // 不使用thinking字段
+          requestState.current.content.thinkingFromField, // 使用累积的thinkingFromField
+          false, // 已经完成
+        );
+
+        // 添加深度思考消息
+        addMessage(thinkingMessage);
+
+        // 清除累积的思考内容，避免重复显示
+        requestState.current.content.thinkingFromField = '';
+      }
+
       // 如果返回的 content 为空且有 tool_calls，保存 tool_group_id 用于下一次请求
       if ((!currentContent || currentContent.trim() === '') && tool_calls && tool_calls.length > 0 && tool_group_id) {
         requestState.current.lastToolGroupIdRef = tool_group_id;
@@ -438,7 +460,7 @@ export function useChatStream() {
 
         // 12. 处理后续操作
         if (!isToolError && toolCallHandlersRef.current.continueConversation) {
-          // 调用继续对话函数
+          // 调用继续对话函数，处理后续流式响应
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
         } else if (isToolError) {
           console.error('工具调用失败:', toolErrorMessage);
@@ -491,6 +513,7 @@ export function useChatStream() {
         const continueRequestData: ChatRequestParams = {
           content: toolResult,
           SessionID: currentSessionId,
+          // embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
         };
 
         if (selectedMcpIds().length > 0) {
@@ -521,11 +544,36 @@ export function useChatStream() {
                 requestState.current.timers.totalTimer = null;
               }
               const data = response.data;
+              console.log('工具调用后流式响应:', data);
+
+              // 检查是否即将开始工具调用且有深度思考内容
+              if (data?.tool_calls && data.tool_calls.length > 0 && requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
+                // 将深度思考内容作为单独的消息保存，然后再处理工具调用
+                const thinkingMessage = buildMessageWithThinkContent(
+                  '', // 正文内容为空
+                  true, // 标记为完成
+                  '', // 不使用thinking字段
+                  requestState.current.content.thinkingFromField, // 使用累积的thinkingFromField
+                  false, // 已经完成
+                );
+
+                // 添加深度思考消息
+                addMessage(thinkingMessage);
+
+                // 清除累积的思考内容，避免重复显示
+                requestState.current.content.thinkingFromField = '';
+              }
+
               if (data?.tool_calls && data.tool_calls.length > 0) {
+                // 处理工具调用
                 await handleToolCalls(data, localResponseContent);
               } else if (data.content || data.thoughts) {
+                // 处理普通文本内容，确保显示在UI上
                 localResponseContent = handleTextContent(data, localResponseContent, setStreamingContent, setStreamingThinking, requestState, false);
                 requestState.current.content.response = localResponseContent;
+
+                // 实时更新流式内容显示
+                setStreamingContent(localResponseContent);
               }
             },
             onComplete: () => {
@@ -571,9 +619,39 @@ export function useChatStream() {
                   addMessage(finalMessage, true);
                 }
               }
+
+              // 检查是否有未保存的思考内容需要在完成时保存
+              if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
+                // 将深度思考内容作为单独的消息保存
+                const thinkingMessage = buildMessageWithThinkContent(
+                  '', // 正文内容为空
+                  true, // 标记为完成
+                  '', // 不使用thinking字段
+                  requestState.current.content.thinkingFromField, // 使用累积的thinkingFromField
+                  false, // 已经完成
+                );
+
+                // 添加深度思考消息
+                addMessage(thinkingMessage);
+
+                // 清除累积的思考内容，避免重复显示
+                requestState.current.content.thinkingFromField = '';
+                requestState.current.content.isThinkingActive = false;
+              }
+
               const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
+              console.log('完成状态:', {
+                isToolCallActive: requestState.current.status.isToolCallActive,
+                response,
+                localResponseContent,
+                thinking,
+                streamingThinking,
+                thinkingFromField,
+              });
+
               if (!requestState.current.status.isToolCallActive && (response || localResponseContent)) {
                 const finalContent = response || localResponseContent;
+                console.log('保存最终内容:', finalContent);
                 const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || streamingThinking, thinkingFromField, isThinkingActive);
                 addMessage(aiMessage);
 
@@ -657,6 +735,7 @@ export function useChatStream() {
       // 构建请求参数
       const requestData: ChatRequestParams = {
         content: userMessage,
+        // embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
       };
       // 添加会话ID
       if (currentSessionId && currentSessionId.trim()) {
@@ -709,11 +788,37 @@ export function useChatStream() {
                 requestState.current.timers.totalTimer = null;
               }
               const data = response.data;
+              console.log('处理流式响应:', data);
+
+              // 检查是否即将开始工具调用且有深度思考内容
+              if (data?.tool_calls && data.tool_calls.length > 0 && requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
+                // 将深度思考内容作为单独的消息保存，然后再处理工具调用
+                const thinkingMessage = buildMessageWithThinkContent(
+                  '', // 正文内容为空
+                  true, // 标记为完成
+                  '', // 不使用thinking字段
+                  requestState.current.content.thinkingFromField, // 使用累积的thinkingFromField
+                  false, // 已经完成
+                );
+
+                // 添加深度思考消息
+                addMessage(thinkingMessage);
+
+                // 清除累积的思考内容，避免重复显示
+                requestState.current.content.thinkingFromField = '';
+                requestState.current.content.isThinkingActive = false;
+              }
+
               if (data?.tool_calls && data.tool_calls.length > 0) {
+                // 处理工具调用
                 await handleToolCalls(data, responseContent);
               } else if (data.content || data.thoughts) {
+                // 处理普通文本内容
                 responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestState, false);
                 requestState.current.content.response = responseContent;
+
+                // 实时更新流式内容显示
+                setStreamingContent(responseContent);
               }
             },
             onComplete: () => {
@@ -760,9 +865,39 @@ export function useChatStream() {
                   addMessage(finalMessage, true);
                 }
               }
+
+              // 检查是否有未保存的思考内容需要在完成时保存
+              if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
+                // 将深度思考内容作为单独的消息保存
+                const thinkingMessage = buildMessageWithThinkContent(
+                  '', // 正文内容为空
+                  true, // 标记为完成
+                  '', // 不使用thinking字段
+                  requestState.current.content.thinkingFromField, // 使用累积的thinkingFromField
+                  false, // 已经完成
+                );
+
+                // 添加深度思考消息
+                addMessage(thinkingMessage);
+
+                // 清除累积的思考内容，避免重复显示
+                requestState.current.content.thinkingFromField = '';
+                requestState.current.content.isThinkingActive = false;
+              }
+
               const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
+              console.log('onComplete状态:', {
+                isToolCallActive: requestState.current.status.isToolCallActive,
+                response,
+                responseContent,
+                thinking,
+                streamingThinking,
+                thinkingFromField,
+              });
+
               if (!requestState.current.status.isToolCallActive && (response || responseContent)) {
                 const finalContent = response || responseContent;
+                console.log('保存最终消息内容:', finalContent);
                 const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || streamingThinking, thinkingFromField, isThinkingActive);
                 addMessage(aiMessage);
 
