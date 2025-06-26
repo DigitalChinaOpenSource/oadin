@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-
+    "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
     "i18next": "^25.2.1",
     "react-i18next": "^15.5.2"
   },

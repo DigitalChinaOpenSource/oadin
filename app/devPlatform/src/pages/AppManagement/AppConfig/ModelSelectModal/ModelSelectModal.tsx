@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Checkbox, Form, Modal, Space, Tooltip } from 'antd';
 import styles from './ModelSelectModal.module.scss';
 import { transformedCard2Ids, transformedIds2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
@@ -21,9 +21,10 @@ export interface ModelSelectModalProps {
   onSearch: searchFunc;
   initialSelectedModels?: IModelSelectCardItem[];
   searchList: ICardDeatilItem[];
+  setDrawerOpenId?: Dispatch<SetStateAction<string>>;
 }
 
-const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ searchList, onSearch, open, onCancel, onFinish, title, confirmLoading = false, initialSelectedModels = [] }) => {
+const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ setDrawerOpenId, searchList, onSearch, open, onCancel, onFinish, title, confirmLoading = false, initialSelectedModels = [] }) => {
   const [form] = Form.useForm();
   /// 当前选中的id
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>(transformedCard2Ids(initialSelectedModels) || []);
@@ -164,6 +165,7 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ searchList, onSearc
         </div>
         <ModelContent
           setSelectedModelIds={setSelectedModelIds}
+          setDrawerOpenId={setDrawerOpenId}
           selectedModelIds={selectedModelIds}
           onSearch={onSearch}
           showOnlySelecte={showOnlySelecte}
