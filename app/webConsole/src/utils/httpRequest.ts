@@ -17,7 +17,6 @@ declare module 'axios' {
     needMcpStore?: boolean;
     addMcpDownloadItem?: (item: { id: string; error: string; downStatus: string }) => void;
     mcpId?: string;
-    skipHealthCheck?: boolean; // 添加跳过健康检查的标识
   }
 }
 
@@ -120,49 +119,15 @@ const createApiInstance = (baseURL: string) => {
 
 const byzeInstance = createApiInstance(apiBaseURL);
 
-// 防止无限循环的标志
-let isHealthChecking = false;
-
-// 健康检查包装器 - 修复无限循环问题
-async function withHealthCheck<T>(requestFn: () => Promise<T>, config?: any): Promise<T> {
-  // 如果配置中指定跳过健康检查，直接执行请求
-  if (config?.skipHealthCheck) {
-    return requestFn();
-  }
-
-  // 如果正在进行健康检查，直接执行请求，避免无限递归
-  if (isHealthChecking) {
-    return requestFn();
-  }
-
-  try {
-    isHealthChecking = true;
-
-    // 获取当前状态，避免重复调用 getState()
-    const storeState = useByzeServerCheckStore.getState();
-
-    // 执行健康检查
-    await storeState.fetchByzeServerStatus();
-
-    // 检查服务状态
-    if (!useByzeServerCheckStore.getState().checkByzeStatus) {
-      message.destroy();
-      message.error('奥丁服务不可用，请确认奥丁服务启动状态');
-      // 返回一个永远 pending 的 Promise，阻断后续 then/catch
-      return new Promise(() => {});
-    }
-
-    return requestFn();
-  } finally {
-    isHealthChecking = false;
-  }
-}
-
+// 创建请求函数，直接调用实例方法，不再包装健康检查
 const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) => ({
-  get: <T = any>(url: string, params?: any, config?: any) => withHealthCheck(() => instance.get<any, T>(url, { ...config, params }), config),
-  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => withHealthCheck(() => instance.post<any, T>(url, data, config), config),
-  put: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.put<any, T>(url, data, config), config),
-  del: <T = any>(url: string, data?: any, config?: any) => withHealthCheck(() => instance.delete<any, T>(url, { ...config, data }), config),
+  get: <T = any>(url: string, params?: any, config?: any) => instance.get<any, T>(url, { ...config, params }),
+
+  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => instance.post<any, T>(url, data, config),
+
+  put: <T = any>(url: string, data?: any, config?: any) => instance.put<any, T>(url, data, config),
+
+  del: <T = any>(url: string, data?: any, config?: any) => instance.delete<any, T>(url, { ...config, data }),
 });
 
 export const httpRequest = createRequestFunctions(byzeInstance);
@@ -203,8 +168,24 @@ const healthInstance = createHealthApiInstance(healthBaseURL);
 
 export const healthRequest = {
   get: <T = any>(url: string, params?: any, config?: any) => healthInstance.get<any, T>(url, { ...config, params }),
+
   post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => healthInstance.post<any, T>(url, data, config),
+
   put: <T = any>(url: string, data?: any, config?: any) => healthInstance.put<any, T>(url, data, config),
+
   del: <T = any>(url: string, data?: any, config?: any) => healthInstance.delete<any, T>(url, { ...config, data }),
+
   request: (config: AxiosRequestConfig) => healthInstance.request(config),
+};
+
+// 导出一个手动检查健康状态的函数，供需要时调用
+export const checkByzeHealth = async () => {
+  try {
+    const storeState = useByzeServerCheckStore.getState();
+    await storeState.fetchByzeServerStatus();
+    return useByzeServerCheckStore.getState().checkByzeStatus;
+  } catch (error) {
+    console.error('Health check failed:', error);
+    return false;
+  }
 };

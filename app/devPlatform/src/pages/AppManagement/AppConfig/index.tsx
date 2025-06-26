@@ -6,20 +6,11 @@ import styles from './index.module.scss';
 import CreateAppModal from '../AppList/CreateAppModal.tsx';
 import ModelSelectModal from './ModelSelectModal/ModelSelectModal.tsx';
 import ModelCard from '@/pages/AppManagement/AppConfig/ModelCard/ModelCard.tsx';
-import { availableModels } from '@/pages/AppManagement/AppConfig/mock.ts';
-import { transformedCard2Ids, transformedCard2Tags } from '@/pages/AppManagement/AppConfig/uitls.ts';
-import { IModelSelectCardItem, searchFunc, SearchParams } from '@/pages/AppManagement/AppConfig/types.ts';
+import { availableMcps, availableModels } from '@/pages/AppManagement/AppConfig/mock.ts';
+import { transformedCard2Ids, transformedCard2Tags, transformedMcp2Card, transformedModel2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
+import { ICardDeatilItem, IModelSelectCardItem, searchFunc, SearchParams } from '@/pages/AppManagement/AppConfig/types.ts';
 import TagFilter, { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
-import { IModelDataItem } from '@/types/model.ts'; // 模拟可用的MCP服务
-
-// 模拟可用的MCP服务
-const availableMcps = [
-  { value: 'mcp-1', label: 'MCP 服务 1' },
-  { value: 'mcp-2', label: 'MCP 服务 2' },
-  { value: 'mcp-3', label: 'MCP 服务 3' },
-  { value: 'mcp-4', label: 'MCP 服务 4' },
-  { value: 'mcp-5', label: 'MCP 服务 5' },
-];
+import { DetailDrawer } from '@/components/detail_drawer';
 
 interface AppConfigProps {}
 
@@ -71,6 +62,8 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   });
   const [agreement, setAgreement] = useState(false);
   const [form] = Form.useForm();
+  // 当前打开的抽屉详情ID
+  const [drawerOpenId, setDrawerOpenId] = useState<string>('');
 
   // 编辑应用名称相关状态
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
@@ -81,14 +74,19 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   const [mcpSelectVisible, setMcpSelectVisible] = useState(false);
   // 当前选中的模型
   const [selectedModels, setSelectedModels] = useState<IModelSelectCardItem[]>([]);
-  const [selectedMcps, setSelectedMcps] = useState<string[]>([]);
   const [filterModelTags, setFilterModelTags] = useState<Tag[]>([]);
   const [selectedModelTag, setSelectedModelTag] = useState<string>(defaultTag);
   const [filterModelList, setFilterModelList] = useState<IModelSelectCardItem[]>([]);
+  /// 搜索结果
+  const [searchList, setSearchList] = useState<ICardDeatilItem[]>([]);
+  // 当前选中的MCP
+  const [selectedMcps, setSelectedMcps] = useState<IModelSelectCardItem[]>([]);
+  const [filterMcpTags, setFilterMcpTags] = useState<Tag[]>([]);
+  const [selectedMcpTag, setSelectedMcpTag] = useState<string>(defaultTag);
+  const [filterMcpList, setFilterMcpList] = useState<IModelSelectCardItem[]>([]);
+  const [searchMcpList, setSearchMcpList] = useState<ICardDeatilItem[]>([]);
   /// 搜索条件
   const [searchParamsState, setSearchParamsState] = useState<SearchParams>({});
-  /// 搜索结果
-  const [searchList, setSearchList] = useState<IModelDataItem[]>([]);
 
   // 获取应用详情
   useEffect(() => {
@@ -135,6 +133,12 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       setSelectModelsToForm(appDetail?.supportedModels);
     }
   }, [appDetail?.supportedModels]);
+  /// 根据详情数据初始化内部是否已选中数据
+  useEffect(() => {
+    if (appDetail?.supportedMcps?.length > 0) {
+      setSelectMcpToForm(appDetail?.supportedMcps);
+    }
+  }, [appDetail?.supportedMcps]);
 
   /// 根据选中的模型初始化需要显示的模型
   useEffect(() => {
@@ -144,10 +148,20 @@ const AppConfig: React.FC<AppConfigProps> = () => {
     setFilterModelTags(tags);
     setFilterModelList(selectedModels);
   }, [selectedModels]);
+  /// 根据选中的MCP初始化需要显示的模型
+  useEffect(() => {
+    const tags = transformedCard2Tags(selectedMcps);
+    setFilterMcpTags(tags);
+    setFilterMcpList(selectedMcps);
+  }, [selectedMcps]);
 
   const setSelectModelsToForm = (models: IModelSelectCardItem[]) => {
     setSelectedModels(models);
     form.setFieldsValue({ supportedModels: transformedCard2Ids(models) });
+  };
+  const setSelectMcpToForm = (models: IModelSelectCardItem[]) => {
+    setSelectedMcps(models);
+    form.setFieldsValue({ supportedMcps: transformedCard2Ids(models) });
   };
 
   const handleBack = () => {
@@ -225,6 +239,11 @@ const AppConfig: React.FC<AppConfigProps> = () => {
     setModelSelectVisible(true);
   };
 
+  // 处理打开模型选择弹窗
+  const handleOpenMcpSelect = () => {
+    setMcpSelectVisible(true);
+  };
+
   // 处理确认模型选择
   const handleModelSelectConfirm = (models: IModelSelectCardItem[]) => {
     // 更新表单中的模型数据
@@ -235,34 +254,26 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   };
   // 删除模型
   const onRemoveModel = (model: IModelSelectCardItem) => {
-    console.info(model, '当前删除的内容');
     const filterList = selectedModels.filter((item) => {
       return item.id !== model.id;
     });
-    console.info(filterList, 'filterListfilterListfilterList');
     setSelectModelsToForm(filterList);
   };
 
-  // 处理打开MCP选择弹窗
-  const handleOpenMcpSelect = () => {
-    // 初始化选中的MCP
-    setSelectedMcps(form.getFieldValue('supportedMcps') || []);
-    setMcpSelectVisible(true);
-  };
-
-  // 处理确认MCP选择
-  const handleMcpSelectConfirm = (mcps: string[]) => {
-    // 更新表单中的MCP数据
-    form.setFieldsValue({ supportedMcps: mcps });
-
-    // 更新应用数据
-    setAppDetail({
-      ...appDetail,
-      supportedMcps: mcps,
-    });
-
+  // 处理确认模型选择
+  const handleMcpSelectConfirm = (models: IModelSelectCardItem[]) => {
+    // 更新表单中的模型数据
+    setSelectMcpToForm(models);
+    setSelectedMcpTag(defaultTag);
     // 关闭弹窗
     setMcpSelectVisible(false);
+  };
+  // 删除模型
+  const onRemoveMcp = (model: IModelSelectCardItem) => {
+    const filterList = selectedMcps.filter((item) => {
+      return item.id !== model.id;
+    });
+    setSelectMcpToForm(filterList);
   };
 
   // 选择model标签筛选
@@ -276,14 +287,36 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       setFilterModelList(selectedModels);
     }
   };
+  // 选择mcp标签筛选
+  const onMcpTagSelect = (mcpTagLabel: string) => {
+    setSelectedMcpTag(mcpTagLabel);
+    if (mcpTagLabel !== defaultTag) {
+      const filteredMcps = selectedMcps?.filter((model: IModelSelectCardItem) => model.class?.includes(mcpTagLabel)) || [];
+      setFilterMcpList(filteredMcps);
+    } else {
+      setFilterMcpList(selectedMcps);
+    }
+  };
 
   const onSearch: searchFunc = async (params?: SearchParams) => {
     const _searchParams = { ...searchParamsState, ...params };
     setSearchParamsState(_searchParams);
     message.info(`搜索条件为:${JSON.stringify(params)}`);
     /// TODO 接口调用
-    setSearchList(availableModels);
-    return availableModels;
+    /// 接口返回的数据进行转换
+    const dealList = transformedModel2Card(availableModels);
+    setSearchList(dealList);
+    return dealList;
+  };
+  const onMcpSearch: searchFunc = async (params?: SearchParams) => {
+    const _searchParams = { ...searchParamsState, ...params };
+    setSearchParamsState(_searchParams);
+    message.info(`搜索条件为:${JSON.stringify(params)}`);
+    /// TODO 接口调用
+
+    const dealList = transformedMcp2Card(availableMcps);
+    setSearchMcpList(dealList);
+    return dealList;
   };
 
   if (loading) {
@@ -384,7 +417,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                 <div className={styles.configSection}>
                   <div className={styles.configItemRow}>
                     <div className={styles.configLabel}>
-                      <span>支持的模型</span>
+                      <span>选择模型</span>
                       <Button
                         className={styles.modelSelectButton}
                         onClick={handleOpenModelSelect}
@@ -418,10 +451,54 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                     ) : null}
                   </div>
 
+                  <div className={styles.configItemRow}>
+                    <div className={styles.configLabel}>
+                      <span>选择MCP服务</span>
+                      <Button
+                        className={styles.modelSelectButton}
+                        onClick={handleOpenMcpSelect}
+                        icon={<PlusOutlined />}
+                      >
+                        选择MCP
+                      </Button>
+                    </div>
+                    {filterMcpTags.length > 0 ? (
+                      <TagFilter
+                        onTagSelect={onMcpTagSelect}
+                        selectedTag={selectedMcpTag}
+                        tags={filterMcpTags}
+                      />
+                    ) : null}
+
+                    {filterMcpList?.length > 0 ? (
+                      <List
+                        style={{ width: '100%' }}
+                        grid={{ gutter: 16, column: 4 }}
+                        dataSource={filterMcpList}
+                        renderItem={(model: IModelSelectCardItem) => (
+                          <List.Item>
+                            <ModelCard
+                              model={model}
+                              onRemove={onRemoveMcp}
+                            />
+                          </List.Item>
+                        )}
+                      />
+                    ) : null}
+                  </div>
+
                   {/* 隐藏的表单项用于验证 */}
                   <Form.Item
                     name="supportedModels"
                     rules={[{ required: true, message: '请至少选择一个模型' }]}
+                    hidden
+                  >
+                    <input type="hidden" />
+                  </Form.Item>
+                  {/* 隐藏的表单项用于验证 */}
+                  <Form.Item
+                    name="supportedMcps"
+                    rules={[{ required: true, message: '请至少选择一个Mcp' }]}
                     hidden
                   >
                     <input type="hidden" />
@@ -509,6 +586,28 @@ const AppConfig: React.FC<AppConfigProps> = () => {
           initialSelectedModels={selectedModels}
         />
       ) : null}
+
+      {/* MCP选择弹窗 */}
+      {mcpSelectVisible ? (
+        <ModelSelectModal
+          setDrawerOpenId={setDrawerOpenId}
+          open={mcpSelectVisible}
+          onCancel={() => setMcpSelectVisible(false)}
+          onFinish={handleMcpSelectConfirm}
+          title="选择模型"
+          onSearch={onMcpSearch}
+          searchList={searchMcpList}
+          initialSelectedModels={selectedMcps}
+        />
+      ) : null}
+
+      {/*  抽屉详情 */}
+
+      <DetailDrawer
+        id={drawerOpenId}
+        open={!!(drawerOpenId && drawerOpenId !== '')}
+        onClose={() => setDrawerOpenId('')}
+      />
     </div>
   );
 };

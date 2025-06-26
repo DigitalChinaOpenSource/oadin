@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Checkbox, Form, Modal, Space, Tooltip } from 'antd';
 import styles from './ModelSelectModal.module.scss';
 import { transformedCard2Ids, transformedIds2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
-import { IModelSelectCardItem, searchFunc } from '@/pages/AppManagement/AppConfig/types.ts';
+import { ICardDeatilItem, IModelSelectCardItem, searchFunc } from '@/pages/AppManagement/AppConfig/types.ts';
 import { ModelSearch } from '@/pages/AppManagement/AppConfig/ModelSelectModal/ModelSearch.tsx';
-import { IModelDataItem, ITagsDataItem } from '@/types/model.ts';
+import { ITagsDataItem } from '@/types/model.ts';
 import { ModelContent } from '@/pages/AppManagement/AppConfig/ModelSelectModal/ModelContent.tsx';
 import McpAdvanceFilter from '@/pages/AppManagement/AppConfig/ModelSelectModal/McpAdvanceFilter';
 import expandSvg from '@/components/icons/expand.svg';
@@ -20,10 +20,11 @@ export interface ModelSelectModalProps {
   confirmLoading?: boolean;
   onSearch: searchFunc;
   initialSelectedModels?: IModelSelectCardItem[];
-  searchList: IModelDataItem[];
+  searchList: ICardDeatilItem[];
+  setDrawerOpenId?: Dispatch<SetStateAction<string>>;
 }
 
-const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ searchList, onSearch, open, onCancel, onFinish, title, confirmLoading = false, initialSelectedModels = [] }) => {
+const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ setDrawerOpenId, searchList, onSearch, open, onCancel, onFinish, title, confirmLoading = false, initialSelectedModels = [] }) => {
   const [form] = Form.useForm();
   /// 当前选中的id
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>(transformedCard2Ids(initialSelectedModels) || []);
@@ -33,7 +34,7 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ searchList, onSearc
   // 搜索栏
   const [searchText, setSearchText] = useState<string>('');
   // 内部筛选数据
-  const [filterSearchList, setFilterSearchList] = useState<IModelDataItem[]>(searchList);
+  const [filterSearchList, setFilterSearchList] = useState<ICardDeatilItem[]>(searchList);
   // 右侧筛选器的筛选项
   const [checkedValues, setCheckedValues] = useState<string[]>([]);
   const [tagsData, setTagsData] = useState<ITagsDataItem[]>([{ category: '', tags: [] }]);
@@ -98,6 +99,7 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ searchList, onSearc
   const handleSubmit = async () => {
     try {
       const cardList = transformedIds2Card(searchList, selectedModelIds);
+      console.info(cardList, 'cardListcardList');
       onFinish(cardList || []);
     } catch (error) {
       console.error('表单验证失败:', error);
@@ -163,6 +165,7 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ searchList, onSearc
         </div>
         <ModelContent
           setSelectedModelIds={setSelectedModelIds}
+          setDrawerOpenId={setDrawerOpenId}
           selectedModelIds={selectedModelIds}
           onSearch={onSearch}
           showOnlySelecte={showOnlySelecte}

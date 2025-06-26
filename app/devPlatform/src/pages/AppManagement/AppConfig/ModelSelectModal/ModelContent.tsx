@@ -1,19 +1,19 @@
 import React, { Dispatch, FC, SetStateAction } from 'react';
 import { List } from 'antd';
-import { searchFunc } from '@/pages/AppManagement/AppConfig/types.ts';
-import { IModelDataItem } from '@/types/model.ts';
+import { ICardDeatilItem, searchFunc } from '@/pages/AppManagement/AppConfig/types.ts';
 import styles from './ModelSelectModal.module.scss';
 import ModelDeatilCard from '@/pages/AppManagement/AppConfig/ModelDeatilCard';
 
 interface IModelContentProps {
   onSearch: searchFunc;
-  filterSearchList: IModelDataItem[];
+  filterSearchList: ICardDeatilItem[];
   showOnlySelecte?: boolean;
   selectedModelIds?: string[];
   setSelectedModelIds?: Dispatch<SetStateAction<string[]>>;
+  setDrawerOpenId?: Dispatch<SetStateAction<string>>;
 }
 
-export const ModelContent: FC<IModelContentProps> = ({ selectedModelIds, setSelectedModelIds, showOnlySelecte, onSearch, filterSearchList }) => {
+export const ModelContent: FC<IModelContentProps> = ({ setDrawerOpenId, selectedModelIds, setSelectedModelIds, showOnlySelecte, onSearch, filterSearchList }) => {
   const handleSearch = async () => {
     await onSearch({});
   };
@@ -36,11 +36,9 @@ export const ModelContent: FC<IModelContentProps> = ({ selectedModelIds, setSele
           <List.Item key={item.id}>
             <ModelDeatilCard
               setSelectedModelIds={setSelectedModelIds}
+              setDrawerOpenId={setDrawerOpenId}
               selectedModelIds={selectedModelIds}
               deatilData={item}
-              handelMcpCardClick={(id) => {
-                // handleDetail(id as string);
-              }}
             />
           </List.Item>
         )}

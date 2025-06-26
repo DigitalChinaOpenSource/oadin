@@ -7,7 +7,7 @@ import rehypeRaw from 'rehype-raw';
 interface StreamingMessageProps {
   content: string;
   scroll: () => void;
-  thinkingContent?: string;
+  thinkingContent?: string | { data: string; status: string };
 }
 
 const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, thinkingContent }) => {
@@ -21,7 +21,9 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, th
 
   return (
     <div className="chat-message-bubble ai-bubble">
-      {thinkingContent && <DeepThinkChat dataSource={{ data: thinkingContent, status: 'progress' }} />}
+      <div style={{ marginBottom: '16px' }}>
+        {typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data && <DeepThinkChat dataSource={{ data: thinkingContent.data, status: thinkingContent.status as any }} />}
+      </div>
       {/* @ts-ignore */}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}

@@ -7,15 +7,15 @@ import dayjs from 'dayjs';
 import defaultPng from '@/assets/favicon.png';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { checkMcpLength } from '@/pages/AppManagement/AppConfig/uitls.ts';
-import { IModelDataItem } from '@/types/model.ts';
 import EllipsisTooltip from '@/pages/AppManagement/AppConfig/ModelDeatilCard/ellipsisTooltip.tsx';
+import { ICardDeatilItem } from '@/pages/AppManagement/AppConfig/types.ts';
 
 export interface IMcpCardProps {
   // 模型数据
-  deatilData: IModelDataItem;
-  handelMcpCardClick: (mcpId: string | number) => void;
+  deatilData: ICardDeatilItem;
   selectedModelIds?: string[];
   setSelectedModelIds?: Dispatch<SetStateAction<string[]>>;
+  setDrawerOpenId?: Dispatch<SetStateAction<string>>;
 }
 
 const formatUnixTime = (unixTime: number) => {
@@ -23,9 +23,9 @@ const formatUnixTime = (unixTime: number) => {
   return date.format('YYYY-MM-DD');
 };
 export default function McpCard(props: IMcpCardProps) {
-  const { deatilData, handelMcpCardClick, setSelectedModelIds, selectedModelIds = [] } = props;
+  const { deatilData, setSelectedModelIds, selectedModelIds = [], setDrawerOpenId } = props;
   // 处理单个项目的选择
-  const handleItemSelect = (item: IModelDataItem, checked: boolean) => {
+  const handleItemSelect = (item: ICardDeatilItem, checked: boolean) => {
     if (checked) {
       if (checkMcpLength(selectedModelIds.length)) {
         setSelectedModelIds?.([...(selectedModelIds ?? []), item.id]);
@@ -88,7 +88,7 @@ export default function McpCard(props: IMcpCardProps) {
       </div>
       {/* 修改：使用 EllipsisTooltip 组件 */}
       <EllipsisTooltip
-        title={deatilData?.desc}
+        title={deatilData?.desc || ''}
         className={styles.contentWrapper}
         maxWidth={400}
       >
@@ -99,15 +99,18 @@ export default function McpCard(props: IMcpCardProps) {
         <div className={styles.dot}>·</div>
         <div className={styles.updateName}>{deatilData?.update_time && formatUnixTime(deatilData?.update_time) + '更新'}</div>
       </div>
-      <div className={styles.cardOperate}>
-        <Button
-          type={'text'}
-          icon={<ExclamationCircleOutlined />}
-          onClick={() => handelMcpCardClick(deatilData?.id)}
-        >
-          查看详情
-        </Button>
-      </div>
+      {setDrawerOpenId ? (
+        <div className={styles.cardOperate}>
+          <Button
+            block
+            type={'text'}
+            icon={<ExclamationCircleOutlined />}
+            onClick={() => setDrawerOpenId(deatilData?.id)}
+          >
+            查看详情
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -29,7 +29,7 @@ export function useChatStream() {
   const { selectedMcpIds } = useSelectMcpStore();
 
   const [streamingContent, setStreamingContent] = useState<string>('');
-  const [streamingThinking, setStreamingThinking] = useState<string>('');
+  const [streamingThinking, setStreamingThinking] = useState<string | { data: string; status: string }>('');
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,8 +53,6 @@ export function useChatStream() {
     },
     lastToolGroupIdRef: null as string | null,
   });
-  // 上下文保存
-  const lastUserMessageRef = useRef<string | null>(null);
   const toolCallHandlersRef = useRef<{
     continueConversation: ((result: string) => Promise<void>) | null;
   }>({ continueConversation: null });
@@ -214,9 +212,18 @@ export function useChatStream() {
     // 如果有生成的内容，保存为消息
     if (isLoading && (streamingContent || response)) {
       const finalContent = (response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
-      // 将 thinking 内容也传入构建消息的函数 - 更新调用方式
 
-      const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || streamingThinking, thinkingFromField, isThinkingActive);
+      // 如果正在进行深度思考，标记为用户取消（错误状态）
+      if (isThinkingActive && thinkingFromField) {
+        // 手动设置思考内容为错误状态
+        setStreamingThinking({
+          data: thinkingFromField,
+          status: 'error',
+        });
+      }
+
+      // 将 thinking 内容也传入构建消息的函数
+      const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || streamingThinking, thinkingFromField, false);
       addMessage(aiMessage);
 
       // 保存当前的工具调用活动状态和toolGroupId，但清除内部状态
@@ -437,7 +444,7 @@ export function useChatStream() {
           console.error('工具调用失败:', toolErrorMessage);
           const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
           // 使用 handleTextContent 处理错误内容
-          handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState);
+          handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState, false);
           requestState.current.content.response = errorContent;
         } else {
           console.error('工具调用处理程序未初始化');
@@ -516,8 +523,8 @@ export function useChatStream() {
               const data = response.data;
               if (data?.tool_calls && data.tool_calls.length > 0) {
                 await handleToolCalls(data, localResponseContent);
-              } else if (data.content) {
-                localResponseContent = handleTextContent(data, localResponseContent, setStreamingContent, setStreamingThinking, requestState);
+              } else if (data.content || data.thoughts) {
+                localResponseContent = handleTextContent(data, localResponseContent, setStreamingContent, setStreamingThinking, requestState, false);
                 requestState.current.content.response = localResponseContent;
               }
             },
@@ -627,10 +634,7 @@ export function useChatStream() {
         handleError(ERROR_MESSAGES.REQUEST.NO_MODEL_SELECTED, null, ErrorType.REQUEST, { shouldCancel: false });
         return;
       }
-      // 记录最后一条消息用于重发
       if (!isResend) {
-        lastUserMessageRef.current = userMessage;
-
         // 创建用户消息，仅在非重发时添加
         const userMsg: MessageType = {
           id: generateUniqueId('user_msg'),
@@ -707,8 +711,8 @@ export function useChatStream() {
               const data = response.data;
               if (data?.tool_calls && data.tool_calls.length > 0) {
                 await handleToolCalls(data, responseContent);
-              } else if (data.content) {
-                responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestState);
+              } else if (data.content || data.thoughts) {
+                responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestState, false);
                 requestState.current.content.response = responseContent;
               }
             },
@@ -828,13 +832,28 @@ export function useChatStream() {
       setIsResending(true);
       setError(null);
 
-      // 获取上次发送的消息内容
-      const lastMessage = lastUserMessageRef.current;
-      if (!lastMessage) {
-        console.warn('没有可重发的消息');
+      // 从消息列表中获取最后一条用户消息
+      const messages = useChatStore.getState().messages;
+      // 倒序查找第一条用户消息
+      const lastUserMessage = [...messages].reverse().find((msg) => msg.role === 'user');
+
+      if (!lastUserMessage || !lastUserMessage.contentList || lastUserMessage.contentList.length === 0) {
+        console.warn('没有找到可重发的用户消息');
         setIsResending(false);
         return;
       }
+
+      // 获取最后一条content的内容
+      const lastContent = lastUserMessage.contentList[lastUserMessage.contentList.length - 1];
+      if (!lastContent || !lastContent.content || typeof lastContent.content !== 'string') {
+        console.warn('用户消息内容格式不正确');
+        setIsResending(false);
+        return;
+      }
+
+      const lastMessageContent = lastContent.content;
+
+      // 创建新的用户消息
       const userMessage: MessageType = {
         id: generateUniqueId('user_msg'),
         role: 'user',
@@ -842,13 +861,13 @@ export function useChatStream() {
           {
             id: generateUniqueId('content'),
             type: 'plain',
-            content: lastMessage,
+            content: lastMessageContent,
           },
         ],
       };
       addMessage(userMessage);
 
-      await sendChatMessageInternal(lastMessage, true);
+      await sendChatMessageInternal(lastMessageContent, true);
     } catch (error: any) {
       handleError(formatErrorMessage('重发消息失败: {0}', error.message || '未知错误'), error, ErrorType.REQUEST);
     } finally {
