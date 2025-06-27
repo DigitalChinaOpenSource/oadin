@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"byze/internal/types"
+	"oadin/internal/types"
 
 	jsonata "github.com/blues/jsonata-go"
 )

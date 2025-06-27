@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"byze/config"
 	"encoding/json"
+	"oadin/config"
 	"os"
 	"path/filepath"
 )
@@ -14,7 +14,7 @@ const (
 )
 
 func CacheFilePath() string {
-	return filepath.Join(config.GlobalByzeEnvironment.RootDir, "cache")
+	return filepath.Join(config.GlobalOadinEnvironment.RootDir, "cache")
 }
 
 // 获取本地配置文件路径

@@ -5,13 +5,13 @@ import (
 	"io"
 	"net/http"
 
-	"byze/internal/api/dto"
-	"byze/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (t *ByzeCoreServer) CreateServiceProvider(c *gin.Context) {
+func (t *OadinCoreServer) CreateServiceProvider(c *gin.Context) {
 	request := new(dto.CreateServiceProviderRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
@@ -33,7 +33,7 @@ func (t *ByzeCoreServer) CreateServiceProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) DeleteServiceProvider(c *gin.Context) {
+func (t *OadinCoreServer) DeleteServiceProvider(c *gin.Context) {
 	request := new(dto.DeleteServiceProviderRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
@@ -55,7 +55,7 @@ func (t *ByzeCoreServer) DeleteServiceProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) UpdateServiceProvider(c *gin.Context) {
+func (t *OadinCoreServer) UpdateServiceProvider(c *gin.Context) {
 	request := new(dto.UpdateServiceProviderRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
@@ -77,7 +77,7 @@ func (t *ByzeCoreServer) UpdateServiceProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) GetServiceProvider(c *gin.Context) {
+func (t *OadinCoreServer) GetServiceProvider(c *gin.Context) {
 	request := &dto.GetServiceProviderRequest{}
 	if err := c.Bind(request); err != nil {
 		if !errors.Is(err, io.EOF) {
@@ -101,7 +101,7 @@ func (t *ByzeCoreServer) GetServiceProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) GetServiceProviders(c *gin.Context) {
+func (t *OadinCoreServer) GetServiceProviders(c *gin.Context) {
 	request := &dto.GetServiceProvidersRequest{}
 	if err := c.ShouldBindJSON(request); err != nil {
 		if !errors.Is(err, io.EOF) {

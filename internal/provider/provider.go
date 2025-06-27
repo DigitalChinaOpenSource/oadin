@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 
-	"byze/internal/provider/engine"
-	"byze/internal/types"
-	"byze/internal/utils/client"
+	"oadin/internal/provider/engine"
+	"oadin/internal/types"
+	"oadin/internal/utils/client"
 )
 
 // ModelServiceProvider local model engine

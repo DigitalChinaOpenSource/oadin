@@ -1,34 +1,34 @@
 =====================================
-Byze (AIPC Open Gateway)
+Oadin (AIPC Open Gateway)
 =====================================
 
 .. include:: global.rst
 
-:版本: |byze_spec_version|
+:版本: |oadin_spec_version|
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: Byze Get Started
+   :caption: Oadin Get Started
 
-   byze用法
+   oadin用法
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: Byze 目标:
+   :caption: Oadin 目标:
 
    介绍 
-   byze基本概念
-   byze的机制
+   oadin基本概念
+   oadin的机制
 
 
-.. _byze_spec:
+.. _oadin_spec:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Byze API 规范:
+   :caption: Oadin API 规范:
 
-   byze规范
+   oadin规范
    service_specs/chat
 
