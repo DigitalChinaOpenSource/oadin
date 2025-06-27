@@ -17,5 +17,5 @@ export const LOCAL_STORAGE_KEYS = {
 };
 
 export const API_VERSION = 'v0.2';
-export const API_PREFIX = `/byze/${API_VERSION}`;
+export const API_PREFIX = `/oadin/${API_VERSION}`;
 export const API_HEALTH_ENDPOINT = '/health';
