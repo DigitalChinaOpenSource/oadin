@@ -63,12 +63,6 @@ export default function ChatView() {
     }
   }, [messages.length, getIsNearBottom, scrollToBottom]);
 
-  useEffect(() => {
-    if (messages.length === 0 && streamingContent) {
-      cancelRequest();
-    }
-  }, [messages.length, streamingContent, cancelRequest]);
-
   // 正在生成的消息控制滚动
   const chattingMessageControlScroll = () => {
     if (getIsNearBottom()) {
