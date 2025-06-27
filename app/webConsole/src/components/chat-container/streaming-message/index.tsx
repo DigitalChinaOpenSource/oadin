@@ -21,16 +21,17 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, th
 
   return (
     <div className="chat-message-bubble ai-bubble">
-      <div style={{ marginBottom: '16px' }}>
-        {typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data && <DeepThinkChat dataSource={{ data: thinkingContent.data, status: thinkingContent.status as any }} />}
-      </div>
+      <div>{typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data && <DeepThinkChat dataSource={{ data: thinkingContent.data, status: thinkingContent.status as any }} />}</div>
       {/* @ts-ignore */}
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-      >
-        {content || ''}
-      </ReactMarkdown>
+      <div style={{ marginTop: typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data ? '16px' : unset }}>
+        <>
+          {ReactMarkdown({
+            children: content || '',
+            remarkPlugins: [remarkGfm],
+            rehypePlugins: [rehypeRaw],
+          })}
+        </>
+      </div>
     </div>
   );
 };

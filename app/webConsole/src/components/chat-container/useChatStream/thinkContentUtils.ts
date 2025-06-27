@@ -264,14 +264,21 @@ export const handleTextContent = (
       responseContent += data.content || '';
     }
   } else {
-    if (data.content && (data.content.length > responseContent.length || !responseContent.includes(data.content.trim()))) {
-      responseContent += data.content || '';
-    } else if (data.content) {
-      responseContent = data.content;
+    if (data.content) {
+      // 确保新内容不会导致数据重复或标签断开
+      if (data.content.length > responseContent.length) {
+        // 完全替换
+        responseContent = data.content;
+      } else if (!responseContent.includes(data.content.trim())) {
+        // 累加，防止标签被分割
+        responseContent += data.content;
+      }
+      // 如果内容已经包含在现有响应中，保持不变
     }
   }
 
-  if (responseContent.includes('<think>')) {
+  // 检查是否包含 <think> 标签（包括可能不完整的标签）
+  if (responseContent.includes('<think>') || responseContent.includes('</think>')) {
     // 检查是否有未闭合的 <think> 标签
     const openTagCount = (responseContent.match(/<think>/g) || []).length;
     const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
@@ -306,7 +313,7 @@ export const handleTextContent = (
     requestStateRef.current.content.thinking = combinedThinkContent;
     setStreamingThinking({
       data: combinedThinkContent,
-      status: 'success',
+      status: hasUnfinishedThink && !data.is_complete ? 'progress' : 'success', // 如果未完成且标签未闭合，标记为进行中
     });
 
     // 2. 清理常规文本内容，移除所有 <think> 标签及其内容
