@@ -434,8 +434,8 @@ namespace Oadin
             {
                 // 根据操作系统选择下载 URL 和目标路径
                 string url = OperatingSystem.IsMacOS()
-                    ? "http://120.232.136.73:31619/oadindev/oadin.zip"
-                    : "http://120.232.136.73:31619/oadindev/oadin.exe";
+                    ? "http://120.232.136.73:31619/byzedev/oadin.zip"
+                    : "http://120.232.136.73:31619/byzedev/oadin.exe";
 
                 string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
                 string oadinDirectory = Path.Combine(userDirectory, "Oadin");

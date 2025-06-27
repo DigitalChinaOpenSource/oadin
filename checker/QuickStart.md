@@ -7,7 +7,7 @@ Oadin 是一个模型框架，它能解耦 AI PC 上的 AI 应用与它所依赖
 
 ### 下载和启动
 
-你可以前往 http://120.232.136.73:31619/oadindev/oadin.exe 下载 `oadin.exe` 到你的用户目录下，并添加到环境变量。
+你可以前往 http://120.232.136.73:31619/byzedev/oadin.exe 下载 `oadin.exe` 到你的用户目录下，并添加到环境变量。
 
 用以下命令启动 Oadin 服务：
 

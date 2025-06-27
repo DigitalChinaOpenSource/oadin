@@ -102,7 +102,7 @@ namespace oadin_checker_0
         // Download Oadin
         public static async Task DownloadOadinAsync()
         {
-            string downloadUrl = "http://120.232.136.73:31619/oadindev/oadin.exe";
+            string downloadUrl = "http://120.232.136.73:31619/byzedev/oadin.exe";
             string userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string oadinFolder = Path.Combine(userFolder, "Oadin");
 
