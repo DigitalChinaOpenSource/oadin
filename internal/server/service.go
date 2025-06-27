@@ -706,13 +706,13 @@ func getRecommendConfig(service string) types.RecommendConfig {
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/oadindev/ipex-llm-ollama-Installer-20250226.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	case types.ServiceEmbed:
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "bge-m3",
-			EngineDownloadUrl: "http://120.232.136.73:31619/oadindev/ipex-llm-ollama-Installer-20250226.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	case types.ServiceModels:
 		return types.RecommendConfig{}
@@ -720,7 +720,7 @@ func getRecommendConfig(service string) types.RecommendConfig {
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/oadindev/ipex-llm-ollama-Installer-20250226.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	default:
 		return types.RecommendConfig{}
