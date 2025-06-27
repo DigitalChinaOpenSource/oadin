@@ -197,29 +197,29 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 
 		switch utils.DetectGpuModel() {
 		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ollama-windows-amd64-all.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-all.zip"
 		case types.GPUTypeNvidia:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ollama-windows-amd64.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64.zip"
 		case types.GPUTypeAmd:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ollama-windows-amd64-rocm.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-rocm.zip"
 		case types.GPUTypeIntelArc:
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ipex-llm-ollama.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama.zip"
 		default:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ollama-windows-amd64-base.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-base.zip"
 		}
 
 	case "linux":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/linux/OllamaSetup.exe"
+		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", "ollama")
 		if runtime.GOARCH == "amd64" {
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/macos/Ollama-darwin.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
 		} else {
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/macos/Ollama-arm64.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
 		}
 	default:
 		return nil
