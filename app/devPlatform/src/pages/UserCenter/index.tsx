@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './index.module.scss';
 import './common.css';
-import { Button, Spin } from 'antd';
+import { Button, message, Spin } from 'antd';
 import { CaretRightIcon } from '@phosphor-icons/react';
 import AccountInfo from './accountInfo';
 import RealNameAuth from './realnameAuth';
@@ -9,6 +9,8 @@ import ServiceAgreement from './serviceAgreement';
 import AccountSetting from './accountSetting';
 import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 import { IAccountInfo } from '@/pages/UserCenter/types';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLoginView } from '@/pages/Login/useLoginView.ts';
 
 const UserCenter: React.FC = () => {
   const [showSetting, setShowSetting] = useState<boolean>(false);

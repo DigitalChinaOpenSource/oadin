@@ -1,8 +1,12 @@
 import { Form, Input } from 'antd';
 import React, { useRef, useState } from 'react';
 import styles from '@/pages/Login/loginForm/index.module.scss';
+import { useLoginView } from '@/pages/Login/useLoginView.ts';
+import { message } from 'antd';
 
 const CodeInput = ({ form, validateFiled, codeFiled, placeholder }: { form: any; validateFiled: string; codeFiled: string; placeholder?: string }) => {
+  const { getPhoneCode } = useLoginView();
+
   // 60s倒计时
   const [countTime, setCountTime] = useState(60);
   const [showTimeStatus, setShowTimeStatus] = useState<1 | 2 | 3>(1); // 1 显示获取验证码 2 显示倒计时 3显示重新获取
@@ -42,8 +46,9 @@ const CodeInput = ({ form, validateFiled, codeFiled, placeholder }: { form: any;
       setShowTimeStatus(2);
       createTimer();
       // 这里是获取验证码
-      //   const { message } = await System.getPhoneCode({ phone: form.getFieldValue('phoneNumber') })
-      //   message.success(message || '验证码已发送')
+      const res = await getPhoneCode({ phone: form.getFieldValue(validateFiled) });
+      console.log('验证码获取结果', res);
+      message.success(res.data || res.message || '验证码已发送');
     } catch (error) {
       console.log('error', error);
     }

@@ -9,23 +9,30 @@ export interface User {
   phoneBind?: boolean;
   wechatInfo?: Record<string, any>;
   email?: string;
-  token: string;
 }
 
 interface AuthState {
   isAuthenticated: boolean;
-  user: User | null;
-  login: (userData: User) => void;
+  user: any;
+  login: (userData: any, token: string) => void;
   logout: () => void;
+  token: string | null; // 可选的 token 字段
+  changeUser: (userData: any) => void;
+  wechatInfo?: any; // 可选的微信信息字段
+  setWechatInfo: (wechatInfo: any) => void;
 }
 
 const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       isAuthenticated: false,
+      token: null,
       user: null,
-      login: (userData: User) => set({ isAuthenticated: true, user: userData }),
-      logout: () => set({ isAuthenticated: false, user: null }),
+      wechatInfo: null,
+      login: (userData: any, token: string) => set({ isAuthenticated: true, user: userData, token: token }),
+      logout: () => set({ isAuthenticated: false, user: null, token: null, wechatInfo: null }),
+      changeUser: (userData: any) => set((state) => ({ user: { ...state.user, ...userData } })),
+      setWechatInfo: (wechatInfo: any) => set({ wechatInfo }),
     }),
     {
       name: 'auth-storage', // localStorage 中的键名

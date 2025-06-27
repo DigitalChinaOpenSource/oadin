@@ -1,37 +1,18 @@
 import { useState } from 'react';
-import { IAccountInfo } from '@/pages/UserCenter/types';
+import { IAccountInfo, IDeleteAccountProps } from '@/pages/UserCenter/types';
 import useAuthStore from '@/store/authStore.ts';
 import useLoginStore from '@/store/loginStore.ts';
+import { httpRequest } from '@/utils/httpRequest.ts';
+import { getUserToken } from '@/utils/getUserToken.ts';
 
 export const useUserCenterView = () => {
   const [userInfo, setUserInfo] = useState<IAccountInfo>();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const { setCurrentStep } = useLoginStore();
 
   // 获取用户信息
   const getUserInfo = async () => {
-    await new Promise((resolve) => {
-      setTimeout(resolve, 2000);
-    });
-    const testData = {
-      id: 'user-123',
-      userName: 'testUser',
-      enterpriseName: 'testCompany',
-      email: '123@456.com',
-      phone: '1234567890',
-      type: 'enterprise', // 个人账号
-      wechatBind: false,
-      wechatInfo: {
-        openId: 'wx-123456',
-        unionId: 'wx-union-123456',
-        nickname: 'Test WeChat User',
-        avatarUrl: 'https://example.com/avatar.jpg',
-      },
-      isRealNameAuth: false,
-      isEnterpriseAuth: false,
-      authInfo: {},
-    };
-    setUserInfo(testData as IAccountInfo);
+    setUserInfo({ ...user, type: 'person' } as IAccountInfo);
   };
 
   // 修改用户名
@@ -50,9 +31,10 @@ export const useUserCenterView = () => {
   };
 
   // 确认注销
-  const sureDeleteAccount = async () => {
+  const sureDeleteAccount = async (data: IDeleteAccountProps) => {
     // 模拟 API 调用
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    const res = await httpRequest.del('/account', data, { Authorization: getUserToken() });
     // 清除用户信息
     setUserInfo(undefined);
     logout();

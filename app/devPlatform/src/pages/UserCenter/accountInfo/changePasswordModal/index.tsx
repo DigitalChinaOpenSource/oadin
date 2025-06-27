@@ -18,7 +18,7 @@ const ChangePasswordModal = ({ title, onCancel, onConfirm, visible }: IChangePas
   };
 
   useEffect(() => {
-    form.resetFields();
+    if (visible) form.resetFields();
   }, [visible]);
 
   return (

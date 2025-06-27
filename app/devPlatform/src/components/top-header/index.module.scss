@@ -30,3 +30,43 @@
     }
   }
 }
+
+.userPopover {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 254px;
+  padding: 24px 16px;
+  gap: 16px;
+  :global(.ant-divider-horizontal) {
+    margin: 0;
+  }
+  .popoverHeader {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    img {
+      width: 32px;
+      height: 32px;
+    }
+  }
+  .popoverContent {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    .comItem {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 6px 8px;
+      font-size: 12px;
+      line-height: 20px;
+      &:hover {
+        color: #4f4dff;
+        background-color: #dee7ff;
+        border-radius: 4px;
+      }
+    }
+  }
+}

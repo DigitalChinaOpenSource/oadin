@@ -14,7 +14,7 @@ import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
  * 用户中心账号信息组件
  */
 const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
-  const { type: userType, userName, enterpriseName, email, phone, avatarUrl, wechatInfo, wechatBind } = accountInfo;
+  const { type: userType, username, nickname, wechatName, enterpriseName, email, phone, avatar, wechatInfo, wechatBind } = accountInfo;
 
   const { changeUsername, userInfo } = useUserCenterView();
   // 修改用户名的弹窗
@@ -105,14 +105,14 @@ const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
       <div className={styles.headerSection}>
         <div className={styles.userInfoBlock}>
           <img
-            src={isPerson ? avatarUrl || DefaultUserIcon : CompanyIcon}
+            src={isPerson ? avatar || DefaultUserIcon : CompanyIcon}
             alt=""
           />
 
           {/* 用户名和编辑按钮 */}
           <div className={styles.userInfo}>
             <div className={styles.userNameBlock}>
-              <span className={styles.userName}>{isPerson ? userName : enterpriseName}</span>
+              <span className={styles.userName}>{isPerson ? nickname : enterpriseName}</span>
 
               <Button
                 type="text"
@@ -160,7 +160,7 @@ const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
           label: '微信号',
           content: (
             <>
-              {wechatBind && <span className={styles.infoText}>{wechatInfo?.userName}</span>}
+              {wechatBind && <span className={styles.infoText}>{wechatName}</span>}
               <div className={styles.bindingStatus}>{renderBindStatus(wechatBind as boolean)}</div>
             </>
           ),

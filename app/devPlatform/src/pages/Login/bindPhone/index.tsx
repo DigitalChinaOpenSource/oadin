@@ -7,14 +7,34 @@ import CodeInput from '@/pages/Login/components/codeInput';
 import useLoginStore from '@/store/loginStore.ts';
 import { useNavigate } from 'react-router-dom';
 import { IBasePhoneFormProps } from '@/pages/Login/types';
+import { useLoginView } from '@/pages/Login/useLoginView.ts';
+import useAuthStore from '@/store/authStore.ts';
 
-const BindPhone = () => {
+interface IBindPhoneProps {
+  onConfirm?: (values: IBasePhoneFormProps) => void;
+}
+
+const BindPhone = ({ onConfirm }: IBindPhoneProps) => {
   const [form] = Form.useForm();
   const { setCurrentStep } = useLoginStore();
+  const { wechatInfo, login } = useAuthStore();
   const navigate = useNavigate();
+  const { loginWithPhone } = useLoginView();
 
-  const onFinish = (values: IBasePhoneFormProps) => {
+  const onFinish = async (values: IBasePhoneFormProps) => {
     console.log('Received values of form: ', values);
+    // onConfirm(values);
+    const res = await loginWithPhone({ ...values, wechatInfo });
+    if (res && res.data) {
+      if (res.data.isNewUser) {
+        login(res.data.user, res.data.token);
+        setCurrentStep('personAuth');
+      } else {
+        // 登录成功后跳转到首页
+        login(res.data.user, res.data.token);
+        navigate('/');
+      }
+    }
   };
 
   return (

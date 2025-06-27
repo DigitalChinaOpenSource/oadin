@@ -45,12 +45,12 @@ const SureAuthModal = ({
     >
       <PhoneNumberInput
         form={form}
-        codeFiled={'phoneNumber'}
+        codeFiled={'phone'}
       />
 
       <CodeInput
         form={form}
-        validateFiled={'phoneNumber'}
+        validateFiled={'phone'}
         codeFiled={'code'}
       />
     </Form>

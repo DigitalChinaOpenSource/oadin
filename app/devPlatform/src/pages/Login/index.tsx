@@ -16,6 +16,7 @@ import './common.css';
 import BindPhone from '@/pages/Login/bindPhone';
 import AuthPerson from '@/pages/Login/loginPerson/authPerson';
 import AuthEnterprise from '@/pages/Login/loginEnterprise/authEnterprise';
+import { IBasePhoneFormProps } from '@/pages/Login/types';
 
 interface LoginFormValues {
   username: string;
@@ -29,7 +30,6 @@ interface MobileLoginFormValues {
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuthStore();
   const [loginAccount, setLoginAccount] = useState<'personAccount' | 'enterpriseAccount'>('personAccount');
   const { currentStep, setCurrentStep } = useLoginStore();
@@ -48,14 +48,8 @@ const LoginPage: React.FC = () => {
       children: <LoginEnterprise />,
     },
   ];
-  // 获取重定向来源
-  // const from = (location.state as { from?: string })?.from || '/app-management';
 
   const [searchParams] = useSearchParams();
-  console.log('searchParams:', searchParams.get('needBindPhone'));
-
-  // 如果需要绑定手机号，则显示手机号绑定页面
-
   // 处理tab切换
   const handleTabChange = (activeKey: LoginType) => {
     console.log(1111111);
@@ -79,14 +73,7 @@ const LoginPage: React.FC = () => {
   }, [currentStep]);
 
   useEffect(() => {
-    setCurrentStep('personPhone');
-    const needBindPhone = searchParams.get('needBindPhone');
-    const loginFrom = searchParams.get('loginFrom');
-    if (needBindPhone === 'true' && loginFrom === 'personWechat') {
-      setCurrentStep('bindPhone');
-    } else if (needBindPhone === 'false' && loginFrom !== 'personWechat') {
-      navigate(`/${loginFrom}`);
-    }
+    setCurrentStep('personWechat');
   }, []);
 
   return (
@@ -110,6 +97,7 @@ const LoginPage: React.FC = () => {
               <div className={styles.secondTag}></div>
               <span>低门槛，高效率开发体验</span>
             </div>
+            {/*<Button onClick={() => setCurrentStep('bindPhone')}>测试按钮</Button>*/}
           </div>
           {/*左侧描述图片*/}
           <div className={styles.decorationContainer}>

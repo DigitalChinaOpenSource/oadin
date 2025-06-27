@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Input, InputNumber, Button, Form, Checkbox } from 'antd';
+import { Input, InputNumber, Button, Form, Checkbox, message } from 'antd';
 import styles from './index.module.scss';
 import CodeInput from '@/pages/Login/components/codeInput';
 import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
@@ -19,26 +19,29 @@ const LoginForm = () => {
   const [form] = Form.useForm<LoginFormValues>();
   const { setPersonPhoneData, personPhoneData, setCurrentStep } = useLoginStore();
   const navigate = useNavigate();
-  const { loginWithPhone } = useLoginView();
+  const { loginWithPhone, getUserInfo } = useLoginView();
   const { login } = useAuthStore();
   const onFinish = async (values: LoginFormValues) => {
     console.log('Received values of form: ', values);
-    const userRes: any = await loginWithPhone(values.phone, values.verifyCode, values.agreed);
-    console.log('userRes', userRes);
+    const loginRes = await loginWithPhone({ phone: values.phone, verifyCode: values.verifyCode, agreed: values.agreed });
+    console.log('loginRes', loginRes);
 
-    if (userRes.data) {
-      login(userRes as User);
-      if (userRes.needRealName) {
+    if (loginRes.code === 200) {
+      const userRes = await getUserInfo({ token: loginRes.data.token });
+      if (!userRes) return message.error('登录失败');
+      login(userRes, loginRes.data.token);
+      if (loginRes.data.isNewUser) {
         setCurrentStep('personAuth');
       } else {
         navigate('/app-management');
       }
+    } else {
+      message.error(loginRes.message || '登录失败');
     }
   };
 
   // 处理表单值变化的函数
   const handleValuesChange = (_: any, allValues: LoginFormValues) => {
-    console.log('Form values changed: ', allValues);
     setPersonPhoneData(allValues);
   };
 

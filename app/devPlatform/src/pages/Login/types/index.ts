@@ -30,6 +30,17 @@ export interface IImageUploadProps {
   name?: string;
   rules?: any[];
   action?: string; // 添加上传地址
-  customRequest?: (options: any) => void; // 添加自定义上传方法
   bgIcon?: string;
+}
+
+export interface IWechatInfoProps {
+  valid: boolean;
+  user: Record<string, any>;
+  token: string;
+}
+
+export interface IBaseRequestResProps {
+  code: number;
+  message: string;
+  data: any;
 }

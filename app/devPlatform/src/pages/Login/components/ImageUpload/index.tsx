@@ -1,26 +1,57 @@
 import styles from './index.module.scss';
-import { Upload, message, Image, Button, Form } from 'antd';
+import { Upload, message, Image, Button, Form, Spin } from 'antd';
 import { PlusOutlined, EyeOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import type { UploadFile, UploadProps } from 'antd';
 import { IImageUploadProps } from '@/pages/Login/types';
+import { useOssSignStore } from '@/store/ossSignStore.ts';
+import { httpRequest } from '@/utils/httpRequest.ts';
+import { Spinner, SpinnerIcon } from '@phosphor-icons/react';
 
-const ImageUpload = ({
-  title = '上传图片',
-  maxSize = 1,
-  accept = ['image/jpeg', 'image/png'],
-  height = 112,
-  value,
-  onChange,
-  name,
-  rules,
-  action = '/api/upload', // 默认上传地址
-  customRequest,
-  bgIcon,
-}: IImageUploadProps) => {
+const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpeg', 'image/png'], height = 112, value, onChange, name, rules, bgIcon }: IImageUploadProps) => {
   const [fileList, setFileList] = useState<UploadFile[]>(value || []);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
+  const { getOssSign } = useOssSignStore();
+
+  const [loading, setLoading] = useState(false);
+
+  const customRequest = async (options: any) => {
+    console.log('customRequest file', 111111111111);
+
+    const { file, onSuccess, onError } = options;
+    console.log('customRequest file', options);
+    setLoading(true);
+    try {
+      const ossSign = await getOssSign();
+      if (!ossSign) {
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('key', `${ossSign.dir}/${file.name}`);
+      formData.append('policy', ossSign.policy);
+      formData.append('OSSAccessKeyId', ossSign.accessid);
+      formData.append('signature', ossSign.signature);
+      formData.append('success_action_status', '200');
+      formData.append('file', file);
+
+      const response = await httpRequest.post(ossSign.host, formData);
+
+      if (response.status === 200) {
+        message.success('文件上传成功');
+        onSuccess(response, file);
+        handleSuccess(file);
+      } else {
+        message.error('文件上传失败');
+        onError(new Error('上传失败'));
+      }
+    } catch (error) {
+      message.error('上传文件到 OSS 出错');
+      onError(error);
+    }
+  };
 
   // 同步外部表单值到内部状态
   useEffect(() => {
@@ -38,6 +69,13 @@ const ImageUpload = ({
     }
   };
 
+  const handleSuccess = (file: UploadFile) => {
+    setFileList([file]);
+    if (onChange) {
+      onChange([file]);
+    }
+  };
+
   const beforeUpload = (file: File) => {
     const isAcceptType = accept.includes(file.type);
     if (!isAcceptType) {
@@ -47,6 +85,7 @@ const ImageUpload = ({
     if (!isLtMaxSize) {
       message.error(`图片大小不能超过 ${maxSize}MB!`);
     }
+    console.log(isAcceptType && isLtMaxSize);
     return isAcceptType && isLtMaxSize;
   };
 
@@ -77,64 +116,73 @@ const ImageUpload = ({
             className={styles.previewContainer}
             style={{ height }}
           >
-            <Image
-              src={fileList[0].thumbUrl || fileList[0].url}
-              alt={title}
-              className={styles.previewImage}
-              preview={false}
-            />
-            <div className={styles.previewOverlay}>
-              <div className={styles.actionButtons}>
-                <Button
-                  icon={<EyeOutlined />}
-                  className={styles.actionButton}
-                  onClick={handlePreview}
-                >
-                  预览
-                </Button>
-                <Button
-                  icon={<DeleteOutlined />}
-                  className={styles.actionButton}
-                  onClick={handleDelete}
-                >
-                  删除
-                </Button>
-                <Upload
-                  listType="text"
-                  fileList={[]}
-                  onChange={handleChange}
-                  beforeUpload={beforeUpload}
-                  maxCount={1}
-                  showUploadList={false}
-                  multiple={false}
-                  action={action} // 添加上传地址
-                  customRequest={customRequest} // 添加自定义上传方法
-                >
-                  <Button
-                    icon={<ReloadOutlined />}
-                    className={styles.actionButton}
-                  >
-                    重新上传
-                  </Button>
-                </Upload>
-              </div>
-            </div>
+            {loading ? (
+              <Spin />
+            ) : (
+              <>
+                <Image
+                  src={fileList[0].thumbUrl || fileList[0].url}
+                  alt={title}
+                  className={styles.previewImage}
+                  preview={false}
+                />
+                <div className={styles.previewOverlay}>
+                  <div className={styles.actionButtons}>
+                    <Button
+                      icon={<EyeOutlined />}
+                      className={styles.actionButton}
+                      onClick={handlePreview}
+                    >
+                      预览
+                    </Button>
+                    <Button
+                      icon={<DeleteOutlined />}
+                      className={styles.actionButton}
+                      onClick={handleDelete}
+                    >
+                      删除
+                    </Button>
+                    <Upload
+                      listType="text"
+                      action=""
+                      fileList={fileList} // 修复：确保 fileList 正确传递
+                      // onChange={handleChange}
+                      beforeUpload={beforeUpload}
+                      maxCount={1}
+                      showUploadList={false}
+                      multiple={false}
+                      customRequest={customRequest} // 添加自定义上传方法
+                    >
+                      <Button
+                        icon={<ReloadOutlined />}
+                        className={styles.actionButton}
+                      >
+                        重新上传
+                      </Button>
+                    </Upload>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <Upload
             listType="picture-card"
-            fileList={[]}
-            onChange={handleChange}
+            action=""
+            fileList={fileList} // 修复：确保 fileList 正确传递
+            // onChange={handleChange}
             beforeUpload={beforeUpload}
             maxCount={1}
             className={styles.idCardUpload}
             showUploadList={false}
             multiple={false}
-            action={action} // 添加上传地址
             customRequest={customRequest} // 添加自定义上传方法
+            disabled={loading} // 上传时禁用上传按钮
           >
             <div className={styles.uploadButton}>
-              {bgIcon ? (
+              {loading ? (
+                <Spin />
+              ) : bgIcon ? (
                 <img
                   src={bgIcon || ''}
                   alt=""
