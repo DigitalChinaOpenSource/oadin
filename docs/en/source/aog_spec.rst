@@ -1,5 +1,5 @@
 ==========================
-General Byze Specification
+General Oadin Specification
 ==========================
 
 .. include:: global.rst
@@ -7,7 +7,7 @@ General Byze Specification
 Versioning
 ====================
 
-Current version |byze_spec_version|
+Current version |oadin_spec_version|
 
 The versioning follows semantic versioning, basically:
 
@@ -15,14 +15,14 @@ The versioning follows semantic versioning, basically:
 - MINOR version when functionality in a backward compatible manner is added
 - PATCH version when backward compatible bug fixes is made
 
-Therefore, the MAJOR version number is part of the URL to access ``Byze APIs``
+Therefore, the MAJOR version number is part of the URL to access ``Oadin APIs``
 
 
-Byze Service
+Oadin Service
 ====================
 
-``Byze Service`` is a service that provides AI capabilities. It can be a chatbot,
-a text-to-speech service, a translation service, etc. Each ``Byze Service`` has
+``Oadin Service`` is a service that provides AI capabilities. It can be a chatbot,
+a text-to-speech service, a translation service, etc. Each ``Oadin Service`` has
 its own ``properties`` and ``API``.
 
 * ``properties`` describes the characteristics of the service, such as the model
@@ -31,30 +31,30 @@ its own ``properties`` and ``API``.
 * ``API`` describes the interface of the service, such as the input/output format,
   the HTTP method it uses, etc.
 
-Byze Service Name and Endpoint
+Oadin Service Name and Endpoint
 -----------------------------------------
 
-Each ``Byze Service`` has its unique name. The name is used to identify the
+Each ``Oadin Service`` has its unique name. The name is used to identify the
 service and also to form the URL of endpoint to access the service.
 
-Typical names of the ``Byze Service`` include ``chat``, ``audio/text-to-speech``,
+Typical names of the ``Oadin Service`` include ``chat``, ``audio/text-to-speech``,
 ``embed`` etc.
 
-``Byze`` so far supports RESTful like API. The ``Endpoint`` of the ``Byze
+``Oadin`` so far supports RESTful like API. The ``Endpoint`` of the ``Oadin
 Service`` includes both the HTTP method and the URL to access the service. The 
 URL is formed by the hostname and port (by default is `localhost` and `16688`) 
-``Byze`` prefix, the spec version number, and the name of the
-service, i.e. ``http://localhost:{port_number}/byze/v{spec_version_number}/services/{service_name}``.
+``Oadin`` prefix, the spec version number, and the name of the
+service, i.e. ``http://localhost:{port_number}/oadin/v{spec_version_number}/services/{service_name}``.
 
 For example, the ``Endpoint`` of the ``chat`` service is ``POST
-http://localhost:16688/byze/v0.2/services/chat``.
+http://localhost:16688/oadin/v0.2/services/chat``.
 
-.. _`Metadata of Byze Service`:
+.. _`Metadata of Oadin Service`:
 
-Metadata of Byze Service
+Metadata of Oadin Service
 -----------------------------------
 
-Metadata of Byze Service is a JSON object that describes the service. It may vary
+Metadata of Oadin Service is a JSON object that describes the service. It may vary
 from service to service. However, there are some common fields that are usually
 included in the metadata of the service.
 
@@ -72,30 +72,30 @@ included in the metadata of the service.
      - JSON object listing the service providers for this service at local and 
        remote. e.g., ``{"local": "provider_a", "remote": "provider_b"}``. Here,
        ``provider_a`` and ``provider_b`` are the ids of the service providers to
-       reference the `Metadata of Byze Service Provider`_
+       reference the `Metadata of Oadin Service Provider`_
      - Describing the service providers for this service
 
 
-Byze Service Provider
+Oadin Service Provider
 =========================
 
-Byze Service Provider actually implements the corresponding Byze Service.
+Oadin Service Provider actually implements the corresponding Oadin Service.
 
-Typically, for a given Byze Service, it may have multiple service providers. For
-instance, a ``/chat`` Byze Service may have a local Byze Service Provider running
-on the same machine by ollama, and meanwhile have a remote Byze Service Provider
+Typically, for a given Oadin Service, it may have multiple service providers. For
+instance, a ``/chat`` Oadin Service may have a local Oadin Service Provider running
+on the same machine by ollama, and meanwhile have a remote Oadin Service Provider
 by OpenAI.
 
-Each Byze Service Provider has a unique id. The id is used to identify the
+Each Oadin Service Provider has a unique id. The id is used to identify the
 service provider and used to reference the service provider, e.g., in the
-metadata of the Byze Service. See `Metadata of Byze Service`_ .
+metadata of the Oadin Service. See `Metadata of Oadin Service`_ .
 
-.. _`Metadata of Byze Service Provider`:
+.. _`Metadata of Oadin Service Provider`:
 
-Metadata of Byze Service Provider
+Metadata of Oadin Service Provider
 ------------------------------------
 
-Metadata of Byze Service Provider is a JSON object that describes the service
+Metadata of Oadin Service Provider is a JSON object that describes the service
 provider. Here are some common fields that most of the service providers have.
 
 .. list-table:: 
@@ -116,7 +116,7 @@ provider. Here are some common fields that most of the service providers have.
      - The URL to access the service provider. This together with method forms
        the endpoint of the service provider
    * - api_flavor
-     - string, e.g., ``byze``, ``openai``, ``ollama``, etc.
+     - string, e.g., ``oadin``, ``openai``, ``ollama``, etc.
      - The API flavor of the service provider. This is used to convert the API
        if needed. See `flavor_conversion`_
    * - supported_response_mode
@@ -145,7 +145,7 @@ provider. Here are some common fields that most of the service providers have.
 General Data Types
 =========================
 
-In the RESTful API of the ``Byze Service``, there are some commonly used data
+In the RESTful API of the ``Oadin Service``, there are some commonly used data
 types. For example, how to represent the text images, etc. We describe these
 general types here.
 
@@ -221,7 +221,7 @@ or base64-encoded string
     }
 
 
-OpenAI also provides ```image_file```, which will be in Byze's future roadmap.
+OpenAI also provides ```image_file```, which will be in Oadin's future roadmap.
 
 
 Array Content
@@ -456,7 +456,7 @@ This is an example extracted from aobve `Message Example`_ .
 Fields of Header and JSON body for Services
 ======================================================
 
-The services are invoked by HTTP, and Byze services require ``JSON`` format for
+The services are invoked by HTTP, and Oadin services require ``JSON`` format for
 both requests and responses. 
 
 Required and Optional Fields
@@ -476,7 +476,7 @@ Optional fields can be supplied by the application, but there is no guarantee
 that the underlying actual service provider supports them. 
 
 **NOTE** that if an optional field is not supported by underlying actual service
-provider, it will be removed from the request during the conversion by Byze. This
+provider, it will be removed from the request during the conversion by Oadin. This
 might result in certain information loss, but avoids unintentional parameters
 are sent to service provider. This behavior is up-to-change in future spec. More
 details in `flavor_conversion`_ .
@@ -504,12 +504,12 @@ details in `flavor_conversion`_ .
 Required and Optional Fields for Responses
 ____________________________________________
 
-Required fields defined for response will always be provided by Byze.
+Required fields defined for response will always be provided by Oadin.
 
 However, whether an optional field will appear in the returned response, depends
 on the actual Service Provider which processes the corresponding request. 
 
-Unlike the request, the additional fields not defined in Byze but returned by
+Unlike the request, the additional fields not defined in Oadin but returned by
 Service Provider, will still be remained there and sent to the application
 without being filtered out. 
 
@@ -519,23 +519,23 @@ without being filtered out.
 
    * - Type of Fields in Response
      - Will appear in the Response returned  by Underlying Service Provider
-     - Will appear in the final Response returned by Byze
+     - Will appear in the final Response returned by Oadin
    * - required
      - | Unsure. 
        | The response from underlying Service Provider may have the related 
          information but not put in this field.
      - | Yes. 
-       | Byze will convert and ensure the field is presented and the
+       | Oadin will convert and ensure the field is presented and the
          application is safe to access this field
    * - optional
      - Unsure.
      - | Unsure.
-       | The final response returned by Byze only contain it if it is provided
+       | The final response returned by Oadin only contain it if it is provided
          by the actual Service Provider
 
-.. _`Common Fields of Byze Services`:
+.. _`Common Fields of Oadin Services`:
 
-Common Fields of Byze Services
+Common Fields of Oadin Services
 ==================================
 
 Although each service may have its own specific fields in header and JSON body
@@ -565,8 +565,8 @@ header. However, for binary inputs, such as images or audio files etc., APIs may
 use form data (e.g. ``multipart/form-data`` in ``Content-Type``)
 
 **NOTE** that unlike invoking cloud service, the ``Authorization`` header is not
-always required since it may invoke the Byze Service locally. However, such
-header can be added by Byze later based on the information provided in
+always required since it may invoke the Oadin Service locally. However, such
+header can be added by Oadin later based on the information provided in
 configuration or application invocation. 
 
 .. _`Common Fields in Request Body`:
@@ -588,30 +588,30 @@ Common Fields in Request Body
      - The model(s) to be used for this service. If not provided, the default
        model will be used. If the service does not support selecting model, this
        field will be ignored. See ``allow_to_select_model`` in 
-       `Metadata of Byze Service Provider`_. Some services may have multiple
+       `Metadata of Oadin Service Provider`_. Some services may have multiple
        models, so the application may pass in a JSON object to specify the
        model name for each model to be used inside the service.
    * - stream
      - ``true`` or ``false``. Default is ``false``
      - required
      - Whether to use stream mode or not. If not provided, the default mode will
-       be used. See ``supported_response_mode`` in `Metadata of Byze Service Provider`_
+       be used. See ``supported_response_mode`` in `Metadata of Oadin Service Provider`_
    * - hybrid_policy
      - ``always_remote``, ``always_local``, ``default``
      - optional
      - The hybrid policy to use. If not provided, the ``default`` policy will be
-       used. See ``hybrid_policy`` in `Metadata of Byze Service`_
+       used. See ``hybrid_policy`` in `Metadata of Oadin Service`_
    * - remote_service_provider
-     - string, or JSON object as of `Metadata of Byze Service Provider`_
+     - string, or JSON object as of `Metadata of Oadin Service Provider`_
      - optional
-     - By default, if Byze decides to use the remote Service Provider to serve
+     - By default, if Oadin decides to use the remote Service Provider to serve
        this invocation (based on hybrid_policy etc.), it will use platform
        defined default remote service provider for this service. However,
        application may overwrite this particular for current invocation, by
        using this field in the request to ensure this remote service provider is
-       used when Byze decides to use the remote. The field needs to be string
+       used when Oadin decides to use the remote. The field needs to be string
        which is the ID of a predefined Service Provider. Or it can be a JSON
-       object which is the `Metadata of Byze Service Provider`_
+       object which is the `Metadata of Oadin Service Provider`_
    * - keep_alive
      - timespan, e.g. ``5m`` as the default
      - optional
@@ -626,20 +626,20 @@ Common Fields in Response Body
 ---------------------------------
 
 In a lot of occasions, the returned response is a JSON object. In addition to
-make conversions if needed, (See `flavor_conversion`_), Byze will also add a
-field ``byze`` in the returned JSON object. The value of this ``byze`` field is a
+make conversions if needed, (See `flavor_conversion`_), Oadin will also add a
+field ``oadin`` in the returned JSON object. The value of this ``oadin`` field is a
 JSON object with the following fields.
 
 .. list-table:: 
    :header-rows: 1
    :widths: 20 80
 
-   * - Field under ``byze`` in Response
+   * - Field under ``oadin`` in Response
      - Description
    * - received_request_at
-     - The timestamp when the invocation request is received by Byze
+     - The timestamp when the invocation request is received by Oadin
    * - received_response_at
-     - The timestamp when Byze receives the response from the actual Service
+     - The timestamp when Oadin receives the response from the actual Service
        Provider
    * - served_by
      - The URL of the Service Provider that actually serves this invocation

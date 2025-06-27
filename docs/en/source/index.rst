@@ -1,34 +1,34 @@
 =====================================
-Byze (AIPC Open Gateway)
+Oadin (AIPC Open Gateway)
 =====================================
 
 .. include:: global.rst
 
-:Specification Version: |byze_spec_version|
+:Specification Version: |oadin_spec_version|
 :Author: Jonathan Ding
 :Last Changed: 2024-11-26
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: Byze Get Started
+   :caption: Oadin Get Started
 
-   byze_usage
+   oadin_usage
 
 
 .. toctree::
    :maxdepth: 1
-   :caption: Byze Motivation and Solution:
+   :caption: Oadin Motivation and Solution:
 
    introduction 
-   byze_concept
-   byze_mechanism
+   oadin_concept
+   oadin_mechanism
 
 
 .. toctree::
    :maxdepth: 2
-   :caption: Byze API Specification
+   :caption: Oadin API Specification
 
-   byze_spec
+   oadin_spec
    service_specs/chat
 

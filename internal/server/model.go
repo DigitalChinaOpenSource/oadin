@@ -13,16 +13,16 @@ import (
 	"strings"
 	"time"
 
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/provider"
-	"byze/internal/provider/template"
-	"byze/internal/schedule"
-	"byze/internal/server/vega"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
-	"byze/internal/utils/client"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/provider"
+	"oadin/internal/provider/template"
+	"oadin/internal/schedule"
+	"oadin/internal/server/vega"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
+	"oadin/internal/utils/client"
 )
 
 type Model interface {

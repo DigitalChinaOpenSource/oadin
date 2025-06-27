@@ -41,7 +41,7 @@ bk.*
 .idea/
 .vscode/
 *.db
-byze
+oadin
 build.sh
 
 # Demo APP files

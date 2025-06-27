@@ -1,5 +1,5 @@
 ========================================
-Problem Statements targetted by Byze
+Problem Statements targetted by Oadin
 ========================================
 
 Bad Pattern of Ship Everything
@@ -147,7 +147,7 @@ platform-provided AI services as required. This approach addresses the
 limitations of the "ship everything" pattern.
 
 
-Byze Unified Architecture and API for AI Applications
+Oadin Unified Architecture and API for AI Applications
 ==========================================================
 
 While the emerging trend of decoupling AI applications from general AI services
@@ -164,13 +164,13 @@ new set of engineering challenges:
   application should seamlessly transition to utilizing remote AI services, such
   as those provided by cloud or edge computing platforms.
 
-``Byze`` (**A**\IPC **O**\pen **G**\ateway) proposes an unified architecture and API
+``Oadin`` (**A**\IPC **O**\pen **G**\ateway) proposes an unified architecture and API
 layer to tackle these two problems. 
 
-- ``Byze`` defines a unified ``Byze API`` specification for most general AI services.
+- ``Oadin`` defines a unified ``Oadin API`` specification for most general AI services.
 
-- Architecture level, the applications now send their AI requests to ``Byze API
-  Layer``. The ``Byze API Layer`` will dispatch the requests to the suitable AI
+- Architecture level, the applications now send their AI requests to ``Oadin API
+  Layer``. The ``Oadin API Layer`` will dispatch the requests to the suitable AI
   services.
 
 
@@ -181,7 +181,7 @@ layer to tackle these two problems.
    digraph G {
      rankdir=TB
      compound=true
-     label = "Application Utilizing Byze API Layer"
+     label = "Application Utilizing Oadin API Layer"
      graph [fontname = "Verdana", fontsize = 10, style="filled", penwidth=0.5]
      node [fontname = "Verdana", fontsize = 10, shape=box, color="#333333", style="filled", penwidth=0.5] 
 
@@ -194,7 +194,7 @@ layer to tackle these two problems.
         app_a1[label="Application A", fillcolor="#eeeeff"]
         app_b1[label="Application B", fillcolor="#eeeeff"]
 
-        byze_1[label="Byze API Layer", fillcolor="#ffffcc"]
+        oadin_1[label="Oadin API Layer", fillcolor="#ffffcc"]
 
 
         subgraph cluster_service_1 {
@@ -205,11 +205,11 @@ layer to tackle these two problems.
             models_1[label="AI Models", fillcolor="#eeffcc"]
         }
 
-        {app_a1, app_b1} -> byze_1
-        byze_1 -> models_1[lhead=cluster_service_1, minlen=2]
+        {app_a1, app_b1} -> oadin_1
+        oadin_1 -> models_1[lhead=cluster_service_1, minlen=2]
      }
      cloud_m[label="Cloud AI Service from M", fillcolor="#ffcccc"]
-     byze_1 -> cloud_m[minlen=2 style="dashed"]
+     oadin_1 -> cloud_m[minlen=2 style="dashed"]
 
      subgraph cluster_aipc_2 {
         label = "another AIPC"
@@ -219,7 +219,7 @@ layer to tackle these two problems.
         app_a2[label="Application A", fillcolor="#eeeeff"]
         app_b2[label="Application B", fillcolor="#eeeeff"]
 
-        byze_2[label="Byze API Layer", fillcolor="#ffffcc"]
+        oadin_2[label="Oadin API Layer", fillcolor="#ffffcc"]
 
 
         subgraph cluster_service_2 {
@@ -230,11 +230,11 @@ layer to tackle these two problems.
             models_2[label="AI Models", fillcolor="#eeffcc"]
         }
 
-        {app_a2, app_b2} -> byze_2
-        byze_2 -> models_2[lhead=cluster_service_2, minlen=2]
+        {app_a2, app_b2} -> oadin_2
+        oadin_2 -> models_2[lhead=cluster_service_2, minlen=2]
      }
      cloud_n[label="Cloud AI Service from N", fillcolor="#ffcccc"]
-     byze_2 -> cloud_n[minlen=2 style="dashed"]
+     oadin_2 -> cloud_n[minlen=2 style="dashed"]
 
    }
 
@@ -244,14 +244,14 @@ Addressing Compatibility Issues
 ---------------------------------------
 
 Ideally, applications would interact with AI services exclusively through the
-``Byze API``. This would ensure compatibility and enable applications to run on any
+``Oadin API``. This would ensure compatibility and enable applications to run on any
 platform, regardless of the underlying AI service provider. However, in reality,
-some applications or service providers may not fully adhere to the ``Byze API``.
+some applications or service providers may not fully adhere to the ``Oadin API``.
 
-To mitigate this, the ``Byze API Layer`` will attempt to bridge these compatibility
+To mitigate this, the ``Oadin API Layer`` will attempt to bridge these compatibility
 gaps by performing necessary conversions. This is feasible because many APIs,
 even if not identical, often share similarities with OpenAI's API. By leveraging
-these similarities, the ``Byze API Layer`` can facilitate the interaction between
+these similarities, the ``Oadin API Layer`` can facilitate the interaction between
 applications and diverse AI services, even when their APIs are not fully
 compatible.
 
@@ -261,13 +261,13 @@ compatible.
 Addressing Availability Issues
 --------------------------------------
 
-The ``Byze API Layer`` acts as a dynamic intermediary, intelligently routing
+The ``Oadin API Layer`` acts as a dynamic intermediary, intelligently routing
 requests from applications to the most suitable AI service provider. By
 monitoring system resources like CPU, GPU, and NPU utilization, it can determine
 when local services are overloaded. In such cases, the layer can seamlessly
 redirect requests to cloud-based AI service providers, optimizing performance
 and ensuring uninterrupted service. This flexibility is made possible by the
-``Byze API Layer``'s ability to handle potential API incompatibilities through
+``Oadin API Layer``'s ability to handle potential API incompatibilities through
 conversion and matching, even if the API of cloud-based AI service is slightly
 different vs. what application uses.
 

@@ -1,10 +1,10 @@
 package vega
 
 import (
-	"byze/internal/api/dto"
-	"byze/internal/provider/template"
 	"context"
 	"encoding/json"
+	"oadin/internal/api/dto"
+	"oadin/internal/provider/template"
 	"reflect"
 	"testing"
 )

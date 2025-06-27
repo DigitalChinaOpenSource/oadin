@@ -1,14 +1,14 @@
 package installer
 
 import (
-	"byze/config"
+	"oadin/config"
 	"os"
 	"path/filepath"
 	"runtime"
 )
 
 func RuntimePath() string {
-	return filepath.Join(config.GlobalByzeEnvironment.RootDir, "runtime")
+	return filepath.Join(config.GlobalOadinEnvironment.RootDir, "runtime")
 }
 
 func getBinaryName(name string) string {

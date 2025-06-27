@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"byze/internal/datastore"
-	"byze/internal/provider/template"
-	"byze/internal/types"
+	"oadin/internal/datastore"
+	"oadin/internal/provider/template"
+	"oadin/internal/types"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

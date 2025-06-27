@@ -8,12 +8,12 @@ import (
 	"log/slog"
 	"time"
 
-	"byze/config"
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/provider/engine"
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
+	"oadin/config"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/provider/engine"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 
 	"github.com/google/uuid"
 )
@@ -54,7 +54,7 @@ func NewPlayground() Playground {
 	}
 	go func() {
 		ctx := context.Background()
-		dbPath := config.GlobalByzeEnvironment.Datastore
+		dbPath := config.GlobalOadinEnvironment.Datastore
 		if err := InitPlaygroundVec(ctx, dbPath); err != nil {
 			slog.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
 		} else {
@@ -135,7 +135,6 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 
 // GetSessions 获取所有会话
 func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsResponse, error) {
-	slog.Info("GetSessions called")
 	sessionQuery := &types.ChatSession{}
 	sessions, err := p.Ds.List(ctx, sessionQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
@@ -147,12 +146,9 @@ func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsRespo
 		return nil, err
 	}
 
-	slog.Info("Found sessions in database", "count", len(sessions))
-
 	sessionDTOs := make([]dto.Session, 0, len(sessions))
 	for _, s := range sessions {
 		session := s.(*types.ChatSession)
-		slog.Info("Processing session", "id", session.ID, "title", session.Title)
 
 		sessionDTOs = append(sessionDTOs, dto.Session{
 			Id:              session.ID,
@@ -393,7 +389,7 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 		typeStr := ""
 		if msg.Role == "assistant" {
 			typeStr = "answer"
-		} else if msg.Role == "system" && len(msg.Content) > 0 && (msg.Content[:12] == "思考过程: " || msg.Content[:9] == "Thoughts:") {
+		} else if msg.Role == "think" && len(msg.Content) > 0 {
 			typeStr = "thoughts"
 		}
 

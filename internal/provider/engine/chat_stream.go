@@ -1,12 +1,12 @@
 package engine
 
 import (
-	"byze/internal/schedule"
-	"byze/internal/types"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
 )
 
 func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan *types.ChatResponse, <-chan error) {
@@ -54,7 +54,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 		// 跟踪流的状态
 		accumulatedContent := ""
 		var toolCalls []types.ToolCall
-		var thoughts string
+		//var thoughts string
 
 		// 处理流式响应
 		for result := range ch {
@@ -72,11 +72,14 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			// fmt.Printf("[ChatStream] 收到块，长度: %d\n", len(result.HTTP.Body))
 			// debugLogJSON("[ChatStream] 原始响应内容", result.HTTP.Body)
 			// debugLogJSON("[ChatStream] 收到块内容", result.HTTP.Body) // 调用调试日志函数
+			// fmt.Println("[ChatStream] 收到块内容:", string(result.HTTP.Body))
 
 			// 每个块都是一个完整的JSON对象
 			var ollamaResp ollamaAPIResponse
 			var content string
 			isComplete := false
+			var thoughts string
+
 			model := ""
 
 			// 首先尝试解析为Ollama API标准响应
@@ -102,7 +105,6 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 					fmt.Printf("[ChatStream] 从content提取内容，长度: %d\n", len(content))
 				}
 
-				var thoughts string
 				if ollamaResp.Message != nil && ollamaResp.Message.Thinking != "" {
 					thoughts = ollamaResp.Message.Thinking
 					fmt.Printf("[ChatStream] 提取到思考内容，长度: %d\n", len(thoughts))
@@ -176,11 +178,15 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 					fmt.Printf("[ChatStream] JSON解析完全失败: %v，跳过此块\n", err)
 					continue // 如果连JSON都解析不了，就跳过这个块
 				}
-			} // 处理提取到的内容
+			}
+
+			// 处理提取到的内容
 			if content != "" {
 				accumulatedContent += content
 				// fmt.Printf("[ChatStream] 累积内容，当前长度: %d\n", len(accumulatedContent))
-			} // 创建响应对象
+			}
+
+			// 创建响应对象
 			resp := &types.ChatResponse{
 				Content:       content, // 只发送当前块的内容，而不是累积的内容
 				Model:         model,
@@ -189,9 +195,10 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				Object:        "chat.completion.chunk",
 				TotalDuration: ollamaResp.TotalDuration, // 使用HTTP响应的持续时间
 				Thoughts:      thoughts,                 // 添加思考内容
-			} // 发送响应
+			}
+			// 发送响应
 			// 只发送有内容或是最后一个块的响应
-			if resp.Content != "" || resp.IsComplete {
+			if (resp.Content != "" || resp.Thoughts != "") || resp.IsComplete {
 				// 如果是最后一个块，发送完整累积的内容
 				if resp.IsComplete {
 					// 确保最后一块还包含之前累积的内容

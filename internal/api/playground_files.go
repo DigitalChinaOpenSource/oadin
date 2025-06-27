@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"byze/internal/api/dto"
+	"oadin/internal/api/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 // 上传文件
-func (t *ByzeCoreServer) UploadFile(c *gin.Context) {
+func (t *OadinCoreServer) UploadFile(c *gin.Context) {
 	// 解析表单
 	sessionID := c.PostForm("sessionId")
 	if sessionID == "" {
@@ -125,7 +125,7 @@ func (t *ByzeCoreServer) UploadFile(c *gin.Context) {
 }
 
 // 获取文件列表
-func (t *ByzeCoreServer) GetFiles(c *gin.Context) {
+func (t *OadinCoreServer) GetFiles(c *gin.Context) {
 	sessionID := c.Query("sessionId")
 	if sessionID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "sessionId is required"})
@@ -146,7 +146,7 @@ func (t *ByzeCoreServer) GetFiles(c *gin.Context) {
 }
 
 // 删除文件
-func (t *ByzeCoreServer) DeleteFile(c *gin.Context) {
+func (t *OadinCoreServer) DeleteFile(c *gin.Context) {
 	var req dto.DeleteFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -163,7 +163,7 @@ func (t *ByzeCoreServer) DeleteFile(c *gin.Context) {
 }
 
 // 处理文件生成嵌入向量
-func (t *ByzeCoreServer) ProcessFile(c *gin.Context) {
+func (t *OadinCoreServer) ProcessFile(c *gin.Context) {
 	var req dto.GenerateEmbeddingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

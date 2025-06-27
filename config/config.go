@@ -12,18 +12,18 @@ import (
 	"sync"
 	"time"
 
-	"byze/internal/utils"
-	"byze/internal/utils/client"
-	"byze/version"
+	"oadin/internal/utils"
+	"oadin/internal/utils/client"
+	"oadin/version"
 
 	"github.com/MatusOllah/slogcolor"
 	"github.com/fatih/color"
 	"github.com/spf13/pflag"
 )
 
-var GlobalByzeEnvironment *ByzeEnvironment
+var GlobalOadinEnvironment *OadinEnvironment
 
-type ByzeEnvironment struct {
+type OadinEnvironment struct {
 	ApiHost           string // host
 	Datastore         string // path to the datastore
 	DatastoreType     string // type of the datastore
@@ -37,30 +37,30 @@ type ByzeEnvironment struct {
 	LogHTTP           string // path to the http log
 	LogLevel          string // log level
 	LogFileExpireDays int    // log file expiration time
-	ConsoleLog        string // byze server console log path
+	ConsoleLog        string // oadin server console log path
 }
 
 var (
 	once         sync.Once
-	envSingleton *ByzeEnvironment
+	envSingleton *OadinEnvironment
 )
 
-type ByzeClient struct {
+type OadinClient struct {
 	client.Client
 }
 
-func NewByzeClient() *ByzeClient {
-	return &ByzeClient{
+func NewOadinClient() *OadinClient {
+	return &OadinClient{
 		Client: *client.NewClient(Host(), http.DefaultClient),
 	}
 }
 
-// Host returns the scheme and host. Host can be configured via the Byze_HOST environment variable.
+// Host returns the scheme and host. Host can be configured via the Oadin_HOST environment variable.
 // Default is scheme "http" and host "127.0.0.1:16688"
 func Host() *url.URL {
 	defaultPort := "16688"
 
-	s := strings.TrimSpace(Var("Byze_HOST"))
+	s := strings.TrimSpace(Var("Oadin_HOST"))
 	scheme, hostport, ok := strings.Cut(s, "://")
 	switch {
 	case !ok:
@@ -99,11 +99,11 @@ func Var(key string) string {
 	return strings.Trim(strings.TrimSpace(os.Getenv(key)), "\"'")
 }
 
-func NewByzeEnvironment() *ByzeEnvironment {
+func NewOadinEnvironment() *OadinEnvironment {
 	once.Do(func() {
-		env := ByzeEnvironment{
+		env := OadinEnvironment{
 			ApiHost:           "0.0.0.0:16688",
-			Datastore:         "byze.db",
+			Datastore:         "oadin.db",
 			DatastoreType:     "sqlite",
 			UpdateDir:         "updates",
 			LogDir:            "logs",
@@ -113,8 +113,8 @@ func NewByzeEnvironment() *ByzeEnvironment {
 			Verbose:           "info",
 			RootDir:           "./",
 			WorkDir:           "./",
-			APIVersion:        version.ByzeVersion,
-			SpecVersion:       version.ByzeVersion,
+			APIVersion:        version.OadinVersion,
+			SpecVersion:       version.OadinVersion,
 			ConsoleLog:        "console.log",
 		}
 		cwd, err := os.Getwd()
@@ -123,7 +123,7 @@ func NewByzeEnvironment() *ByzeEnvironment {
 		}
 		env.WorkDir = cwd
 
-		env.RootDir, err = utils.GetByzeDataDir()
+		env.RootDir, err = utils.GetOadinDataDir()
 		if err != nil {
 			panic("[Init Env] get user dir failed: " + err.Error())
 		}
@@ -173,8 +173,8 @@ func (fs *FlagSets) GetFlagSet(name string) *pflag.FlagSet {
 	return fs.FlagSets[name]
 }
 
-// Flags returns the flag sets for the ByzeEnvironment.
-func (s *ByzeEnvironment) Flags() *FlagSets {
+// Flags returns the flag sets for the OadinEnvironment.
+func (s *OadinEnvironment) Flags() *FlagSets {
 	fss := NewFlagSets()
 	fs := fss.GetFlagSet("generic")
 	fs.StringVar(&s.ApiHost, "app-host", s.ApiHost, "API host")
@@ -189,7 +189,7 @@ func (s *ByzeEnvironment) Flags() *FlagSets {
 	return fss
 }
 
-func (s *ByzeEnvironment) SetSlogColor() {
+func (s *OadinEnvironment) SetSlogColor() {
 	opts := slogcolor.DefaultOptions
 	if s.Verbose == "debug" {
 		opts.Level = slog.LevelDebug
@@ -202,8 +202,8 @@ func (s *ByzeEnvironment) SetSlogColor() {
 	opts.MsgColor = color.New(color.FgHiYellow)
 
 	slog.SetDefault(slog.New(slogcolor.NewHandler(os.Stderr, opts)))
-	_, _ = color.New(color.FgHiCyan).Println(">>>>>> Byze Open Gateway Starting : " + time.Now().Format("2006-01-02 15:04:05") + "\n\n")
+	_, _ = color.New(color.FgHiCyan).Println(">>>>>> Oadin Open Gateway Starting : " + time.Now().Format("2006-01-02 15:04:05") + "\n\n")
 	defer func() {
-		_, _ = color.New(color.FgHiGreen).Println("\n\n<<<<<< Byze Open Gateway Stopped : " + time.Now().Format("2006-01-02 15:04:05"))
+		_, _ = color.New(color.FgHiGreen).Println("\n\n<<<<<< Oadin Open Gateway Stopped : " + time.Now().Format("2006-01-02 15:04:05"))
 	}()
 }

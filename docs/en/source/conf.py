@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "Byze (AIPC Open Gateway)"
+project = "Oadin (AIPC Open Gateway)"
 copyright = "2024"
 author = "Jonathan Ding"
 release = "v0.2.0"

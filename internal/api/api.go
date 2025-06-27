@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"byze/internal/datastore"
-	"byze/internal/server"
+	"oadin/internal/datastore"
+	"oadin/internal/server"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-type ByzeCoreServer struct {
+type OadinCoreServer struct {
 	Router          *gin.Engine
 	AIGCService     server.AIGCService
 	Model           server.Model
@@ -22,8 +22,8 @@ type ByzeCoreServer struct {
 	DataStore       datastore.Datastore
 }
 
-// NewByzeCoreServer is the constructor of the server structure
-func NewByzeCoreServer() *ByzeCoreServer {
+// NewOadinCoreServer is the constructor of the server structure
+func NewOadinCoreServer() *OadinCoreServer {
 	g := gin.Default()
 	g.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
@@ -37,17 +37,17 @@ func NewByzeCoreServer() *ByzeCoreServer {
 		fmt.Println("SetTrustedProxies failed")
 		return nil
 	}
-	return &ByzeCoreServer{
+	return &OadinCoreServer{
 		Router: g,
 	}
 }
 
 // Run is the function to start the server
-func (t *ByzeCoreServer) Run(ctx context.Context, address string) error {
+func (t *OadinCoreServer) Run(ctx context.Context, address string) error {
 	return t.Router.Run(address)
 }
 
-func (t *ByzeCoreServer) Register() {
+func (t *OadinCoreServer) Register() {
 	t.AIGCService = server.NewAIGCService()
 	t.ServiceProvider = server.NewServiceProvider()
 	t.Model = server.NewModel()
