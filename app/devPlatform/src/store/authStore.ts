@@ -18,6 +18,8 @@ interface AuthState {
   logout: () => void;
   token: string | null; // 可选的 token 字段
   changeUser: (userData: any) => void;
+  wechatInfo?: any; // 可选的微信信息字段
+  setWechatInfo: (wechatInfo: any) => void;
 }
 
 const useAuthStore = create<AuthState>()(
@@ -26,9 +28,11 @@ const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       token: null,
       user: null,
+      wechatInfo: null,
       login: (userData: any, token: string) => set({ isAuthenticated: true, user: userData, token: token }),
-      logout: () => set({ isAuthenticated: false, user: null, token: null }),
+      logout: () => set({ isAuthenticated: false, user: null, token: null, wechatInfo: null }),
       changeUser: (userData: any) => set((state) => ({ user: { ...state.user, ...userData } })),
+      setWechatInfo: (wechatInfo: any) => set({ wechatInfo }),
     }),
     {
       name: 'auth-storage', // localStorage 中的键名

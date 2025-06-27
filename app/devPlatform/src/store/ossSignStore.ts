@@ -23,7 +23,7 @@ export const useOssSignStore = create<IOssSignStore>()(
     (set) => ({
       ossSign: null,
       setOssSign: (sign: IOssSignProps) => set({ ossSign: sign }),
-      getOssSign: getSign, // 获取签名的方法
+      getOssSign: () => getSign(), // 获取签名的方法
     }),
     {
       name: 'oss-sign-storage', // 持久化存储的键名
@@ -35,7 +35,7 @@ export const useOssSignStore = create<IOssSignStore>()(
 export const getSign = async (): Promise<IOssSignProps | null> => {
   const currentStore = useOssSignStore.getState();
   const currentOssSign = currentStore.ossSign;
-
+  console.log(1111111);
   // 检查是否有缓存的签名且未过期
   if (currentOssSign) {
     const nowTimestamp = Math.floor(Date.now() / 1000);

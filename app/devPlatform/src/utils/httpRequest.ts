@@ -95,7 +95,11 @@ const byzeInstance = createApiInstance(apiBaseURL);
 
 const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) => ({
   get: <T = any>(url: string, params?: any, config?: any) => instance.get<any, T>(url, { ...config, params }),
-  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => instance.post<any, T>(url, data, config),
+  post: <T = any>(url: string, data?: any, config: any = {}) => {
+    const headers = data instanceof FormData ? { 'Content-Type': 'multipart/form-data', ...config.headers } : config.headers;
+
+    return instance.post<any, T>(url, data, { ...config, headers });
+  },
 
   put: <T = any>(url: string, data?: any, config?: any) => instance.put<any, T>(url, data, config),
 

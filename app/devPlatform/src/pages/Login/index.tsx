@@ -34,10 +34,6 @@ const LoginPage: React.FC = () => {
   const [loginAccount, setLoginAccount] = useState<'personAccount' | 'enterpriseAccount'>('personAccount');
   const { currentStep, setCurrentStep } = useLoginStore();
   const oldStep: any = useRef(null);
-  // 微信扫码登录的结果
-  const wechatInfo = useRef<any>(null);
-
-  const { getUserInfo, bindPhone } = useLoginView();
 
   // 个人账号-企业账号
   const items: TabsProps['items'] = [
@@ -65,14 +61,6 @@ const LoginPage: React.FC = () => {
     setLoginAccount(activeKey);
   };
 
-  // 绑定手机号
-  const handleBindPhone = (values: IBasePhoneFormProps) => {
-    console.log('Binding phone with values: ', values);
-    // TODO: （需要绑定手机号肯定是新用户）-绑定成功之后-设置登录状态-跳转到认证界面
-    // login()
-    setCurrentStep('personAuth');
-  };
-
   useEffect(() => {
     if (!currentStep) setCurrentStep('personPhone');
     if (currentStep === 'personPhone' || currentStep === 'personWechat') {
@@ -86,30 +74,6 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     setCurrentStep('personWechat');
-    const success = searchParams.get('success');
-    if (success !== 'true') return;
-    const needBindPhone = searchParams.get('needBindPhone');
-    const loginFrom = searchParams.get('loginFrom');
-    const token = searchParams.get('token');
-    if (!token) return;
-    getUserInfo({ token })
-      .then((res) => {
-        wechatInfo.current = res;
-        if (needBindPhone === 'true' && loginFrom === 'personWechat') {
-          setCurrentStep('bindPhone');
-        } else if (loginFrom === 'user-center') {
-          // TODO 这里需要执行手机号绑定微信操作
-          // bindPhone()
-          navigate(`/${loginFrom}`);
-          message.success('绑定微信成功');
-        } else {
-          navigate('/');
-        }
-      })
-      .catch((e) => {
-        console.error('获取用户信息失败:', e);
-        navigate('/login');
-      });
   }, []);
 
   return (
@@ -133,7 +97,7 @@ const LoginPage: React.FC = () => {
               <div className={styles.secondTag}></div>
               <span>低门槛，高效率开发体验</span>
             </div>
-            <Button onClick={() => setCurrentStep('bindPhone')}>测试按钮</Button>
+            {/*<Button onClick={() => setCurrentStep('bindPhone')}>测试按钮</Button>*/}
           </div>
           {/*左侧描述图片*/}
           <div className={styles.decorationContainer}>
@@ -158,7 +122,7 @@ const LoginPage: React.FC = () => {
             )}
             {currentStep === 'forgetPassword' && <ForgetPassword />}
             {currentStep === 'createAccount' && <CreateNewAccount />}
-            {currentStep === 'bindPhone' && <BindPhone onConfirm={handleBindPhone} />}
+            {currentStep === 'bindPhone' && <BindPhone />}
             {currentStep === 'personAuth' && <AuthPerson />}
             {currentStep === 'enterpriseAuth' && <AuthEnterprise />}
           </div>
