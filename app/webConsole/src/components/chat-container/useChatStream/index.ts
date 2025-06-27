@@ -509,7 +509,7 @@ export function useChatStream() {
       }
 
       // 创建用户消息（仅在需要时）
-      if (isUserMessage && !isResend) {
+      if (isUserMessage) {
         const userMsg: MessageType = {
           id: generateUniqueId('user_msg'),
           role: 'user',
