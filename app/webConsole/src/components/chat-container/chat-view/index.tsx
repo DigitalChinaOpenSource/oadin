@@ -50,6 +50,8 @@ interface ChatMessage extends MessageType {
 
 export default function ChatView() {
   const { messages, isUploading } = useChatStore();
+  // 添加日志以跟踪 messages 更新
+  console.log('ChatView - messages updated:', messages);
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();

@@ -10,9 +10,10 @@ interface IModelDownloadStore {
 
 const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
   downloadList: [],
+  isDownloadEmbed: false,
   setDownloadList: (list: any[] | ((currentList: any[]) => any[])) => {
     if (typeof list === 'function') {
-      set((state) => {
+      set((state: IModelDownloadStore) => {
         const newList = list(state.downloadList);
         // 处理词嵌入模型的avatar
         const processedList = newList.map((item) => {
@@ -45,7 +46,6 @@ const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
       set({ downloadList: uniqueList });
     }
   },
-  isDownloadEmbed: false,
   setIsDownloadEmbed: (isDownloadEmbed: boolean) => {
     set({ isDownloadEmbed });
   },

@@ -58,11 +58,13 @@ const useChatStore = create<ChatState>((set, get) => ({
   },
   setUploadFileList: (files) => set({ uploadFileList: files }),
   setHistoryVisible: (visible) => set({ historyVisible: visible }),
-  createNewChat: () =>
+  createNewChat: () => {
+    console.log('createNewChat called');
     set({
       messages: [],
       uploadFileList: [],
-    }),
+    });
+  },
   setIsLoading: (isLoading) => set({ isLoading: isLoading ?? false }),
   setIsUploading: (isUploading) => set({ isUploading: isUploading ?? false }),
 }));
