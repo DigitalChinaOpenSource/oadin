@@ -13,9 +13,9 @@ export const PIORITY_MODEL = ['神州数码|DeepSeek-R1', '深度求索|DeepSeek
 
 // 本地存储键名常量
 export const LOCAL_STORAGE_KEYS = {
-  DOWN_LIST: 'downList',
+  MODEL_DOWNLOAD_LIST: 'modelDownloadList',
 };
 
 export const API_VERSION = 'v0.2';
-export const API_PREFIX = `/byze/${API_VERSION}`;
+export const API_PREFIX = `/oadin/${API_VERSION}`;
 export const API_HEALTH_ENDPOINT = '/health';

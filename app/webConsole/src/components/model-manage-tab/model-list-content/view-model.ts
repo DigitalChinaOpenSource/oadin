@@ -111,7 +111,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     // 检查数据源实例是否变化（remote/local切换）
     const currentInstanceId = `${modelSourceVal}-${mine ? 'mine' : 'all'}`;
     const isInstanceChanged = instanceIdRef.current !== currentInstanceId;
-    
+
     // 如果是刚删除模型的情况或者数据源变化，我们需要强制更新列表
     if (justDeletedRef.current || isInstanceChanged) {
       console.info('检测到模型刚被删除或数据源变化，强制更新modelListStateData');
@@ -128,7 +128,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     // 检查列表长度是否变化
     const isLengthChanged = modelListData.length !== modelListStateData.length;
     if (isLengthChanged) {
-      console.info('检测到列表长度变化，强制更新modelListStateData');
       setModelListStateData(modelListData);
       prevDownloadStatusMapRef.current = { ...currentDownloadStatusMap };
       return;
@@ -154,8 +153,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         }
       }
     }
-    console.info(hasStatusChanged, 'hasStatusChanged');
-    console.info(modelListStateData, 'modelListStateData');
     // 如果有状态变化，更新modelListStateData
     if (hasStatusChanged) {
       // 只更新现有项的状态，不处理列表长度变化
@@ -171,7 +168,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         return item;
       });
 
-      console.info('更新后的模型列表数据:', updatedList);
       if (updatedList.length > 0) {
         setModelListStateData(updatedList);
       }
@@ -190,7 +186,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         // 只有在params中没有指定mine的情况下才使用props.mine
         mine: params.mine !== undefined ? params.mine : mine,
       };
-      console.info('fetchModelSupport params:', paramsTemp);
       if (params?.service_source === 'remote') {
         paramsTemp.env_type = 'product';
       }
@@ -212,7 +207,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
               currentDownload: 0,
             }) as any,
         );
-        console.info(dataWithSource, '返回了数据');
         setListData(dataWithSource);
         setPagination({
           ...pagination,
@@ -229,7 +223,8 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 必须，下载时需要获取当前路径的存储空间
   useEffect(() => {
     fetchModelPath();
-  }, []);  useEffect(() => {
+  }, []);
+  useEffect(() => {
     onModelSearch('');
     setPagination({ ...pagination, current: 1, total: 0 });
     // 重置下载状态映射

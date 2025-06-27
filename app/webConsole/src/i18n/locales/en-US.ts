@@ -12,9 +12,9 @@ export default {
     '40005': 'Path permission denied, please check',
     '40006': 'mcp add failed, please retry!',
 
-    service_error: 'Service error, please check the Byze service',
+    service_error: 'Service error, please check the Oadin service',
     network: 'Network error, please check your network connection',
-    byze_unavailable: 'Byze service unavailable, please confirm the status of the Byze service',
+    oadin_unavailable: 'Oadin service unavailable, please confirm the status of the Oadin service',
   },
   modelInfo: {
     noSelectModel: '请先选择模型，再体验。',

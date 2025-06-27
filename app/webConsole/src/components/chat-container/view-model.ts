@@ -16,6 +16,7 @@ import { convertMessageFormat } from './utils/historyMessageFormat';
 export default function useViewModel() {
   const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
   const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
+  const setIsDownloadEmbed = useModelDownloadStore((state) => state.setIsDownloadEmbed);
   const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 
@@ -23,6 +24,10 @@ export default function useViewModel() {
   const [prevModelId, setPrevModelId] = useState<string | undefined>(selectedModel?.id);
   const [prevSessionId, setPrevSessionId] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+
+  // 添加标志位防止循环更新
+  const isCreatingNewChat = useRef(false);
+  const isLoadingHistory = useRef(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -56,12 +61,14 @@ export default function useViewModel() {
       return;
     }
 
-    if (sessionId && selectedModel?.id) {
+    if (sessionId && selectedModel?.id && !isLoadingHistory.current) {
       // 有会话ID且有模型，加载历史记录
+      isLoadingHistory.current = true;
       fetchChatHistoryDetail(sessionId);
       setPrevSessionId(sessionId);
-    } else if (selectedModel?.id) {
+    } else if (selectedModel?.id && !isCreatingNewChat.current) {
       // 无会话ID但有模型，创建新会话
+      isCreatingNewChat.current = true;
       fetchCreateChat({ modelId: selectedModel.id });
       setPrevModelId(selectedModel.id);
     }
@@ -69,21 +76,22 @@ export default function useViewModel() {
   }, [initialized, selectedModel]);
 
   useEffect(() => {
-    if (!initialized) return;
+    if (!initialized || isCreatingNewChat.current || isLoadingHistory.current) return;
+
     // 如果会话ID变化了
     if (currentSessionId !== prevSessionId) {
+      console.log('Session ID changed:', { currentSessionId, prevSessionId, getSessionSource: getSessionSource() });
       const source = getSessionSource();
+
       // 来自历史记录的会话变更，已在chat-history-drawer中处理，这里仅更新状态
       if (source === 'history') {
         setPrevSessionId(currentSessionId);
       }
       // 其他来源（如URL直接修改或分享链接）且有会话ID，需要加载历史记录
-      else if (currentSessionId && source !== 'new') {
+      else if (currentSessionId && !isLoadingHistory.current) {
+        console.log('Loading history from session ID change');
+        isLoadingHistory.current = true;
         fetchChatHistoryDetail(currentSessionId);
-        setPrevSessionId(currentSessionId);
-      }
-      // 新建会话的情况，只更新状态
-      else if (source === 'new') {
         setPrevSessionId(currentSessionId);
       }
     }
@@ -91,7 +99,7 @@ export default function useViewModel() {
 
   // 处理模型变化
   useEffect(() => {
-    if (!initialized) return;
+    if (!initialized || isCreatingNewChat.current) return;
 
     // 如果没有选定模型，清除URL中的sessionId和source参数
     if (!selectedModel) {
@@ -100,15 +108,39 @@ export default function useViewModel() {
       return;
     }
 
-    // 当模型变化时，只更新prevModelId的状态，不自动创建新会话
-    if (selectedModel.id !== prevModelId) {
-      setPrevModelId(selectedModel.id);
+    // 当模型变化时，自动创建新会话
+    if (selectedModel.id !== prevModelId && prevModelId !== undefined) {
+      console.log('Model changed, creating new chat:', {
+        oldModelId: prevModelId,
+        newModelId: selectedModel.id,
+      });
+
+      // 防止重复创建
+      if (!isCreatingNewChat.current) {
+        isCreatingNewChat.current = true;
+
+        // 清空当前对话内容
+        createNewChat();
+        setSelectMcpList([]);
+
+        // 创建新会话
+        fetchCreateChat({
+          modelId: selectedModel.id,
+          embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
+        });
+      }
     }
-  }, [selectedModel, initialized, prevModelId]);
+
+    // 更新 prevModelId
+    setPrevModelId(selectedModel.id);
+  }, [selectedModel, initialized, prevModelId, isDownloadEmbed]);
 
   useEffect(() => {
     fetchAllModels();
-    if (isDownloadEmbed) {
+  }, []);
+
+  useEffect(() => {
+    if (isDownloadEmbed && currentSessionId && selectedModel?.id) {
       fetchChooseModelNotify({
         service_name: 'embed',
         local_provider: 'local_ollama_embed',
@@ -119,7 +151,7 @@ export default function useViewModel() {
         embedModelId: 'bc8ca0995fcd651',
       });
     }
-  }, [isDownloadEmbed]);
+  }, [isDownloadEmbed, currentSessionId, selectedModel?.id]);
 
   useEffect(() => {
     return () => {
@@ -157,6 +189,8 @@ export default function useViewModel() {
     {
       manual: true,
       onSuccess: (data: IChatDetailItem[]) => {
+        isLoadingHistory.current = false; // 重置加载标志
+
         if (!data || data.length === 0) return;
         // 将 IChatDetailItem[] 转换为 InputMessage[]
         const inputMessages = (data || []).map((item) => ({
@@ -167,6 +201,7 @@ export default function useViewModel() {
         fetchModelDetail(data[data.length - 1].modelId || '', tempData, data[data.length - 1].sessionId);
       },
       onError: () => {
+        isLoadingHistory.current = false; // 重置加载标志
         message.error('获取历史对话记录失败');
       },
     },
@@ -187,9 +222,10 @@ export default function useViewModel() {
     {
       manual: true,
       onSuccess: (data: ModelItem[]) => {
+        console.log('获取所有下载模型列表', data);
         if (!data || data?.length === 0) return;
         const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16');
-        setIsUploadVisible(isEmbed);
+        setIsDownloadEmbed(isEmbed);
       },
       onError: () => {
         message.error('获取所有下载模型列表失败');
@@ -221,7 +257,6 @@ export default function useViewModel() {
 
       setSelectedModel(res);
       setIsSelectedModel(true);
-
       setMessages(messages);
 
       // 更新prevModelId，避免模型变化触发新建会话
@@ -256,29 +291,65 @@ export default function useViewModel() {
       manual: true,
       onSuccess: (data) => {
         if (data.id) {
-          setSessionIdToUrl(data.id);
-          setSelectMcpList([]);
-          createNewChat();
+          console.log('fetchCreateChat success with id:', data.id);
 
-          setPrevSessionId(data.id);
+          // 批量更新状态，避免中间状态触发其他 useEffect
+          const batchUpdate = () => {
+            // 1. 首先清空内容和选择的MCP
+            setSelectMcpList([]);
+            createNewChat();
+
+            // 2. 更新会话相关状态
+            setPrevSessionId(data.id);
+
+            // 3. 最后更新 URL（这样不会触发 currentSessionId 监听的 useEffect）
+            setSessionIdToUrl(data.id);
+
+            // 4. 重置创建标志
+            isCreatingNewChat.current = false;
+          };
+
+          // 使用 setTimeout 确保状态更新是异步的，避免在渲染过程中触发
+          setTimeout(batchUpdate, 0);
+        } else {
+          isCreatingNewChat.current = false;
         }
+      },
+      onError: () => {
+        isCreatingNewChat.current = false; // 重置创建标志
       },
     },
   );
 
   const handleCreateNewChat = () => {
-    if (messages.length === 0) {
+    console.log('handleCreateNewChat called, messages length:', messages.length);
+
+    // 防止重复创建
+    if (isCreatingNewChat.current) {
+      console.log('Already creating new chat, skipping');
       return;
     }
+
+    if (messages.length === 0) {
+      console.log('messages is empty, not creating new chat');
+      return;
+    }
+
     if (!selectedModel?.id) {
+      console.log('no selected model');
       message.error('请先选择一个模型');
       return;
     }
+
+    console.log('Creating new chat with model:', selectedModel.id);
+    isCreatingNewChat.current = true;
+
     fetchCreateChat({
       modelId: selectedModel?.id || '',
-      embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : '',
+      embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
     });
   };
+
   return {
     isUploadVisible,
     setIsUploadVisible,

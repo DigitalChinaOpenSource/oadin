@@ -24,6 +24,18 @@ export const getSessionIdFromUrl = (): string => {
  * @param sessionId 要设置的会话ID
  */
 export const setSessionIdToUrl = (sessionId: string, source?: string): void => {
+  // 获取当前URL中的sessionId，避免重复设置相同值
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentSessionId = urlParams.get('sessionId');
+
+  console.log('setSessionIdToUrl called with:', sessionId, 'current:', currentSessionId);
+
+  // 如果要设置的sessionId与当前URL中的相同，则不做任何操作
+  if (sessionId && sessionId === currentSessionId) {
+    console.log('Session ID unchanged, skipping URL update');
+    return;
+  }
+
   const url = new URL(window.location.href);
 
   if (sessionId) {

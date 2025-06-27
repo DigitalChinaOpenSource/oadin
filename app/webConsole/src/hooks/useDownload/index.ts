@@ -19,9 +19,8 @@ import { IDownParseData } from './types';
  * @returns {Object} - 下载相关的状态和方法
  */
 export const useDownLoad = () => {
-  const downloadList = useModelDownloadStore.getState().downloadList;
-  const setDownloadList = useModelDownloadStore.getState().setDownloadList;
-  const setIsDownloadEmbed = useModelDownloadStore.getState().setIsDownloadEmbed;
+  const { downloadList, setDownloadList, setIsDownloadEmbed } = useModelDownloadStore();
+
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
   downListRef.current = downloadList;
@@ -140,7 +139,7 @@ export const useDownLoad = () => {
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {
     const timeout = setTimeout(() => {
-      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.DOWN_LIST);
+      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
       if (downListLocal.length > 0) {
         const updatedList = downListLocal.map((item: IModelDataItem) => ({
           ...item,
@@ -149,7 +148,7 @@ export const useDownLoad = () => {
         setDownloadList(updatedList);
       }
 
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.DOWN_LIST);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
     }, 150);
 
     return () => clearTimeout(timeout);
@@ -158,7 +157,7 @@ export const useDownLoad = () => {
   // 监听浏览器刷新 暂停所有模型下载 并且缓存下载列表
   usePageRefreshListener(() => {
     // 存储正在下载的列表
-    localStorage.setItem(LOCAL_STORAGE_KEYS.DOWN_LIST, JSON.stringify(downloadingItems));
+    localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(downloadingItems));
 
     // 更新所有下载中的项目状态为暂停
     if (downListRef.current?.length > 0) {
@@ -166,7 +165,7 @@ export const useDownLoad = () => {
         ...item,
         status: item.status === IN_PROGRESS ? PAUSED : item.status,
       }));
-      localStorage.setItem(LOCAL_STORAGE_KEYS.DOWN_LIST, JSON.stringify(data));
+      localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(data));
     }
   });
 

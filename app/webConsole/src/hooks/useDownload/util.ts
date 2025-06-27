@@ -58,12 +58,6 @@ export function updateDownloadStatus(id: string, updates: any) {
   // 查找要更新的项目
   const itemToUpdate = downloadList?.find((item) => item.id === id);
 
-  // 检查status字段是否发生变化
-  let statusChanged = false;
-  if (itemToUpdate && 'status' in updates) {
-    statusChanged = itemToUpdate.status !== updates.status;
-  }
-
   // 更新下载列表
   setDownloadList((draft: any[]): any[] => {
     if (!draft || !Array.isArray(draft) || draft?.length === 0) {
@@ -78,18 +72,15 @@ export function updateDownloadStatus(id: string, updates: any) {
   });
 
   // 只有当status状态发生变化时才更新模型列表
-  if (statusChanged) {
-    console.log('更新模型列表中的下载状态', id, updates);
-    setModelListData((draft: any[]): any[] => {
-      if (!Array.isArray(draft) || draft.length === 0) {
-        return [];
+  setModelListData((draft: any[]): any[] => {
+    if (!Array.isArray(draft) || draft.length === 0) {
+      return [];
+    }
+    return draft.map((item) => {
+      if (item.id === id) {
+        return { ...item, ...updates };
       }
-      return draft.map((item) => {
-        if (item.id === id) {
-          return { ...item, ...updates };
-        }
-        return item;
-      });
+      return item;
     });
-  }
+  });
 }

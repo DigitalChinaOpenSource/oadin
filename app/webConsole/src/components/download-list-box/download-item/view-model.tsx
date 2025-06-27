@@ -18,7 +18,7 @@ export function useViewModel() {
     }
     const result = downloadList.filter((item) => item.name !== data.name);
     setDownloadList(result);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.DOWN_LIST, JSON.stringify(result));
+    localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(result));
 
     await fetchCancelModel(data);
   };

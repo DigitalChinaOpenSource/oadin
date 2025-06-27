@@ -19,6 +19,7 @@ import { useChatStream } from '@/components/chat-container/useChatStream';
 import { copyMessageToClipboard } from '../useChatStream/utils';
 import { HeaderContent } from './header-content';
 import EmbedDownloadButton from '../enbed-download-btn';
+import useModelDownloadStore from '@/store/useModelDownloadStore';
 import './index.scss';
 
 interface IChatViewProps {
@@ -47,10 +48,12 @@ interface ChatMessage extends MessageType {
   contentList?: ChatMessageContent[];
 }
 
-export default function ChatView({ isUploadVisible }: IChatViewProps) {
+export default function ChatView() {
   const { messages, isUploading } = useChatStore();
+  // 添加日志以跟踪 messages 更新
+  console.log('ChatView - messages updated:', messages);
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
-
+  const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
   useEffect(() => {
@@ -90,7 +93,7 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
   // 输入框底部功能区
   const footerContent = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 14, color: '#7553FC' }}>
-      {isUploadVisible ? <UploadTool /> : <EmbedDownloadButton />}
+      {isDownloadEmbed ? <UploadTool /> : <EmbedDownloadButton />}
 
       <SelectMcp />
     </div>
@@ -108,49 +111,50 @@ export default function ChatView({ isUploadVisible }: IChatViewProps) {
             scroll={chattingMessageControlScroll}
           />
         )}
-
-        {(isLoading || streamingContent) && (
-          <div className="message-control-buttons">
-            {isLoading && (
-              <img
-                src={realLoading}
-                alt="加载中"
-                style={{ width: 24, height: 24 }}
-              />
-            )}
-          </div>
-        )}
-        {error && (
-          <Button
-            type="link"
-            icon={<ArrowClockwiseIcon width={16} />}
-            onClick={resendLastMessage}
-            loading={isResending}
-            disabled={isLoading && !isResending}
-          >
-            重试
-          </Button>
-        )}
-        {!isLoading && messages.length > 0 && (
-          <div className="message-control-buttons">
-            <Button
-              type="link"
-              icon={<CopyIcon width={16} />}
-              onClick={() => handleCopyMessage()}
-            >
-              复制
-            </Button>
+        <div className="message-control-buttons">
+          {(isLoading || streamingContent) && (
+            <>
+              {isLoading && (
+                <img
+                  src={realLoading}
+                  alt="加载中"
+                  style={{ width: 24, height: 24 }}
+                />
+              )}
+            </>
+          )}
+          {error && (
             <Button
               type="link"
               icon={<ArrowClockwiseIcon width={16} />}
               onClick={resendLastMessage}
               loading={isResending}
-              disabled={isResending}
+              disabled={isLoading && !isResending}
             >
-              重新发送
+              重试
             </Button>
-          </div>
-        )}
+          )}
+          {!isLoading && messages.length > 0 && (
+            <>
+              <Button
+                type="link"
+                icon={<CopyIcon width={16} />}
+                onClick={() => handleCopyMessage()}
+              >
+                复制
+              </Button>
+              <Button
+                type="link"
+                icon={<ArrowClockwiseIcon width={16} />}
+                onClick={resendLastMessage}
+                loading={isResending}
+                disabled={isResending}
+              >
+                重新发送
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     );
   };

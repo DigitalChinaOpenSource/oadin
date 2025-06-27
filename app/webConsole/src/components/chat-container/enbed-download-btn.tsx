@@ -2,7 +2,6 @@ import React, { useCallback, useEffect } from 'react';
 import { Button, Tooltip } from 'antd';
 import uploadSvg from '@/components/icons/upload.svg';
 import { useDownLoad } from '@/hooks/useDownload';
-import useModelDownloadStore from '@/store/useModelDownloadStore';
 
 const EmbedDownloadButton = React.memo(() => {
   const { fetchDownloadStart } = useDownLoad();

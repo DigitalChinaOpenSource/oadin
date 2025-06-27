@@ -4,9 +4,7 @@ import { httpRequest } from '@/utils/httpRequest';
 import { useRequest } from 'ahooks';
 import thinkSvg from '@/components/icons/think.svg';
 import nothinkSvg from '@/components/icons/no-think.svg';
-import exchangeSvg from '@/components/icons/exchange.svg';
 import TagsRender from '@/components/tags-render';
-import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import useChatStore from '../store/useChatStore';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
@@ -21,8 +19,7 @@ interface IChatModelManageProps {
 export default function ChatModelManage(props: IChatModelManageProps) {
   const { selectedModel } = useSelectedModelStore();
   const currentSessionId = getSessionIdFromUrl();
-  const { isLoading } = useChatStore();
-  const [open, setOpen] = useState<boolean>(false);
+
   const [isThinking, setIsThinking] = useState<boolean>(true);
 
   const { run: fetchThinkingEnable } = useRequest(
@@ -79,32 +76,10 @@ export default function ChatModelManage(props: IChatModelManageProps) {
                 />
                 <span>深度思考</span>
               </div>
-              <div className={styles.fill}></div>
             </>
           )}
-
-          <Tooltip title={isLoading ? '对话中不可修改模型' : '切换模型后，将开启新会话'}>
-            <div
-              className={styles.changeModel}
-              onClick={() => {
-                if (isLoading) return;
-                setOpen(true);
-              }}
-            >
-              <img
-                src={exchangeSvg}
-                alt="切换模型图标"
-              />
-            </div>
-          </Tooltip>
         </div>
       </div>
-      {open && (
-        <ChooseModelDialog
-          open={true}
-          onCancel={() => setOpen(false)}
-        />
-      )}
     </>
   );
 }

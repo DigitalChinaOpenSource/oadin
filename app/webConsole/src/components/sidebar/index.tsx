@@ -17,7 +17,6 @@ import type { MenuProps } from 'antd';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 import McpDownloadBox from '@/components/mcp-download-box';
 import mcpAddSvg from '@/components/icons/mcpAdd.svg';
-import DownloadSection from './download-section.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -26,6 +25,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   const location = useLocation();
   // 是否展示下载列表弹窗
   const [isDownloadListOpen, setIsDownloadListOpen] = useState(false);
+  const { downloadList } = useModelDownloadStore();
 
   // 当前选中的菜单项和展开的菜单项
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -154,7 +154,76 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
           </div>
         </Popover>
       )}
-      <DownloadSection collapsed={collapsed} />
+      {downloadList.length > 0 && (
+        <Popover
+          style={{ padding: 0 }}
+          zIndex={1300}
+          content={
+            <DownloadListBox
+              className={styles.downloadListWrapper}
+              handleDownload={() => handleDownload(false)}
+            />
+          }
+          trigger={'click'}
+          placement={'rightTop'}
+          arrow={false}
+          open={isDownloadListOpen}
+          onOpenChange={(visible) => {
+            handleDownload(visible);
+          }}
+        >
+          <div className={styles.mcpDownloadBox}>
+            <div className={styles.mpcDownloadBoxContent}>
+              <Tooltip title={collapsed ? '正在下载' : ''}>
+                <div className={styles.downloadBtnBox}>
+                  <Badge
+                    // dot={!!downloadList?.length}
+                    count={downloadList?.length}
+                    showZero={false}
+                    className={styles.badge}
+                  >
+                    <div className={styles.downloadBtn}>
+                      <DownloadIcon
+                        width={14}
+                        height={14}
+                        fill="#ffffff"
+                      />
+                    </div>
+                  </Badge>
+                </div>
+              </Tooltip>
+              {!collapsed && <div>正在下载</div>}
+            </div>
+          </div>
+        </Popover>
+      )}
+      {/*{!!downloadList?.length && (*/}
+      {/*  <div className={styles.downloadBtnBox}>*/}
+      {/*    <Badge*/}
+      {/*      // dot={!!downloadList?.length}*/}
+      {/*      count={downloadList?.length}*/}
+      {/*      showZero={false}*/}
+      {/*      className={styles.badge}*/}
+      {/*    >*/}
+      {/*      <div*/}
+      {/*        className={styles.downloadBtn}*/}
+      {/*        onClick={() => handleDownload(true)}*/}
+      {/*      >*/}
+      {/*        <DownloadIcon*/}
+      {/*          width={18}*/}
+      {/*          height={18}*/}
+      {/*          fill="#ffffff"*/}
+      {/*        />*/}
+      {/*      </div>*/}
+      {/*    </Badge>*/}
+      {/*    {isDownloadListOpen && downloadList.length > 0 && (*/}
+      {/*      <DownloadListBox*/}
+      {/*        className={styles.downloadListWrapper}*/}
+      {/*        handleDownload={() => handleDownload(false)}*/}
+      {/*      />*/}
+      {/*    )}*/}
+      {/*  </div>*/}
+      {/*)}*/}
     </div>
   );
 }
