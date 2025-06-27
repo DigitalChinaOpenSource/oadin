@@ -333,21 +333,28 @@ export const handleTextContent = (
     cleanContent = cleanContent.replace(/\n{3,}/g, '\n\n').trim();
 
     setStreamingContent(cleanContent);
-  } else {
-    requestStateRef.current.content.thinking = '';
+  }
+
+  // 在数据完成时，确保思考区域显示内容正确
+  if (data.is_complete) {
+    // 数据完成，更新思考字段最终状态
     if (requestStateRef.current.content.thinkingFromField) {
       setStreamingThinking({
         data: requestStateRef.current.content.thinkingFromField,
-        status: 'success', // 显式设置为 success
+        status: 'success',
+      });
+    } else if (requestStateRef.current.content.thinking) {
+      setStreamingThinking({
+        data: requestStateRef.current.content.thinking,
+        status: 'success',
       });
     } else {
+      // 没有任何思考内容
       setStreamingThinking({
         data: '',
         status: 'success',
       });
     }
-
-    setStreamingContent(responseContent);
   }
 
   return responseContent;
