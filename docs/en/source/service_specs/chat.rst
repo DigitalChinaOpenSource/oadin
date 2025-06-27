@@ -1,5 +1,5 @@
 ===================================
-Chat Related Byze Services
+Chat Related Oadin Services
 ===================================
 
 chat Service
@@ -10,7 +10,7 @@ chat Service
 Custom Properties of its Service Providers
 --------------------------------------------
 
-In addition to the common properties defined in :ref:`Metadata of Byze Service
+In addition to the common properties defined in :ref:`Metadata of Oadin Service
 Provider`, the chat service providers may also have the following properties put
 into the ``custom_properties`` field of the service provider metadata.
 
@@ -109,7 +109,7 @@ Sending Request
 
 .. code-block:: shell
 
-    curl https://localhost:6688/byze/v0.1/chat/SERVICES/completions \
+    curl https://localhost:6688/oadin/v0.1/chat/SERVICES/completions \
     -H "Content-Type: application/json" \
     -d '{
         "messages": [
@@ -131,8 +131,8 @@ Returned Response
 .. code-block:: json
 
     {
-        "byze": {
-            "non_byze_data_in_response": {
+        "oadin": {
+            "non_oadin_data_in_response": {
                 "prompt_eval_count": 26,
                 "... other ollama specific data here ...": "..."
             },
@@ -149,8 +149,8 @@ Returned Response
     }
 
     {
-        "byze": {
-            "non_byze_data_in_response": {
+        "oadin": {
+            "non_oadin_data_in_response": {
                 "prompt_eval_count": 26,
                 "... other ollama specific data here ...": "..."
             },
@@ -177,7 +177,7 @@ The function_call is very smilar as the chat service. Many cloud vendors provide
 the function_call directly through the same endpoint of chat service, while have
 some additional fields in the request body to specify the function call.
 
-Byze specifically create a new end point to seperate it from the more general
+Oadin specifically create a new end point to seperate it from the more general
 chat service. So it clearly tells whether the platform has the service provider
 which is capable enough to provide support of function call (even through chat)
 
@@ -260,7 +260,7 @@ invocation of that function in a response looks like this.
 .. code-block:: json
 
     {
-        "byze": {
+        "oadin": {
             "received_at": "2024-06-26T19:22:26.123127",
             "responsed_at": "2024-06-26T19:22:28.123127",
             "served_by": "https://api.openai.com/v1/chat/completions",
@@ -288,7 +288,7 @@ text_embed Service
 Custom Properties of its Service Providers
 --------------------------------------------
 
-In addition to the common properties defined in :ref:`Metadata of Byze Service
+In addition to the common properties defined in :ref:`Metadata of Oadin Service
 Provider`, the chat service providers may also have the following properties put
 into the ``custom_properties`` field of the service provider metadata.
 
@@ -357,7 +357,7 @@ The returned embedding may look like this
 .. code-block:: json
 
     {
-        "byze": {
+        "oadin": {
             "received_at": "2024-06-26T19:22:26.123127",
             "responsed_at": "2024-06-26T19:22:28.123127",
             "served_by": "http://localhost:11434/api/embed",

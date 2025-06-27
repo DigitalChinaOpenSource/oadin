@@ -18,11 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"byze/config"
-	"byze/internal/datastore"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/version"
+	"oadin/config"
+	"oadin/internal/datastore"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/version"
 
 	"gorm.io/gorm"
 )
@@ -33,7 +33,7 @@ var (
 	// UpdateCheckUrlBase  = "http://10.3.74.123:3000"
 	UpdateCheckInterval = 60 * 60 * time.Second
 
-	AppKey    = "byze"
+	AppKey    = "oadin"
 	AppSecret = "39ee3ba7b2003ee239d700b53da8dfa4c29f09ee5a460b9641a8bc9d89eac99a"
 )
 
@@ -142,7 +142,7 @@ func UpdaterAuth() (UpdateAuthResponseData, error) {
 func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 	var updateResp UpdateResponse
 
-	requestURL, err := url.Parse(UpdateCheckUrlBase + "/api/byze/updates")
+	requestURL, err := url.Parse(UpdateCheckUrlBase + "/api/oadin/updates")
 	if err != nil {
 		return false, updateResp
 	}
@@ -189,7 +189,7 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 		slog.Warn(fmt.Sprintf("malformed response checking for update: %s", err))
 		return false, updateResp
 	}
-	currentVersion := version.ByzeVersion
+	currentVersion := version.OadinVersion
 	if updateResp.UpdateVersion == currentVersion {
 		return false, updateResp
 	}
@@ -201,7 +201,7 @@ func DownloadNewVersion(ctx context.Context, updateResponse UpdateResponse) erro
 	if err != nil {
 		return err
 	}
-	_, err = utils.DownloadFile(updateResponse.UpdateURL, config.GlobalByzeEnvironment.UpdateDir)
+	_, err = utils.DownloadFile(updateResponse.UpdateURL, config.GlobalOadinEnvironment.UpdateDir)
 	if err != nil {
 		return err
 	}

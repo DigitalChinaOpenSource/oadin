@@ -1,5 +1,5 @@
 package version
 
-const ByzeVersion = "v0.2"
+const OadinVersion = "v0.2"
 
-var ByzeSubVersion = "20250605-10"
+var OadinSubVersion = "20250605-10"

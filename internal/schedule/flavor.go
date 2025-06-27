@@ -19,13 +19,13 @@ import (
 	"strings"
 	"time"
 
-	"byze/config"
-	"byze/internal/convert"
-	"byze/internal/event"
-	"byze/internal/provider/template"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/version"
+	"oadin/config"
+	"oadin/internal/convert"
+	"oadin/internal/event"
+	"oadin/internal/provider/template"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/version"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
@@ -34,7 +34,7 @@ import (
 // APIFlavor mode is usually set to "default". And set to "stream" if it is using stream mode
 type APIFlavor interface {
 	Name() string
-	InstallRoutes(server *gin.Engine, options *config.ByzeEnvironment)
+	InstallRoutes(server *gin.Engine, options *config.OadinEnvironment)
 
 	// GetStreamResponseProlog In stream mdoe, some flavor may ask for some packets to be send first
 	// or at the end, in addition to normal contents. For example, OpenAI
@@ -45,12 +45,12 @@ type APIFlavor interface {
 	// Convert This should cover the 6 conversion methods below
 	Convert(service string, conversion string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
 
-	ConvertRequestToByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertRequestFromByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertResponseToByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertResponseFromByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertStreamResponseToByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertStreamResponseFromByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertRequestToOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertRequestFromOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertResponseToOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertResponseFromOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertStreamResponseToOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertStreamResponseFromOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
 }
 
 var allFlavors = make(map[string]APIFlavor)
@@ -84,23 +84,23 @@ type ModelSelector struct {
 	ModelInResponse string `yaml:"response"`
 }
 type FlavorServiceDef struct {
-	Endpoints              []string            `yaml:"endpoints"`
-	InstallRawRoutes       bool                `yaml:"install_raw_routes"`
-	DefaultModel           string              `yaml:"default_model"`
-	RequestUrl             string              `yaml:"url"`
-	RequestExtraUrl        string              `yaml:"extra_url"`
-	AuthType               string              `yaml:"auth_type"`
-	AuthApplyUrl           string              `yaml:"auth_apply_url"`
-	RequestSegments        int                 `yaml:"request_segments"`
-	ExtraHeaders           string              `yaml:"extra_headers"`
-	SupportModels          []string            `yaml:"support_models"`
-	ModelSelector          ModelSelector       `yaml:"model_selector"`
-	RequestToByze          FlavorConversionDef `yaml:"request_to_byze"`
-	RequestFromByze        FlavorConversionDef `yaml:"request_from_byze"`
-	ResponseToByze         FlavorConversionDef `yaml:"response_to_byze"`
-	ResponseFromByze       FlavorConversionDef `yaml:"response_from_byze"`
-	StreamResponseToByze   FlavorConversionDef `yaml:"stream_response_to_byze"`
-	StreamResponseFromByze FlavorConversionDef `yaml:"stream_response_from_byze"`
+	Endpoints               []string            `yaml:"endpoints"`
+	InstallRawRoutes        bool                `yaml:"install_raw_routes"`
+	DefaultModel            string              `yaml:"default_model"`
+	RequestUrl              string              `yaml:"url"`
+	RequestExtraUrl         string              `yaml:"extra_url"`
+	AuthType                string              `yaml:"auth_type"`
+	AuthApplyUrl            string              `yaml:"auth_apply_url"`
+	RequestSegments         int                 `yaml:"request_segments"`
+	ExtraHeaders            string              `yaml:"extra_headers"`
+	SupportModels           []string            `yaml:"support_models"`
+	ModelSelector           ModelSelector       `yaml:"model_selector"`
+	RequestToOadin          FlavorConversionDef `yaml:"request_to_oadin"`
+	RequestFromOadin        FlavorConversionDef `yaml:"request_from_oadin"`
+	ResponseToOadin         FlavorConversionDef `yaml:"response_to_oadin"`
+	ResponseFromOadin       FlavorConversionDef `yaml:"response_from_oadin"`
+	StreamResponseToOadin   FlavorConversionDef `yaml:"stream_response_to_oadin"`
+	StreamResponseFromOadin FlavorConversionDef `yaml:"stream_response_from_oadin"`
 }
 
 type FlavorDef struct {
@@ -112,8 +112,8 @@ type FlavorDef struct {
 }
 
 var allConversions = []string{
-	"request_to_byze", "request_from_byze", "response_to_byze", "response_from_byze",
-	"stream_response_to_byze", "stream_response_from_byze",
+	"request_to_oadin", "request_from_oadin", "response_to_oadin", "response_from_oadin",
+	"stream_response_to_oadin", "stream_response_from_oadin",
 }
 
 func EnsureConversionNameValid(conversion string) {
@@ -126,24 +126,24 @@ func EnsureConversionNameValid(conversion string) {
 }
 
 // Not all elements are defined in the YAML file. So need to handle and return nil
-// Example: getConversionDef("chat", "request_to_byze")
+// Example: getConversionDef("chat", "request_to_oadin")
 func (f *FlavorDef) getConversionDef(service, conversion string) *FlavorConversionDef {
 	EnsureConversionNameValid(conversion)
 	if serviceDef, exists := f.Services[service]; exists {
 		var def FlavorConversionDef
 		switch conversion {
-		case "request_to_byze":
-			def = serviceDef.RequestToByze
-		case "request_from_byze":
-			def = serviceDef.RequestFromByze
-		case "response_to_byze":
-			def = serviceDef.ResponseToByze
-		case "response_from_byze":
-			def = serviceDef.ResponseFromByze
-		case "stream_response_to_byze":
-			def = serviceDef.StreamResponseToByze
-		case "stream_response_from_byze":
-			def = serviceDef.StreamResponseFromByze
+		case "request_to_oadin":
+			def = serviceDef.RequestToOadin
+		case "request_from_oadin":
+			def = serviceDef.RequestFromOadin
+		case "response_to_oadin":
+			def = serviceDef.ResponseToOadin
+		case "response_from_oadin":
+			def = serviceDef.ResponseFromOadin
+		case "stream_response_to_oadin":
+			def = serviceDef.StreamResponseToOadin
+		case "stream_response_from_oadin":
+			def = serviceDef.StreamResponseFromOadin
 		default:
 			panic("[Flavor] Invalid Conversion Name: " + conversion)
 		}
@@ -173,7 +173,7 @@ var allFlavorDefs = make(map[string]FlavorDef)
 func GetFlavorDef(flavor string) FlavorDef {
 	// Force reload so changes in flavor config files take effect on the fly
 	if _, exists := allFlavorDefs[flavor]; !exists {
-		def, err := LoadFlavorDef(flavor, config.GlobalByzeEnvironment.RootDir)
+		def, err := LoadFlavorDef(flavor, config.GlobalOadinEnvironment.RootDir)
 		if err != nil {
 			slog.Error("[Init] Failed to load flavor config", "flavor", flavor, "error", err)
 			// This shouldn't happen unless something goes wrong
@@ -265,8 +265,8 @@ func (f *ConfigBasedAPIFlavor) Name() string {
 	return f.Config.Name
 }
 
-func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine, options *config.ByzeEnvironment) {
-	vSpec := version.ByzeVersion
+func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine, options *config.OadinEnvironment) {
+	vSpec := version.OadinVersion
 	for service, serviceDef := range f.Config.Services {
 		for _, endpoint := range serviceDef.Endpoints {
 			parts := strings.SplitN(endpoint, " ", 2)
@@ -284,20 +284,20 @@ func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine, options *confi
 			}
 			handler := makeServiceRequestHandler(f, service)
 
-			// raw routes which doesn't have any byze prefix
+			// raw routes which doesn't have any oadin prefix
 			if serviceDef.InstallRawRoutes {
 				gateway.Handle(method, path, handler)
 				slog.Debug("[Flavor] Installed raw route", "flavor", f.Name(), "service", service, "route", method+" "+path)
 			}
 			// flavor routes in api_flavors or directly under services
-			if f.Name() != "byze" {
-				byzePath := "/byze/" + vSpec + "/api_flavors/" + f.Name() + path
-				gateway.Handle(method, byzePath, handler)
-				slog.Debug("[Flavor] Installed flavor route", "flavor", f.Name(), "service", service, "route", method+" "+byzePath)
+			if f.Name() != "oadin" {
+				oadinPath := "/oadin/" + vSpec + "/api_flavors/" + f.Name() + path
+				gateway.Handle(method, oadinPath, handler)
+				slog.Debug("[Flavor] Installed flavor route", "flavor", f.Name(), "service", service, "route", method+" "+oadinPath)
 			} else {
-				byzePath := "/byze/" + vSpec + "/services" + path
-				gateway.Handle(method, byzePath, makeServiceRequestHandler(f, service))
-				slog.Debug("[Flavor] Installed byze route", "flavor", f.Name(), "service", service, "route", method+" "+byzePath)
+				oadinPath := "/oadin/" + vSpec + "/services" + path
+				gateway.Handle(method, oadinPath, makeServiceRequestHandler(f, service))
+				slog.Debug("[Flavor] Installed oadin route", "flavor", f.Name(), "service", service, "route", method+" "+oadinPath)
 			}
 		}
 		slog.Info("[Flavor] Installed routes", "flavor", f.Name(), "service", service)
@@ -305,11 +305,11 @@ func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine, options *confi
 }
 
 func (f *ConfigBasedAPIFlavor) GetStreamResponseProlog(service string) []string {
-	return f.Config.getConversionDef(service, "stream_response_from_byze").Prologue
+	return f.Config.getConversionDef(service, "stream_response_from_oadin").Prologue
 }
 
 func (f *ConfigBasedAPIFlavor) GetStreamResponseEpilog(service string) []string {
-	return f.Config.getConversionDef(service, "stream_response_from_byze").Epilogue
+	return f.Config.getConversionDef(service, "stream_response_from_oadin").Epilogue
 }
 
 func (f *ConfigBasedAPIFlavor) Convert(service, conversion string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
@@ -318,28 +318,28 @@ func (f *ConfigBasedAPIFlavor) Convert(service, conversion string, content types
 	return pipeline.Convert(content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertRequestToByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "request_to_byze", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertRequestToOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "request_to_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertRequestFromByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "request_from_byze", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertRequestFromOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "request_from_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertResponseToByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "response_to_byze", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertResponseToOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "response_to_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertResponseFromByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "response_from_byze", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertResponseFromOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "response_from_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertStreamResponseToByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "stream_response_to_byze", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertStreamResponseToOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "stream_response_to_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertStreamResponseFromByze(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "stream_response_from_byze", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertStreamResponseFromOadin(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "stream_response_from_oadin", content, ctx)
 }
 
 func makeServiceRequestHandler(flavor APIFlavor, service string) func(c *gin.Context) {
@@ -406,25 +406,25 @@ func ConvertBetweenFlavors(from, to APIFlavor, service string, conv string, cont
 	// need conversion, content-length may change
 	content.Header.Del("Content-Length")
 
-	firstConv := conv + "_to_byze"
-	secondConv := conv + "_from_byze"
+	firstConv := conv + "_to_oadin"
+	secondConv := conv + "_from_oadin"
 	EnsureConversionNameValid(firstConv)
 	EnsureConversionNameValid(secondConv)
-	if from.Name() != "byze" {
+	if from.Name() != "oadin" {
 		var err error
 		content, err = from.Convert(service, firstConv, content, ctx)
 		if err != nil {
 			return types.HTTPContent{}, err
 		}
 	}
-	if from.Name() != "byze" && to.Name() != "byze" {
+	if from.Name() != "oadin" && to.Name() != "oadin" {
 		if strings.HasPrefix(conv, "request") {
-			event.SysEvents.NotifyHTTPRequest("request_converted_to_byze", "<n/a>", "<n/a>", content.Header, content.Body)
+			event.SysEvents.NotifyHTTPRequest("request_converted_to_oadin", "<n/a>", "<n/a>", content.Header, content.Body)
 		} else {
-			event.SysEvents.NotifyHTTPResponse("response_converted_to_byze", -1, content.Header, content.Body)
+			event.SysEvents.NotifyHTTPResponse("response_converted_to_oadin", -1, content.Header, content.Body)
 		}
 	}
-	if to.Name() != "byze" {
+	if to.Name() != "oadin" {
 		var err error
 		content, err = to.Convert(service, secondConv, content, ctx)
 		if err != nil {
@@ -642,7 +642,7 @@ func (s *TencentSignAuthenticator) Authenticate() error {
 	return nil
 }
 
-// byze
+// oadin
 func (c *CredentialsAuthenticator) Authenticate() error {
 	var reqData map[string]interface{}
 

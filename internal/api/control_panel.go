@@ -5,14 +5,14 @@ import (
 	"io"
 	"net/http"
 
-	"byze/internal/api/dto"
-	"byze/internal/server"
-	"byze/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/server"
+	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (t *ByzeCoreServer) GetModelFilePathHandler(c *gin.Context) {
+func (t *OadinCoreServer) GetModelFilePathHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 	resp, err := server.GetModelFilePath(ctx)
 	if err != nil {
@@ -23,7 +23,7 @@ func (t *ByzeCoreServer) GetModelFilePathHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) GetPathDiskSizeHandler(c *gin.Context) {
+func (t *OadinCoreServer) GetPathDiskSizeHandler(c *gin.Context) {
 	request := new(dto.GetPathDiskSizeInfoRequest)
 	if err := c.Bind(request); err != nil {
 		if !errors.Is(err, io.EOF) {
@@ -47,7 +47,7 @@ func (t *ByzeCoreServer) GetPathDiskSizeHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) ModifyModelFilePathHandler(c *gin.Context) {
+func (t *OadinCoreServer) ModifyModelFilePathHandler(c *gin.Context) {
 	request := new(dto.ModifyModelFilePathRequest)
 	if err := c.Bind(request); err != nil {
 		if !errors.Is(err, io.EOF) {

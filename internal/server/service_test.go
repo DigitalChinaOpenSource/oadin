@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/types"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/types"
 
 	"github.com/golang/mock/gomock"
 )

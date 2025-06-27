@@ -12,10 +12,10 @@ import (
 	"sort"
 	"strings"
 
-	"byze/config"
-	"byze/internal/logger"
-	"byze/internal/types"
-	"byze/internal/utils"
+	"oadin/config"
+	"oadin/internal/logger"
+	"oadin/internal/types"
+	"oadin/internal/utils"
 )
 
 // A simple event system for UI and logging purpose
@@ -33,7 +33,7 @@ func NewEventManager(supportedEventTypes []string) *types.EventManager {
 
 func NewFileLogger(logFilePath string) *slog.Logger {
 	logger.NewSysLogger(logger.NewLogConfig{
-		LogLevel: config.GlobalByzeEnvironment.LogLevel,
+		LogLevel: config.GlobalOadinEnvironment.LogLevel,
 		LogPath:  logFilePath,
 	})
 	return logger.GlobalLogger
@@ -85,13 +85,13 @@ var SysEvents *types.EventManager
 func InitSysEvents() {
 	SysEvents = NewEventManager([]string{
 		"start_app", "start_session",
-		"end_session", "receive_service_request", "request_converted_to_byze", "invoke_service_provider",
-		"service_provider_response", "response_converted_to_byze", "send_back_response",
+		"end_session", "receive_service_request", "request_converted_to_oadin", "invoke_service_provider",
+		"service_provider_response", "response_converted_to_oadin", "send_back_response",
 	})
-	if config.GlobalByzeEnvironment.LogHTTP == "" {
+	if config.GlobalOadinEnvironment.LogHTTP == "" {
 		return
 	}
-	fl := NewFileLogger(config.GlobalByzeEnvironment.LogHTTP)
+	fl := NewFileLogger(config.GlobalOadinEnvironment.LogHTTP)
 	testLog := logger.GetModuleLogger("test")
 	testLog.Info("test start http log")
 	SysEvents.AddListener(func(eventType string, data any) {
@@ -100,10 +100,10 @@ func InitSysEvents() {
 			fl.Info("start app")
 		case "start_session":
 			fl.Info("start session")
-		case "receive_service_request", "request_converted_to_byze", "invoke_service_provider":
+		case "receive_service_request", "request_converted_to_oadin", "invoke_service_provider":
 			d := data.(types.HttpRequestEventData)
 			LogHTTPRequest(fl, eventType, d.Method, d.Url, d.Header, d.Body)
-		case "service_provider_response", "response_converted_to_byze", "send_back_response":
+		case "service_provider_response", "response_converted_to_oadin", "send_back_response":
 			d := data.(types.HttpResponseEventData)
 			LogHTTPResponse(fl, eventType, d.StatusCode, d.Header, d.Body)
 		}

@@ -1,8 +1,8 @@
 ========================
-Byze 平台配置
+Oadin 平台配置
 ========================
 
 
-.. _byze_hybrid_policy:
+.. _oadin_hybrid_policy:
 
 混合调度策略

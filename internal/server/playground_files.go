@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"byze/config"
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/provider/engine"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
+	"oadin/config"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/provider/engine"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
 
 	"hash/fnv"
 
@@ -77,12 +77,12 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 	}
 
 	// 生成文件保存路径，按对话分目录
-	byzeDir, err := utils.GetByzeDataDir()
+	oadinDir, err := utils.GetOadinDataDir()
 	if err != nil {
-		slog.Error("Failed to get Byze data directory", "error", err)
+		slog.Error("Failed to get Oadin data directory", "error", err)
 		return nil, err
 	}
-	fileDir := filepath.Join(byzeDir, "files", request.SessionID)
+	fileDir := filepath.Join(oadinDir, "files", request.SessionID)
 	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(fileDir, 0755); err != nil {
 			slog.Error("Failed to create session files directory", "error", err)
@@ -154,7 +154,7 @@ func (p *PlaygroundImpl) GetFiles(ctx context.Context, request *dto.GetFilesRequ
 
 	// 直接使用SQL查询进行验证
 	// 获取SQLite数据库路径
-	dbPath := config.GlobalByzeEnvironment.Datastore
+	dbPath := config.GlobalOadinEnvironment.Datastore
 	slog.Info("GetFiles: 尝试直接SQL查询验证", "dbPath", dbPath, "sessionID", request.SessionID)
 
 	// 直接使用SQL查询
@@ -315,7 +315,7 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 	}
 
 	// 获取SQLite数据库路径
-	dbPath := config.GlobalByzeEnvironment.Datastore
+	dbPath := config.GlobalOadinEnvironment.Datastore
 	slog.Info("尝试打开数据库直接查询", "dbPath", dbPath, "fileID", request.FileID)
 
 	// 直接使用SQL查询文件

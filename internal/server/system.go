@@ -1,11 +1,12 @@
 package server
 
 import (
-	"byze/internal/api/dto"
-	"byze/internal/cache"
-	"byze/internal/provider"
 	"context"
 	"log/slog"
+	"oadin/internal/api/dto"
+	"oadin/internal/cache"
+	"oadin/internal/provider"
+	"oadin/internal/utils/bcode"
 )
 
 type System interface {
@@ -32,7 +33,7 @@ func (s *SystemImpl) ModifyRegistry(ctx context.Context, url string) error {
 	err := cache.ReadSystemSettings(&settings)
 	if err != nil {
 		slog.Error("设置仓库地址失败", "error", err)
-		return err
+		return bcode.HttpError(bcode.ControlPanelSystemError, "设置仓库地址失败")
 	}
 	settings.OllamaRegistry = url
 
@@ -40,7 +41,7 @@ func (s *SystemImpl) ModifyRegistry(ctx context.Context, url string) error {
 	err = cache.WriteSystemSettings(settings)
 	if err != nil {
 		slog.Error("设置仓库地址失败", "error", err)
-		return err
+		return bcode.HttpError(bcode.ControlPanelSystemError, "设置仓库地址失败")
 	}
 	return nil
 }
@@ -52,7 +53,7 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 	err := cache.ReadSystemSettings(&settings)
 	if err != nil {
 		slog.Error("设置代理地址失败", "error", err)
-		return err
+		return bcode.HttpError(bcode.ControlPanelSystemError, "设置代理地址失败")
 	}
 	// 使用临时变量存储代理设置
 	tempProxy := settings.SystemProxy
@@ -66,7 +67,7 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 	err = cache.WriteSystemSettings(settings)
 	if err != nil {
 		slog.Error("设置代理地址失败", "error", err)
-		return err
+		return bcode.HttpError(bcode.ControlPanelSystemError, "设置代理地址失败")
 	}
 
 	// 重启Ollama服务以应用新的代理设置
@@ -75,7 +76,7 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 		slog.Error("重启Ollama失败", "error", err)
 		// 回滚代理设置
 		settings.SystemProxy = tempProxy // 清空代理设置
-		return err
+		return bcode.HttpError(bcode.ControlPanelSystemError, "重启Ollama失败")
 	}
 
 	// 设置代理状态
@@ -86,7 +87,7 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 		slog.Error("设置代理地址失败", "error", err)
 		// 回滚代理设置
 		settings.SystemProxy = tempProxy // 清空代理设置
-		return err
+		return bcode.HttpError(bcode.ControlPanelSystemError, "设置代理地址失败")
 	}
 	return nil
 
@@ -97,21 +98,25 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 	// 从用户配置文件中读取系统设置
 	var settings cache.SystemSettings
 	err := cache.ReadSystemSettings(&settings)
+	temp := settings.SystemProxy.Enabled
+	// 更新代理启用状态
+	settings.SystemProxy.Enabled = enabled
+	// 将修改后的设置写回用户配置文件
+	err = cache.WriteSystemSettings(settings)
+
+	if settings.SystemProxy.Endpoint == "" && enabled {
+		slog.Error("代理地址不能为空，请先设置代理地址")
+		return bcode.HttpError(bcode.ControlPanelSystemError, "代理地址不能为空，请先设置代理地址")
+	}
 
 	err = s.RestartOllama(ctx)
 	if err != nil {
-		slog.Error("重启Ollama失败", "error", err)
-		return err
-	}
-
-	// 更新代理启用状态
-	settings.SystemProxy.Enabled = enabled
-
-	// 将修改后的设置写回用户配置文件
-	err = cache.WriteSystemSettings(settings)
-	if err != nil {
 		slog.Error("切换代理启用状态失败", "error", err)
-		return err
+
+		settings.SystemProxy.Enabled = temp // 回滚代理启用状态
+		// 将修改后的设置写回用户配置文件
+		err = cache.WriteSystemSettings(settings)
+		return bcode.HttpError(bcode.ControlPanelSystemError, "切换代理启用状态失败")
 	}
 	return nil
 }

@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"byze/internal/rpc/dto/response"
+	"oadin/internal/rpc/dto/response"
 )
 
 // About  retrieves the "About Us" information from the Vega API.

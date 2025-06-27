@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"byze/internal/api/dto"
-	"byze/internal/provider"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/provider"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
 )
 
 func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error) {
@@ -19,7 +19,7 @@ func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error
 	engineConfig := engine.GetConfig()
 	defaultPath := filepath.Join(engineConfig.EnginePath, "models")
 	res := &dto.GetModelFilePathData{}
-	value := os.Getenv("BYZE_OLLAMA_MODELS")
+	value := os.Getenv("OADIN_OLLAMA_MODELS")
 	if value != "" {
 		res.Path = value
 	} else {
@@ -92,7 +92,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	}
 
 	envInfo := &utils.EnvVariables{
-		Name:  "BYZE_OLLAMA_MODELS",
+		Name:  "OADIN_OLLAMA_MODELS",
 		Value: req.TargetPath,
 	}
 	err = utils.ModifySystemUserVariables(envInfo)
@@ -103,7 +103,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		}
 		return nil, bcode.ControlPanelCopyDirError
 	}
-	os.Setenv("BYZE_OLLAMA_MODELS", req.TargetPath)
+	os.Setenv("OADIN_OLLAMA_MODELS", req.TargetPath)
 
 	time.Sleep(1 * time.Second)
 

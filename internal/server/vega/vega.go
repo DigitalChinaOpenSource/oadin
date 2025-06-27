@@ -1,15 +1,15 @@
 package vega
 
 import (
-	"byze/config"
-	"byze/internal/api/dto"
-	"byze/internal/provider/template"
-	"byze/internal/utils/client"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"oadin/config"
+	"oadin/internal/api/dto"
+	"oadin/internal/provider/template"
+	"oadin/internal/utils/client"
 )
 
 type VegaClient struct {

@@ -2,9 +2,9 @@ package hardware
 
 import (
 	"bytes"
-	"byze/internal/hardware/installer"
 	"context"
 	"fmt"
+	"oadin/internal/hardware/installer"
 	"os"
 	"os/exec"
 	"runtime"

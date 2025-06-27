@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"os/exec"
 
-	"byze/config"
+	"oadin/config"
 )
 
 func ShowLogs() error {
-	cmd := exec.Command("open", config.GlobalByzeEnvironment.LogDir)
+	cmd := exec.Command("open", config.GlobalOadinEnvironment.LogDir)
 	err := cmd.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to open log dir: %s", err))
