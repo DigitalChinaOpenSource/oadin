@@ -8,13 +8,13 @@ import (
 	"os/exec"
 	"syscall"
 
-	"byze/config"
+	"oadin/config"
 )
 
 func ShowLogs() error {
 	// Windows implementation (your existing code)
 	cmd_path := "c:\\Windows\\system32\\cmd.exe"
-	cmd := exec.Command(cmd_path, "/c", "start", config.GlobalByzeEnvironment.LogDir)
+	cmd := exec.Command(cmd_path, "/c", "start", config.GlobalOadinEnvironment.LogDir)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: false, CreationFlags: 0x08000000}
 
 	err := cmd.Start()

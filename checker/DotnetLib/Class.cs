@@ -8,14 +8,14 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Byze
+namespace Oadin
 {
-    public class ByzeClient
+    public class OadinClient
     {
         private readonly HttpClient _client;
         private readonly string _baseUrl;
 
-        public ByzeClient(string version = "byze/v0.2")
+        public OadinClient(string version = "oadin/v0.2")
         {
             if (!version.EndsWith("/")) version += "/";
             _baseUrl = $"http://127.0.0.1:16688/{version}";
@@ -225,13 +225,13 @@ namespace Byze
                 var config = await RequestAsync(HttpMethod.Get, "/config/export", data);
 
                 string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                string byzeDirectory = Path.Combine(userDirectory, "Byze");
-                string byzeFilePath = Path.Combine(byzeDirectory, ".byze");
+                string oadinDirectory = Path.Combine(userDirectory, "Oadin");
+                string oadinFilePath = Path.Combine(oadinDirectory, ".oadin");
 
-                await File.WriteAllTextAsync(byzeFilePath, config);
+                await File.WriteAllTextAsync(oadinFilePath, config);
 
                 // 返回文件路径
-                return byzeFilePath;
+                return oadinFilePath;
             }
             catch (Exception ex)
             {
@@ -380,8 +380,8 @@ namespace Byze
             return await RequestAsync(HttpMethod.Post, "/services/text-to-image", data);
         }
 
-        // 检查 byze 状态
-        public async Task<bool> IsByzeAvailiableAsync()
+        // 检查 oadin 状态
+        public async Task<bool> IsOadinAvailiableAsync()
         {
             try
             {
@@ -390,12 +390,12 @@ namespace Byze
             }
             catch (Exception ex)
             {
-                throw new Exception($"检查 Byze 状态失败: {ex.Message}");
+                throw new Exception($"检查 Oadin 状态失败: {ex.Message}");
             }
         }
 
-        // 检查 byze 是否下载
-        public bool IsByzeExisted()
+        // 检查 oadin 是否下载
+        public bool IsOadinExisted()
         {
             try
             {
@@ -403,14 +403,14 @@ namespace Byze
                 string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
                 // 根据操作系统设置路径
-                string byzePath;
+                string oadinPath;
                 if (OperatingSystem.IsWindows())
                 {
-                    byzePath = Path.Combine(userDirectory, "Byze", "byze.exe");
+                    oadinPath = Path.Combine(userDirectory, "Oadin", "oadin.exe");
                 }
                 else if (OperatingSystem.IsMacOS())
                 {
-                    byzePath = Path.Combine(userDirectory, "Byze", "byze");
+                    oadinPath = Path.Combine(userDirectory, "Oadin", "oadin");
                 }
                 else
                 {
@@ -418,34 +418,34 @@ namespace Byze
                 }
 
                 // 检查文件是否存在
-                return File.Exists(byzePath);
+                return File.Exists(oadinPath);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"检查 Byze 文件失败: {ex.Message}");
+                Console.WriteLine($"检查 Oadin 文件失败: {ex.Message}");
                 return false;
             }
         }
 
-        // 下载 Byze
-        public async Task<bool> DownloadByzeAsync()
+        // 下载 Oadin
+        public async Task<bool> DownloadOadinAsync()
         {
             try
             {
                 // 根据操作系统选择下载 URL 和目标路径
                 string url = OperatingSystem.IsMacOS()
-                    ? "http://120.232.136.73:31619/byzedev/byze.zip"
-                    : "http://120.232.136.73:31619/byzedev/byze.exe";
+                    ? "http://120.232.136.73:31619/oadindev/oadin.zip"
+                    : "http://120.232.136.73:31619/oadindev/oadin.exe";
 
                 string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                string byzeDirectory = Path.Combine(userDirectory, "Byze");
-                string destFileName = OperatingSystem.IsMacOS() ? "byze.zip" : "byze.exe";
-                string destFilePath = Path.Combine(byzeDirectory, destFileName);
+                string oadinDirectory = Path.Combine(userDirectory, "Oadin");
+                string destFileName = OperatingSystem.IsMacOS() ? "oadin.zip" : "oadin.exe";
+                string destFilePath = Path.Combine(oadinDirectory, destFileName);
 
-                // 创建 Byze 目录
-                if (!Directory.Exists(byzeDirectory))
+                // 创建 Oadin 目录
+                if (!Directory.Exists(oadinDirectory))
                 {
-                    Directory.CreateDirectory(byzeDirectory);
+                    Directory.CreateDirectory(oadinDirectory);
                 }
 
                 // 下载文件
@@ -461,8 +461,8 @@ namespace Byze
                 // 如果是 macOS，解压 ZIP 文件
                 if (OperatingSystem.IsMacOS())
                 {
-                    string extractedPath = Path.Combine(byzeDirectory, "byze");
-                    System.IO.Compression.ZipFile.ExtractToDirectory(destFilePath, byzeDirectory, true);
+                    string extractedPath = Path.Combine(oadinDirectory, "oadin");
+                    System.IO.Compression.ZipFile.ExtractToDirectory(destFilePath, oadinDirectory, true);
                     File.Delete(destFilePath);
                     Console.WriteLine($"✅ 解压完成: {extractedPath}");
 
@@ -482,14 +482,14 @@ namespace Byze
                     }
                 }
 
-                // 添加 Byze 目录到环境变量
-                AddToEnvironmentPath(byzeDirectory);
+                // 添加 Oadin 目录到环境变量
+                AddToEnvironmentPath(oadinDirectory);
 
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 下载 Byze 失败: {ex.Message}");
+                Console.WriteLine($"❌ 下载 Oadin 失败: {ex.Message}");
                 return false;
             }
         }
@@ -511,11 +511,11 @@ namespace Byze
                     {
                         string newPath = string.IsNullOrEmpty(currentPath) ? directory : $"{currentPath};{directory}";
                         key.SetValue("Path", newPath, RegistryValueKind.ExpandString);
-                        Console.WriteLine("✅ 已将 Byze 目录添加到环境变量 PATH");
+                        Console.WriteLine("✅ 已将 Oadin 目录添加到环境变量 PATH");
                     }
                     else
                     {
-                        Console.WriteLine("✅ Byze 目录已存在于环境变量 PATH 中");
+                        Console.WriteLine("✅ Oadin 目录已存在于环境变量 PATH 中");
                     }
                 }
                 else if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
@@ -534,17 +534,17 @@ namespace Byze
                         if (!content.Contains(exportLine))
                         {
                             File.AppendAllText(shellConfigPath, Environment.NewLine + exportLine);
-                            Console.WriteLine($"✅ 已将 Byze 目录添加到 {Path.GetFileName(shellConfigPath)}，请执行以下命令使其生效：\nsource {shellConfigPath}");
+                            Console.WriteLine($"✅ 已将 Oadin 目录添加到 {Path.GetFileName(shellConfigPath)}，请执行以下命令使其生效：\nsource {shellConfigPath}");
                         }
                         else
                         {
-                            Console.WriteLine($"✅ Byze 目录已存在于 {Path.GetFileName(shellConfigPath)} 中");
+                            Console.WriteLine($"✅ Oadin 目录已存在于 {Path.GetFileName(shellConfigPath)} 中");
                         }
                     }
                     else
                     {
                         File.WriteAllText(shellConfigPath, exportLine + Environment.NewLine);
-                        Console.WriteLine($"✅ 已创建 {Path.GetFileName(shellConfigPath)} 并添加 Byze 目录，请执行以下命令使其生效：\nsource {shellConfigPath}");
+                        Console.WriteLine($"✅ 已创建 {Path.GetFileName(shellConfigPath)} 并添加 Oadin 目录，请执行以下命令使其生效：\nsource {shellConfigPath}");
                     }
                 }
                 else
@@ -554,38 +554,38 @@ namespace Byze
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 添加 Byze 目录到环境变量失败: {ex.Message}");
+                Console.WriteLine($"❌ 添加 Oadin 目录到环境变量失败: {ex.Message}");
             }
         }
 
-        // 启动 Byze 服务
-        public bool InstallByze()
+        // 启动 Oadin 服务
+        public bool InstallOadin()
         {
             try
             {
                 string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                string byzeDirectory = Path.Combine(userDirectory, "Byze");
-                string byzeExecutable = OperatingSystem.IsMacOS()
-                    ? Path.Combine(byzeDirectory, "byze")
-                    : Path.Combine(byzeDirectory, "byze.exe");
+                string oadinDirectory = Path.Combine(userDirectory, "Oadin");
+                string oadinExecutable = OperatingSystem.IsMacOS()
+                    ? Path.Combine(oadinDirectory, "oadin")
+                    : Path.Combine(oadinDirectory, "oadin.exe");
 
-                if (!File.Exists(byzeExecutable))
+                if (!File.Exists(oadinExecutable))
                 {
-                    Console.WriteLine("❌ Byze 可执行文件不存在，请先下载。");
+                    Console.WriteLine("❌ Oadin 可执行文件不存在，请先下载。");
                     return false;
                 }
 
-                // 确保 PATH 包含 Byze 目录
+                // 确保 PATH 包含 Oadin 目录
                 string pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-                if (!pathEnv.Contains(byzeDirectory))
+                if (!pathEnv.Contains(oadinDirectory))
                 {
-                    Environment.SetEnvironmentVariable("PATH", pathEnv + Path.PathSeparator + byzeDirectory);
+                    Environment.SetEnvironmentVariable("PATH", pathEnv + Path.PathSeparator + oadinDirectory);
                 }
 
-                // 启动 Byze 服务
+                // 启动 Oadin 服务
                 var processStartInfo = new ProcessStartInfo
                 {
-                    FileName = byzeExecutable,
+                    FileName = oadinExecutable,
                     Arguments = "server start -d",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -596,7 +596,7 @@ namespace Byze
                 using var process = Process.Start(processStartInfo);
                 if (process == null)
                 {
-                    Console.WriteLine("❌ 启动 Byze 服务失败。");
+                    Console.WriteLine("❌ 启动 Oadin 服务失败。");
                     return false;
                 }
 
@@ -604,18 +604,18 @@ namespace Byze
 
                 if (process.ExitCode == 0)
                 {
-                    Console.WriteLine("✅ Byze 服务已启动。");
+                    Console.WriteLine("✅ Oadin 服务已启动。");
                     return true;
                 }
                 else
                 {
-                    Console.WriteLine($"❌ Byze 服务启动失败，退出码: {process.ExitCode}");
+                    Console.WriteLine($"❌ Oadin 服务启动失败，退出码: {process.ExitCode}");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ 启动 Byze 服务失败: {ex.Message}");
+                Console.WriteLine($"❌ 启动 Oadin 服务失败: {ex.Message}");
                 return false;
             }
         }

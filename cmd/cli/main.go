@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	cli "byze/cmd/cli/core"
+	cli "oadin/cmd/cli/core"
 )
 
 func main() {

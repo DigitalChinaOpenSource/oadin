@@ -1,12 +1,12 @@
 package server
 
 import (
-	"byze/internal/api/dto"
-	"byze/internal/cache"
-	"byze/internal/provider"
-	"byze/internal/utils/bcode"
 	"context"
 	"log/slog"
+	"oadin/internal/api/dto"
+	"oadin/internal/cache"
+	"oadin/internal/provider"
+	"oadin/internal/utils/bcode"
 )
 
 type System interface {

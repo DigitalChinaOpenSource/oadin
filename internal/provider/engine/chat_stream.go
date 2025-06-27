@@ -1,12 +1,12 @@
 package engine
 
 import (
-	"byze/internal/schedule"
-	"byze/internal/types"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
 )
 
 func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan *types.ChatResponse, <-chan error) {

@@ -66,7 +66,7 @@ func (t *Service) PrimaryKey() string {
 }
 
 func (t *Service) TableName() string {
-	return "byze_service"
+	return "oadin_service"
 }
 
 func (t *Service) Index() map[string]interface{} {
@@ -111,7 +111,7 @@ func (t *ServiceProvider) PrimaryKey() string {
 }
 
 func (t *ServiceProvider) TableName() string {
-	return "byze_service_provider"
+	return "oadin_service_provider"
 }
 
 func (t *ServiceProvider) Index() map[string]interface{} {
@@ -158,7 +158,7 @@ func (t *Model) PrimaryKey() string {
 }
 
 func (t *Model) TableName() string {
-	return "byze_model"
+	return "oadin_model"
 }
 
 func (t *Model) Index() map[string]interface{} {
@@ -197,7 +197,7 @@ func (t *VersionUpdateRecord) PrimaryKey() string {
 }
 
 func (t *VersionUpdateRecord) TableName() string {
-	return "byze_version_update_record"
+	return "oadin_version_update_record"
 }
 
 func (t *VersionUpdateRecord) Index() map[string]interface{} {

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\File\\PycharmProjects\\ByzeLib\\DotnetLib\\DotnetLib.csproj": {}
+    "C:\\File\\PycharmProjects\\OadinLib\\DotnetLib\\DotnetLib.csproj": {}
   },
   "projects": {
-    "C:\\File\\PycharmProjects\\ByzeLib\\DotnetLib\\DotnetLib.csproj": {
+    "C:\\File\\PycharmProjects\\OadinLib\\DotnetLib\\DotnetLib.csproj": {
       "version": "1.0.1",
       "restore": {
-        "projectUniqueName": "C:\\File\\PycharmProjects\\ByzeLib\\DotnetLib\\DotnetLib.csproj",
-        "projectName": "ByzeClient",
-        "projectPath": "C:\\File\\PycharmProjects\\ByzeLib\\DotnetLib\\DotnetLib.csproj",
+        "projectUniqueName": "C:\\File\\PycharmProjects\\OadinLib\\DotnetLib\\DotnetLib.csproj",
+        "projectName": "OadinClient",
+        "projectPath": "C:\\File\\PycharmProjects\\OadinLib\\DotnetLib\\DotnetLib.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "C:\\File\\PycharmProjects\\ByzeLib\\DotnetLib\\obj\\",
+        "outputPath": "C:\\File\\PycharmProjects\\OadinLib\\DotnetLib\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

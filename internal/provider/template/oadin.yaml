@@ -1,5 +1,5 @@
 version: "0.1"
-name: byze
+name: oadin
 services:
     models:
         endpoints: ["GET /models"]

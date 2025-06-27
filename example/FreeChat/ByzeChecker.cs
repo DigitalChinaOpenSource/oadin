@@ -6,9 +6,9 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace byze_checker_0
+namespace oadin_checker_0
 {
-    public class ByzeChecker
+    public class OadinChecker
     {
 
         public class ComponentStatus
@@ -26,33 +26,33 @@ namespace byze_checker_0
 
         public static ComponentStatus? LastCheckResult { get; private set; }
 
-        // Initialize Byze
-        public static async Task ByzeInit(Page page)
+        // Initialize Oadin
+        public static async Task OadinInit(Page page)
         {
             // create a log.txt
             string userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string logPath = Path.Combine(userFolder, "byze_log.txt");
-            File.WriteAllText(logPath, "Byze 初始化开始\n");
+            string logPath = Path.Combine(userFolder, "oadin_log.txt");
+            File.WriteAllText(logPath, "Oadin 初始化开始\n");
 
-            var byzeAvailable = await CheckByzeAvailabilityAsync(page);
-            if (!byzeAvailable)
+            var oadinAvailable = await CheckOadinAvailabilityAsync(page);
+            if (!oadinAvailable)
             {
                 return;
             }
 
             string projectRoot = GetProjectRootDirectory();
-            string configPath = Path.Combine(projectRoot, ".byze");
+            string configPath = Path.Combine(projectRoot, ".oadin");
 
             if (!File.Exists(configPath))
             {
-                File.AppendAllText(logPath, ".byze 配置文件未找到，请将其放在项目根目录{configPath}。\n");
-                throw new FileNotFoundException($".byze 配置文件未找到，请将其放在项目根目录{configPath}。");
+                File.AppendAllText(logPath, ".oadin 配置文件未找到，请将其放在项目根目录{configPath}。\n");
+                throw new FileNotFoundException($".oadin 配置文件未找到，请将其放在项目根目录{configPath}。");
             }
 
             // Download conponents need
-            ExecuteCommand($"byze import --file {configPath}");
+            ExecuteCommand($"oadin import --file {configPath}");
 
-            File.AppendAllText(logPath, "ByzeInit完成\n");
+            File.AppendAllText(logPath, "OadinInit完成\n");
         }
 
         private static string GetProjectRootDirectory()
@@ -60,14 +60,14 @@ namespace byze_checker_0
             return AppDomain.CurrentDomain.BaseDirectory;
         }
 
-        // Check whether Byze is available
-        public static async Task<bool> CheckByzeAvailabilityAsync(Page page)
+        // Check whether Oadin is available
+        public static async Task<bool> CheckOadinAvailabilityAsync(Page page)
         {
             // Change
             bool isAvailable = false;
             string userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string logPath = Path.Combine(userFolder, "byze_log.txt");
-            File.AppendAllText(logPath, "CheckByzeAvailabilityAsync\n");
+            string logPath = Path.Combine(userFolder, "oadin_log.txt");
+            File.AppendAllText(logPath, "CheckOadinAvailabilityAsync\n");
             try
             {
                 using (var client = new HttpClient())
@@ -79,19 +79,19 @@ namespace byze_checker_0
             catch
             {
             }
-            File.AppendAllText(logPath, "CheckByzeAvailabilityAsync开始弹窗询问\n");
+            File.AppendAllText(logPath, "CheckOadinAvailabilityAsync开始弹窗询问\n");
             if (!isAvailable)
             {
-                var result = await page.DisplayAlert("Byze 服务不可用", "是否下载并安装 Byze？", "是", "否");
+                var result = await page.DisplayAlert("Oadin 服务不可用", "是否下载并安装 Oadin？", "是", "否");
                 if (result)
                 {
-                    await DownloadByzeAsync();
-                    await page.DisplayAlert("安装完成", "Byze 已下载并安装，请重启应用程序。", "确定");
+                    await DownloadOadinAsync();
+                    await page.DisplayAlert("安装完成", "Oadin 已下载并安装，请重启应用程序。", "确定");
                     return false;
                 }
                 else
                 {
-                    await page.DisplayAlert("错误", "Byze 服务不可用，用户取消安装。", "确定");
+                    await page.DisplayAlert("错误", "Oadin 服务不可用，用户取消安装。", "确定");
                     return false;
                 }
             }
@@ -99,18 +99,18 @@ namespace byze_checker_0
         }
 
 
-        // Download Byze
-        public static async Task DownloadByzeAsync()
+        // Download Oadin
+        public static async Task DownloadOadinAsync()
         {
-            string downloadUrl = "http://120.232.136.73:31619/byzedev/byze.exe";
+            string downloadUrl = "http://120.232.136.73:31619/oadindev/oadin.exe";
             string userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string byzeFolder = Path.Combine(userFolder, "Byze");
+            string oadinFolder = Path.Combine(userFolder, "Oadin");
 
-            if(!Directory.Exists(byzeFolder))
+            if(!Directory.Exists(oadinFolder))
             {
-                Directory.CreateDirectory(byzeFolder);
+                Directory.CreateDirectory(oadinFolder);
             }
-            string destinationPath = Path.Combine(byzeFolder, "byze.exe");
+            string destinationPath = Path.Combine(oadinFolder, "oadin.exe");
             using (var client = new HttpClient())
             {
                 var response = await client.GetAsync(downloadUrl);
@@ -119,19 +119,19 @@ namespace byze_checker_0
                 await File.WriteAllBytesAsync(destinationPath, fileBytes);
             }
 
-            string logPath = Path.Combine(userFolder, "byze_log.txt");
-            AddToEnvironmentVariable("PATH", byzeFolder);
+            string logPath = Path.Combine(userFolder, "oadin_log.txt");
+            AddToEnvironmentVariable("PATH", oadinFolder);
 
-            ExecuteCommand("byze server start -d");
+            ExecuteCommand("oadin server start -d");
 
-            File.AppendAllText(logPath, "DownloadByzeAsync执行完成\n");
+            File.AppendAllText(logPath, "DownloadOadinAsync执行完成\n");
         }
 
         private static void ExecuteCommand(string command)
         {
             string userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string byzeFolder = Path.Combine(userFolder, "Byze");
-            string logPath = Path.Combine(userFolder, "byze_log.txt");
+            string oadinFolder = Path.Combine(userFolder, "Oadin");
+            string logPath = Path.Combine(userFolder, "oadin_log.txt");
             var processInfo = new System.Diagnostics.ProcessStartInfo("cmd.exe", "/c " + command)
             {
                 CreateNoWindow = true,

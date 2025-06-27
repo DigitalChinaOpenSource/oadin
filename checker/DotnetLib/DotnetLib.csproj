@@ -5,11 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <PackageId>ByzeClient</PackageId>
+    <PackageId>OadinClient</PackageId>
     <Version>1.0.15</Version>
     <Authors>zhoulxg</Authors> 
     <Company>DigitalChina</Company>
-    <Description>byze sdk</Description>
+    <Description>oadin sdk</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 

@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bufio"
-	"byze/internal/types"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -12,6 +11,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"oadin/internal/types"
 	"os"
 	"os/exec"
 	"os/user"
@@ -71,13 +71,13 @@ func GetUserDataDir() (string, error) {
 	return dir, nil
 }
 
-func GetByzeDataDir() (string, error) {
+func GetOadinDataDir() (string, error) {
 	var dir string
 	userDir, err := GetUserDataDir()
 	if err != nil {
 		return "", err
 	}
-	dir = filepath.Join(userDir, "Byze")
+	dir = filepath.Join(userDir, "Oadin")
 	if err = os.MkdirAll(dir, 0o750); err != nil {
 		return "", fmt.Errorf("failed to create directory %s: %v", dir, err)
 	}
@@ -332,7 +332,7 @@ func GetGpuInfo() (int, error) {
 	return gpuUtilization, nil
 }
 
-// byze
+// oadin
 type SmartVisionUrlInfo struct {
 	Url             string `json:"url"`
 	AccessToken     string `json:"access_token"`
@@ -368,15 +368,15 @@ func IsServerRunning() bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-func StartByzeServer(logPath string, pidFilePath string) error {
+func StartOadinServer(logPath string, pidFilePath string) error {
 	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %v", err)
 	}
 	defer logFile.Close()
-	execCmd := "byze.exe"
+	execCmd := "oadin.exe"
 	if runtime.GOOS != "windows" {
-		execCmd = "byze"
+		execCmd = "oadin"
 	}
 	cmd := exec.Command(execCmd, "server", "start")
 	cmd.Stdout = logFile
@@ -385,20 +385,20 @@ func StartByzeServer(logPath string, pidFilePath string) error {
 		SetCmdSysProcAttr(cmd)
 	}
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start Byze server: %v", err)
+		return fmt.Errorf("failed to start Oadin server: %v", err)
 	}
 	// Save PID to file.
 	pid := cmd.Process.Pid
-	pidFile := filepath.Join(pidFilePath, "byze.pid")
+	pidFile := filepath.Join(pidFilePath, "oadin.pid")
 	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
 		return fmt.Errorf("failed to save PID to file: %v", err)
 	}
 
-	fmt.Printf("\rByze server started with PID: %d\n", cmd.Process.Pid)
+	fmt.Printf("\rOadin server started with PID: %d\n", cmd.Process.Pid)
 	return nil
 }
 
-func StopByzeServer(pidFilePath string) error {
+func StopOadinServer(pidFilePath string) error {
 	files, err := filepath.Glob(pidFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to list pid files: %v", err)

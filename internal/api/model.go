@@ -10,15 +10,15 @@ import (
 	"net/http"
 	"strings"
 
-	"byze/internal/api/dto"
-	"byze/internal/server"
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/server"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (t *ByzeCoreServer) CreateModel(c *gin.Context) {
+func (t *OadinCoreServer) CreateModel(c *gin.Context) {
 	request := new(dto.CreateModelRequest)
 	if err := c.ShouldBindJSON(request); err != nil {
 		if !errors.Is(err, io.EOF) {
@@ -42,7 +42,7 @@ func (t *ByzeCoreServer) CreateModel(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) DeleteModel(c *gin.Context) {
+func (t *OadinCoreServer) DeleteModel(c *gin.Context) {
 	request := new(dto.DeleteModelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -64,7 +64,7 @@ func (t *ByzeCoreServer) DeleteModel(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
+func (t *OadinCoreServer) CreateModelStream(c *gin.Context) {
 	request := new(dto.CreateModelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -155,7 +155,7 @@ func (t *ByzeCoreServer) CreateModelStream(c *gin.Context) {
 	}
 }
 
-func (t *ByzeCoreServer) GetModels(c *gin.Context) {
+func (t *OadinCoreServer) GetModels(c *gin.Context) {
 	request := new(dto.GetModelsRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -177,7 +177,7 @@ func (t *ByzeCoreServer) GetModels(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) CancelModelStream(c *gin.Context) {
+func (t *OadinCoreServer) CancelModelStream(c *gin.Context) {
 	request := new(dto.ModelStreamCancelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -197,7 +197,7 @@ func (t *ByzeCoreServer) CancelModelStream(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (t *ByzeCoreServer) GetRecommendModels(c *gin.Context) {
+func (t *OadinCoreServer) GetRecommendModels(c *gin.Context) {
 	data, err := server.GetRecommendModel()
 	if err != nil {
 		bcode.ReturnError(c, err)
@@ -206,7 +206,7 @@ func (t *ByzeCoreServer) GetRecommendModels(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (t *ByzeCoreServer) GetModelList(c *gin.Context) {
+func (t *OadinCoreServer) GetModelList(c *gin.Context) {
 	request := new(dto.GetModelListRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -226,7 +226,7 @@ func (t *ByzeCoreServer) GetModelList(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (t *ByzeCoreServer) GetSupportModelListCombine(c *gin.Context) {
+func (t *OadinCoreServer) GetSupportModelListCombine(c *gin.Context) {
 	request := new(dto.GetSupportModelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -247,7 +247,7 @@ func (t *ByzeCoreServer) GetSupportModelListCombine(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (t *ByzeCoreServer) GetSmartVisionSupportModelList(c *gin.Context) {
+func (t *OadinCoreServer) GetSmartVisionSupportModelList(c *gin.Context) {
 	request := new(dto.SmartVisionSupportModelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
