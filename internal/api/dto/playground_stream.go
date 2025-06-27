@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 )
 
 // 流式消息响应

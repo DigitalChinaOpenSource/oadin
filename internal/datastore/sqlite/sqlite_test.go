@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"byze/internal/datastore"
-	"byze/internal/types"
+	"oadin/internal/datastore"
+	"oadin/internal/types"
 )
 
 func TestNew(t *testing.T) {

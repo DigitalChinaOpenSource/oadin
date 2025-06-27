@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/provider/engine"
-	"byze/internal/types"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/provider/engine"
+	"oadin/internal/types"
 
 	"github.com/google/uuid"
 )
@@ -302,7 +302,7 @@ func (p *PlaygroundImpl) AddSessionTitle(request *dto.SendStreamMessageRequest) 
 		payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`, sessionCheck.ModelName, genTitlePrompt)
 		slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
 		client := &http.Client{}
-		req, err := http.NewRequest("POST", "http://localhost:16688/byze/v0.2/services/chat", strings.NewReader(payload))
+		req, err := http.NewRequest("POST", "http://localhost:16688/oadin/v0.2/services/chat", strings.NewReader(payload))
 		if err == nil {
 			req.Header.Set("Content-Type", "application/json")
 			resp, err := client.Do(req)

@@ -5,7 +5,7 @@ services:
     models:
         endpoints: ["GET /v1/models"]
         install_raw_routes: true
-        response_to_byze:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -15,7 +15,7 @@ services:
                           }] 
                       }
 
-        response_from_byze:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -28,11 +28,11 @@ services:
                           "object": "list"
                       }
 
-    chat: # service name defined by Byze
+    chat: # service name defined by Oadin
         endpoints: ["POST /v1/chat/completions"] # request to this will use this flavor
-        install_raw_routes: true # also install routes without byze prefix in url path
+        install_raw_routes: true # also install routes without oadin prefix in url path
         default_model: gpt-3.5-turbo
-        request_to_byze:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -55,7 +55,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_byze:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -78,7 +78,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_byze:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -91,7 +91,7 @@ services:
                           "finish_reason": choices[0].finish_reason
                       }
 
-        stream_response_to_byze:
+        stream_response_to_oadin:
             conversion:
                 - converter: action_if
                   config:
@@ -109,7 +109,7 @@ services:
                           "finish_reason": choices[0].finish_reason
                       }
 
-        response_from_byze:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -125,7 +125,7 @@ services:
                           }]
                       }
 
-        stream_response_from_byze:
+        stream_response_from_oadin:
             epilogue: ["[DONE]"] # openai adds a data: [DONE] at the end
             conversion:
                 - converter: jsonata

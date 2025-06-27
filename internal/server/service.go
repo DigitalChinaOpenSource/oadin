@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/provider"
-	"byze/internal/schedule"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
-	"byze/version"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/provider"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
+	"oadin/version"
 )
 
 type AIGCService interface {
@@ -332,14 +332,14 @@ func (s *AIGCServiceImpl) ExportService(ctx context.Context, request *dto.Export
 	}
 
 	return &dto.ExportServiceResponse{
-		Version:          version.ByzeVersion,
+		Version:          version.OadinVersion,
 		Services:         dbServices.Services,
 		ServiceProviders: dbServices.ServiceProviders,
 	}, nil
 }
 
 func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.ImportServiceRequest) (*dto.ImportServiceResponse, error) {
-	if request.Version != version.ByzeVersion {
+	if request.Version != version.OadinVersion {
 		return nil, bcode.ErrAIGCServiceVersionNotMatch
 	}
 
@@ -706,13 +706,13 @@ func getRecommendConfig(service string) types.RecommendConfig {
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/oadindev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	case types.ServiceEmbed:
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "bge-m3",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/oadindev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	case types.ServiceModels:
 		return types.RecommendConfig{}
@@ -720,7 +720,7 @@ func getRecommendConfig(service string) types.RecommendConfig {
 		return types.RecommendConfig{
 			ModelEngine:       "ollama",
 			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
+			EngineDownloadUrl: "http://120.232.136.73:31619/oadindev/ipex-llm-ollama-Installer-20250226.exe",
 		}
 	default:
 		return types.RecommendConfig{}

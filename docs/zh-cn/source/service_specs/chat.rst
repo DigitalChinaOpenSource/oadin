@@ -1,5 +1,5 @@
 ===================================
-Byze Chat 服务相关
+Oadin Chat 服务相关
 ===================================
 
 Chat 服务
@@ -10,7 +10,7 @@ Chat 服务
 Custom Properties of its Service Providers
 --------------------------------------------
 
-除了在 :ref:`Metadata of Byze Service
+除了在 :ref:`Metadata of Oadin Service
 Provider` 中定义的常见属性外, 聊天服务提供商还可以将以下属性放入服务提供商元数据的 ``custom_properties`` 字段中。
 
 .. list-table::
@@ -106,7 +106,7 @@ ______________
 
 .. code-block:: shell
 
-    curl https://localhost:16688/byze/v0.2/services/chat\
+    curl https://localhost:16688/oadin/v0.2/services/chat\
     -H "Content-Type: application/json" \
     -d '{
         "model": "deepseek-r1:7b",
@@ -144,7 +144,7 @@ Embed 服务
 自定义服务提供商属性
 --------------------------------------------
 
-除了在 :ref:`Metadata of Byze Service
+除了在 :ref:`Metadata of Oadin Service
 Provider` 中定义的常见属性外，聊天服务提供商还可以将以下属性放入服务提供商元数据的 ``custom_properties`` 字段中。
 
 .. list-table::
@@ -251,7 +251,7 @@ Text-to-image 服务
 自定义服务提供商属性
 --------------------------------------------
 
-除了在 :ref:`Metadata of Byze Service
+除了在 :ref:`Metadata of Oadin Service
 Provider` 中定义的常见属性外，聊天服务提供商还可以将以下属性放入服务提供商元数据的 ``custom_properties`` 字段中。
 
 .. list-table::

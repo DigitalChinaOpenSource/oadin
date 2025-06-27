@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	ConfigRoot "byze/config"
-	"byze/internal/types"
+	ConfigRoot "oadin/config"
+	"oadin/internal/types"
 
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/client/transport"

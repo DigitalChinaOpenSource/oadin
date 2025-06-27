@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"byze/config"
-	"byze/internal/utils"
-	trayTemplate "byze/tray/icon"
-	tray "byze/tray/utils"
 	"github.com/getlantern/systray/example/icon"
 	"github.com/pkg/browser"
+	"oadin/config"
+	"oadin/internal/utils"
+	trayTemplate "oadin/tray/icon"
+	tray "oadin/tray/utils"
 
 	"github.com/getlantern/systray"
 	"github.com/sqweek/dialog"
@@ -56,11 +56,11 @@ func (m *Manager) onReady() {
 		data = icon.Data
 	}
 	systray.SetIcon(data)
-	systray.SetTitle("Byze")
-	systray.SetTooltip("Byze AI Service Manager")
+	systray.SetTitle("Oadin")
+	systray.SetTooltip("Oadin AI Service Manager")
 
 	// Add menu items
-	mStartStop := systray.AddMenuItem("Start Server", "Start/Stop Byze server")
+	mStartStop := systray.AddMenuItem("Start Server", "Start/Stop Oadin server")
 	systray.AddSeparator()
 	mConsole := systray.AddMenuItem("Web Console", "Open Control Panel")
 	m.mRestartUpdate = systray.AddMenuItem("Restart and Update", "Restart and install update")
@@ -69,7 +69,7 @@ func (m *Manager) onReady() {
 	}
 	mViewLogs := systray.AddMenuItem("View Logs", "View Logs")
 	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("Quit", "Quit Byze")
+	mQuit := systray.AddMenuItem("Quit", "Quit Oadin")
 
 	// Update initial server status
 	m.updateStartStopMenuItem(mStartStop)
@@ -79,14 +79,14 @@ func (m *Manager) onReady() {
 		for {
 			select {
 			case <-mStartStop.ClickedCh:
-				byzeServerStatus := utils.IsServerRunning()
-				if byzeServerStatus != m.serverRunning {
-					m.serverRunning = byzeServerStatus
+				oadinServerStatus := utils.IsServerRunning()
+				if oadinServerStatus != m.serverRunning {
+					m.serverRunning = oadinServerStatus
 					m.updateStartStopMenuItem(mStartStop)
 				} else {
 					if m.serverRunning {
 						// Show confirmation dialog before stopping
-						if confirmed := dialog.Message("Are you sure you want to stop the Byze server?").Title("Confirm Stop Server").YesNo(); confirmed {
+						if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
 							if err := m.onServerStop(); err == nil {
 								m.serverRunning = false
 								m.updateStartStopMenuItem(mStartStop)
@@ -134,7 +134,7 @@ func (m *Manager) onReady() {
 						return
 					}
 				} else {
-					if confirmed := dialog.Message("Are you sure you want to quit Byze?").Title("Confirm Quit").YesNo(); confirmed {
+					if confirmed := dialog.Message("Are you sure you want to quit Oadin?").Title("Confirm Quit").YesNo(); confirmed {
 						if err := m.onKillProcess(); err != nil {
 							dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
 						}
@@ -154,10 +154,10 @@ func (m *Manager) onExit() {
 func (m *Manager) updateStartStopMenuItem(item *systray.MenuItem) {
 	if m.serverRunning {
 		item.SetTitle("Stop Server")
-		item.SetTooltip("Stop Byze server")
+		item.SetTooltip("Stop Oadin server")
 	} else {
 		item.SetTitle("Start Server")
-		item.SetTooltip("Start Byze server")
+		item.SetTooltip("Start Oadin server")
 	}
 }
 
@@ -166,7 +166,7 @@ func (m *Manager) showStatus() {
 	if m.serverRunning {
 		status = "Running"
 	}
-	fmt.Printf("Byze Server Status: %s\nOS: %s\n", status, runtime.GOOS)
+	fmt.Printf("Oadin Server Status: %s\nOS: %s\n", status, runtime.GOOS)
 }
 
 func (m *Manager) openControlPanel() error {
@@ -204,20 +204,20 @@ func (m *Manager) performUpdate() error {
 
 // installUpdate
 func (m *Manager) installUpdate() error {
-	emptyStatus := utils.IsDirEmpty(config.GlobalByzeEnvironment.UpdateDir)
+	emptyStatus := utils.IsDirEmpty(config.GlobalOadinEnvironment.UpdateDir)
 	if emptyStatus {
 		return fmt.Errorf("installation directory is empty")
 	}
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		installFilaPath := filepath.Join(config.GlobalByzeEnvironment.UpdateDir, "byze-installer-latest.pkg")
+		installFilaPath := filepath.Join(config.GlobalOadinEnvironment.UpdateDir, "oadin-installer-latest.pkg")
 		cmd = exec.Command("open", installFilaPath)
 	case "linux":
 		installFilaPath := ""
 		fmt.Sprintf(installFilaPath)
 	case "windows":
-		installFilaPath := filepath.Join(config.GlobalByzeEnvironment.UpdateDir, "byze-installer-latest.exe")
+		installFilaPath := filepath.Join(config.GlobalOadinEnvironment.UpdateDir, "oadin-installer-latest.exe")
 		cmd = exec.Command(installFilaPath, "/S")
 	}
 	err := cmd.Run()
@@ -254,7 +254,7 @@ func (m *Manager) viewLogs() error {
 // getIcon returns the icon data
 func getIcon() ([]byte, error) {
 	// 尝试从多个位置获取图标
-	data, err := trayTemplate.TrayIconFS.ReadFile("byze.ico")
+	data, err := trayTemplate.TrayIconFS.ReadFile("oadin.ico")
 	if err != nil {
 		return nil, err
 	}

@@ -1,16 +1,16 @@
 package api
 
 import (
-	"byze/internal/api/dto"
-	"byze/internal/rpc"
-	"byze/internal/utils/bcode"
 	"github.com/gin-gonic/gin"
 	"log/slog"
 	"net/http"
+	"oadin/internal/api/dto"
+	"oadin/internal/rpc"
+	"oadin/internal/utils/bcode"
 )
 
 // About 获取关于信息
-func (t *ByzeCoreServer) About(c *gin.Context) {
+func (t *OadinCoreServer) About(c *gin.Context) {
 	res, err := rpc.About()
 	if err != nil {
 		slog.Error("Failed to get about information", "error", err)
@@ -21,7 +21,7 @@ func (t *ByzeCoreServer) About(c *gin.Context) {
 }
 
 // ModifyRepositoryURL 修改仓库地址
-func (t *ByzeCoreServer) ModifyRepositoryURL(c *gin.Context) {
+func (t *OadinCoreServer) ModifyRepositoryURL(c *gin.Context) {
 	var body struct {
 		Url string `json:"url"`
 	}
@@ -39,7 +39,7 @@ func (t *ByzeCoreServer) ModifyRepositoryURL(c *gin.Context) {
 }
 
 // SetProxy 设置代理地址
-func (t *ByzeCoreServer) SetProxy(c *gin.Context) {
+func (t *OadinCoreServer) SetProxy(c *gin.Context) {
 	var req dto.ProxyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		slog.Error("Invalid request body", "error", err)
@@ -57,7 +57,7 @@ func (t *ByzeCoreServer) SetProxy(c *gin.Context) {
 }
 
 // ProxySwitch 代理启停
-func (t *ByzeCoreServer) ProxySwitch(c *gin.Context) {
+func (t *OadinCoreServer) ProxySwitch(c *gin.Context) {
 	var body struct {
 		Enabled bool `json:"enabled"`
 	}
@@ -78,7 +78,7 @@ func (t *ByzeCoreServer) ProxySwitch(c *gin.Context) {
 }
 
 // SystemSettings 获取系统设置
-func (t *ByzeCoreServer) SystemSettings(c *gin.Context) {
+func (t *OadinCoreServer) SystemSettings(c *gin.Context) {
 
 	res, err := t.System.GetSystemSettings(c.Request.Context())
 	if err != nil {

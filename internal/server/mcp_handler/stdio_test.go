@@ -2,13 +2,13 @@ package mcp_handler
 
 import (
 	"bytes"
-	"byze/internal/types"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"oadin/internal/types"
 	"testing"
 	"time"
 
@@ -23,7 +23,7 @@ func TestMcpClientAndLLM(t *testing.T) {
 	// 第三步是处理返回的结果，打印出工具调用的结果。
 	config := types.MCPServerConfig{
 		Id:      "683ec88241fa614eb1531fc7",
-		Command: "C:\\Users\\Intel\\AppData\\Roaming\\Byze\\runtime\\bun.exe",
+		Command: "C:\\Users\\Intel\\AppData\\Roaming\\Oadin\\runtime\\bun.exe",
 		Args:    []string{"x", "-y", "bing-cn-mcp"},
 		Env:     nil,
 	}
@@ -139,13 +139,13 @@ func TestMcpClientAndLLM(t *testing.T) {
 
 func TestMcpClientTest(t *testing.T) {
 	config := types.MCPServerConfig{
-		Command: "C:\\Users\\Intel\\AppData\\Roaming\\Byze\\runtime\\bun.exe",
+		Command: "C:\\Users\\Intel\\AppData\\Roaming\\Oadin\\runtime\\bun.exe",
 		Args:    []string{"x", "-y", "bing-cn-mcp"},
 		Env:     nil,
 	}
 	fmt.Println("Initializing transport client with config:", config)
 	if config.Command != "" {
-		// command := "D:\\work_szsm\\20250603\\byze\\internal\\hardware\\installer\\runtime\\bun.exe"
+		// command := "D:\\work_szsm\\20250603\\oadin\\internal\\hardware\\installer\\runtime\\bun.exe"
 		// args := []string{"x", "-y", "bing-cn-mcp"}
 		var envVars []string
 		for k, v := range config.Env {
@@ -184,7 +184,7 @@ func TestMcpClientTest(t *testing.T) {
 
 // 这个可以跑通了
 func TestMcpClientListTools(t *testing.T) {
-	command := "D:\\work_szsm\\20250603\\byze\\internal\\hardware\\installer\\runtime\\bun.exe"
+	command := "D:\\work_szsm\\20250603\\oadin\\internal\\hardware\\installer\\runtime\\bun.exe"
 	args := []string{"x", "-y", "bing-cn-mcp"}
 	stdioTransport := transport.NewStdio(
 		command,
@@ -216,7 +216,7 @@ func TestMcpClientListTools(t *testing.T) {
 }
 
 func TestMcpClientRunTool(t *testing.T) {
-	command := "D:\\work_szsm\\20250603\\byze\\internal\\hardware\\installer\\runtime\\bun.exe"
+	command := "D:\\work_szsm\\20250603\\oadin\\internal\\hardware\\installer\\runtime\\bun.exe"
 	args := []string{"x", "-y", "bing-cn-mcp"}
 	stdioTransport := transport.NewStdio(
 		command,

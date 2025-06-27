@@ -1,12 +1,12 @@
 package api
 
 import (
-	"byze/internal/rpc"
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"oadin/internal/rpc"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +21,7 @@ import (
 // @Param size query int 10 "每页数量"
 // @Success 200 {object} models.MCPListResponse
 // @Router /api/mcp [get]
-func (t *ByzeCoreServer) GetMCPList(c *gin.Context) {
+func (t *OadinCoreServer) GetMCPList(c *gin.Context) {
 	var req rpc.MCPListRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -43,7 +43,7 @@ func (t *ByzeCoreServer) GetMCPList(c *gin.Context) {
 // @Param id path int true "MCP ID"
 // @Success 200 {object} models.MCPDetailResponse
 // @Router /api/mcp/{id} [get]
-func (t *ByzeCoreServer) GetMCPDetail(c *gin.Context) {
+func (t *OadinCoreServer) GetMCPDetail(c *gin.Context) {
 	id := c.Param("id")
 	resp, err := t.MCP.GetMCP(c, id)
 	if err != nil {
@@ -53,7 +53,7 @@ func (t *ByzeCoreServer) GetMCPDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, resp.Data)
 }
 
-func (t *ByzeCoreServer) GetKits(c *gin.Context) {
+func (t *OadinCoreServer) GetKits(c *gin.Context) {
 	id := c.Param("id")
 	var req rpc.ToolSearchRequest
 	if err := c.BindJSON(&req); err != nil {
@@ -68,7 +68,7 @@ func (t *ByzeCoreServer) GetKits(c *gin.Context) {
 	c.JSON(http.StatusOK, resp.Data)
 }
 
-func (t *ByzeCoreServer) GetClients(c *gin.Context) {
+func (t *OadinCoreServer) GetClients(c *gin.Context) {
 	id := c.Param("id")
 	resp, err := t.MCP.GetClients(c, id)
 	if err != nil {
@@ -78,7 +78,7 @@ func (t *ByzeCoreServer) GetClients(c *gin.Context) {
 	c.JSON(http.StatusOK, resp.Data)
 }
 
-func (t *ByzeCoreServer) DownloadMCP(c *gin.Context) {
+func (t *OadinCoreServer) DownloadMCP(c *gin.Context) {
 	id := c.Param("id")
 	err := t.MCP.DownloadMCP(c, id)
 	if err != nil {
@@ -89,7 +89,7 @@ func (t *ByzeCoreServer) DownloadMCP(c *gin.Context) {
 
 }
 
-func (t *ByzeCoreServer) AuthorizeMCP(c *gin.Context) {
+func (t *OadinCoreServer) AuthorizeMCP(c *gin.Context) {
 
 	id := c.Param("id")
 
@@ -106,7 +106,7 @@ func (t *ByzeCoreServer) AuthorizeMCP(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
 }
 
-func (t *ByzeCoreServer) GetCategories(c *gin.Context) {
+func (t *OadinCoreServer) GetCategories(c *gin.Context) {
 	resp, err := t.MCP.GetCategories(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
@@ -115,7 +115,7 @@ func (t *ByzeCoreServer) GetCategories(c *gin.Context) {
 	c.JSON(http.StatusOK, resp.Data)
 }
 
-func (t *ByzeCoreServer) GetMyMCPList(c *gin.Context) {
+func (t *OadinCoreServer) GetMyMCPList(c *gin.Context) {
 	var req rpc.MCPListRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -130,7 +130,7 @@ func (t *ByzeCoreServer) GetMyMCPList(c *gin.Context) {
 
 }
 
-func (t *ByzeCoreServer) ReverseStatus(c *gin.Context) {
+func (t *OadinCoreServer) ReverseStatus(c *gin.Context) {
 	id := c.Param("id")
 	err := t.MCP.ReverseStatus(c, id)
 	if err != nil {
@@ -141,7 +141,7 @@ func (t *ByzeCoreServer) ReverseStatus(c *gin.Context) {
 
 }
 
-func (t *ByzeCoreServer) SetupFunTool(c *gin.Context) {
+func (t *OadinCoreServer) SetupFunTool(c *gin.Context) {
 	var req rpc.SetupFunToolRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -157,7 +157,7 @@ func (t *ByzeCoreServer) SetupFunTool(c *gin.Context) {
 
 }
 
-func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
+func (t *OadinCoreServer) ClientMcpStart(c *gin.Context) {
 	var req types.ClientMcpStartRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
@@ -175,7 +175,7 @@ func (t *ByzeCoreServer) ClientMcpStart(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success", "data": message})
 }
 
-func (t *ByzeCoreServer) ClientMcpStop(c *gin.Context) {
+func (t *OadinCoreServer) ClientMcpStop(c *gin.Context) {
 	var req types.ClientMcpStopRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
@@ -189,7 +189,7 @@ func (t *ByzeCoreServer) ClientMcpStop(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success"})
 }
 
-func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
+func (t *OadinCoreServer) ClientRunTool(c *gin.Context) {
 	var req types.ClientRunToolRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
@@ -226,7 +226,7 @@ func (t *ByzeCoreServer) ClientRunTool(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": resp})
 }
 
-func (t *ByzeCoreServer) ClientGetTools(c *gin.Context) {
+func (t *OadinCoreServer) ClientGetTools(c *gin.Context) {
 	var req types.ClientGetToolsRequest
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
@@ -251,7 +251,7 @@ func (t *ByzeCoreServer) ClientGetTools(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": res})
 }
 
-func (t *ByzeCoreServer) ClientMAC(c *gin.Context) {
+func (t *OadinCoreServer) ClientMAC(c *gin.Context) {
 	err := t.MCP.ClientMAC(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "500", "message": err.Error()})
