@@ -264,97 +264,58 @@ export const handleTextContent = (
       responseContent += data.content || '';
     }
   } else {
-    if (data.content) {
-      // 确保新内容不会导致数据重复或标签断开
-      if (data.content.length > responseContent.length) {
-        // 完全替换
-        responseContent = data.content;
-      } else if (!responseContent.includes(data.content.trim())) {
-        // 累加，防止标签被分割
-        responseContent += data.content;
-      }
-      // 如果内容已经包含在现有响应中，保持不变
+    if (data.content && (data.content.length > responseContent.length || !responseContent.includes(data.content.trim()))) {
+      responseContent += data.content || '';
+    } else if (data.content) {
+      responseContent = data.content;
     }
   }
 
-  // 检查是否包含 <think> 标签（包括可能不完整的标签）
-  if (responseContent.includes('<think>') || responseContent.includes('</think>')) {
+  if (responseContent.includes('<think>')) {
     // 检查是否有未闭合的 <think> 标签
     const openTagCount = (responseContent.match(/<think>/g) || []).length;
     const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
     const hasUnfinishedThink = openTagCount > closeTagCount;
 
-    // 提取并清理内容 - 直接从原始字符串中处理
-    // 1. 收集所有 think 标签内的内容
-    const thinkTagMatches = responseContent.match(/<think>([\s\S]*?)<\/think>/g) || [];
-    const thinkContents: string[] = [];
-
-    // 提取所有完整的 <think> 标签内容
-    for (const match of thinkTagMatches) {
-      const content = match.replace(/<think>([\s\S]*?)<\/think>/g, '$1').trim();
-      if (content) {
-        thinkContents.push(content);
-      }
-    }
-
-    // 处理未闭合的标签（如果有）
-    if (hasUnfinishedThink) {
-      const lastThinkIndex = responseContent.lastIndexOf('<think>');
-      if (lastThinkIndex !== -1) {
-        const unfinishedContent = responseContent.substring(lastThinkIndex + 7).trim(); // +7 是 <think> 的长度
-        if (unfinishedContent) {
-          thinkContents.push(unfinishedContent);
+    const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
+    const thinkContents = parsedContents
+      .filter((item) => item.type === 'think')
+      .map((item) => {
+        if (typeof item.content === 'object') {
+          return item.content.data;
         }
-      }
-    }
+        return '';
+      })
+      .join('\n\n');
 
-    // 将 think 内容保存并设置到思考中
-    const combinedThinkContent = thinkContents.join('\n\n');
-    requestStateRef.current.content.thinking = combinedThinkContent;
+    requestStateRef.current.content.thinking = thinkContents;
     setStreamingThinking({
-      data: combinedThinkContent,
-      status: hasUnfinishedThink && !data.is_complete ? 'progress' : 'success', // 如果未完成且标签未闭合，标记为进行中
+      data: thinkContents,
+      status: 'success',
     });
 
-    // 2. 清理常规文本内容，移除所有 <think> 标签及其内容
-    let cleanContent = responseContent;
-    // 移除所有完整的 <think>...</think> 标签
-    cleanContent = cleanContent.replace(/<think>[\s\S]*?<\/think>/g, '');
+    // 提取纯文本内容
+    const plainContents = parsedContents
+      .filter((item) => item.type === 'plain')
+      .map((item) => (typeof item.content === 'string' ? item.content : ''))
+      .join('\n\n');
 
-    // 移除最后一个未闭合的 <think> 标签及其内容（如果有）
-    if (hasUnfinishedThink) {
-      const lastThinkIndex = cleanContent.lastIndexOf('<think>');
-      if (lastThinkIndex !== -1) {
-        cleanContent = cleanContent.substring(0, lastThinkIndex);
-      }
-    }
-
-    // 修剪空白并确保内容不为空，避免多余换行等
-    cleanContent = cleanContent.replace(/\n{3,}/g, '\n\n').trim();
-
-    setStreamingContent(cleanContent);
-  }
-
-  // 在数据完成时，确保思考区域显示内容正确
-  if (data.is_complete) {
-    // 数据完成，更新思考字段最终状态
+    setStreamingContent(plainContents);
+  } else {
+    requestStateRef.current.content.thinking = '';
     if (requestStateRef.current.content.thinkingFromField) {
       setStreamingThinking({
         data: requestStateRef.current.content.thinkingFromField,
-        status: 'success',
-      });
-    } else if (requestStateRef.current.content.thinking) {
-      setStreamingThinking({
-        data: requestStateRef.current.content.thinking,
-        status: 'success',
+        status: 'success', // 显式设置为 success
       });
     } else {
-      // 没有任何思考内容
       setStreamingThinking({
         data: '',
         status: 'success',
       });
     }
+
+    setStreamingContent(responseContent);
   }
 
   return responseContent;
