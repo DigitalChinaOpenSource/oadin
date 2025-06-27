@@ -16,7 +16,7 @@ const schemas = require('./schema.js');
 
 function runInstaller(installerPath, isMacOS) {
   return new Promise((resolve, reject) => {
-    console.log(`[download]installer 正在安装 Byze...`);
+    console.log(`[download]installer 正在安装 Oadin...`);
     if (isMacOS) {
       // 打开 GUI 安装器
       const child = spawn('open', [installerPath], { stdio: 'ignore', detached: true });
@@ -24,17 +24,17 @@ function runInstaller(installerPath, isMacOS) {
       child.on('error', reject);
 
       // 等待安装目录生成（轮询）
-      const expectedPath = '/usr/local/bin/byze';
+      const expectedPath = '/usr/local/bin/oadin';
       const maxRetries = 100;
       let retries = 0;
 
       const interval = setInterval(async () => {
         if (fs.existsSync(expectedPath)) {
-          console.log("byze 已添加到 /usr/local/bin ");
+          console.log("oadin 已添加到 /usr/local/bin ");
           // 检查服务是否可用
-          const Byze = require('./index.js'); // 防止循环依赖可单独提取IsByzeAvailiable
-          const byze = new Byze();
-          const available = await byze.IsByzeAvailiable(2, 1000);
+          const Oadin = require('./index.js'); // 防止循环依赖可单独提取IsOadinAvailiable
+          const oadin = new Oadin();
+          const available = await oadin.IsOadinAvailiable(2, 1000);
           if (available) {
             clearInterval(interval);
             resolve();
@@ -56,8 +56,8 @@ function runInstaller(installerPath, isMacOS) {
   });
 }
 
-class Byze {
-  version = "byze/v0.2";
+class Oadin {
+  version = "oadin/v0.2";
 
   constructor(version) {
     this.client = axios.create({
@@ -80,8 +80,8 @@ class Byze {
     return data;
   }
 
-  // 检查 Byze 服务是否启动
-  IsByzeAvailiable(retries = 5, interval = 1000) {
+  // 检查 Oadin 服务是否启动
+  IsOadinAvailiable(retries = 5, interval = 1000) {
     return new Promise((resolve) => {
       const checkPort = (port) => {
         return new Promise((resolvePort) => {
@@ -121,8 +121,8 @@ class Byze {
     });
   }
 
-  // 检查用户目录是否存在 Byze.exe
-  IsByzeExisted() {
+  // 检查用户目录是否存在 Oadin.exe
+  IsOadinExisted() {
     return new Promise((resolve) => {
         const userDir = os.homedir();
         const platform = process.platform; // 获取当前平台
@@ -132,11 +132,11 @@ class Byze {
 
         if (platform === 'win32') {
             // Windows 平台路径
-            destDir = path.join(userDir, 'Byze');
-            dest = path.join(destDir, 'byze.exe');
+            destDir = path.join(userDir, 'Oadin');
+            dest = path.join(destDir, 'oadin.exe');
         } else if (platform === 'darwin') {
             // macOS 平台路径
-            dest = '/usr/local/bin/byze';
+            dest = '/usr/local/bin/oadin';
         } else {
             console.error('❌ 不支持的操作系统');
             return resolve(false);
@@ -185,7 +185,7 @@ class Byze {
   }
 
   // 运行安装包
-  async runByzeInstaller(installerPath, isMacOS) {
+  async runOadinInstaller(installerPath, isMacOS) {
     try {
       await runInstaller(installerPath, isMacOS);
       return true;
@@ -195,16 +195,16 @@ class Byze {
     }
   }
 
-  async DownloadByze(retries = 3) {
+  async DownloadOadin(retries = 3) {
    try {
       const isMacOS = process.platform === 'darwin';
       const url = isMacOS
-        ? 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/byze-installer-latest.pkg'
-        : 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/byze-installer-latest.exe';
+        ? 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/oadin-installer-latest.pkg'
+        : 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/win/oadin-installer-latest.exe';
 
       const userDir = os.homedir();
-      const destDir = path.join(userDir, 'ByzeInstaller');
-      const destFileName = isMacOS ? 'byze-installer-latest.pkg' : 'byze-installer-latest.exe';
+      const destDir = path.join(userDir, 'OadinInstaller');
+      const destFileName = isMacOS ? 'oadin-installer-latest.pkg' : 'oadin-installer-latest.exe';
       const dest = path.join(destDir, destFileName);
 
       fs.mkdirSync(destDir, { recursive: true });
@@ -229,10 +229,10 @@ class Byze {
         if (downloadSuccess) {
           let installResult = false;
           try {
-            console.log(`byze-installer 运行 ${dest}`);
-            installResult = await this.runByzeInstaller(dest, isMacOS);
+            console.log(`oadin-installer 运行 ${dest}`);
+            installResult = await this.runOadinInstaller(dest, isMacOS);
           } catch (e) {
-            console.error('runByzeInstaller 异常:', e);
+            console.error('runOadinInstaller 异常:', e);
             installResult = false;
           }
           return installResult;
@@ -241,49 +241,49 @@ class Byze {
           return false;
         }
       } catch (err) {
-        console.error('下载或安装 Byze 失败:', err);
+        console.error('下载或安装 Oadin 失败:', err);
         return false;
       }
   }
 
-  // 启动 Byze 服务
-  async InstallByze() {
-    const alreadyRunning = await this.IsByzeAvailiable(2, 1000);
+  // 启动 Oadin 服务
+  async InstallOadin() {
+    const alreadyRunning = await this.IsOadinAvailiable(2, 1000);
     if (alreadyRunning) {
-      console.log('[Install] Byze 在运行中');
+      console.log('[Install] Oadin 在运行中');
       return true;
     }
 
     return new Promise((resolve, reject) => {
       const currentPlatform = process.platform;
       const userDir = os.homedir();
-      const byzeDir = path.join(userDir, 'Byze');
+      const oadinDir = path.join(userDir, 'Oadin');
 
-      console.log(`byzeDir: ${byzeDir}`);
+      console.log(`oadinDir: ${oadinDir}`);
 
       if (currentPlatform === 'win32') {
-        if (!process.env.PATH.includes(byzeDir)) {
-          process.env.PATH = `${process.env.PATH}${path.delimiter}${byzeDir}`;
+        if (!process.env.PATH.includes(oadinDir)) {
+          process.env.PATH = `${process.env.PATH}${path.delimiter}${oadinDir}`;
           console.log("添加到临时环境变量");
         }
         const command = 'cmd.exe';
-        const args = ['/c', 'start-byze.bat'];
+        const args = ['/c', 'start-oadin.bat'];
 
         console.log(`[Install] 正在运行命令: ${command} ${args.join(' ')}`);
 
         execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
-          if (error) console.error(`byze server start:error`, error);
-          if (stdout) console.log(`byze server start:stdout:`, stdout.toString());
-          if (stderr) console.error(`byze server start:stderr:`, stderr.toString());
+          if (error) console.error(`oadin server start:error`, error);
+          if (stdout) console.log(`oadin server start:stdout:`, stdout.toString());
+          if (stderr) console.error(`oadin server start:stderr:`, stderr.toString());
           const output = (stdout + stderr).toString().toLowerCase();
           if (error || output.includes('error')) {
             return resolve(false);
           };
-          // if (output.includes('byze server start successfully')) {
+          // if (output.includes('oadin server start successfully')) {
           //   return resolve(true);
           // };
 
-          const available = await this.IsByzeAvailiable(5, 1500);
+          const available = await this.IsOadinAvailiable(5, 1500);
           return resolve(available);
         });
       } else if (currentPlatform === 'darwin') {
@@ -298,12 +298,12 @@ class Byze {
           let stderrContent = '';
 
           // 日志文件路径
-          // const logDir = path.join(os.homedir(), 'Byze');
-          // const logFile = path.join(logDir, 'byze-server.log');
+          // const logDir = path.join(os.homedir(), 'Oadin');
+          // const logFile = path.join(logDir, 'oadin-server.log');
           // fs.mkdirSync(logDir, { recursive: true });
           // const logStream = fs.createWriteStream(logFile, { flags: 'a' });
 
-          child = spawn('/usr/local/bin/byze', ['server', 'start', '-d'], {
+          child = spawn('/usr/local/bin/oadin', ['server', 'start', '-d'], {
             stdio: ['ignore', 'pipe', 'pipe'],
             windowsHide: true,
           });
@@ -329,7 +329,7 @@ class Byze {
             if (err.code === 'ENOENT') {
               console.log([
                 '💡 可能原因:',
-                `1. 未找到byze可执行文件，请检查下载是否成功`,
+                `1. 未找到oadin可执行文件，请检查下载是否成功`,
                 `2. 环境变量未生效，请尝试重启终端`
               ].filter(Boolean).join('\n'));
             }
@@ -362,14 +362,14 @@ class Byze {
     });
   }
 
-  // 执行 byze install chat
+  // 执行 oadin install chat
   InstallChat(remote = null) {
     return new Promise((resolve) => {
       const userDir = os.homedir();
-      const byzePath = path.join(userDir, 'Byze', 'byze.exe');
-      process.env.PATH = `${process.env.PATH};${byzePath}`;
+      const oadinPath = path.join(userDir, 'Oadin', 'oadin.exe');
+      process.env.PATH = `${process.env.PATH};${oadinPath}`;
 
-      const child = spawn(byzePath, ['install', 'chat'], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
+      const child = spawn(oadinPath, ['install', 'chat'], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
@@ -385,16 +385,16 @@ class Byze {
 
       child.on('close', (code) => {
         if (code === 0) {
-          console.log('安装 Byze 聊天插件成功');
+          console.log('安装 Oadin 聊天插件成功');
           resolve(true);
         } else {
-          console.error(`安装 Byze 聊天插件失败，退出码: ${code}`);
+          console.error(`安装 Oadin 聊天插件失败，退出码: ${code}`);
           resolve(false);
         }
       });
 
       child.on('error', (err) => {
-        console.error(`启动 Byze 安装命令失败: ${err.message}`);
+        console.error(`启动 Oadin 安装命令失败: ${err.message}`);
         resolve(false);
       });
 
@@ -413,15 +413,15 @@ class Byze {
 
     const req = http.request(options, (res) => {
       if (res.statusCode === 200) {
-        console.log('✅ Byze 服务已启动');
+        console.log('✅ Oadin 服务已启动');
         resolve(true);
       } else {
-        console.error(`❌ Byze 服务未启动，HTTP 状态码: ${res.statusCode}`);
+        console.error(`❌ Oadin 服务未启动，HTTP 状态码: ${res.statusCode}`);
         resolve(false);
       }
     });
     req.on('error', (err) => {
-      console.error(`❌ Byze 服务未启动: ${err.message}`);
+      console.error(`❌ Oadin 服务未启动: ${err.message}`);
       resolve(false);
     });
     req.end();
@@ -822,10 +822,10 @@ class Byze {
           data: null,
         };
       }
-      // 将响应数据存入 .byze 文件
+      // 将响应数据存入 .oadin 文件
       const userDir = os.homedir();
-      const destDir = path.join(userDir, 'Byze');
-      const dest = path.join(destDir, '.byze');
+      const destDir = path.join(userDir, 'Oadin');
+      const dest = path.join(destDir, '.oadin');
 
       // 确保目录存在并写入文件
       fs.mkdir(destDir, { recursive: true }, (err) => {
@@ -1132,10 +1132,10 @@ class Byze {
     this.validateSchema(schemas.createSessionRequestSchema, data);
     return new Promise((resolve) => {
       const userDir = os.homedir();
-      const byzePath = path.join(userDir, 'Byze', 'byze.exe');
-      process.env.PATH = `${process.env.PATH};${byzePath}`;
+      const oadinPath = path.join(userDir, 'Oadin', 'oadin.exe');
+      process.env.PATH = `${process.env.PATH};${oadinPath}`;
 
-      const child = spawn(byzePath, ['playground', 'create', JSON.stringify(data)], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
+      const child = spawn(oadinPath, ['playground', 'create', JSON.stringify(data)], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
@@ -1152,7 +1152,7 @@ class Byze {
       });
 
       child.on('error', (err) => {
-        console.error(`启动 Byze 创建会话命令失败: ${err.message}`);
+        console.error(`启动 Oadin 创建会话命令失败: ${err.message}`);
         resolve(false);
       });
 
@@ -1470,31 +1470,31 @@ class Byze {
     }
   }
 
-  // 用于一键安装 Byze 和 导入配置
-  async ByzeInit(path){
-    const isByzeAvailable = await this.IsByzeAvailiable();
-    if (isByzeAvailable) {
-      console.log('✅ Byze 服务已启动，跳过安装。');
+  // 用于一键安装 Oadin 和 导入配置
+  async OadinInit(path){
+    const isOadinAvailable = await this.IsOadinAvailiable();
+    if (isOadinAvailable) {
+      console.log('✅ Oadin 服务已启动，跳过安装。');
       return true;
     }
     
-    const isByzeExisted = await this.IsByzeExisted();
-    if (!isByzeExisted) {
-      const downloadSuccess = await this.DownloadByze();
+    const isOadinExisted = await this.IsOadinExisted();
+    if (!isOadinExisted) {
+      const downloadSuccess = await this.DownloadOadin();
       if (!downloadSuccess) {
-        console.error('❌ 下载 Byze 失败，请检查网络连接或手动下载。');
+        console.error('❌ 下载 Oadin 失败，请检查网络连接或手动下载。');
         return false;
       }
     } else {
-      console.log('✅ Byze 已存在，跳过下载。');
+      console.log('✅ Oadin 已存在，跳过下载。');
     }
 
-    const installSuccess = await this.InstallByze();
+    const installSuccess = await this.InstallOadin();
     if (!installSuccess) {
-      console.error('❌ 启动 Byze 服务失败，请检查配置或手动启动。');
+      console.error('❌ 启动 Oadin 服务失败，请检查配置或手动启动。');
       return false;
     } else {
-      console.log('✅ Byze 服务已启动。');
+      console.log('✅ Oadin 服务已启动。');
     }
 
     const importSuccess = await this.ImportConfig(path);
@@ -1507,4 +1507,4 @@ class Byze {
   }
 }
 
-module.exports = Byze;
+module.exports = Oadin;

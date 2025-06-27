@@ -7,8 +7,8 @@ stages:
 variables:
   GIT_STRATEGY: none
   ENV: "production"
-  MAC_FILE_NAME: "byze-installer-${CI_COMMIT_TAG}.pkg"
-  WIN_FILE_NAME: "byze-installer-${CI_COMMIT_TAG}.exe"
+  MAC_FILE_NAME: "oadin-installer-${CI_COMMIT_TAG}.pkg"
+  WIN_FILE_NAME: "oadin-installer-${CI_COMMIT_TAG}.exe"
 
 
 build_mac:
@@ -35,7 +35,7 @@ build_mac:
     - echo "--------- 🛠️ 制品构建与签名 ----------"
     - go mod tidy
     - echo "$ENV active"
-    - CGO_ENABLED=1 CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec" GOOS=darwin GOARCH=arm64  go build -o byze -tags "$ENV" -ldflags="-s -w"  cmd/cli/main.go
+    - CGO_ENABLED=1 CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec" GOOS=darwin GOARCH=arm64  go build -o oadin -tags "$ENV" -ldflags="-s -w"  cmd/cli/main.go
     - export APPLE_ID="it@digitalchina.com"
     - export APPLE_APP_SPECIFIC_PASSWORD="yyzx-tium-divi-iors"
     - export APPLE_TEAM_ID="US7ZG73N89"
@@ -44,17 +44,17 @@ build_mac:
     - export CSC_INSTALLER_LINK="./Developer ID Installer.p12"
     - export CSC_INSTALLER_KEY_PASSWORD="k-RyN2ggMwLYx<Hb?Lw(OVu49Z-4V1SM"
     - |  
-      codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" byze
+      codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
     - echo "--------- 📦 安装包构建与签名 ----------"
-    - mkdir -p pkgroot/Byze
-    - mv byze pkgroot/Byze/byze
+    - mkdir -p pkgroot/oadin
+    - mv oadin pkgroot/oadin/oadin
     - mkdir -p scripts
     - echo '#!/bin/bash' > scripts/postinstall
     - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
     - echo 'mkdir -p "$USER_HOME/Byze"' >> scripts/postinstall
     - echo 'set -x' >> scripts/postinstall
-    - echo 'cp -f /Users/Shared/Byze/byze "$USER_HOME/Byze/byze"' >> scripts/postinstall
-    - echo 'ln -sf "$USER_HOME/Byze/byze" /usr/local/bin/byze' >> scripts/postinstall
+    - echo 'cp -f /Users/Shared/Byze/oadin "$USER_HOME/Byze/oadin"' >> scripts/postinstall
+    - echo 'ln -sf "$USER_HOME/Byze/oadin" /usr/local/bin/oadin' >> scripts/postinstall
     - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
     - echo 'SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')' >> scripts/postinstall
     - echo 'SHELL_NAME=$(basename "$SHELL_PATH")' >> scripts/postinstall
@@ -66,23 +66,23 @@ build_mac:
     - echo '  RC_FILE=""'  >> scripts/postinstall
     - echo 'fi' >> scripts/postinstall
     - echo 'if [ -n "$RC_FILE" ]; then' >> scripts/postinstall
-    - echo '  su - "$USER" -c "source ~/$RC_FILE; byze server start -d"' >> scripts/postinstall
+    - echo '  su - "$USER" -c "source ~/$RC_FILE; oadin server start -d"' >> scripts/postinstall
     - echo 'else' >> scripts/postinstall
-    - echo '  su - "$USER" -c "byze server start -d"' >> scripts/postinstall
+    - echo '  su - "$USER" -c "oadin server start -d"' >> scripts/postinstall
     - echo 'fi' >> scripts/postinstall
     - chmod +x scripts/postinstall
     - |
-      pkgbuild --identifier com.digitalchina.byze --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Byze --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Byze --scripts ./scripts byze.pkg
+      pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Byze --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Byze --scripts ./scripts oadin.pkg
     - echo "--------- 📬 安装包公证 ----------"
     - xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
-    - xcrun notarytool submit byze.pkg --keychain-profile "ci-profile" --wait
+    - xcrun notarytool submit oadin.pkg --keychain-profile "ci-profile" --wait
     - echo "--------- 📎 附加公证票据 ----------"
-    - xcrun stapler staple byze.pkg
+    - xcrun stapler staple oadin.pkg
     - echo "--------- 🔎️ 验签 ----------"
-    - spctl --assess --type install --verbose=4 byze.pkg
+    - spctl --assess --type install --verbose=4 oadin.pkg
     - echo "--------- 📁 移动到待上传文件夹 ----------"
     - mkdir -p upload
-    - mv byze.pkg upload/${MAC_FILE_NAME}
+    - mv oadin.pkg upload/${MAC_FILE_NAME}
     - echo "========== 🔧 Mac Build End =========="
 
 upload_to_nexus_mac:
@@ -95,8 +95,8 @@ upload_to_nexus_mac:
     - echo "========== 🔧 Mac Upload Begin =========="
     - echo "-------- 📤 上传到 Nexus 私服 --------"
     - |
-      curl -v -u "admin:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/byze/upload/${MAC_FILE_NAME}" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/${MAC_FILE_NAME}"
-      curl -v -u "admin:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/byze/upload/${MAC_FILE_NAME}" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/byze-installer-latest.pkg"
+      curl -v -u "admin:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/byze/upload/${MAC_FILE_NAME}" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
+      curl -v -u "admin:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/byze/upload/${MAC_FILE_NAME}" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/oadin-installer-latest.pkg"
     - echo "--------- 🧹 环境清理 ----------"
     - cd /Users/dcone/WebstormProjects/byze
     - git reset --hard
@@ -105,8 +105,8 @@ upload_to_nexus_mac:
     - git checkout main
     - git tag -d $CI_COMMIT_TAG
     - echo "--------- 🔗️ 制品下载地址 ----------"
-    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/${MAC_FILE_NAME}"
-    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/mac/byze-installer-latest.pkg"
+    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
+    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/oadin-installer-latest.pkg"
     - echo "========== 🔧 Mac Upload End =========="
 
 upload_to_oss_mac:
@@ -119,8 +119,8 @@ upload_to_oss_mac:
     - echo "========== 🔧 Mac Upload Begin =========="
     - echo "-------- 📤 上传到 阿里云 OSS --------"
     - cd /Users/dcone/WebstormProjects/byze/upload
-    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/byze/releases/macos/${MAC_FILE_NAME}" --force
-    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/byze/releases/macos/byze-installer-latest.pkg" --force
+    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/oadin/releases/macos/${MAC_FILE_NAME}" --force
+    - ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/oadin/releases/macos/oadin-installer-latest.pkg" --force
     - echo "--------- 🧹 环境清理 ----------"
     - git reset --hard
     - git clean -fd
@@ -128,10 +128,10 @@ upload_to_oss_mac:
     - git checkout main
     - git tag -d $CI_COMMIT_TAG
     - echo "--------- ♻️ 刷新CND ----------"
-    - aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg" --ObjectType File
+    - aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/oadin/releases/macos/oadin-installer-latest.pkg" --ObjectType File
     - echo "--------- 🔗️ 制品下载地址 ----------"
-    - echo "https://oss-aipc.dcclouds.com/byze/releases/macos/${MAC_FILE_NAME}"
-    - echo "https://oss-aipc.dcclouds.com/byze/releases/macos/byze-installer-latest.pkg"
+    - echo "https://oss-aipc.dcclouds.com/oadin/releases/macos/${MAC_FILE_NAME}"
+    - echo "https://oss-aipc.dcclouds.com/oadin/releases/macos/oadin-installer-latest.pkg"
     - echo "========== 🔧 Mac Upload End =========="
 
 
@@ -167,14 +167,14 @@ build_win:
     - $env:GOARCH= "amd64"
     - $env:CGO_CFLAGS= "-I$PWD\internal\datastore\sqlite\sqlite-vec"
     - echo "$env:ENV active"
-    - go build -o byze.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
-    - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "byze.exe"
+    - go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
+    - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
     - echo "--------- 📦 安装包构建与签名 ----------"
-    - cd installer ; makensis.exe -DVERSION=$env:CI_COMMIT_TAG byze.nsi
-    - cd .. ; signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "byze-installer.exe"
+    - cd installer ; makensis.exe -DVERSION=$env:CI_COMMIT_TAG oadin.nsi
+    - cd .. ; signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
     - echo "--------- 📁 移动到待上传文件夹 ----------"
     - New-Item -ItemType Directory -Path "upload" -Force
-    - Move-Item -Path "byze-installer.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
+    - Move-Item -Path "oadin-installer.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
     - echo "========== 🔧 Win Build End =========="
 
 upload_to_nexus_win:
@@ -191,8 +191,8 @@ upload_to_nexus_win:
     - echo "========== 🔧 Win Upload Begin =========="
     - echo "-------- 📤 上传到 Nexus 私服 --------"
     - cd C:\Users\Administrator\WebstormProjects\byze
-    - curl.exe -v -u "admin:$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/$($env:WIN_FILE_NAME)"
-    - curl.exe -v -u "admin:$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/byze-installer-latest.exe"
+    - curl.exe -v -u "admin:$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$($env:WIN_FILE_NAME)"
+    - curl.exe -v -u "admin:$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/win/oadin-installer-latest.exe"
     - echo "--------- 🧹 环境清理 ----------"
     - git reset --hard
     - git clean -fd
@@ -200,8 +200,8 @@ upload_to_nexus_win:
     - git checkout main
     - git tag -d $env:CI_COMMIT_TAG
     - echo "--------- 🔗️ 制品下载地址 ----------"
-    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/$($env:WIN_FILE_NAME)"
-    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/byze/releases/win/byze-installer-latest.exe"
+    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$($env:WIN_FILE_NAME)"
+    - echo "http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/win/oadin-installer-latest.exe"
     - echo "========== 🔧 Win Upload End =========="
 
 
@@ -219,8 +219,8 @@ upload_to_oss_win:
     - echo "========== 🔧 Win Upload Begin =========="
     - echo "-------- 📤 上传到 阿里云 OSS --------"
     - cd C:\Users\Administrator\WebstormProjects\byze
-    - ossutil cp "upload/$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/byze/releases/windows/$($env:WIN_FILE_NAME)" --force
-    - ossutil cp "upload/$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/byze/releases/windows/byze-installer-latest.exe" --force
+    - ossutil cp "upload/$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/oadin/releases/windows/$($env:WIN_FILE_NAME)" --force
+    - ossutil cp "upload/$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/oadin/releases/windows/oadin-installer-latest.exe" --force
     - echo "--------- 🧹 环境清理 ----------"
     - git reset --hard
     - git clean -fd
@@ -228,8 +228,8 @@ upload_to_oss_win:
     - git checkout main
     - git tag -d $env:CI_COMMIT_TAG
     - echo "--------- ♻️ 刷新CND ----------"
-    - aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe" --ObjectType File
+    - aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/oadin/releases/windows/oadin-installer-latest.exe" --ObjectType File
     - echo "--------- 🔗️ 制品下载地址 ----------"
-    - echo "https://oss-aipc.dcclouds.com/byze/releases/windows/$($env:WIN_FILE_NAME)"
-    - echo "https://oss-aipc.dcclouds.com/byze/releases/windows/byze-installer-latest.exe"
+    - echo "https://oss-aipc.dcclouds.com/oadin/releases/windows/$($env:WIN_FILE_NAME)"
+    - echo "https://oss-aipc.dcclouds.com/oadin/releases/windows/oadin-installer-latest.exe"
     - echo "========== 🔧 Win Upload End =========="

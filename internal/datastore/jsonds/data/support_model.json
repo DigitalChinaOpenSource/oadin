@@ -2,7 +2,7 @@
   {
     "id": "b7b2e6b3-7d91-41e2-ba98-adf5f4449c84",
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -20,7 +20,7 @@
   {
     "id": "4e15fa62-5710-4b7a-87dc-8b0cceb9ecc2",
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -38,7 +38,7 @@
   {
     "id": "6746afb6-4b39-42d1-bab6-eeeb2f67aeca",
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -56,7 +56,7 @@
   {
     "id": "43aeb3d7-314c-4323-86ee-aaa7e8c03110",
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -74,7 +74,7 @@
   {
     "id": "9721e8b8-9d6f-4b72-97ab-6f76924ed3db",
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -91,7 +91,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -107,7 +107,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -123,7 +123,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -139,7 +139,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -155,7 +155,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -171,7 +171,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -187,7 +187,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -203,7 +203,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -219,7 +219,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -235,7 +235,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -251,7 +251,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -267,7 +267,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -283,7 +283,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -299,7 +299,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -315,7 +315,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -331,7 +331,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/yi.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/yi.png",
     "class": [
       "文本生成"
     ],
@@ -347,7 +347,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/yi.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/yi.png",
     "class": [
       "文本生成"
     ],
@@ -363,7 +363,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -380,7 +380,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -397,7 +397,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/glm.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/glm.png",
     "class": [
       "文本生成"
     ],
@@ -406,7 +406,7 @@
     "id": "0ce77296-e636-4794-af32-613663656161343664383131",
     "name": "glm4:9b",
     "ollama_id": "5b699761eca5",
-    "think": true,
+    "think": false,
     "params_size": 9,
     "service_name": "chat",
     "service_source": "local",
@@ -414,7 +414,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -430,7 +430,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -446,7 +446,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -462,7 +462,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -478,7 +478,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -494,7 +494,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -510,7 +510,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -526,7 +526,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -542,7 +542,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -558,7 +558,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -574,7 +574,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -590,7 +590,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/Nomic.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/Nomic.png",
     "class": [
       "嵌入模型"
     ],
@@ -605,7 +605,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/Mixedbread.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/Mixedbread.png",
     "class": [
       "嵌入模型"
     ],
@@ -620,7 +620,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/BAAI.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/BAAI.png",
     "class": [
       "嵌入模型"
     ],
@@ -635,7 +635,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/Snowflake.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/Snowflake.png",
     "class": [
       "嵌入模型"
     ],
@@ -650,7 +650,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/BAAI.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/BAAI.png",
     "class": [
       "嵌入模型"
     ],
@@ -665,7 +665,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/BAAI.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/BAAI.png",
     "class": [
       "嵌入模型"
     ],
@@ -680,7 +680,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/Snowflake.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/Snowflake.png",
     "class": [
       "嵌入模型"
     ],
@@ -695,7 +695,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/IBM.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/IBM.png",
     "class": [
       "嵌入模型"
     ],
@@ -710,7 +710,7 @@
   },
   {
     "api_flavor": "baidu",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/baidu.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/baidu.png",
     "class": [
       "文本生成"
     ],
@@ -725,7 +725,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -740,7 +740,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -755,7 +755,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -770,7 +770,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -785,7 +785,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -800,7 +800,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -815,7 +815,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -830,7 +830,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -845,7 +845,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -860,7 +860,7 @@
   },
   {
     "api_flavor": "deepseek",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -876,7 +876,7 @@
   },
   {
     "api_flavor": "deepseek",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -892,7 +892,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/tencent.png",
     "class": [
       "文本向量化"
     ],
@@ -907,7 +907,7 @@
   },
   {
     "api_flavor": "baidu",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/baidu.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/baidu.png",
     "class": [
       "文本向量化"
     ],
@@ -922,7 +922,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本向量化"
     ],
@@ -937,7 +937,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本向量化"
     ],
@@ -952,7 +952,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文本向量化"
     ],
@@ -967,7 +967,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文生图"
     ],
@@ -982,7 +982,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文生图"
     ],
@@ -997,7 +997,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/qwen.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/qwen.png",
     "class": [
       "文生图"
     ],
@@ -1012,7 +1012,7 @@
   },
   {
     "api_flavor": "baidu",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/baidu.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/baidu.png",
     "class": [
       "文生图"
     ],
@@ -1027,7 +1027,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://120.232.136.73:31619/oadindev/model_avatar/tencent.png",
     "class": [
       "文生图"
     ],

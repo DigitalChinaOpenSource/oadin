@@ -1,16 +1,16 @@
-# ByzeLib使用说明
+# OadinLib使用说明
 
 ## 1. 介绍
 
-ByzeLib 将协助开发者使用 Byze（白泽模型框架）。
+OadinLib 将协助开发者使用 Oadin（白泽模型框架）。
 
-现在 ByzeLib 提供了以下功能：
+现在 OadinLib 提供了以下功能：
 
-检查 byze 服务是否存在
+检查 oadin 服务是否存在
 
-检查 byze.exe 是否下载
+检查 oadin.exe 是否下载
 
-下载 byze.exe
+下载 oadin.exe
 
 ## 2. 使用
 
@@ -18,43 +18,43 @@ ByzeLib 将协助开发者使用 Byze（白泽模型框架）。
 
 
 ``` sh
-npm install byze-lib-1.2.66.tgz
+npm install oadin-lib-1.2.66.tgz
 ```
 
 然后在项目中引入该 Node Module：
 
 ``` JavaScript
-const ByzeLib = require('byze-lib');
+const OadinLib = require('oadin-lib');
 
-const byze = new ByzeLib();
+const oadin = new OadinLib();
 
-// 检查 byze 服务是否存在
-byze.IsByzeAvailiable().then((result) => {
+// 检查 oadin 服务是否存在
+oadin.IsOadinAvailiable().then((result) => {
     console.log(result);
 });
 
-// 检查 byze.exe 是否下载
-byze.IsByzeExisted().then((result) => {
+// 检查 oadin.exe 是否下载
+oadin.IsOadinExisted().then((result) => {
     console.log(result);
 });
 
-// 下载 byze.exe
-byze.DownloadByze().then((result) => {
+// 下载 oadin.exe
+oadin.DownloadOadin().then((result) => {
     console.log(result);
 });
 
-// 启动 byze 服务
-byze.InstallByze().then((result) => {
+// 启动 oadin 服务
+oadin.InstallOadin().then((result) => {
     console.log(result);
 });
 
-// 安装 byze chat服务
-byze.InstallChat().then((result) => {
+// 安装 oadin chat服务
+oadin.InstallChat().then((result) => {
     console.log(result);
 });
 
 // 查看当前服务
-byze.GetServices().then((result) => {
+oadin.GetServices().then((result) => {
     console.log(result);
 });
 
@@ -69,7 +69,7 @@ const data = {
     auth_key: "your_api_key",
 }; // 必填service_name, service_source, hybrid_policy, flavor_name, provider_name
 
-byze.CreateService(data).then((result) => {
+oadin.CreateService(data).then((result) => {
     console.log(result);
 });
 
@@ -81,12 +81,12 @@ const data = {
     local_provider: ""
 }; // 必填service_name
 
-byze.UpdateService(data).then((result) => {
+oadin.UpdateService(data).then((result) => {
     console.log(result);
 });
 
 // 查看模型
-byze.GetModels().then((result) => {
+oadin.GetModels().then((result) => {
     console.log(result);
 });
 
@@ -98,7 +98,7 @@ const data = {
     provider_name: "local_ollama_chat/remote_openai_chat/...",
 }; // 必填model_name, service_name, service_source
 
-byze.InstallModel(data).then((result) => {
+oadin.InstallModel(data).then((result) => {
     console.log(result);
 });
 
@@ -110,12 +110,12 @@ const data = {
     provider_name: "local_ollama_chat/remote_openai_chat/...",
 }; // 必填model_name, service_name, service_source
 
-byze.DeleteModel(data).then((result) => {
+oadin.DeleteModel(data).then((result) => {
     console.log(result);
 });
 
 // 查看服务提供商
-byze.GetServiceProviders().then((result) => {
+oadin.GetServiceProviders().then((result) => {
     console.log(result);
 });
 
@@ -163,12 +163,12 @@ const data = {
     provider_name: ""
 };
 
-byze.DeleteServiceProvider(data).then((reult) => {
+oadin.DeleteServiceProvider(data).then((reult) => {
     console.log(result);
 });
 
 // 导入配置文件
-byze.ImportConfig("path/to/.byze").then((result) => {
+oadin.ImportConfig("path/to/.oadin").then((result) => {
     console.log(result);
 });
 
@@ -177,17 +177,17 @@ const data = {
     service_name: "chat/embed/generate/text-to-image"
 };
 
-byze.ExportConfig(data).then((result) => { // 不填data则导出全部
+oadin.ExportConfig(data).then((result) => { // 不填data则导出全部
     console.log(result);
 });
 
 // 获取模型列表（查看ollama的模型）
-byze.GetModelsAvailiable().then((result) => {
+oadin.GetModelsAvailiable().then((result) => {
     console.log(result);
 });
 
 // 获取推荐模型列表
-byze.GetModelsRecommended().then((result) => {
+oadin.GetModelsRecommended().then((result) => {
     console.log(result);
 });
 
@@ -196,7 +196,7 @@ const data = {
     service_source: "remote/local",
     flavor: "ollama/openai/..." // local 则默认为ollama
 }; // 必填service_source, flavor
-byze.GetModelsSurpported().then((result) => {
+oadin.GetModelsSurpported().then((result) => {
     console.log(result);
 });
 
@@ -214,7 +214,7 @@ const data = {
     max_tokens: 100,
 }
 
-byze.Chat(data).then((chatStream) => {
+oadin.Chat(data).then((chatStream) => {
     chatStream.on('data', (data) => {
         console.log(data);
     });
@@ -240,7 +240,7 @@ const data = {
     max_tokens: 100,
 }
 
-byze.Chat(data).then((result) => {
+oadin.Chat(data).then((result) => {
     console.log(result);
 });
 
@@ -250,7 +250,7 @@ const data = {
     stream: true,
     prompt: "你好",
 }
-byze.Generate(data).then((generateStream) => {
+oadin.Generate(data).then((generateStream) => {
     generateStream.on('data', (data) => {
         console.log(data);
     });
@@ -268,7 +268,7 @@ const data = {
     stream: false,
     prompt: "你好",
 }
-byze.Generate(data).then((result) => {
+oadin.Generate(data).then((result) => {
     console.log(result);
 });
 
@@ -278,13 +278,13 @@ const data = {
     prompt: "一间有着精致窗户的花店，漂亮的木质门，摆放着花朵",
 }
 
-byze.TextToImage(data).then((result) => {
+oadin.TextToImage(data).then((result) => {
     console.log(result);
 });
 
 ## 8. Playground 功能
 
-Byze Playground 功能提供了一个与下载的 AI 模型交互的聊天界面，包含以下特性：
+Oadin Playground 功能提供了一个与下载的 AI 模型交互的聊天界面，包含以下特性：
 
 - 会话管理
 - 消息发送和接收
@@ -301,7 +301,7 @@ const createSessionData = {
     embedModelId: "deepseek-r1:7b",
 };
 
-byze.CreatePlaygroundSession(createSessionData).then((result) => {
+oadin.CreatePlaygroundSession(createSessionData).then((result) => {
     console.log(result);
 });
 ```
@@ -309,7 +309,7 @@ byze.CreatePlaygroundSession(createSessionData).then((result) => {
 ### 8.2 获取会话列表
 
 ```javascript
-byze.GetPlaygroundSessions().then((result) => {
+oadin.GetPlaygroundSessions().then((result) => {
     console.log(result);
 
 });
@@ -323,7 +323,7 @@ const messageData = {
     content: "Hello, I'd like to chat about AI."
 };
 
-byze.SendPlaygroundMessage(messageData).then((result) => {
+oadin.SendPlaygroundMessage(messageData).then((result) => {
     console.log(result);
 
 });
@@ -337,7 +337,7 @@ const messageData = {
     content: "Tell me about neural networks"
 };
 
-const stream = byze.SendPlaygroundMessageStream(messageData);
+const stream = oadin.SendPlaygroundMessageStream(messageData);
 
 // 使用事件监听器接收流式数据
 stream.on('data', (chunk) => {
@@ -364,7 +364,7 @@ stream.on('end', () => {
 ```javascript
 const sessionId = "session-uuid";
 
-byze.GetPlaygroundMessages(sessionId).then((result) => {
+oadin.GetPlaygroundMessages(sessionId).then((result) => {
     console.log(result);
 });
 ```
@@ -376,7 +376,7 @@ byze.GetPlaygroundMessages(sessionId).then((result) => {
 const sessionId = "session-uuid";
 const filePath = "path/to/document.txt";
 
-byze.UploadPlaygroundFile(sessionId, filePath).then((result) => {
+oadin.UploadPlaygroundFile(sessionId, filePath).then((result) => {
     console.log('文件上传结果:', result);
     
     if (result.code === 200 && result.data) {
@@ -384,7 +384,7 @@ byze.UploadPlaygroundFile(sessionId, filePath).then((result) => {
         const fileId = result.data.id;
         const model = "deepseek-r1:7b";  // 用于生成嵌入的模型
         
-        return byze.ProcessPlaygroundFile(fileId, model);
+        return oadin.ProcessPlaygroundFile(fileId, model);
     }
 }).then((result) => {
     console.log('文件处理结果:', result);
@@ -396,7 +396,7 @@ byze.UploadPlaygroundFile(sessionId, filePath).then((result) => {
 ```javascript
 const sessionId = "session-uuid";
 
-byze.GetPlaygroundFiles(sessionId).then((result) => {
+oadin.GetPlaygroundFiles(sessionId).then((result) => {
     console.log(result);
 });
 ```
@@ -406,7 +406,7 @@ byze.GetPlaygroundFiles(sessionId).then((result) => {
 ```javascript
 const fileId = "file-uuid";
 
-byze.DeletePlaygroundFile(fileId).then((result) => {
+oadin.DeletePlaygroundFile(fileId).then((result) => {
     console.log(result);
 });
 ```
@@ -414,7 +414,7 @@ byze.DeletePlaygroundFile(fileId).then((result) => {
 ### 8.9 切换会话模型
 
 ```javascript
-byze.ChangePlaygroundSessionModel({
+oadin.ChangePlaygroundSessionModel({
   sessionId: 'your-session-id',
   modelId: 'new-model-id',
   embedModelId: 'your-embed-model-id'
@@ -426,7 +426,7 @@ byze.ChangePlaygroundSessionModel({
 ```javascript
 const sessionId = "session-uuid";
 
-byze.DeletePlaygroundSession(sessionId).then((result) => {
+oadin.DeletePlaygroundSession(sessionId).then((result) => {
     console.log(result);
 });
 ```

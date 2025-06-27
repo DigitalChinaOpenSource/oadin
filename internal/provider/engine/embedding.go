@@ -1,12 +1,12 @@
 package engine
 
 import (
-	"byze/internal/schedule"
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
 	"context"
 	"encoding/json"
 	"fmt"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 )
 
 // Ollama embedding API 响应结构，兼容 data 和 embeddings 两种格式

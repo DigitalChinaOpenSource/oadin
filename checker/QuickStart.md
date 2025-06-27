@@ -1,39 +1,39 @@
-# Byze Quick Start
+# Oadin Quick Start
 
-Byze 是一个模型框架，它能解耦 AI PC 上的 AI 应用与它所依赖的 AI 服务。它旨在为开发者提供一个 极其简单易用的基础设施，以便他们在开发环境中安装本地 AI 服务，并发布他们的 AI 应用程序，无需打包自己 的 AI 堆栈和模型。
+Oadin 是一个模型框架，它能解耦 AI PC 上的 AI 应用与它所依赖的 AI 服务。它旨在为开发者提供一个 极其简单易用的基础设施，以便他们在开发环境中安装本地 AI 服务，并发布他们的 AI 应用程序，无需打包自己 的 AI 堆栈和模型。
 
 ### 系统要求
 - windows 10 64位及以上版本/ macOS 14及以上版本
 
 ### 下载和启动
 
-你可以前往 http://120.232.136.73:31619/byzedev/byze.exe 下载 `byze.exe` 到你的用户目录下，并添加到环境变量。
+你可以前往 http://120.232.136.73:31619/oadindev/oadin.exe 下载 `oadin.exe` 到你的用户目录下，并添加到环境变量。
 
-用以下命令启动 Byze 服务：
+用以下命令启动 Oadin 服务：
 
 ```bash
-byze server start -d
+oadin server start -d
 ```
 
-Byze 启动时会同时检测本地是否安装了 `ollama` ，如果没有安装会弹出下载和安装的提示，你可以选择是否安装，确认安装即可。
+Oadin 启动时会同时检测本地是否安装了 `ollama` ，如果没有安装会弹出下载和安装的提示，你可以选择是否安装，确认安装即可。
 
-### 检查当前 byze 是否启动
+### 检查当前 oadin 是否启动
 
-通过 api 即向本地的16688端口发送GET请求可以检查 byze 是否正常。响应如下则正常：
+通过 api 即向本地的16688端口发送GET请求可以检查 oadin 是否正常。响应如下则正常：
 ```
 Open Platform for AIPC
 ```
 
 ### 快速使用服务( 以 `chat` 服务为例)
 
-以下将帮助你更快地使用 byze 的服务，在使用中熟悉 byze。如果你想定制化地使用，可以前往[通过多步骤操作安装chat服务](#通过多步骤操作安装chat服务)。
+以下将帮助你更快地使用 oadin 的服务，在使用中熟悉 oadin。如果你想定制化地使用，可以前往[通过多步骤操作安装chat服务](#通过多步骤操作安装chat服务)。
 
 接下来我们以 `chat` 服务为例，从安装开始来使用服务。
 
 首先通过 api `/service` 一键安装 `chat` 服务
 
 ```
-POST http:127.0.0.1:16688/byze/v0.2/service
+POST http:127.0.0.1:16688/oadin/v0.2/service
 ```
 
 请求参数如下：
@@ -49,7 +49,7 @@ POST http:127.0.0.1:16688/byze/v0.2/service
     "method": "POST", // 选填，服务请求方法，默认为POST
     "desc": "", // 选填，服务描述
     "url": "", // 选填，服务提供商的URL
-    "skip_model": false, // 选填，安装服务时会默认一起安装一个由 byze 默认推荐的模型，选择是否跳过模型安装，默认为false
+    "skip_model": false, // 选填，安装服务时会默认一起安装一个由 oadin 默认推荐的模型，选择是否跳过模型安装，默认为false
     "model_name": "llama2", // 选填，模型名，如果不跳过安装，你可以指定安装某个模型，不指定则安装默认模型 deepseek-r1:7b
 }
 ```
@@ -78,7 +78,7 @@ POST http:127.0.0.1:16688/byze/v0.2/service
 `chat` 服务同样通过 api 调用
 
 ```
-POST http:127.0.0.1:16688/byze/v0.2/services/chat
+POST http:127.0.0.1:16688/oadin/v0.2/services/chat
 ```
 
 请求参数如下：
@@ -90,7 +90,7 @@ POST http:127.0.0.1:16688/byze/v0.2/services/chat
 }
 ```
 
-例如我们用这样的请求，可以通过 byze 请求模型的 chat：
+例如我们用这样的请求，可以通过 oadin 请求模型的 chat：
 ```json
 {
     "model": "deepseek-r1:7b",
@@ -160,7 +160,7 @@ data:{
 }
 ```
 
-接着就可以在你的应用程序代码中替换 chat() 函数的url使用服务了，下面给出了用 byze 提供的 url 替换原代码的示例：
+接着就可以在你的应用程序代码中替换 chat() 函数的url使用服务了，下面给出了用 oadin 提供的 url 替换原代码的示例：
 
 ```javascript
 async function chat(messages) {
@@ -178,7 +178,7 @@ async function chat(messages) {
     });
 
     // 修改后
-    const response = await fetch('http://127.0.0.1:16688/byze/v0.2/services/chat', {
+    const response = await fetch('http://127.0.0.1:16688/oadin/v0.2/services/chat', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -217,7 +217,7 @@ async function chat(messages) {
 
 ### 通过导入配置一键安装多个服务
 
-同时，Byze 也支持导入配置文件，导入配置文件功能可以帮助你快速导入多个服务和模型配置。配置文件(.byze)是一个json格式的文件，示例：
+同时，Oadin 也支持导入配置文件，导入配置文件功能可以帮助你快速导入多个服务和模型配置。配置文件(.oadin)是一个json格式的文件，示例：
 ```json
 {
   "version": "v0.2",
@@ -301,7 +301,7 @@ async function chat(messages) {
 
 可以通过 api 调用
 ```
-POST http:127.0.0.1:16688/byze/v0.2/service/import
+POST http:127.0.0.1:16688/oadin/v0.2/service/import
 ```
 
 将配置文件作为请求，得到的响应示例：
@@ -323,9 +323,9 @@ POST http:127.0.0.1:16688/byze/v0.2/service/import
 
 #### 安装服务商
 
-首先，你需要在 Byze 中安装一个服务提供商，例如 `local_ollama_chat`，你可以通过 api 调用：
+首先，你需要在 Oadin 中安装一个服务提供商，例如 `local_ollama_chat`，你可以通过 api 调用：
 ```
-POST http:127.0.0.1:16688/byze/v0.2/service_provider
+POST http:127.0.0.1:16688/oadin/v0.2/service_provider
 ```
 请求参数如下：
 ```json
@@ -358,7 +358,7 @@ POST http:127.0.0.1:16688/byze/v0.2/service_provider
 
 例如 `local_ollama_chat`，你可以通过 api 调用
 ```
-POST http:127.0.0.1:16688/byze/v0.2/model
+POST http:127.0.0.1:16688/oadin/v0.2/model
 ```
 请求参数
 ```json
@@ -378,9 +378,9 @@ POST http:127.0.0.1:16688/byze/v0.2/model
 ```
 接下来你就可以使用模型了。
 
-### 停止 byze 服务
+### 停止 oadin 服务
 
 在终端运行以下命令即可：
 ```bash
-byze server stop
+oadin server stop
 ```

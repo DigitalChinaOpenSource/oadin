@@ -26,7 +26,7 @@ if "%CURRENT_PATH%"=="" (
 )
 
 REM Normalize the INSTALL_PATH for consistent checking (add trailing backslash if not present)
-REM This helps in cases where the path might be 'C:\byze' or 'C:\byze\'
+REM This helps in cases where the path might be 'C:\oadin' or 'C:\oadin\'
 set "NORMALIZED_INSTALL_PATH=%INSTALL_PATH%"
 if not "%NORMALIZED_INSTALL_PATH:~-1%"=="\" (
     set "NORMALIZED_INSTALL_PATH=%NORMALIZED_INSTALL_PATH%\"
@@ -35,7 +35,7 @@ if not "%NORMALIZED_INSTALL_PATH:~-1%"=="\" (
 REM Check if the INSTALL_PATH already exists in the CURRENT_PATH (case-insensitive)
 echo "%PATH_TO_CHECK%" | findstr /i /c:";%NORMALIZED_INSTALL_PATH%;" > nul
 if %errorlevel% equ 0 (
-    echo Byze CLI path already exists in user's Path environment variable. Skipping.
+    echo Oadin CLI path already exists in user's Path environment variable. Skipping.
 ) else (
     REM Add the path if it doesn't exist
     REM Prepend with a semicolon if CURRENT_PATH is not empty and doesn't already end with a semicolon
@@ -47,7 +47,7 @@ if %errorlevel% equ 0 (
         )
     )
 
-    echo Byze CLI path added to user's Path environment variable.
+    echo Oadin CLI path added to user's Path environment variable.
 )
 
 REM Force a refresh of environment variables for currently running applications

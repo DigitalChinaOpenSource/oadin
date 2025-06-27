@@ -5,19 +5,19 @@ dotnet pack --configuration Release
 
 mkdir local-nuget
 
-cp ./bin/Release/ByzeClient.1.0.0.nupkg ./local-nuget
+cp ./bin/Release/OadinClient.1.0.0.nupkg ./local-nuget
 
-# 这一步会把这个目录配置到你的dotnet源列表中，dotnet nuget list source可以查看你的源列表，这之后在任何项目都可以通过--source LocalByze来使用这个源中的包
-dotnet nuget add source ./local-nuget --name LocalByze
+# 这一步会把这个目录配置到你的dotnet源列表中，dotnet nuget list source可以查看你的源列表，这之后在任何项目都可以通过--source LocalOadin来使用这个源中的包
+dotnet nuget add source ./local-nuget --name LocalOadin
 
-dotnet add package ByzeClient --version 1.0.0 --source LocalByze
-dotnet add package ByzeClient --version 1.0.0 --source .
+dotnet add package OadinClient --version 1.0.0 --source LocalOadin
+dotnet add package OadinClient --version 1.0.0 --source .
 ```
 
 ```csharp
-using ByzeClient;
+using OadinClient;
 
-var client = new ByzeClient();
+var client = new OadinClient();
 
 
 // 获取服务列表
@@ -172,7 +172,7 @@ var models = await client.GetModelListAsync(requestData);
 console.WriteLine(models);
 
 // 导入配置文件
-var result = await client.ImportConfigAsync("path/to/.byze");
+var result = await client.ImportConfigAsync("path/to/.oadin");
 Console.WriteLine(result);
 
 // 导出配置文件

@@ -1,11 +1,11 @@
 package config
 
 import (
-	"byze/config/condition_build"
 	"embed"
 	_ "embed"
 	"fmt"
 	"github.com/spf13/viper"
+	"oadin/config/condition_build"
 )
 
 //go:embed *

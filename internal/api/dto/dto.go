@@ -3,10 +3,10 @@ package dto
 import (
 	"time"
 
-	"byze/internal/types"
+	"oadin/internal/types"
 
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
 )
 
 type CreateAIGCServiceRequest struct {

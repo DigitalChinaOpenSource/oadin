@@ -9,7 +9,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Text;
 using System.Runtime.InteropServices;
-using byze_checker_0;
+using oadin_checker_0;
 
 namespace FreeChat
 {
@@ -24,16 +24,16 @@ namespace FreeChat
 
         public MainPage()
         {
-            string logPath = Path.Combine(userFolder, "byze_log.txt");
+            string logPath = Path.Combine(userFolder, "oadin_log.txt");
             InitializeComponent();
             LoadSettings();
 
-            InitializeByze();
+            InitializeOadin();
         }
 
-        private async void InitializeByze()
+        private async void InitializeOadin()
         {
-            await ByzeChecker.ByzeInit(this);
+            await OadinChecker.OadinInit(this);
         }
 
         // Navigation

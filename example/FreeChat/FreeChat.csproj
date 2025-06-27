@@ -74,13 +74,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Reference Include="ByzeCheckerLib">
-	    <HintPath>..\..\ByzeCheckerLib\src\bin\Release\net8.0\ByzeCheckerLib.dll</HintPath>
+	  <Reference Include="OadinCheckerLib">
+	    <HintPath>..\..\OadinCheckerLib\src\bin\Release\net8.0\OadinCheckerLib.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
 	
 	<ItemGroup>
-		<None Update=".byze">
+		<None Update=".oadin">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
