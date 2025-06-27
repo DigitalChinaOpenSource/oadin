@@ -631,7 +631,6 @@ export function useChatStream() {
                 // 处理普通文本内容
                 responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestState, false);
                 requestState.current.content.response = responseContent;
-                setStreamingContent(responseContent);
               }
             },
 

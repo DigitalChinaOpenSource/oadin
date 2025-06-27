@@ -23,7 +23,7 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, th
     <div className="chat-message-bubble ai-bubble">
       <div>{typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data && <DeepThinkChat dataSource={{ data: thinkingContent.data, status: thinkingContent.status as any }} />}</div>
       {/* @ts-ignore */}
-      <div style={{ marginTop: typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data ? '16px' : unset }}>
+      <div style={{ marginTop: typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data ? '16px' : 'unset' }}>
         <>
           {ReactMarkdown({
             children: content || '',
