@@ -51,10 +51,10 @@ build_mac:
     - mkdir -p scripts
     - echo '#!/bin/bash' > scripts/postinstall
     - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
-    - echo 'mkdir -p "$USER_HOME/Byze"' >> scripts/postinstall
+    - echo 'mkdir -p "$USER_HOME/Oadin"' >> scripts/postinstall
     - echo 'set -x' >> scripts/postinstall
-    - echo 'cp -f /Users/Shared/Byze/oadin "$USER_HOME/Byze/oadin"' >> scripts/postinstall
-    - echo 'ln -sf "$USER_HOME/Byze/oadin" /usr/local/bin/oadin' >> scripts/postinstall
+    - echo 'cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"' >> scripts/postinstall
+    - echo 'ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin' >> scripts/postinstall
     - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
     - echo 'SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')' >> scripts/postinstall
     - echo 'SHELL_NAME=$(basename "$SHELL_PATH")' >> scripts/postinstall
@@ -72,7 +72,7 @@ build_mac:
     - echo 'fi' >> scripts/postinstall
     - chmod +x scripts/postinstall
     - |
-      pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Byze --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Byze --scripts ./scripts oadin.pkg
+      pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./scripts oadin.pkg
     - echo "--------- 📬 安装包公证 ----------"
     - xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
     - xcrun notarytool submit oadin.pkg --keychain-profile "ci-profile" --wait
