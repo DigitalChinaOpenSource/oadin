@@ -8,12 +8,12 @@ import (
 	"log/slog"
 	"time"
 
-	"byze/config"
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/provider/engine"
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
+	"oadin/config"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/provider/engine"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 
 	"github.com/google/uuid"
 )
@@ -54,7 +54,7 @@ func NewPlayground() Playground {
 	}
 	go func() {
 		ctx := context.Background()
-		dbPath := config.GlobalByzeEnvironment.Datastore
+		dbPath := config.GlobalOadinEnvironment.Datastore
 		if err := InitPlaygroundVec(ctx, dbPath); err != nil {
 			slog.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
 		} else {

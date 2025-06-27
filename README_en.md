@@ -1,17 +1,17 @@
-# Byze (AIPC Open Gateway) Preview
+# Oadin (AIPC Open Gateway) Preview
 
 [中文](README.md) | English
 
-This is the preview version v0.2.0 of Byze. More features and stability are continuously being
+This is the preview version v0.2.0 of Oadin. More features and stability are continuously being
 improved. Please submit Issues for any defects found.
 
 The current version supports chat and embed services, with ollama supported at the lower level. More
 services such as text-to-image, audio-related, and other AI engines are under development in
 subsequent versions, so stay tuned.
 
-## Features of Byze
+## Features of Oadin
 
-Byze (AIPC Open Gateway) aims to decouple AI applications on AI PCs from the AI services they rely
+Oadin (AIPC Open Gateway) aims to decouple AI applications on AI PCs from the AI services they rely
 on. It is designed to provide developers with an extremely simple and easy-to-use infrastructure to
 install local AI services in their development environments and publish their AI applications
 without packaging their own AI stacks and models.
@@ -20,10 +20,10 @@ without packaging their own AI stacks and models.
 graph TB
  classDef pc_style color:#aaa, fill:#fcfcfc, stroke:#ddd, stroke-dasharray: 5 5
  classDef service_style fill:#fcc,stroke:#333
- classDef byze_style fill:#ffc,stroke:#333
+ classDef oadin_style fill:#ffc,stroke:#333
  classDef model_style fill:#efc,stroke:#333
 
- byze(Byze API Layer):::byze_style
+ oadin(Oadin API Layer):::oadin_style
  ai_x:::service_style
  ai_y:::service_style
  ai_m:::service_style
@@ -31,17 +31,17 @@ graph TB
  model_y:::model_style
  pc:::pc_style
 
- byze -.-> ai_m
+ oadin -.-> ai_m
 
  subgraph ai_m [AI Service Provider from Cloud]
  end
 
  subgraph pc[AIPC]
   direction TB
-  a(Application A) --> byze
-  b(Application B) --> byze
-  byze --> ai_x
-  byze --> ai_y
+  a(Application A) --> oadin
+  b(Application B) --> oadin
+  oadin --> ai_x
+  oadin --> ai_y
   subgraph ai_x [AI Service Provider]
    model_x(AI Models):::model_style
   end
@@ -51,28 +51,28 @@ graph TB
  end
 ```
 
-By providing unified platform-level AI services through Byze, AI applications no longer need to
+By providing unified platform-level AI services through Oadin, AI applications no longer need to
 package and publish AI engines and models with their own programs. Meanwhile, multiple AI
-applications on an AI PC use unified AI services provided by Byze, thus eliminating the need to
+applications on an AI PC use unified AI services provided by Oadin, thus eliminating the need to
 redundantly deploy and start their own AI stacks. This significantly reduces application size,
 eliminates redundant downloads of the same AI stacks and models by each application, and avoids
 competition for memory consumption during execution.
 
-Byze provides the following basic features:
+Oadin provides the following basic features:
 
 - One-stop AI service installation
 
   - During development, developers can install local AI services in their development environments
-    through simple commands such as `byze install chat` or
-    `byze pull-model deepseek-r1:1.5b for chat`. Byze will automatically download and install the most
+    through simple commands such as `oadin install chat` or
+    `oadin pull-model deepseek-r1:1.5b for chat`. Oadin will automatically download and install the most
     suitable and optimized AI stack (e.g., `ollama`) and models.
   - During deployment, developers can publish their AI applications without packaging dependent AI
-    stacks and models. Byze will automatically pull the required AI stacks and models for the
+    stacks and models. Oadin will automatically pull the required AI stacks and models for the
     deployed PC when needed.
 
 - Decoupling applications and AI service providers through shared services and standard APIs
 
-  - The Byze API layer provides standardized APIs for typical AI services such as chat and embedding.
+  - The Oadin API layer provides standardized APIs for typical AI services such as chat and embedding.
     Developers focus on the business logic of their applications without paying too much attention
     to the underlying AI service stack.
   - AI services are provided by the platform and shared by multiple applications on the same system.
@@ -80,50 +80,50 @@ Byze provides the following basic features:
     reducing competition for memory consumption.
 
 - Automatic API conversion to adapt to popular API styles
-  - In addition, the Byze API layer also provides automatic API conversion between popular API styles
-    (e.g., OpenAI API) and AI services provided by Byze. This allows developers to easily migrate
-    existing cloud-based AI applications to Byze-based AIPC applications.
+  - In addition, the Oadin API layer also provides automatic API conversion between popular API styles
+    (e.g., OpenAI API) and AI services provided by Oadin. This allows developers to easily migrate
+    existing cloud-based AI applications to Oadin-based AIPC applications.
 - Hybrid scheduling between local and cloud AI service providers
-  - Byze allows developers to install AI services in local development environments. These services
-    can be accessed through the Byze API layer.
+  - Oadin allows developers to install AI services in local development environments. These services
+    can be accessed through the Oadin API layer.
 
-## Building the Byze Command-Line Tool
+## Building the Oadin Command-Line Tool
 
-As a developer, to build Byze, you need to install [golang](https://go.dev/) on your system.
+As a developer, to build Oadin, you need to install [golang](https://go.dev/) on your system.
 
 If your development environment is Windows, you may need to install [MSYS2](https://www.msys2.org)
 to get commands like Make.
 
-Next, download or clone this project to a directory such as `/path_to_byze`.
+Next, download or clone this project to a directory such as `/path_to_oadin`.
 
 Then run the following commands:
 
 ```bash
-cd /path_to_byze
+cd /path_to_oadin
 
 make build-all
 ```
 
-This will generate an executable file named byze, which is the Byze command line.
+This will generate an executable file named oadin, which is the Oadin command line.
 
-## Using the Byze Command-Line Tool
+## Using the Oadin Command-Line Tool
 
-You can view the help information of the command-line tool by entering `byze -h`.
+You can view the help information of the command-line tool by entering `oadin -h`.
 
-Use commands to start and stop the Byze service
+Use commands to start and stop the Oadin service
 
 ```bash
-# Start Byze in the foreground
-byze server start
+# Start Oadin in the foreground
+oadin server start
 
-# Start Byze in the background
-byze server start -d
+# Start Oadin in the background
+oadin server start -d
 
-# Stop Byze
-byze server stop
+# Stop Oadin
+oadin server stop
 ```
 
-Byze has two key concepts: **Service** and **Service Provider**:
+Oadin has two key concepts: **Service** and **Service Provider**:
 
 - A **service** is a set of AI functions, such as chat and embedding, that provide RESTful
   interfaces for applications to call.
@@ -133,41 +133,41 @@ Byze has two key concepts: **Service** and **Service Provider**:
 A service can have multiple service providers. For example, a chat service can have both local and
 remote chat service providers. The local service provider is provided by ollama, and the remote
 service provider is provided by remote DeepSeek or Tongyi Qianwen. When an application calls the
-chat service using the Byze RESTful API, Byze will automatically select the appropriate service
+chat service using the Oadin RESTful API, Oadin will automatically select the appropriate service
 provider according to certain rules to complete the actual call of the service.
 
-As a developer, you can quickly install, import, and configure the corresponding Byze services and
+As a developer, you can quickly install, import, and configure the corresponding Oadin services and
 service providers through the following commands:
 
 ```sh
 # Install AI services locally
-# Byze will install the necessary AI stack (such as ollama) and Byze-recommended models
-byze install chat
-byze install embed
+# Oadin will install the necessary AI stack (such as ollama) and Oadin-recommended models
+oadin install chat
+oadin install embed
 
 # In addition to the default models, you can install more models in the service
 # The current version only supports pulling models based on ollama
 # Version v0.3 will support more AI stacks and models, as well as other services
-byze pull <model_name> -for <service_name> --provider <provider_name>
+oadin pull <model_name> -for <service_name> --provider <provider_name>
 
 # Get service information, you can view the specified service, if not specified, output all service information
-byze get services <service_name>
+oadin get services <service_name>
 
 # Modify service configuration
 # hybrid_policy   specifies the scheduling policy of the specific service, 
 # 			      the optional values are always_local, always_remote, default
 # remote_provider specifies the remote service provider
 # local_provider  specifies the local service provider
-byze edit service <service_name> --hybrid_policy always_remote --remote_provider xxx --local_provider xxx
+oadin edit service <service_name> --hybrid_policy always_remote --remote_provider xxx --local_provider xxx
 
 # Get service provider information, you can set optional parameters to get the specified service provider information
-byze get service_providers --service <service_name> --provider <provider_name> --remote <local/remote>
+oadin get service_providers --service <service_name> --provider <provider_name> --remote <local/remote>
 
 # Get model information, you can set optional parameters to get the specified model information
-byze get models --provider <provider_name>
+oadin get models --provider <provider_name>
 
 # Install service provider, the model will be automatically pulled during the installation process
-byze install service_provider -f xx/xxx.json
+oadin install service_provider -f xx/xxx.json
 # The file name is not required, the content must be in JSON format, example:
 {
   "provider_name": "local_ollama_chat"
@@ -187,7 +187,7 @@ byze install service_provider -f xx/xxx.json
 
 # Modify service provider configuration, here you can only modify the service provider configuration information, 
 # model changes need to be done by pulling models and deleting models
-byze edit service_provider <provider_name> -f xxx/xxx.json
+oadin edit service_provider <provider_name> -f xxx/xxx.json
 # Example:
 {
   "provider_name": "local_ollama_chat"
@@ -202,57 +202,57 @@ byze edit service_provider <provider_name> -f xxx/xxx.json
 }
 
 # Delete service provider
-byze delete service_provider <provider_name>
+oadin delete service_provider <provider_name>
 
 # Delete model Required parameter: --provider
-byze delete model <model_name>  --provider <provider_name>
+oadin delete model <model_name>  --provider <provider_name>
 ```
 
-## Calling the Byze API
+## Calling the Oadin API
 
-The Byze API is a Restful API. You can call this API in a way similar to calling cloud AI services
-(such as OpenAI). For detailed API specifications, please refer to the Byze API specifications.
+The Oadin API is a Restful API. You can call this API in a way similar to calling cloud AI services
+(such as OpenAI). For detailed API specifications, please refer to the Oadin API specifications.
 
-It is worth noting that the current Byze preview provides basic chat and other services, and the next
+It is worth noting that the current Oadin preview provides basic chat and other services, and the next
 version will provide more services related to text-to-image and voice.
 
 For example, you can use `curl` to test the chat service on Windows.
 
 ```sh
-curl -X POST http://localhost:16688/byze/v0.2/services/chat -X POST 
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat -X POST 
   -H "Content-Type: application/json" 
   -d "{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is the sky blue?\"}],\"stream\":false}"
 ```
 
 Furthermore, if you are already using applications with OpenAI API or ollama API, etc., you do not
-need to rewrite the way you call Byze to comply with its specifications.
+need to rewrite the way you call Oadin to comply with its specifications.
 
-Because Byze can automatically convert these popular API styles, you can easily migrate your
+Because Oadin can automatically convert these popular API styles, you can easily migrate your
 application by simply changing the endpoint URL.
 
 For example, if you are using OpenAI's chat completion service, you only need to replace the
 endpoint URL from `https://api.openai.com/v1/chat/completions` to
-`http://localhost:16688/byze/v0.2/api_flavors/openai/v1/chat/completions`.
+`http://localhost:16688/oadin/v0.2/api_flavors/openai/v1/chat/completions`.
 
-NOTE Please note that the new URL for calling Byze is located at `api_flavors/openai`, and the rest
+NOTE Please note that the new URL for calling Oadin is located at `api_flavors/openai`, and the rest
 of the URL is the same as the original OpenAI API, i.e., `/v1/chat/completions`.
 
 If you are using the ollama API, you can replace the endpoint URL from
-`https://localhost:11434/api/chat` to `http://localhost:16688/byze/v0.2/api_flavors/ollama/api/chat`.
+`https://localhost:11434/api/chat` to `http://localhost:16688/oadin/v0.2/api_flavors/ollama/api/chat`.
 Similarly, it is located at `api_flavors/ollama`, and the rest of the URL is the same as the
 original ollama API, i.e., `/api/chat`.
 
-## Publishing Your Byze-Based AI Application
+## Publishing Your Oadin-Based AI Application
 
-To publish your AI application, you only need to package the application with a tiny Byze component,
-the so-called `Byze Checker`, which is `ByzeChecker.dll` on Windows. You do not need to publish the AI
+To publish your AI application, you only need to package the application with a tiny Oadin component,
+the so-called `Oadin Checker`, which is `OadinChecker.dll` on Windows. You do not need to publish the AI
 stack or models.
 
-Taking a C/C++/C# application as an example, the following are the steps to deploy an Byze-based AI
+Taking a C/C++/C# application as an example, the following are the steps to deploy an Oadin-based AI
 application.
 
-1. Prepare the `.byze` file along with your application. The `.byze` file is a text manifest file that
-   specifies the AI services and models required by the application. For example, the `.byze` file
+1. Prepare the `.oadin` file along with your application. The `.oadin` file is a text manifest file that
+   specifies the AI services and models required by the application. For example, the `.oadin` file
    might look like this:
 
 ```json
@@ -269,11 +269,11 @@ application.
 }
 ```
 
-1. Include `ByzeChecker.h` and call `ByzeInit()` in your `main()` function. `ByzeInit()` will:
-   - Check if Byze is installed on the target PC. If not, it will automatically download and install
-     Byze.
-   - Check if the required AI services and models (as represented in the `.byze` file) are installed.
+1. Include `OadinChecker.h` and call `OadinInit()` in your `main()` function. `OadinInit()` will:
+   - Check if Oadin is installed on the target PC. If not, it will automatically download and install
+     Oadin.
+   - Check if the required AI services and models (as represented in the `.oadin` file) are installed.
      If not, it will automatically download and install them.
-2. Link the application with `byze.dll`.
-3. Publish the application along with the `.byze` file and the `ByzeChecker.dll` file in the same
+2. Link the application with `oadin.dll`.
+3. Publish the application along with the `.oadin` file and the `OadinChecker.dll` file in the same
    directory as your application's `.exe` file.

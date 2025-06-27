@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 )
 
 // 创建会话请求

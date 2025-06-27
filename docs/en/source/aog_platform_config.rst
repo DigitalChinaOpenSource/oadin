@@ -1,8 +1,8 @@
 ========================
-Byze Platform Config
+Oadin Platform Config
 ========================
 
 
-.. _byze_hybrid_policy:
+.. _oadin_hybrid_policy:
 
 Details of hybrid policy

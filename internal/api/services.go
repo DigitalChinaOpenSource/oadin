@@ -5,13 +5,13 @@ import (
 	"io"
 	"net/http"
 
-	"byze/internal/api/dto"
-	"byze/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (t *ByzeCoreServer) CreateAIGCService(c *gin.Context) {
+func (t *OadinCoreServer) CreateAIGCService(c *gin.Context) {
 	request := new(dto.CreateAIGCServiceRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
@@ -33,7 +33,7 @@ func (t *ByzeCoreServer) CreateAIGCService(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) UpdateAIGCService(c *gin.Context) {
+func (t *OadinCoreServer) UpdateAIGCService(c *gin.Context) {
 	request := new(dto.UpdateAIGCServiceRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
@@ -55,10 +55,10 @@ func (t *ByzeCoreServer) UpdateAIGCService(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) GetAIGCService(c *gin.Context) {
+func (t *OadinCoreServer) GetAIGCService(c *gin.Context) {
 }
 
-func (t *ByzeCoreServer) GetAIGCServices(c *gin.Context) {
+func (t *OadinCoreServer) GetAIGCServices(c *gin.Context) {
 	request := new(dto.GetAIGCServicesRequest)
 	if err := c.ShouldBindJSON(request); err != nil {
 		if !errors.Is(err, io.EOF) {
@@ -82,7 +82,7 @@ func (t *ByzeCoreServer) GetAIGCServices(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) ExportService(c *gin.Context) {
+func (t *OadinCoreServer) ExportService(c *gin.Context) {
 	request := new(dto.ExportServiceRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)
@@ -104,7 +104,7 @@ func (t *ByzeCoreServer) ExportService(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *ByzeCoreServer) ImportService(c *gin.Context) {
+func (t *OadinCoreServer) ImportService(c *gin.Context) {
 	request := new(dto.ImportServiceRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrAIGCServiceBadRequest)

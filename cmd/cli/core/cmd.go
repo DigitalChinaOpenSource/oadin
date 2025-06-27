@@ -19,24 +19,24 @@ import (
 	"syscall"
 	"time"
 
-	"byze/config"
-	"byze/console"
-	"byze/internal/api"
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/datastore/jsonds"
-	jsondsTemplate "byze/internal/datastore/jsonds/data"
-	"byze/internal/datastore/sqlite"
-	"byze/internal/event"
-	"byze/internal/provider"
-	"byze/internal/schedule"
-	"byze/internal/server"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
-	"byze/internal/utils/progress"
-	"byze/tray"
-	"byze/version"
+	"oadin/config"
+	"oadin/console"
+	"oadin/internal/api"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/datastore/jsonds"
+	jsondsTemplate "oadin/internal/datastore/jsonds/data"
+	"oadin/internal/datastore/sqlite"
+	"oadin/internal/event"
+	"oadin/internal/provider"
+	"oadin/internal/schedule"
+	"oadin/internal/server"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
+	"oadin/internal/utils/progress"
+	"oadin/tray"
+	"oadin/version"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -44,7 +44,7 @@ import (
 
 // ServerManager 用于管理服务器实例
 type ServerManager struct {
-	byzeServer    *http.Server
+	oadinServer   *http.Server
 	consoleServer *http.Server
 	cancel        context.CancelFunc
 	trayManager   *tray.Manager
@@ -56,8 +56,8 @@ var globalServerManager *ServerManager
 func (sm *ServerManager) StopServer(serverType string) error {
 	var srv *http.Server
 	switch serverType {
-	case "byze":
-		srv = sm.byzeServer
+	case "oadin":
+		srv = sm.oadinServer
 	case "console":
 		srv = sm.consoleServer
 	default:
@@ -84,14 +84,14 @@ func (sm *ServerManager) StopServer(serverType string) error {
 	}
 
 	switch serverType {
-	case "byze":
-		sm.byzeServer = nil
+	case "oadin":
+		sm.oadinServer = nil
 	case "console":
 		sm.consoleServer = nil
 	}
 
 	// 如果两个服务器都已停止，则取消主context
-	if sm.byzeServer == nil && sm.consoleServer == nil && sm.cancel != nil {
+	if sm.oadinServer == nil && sm.consoleServer == nil && sm.cancel != nil {
 		sm.cancel()
 	}
 
@@ -101,7 +101,7 @@ func (sm *ServerManager) StopServer(serverType string) error {
 // NewCommand will contain all commands
 func NewCommand() *cobra.Command {
 	cmds := &cobra.Command{
-		Use: "byze",
+		Use: "oadin",
 	}
 
 	cmds.AddCommand(
@@ -205,8 +205,8 @@ func NewEditServiceCommand() *cobra.Command {
 				req.LocalProvider = localProvider
 			}
 
-			c := config.NewByzeClient()
-			routerPath := fmt.Sprintf("/byze/%s/service", version.ByzeVersion)
+			c := config.NewOadinClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service", version.OadinVersion)
 
 			err = c.Client.Do(context.Background(), http.MethodPut, routerPath, req, &resp)
 			if err != nil {
@@ -227,7 +227,7 @@ func NewEditServiceCommand() *cobra.Command {
 
 func Run(ctx context.Context) error {
 	// Initialize the datastore
-	ds, err := sqlite.New(config.GlobalByzeEnvironment.Datastore)
+	ds, err := sqlite.New(config.GlobalOadinEnvironment.Datastore)
 	if err != nil {
 		slog.Error("[Init] Failed to load datastore", "error", err)
 		return err
@@ -250,7 +250,7 @@ func Run(ctx context.Context) error {
 
 	if server.UseVSSForPlayground() {
 		go func() {
-			dbPath := config.GlobalByzeEnvironment.Datastore
+			dbPath := config.GlobalOadinEnvironment.Datastore
 			if err := server.InitPlaygroundVec(ctx, dbPath); err != nil {
 				slog.Error("Failed to initialize VSS database", "error", err)
 			} else {
@@ -261,8 +261,8 @@ func Run(ctx context.Context) error {
 
 	// version.StartCheckUpdate(ctx)
 	// Initialize core core app server
-	byzeServer := api.NewByzeCoreServer()
-	byzeServer.Register()
+	oadinServer := api.NewOadinCoreServer()
+	oadinServer.Register()
 
 	event.InitSysEvents()
 	event.SysEvents.Notify("start_app", nil)
@@ -280,16 +280,16 @@ func Run(ctx context.Context) error {
 	schedule.StartScheduler("basic")
 
 	// Inject the router
-	api.InjectRouter(byzeServer)
+	api.InjectRouter(oadinServer)
 
 	// Inject all flavors to the router
 	// Setup flavors
 	for _, flavor := range schedule.AllAPIFlavors() {
-		flavor.InstallRoutes(byzeServer.Router, config.GlobalByzeEnvironment)
+		flavor.InstallRoutes(oadinServer.Router, config.GlobalOadinEnvironment)
 		schedule.InitProviderDefaultModelTemplate(flavor)
 	}
 
-	pidFile := filepath.Join(config.GlobalByzeEnvironment.RootDir, "byze.pid")
+	pidFile := filepath.Join(config.GlobalOadinEnvironment.RootDir, "oadin.pid")
 	err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0o644)
 	if err != nil {
 		slog.Error("[Run] Failed to write pid file", "error", err)
@@ -309,16 +309,16 @@ func Run(ctx context.Context) error {
 		cancel: cancel,
 	}
 
-	// start byze server
-	byzeSrv := &http.Server{
-		Addr:    config.GlobalByzeEnvironment.ApiHost,
-		Handler: byzeServer.Router,
+	// start oadin server
+	oadinSrv := &http.Server{
+		Addr:    config.GlobalOadinEnvironment.ApiHost,
+		Handler: oadinServer.Router,
 	}
-	globalServerManager.byzeServer = byzeSrv
+	globalServerManager.oadinServer = oadinSrv
 
 	go func() {
-		if err := byzeSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			errChan <- fmt.Errorf("byze server error: %v", err)
+		if err := oadinSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errChan <- fmt.Errorf("oadin server error: %v", err)
 		}
 	}()
 
@@ -329,38 +329,38 @@ func Run(ctx context.Context) error {
 	}
 	globalServerManager.consoleServer = consoleSrv
 
-	_, _ = color.New(color.FgHiGreen).Println("Byze Gateway starting on port", config.GlobalByzeEnvironment.ApiHost)
+	_, _ = color.New(color.FgHiGreen).Println("Oadin Gateway starting on port", config.GlobalOadinEnvironment.ApiHost)
 	_, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
 
 	// create tray manager
 	trayManager := tray.NewManager(
 		func() error {
-			if globalServerManager.byzeServer != nil {
+			if globalServerManager.oadinServer != nil {
 				return fmt.Errorf("server is already running")
 			}
-			byzeSrv = &http.Server{
-				Addr:    config.GlobalByzeEnvironment.ApiHost,
-				Handler: byzeServer.Router,
+			oadinSrv = &http.Server{
+				Addr:    config.GlobalOadinEnvironment.ApiHost,
+				Handler: oadinServer.Router,
 			}
 			go func() {
-				if err := byzeSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					errChan <- fmt.Errorf("byze server error: %v", err)
+				if err := oadinSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					errChan <- fmt.Errorf("oadin server error: %v", err)
 				}
 			}()
-			globalServerManager.byzeServer = byzeSrv
+			globalServerManager.oadinServer = oadinSrv
 			return nil
 		},
 		func() error {
-			if globalServerManager.byzeServer == nil {
+			if globalServerManager.oadinServer == nil {
 				return fmt.Errorf("server is not running")
 			}
-			return globalServerManager.StopServer("byze")
+			return globalServerManager.StopServer("oadin")
 		},
 		func() error {
 			var errs []error
-			if globalServerManager.byzeServer != nil {
-				if err := globalServerManager.StopServer("byze"); err != nil {
-					errs = append(errs, fmt.Errorf("failed to stop byze server: %v", err))
+			if globalServerManager.oadinServer != nil {
+				if err := globalServerManager.StopServer("oadin"); err != nil {
+					errs = append(errs, fmt.Errorf("failed to stop oadin server: %v", err))
 				}
 			}
 			if globalServerManager.consoleServer != nil {
@@ -374,7 +374,7 @@ func Run(ctx context.Context) error {
 			return nil
 		},
 		func() error {
-			return utils.StopByzeServer(pidFile)
+			return utils.StopOadinServer(pidFile)
 		},
 		true,
 	)
@@ -432,8 +432,8 @@ func updateServiceProviderHandler(providerName, configFile string) error {
 
 	resp := dto.UpdateServiceProviderResponse{}
 
-	c := config.NewByzeClient()
-	routerPath := fmt.Sprintf("/byze/%s/service_provider", version.ByzeVersion)
+	c := config.NewOadinClient()
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OadinVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPut, routerPath, spConf, &resp)
 	if err != nil {
@@ -477,8 +477,8 @@ func NewDeleteCommand() *cobra.Command {
 func NewApiserverCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "server",
-		Short: "Manage byze server",
-		Long:  "Manage byze server (start, stop, etc.)",
+		Short: "Manage oadin server",
+		Long:  "Manage oadin server (start, stop, etc.)",
 	}
 
 	cmd.AddCommand(
@@ -493,18 +493,18 @@ func NewApiserverCommand() *cobra.Command {
 func NewStopApiServerCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "stop",
-		Short: "Stop byze server daemon",
-		Long:  "Stop byze server daemon",
+		Short: "Stop oadin server daemon",
+		Long:  "Stop oadin server daemon",
 		Args:  cobra.ExactArgs(0), // 不需要参数
-		RunE:  stopByzeServer,
+		RunE:  stopOadinServer,
 	}
 }
 
-func stopByzeServer(cmd *cobra.Command, args []string) error {
-	pidFile := filepath.Join(config.GlobalByzeEnvironment.RootDir, "*.pid")
-	err := utils.StopByzeServer(pidFile)
+func stopOadinServer(cmd *cobra.Command, args []string) error {
+	pidFile := filepath.Join(config.GlobalOadinEnvironment.RootDir, "*.pid")
+	err := utils.StopOadinServer(pidFile)
 	if err != nil {
-		fmt.Printf("[Stop] Failed to stop byze server err: %s", err)
+		fmt.Printf("[Stop] Failed to stop oadin server err: %s", err)
 	}
 
 	return nil
@@ -529,7 +529,7 @@ func NewInstallServiceCommand() *cobra.Command {
 		Short:  "Install a service or service provider",
 		Long:   `Install a service by name or a service provider from a file.`,
 		Args:   cobra.ExactArgs(1),
-		PreRun: CheckByzeServer,
+		PreRun: CheckOadinServer,
 		Run:    InstallServiceHandler,
 	}
 
@@ -551,11 +551,11 @@ func NewInstallServiceCommand() *cobra.Command {
 func NewVersionCommand() *cobra.Command {
 	ver := &cobra.Command{
 		Use:   "version",
-		Short: "Prints byze build version information.",
-		Long:  "Prints byze build version information.",
+		Short: "Prints oadin build version information.",
+		Long:  "Prints oadin build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf(`Byze Version: %s`,
-				version.ByzeVersion)
+			fmt.Printf(`Oadin Version: %s`,
+				version.OadinVersion)
 		},
 	}
 
@@ -564,25 +564,25 @@ func NewVersionCommand() *cobra.Command {
 
 // NewStartApiServerCommand  Create a new cobra.Command Object with default values.
 func NewStartApiServerCommand() *cobra.Command {
-	config.GlobalByzeEnvironment = config.NewByzeEnvironment()
+	config.GlobalOadinEnvironment = config.NewOadinEnvironment()
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "byze apiserver is a aipc open gateway",
-		Long:  "byze apiserver is a aipc open gateway",
+		Short: "oadin apiserver is a aipc open gateway",
+		Long:  "oadin apiserver is a aipc open gateway",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			isDaemon, err := cmd.Flags().GetBool("d")
 			if err != nil {
 				return err
 			}
 			if isDaemon {
-				CheckByzeServer(cmd, args)
+				CheckOadinServer(cmd, args)
 				return nil
 			}
 			return Run(context.Background())
 		},
 	}
 	fs := cmd.Flags()
-	namedFlagSets := config.GlobalByzeEnvironment.Flags()
+	namedFlagSets := config.GlobalOadinEnvironment.Flags()
 	for _, set := range namedFlagSets.FlagSets {
 		fs.AddFlagSet(set)
 	}
@@ -668,8 +668,8 @@ func NewListServicesCommand() *cobra.Command {
 				req.ServiceName = args[0]
 			}
 
-			c := config.NewByzeClient()
-			routerPath := fmt.Sprintf("/byze/%s/service", version.ByzeVersion)
+			c := config.NewOadinClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service", version.OadinVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -716,8 +716,8 @@ func NewListModelsCommand() *cobra.Command {
 				req.ProviderName = providerName
 			}
 
-			c := config.NewByzeClient()
-			routerPath := fmt.Sprintf("/byze/%s/model", version.ByzeVersion)
+			c := config.NewOadinClient()
+			routerPath := fmt.Sprintf("/oadin/%s/model", version.OadinVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -766,8 +766,8 @@ func NewListProvidersCommand() *cobra.Command {
 				req.ServiceSource = remote
 			}
 
-			c := config.NewByzeClient()
-			routerPath := fmt.Sprintf("/byze/%s/service_provider", version.ByzeVersion)
+			c := config.NewOadinClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OadinVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -835,8 +835,8 @@ func installServiceProviderHandler(configFile string) error {
 	msg := "Service provider installing"
 	go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
-	c := config.NewByzeClient()
-	routerPath := fmt.Sprintf("/byze/%s/service_provider", version.ByzeVersion)
+	c := config.NewOadinClient()
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OadinVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPost, routerPath, spConf, &resp)
 	if err != nil {
@@ -955,8 +955,8 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 		msg := "Service installing"
 		go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
-		c := config.NewByzeClient()
-		routerPath := fmt.Sprintf("/byze/%s/service", version.ByzeVersion)
+		c := config.NewOadinClient()
+		routerPath := fmt.Sprintf("/oadin/%s/service", version.OadinVersion)
 
 		err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 		if err != nil {
@@ -1004,28 +1004,28 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 		//			return
 		//		}
 		//	} else {
-		//		fmt.Println("下次您可以通过 byze install chat -r --flavor deepseek --auth_type apikey 来启用远程DeepSeek服务")
+		//		fmt.Println("下次您可以通过 oadin install chat -r --flavor deepseek --auth_type apikey 来启用远程DeepSeek服务")
 		//	}
 		//}
 	}
 }
 
-func CheckByzeServer(cmd *cobra.Command, args []string) {
+func CheckOadinServer(cmd *cobra.Command, args []string) {
 	if utils.IsServerRunning() {
-		fmt.Println("Byze server start successfully.")
+		fmt.Println("Oadin server start successfully.")
 		return
 	}
 
-	fmt.Println("Byze server is not running. Starting the server...")
-	if err := startByzeServer(); err != nil {
-		log.Fatalf("Failed to start Byze server: %s \n", err.Error())
+	fmt.Println("Oadin server is not running. Starting the server...")
+	if err := startOadinServer(); err != nil {
+		log.Fatalf("Failed to start Oadin server: %s \n", err.Error())
 		return
 	}
 
 	time.Sleep(6 * time.Second)
 
 	if !utils.IsServerRunning() {
-		log.Fatal("Failed to start Byze server.")
+		log.Fatal("Failed to start Oadin server.")
 		return
 	}
 
@@ -1096,15 +1096,15 @@ func CheckByzeServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println("Byze server start successfully.")
+	fmt.Println("Oadin server start successfully.")
 }
 
-func startByzeServer() error {
-	logPath := config.GlobalByzeEnvironment.ConsoleLog
-	rootDir := config.GlobalByzeEnvironment.RootDir
-	err := utils.StartByzeServer(logPath, rootDir)
+func startOadinServer() error {
+	logPath := config.GlobalOadinEnvironment.ConsoleLog
+	rootDir := config.GlobalOadinEnvironment.RootDir
+	err := utils.StartOadinServer(logPath, rootDir)
 	if err != nil {
-		fmt.Printf("byze server start failed: %s", err.Error())
+		fmt.Printf("oadin server start failed: %s", err.Error())
 		return err
 	}
 	return nil
@@ -1179,8 +1179,8 @@ func PullHandler(cmd *cobra.Command, args []string) {
 	//msg := "Pulling model"
 	//go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
-	c := config.NewByzeClient()
-	routerPath := fmt.Sprintf("/byze/%s/model", version.ByzeVersion)
+	c := config.NewOadinClient()
+	routerPath := fmt.Sprintf("/oadin/%s/model", version.OadinVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 	if err != nil {
@@ -1228,8 +1228,8 @@ func DeleteModelHandler(cmd *cobra.Command, args []string) {
 	req.ServiceName = serviceName
 	req.ProviderName = providerName
 
-	c := config.NewByzeClient()
-	routerPath := fmt.Sprintf("/byze/%s/model", version.ByzeVersion)
+	c := config.NewOadinClient()
+	routerPath := fmt.Sprintf("/oadin/%s/model", version.OadinVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodDelete, routerPath, req, &resp)
 	if err != nil {
@@ -1253,8 +1253,8 @@ func DeleteProviderHandler(cmd *cobra.Command, args []string) {
 
 	req.ProviderName = providerName
 
-	c := config.NewByzeClient()
-	routerPath := fmt.Sprintf("/byze/%s/service_provider", version.ByzeVersion)
+	c := config.NewOadinClient()
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OadinVersion)
 
 	err := c.Client.Do(context.Background(), http.MethodDelete, routerPath, req, &resp)
 	if err != nil {
@@ -1277,7 +1277,7 @@ func NewImportServiceCommand() *cobra.Command {
 		Long:  "Import service configuration from a file and send it to the API.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
-				return fmt.Errorf("please provide a .byze file path")
+				return fmt.Errorf("please provide a .oadin file path")
 			}
 			filePath := args[0]
 			// Read the file content
@@ -1300,8 +1300,8 @@ func NewImportServiceCommand() *cobra.Command {
 			msg := "Importing service configuration"
 			go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
-			c := config.NewByzeClient()
-			routerPath := fmt.Sprintf("/byze/%s/service/import", version.ByzeVersion)
+			c := config.NewOadinClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service/import", version.OadinVersion)
 
 			err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
@@ -1352,8 +1352,8 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 			}
 			resp := &dto.ExportServiceResponse{}
 
-			c := config.NewByzeClient()
-			routerPath := fmt.Sprintf("/byze/%s/service/export", version.ByzeVersion)
+			c := config.NewOadinClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OadinVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
@@ -1376,7 +1376,7 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		},
 	}
 
-	cmd.Flags().StringVarP(&filePath, "file", "f", "./.byze", "Output file path")
+	cmd.Flags().StringVarP(&filePath, "file", "f", "./.oadin", "Output file path")
 
 	return cmd
 }
@@ -1394,8 +1394,8 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 			}
 			resp := &dto.ExportServiceResponse{}
 
-			c := config.NewByzeClient()
-			routerPath := fmt.Sprintf("/byze/%s/service/export", version.ByzeVersion)
+			c := config.NewOadinClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OadinVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
@@ -1468,14 +1468,14 @@ func ListenModelEngineHealth() {
 // NewStopServerCommand 创建停止指定服务器的命令
 func NewStopServerCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "stop [byze|console]",
+		Use:   "stop [oadin|console]",
 		Short: "Stop a specific server",
-		Long:  "Stop either the byze server or the console server",
+		Long:  "Stop either the oadin server or the console server",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serverType := args[0]
-			if serverType != "byze" && serverType != "console" {
-				return fmt.Errorf("invalid server type: %s. Must be either 'byze' or 'console'", serverType)
+			if serverType != "oadin" && serverType != "console" {
+				return fmt.Errorf("invalid server type: %s. Must be either 'oadin' or 'console'", serverType)
 			}
 
 			if globalServerManager == nil {

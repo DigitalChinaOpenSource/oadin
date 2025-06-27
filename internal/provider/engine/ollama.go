@@ -1,12 +1,12 @@
 package engine
 
 import (
-	"byze/internal/cache"
 	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"oadin/internal/cache"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,10 +14,10 @@ import (
 	"strconv"
 	"strings"
 
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/client"
-	"byze/internal/utils/progress"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/client"
+	"oadin/internal/utils/progress"
 
 	"github.com/spf13/cobra"
 )
@@ -32,13 +32,13 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 			EngineConfig: config,
 		}
 	}
-	ByzeDir, err := utils.GetByzeDataDir()
+	OadinDir, err := utils.GetOadinDataDir()
 	if err != nil {
-		slog.Error("Get Byze data dir failed", "error", err.Error())
+		slog.Error("Get Oadin data dir failed", "error", err.Error())
 		return nil
 	}
 
-	downloadPath := fmt.Sprintf("%s/%s", ByzeDir, "download")
+	downloadPath := fmt.Sprintf("%s/%s", OadinDir, "download")
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		err := os.MkdirAll(downloadPath, 0o750)
 		if err != nil {
@@ -101,9 +101,9 @@ func (o *OllamaProvider) StartEngine() error {
 		return fmt.Errorf("failed to start ollama: %v", err)
 	}
 
-	rootPath, err := utils.GetByzeDataDir()
+	rootPath, err := utils.GetOadinDataDir()
 	if err != nil {
-		return fmt.Errorf("failed get byze dir: %v", err)
+		return fmt.Errorf("failed get oadin dir: %v", err)
 	}
 	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
 	err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
@@ -119,9 +119,9 @@ func (o *OllamaProvider) StartEngine() error {
 }
 
 func (o *OllamaProvider) StopEngine() error {
-	rootPath, err := utils.GetByzeDataDir()
+	rootPath, err := utils.GetOadinDataDir()
 	if err != nil {
-		return fmt.Errorf("failed get byze dir: %v", err)
+		return fmt.Errorf("failed get oadin dir: %v", err)
 	}
 	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
 
@@ -180,9 +180,9 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			return nil
 		}
 	}
-	dataDir, err := utils.GetByzeDataDir()
+	dataDir, err := utils.GetOadinDataDir()
 	if err != nil {
-		slog.Error("Get Byze data dir failed", "error", err)
+		slog.Error("Get Oadin data dir failed", "error", err)
 		return nil
 	}
 
@@ -197,29 +197,29 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 
 		switch utils.DetectGpuModel() {
 		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-all.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ollama-windows-amd64-all.zip"
 		case types.GPUTypeNvidia:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ollama-windows-amd64.zip"
 		case types.GPUTypeAmd:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-rocm.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ollama-windows-amd64-rocm.zip"
 		case types.GPUTypeIntelArc:
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ipex-llm-ollama.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ipex-llm-ollama.zip"
 		default:
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ollama-windows-amd64-base.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/ollama-windows-amd64-base.zip"
 		}
 
 	case "linux":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/linux/OllamaSetup.exe"
+		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/linux/OllamaSetup.exe"
 	case "darwin":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", "ollama")
 		if runtime.GOARCH == "amd64" {
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/macos/Ollama-darwin.zip"
 		} else {
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
+			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/macos/Ollama-arm64.zip"
 		}
 	default:
 		return nil
@@ -339,7 +339,7 @@ func (o *OllamaProvider) InitEnv() error {
 	}
 
 	modelPath := fmt.Sprintf("%s/%s", o.EngineConfig.EnginePath, "models")
-	currModelPath := os.Getenv("BYZE_OLLAMA_MODELS")
+	currModelPath := os.Getenv("OADIN_OLLAMA_MODELS")
 	if currModelPath != "" {
 		modelPath = currModelPath
 	}

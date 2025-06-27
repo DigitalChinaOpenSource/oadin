@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"byze/internal/types"
-	"byze/internal/utils/client"
+	"oadin/internal/types"
+	"oadin/internal/utils/client"
 )
 
 type OpenvinoProvider struct {

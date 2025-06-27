@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"byze/config"
 	"github.com/go-resty/resty/v2"
+	"oadin/config"
 	"time"
 )
 

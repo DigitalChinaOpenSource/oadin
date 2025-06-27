@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"byze/internal/utils/bcode"
+	"oadin/internal/utils/bcode"
 )
 
 // 切换会话深度思考模式请求

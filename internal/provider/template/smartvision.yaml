@@ -1,7 +1,7 @@
 version: "0.1"
 name: smartvision # the name should be aligned with file name
 services:
-    chat: # service name defined by Byze
+    chat: # service name defined by Oadin
         url: "https://smartvision-dev.digitalchina.com/api/apps/chat"
         endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
         extra_url: ""
@@ -9,10 +9,10 @@ services:
         auth_apply_url: ""
         default_model: ""
         request_segments: 1 # request
-        install_raw_routes: false  # also install routes without byze prefix in url path
+        install_raw_routes: false  # also install routes without oadin prefix in url path
         extra_headers: '{}'
         support_models: ["ernie-3.5-8k", ]
-        request_to_byze:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -40,7 +40,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_byze:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -68,7 +68,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_byze:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -81,7 +81,7 @@ services:
                           "finish_reason": data.finish_reason
                       }
 
-        stream_response_to_byze:
+        stream_response_to_oadin:
             conversion:
                 - converter: action_if
                   config:
@@ -99,7 +99,7 @@ services:
                           "finish_reason": delta.finish_reason
                       }
 
-        response_from_byze:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -113,7 +113,7 @@ services:
                       }
                       
 
-        stream_response_from_byze:
+        stream_response_from_oadin:
             epilogue: ["[DONE]"] # openai adds a data: [DONE] at the end
             conversion:
                 - converter: jsonata
@@ -134,10 +134,10 @@ services:
         auth_apply_url: ""
         default_model: ""
         request_segments: 1 # request
-        install_raw_routes: false # also install routes without byze prefix in url path# request to this will use this flavor
+        install_raw_routes: false # also install routes without oadin prefix in url path# request to this will use this flavor
         extra_headers: '{}'
         support_models: ["embedding-v1", ""]
-        request_to_byze:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -153,7 +153,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_byze:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -169,7 +169,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_byze:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -178,7 +178,7 @@ services:
                            "model": model,
                            "data": [$map(data, function($v, $i){{"index": $i, "embedding": $v}})]
                        }
-        response_from_byze:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |

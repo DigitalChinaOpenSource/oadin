@@ -1,17 +1,17 @@
 version: "0.1"
 name: deepseek # the name should be aligned with file name
 services:
-    chat: # service name defined by Byze
+    chat: # service name defined by Oadin
         url: "https://api.lkeap.cloud.tencent.com/v1/chat/completions"
         endpoints: [ "POST /v1/chat/completions" ]  # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
         default_model: deepseek-chat
         request_segments: 1 # request
-        install_raw_routes: false # also install routes without byze prefix in url path
+        install_raw_routes: false # also install routes without oadin prefix in url path
         extra_headers: '{}'
         support_models: ["deepseek-chat", "deepseek-resoning"]
-        request_to_byze:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -34,7 +34,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_byze:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -57,7 +57,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_byze:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -70,7 +70,7 @@ services:
                           "finish_reason": choices[0].finish_reason
                       }
 
-        stream_response_to_byze:
+        stream_response_to_oadin:
             conversion:
                 - converter: action_if
                   config:
@@ -88,7 +88,7 @@ services:
                           "finish_reason": choices[0].finish_reason
                       }
 
-        response_from_byze:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -104,7 +104,7 @@ services:
                           }]
                       }
 
-        stream_response_from_byze:
+        stream_response_from_oadin:
             epilogue: ["[DONE]"] # openai adds a data: [DONE] at the end
             conversion:
                 - converter: jsonata
