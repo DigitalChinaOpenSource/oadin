@@ -158,6 +158,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						finalContent = fmt.Sprintf("<think>\n%s\n</think>\n\n%s", thoughts, fullContent)
 					}
 
+					resp.TotalDuration = resp.TotalDuration / int64(time.Second)
+					totalDuration = resp.TotalDuration
+
 					assistantMsg := &types.ChatMessage{
 						ID:            assistantMsgID,
 						SessionID:     request.SessionID,
@@ -219,7 +222,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 							CreatedAt:     time.Now(),
 							ModelID:       session.ModelID,
 							ModelName:     session.ModelName,
-							TotalDuration: resp.TotalDuration,
+							TotalDuration: totalDuration,
 						}
 						err = p.Ds.Add(ctx, assistantMsg)
 						if err != nil {
