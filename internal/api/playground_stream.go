@@ -5,15 +5,15 @@ import (
 	"io"
 	"net/http"
 
-	"byze/internal/api/dto"
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
 
 // 发送消息并流式返回响应
-func (t *ByzeCoreServer) SendMessageStream(c *gin.Context) {
+func (t *OadinCoreServer) SendMessageStream(c *gin.Context) {
 	var req dto.SendStreamMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

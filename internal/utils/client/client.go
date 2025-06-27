@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"byze/internal/utils/bcode"
-	"byze/internal/utils/progress"
+	"oadin/internal/utils/bcode"
+	"oadin/internal/utils/progress"
 )
 
 type Client struct {

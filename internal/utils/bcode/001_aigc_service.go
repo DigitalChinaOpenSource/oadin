@@ -27,9 +27,9 @@ var (
 
 	ErrAddModelService = NewBcode(http.StatusInternalServerError, 10013, "add model service failed")
 
-	ErrAIGCServiceVersionNotMatch = NewBcode(http.StatusUnprocessableEntity, 10014, "byze version not match")
+	ErrAIGCServiceVersionNotMatch = NewBcode(http.StatusUnprocessableEntity, 10014, "oadin version not match")
 
-	ErrUnSupportAIGCService = NewBcode(http.StatusBadRequest, 10015, "unsupport byze service")
+	ErrUnSupportAIGCService = NewBcode(http.StatusBadRequest, 10015, "unsupport oadin service")
 
 	ErrUnSupportHybridPolicy = NewBcode(http.StatusBadRequest, 10016, "unsupport hybrid policy")
 

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"byze/internal/api/dto"
+	"oadin/internal/api/dto"
 )
 
 func TestServiceProviderImpl_CreateServiceProvider(t *testing.T) {

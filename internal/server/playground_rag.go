@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"byze/config"
-	"byze/internal/datastore"
-	"byze/internal/datastore/sqlite"
-	"byze/internal/provider/engine"
-	"byze/internal/types"
+	"oadin/config"
+	"oadin/internal/datastore"
+	"oadin/internal/datastore/sqlite"
+	"oadin/internal/provider/engine"
+	"oadin/internal/types"
 )
 
 // 包含检索增强生成的配置选项
@@ -128,7 +128,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	// 检查VEC数据库初始化状态
 	if !vecInitialized || vecDB == nil {
 		slog.Warn("[RAG] VEC未初始化，尝试初始化", "sessionID", session.ID) // 尝试初始化VEC数据库
-		dbPath := config.GlobalByzeEnvironment.Datastore
+		dbPath := config.GlobalOadinEnvironment.Datastore
 		if err := initVecDB(dbPath); err != nil {
 			slog.Error("[RAG] VEC初始化失败", "error", err)
 			return "", fmt.Errorf("VEC初始化失败: %w", err)
@@ -265,7 +265,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	if !vecInitialized || vecDB == nil {
 		slog.Error("[RAG] VEC数据库无法使用，尝试重新初始化", "sessionID", session.ID)
 		// 尝试初始化VEC数据库
-		dbPath := config.GlobalByzeEnvironment.Datastore
+		dbPath := config.GlobalOadinEnvironment.Datastore
 		if err := initVecDB(dbPath); err != nil || !vecInitialized || vecDB == nil {
 			slog.Error("[RAG] VEC初始化失败，无法执行检索", "error", err)
 			return "", fmt.Errorf("VEC数据库不可用: %w", err)

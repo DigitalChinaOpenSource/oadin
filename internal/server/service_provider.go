@@ -15,13 +15,13 @@ import (
 	"strings"
 	"time"
 
-	"byze/internal/api/dto"
-	"byze/internal/datastore"
-	"byze/internal/provider"
-	"byze/internal/schedule"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/provider"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
 )
 
 type ServiceProvider interface {

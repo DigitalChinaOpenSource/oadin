@@ -9,9 +9,9 @@ services:
     auth_apply_url: "https://cloud.tencent.com/document/product/1729/111007"
     default_model: ""
     request_segments: 1 # request
-    install_raw_routes: false # also install routes without byze prefix in url path
+    install_raw_routes: false # also install routes without oadin prefix in url path
     extra_headers: '{}'
-    response_to_byze:
+    response_to_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -21,7 +21,7 @@ services:
                 }] 
             }
 
-    response_from_byze:
+    response_from_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -34,18 +34,18 @@ services:
                 "object": "list"
             }
 
-  chat: # service name defined by Byze
+  chat: # service name defined by Oadin
     url: "https://api.hunyuan.cloud.tencent.com/v1/chat/completions"
     endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
     extra_url: ""
     auth_type: "apikey"
     auth_apply_url: "https://cloud.tencent.com/document/product/1729/111007"
-    install_raw_routes: false # also install routes without byze prefix in url path
+    install_raw_routes: false # also install routes without oadin prefix in url path
     default_model: hunyuan-turbo
     request_segments: 1 # request
     extra_headers: '{}'
     support_models: ["hunyuan-turbo", "hunyuan-t1-latest", "hunyuan-large", "hunyuan-standard", "hunyuan-turbos-latest"]
-    request_to_byze:
+    request_to_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -68,7 +68,7 @@ services:
             set:
               Content-Type: application/json
 
-    request_from_byze:
+    request_from_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -91,7 +91,7 @@ services:
             set:
               Content-Type: application/json
 
-    response_to_byze:
+    response_to_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -104,7 +104,7 @@ services:
                 "finish_reason": choices[0].finish_reason
             }
 
-    stream_response_to_byze:
+    stream_response_to_oadin:
       conversion:
         - converter: action_if
           config:
@@ -122,7 +122,7 @@ services:
                 "finish_reason": choices[0].finish_reason
             }
 
-    response_from_byze:
+    response_from_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -138,7 +138,7 @@ services:
                 }]
             }
 
-    stream_response_from_byze:
+    stream_response_from_oadin:
       epilogue: [ "[DONE]" ] # openai adds a data: [DONE] at the end
       conversion:
         - converter: jsonata
@@ -161,12 +161,12 @@ services:
     extra_url: ""
     auth_type: "apikey"
     auth_apply_url: "https://cloud.tencent.com/document/product/1729/111007"
-    install_raw_routes: false # also install routes without byze prefix in url path
+    install_raw_routes: false # also install routes without oadin prefix in url path
     default_model: "hunyuan-embedding"
     request_segments: 1 # request
     extra_headers: '{}'
     support_models: ["hunyuan-embedding"]
-    request_to_byze:
+    request_to_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -181,7 +181,7 @@ services:
             set:
               Content-Type: application/json
 
-    request_from_byze:
+    request_from_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -197,7 +197,7 @@ services:
             set:
               Content-Type: application/json
 
-    response_to_byze:
+    response_to_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -206,7 +206,7 @@ services:
                 "model": model,
                 "data": data
             }
-    response_from_byze:
+    response_from_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -221,12 +221,12 @@ services:
     extra_url: ""
     auth_type: "token"
     auth_apply_url: "https://cloud.tencent.com/document/api/1729/101843"
-    install_raw_routes: false # also install routes without byze prefix in url path
+    install_raw_routes: false # also install routes without oadin prefix in url path
     default_model: ""
     request_segments: 1 # request
     extra_headers: '{"Action": "TextToImageLite", "Version": "2023-09-01", "Region": "ap-guangzhou"}'
     support_models: ["hunyuan-DiT"]
-    request_to_byze:
+    request_to_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -240,7 +240,7 @@ services:
           config:
             set:
               Content-Type: application/json
-    request_from_byze:
+    request_from_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -254,7 +254,7 @@ services:
           config:
             set:
               Content-Type: application/json
-    response_to_byze:
+    response_to_oadin:
       conversion:
         - converter: jsonata
           config: |
@@ -266,7 +266,7 @@ services:
                      "message": Response.Error.Message
                         }
             }
-    response_from_byze:
+    response_from_oadin:
       conversion:
         - converter: jsonata
           config: |

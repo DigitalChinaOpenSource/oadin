@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"byze/internal/datastore"
-	"byze/internal/event"
-	"byze/internal/types"
-	"byze/internal/utils"
+	"oadin/internal/datastore"
+	"oadin/internal/event"
+	"oadin/internal/types"
+	"oadin/internal/utils"
 )
 
 type ServiceTaskEventType int

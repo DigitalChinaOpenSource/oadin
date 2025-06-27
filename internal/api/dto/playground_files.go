@@ -1,6 +1,6 @@
 package dto
 
-import "byze/internal/utils/bcode"
+import "oadin/internal/utils/bcode"
 
 // 文件上传请求
 type UploadFileRequest struct {

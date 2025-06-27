@@ -1,18 +1,18 @@
 package server
 
 import (
-	ConfigRoot "byze/config"
-	"byze/internal/datastore"
-	"byze/internal/hardware"
-	"byze/internal/hardware/installer"
-	"byze/internal/rpc"
-	"byze/internal/server/mcp_handler"
-	"byze/internal/types"
-	"byze/internal/utils/bcode"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	ConfigRoot "oadin/config"
+	"oadin/internal/datastore"
+	"oadin/internal/hardware"
+	"oadin/internal/hardware/installer"
+	"oadin/internal/rpc"
+	"oadin/internal/server/mcp_handler"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 	"strings"
 	"time"
 
@@ -29,7 +29,7 @@ type MCPServer interface {
 	GetCategories(ctx context.Context) (*rpc.CategoryListResponse, error)
 	GetMyMCPList(ctx context.Context, request *rpc.MCPListRequest) (*rpc.MCPListResponse, error)
 	DownloadMCP(ctx context.Context, id string) error
-	Configuration(ctx context.Context, id string, auth string) error
+	AuthorizeMCP(ctx context.Context, id string, auth string) error
 	ReverseStatus(c *gin.Context, id string) error
 	SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest) error
 	ClientMcpStart(ctx context.Context, id string) error
@@ -269,7 +269,7 @@ func (M *MCPServerImpl) DownloadMCP(ctx context.Context, id string) error {
 
 }
 
-func (M *MCPServerImpl) Configuration(ctx context.Context, id string, config string) error {
+func (M *MCPServerImpl) AuthorizeMCP(ctx context.Context, id string, auth string) error {
 	con := new(types.McpUserConfig)
 	con.MCPID = id
 	err := M.Ds.Get(ctx, con)
@@ -278,13 +278,13 @@ func (M *MCPServerImpl) Configuration(ctx context.Context, id string, config str
 		// 初始化个人配置
 		con.MCPID = id
 		con.Status = 0
-		con.Auth = config
+		con.Auth = auth
 		con.Kits = ""
 		M.Ds.Add(ctx, con)
 	}
 
 	// 保存授权配置项
-	con.Auth = config
+	con.Auth = auth
 	err = M.Ds.Put(ctx, con)
 	if err != nil {
 		return err
@@ -518,7 +518,7 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 func (M *MCPServerImpl) ClientMAC(ctx context.Context) error {
 	config := &types.MCPServerConfig{
 		Id:      "mac",
-		Command: "/Users/aipc/Library/Application Support/Byze/runtime/bun",
+		Command: "/Users/aipc/Library/Application Support/Oadin/runtime/bun",
 		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
 		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
 	}

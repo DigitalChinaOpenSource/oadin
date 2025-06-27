@@ -1,25 +1,25 @@
 ====================================
-Byze 关键概念
+Oadin 关键概念
 ====================================
 
 .. include:: global.rst
 
-在这一节中，我们将介绍 ``Byze`` 的关键概念和术语.
+在这一节中，我们将介绍 ``Oadin`` 的关键概念和术语.
 
-Byze 服务和 Byze 服务提供商
+Oadin 服务和 Oadin 服务提供商
 =========================================
 
-在 ``Byze`` 中, 典型的通用 AI 服务例如 ``chat`` 和 ``text-to-image``
-等被定义为 ``Byze Service``，每个服务都有其标准化的API.
+在 ``Oadin`` 中, 典型的通用 AI 服务例如 ``chat`` 和 ``text-to-image``
+等被定义为 ``Oadin Service``，每个服务都有其标准化的API.
 
-目前， ``Byze`` 支持基于HTTP协议的RESTFUL API。 所以这里的API指的是接口（HTTP verb 和 URL），以及通过该接口进行对应服务的请求和响应的格式。
+目前， ``Oadin`` 支持基于HTTP协议的RESTFUL API。 所以这里的API指的是接口（HTTP verb 和 URL），以及通过该接口进行对应服务的请求和响应的格式。
 
-另一方面 ``Byze Service Provider`` 是实际提供服务的实体，它实现了 ``Byze Service`` 的API。
+另一方面 ``Oadin Service Provider`` 是实际提供服务的实体，它实现了 ``Oadin Service`` 的API。
 
-这与面向对象编程（OOP, Object Oriented Programming）中的抽象接口和具体类概念相似，即 ``Byze Service`` 是一种抽象接口，而 ``Byze Service Provider`` 是实现该接口的具体类。
+这与面向对象编程（OOP, Object Oriented Programming）中的抽象接口和具体类概念相似，即 ``Oadin Service`` 是一种抽象接口，而 ``Oadin Service Provider`` 是实现该接口的具体类。
 
 
-实际操作上，一个 ``Byze Service`` 可以拥有多个 ``Byze Service Providers`` 。一个 ``Byze Service Provider`` 也可以提供多个 ``Byze Services`` 。
+实际操作上，一个 ``Oadin Service`` 可以拥有多个 ``Oadin Service Providers`` 。一个 ``Oadin Service Provider`` 也可以提供多个 ``Oadin Services`` 。
 
 
 .. graphviz:: 
@@ -28,13 +28,13 @@ Byze 服务和 Byze 服务提供商
    digraph G {
     rankdir=BT
     compound=true
-    label = "Byze Services and Service Providers"
+    label = "Oadin Services and Service Providers"
     graph [fontname = "Verdana", fontsize = 10, style="filled", penwidth=0.5]
     node [fontname = "Verdana", fontsize = 10, shape=box, color="#333333", style="filled", penwidth=0.5] 
 
 
-    subgraph cluster_byze_service {
-        label = "Byze Services"
+    subgraph cluster_oadin_service {
+        label = "Oadin Services"
         color="#dddddd"
         fillcolor="#eeeeee"
 
@@ -45,8 +45,8 @@ Byze 服务和 Byze 服务提供商
         text_to_image[label="text-to-image"]
     }
 
-    subgraph cluster_byze_service_provider {
-        label = "Byze Service Providers"
+    subgraph cluster_oadin_service_provider {
+        label = "Oadin Service Providers"
         color="#dddddd"
         fillcolor="#eeeeee"
 
@@ -65,17 +65,17 @@ Byze 服务和 Byze 服务提供商
 
    }
 
-如上图所示，远程 *OpenAI Chat* 和本地 *Ollama Chat* 均为 ``Byze Service Providers`` 服务的 ``chat`` 。同时，*rag/summarize* 服务实际上依赖于与 ``chat`` 相同的提供商。
+如上图所示，远程 *OpenAI Chat* 和本地 *Ollama Chat* 均为 ``Oadin Service Providers`` 服务的 ``chat`` 。同时，*rag/summarize* 服务实际上依赖于与 ``chat`` 相同的提供商。
 
 
 
-Byze 服务详情
+Oadin 服务详情
 ================================
 
-一个 ``Byze Service`` 包含以下定义属性：
+一个 ``Oadin Service`` 包含以下定义属性：
 
 Name
-    服务的名称。 这是 ``Byze Service`` 的字符串类型的ID。因此，每个服务的名称都是唯一的。例如
+    服务的名称。 这是 ``Oadin Service`` 的字符串类型的ID。因此，每个服务的名称都是唯一的。例如
     ``chat``, ``embed``, ``rag/query``, ``text-to-image``,
     ``audio/text-to-speech`` 等。
 
@@ -95,7 +95,7 @@ LocalProvider
     我们会自动将当前服务提供商设置为默认本地服务提供商。
 
 
-Byze 服务提供商详情
+Oadin 服务提供商详情
 ========================================================
 
 ProviderName
@@ -124,21 +124,21 @@ AuthType
 AuthKey
     服务的鉴权信息。根据 ``AuthType`` 提供不同的鉴权信息。
 
-.. _byze_service_provider_properties:
+.. _oadin_service_provider_properties:
 
 Properties
-    每个 ``Byze Service`` 也有一组属性。这些属性用于描述实现服务的实际服务提供商，因此其值因服务提供商而异。
+    每个 ``Oadin Service`` 也有一组属性。这些属性用于描述实现服务的实际服务提供商，因此其值因服务提供商而异。
 
     例如， ``chat`` 服务有 ``max_input_tokens`` 属性，该属性告知上层应用程序可以向底层服务提供商发送的最大token数。对不同的服务提供商，该属性的值也不同。
 
 
 
-Byze 应用的 API 风格
+Oadin 应用的 API 风格
 ========================================================
 
-在 :doc:`byze规范` 中， ``Byze`` 定义了 ``Byze Services`` 的规范，包括其名称、端口、请求模式、响应模式等。
+在 :doc:`oadin规范` 中， ``Oadin`` 定义了 ``Oadin Services`` 的规范，包括其名称、端口、请求模式、响应模式等。
 
-然而实际上应用开发者和服务提供商很可能并未完全遵守 ``Byze`` 的规范，正如文档 :ref:`compatibility_issue` 所说的。
+然而实际上应用开发者和服务提供商很可能并未完全遵守 ``Oadin`` 的规范，正如文档 :ref:`compatibility_issue` 所说的。
 
 例如，当调用 ``chat`` 服务时，应用程序可能遵循 ``ollama`` 的风格，即它会访问类似 ``/api/chat`` 的 ``URL``，并在 JSON 体的 ``options.temperature`` 中指定 ``temperature`` 参数。
 
@@ -168,8 +168,8 @@ Byze 应用的 API 风格
 
 
 
-``Byze`` 将这种风格简称为 ``API Flavor`` 或 ``Flavor`` 。在上例中，应用程序调用 ``chat`` 使用 ``ollama Flavor`` ，
-但服务提供商在 ``openai Flavor`` 提供服务，他们都没有直接使用 ``byze Flavor`` 。
+``Oadin`` 将这种风格简称为 ``API Flavor`` 或 ``Flavor`` 。在上例中，应用程序调用 ``chat`` 使用 ``ollama Flavor`` ，
+但服务提供商在 ``openai Flavor`` 提供服务，他们都没有直接使用 ``oadin Flavor`` 。
 
-Byze 会在不同 Flavor 之间进行转换，因此应用程序无需担心服务提供商 API 的细节。详细信息请参阅：
+Oadin 会在不同 Flavor 之间进行转换，因此应用程序无需担心服务提供商 API 的细节。详细信息请参阅：
 :ref:`flavor_conversion`.

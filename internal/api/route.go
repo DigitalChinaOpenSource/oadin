@@ -14,16 +14,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"byze/config"
-	"byze/internal/datastore"
-	"byze/internal/provider"
-	"byze/internal/types"
-	"byze/internal/utils"
-	"byze/tray"
-	"byze/version"
+	"oadin/config"
+	"oadin/internal/datastore"
+	"oadin/internal/provider"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/tray"
+	"oadin/version"
 )
 
-func InjectRouter(e *ByzeCoreServer) {
+func InjectRouter(e *OadinCoreServer) {
 	e.Router.Handle(http.MethodGet, "/", rootHandler)
 	e.Router.Handle(http.MethodGet, "/health", healthHeader)
 	e.Router.Handle(http.MethodGet, "/engine/health", engineHealthHandler)
@@ -32,7 +32,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	e.Router.Handle(http.MethodGet, "/update/status", updateAvailableHandler)
 	e.Router.Handle(http.MethodPost, "/update", updateHandler)
 
-	r := e.Router.Group("/byze/" + version.ByzeVersion)
+	r := e.Router.Group("/oadin/" + version.OadinVersion)
 
 	// service import / export
 	r.Handle(http.MethodPost, "/service/export", e.ExportService)
@@ -74,7 +74,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	mcpApi.GET("/categories", e.GetCategories)
 	mcpApi.PUT("/:id/download", e.DownloadMCP)
 	mcpApi.POST("/mine", e.GetMyMCPList)
-	mcpApi.PUT("/:id/configuration", e.Configuration)
+	mcpApi.PUT("/:id/auth", e.AuthorizeMCP)
 	mcpApi.PUT("/:id/reverse", e.ReverseStatus)
 	mcpApi.PUT("/setup", e.SetupFunTool)
 	mcpApi.POST("/client/start", e.ClientMcpStart)
@@ -108,7 +108,7 @@ func InjectRouter(e *ByzeCoreServer) {
 	playgroundApi.POST("/session/thinking", e.ToggleSessionThinking)
 	playgroundApi.GET("/testjson", e.HandleToolCalls)
 
-	slog.Info("Gateway started", "host", config.GlobalByzeEnvironment.ApiHost)
+	slog.Info("Gateway started", "host", config.GlobalOadinEnvironment.ApiHost)
 }
 
 func rootHandler(c *gin.Context) {
@@ -131,7 +131,7 @@ func engineHealthHandler(c *gin.Context) {
 }
 
 func getVersion(c *gin.Context) {
-	c.JSON(http.StatusOK, map[string]string{"version": version.ByzeVersion + "-" + version.ByzeSubVersion})
+	c.JSON(http.StatusOK, map[string]string{"version": version.OadinVersion + "-" + version.OadinSubVersion})
 }
 
 func getEngineVersion(c *gin.Context) {
@@ -162,36 +162,36 @@ func updateHandler(c *gin.Context) {
 	status := utils.IsServerRunning()
 	if status {
 		// stop server
-		pidFilePath := filepath.Join(config.GlobalByzeEnvironment.RootDir, "byze.pid")
-		err := utils.StopByzeServer(pidFilePath)
+		pidFilePath := filepath.Join(config.GlobalOadinEnvironment.RootDir, "oadin.pid")
+		err := utils.StopOadinServer(pidFilePath)
 		if err != nil {
 			c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 		}
 	}
 	// rm old version file
-	byzeFileName := "byze.exe"
+	oadinFileName := "oadin.exe"
 	if runtime.GOOS != "windows" {
-		byzeFileName = "byze"
+		oadinFileName = "oadin"
 	}
-	byzeFilePath := filepath.Join(config.GlobalByzeEnvironment.RootDir, byzeFileName)
-	err := os.Remove(byzeFilePath)
+	oadinFilePath := filepath.Join(config.GlobalOadinEnvironment.RootDir, oadinFileName)
+	err := os.Remove(oadinFilePath)
 	if err != nil {
-		slog.Error("[Update] Failed to remove byze file %s: %v\n", byzeFilePath, err)
+		slog.Error("[Update] Failed to remove oadin file %s: %v\n", oadinFilePath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 	}
 	// install new version
-	downloadPath := filepath.Join(config.GlobalByzeEnvironment.RootDir, "download", byzeFileName)
-	err = os.Rename(downloadPath, byzeFilePath)
+	downloadPath := filepath.Join(config.GlobalOadinEnvironment.RootDir, "download", oadinFileName)
+	err = os.Rename(downloadPath, oadinFilePath)
 	if err != nil {
-		slog.Error("[Update] Failed to rename byze file %s: %v\n", downloadPath, err)
+		slog.Error("[Update] Failed to rename oadin file %s: %v\n", downloadPath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 	}
 	// start server
-	logPath := config.GlobalByzeEnvironment.ConsoleLog
-	rootDir := config.GlobalByzeEnvironment.RootDir
-	err = utils.StartByzeServer(logPath, rootDir)
+	logPath := config.GlobalOadinEnvironment.ConsoleLog
+	rootDir := config.GlobalOadinEnvironment.RootDir
+	err = utils.StartOadinServer(logPath, rootDir)
 	if err != nil {
-		slog.Error("[Update] Failed to start byze log %s: %v\n", logPath, err)
+		slog.Error("[Update] Failed to start oadin log %s: %v\n", logPath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 	}
 	ds := datastore.GetDefaultDatastore()
