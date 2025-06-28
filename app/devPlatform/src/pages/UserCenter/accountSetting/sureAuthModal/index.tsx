@@ -45,7 +45,7 @@ const SureAuthModal = ({
       <CodeInput
         form={form}
         validateFiled={'phone'}
-        codeFiled={'smsCode'}
+        codeFiled={'verifyCode'}
       />
     </Form>
   );

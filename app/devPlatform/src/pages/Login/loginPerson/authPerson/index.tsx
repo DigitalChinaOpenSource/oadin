@@ -5,26 +5,50 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginFrontedIcon from '@/assets/login-fronted-icon.svg';
 import LoginBackIcon from '@/assets/login-back-icon.svg';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
+import useAuthStore from '@/store/authStore.ts';
 
 const AuthPerson = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { message } = App.useApp();
+  const { bindRealNameAuth } = useUserCenterView();
+  const { user, changeUser, token } = useAuthStore();
 
   const handleSubmit = async () => {
+    try {
+      await form.validateFields();
+      setLoading(true);
+      const idCardFront = form.getFieldValue('frontImage')[0].url;
+      const idCardBack = form.getFieldValue('backImage')[0].url;
+      const params = { userId: user.uid, token: token, idCardFront: idCardFront, idCardBack: idCardBack };
+      const res = await bindRealNameAuth(params);
+      if (res.code === 200) {
+        changeUser({
+          ...user,
+          isRealNameVerified: true,
+          idCardFront: idCardFront,
+          idCardBack: idCardBack,
+        });
+        setLoading(false);
+        message.success('认证成功');
+        navigate('/');
+      } else {
+        setLoading(false);
+        message.error('认证失败，请重试');
+      }
+    } catch (error) {
+      setLoading(false);
+    }
     try {
       setLoading(true);
       const values = await form.validateFields();
       console.log('提交的表单数据：', values);
 
-      // 这里可以看到表单中包含了上传的图片文件信息
-      // values.frontImage 和 values.backImage 包含了上传的文件信息
-
-      // 实际表单提交逻辑...
       message.success('提交成功！');
     } catch (error) {
-      console.error('表单验证失败：', error);
+      setLoading(false);
     } finally {
       setLoading(false);
     }

@@ -1,16 +1,39 @@
 import styles from './index.module.scss';
 import AuthIcon from '@/assets/authIcon.svg';
-import { Button, Form } from 'antd';
+import { App, Button, Form } from 'antd';
 import ImageUpload from '@/pages/Login/components/ImageUpload';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import LoginEnterpriseIcon from '@/assets/login-enterprise-icon.svg';
+import useAuthStore from '@/store/authStore.ts';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 
 const AuthEnterprise = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
-  const handleSubmit = () => {};
+  const { changeUser, user } = useAuthStore();
+  const { bindRealNameAuth } = useUserCenterView();
+  const handleSubmit = async () => {
+    try {
+      await form.validateFields();
+      setLoading(true);
+      const res = await bindRealNameAuth({ licenseImageUrl: form.getFieldValue('enterpriseIcon')[0].url });
+      if (res.code === 200) {
+        setLoading(false);
+        message.success('认证成功');
+        const { realNameAuth } = user;
+        changeUser({ realNameAuth: { ...realNameAuth, status: 'approved', licenseImageUrl: form.getFieldValue('enterpriseIcon')[0].url } });
+        navigate('/');
+      } else {
+        setLoading(false);
+        message.error('认证失败，请重试');
+      }
+    } catch (error) {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className={styles.authEnterprise}>

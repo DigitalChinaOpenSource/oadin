@@ -4,15 +4,15 @@ import { PlusOutlined, EyeOutlined, DeleteOutlined, ReloadOutlined } from '@ant-
 import { useState, useEffect } from 'react';
 import type { UploadFile, UploadProps } from 'antd';
 import { IImageUploadProps } from '@/pages/Login/types';
-import { useOssSignStore } from '@/store/ossSignStore.ts';
-import OSS from 'ali-oss';
+import { httpRequest } from '@/utils/httpRequest.ts';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 
 const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpeg', 'image/png'], height = 112, value, onChange, name, rules, bgIcon }: IImageUploadProps) => {
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [fileList, setFileList] = useState<any[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
-  const { getOssSign, ossSign } = useOssSignStore();
   const { message } = App.useApp();
+  const { uploadRealNameAuthPhoto } = useUserCenterView();
 
   const [loading, setLoading] = useState(false);
 
@@ -24,40 +24,34 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
     setLoading(true);
     try {
       // 1. 获取 OSS 签名信息
-      const ossSign = await getOssSign();
-      if (!ossSign) {
-        setLoading(false);
-        return;
-      }
-      // 2. 初始化 OSS 客户端
-      console.log(ossSign);
-      const client = new OSS({
-        region: ossSign.region,
-        accessKeyId: ossSign.accessKeyId,
-        bucket: ossSign.bucket,
-        secure: true,
-        accessKeySecret: ossSign.accessKeySecret,
-        stsToken: ossSign.securityToken,
-      });
-      console.log('OSS 客户端初始化成功', client);
-      const result = await client.put(`/${ossSign.dir}${file.name}`, file);
-      // const res = await httpRequest.put(`/${ossSign.dir}${file.name}`, file, {
-      //   headers: {
-      //     'x-oss-policy': ossSign.policy,
-      //     'x-oss-signature': ossSign.signature,
-      //   },
-      // });
-      console.log('上传结果', result);
-
-      // if (response.status === 200) {
-      //   message.success('文件上传成功');
-      //   onSuccess(response, file);
-      //   handleSuccess(file);
-      // } else {
+      // const ossSign = await getOssSign();
+      // if (!ossSign) {
       //   setLoading(false);
-      //   message.error('文件上传失败');
-      //   onError(new Error('上传失败'));
+      //   return;
       // }
+      // 2. 初始化 OSS 客户端
+      // console.log(ossSign);
+      // const client = new OSS({
+      //   region: ossSign.region,
+      //   accessKeyId: ossSign.accessKeyId,
+      //   bucket: ossSign.bucket,
+      //   secure: true,
+      //   accessKeySecret: ossSign.accessKeySecret,
+      //   stsToken: ossSign.securityToken,
+      // });
+      // console.log('OSS 客户端初始化成功', client);
+      // const result = await client.put(`/${ossSign.dir}${file.name}`, file);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('name', file.name);
+      const res = await uploadRealNameAuthPhoto(formData);
+
+      console.log('上传结果', res);
+      if (res.code === 200) {
+        setFileList([{ url: res.data.licenseImageUrl }]);
+        handleSuccess({ url: res.data.licenseImageUrl });
+        setLoading(false);
+      }
     } catch (error) {
       console.log('上传失败', error);
       setLoading(false);
@@ -69,20 +63,11 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
     console.log('value changed', value);
     if (value && value.length && value[0].url) {
       console.log('value changed22222', value);
-      setFileList(value);
+      handleSuccess(value[0]);
     }
   }, [value]);
 
-  const handleChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
-    setFileList(newFileList);
-    console.log('newFileList', newFileList);
-    // 将值传递给表单
-    if (onChange) {
-      onChange(newFileList);
-    }
-  };
-
-  const handleSuccess = (file: UploadFile) => {
+  const handleSuccess = (file: { url: string }) => {
     setFileList([file]);
     if (onChange) {
       onChange([file]);
@@ -110,11 +95,10 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
   };
 
   const handleDelete = () => {
-    const newFileList: UploadFile[] = [];
-    setFileList(newFileList);
+    setFileList([]);
     // 将空数组传递给表单
     if (onChange) {
-      onChange(newFileList);
+      onChange([]);
     }
   };
 
@@ -158,7 +142,7 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
                     <Upload
                       listType="text"
                       action=""
-                      fileList={fileList} // 修复：确保 fileList 正确传递
+                      fileList={[]} // 修复：确保 fileList 正确传递
                       // onChange={handleChange}
                       beforeUpload={beforeUpload}
                       maxCount={1}
@@ -182,7 +166,7 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
           <Upload
             listType="picture-card"
             action=""
-            fileList={fileList} // 修复：确保 fileList 正确传递
+            fileList={[]} // 修复：确保 fileList 正确传递
             // onChange={handleChange}
             beforeUpload={beforeUpload}
             maxCount={1}

@@ -34,7 +34,7 @@ const LoginForm = () => {
       if (loginRes.data.isNewUser) {
         setCurrentStep('personAuth');
       } else {
-        navigate('/app-management');
+        navigate('/');
       }
     } else {
       message.error(loginRes.message || '登录失败');
@@ -47,9 +47,9 @@ const LoginForm = () => {
   };
 
   useEffect(() => {
-    if (personPhoneData) {
-      form.setFieldsValue(personPhoneData);
-    }
+    // if (personPhoneData) {
+    //   form.setFieldsValue(personPhoneData);
+    // }
   }, []);
 
   return (

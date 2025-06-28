@@ -45,9 +45,9 @@ const LoginEnterprise: React.FC<LoginFormProps> = ({ showAgreed = true }) => {
   };
 
   useEffect(() => {
-    if (enterpriseAccountData) {
-      form.setFieldsValue(enterpriseAccountData);
-    }
+    // if (enterpriseAccountData) {
+    //   form.setFieldsValue(enterpriseAccountData);
+    // }
   }, []);
 
   return (

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Avatar, Button, Input, message } from 'antd';
+import { App, Avatar, Button, Input } from 'antd';
 import { PencilSimpleLineIcon, UserIcon, CheckIcon, CheckCircleIcon, WarningCircleIcon, BuildingOfficeIcon } from '@phosphor-icons/react';
 import styles from './index.module.scss';
 import UserNameModal from './userNameModal';
@@ -10,13 +10,15 @@ import ChangePasswordModal from '@/pages/UserCenter/accountInfo/changePasswordMo
 import WechatBind from '@/pages/UserCenter/accountInfo/wechatBind';
 import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 import { useLoginView } from '@/pages/Login/useLoginView.ts';
+import useAuthStore from '@/store/authStore.ts';
 
 /**
  * 用户中心账号信息组件
  */
 const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
   const { type: userType, username, nickname, wechatName, enterpriseName, email, phone, avatar, wechatInfo, wechatBind } = accountInfo;
-
+  const { token, user, changeUser } = useAuthStore();
+  const { message } = App.useApp();
   const { changeUsername, changePassword } = useUserCenterView();
   const { resetPassword } = useLoginView();
   // 修改用户名的弹窗
@@ -90,10 +92,19 @@ const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
   // 修改用户名
   const handleChangeUserName = async (newUserName: string) => {
     console.log('handleChangeUserName:', newUserName);
-    const changeRes = await changeUsername({ realName: newUserName });
+    let params;
+    if (isPerson) {
+      params = { nickname: newUserName, token: token, userId: user.uid };
+    } else {
+      params = { realName: newUserName };
+    }
+    const changeRes = await changeUsername(params);
     if (changeRes.code === 200) {
-      setUserInfo({
-        ...accountInfo,
+      // setUserInfo({
+      //   ...accountInfo,
+      //   [isPerson ? 'nickname' : 'enterpriseName']: newUserName,
+      // });
+      changeUser({
         [isPerson ? 'nickname' : 'enterpriseName']: newUserName,
       });
       setUserEditShow(false);
@@ -109,6 +120,7 @@ const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
     if (res.code === 200) {
       message.success('密码修改成功');
       setChangePasswordShow(false);
+      // TODO: 这里可以添加密码修改成功后的逻辑，比如跳转到登录页或清除用户信息等(现在默认不操作)
     } else {
       message.error(res.message || '密码修改失败，请重试');
     }

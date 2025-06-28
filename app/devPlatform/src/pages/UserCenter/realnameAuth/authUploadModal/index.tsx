@@ -42,7 +42,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', ti
           name="enterpriseIcon"
           rules={[{ required: true, message: '请上传营业执照' }]}
           onChange={(value) => form.setFieldsValue({ enterpriseIcon: value })}
-          value={[{ url: accountInfo.licenseImageUrl || '', name: '' }] as UploadFile[]}
+          value={[{ url: accountInfo?.realNameAuth?.licenseImageUrl || '' }]}
         />
       </Form>
     );
@@ -64,6 +64,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', ti
           name="frontImage"
           rules={[{ required: true, message: '请上传身份证人像面照片' }]}
           onChange={(value) => form.setFieldsValue({ frontImage: value })}
+          value={[{ url: accountInfo.idCardFront || '' }]}
         />
         <ImageUpload
           height={'auto'}
@@ -72,6 +73,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', ti
           name="backImage"
           rules={[{ required: true, message: '请上传身份证国徽面照片' }]}
           onChange={(value) => form.setFieldsValue({ backImage: value })}
+          value={[{ url: accountInfo.idCardBack || '' }]}
         />
       </Form>
     );

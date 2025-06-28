@@ -19,7 +19,7 @@ const AccountSetting = ({ goBack }: { goBack: () => void }) => {
   const navigate = useNavigate();
 
   const { sureDeleteAccount } = useUserCenterView();
-  const { logout } = useAuthStore();
+  const { logout, user, token } = useAuthStore();
   const { setCurrentStep } = useLoginStore();
 
   // 注销提示弹窗确认
@@ -28,17 +28,20 @@ const AccountSetting = ({ goBack }: { goBack: () => void }) => {
     setAuthModalVisible(true);
   };
 
-  //   身份验证弹窗确认
+  //   注销身份验证弹窗确认
   const handleAuthConfirm = async (values: IDeleteAccountProps) => {
     console.log('身份验证收集数据', values);
+    let params: IDeleteAccountProps = values;
+    if (user.type === 'person') {
+      params = { ...values, userId: user.uid, token: token };
+    }
     // 这里可以添加身份验证成功后的逻辑
-    const res: any = await sureDeleteAccount(values);
+    const res = await sureDeleteAccount(params);
     if (res.code === 200) {
       message.success('账号注销成功,请重新登录');
       setAuthModalVisible(false);
       // 清除用户信息
       setCurrentStep('personPhone');
-
       logout();
       navigate('/login');
     } else {

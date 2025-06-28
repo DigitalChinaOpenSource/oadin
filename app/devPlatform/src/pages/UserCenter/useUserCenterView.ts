@@ -4,6 +4,7 @@ import useAuthStore from '@/store/authStore.ts';
 import useLoginStore from '@/store/loginStore.ts';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { getUserToken } from '@/utils/getUserToken.ts';
+import { IBaseRequestResProps } from '@/pages/Login/types';
 
 export const useUserCenterView = () => {
   const [userInfo, setUserInfo] = useState<IAccountInfo>();
@@ -18,7 +19,7 @@ export const useUserCenterView = () => {
   const changeUsername = async (params: any) => {
     // 修改个人名称
     if (user.type === 'person') {
-      return await httpRequest.post('/user/updateName', params, { headers: { Authorization: getUserToken() } });
+      return await httpRequest.post('/individual-login/user/update-nickname', params, { headers: { Authorization: getUserToken() } });
     } else if (user.type === 'enterprise') {
       // 修改企业名称
       return await httpRequest.put('/enterprise/updateName', params, { headers: { Authorization: getUserToken() } });
@@ -27,20 +28,25 @@ export const useUserCenterView = () => {
   };
 
   // 确认注销
-  const sureDeleteAccount = async (data: IDeleteAccountProps) => {
+  const sureDeleteAccount = async (params: IDeleteAccountProps) => {
     if (user.type === 'person') {
       // 个人注销
-      return await httpRequest.del('/user/account', data, { headers: { Authorization: getUserToken() } });
+      return await httpRequest.del('/individual-login/user/unregister', params, { headers: { Authorization: getUserToken() } });
     } else if (user.type === 'enterprise') {
       // 企业注销
-      return await httpRequest.del('/enterprise/account', data, { headers: { Authorization: getUserToken() } });
+      return await httpRequest.del('/enterprise/account', params, { headers: { Authorization: getUserToken() } });
     }
     return { code: 400, message: '未知用户类型' };
   };
 
+  // 上传实名认证照片
+  const uploadRealNameAuthPhoto = async (params: any) => {
+    return await httpRequest.post<IBaseRequestResProps>('/enterprise/license', params, { headers: { Authorization: getUserToken() } });
+  };
+
   // 绑定/更改实名认证
   const bindRealNameAuth = async (params: any) => {
-    return await httpRequest.post('/enterprise/license', params, { headers: { Authorization: getUserToken() } });
+    return await httpRequest.post<IBaseRequestResProps>('/enterprise/licenseSubmit', params, { headers: { Authorization: getUserToken() } });
   };
 
   // 修改密码
@@ -60,5 +66,6 @@ export const useUserCenterView = () => {
     setUserInfo,
     getUserAgreement,
     changePassword,
+    uploadRealNameAuthPhoto,
   };
 };

@@ -11,6 +11,7 @@ export interface IOssSignProps {
   region: string;
   dir: string;
   expire: number; //过期时间
+  expiration: string; //过期时间
 }
 
 interface IOssSignStore {
