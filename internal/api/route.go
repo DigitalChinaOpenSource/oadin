@@ -99,6 +99,7 @@ func InjectRouter(e *OadinCoreServer) {
 	playgroundApi.DELETE("/session", e.DeleteSession)
 	playgroundApi.POST("/message", e.SendMessage)
 	playgroundApi.POST("/message/stream", e.SendMessageStream)
+	playgroundApi.POST("/session/genTitle", e.GenSessionTitle)
 	playgroundApi.GET("/messages", e.GetMessages)
 	playgroundApi.POST("/file", e.UploadFile)
 	playgroundApi.GET("/files", e.GetFiles)
