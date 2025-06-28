@@ -289,51 +289,113 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 	return respChan, errChan
 }
 
+// 更新会话的标题
+func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID string) error {
+	sessionCheck := &types.ChatSession{ID: sessionID}
+	err := p.Ds.Get(ctx, sessionCheck)
+	if err != nil {
+		slog.Error("Failed to get chat session", "error", err)
+		return err
+	}
+	// 获取会话中的所有消息，构建历史上下文
+	messageQuery := &types.ChatMessage{SessionID: sessionID}
+	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
+		SortBy: []datastore.SortOption{
+			{Key: "created_at", Order: datastore.SortOrderAscending},
+		},
+	})
+	if err != nil {
+		slog.Error("Failed to list chat messages", "error", err)
+		return err
+	}
+
+	// 构建历史对话
+	history := make([]map[string]string, 0, len(messages)+1)
+	for _, m := range messages {
+		msg := m.(*types.ChatMessage)
+		history = append(history, map[string]string{
+			"role":    msg.Role,
+			"content": msg.Content,
+		})
+	}
+	genTitlePrompt := "请用一句话为本次对话生成一个不超过10字的简洁标题，仅输出标题本身。"
+	history = append(history, map[string]string{
+		"role":    "user",
+		"content": genTitlePrompt,
+	})
+	payload := map[string]interface{}{
+		"model":    sessionCheck.ModelName,
+		"messages": history,
+		"stream":   false,
+		"think":    false,
+	}
+
+	slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
+	fmt.Println("[DEBUG] TitleGen HTTP payload", "payload", payload)
+	client := &http.Client{}
+	payloadBytes, marshalErr := json.Marshal(payload)
+	if marshalErr != nil {
+		slog.Error("Failed to marshal payload to JSON", "error", marshalErr)
+		return marshalErr
+	}
+	req, err := http.NewRequest("POST", "http://localhost:16688/oadin/v0.2/services/chat", strings.NewReader(string(payloadBytes)))
+	if err == nil {
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := client.Do(req)
+		var title string
+		if err == nil && resp != nil {
+			defer resp.Body.Close()
+			var result struct {
+				Content string `json:"content"`
+				Message struct {
+					Content string `json:"content"`
+				} `json:"message"`
+			}
+			decodeErr := json.NewDecoder(resp.Body).Decode(&result)
+			fmt.Println("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
+			if decodeErr == nil {
+				if len(result.Content) > 0 {
+					title = result.Content
+				} else if len(result.Message.Content) > 0 {
+					title = result.Message.Content
+				}
+				if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
+					re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+					title = re.ReplaceAllString(title, "")
+					title = strings.TrimSpace(title)
+				}
+				runes := []rune(title)
+				title = string(runes)
+				slog.Info("[DEBUG] TitleGen final title", "title", title)
+				if title != "" {
+					sessionCheck.Title = title
+					err = p.Ds.Put(context.Background(), sessionCheck)
+				}
+			}
+		}
+	}
+
+	fmt.Println("UpdateSessionTitle err", err)
+	return err
+}
+
 // 增加会话的标题
 func (p *PlaygroundImpl) AddSessionTitle(request *dto.SendStreamMessageRequest) error {
 	sessionCheck := &types.ChatSession{ID: request.SessionID}
 	ctx := context.Background()
 	err := p.Ds.Get(ctx, sessionCheck)
 	if err == nil && sessionCheck.Title == "" {
-		genTitlePrompt := fmt.Sprintf("请为以下用户问题迅速生成一个简洁的标题（不超过10字），用于在首轮对话时生成对话标题，该标题应描述用户提问的主题或意图，而不是问题的答案本身：%s", request.Content)
-		payload := fmt.Sprintf(`{"model":"%s","messages":[{"role":"user","content":"%s"}],"stream":false}`, sessionCheck.ModelName, genTitlePrompt)
-		slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
-		client := &http.Client{}
-		req, err := http.NewRequest("POST", "http://localhost:16688/oadin/v0.2/services/chat", strings.NewReader(payload))
-		if err == nil {
-			req.Header.Set("Content-Type", "application/json")
-			resp, err := client.Do(req)
-			title := "新对话 " + time.Now().Format("2006-01-02")
-			if err == nil && resp != nil {
-				defer resp.Body.Close()
-				var result struct {
-					Content string `json:"content"`
-					Message struct {
-						Content string `json:"content"`
-					} `json:"message"`
-				}
-				decodeErr := json.NewDecoder(resp.Body).Decode(&result)
-				slog.Info("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
-				if decodeErr == nil {
-					if len(result.Content) > 0 {
-						title = result.Content
-					} else if len(result.Message.Content) > 0 {
-						title = result.Message.Content
-					}
-					if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
-						re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
-						title = re.ReplaceAllString(title, "")
-						title = strings.TrimSpace(title)
-					}
-					runes := []rune(title)
-					title = string(runes)
-				}
-			}
-			slog.Info("[DEBUG] TitleGen final title", "title", title)
-			sessionCheck.Title = title
-			_ = p.Ds.Put(context.Background(), sessionCheck)
+		content := request.Content
+		runes := []rune(content)
+		if len(runes) > 10 {
+			content = string(runes[:10])
 		}
+		title := "新对话 " + time.Now().Format("2006-01-02 15:04:05") + " " + content
+		sessionCheck.Title = title
+		err = p.Ds.Put(context.Background(), sessionCheck)
 	}
+	slog.Info("AddSessionTitle err", err)
+	fmt.Println("AddSessionTitle err", err)
 	return err
 }
 
