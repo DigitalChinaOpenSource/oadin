@@ -1,6 +1,6 @@
 import styles from './index.module.scss';
 import ImageUpload from '@/pages/Login/components/ImageUpload';
-import { Form, Button, message } from 'antd';
+import { Form, Button, App } from 'antd';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginFrontedIcon from '@/assets/login-fronted-icon.svg';
@@ -10,6 +10,7 @@ const AuthPerson = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { message } = App.useApp();
 
   const handleSubmit = async () => {
     try {

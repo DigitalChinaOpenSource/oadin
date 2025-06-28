@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLoginView } from '../../useLoginView';
 import styles from './index.module.scss';
 import wechatIcon from '@/assets/wechatIcon.svg';
-import { message } from 'antd';
+import { App, message } from 'antd';
 import useLoginStore from '@/store/loginStore.ts';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '@/store/authStore.ts';
@@ -13,12 +13,10 @@ const WechatLogin: React.FC = () => {
   const { setWechatInfo, login } = useAuthStore();
   const [qrcodeUrl, setQrcodeUrl] = useState<string>('');
   const navigate = useNavigate();
-  let isUnmounted = false; // 标志变量
+  const { message } = App.useApp();
 
   const fetchWechatInfo = async (sessionId: string) => {
-    if (isUnmounted) return; // 检查组件是否已销毁
     const res = await pollWechatInfo(sessionId);
-    if (isUnmounted) return; // 再次检查组件是否已销毁
     console.log('获取微信扫码信息:', res);
     // if (res.success === false && res.message === '微信登录会话已过期，请重新获取二维码') {
     //   await initQrcode();
@@ -42,7 +40,6 @@ const WechatLogin: React.FC = () => {
   // 加载二维码
   const initQrcode = async () => {
     const res = await getWechatLoginQRCode();
-    if (isUnmounted) return; // 检查组件是否已销毁
     if (res && res.data) {
       setQrcodeUrl(res.data.qrcodeUrl);
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -55,9 +52,6 @@ const WechatLogin: React.FC = () => {
 
   useEffect(() => {
     initQrcode();
-    return () => {
-      isUnmounted = true; // 设置标志变量为 true，表示组件已销毁
-    };
   }, []);
 
   return (

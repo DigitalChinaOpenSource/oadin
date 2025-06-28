@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { ConfigProvider, Layout, Spin } from 'antd';
+import { ConfigProvider, Layout, Spin, App as AntdApp } from 'antd';
 import Sidebar from '@/components/sidebar';
 import ProtectedRoute from './components/ProtectedRoute';
 import routes from './routes/routes';
@@ -38,44 +38,46 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Suspense
-        fallback={
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <Spin size="large" />
-          </div>
-        }
-      >
-        <ConfigProvider
-          locale={zhCN}
-          theme={{ token: { colorPrimary: '#4f4dff', colorLink: '#4f4dff' } }}
+    <AntdApp>
+      <BrowserRouter>
+        <Suspense
+          fallback={
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+              <Spin size="large" />
+            </div>
+          }
         >
-          <MainLayout>
-            <Routes>
-              {/* 根路由重定向到应用管理 */}
-              <Route
-                path="/"
-                element={
-                  <Navigate
-                    to="/app-management"
-                    replace
-                  />
-                }
-              />
+          <ConfigProvider
+            locale={zhCN}
+            theme={{ token: { colorPrimary: '#4f4dff', colorLink: '#4f4dff' } }}
+          >
+            <MainLayout>
+              <Routes>
+                {/* 根路由重定向到应用管理 */}
+                <Route
+                  path="/"
+                  element={
+                    <Navigate
+                      to="/app-management"
+                      replace
+                    />
+                  }
+                />
 
-              {/* 动态生成路由 */}
-              {renderRoutes(routes)}
+                {/* 动态生成路由 */}
+                {renderRoutes(routes)}
 
-              {/* 404页面 */}
-              <Route
-                path="*"
-                element={<div>404 Not Found</div>}
-              />
-            </Routes>
-          </MainLayout>
-        </ConfigProvider>
-      </Suspense>
-    </BrowserRouter>
+                {/* 404页面 */}
+                <Route
+                  path="*"
+                  element={<div>404 Not Found</div>}
+                />
+              </Routes>
+            </MainLayout>
+          </ConfigProvider>
+        </Suspense>
+      </BrowserRouter>
+    </AntdApp>
   );
 };
 

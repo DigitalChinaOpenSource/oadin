@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Input, InputNumber, Button, Form, Checkbox, message } from 'antd';
+import { Input, InputNumber, Button, Form, Checkbox, message, App } from 'antd';
 import styles from './index.module.scss';
 import CodeInput from '@/pages/Login/components/codeInput';
 import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
@@ -21,6 +21,7 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const { loginWithPhone, getUserInfo } = useLoginView();
   const { login } = useAuthStore();
+  const { message } = App.useApp();
   const onFinish = async (values: LoginFormValues) => {
     console.log('Received values of form: ', values);
     const loginRes = await loginWithPhone({ phone: values.phone, verifyCode: values.verifyCode, agreed: values.agreed });

@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import styles from './index.module.scss';
-import { Button, message } from 'antd';
+import { App, Button, message } from 'antd';
 import CancelAuthModal from './cancelAuthModal';
 import SureAuthModal from './sureAuthModal';
-import { IUserType } from '../types';
+import { IDeleteAccountProps, IUserType } from '../types';
 import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
+import useAuthStore from '@/store/authStore.ts';
+import useLoginStore from '@/store/loginStore.ts';
+import { useNavigate } from 'react-router-dom';
 
 const AccountSetting = ({ goBack }: { goBack: () => void }) => {
+  const { message } = App.useApp();
   // 控制注销弹窗的显示状态
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   // 控制身份验证弹窗的显示状态
   const [authModalVisible, setAuthModalVisible] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const { sureDeleteAccount } = useUserCenterView();
+  const { logout } = useAuthStore();
+  const { setCurrentStep } = useLoginStore();
 
   // 注销提示弹窗确认
   const handleConfirm = () => {
@@ -22,13 +29,18 @@ const AccountSetting = ({ goBack }: { goBack: () => void }) => {
   };
 
   //   身份验证弹窗确认
-  const handleAuthConfirm = async () => {
-    console.log('身份验证成功');
+  const handleAuthConfirm = async (values: IDeleteAccountProps) => {
+    console.log('身份验证收集数据', values);
     // 这里可以添加身份验证成功后的逻辑
-    const res: any = await sureDeleteAccount();
-    if (res) {
-      message.success('账号注销成功');
+    const res: any = await sureDeleteAccount(values);
+    if (res.code === 200) {
+      message.success('账号注销成功,请重新登录');
       setAuthModalVisible(false);
+      // 清除用户信息
+      setCurrentStep('personPhone');
+
+      logout();
+      navigate('/login');
     } else {
       message.error('账号注销失败');
     }

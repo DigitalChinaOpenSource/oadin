@@ -49,10 +49,8 @@ const LoginPage: React.FC = () => {
     },
   ];
 
-  const [searchParams] = useSearchParams();
   // 处理tab切换
   const handleTabChange = (activeKey: LoginType) => {
-    console.log(1111111);
     if (activeKey === 'enterpriseAccount') {
       setCurrentStep(activeKey);
     } else {
@@ -73,7 +71,7 @@ const LoginPage: React.FC = () => {
   }, [currentStep]);
 
   useEffect(() => {
-    setCurrentStep('personWechat');
+    setCurrentStep('personPhone');
   }, []);
 
   return (

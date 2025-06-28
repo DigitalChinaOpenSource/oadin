@@ -8,41 +8,45 @@ import { getUserToken } from '@/utils/getUserToken.ts';
 export const useUserCenterView = () => {
   const [userInfo, setUserInfo] = useState<IAccountInfo>();
   const { logout, user } = useAuthStore();
-  const { setCurrentStep } = useLoginStore();
 
   // 获取用户信息
   const getUserInfo = async () => {
-    setUserInfo({ ...user, type: 'person' } as IAccountInfo);
+    setUserInfo({ ...user } as IAccountInfo);
   };
 
   // 修改用户名
-  const changeUsername = async (newUsername: string, phoneNumber: string, email?: string) => {
-    // 模拟 API 调用
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // 更新用户信息
-    setUserInfo(
-      (prev) =>
-        ({
-          ...prev,
-          username: newUsername,
-        }) as IAccountInfo,
-    );
+  const changeUsername = async (params: any) => {
+    // 修改个人名称
+    if (user.type === 'person') {
+      return await httpRequest.post('/user/updateName', params, { headers: { Authorization: getUserToken() } });
+    } else if (user.type === 'enterprise') {
+      // 修改企业名称
+      return await httpRequest.put('/enterprise/updateName', params, { headers: { Authorization: getUserToken() } });
+    }
+    return { code: 400, message: '未知用户类型' };
   };
 
   // 确认注销
   const sureDeleteAccount = async (data: IDeleteAccountProps) => {
-    // 模拟 API 调用
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const res = await httpRequest.del('/account', data, { Authorization: getUserToken() });
-    // 清除用户信息
-    setUserInfo(undefined);
-    logout();
-    setCurrentStep('personPhone');
+    if (user.type === 'person') {
+      // 个人注销
+      return await httpRequest.del('/user/account', data, { headers: { Authorization: getUserToken() } });
+    } else if (user.type === 'enterprise') {
+      // 企业注销
+      return await httpRequest.del('/enterprise/account', data, { headers: { Authorization: getUserToken() } });
+    }
+    return { code: 400, message: '未知用户类型' };
   };
 
   // 绑定/更改实名认证
-  const bindRealNameAuth = async (values: any) => {};
+  const bindRealNameAuth = async (params: any) => {
+    return await httpRequest.post('/enterprise/license', params, { headers: { Authorization: getUserToken() } });
+  };
+
+  // 修改密码
+  const changePassword = async (params: { email: string; oldPassword: string; newPassword: string }) => {
+    return await httpRequest.post('/enterprise/password/update', params, { headers: { Authorization: getUserToken() } });
+  };
 
   // 获取用户协议与隐私政策
   const getUserAgreement = async () => {};
@@ -55,5 +59,6 @@ export const useUserCenterView = () => {
     bindRealNameAuth,
     setUserInfo,
     getUserAgreement,
+    changePassword,
   };
 };

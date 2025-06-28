@@ -14,6 +14,8 @@ export interface IAccountInfo {
   wechatBind?: boolean; // 是否绑定微信
   wechatInfo?: Record<string, any>;
   wechatName?: string;
+  realNameAuth?: Record<string, any>;
+  licenseImageUrl?: string;
 }
 
 export interface IAccountInfoProps {

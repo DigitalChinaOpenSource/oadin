@@ -10,10 +10,10 @@ import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
  * 实名认证模块
  */
 const RealNameAuth = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
-  const { type: userType, isRealNameVerified, isEnterpriseAuth } = accountInfo;
+  const { type: userType, isRealNameVerified, realNameAuth } = accountInfo;
   const { bindRealNameAuth } = useUserCenterView();
 
-  const haveAuth = userType === 'person' ? isRealNameVerified : isEnterpriseAuth;
+  const haveAuth = userType === 'person' ? isRealNameVerified : realNameAuth?.status === 'approved';
   // 控制实名认证弹窗的显示状态
   const [authModalVisible, setAuthModalVisible] = useState<boolean>(false);
 
@@ -66,6 +66,7 @@ const RealNameAuth = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
         onConfirm={handleConfirm}
         userType={userType}
         title={haveAuth ? '变更实名信息' : '实名认证'}
+        accountInfo={accountInfo}
       />
     </div>
   );

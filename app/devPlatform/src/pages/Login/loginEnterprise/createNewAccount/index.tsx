@@ -9,23 +9,26 @@ import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
 import { useLoginView } from '@/pages/Login/useLoginView.ts';
 import { IEnterpriseCreateFormValues } from '@/pages/Login/types';
+import useAuthStore from '@/store/authStore.ts';
 
 const CreateNewAccount = ({ onConfirm }: { onConfirm?: (values: IEnterpriseCreateFormValues) => void }) => {
   const { setCurrentStep } = useLoginStore();
-  // const { createNewAccount } = useLoginView();
+  const { login } = useAuthStore();
+  const { createNewAccount } = useLoginView();
   const [form] = Form.useForm();
   const { message } = App.useApp();
 
   const onFinish = async (values: IEnterpriseCreateFormValues) => {
     console.log('Received values of form: ', values);
-    // 这里可以添加提交表单的逻辑
-    // 比如调用API注册新账户
-    // onOk?.(values);
-    // const createRes = await createNewAccount(values);
-    // if (createRes) {
-    //   message.success('企业账户创建成功');
-    // }
-    onConfirm?.(values);
+
+    const createRes = await createNewAccount(values);
+    console.log('创建企业账号结果:', createRes);
+    if (createRes.code === 200) {
+      login(createRes.data.user, createRes.data.token);
+      setCurrentStep('enterpriseAuth');
+    } else {
+      message.error(createRes.message || '创建企业账号失败，请重试');
+    }
   };
 
   return (

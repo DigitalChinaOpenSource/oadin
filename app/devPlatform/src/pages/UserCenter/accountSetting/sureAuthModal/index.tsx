@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, message } from 'antd';
+import { Modal, Form, Input, Button, message, App } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
 import styles from './index.module.scss';
 import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import CodeInput from '@/pages/Login/components/codeInput';
 import EmailInput from '@/pages/Login/components/emailInput';
-import { IUserType } from '@/pages/UserCenter/types';
+import { IDeleteAccountProps, IUserType } from '@/pages/UserCenter/types';
 
 interface ISureAuthModalProps {
   visible: boolean;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (values: IDeleteAccountProps) => void;
   userType: IUserType;
 }
 
@@ -24,17 +24,11 @@ const SureAuthModal = ({
   userType = 'person', // 默认为个人用户
 }: ISureAuthModalProps) => {
   const [form] = Form.useForm();
-
   // 提交表单
   const handleSubmit = async () => {
     await form.validateFields();
 
-    // 提交验证请求
-    // const formData = form.getFieldsValue();
-    // const res = await verifyIdentity(formData);
-
-    message.success('身份验证成功');
-    onConfirm();
+    onConfirm(form.getFieldsValue());
   };
 
   // 个人用户表单
@@ -51,7 +45,7 @@ const SureAuthModal = ({
       <CodeInput
         form={form}
         validateFiled={'phone'}
-        codeFiled={'code'}
+        codeFiled={'smsCode'}
       />
     </Form>
   );
@@ -84,13 +78,13 @@ const SureAuthModal = ({
 
       <PhoneNumberInput
         form={form}
-        codeFiled={'phoneNumber'}
+        codeFiled={'phone'}
       />
 
       <CodeInput
         form={form}
-        validateFiled={'phoneNumber'}
-        codeFiled={'phoneCode'}
+        validateFiled={'phone'}
+        codeFiled={'smsCode'}
       />
     </Form>
   );

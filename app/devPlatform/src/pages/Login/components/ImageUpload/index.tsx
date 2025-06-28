@@ -1,18 +1,18 @@
 import styles from './index.module.scss';
-import { Upload, message, Image, Button, Form, Spin } from 'antd';
+import { Upload, Image, Button, Form, Spin, App } from 'antd';
 import { PlusOutlined, EyeOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import type { UploadFile, UploadProps } from 'antd';
 import { IImageUploadProps } from '@/pages/Login/types';
 import { useOssSignStore } from '@/store/ossSignStore.ts';
-import { httpRequest } from '@/utils/httpRequest.ts';
-import { Spinner, SpinnerIcon } from '@phosphor-icons/react';
+import OSS from 'ali-oss';
 
 const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpeg', 'image/png'], height = 112, value, onChange, name, rules, bgIcon }: IImageUploadProps) => {
-  const [fileList, setFileList] = useState<UploadFile[]>(value || []);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
-  const { getOssSign } = useOssSignStore();
+  const { getOssSign, ossSign } = useOssSignStore();
+  const { message } = App.useApp();
 
   const [loading, setLoading] = useState(false);
 
@@ -23,39 +23,52 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
     console.log('customRequest file', options);
     setLoading(true);
     try {
+      // 1. 获取 OSS 签名信息
       const ossSign = await getOssSign();
       if (!ossSign) {
         setLoading(false);
         return;
       }
+      // 2. 初始化 OSS 客户端
+      console.log(ossSign);
+      const client = new OSS({
+        region: ossSign.region,
+        accessKeyId: ossSign.accessKeyId,
+        bucket: ossSign.bucket,
+        secure: true,
+        accessKeySecret: ossSign.accessKeySecret,
+        stsToken: ossSign.securityToken,
+      });
+      console.log('OSS 客户端初始化成功', client);
+      const result = await client.put(`/${ossSign.dir}${file.name}`, file);
+      // const res = await httpRequest.put(`/${ossSign.dir}${file.name}`, file, {
+      //   headers: {
+      //     'x-oss-policy': ossSign.policy,
+      //     'x-oss-signature': ossSign.signature,
+      //   },
+      // });
+      console.log('上传结果', result);
 
-      const formData = new FormData();
-      formData.append('key', `${ossSign.dir}/${file.name}`);
-      formData.append('policy', ossSign.policy);
-      formData.append('OSSAccessKeyId', ossSign.accessid);
-      formData.append('signature', ossSign.signature);
-      formData.append('success_action_status', '200');
-      formData.append('file', file);
-
-      const response = await httpRequest.post(ossSign.host, formData);
-
-      if (response.status === 200) {
-        message.success('文件上传成功');
-        onSuccess(response, file);
-        handleSuccess(file);
-      } else {
-        message.error('文件上传失败');
-        onError(new Error('上传失败'));
-      }
+      // if (response.status === 200) {
+      //   message.success('文件上传成功');
+      //   onSuccess(response, file);
+      //   handleSuccess(file);
+      // } else {
+      //   setLoading(false);
+      //   message.error('文件上传失败');
+      //   onError(new Error('上传失败'));
+      // }
     } catch (error) {
-      message.error('上传文件到 OSS 出错');
-      onError(error);
+      console.log('上传失败', error);
+      setLoading(false);
     }
   };
 
   // 同步外部表单值到内部状态
   useEffect(() => {
-    if (value) {
+    console.log('value changed', value);
+    if (value && value.length && value[0].url) {
+      console.log('value changed22222', value);
       setFileList(value);
     }
   }, [value]);

@@ -1,5 +1,5 @@
 import styles from './index.module.scss';
-import { Button, Checkbox, Form, Input, message } from 'antd';
+import { App, Button, Checkbox, Form, Input, message } from 'antd';
 import useLoginStore from '@/store/loginStore.ts';
 import CodeInput from '@/pages/Login/components/codeInput';
 import React, { useRef, useState } from 'react';
@@ -17,15 +17,20 @@ interface ISetNewFormProps {
   surePassword: string;
 }
 
-const SetNewPassword = ({ email }: { email: string }) => {
+const SetNewPassword = ({ email, emailCode }: { email: string; emailCode: string }) => {
   const [form] = Form.useForm();
   const { resetPassword } = useLoginView();
+  const { message } = App.useApp();
+  const { setCurrentStep } = useLoginStore();
 
   const onFinish = async (values: ISetNewFormProps) => {
     console.log('Received values of form: ', values, email);
-    const res = await resetPassword(email, values.password);
-    if (res) {
-      message.success('密码重置成功，请使用新密码登录');
+    const res = await resetPassword({ email, newPassword: values.password, surePassword: values.surePassword, emailCode: emailCode });
+    if (res.code === 200) {
+      message.success('密码重置成功，请重新登录');
+      setCurrentStep('enterpriseAccount');
+    } else {
+      message.error(res.message || '密码重置失败，请重试');
     }
   };
   return (
@@ -98,16 +103,20 @@ const ForgetPassword = () => {
   const { setCurrentStep } = useLoginStore();
   const [form] = Form.useForm<IForgetPasswordProp>();
   const { getPassWordWithEmailCode } = useLoginView();
+
   const onFinish = async (values: IForgetPasswordProp) => {
-    const res = await getPassWordWithEmailCode(values.email, values.emailCode);
+    const res = await getPassWordWithEmailCode({ email: values.email, emailCode: values.emailCode });
+    console.log('忘记密码校验res', res);
     emailRef.current = values.email;
-    if (res) {
+    emailCodeRef.current = values.emailCode;
+    if (res.code === 200) {
       setShowForget(false);
     }
   };
 
   const [showForget, setShowForget] = useState<boolean>(true);
   const emailRef: any = useRef(null);
+  const emailCodeRef: any = useRef(null);
 
   return (
     <div className={styles.forgetPassword}>
@@ -148,7 +157,10 @@ const ForgetPassword = () => {
             </Form.Item>
           </Form>
         ) : (
-          <SetNewPassword email={emailRef.current} />
+          <SetNewPassword
+            email={emailRef.current}
+            emailCode={emailCodeRef.current}
+          />
         )}
       </div>
     </div>
