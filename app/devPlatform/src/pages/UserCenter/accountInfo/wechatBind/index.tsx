@@ -12,14 +12,14 @@ const WechatBind = ({ visible, title, onCancel }: { visible: boolean; title?: st
   useEffect(() => {
     if (visible) {
       // 使用setTimeout确保DOM元素已经渲染
-      setTimeout(() => {
-        const loginContainer = document.getElementById('login_container_bind');
-        if (loginContainer) {
-          containerMounted.current = true;
-          const redirect_uri = `${window.location.origin}/login?loginFrom='user-center'`;
-          initializeWeixinLogin(redirect_uri, 'login_container_bind');
-        }
-      }, 100);
+      // setTimeout(() => {
+      //   const loginContainer = document.getElementById('login_container_bind');
+      //   if (loginContainer) {
+      //     containerMounted.current = true;
+      //     const redirect_uri = `${window.location.origin}/login?loginFrom='user-center'`;
+      //     initializeWeixinLogin(redirect_uri, 'login_container_bind');
+      //   }
+      // }, 100);
     }
   }, [visible]);
 
@@ -51,10 +51,10 @@ const WechatBind = ({ visible, title, onCancel }: { visible: boolean; title?: st
           <div>扫码二维码</div>
         </div>
         <div className={styles.wechatBindContainer}>
-          <div
-            id="login_container_bind"
-            className={styles.login_content}
-          ></div>
+          {/*<div*/}
+          {/*  id="login_container_bind"*/}
+          {/*  className={styles.login_content}*/}
+          {/*></div>*/}
         </div>
         <div className={styles.bottom}>绑定微信，可及时获取版本新动态和关键消息通知</div>
       </div>

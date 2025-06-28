@@ -9,17 +9,17 @@ import ServiceAgreement from './serviceAgreement';
 import AccountSetting from './accountSetting';
 import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 import { IAccountInfo } from '@/pages/UserCenter/types';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useLoginView } from '@/pages/Login/useLoginView.ts';
+import useAuthStore from '@/store/authStore.ts';
 
 const UserCenter: React.FC = () => {
   const [showSetting, setShowSetting] = useState<boolean>(false);
 
   const { userInfo, getUserInfo, setUserInfo } = useUserCenterView();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     getUserInfo();
-  }, []);
+  }, [user]);
 
   if (!userInfo)
     return (

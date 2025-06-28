@@ -1,10 +1,12 @@
 import styles from './index.module.scss';
-import { Button, Checkbox, Form, Input } from 'antd';
+import { App, Button, Checkbox, Form, Input, message } from 'antd';
 import useLoginStore from '@/store/loginStore.ts';
 import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
 import EmailInput from '@/pages/Login/components/emailInput';
 import { useLoginView } from '@/pages/Login/useLoginView.ts';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useAuthStore from '@/store/authStore.ts';
 
 export interface IEnterpriseFormValues {
   email: string;
@@ -18,18 +20,34 @@ interface LoginFormProps {
 
 const LoginEnterprise: React.FC<LoginFormProps> = ({ showAgreed = true }) => {
   const [form] = Form.useForm<IEnterpriseFormValues>();
-  const { loginWithEnterprise } = useLoginView();
+  const { loginWithEnterprise, getEnterpriseInfo } = useLoginView();
   const { enterpriseAccountData, setEnterpriseAccountData, setCurrentStep } = useLoginStore();
+  const navigate = useNavigate();
+  const { login } = useAuthStore();
+  const { message } = App.useApp();
 
   const onFinish = async (values: IEnterpriseFormValues) => {
     console.log('Received values of form: ', values);
-    await loginWithEnterprise(values.email, values.password);
+    const res = await loginWithEnterprise({ email: values.email, password: values.password });
+    console.log('企业登录结果', res);
+    if (res.code === 200) {
+      // 登录必定不是新用户 直接进入
+      login(res.data.user, res.data.token);
+      navigate('/');
+    } else if (res.code === 401) {
+      // 登录失败
+      form.resetFields(['password']);
+      setEnterpriseAccountData({ ...values, password: '' });
+      form.setFields([{ name: 'password', errors: [res.message || '登录失败，请重试'] }]);
+    } else {
+      message.error(res.message || '登录失败，请重试');
+    }
   };
 
   useEffect(() => {
-    if (enterpriseAccountData) {
-      form.setFieldsValue(enterpriseAccountData);
-    }
+    // if (enterpriseAccountData) {
+    //   form.setFieldsValue(enterpriseAccountData);
+    // }
   }, []);
 
   return (

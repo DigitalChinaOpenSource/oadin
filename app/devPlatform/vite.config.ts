@@ -21,6 +21,7 @@ export default defineConfig({
     proxy: {
       ['/api']: {
         target: 'http://10.3.74.123:3000', // 向秋怡的后端服务代理请求
+        // target: 'http://10.3.73.66:3000', // 叶鑫的后端服务代理请求
         changeOrigin: true,
         rewrite: (path) => path.replace(new RegExp(`^/api`), '/api'),
         configure: (proxy, options) => {

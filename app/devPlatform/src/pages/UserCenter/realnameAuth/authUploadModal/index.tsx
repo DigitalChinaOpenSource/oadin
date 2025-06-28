@@ -1,11 +1,11 @@
 import styles from '@/pages/UserCenter/accountSetting/sureAuthModal/index.module.scss';
 import { CloseOutlined } from '@ant-design/icons';
-import { Form, Modal } from 'antd';
+import { Form, Modal, type UploadFile } from 'antd';
 import ImageUpload from '@/pages/Login/components/ImageUpload';
 import LoginEnterpriseIcon from '@/assets/login-enterprise-icon.svg';
 import LoginFrontedIcon from '@/assets/login-fronted-icon.svg';
 import LoginBackIcon from '@/assets/login-back-icon.svg';
-import { IUserType } from '@/pages/UserCenter/types';
+import { IAccountInfo, IUserType } from '@/pages/UserCenter/types';
 
 interface IAuthUploadModalProps {
   visible: boolean;
@@ -13,10 +13,12 @@ interface IAuthUploadModalProps {
   onConfirm: (formData: any) => void;
   userType: IUserType;
   title?: string;
+  accountInfo: IAccountInfo; // 可能需要根据实际情况调整类型
 }
 
-const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', title }: IAuthUploadModalProps) => {
+const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', title, accountInfo }: IAuthUploadModalProps) => {
   const [form] = Form.useForm();
+  const isPerson = userType === 'person';
 
   const handleSure = async () => {
     await form.validateFields();
@@ -40,6 +42,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', ti
           name="enterpriseIcon"
           rules={[{ required: true, message: '请上传营业执照' }]}
           onChange={(value) => form.setFieldsValue({ enterpriseIcon: value })}
+          value={[{ url: accountInfo?.realNameAuth?.licenseImageUrl || '' }]}
         />
       </Form>
     );
@@ -61,6 +64,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', ti
           name="frontImage"
           rules={[{ required: true, message: '请上传身份证人像面照片' }]}
           onChange={(value) => form.setFieldsValue({ frontImage: value })}
+          value={[{ url: accountInfo.idCardFront || '' }]}
         />
         <ImageUpload
           height={'auto'}
@@ -69,6 +73,7 @@ const AuthUploadModal = ({ visible, onCancel, onConfirm, userType = 'person', ti
           name="backImage"
           rules={[{ required: true, message: '请上传身份证国徽面照片' }]}
           onChange={(value) => form.setFieldsValue({ backImage: value })}
+          value={[{ url: accountInfo.idCardBack || '' }]}
         />
       </Form>
     );

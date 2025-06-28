@@ -25,8 +25,8 @@ export interface IImageUploadProps {
   maxSize?: number; // 单位：MB
   accept?: string[];
   height?: number | string;
-  value?: UploadFile[];
-  onChange?: (fileList: UploadFile[]) => void;
+  value?: { url: string }[];
+  onChange?: (fileList: { url: string }[]) => void;
   name?: string;
   rules?: any[];
   action?: string; // 添加上传地址

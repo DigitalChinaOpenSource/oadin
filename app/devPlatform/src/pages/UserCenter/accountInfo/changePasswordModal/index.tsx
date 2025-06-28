@@ -6,7 +6,7 @@ import styles from './index.module.scss';
 interface IChangePasswordProps {
   visible: boolean;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (values: any) => void;
   title?: string;
 }
 
@@ -14,7 +14,7 @@ const ChangePasswordModal = ({ title, onCancel, onConfirm, visible }: IChangePas
   const [form] = Form.useForm();
   const handleOk = async () => {
     await form.validateFields();
-    onConfirm();
+    onConfirm(form.getFieldsValue());
   };
 
   useEffect(() => {
@@ -57,7 +57,7 @@ const ChangePasswordModal = ({ title, onCancel, onConfirm, visible }: IChangePas
             />
           </Form.Item>
           <Form.Item
-            name={'password'}
+            name={'newPassword'}
             label="新密码"
             validateTrigger={['onBlur']}
             rules={[
@@ -78,13 +78,13 @@ const ChangePasswordModal = ({ title, onCancel, onConfirm, visible }: IChangePas
           <Form.Item
             name={'surePassword'}
             label="再次输入"
-            dependencies={['password']}
+            dependencies={['newPassword']}
             validateTrigger={['onBlur', 'onChange']}
             rules={[
               { required: true, message: '请确认新的登录密码' },
               ({ getFieldValue }) => ({
                 validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
+                  if (!value || getFieldValue('newPassword') === value) {
                     return Promise.resolve();
                   }
                   return Promise.reject(new Error('两次输入的密码不一致'));

@@ -25,7 +25,7 @@ export default function TopHeader() {
     };
     // 退出登录
     const handleLogout = () => {
-      setCurrentStep('personWechat');
+      setCurrentStep('personPhone');
 
       logout();
       navigate('/login');

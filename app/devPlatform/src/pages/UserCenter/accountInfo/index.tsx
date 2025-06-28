@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Avatar, Button, Input } from 'antd';
+import { App, Avatar, Button, Input } from 'antd';
 import { PencilSimpleLineIcon, UserIcon, CheckIcon, CheckCircleIcon, WarningCircleIcon, BuildingOfficeIcon } from '@phosphor-icons/react';
 import styles from './index.module.scss';
 import UserNameModal from './userNameModal';
@@ -9,14 +9,18 @@ import CompanyIcon from '@/assets/companyIcon.svg';
 import ChangePasswordModal from '@/pages/UserCenter/accountInfo/changePasswordModal';
 import WechatBind from '@/pages/UserCenter/accountInfo/wechatBind';
 import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
+import { useLoginView } from '@/pages/Login/useLoginView.ts';
+import useAuthStore from '@/store/authStore.ts';
 
 /**
  * 用户中心账号信息组件
  */
 const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
   const { type: userType, username, nickname, wechatName, enterpriseName, email, phone, avatar, wechatInfo, wechatBind } = accountInfo;
-
-  const { changeUsername, userInfo } = useUserCenterView();
+  const { token, user, changeUser } = useAuthStore();
+  const { message } = App.useApp();
+  const { changeUsername, changePassword } = useUserCenterView();
+  const { resetPassword } = useLoginView();
   // 修改用户名的弹窗
   const [userEditShow, setUserEditShow] = useState<boolean>(false);
   // 修改密码的弹框
@@ -88,14 +92,37 @@ const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
   // 修改用户名
   const handleChangeUserName = async (newUserName: string) => {
     console.log('handleChangeUserName:', newUserName);
-    const changeRes: any = await changeUsername(newUserName, accountInfo.phone);
-    // TODO 需要根据实际接口修改
-    if (changeRes) {
-      setUserInfo({
-        ...accountInfo,
-        [isPerson ? 'userName' : 'enterpriseName']: newUserName,
+    let params;
+    if (isPerson) {
+      params = { nickname: newUserName, token: token, userId: user.uid };
+    } else {
+      params = { realName: newUserName };
+    }
+    const changeRes = await changeUsername(params);
+    if (changeRes.code === 200) {
+      // setUserInfo({
+      //   ...accountInfo,
+      //   [isPerson ? 'nickname' : 'enterpriseName']: newUserName,
+      // });
+      changeUser({
+        [isPerson ? 'nickname' : 'enterpriseName']: newUserName,
       });
       setUserEditShow(false);
+      message.success(`${isPerson ? '用户名' : '企业名称'}修改成功`);
+    } else {
+      message.error(changeRes.message || `${isPerson ? '用户名' : '企业名称'}修改失败，请重试`);
+    }
+  };
+
+  const handleChangePassword = async (values: any) => {
+    console.log('handleChangePassword:', values);
+    const res = await changePassword({ ...values, email: accountInfo.email });
+    if (res.code === 200) {
+      message.success('密码修改成功');
+      setChangePasswordShow(false);
+      // TODO: 这里可以添加密码修改成功后的逻辑，比如跳转到登录页或清除用户信息等(现在默认不操作)
+    } else {
+      message.error(res.message || '密码修改失败，请重试');
     }
   };
 
@@ -218,7 +245,7 @@ const AccountInfo = ({ accountInfo, setUserInfo }: IAccountInfoProps) => {
       <ChangePasswordModal
         visible={changePasswordShow}
         onCancel={() => setChangePasswordShow(false)}
-        onConfirm={() => setChangePasswordShow(false)}
+        onConfirm={handleChangePassword}
       />
       {/*绑定微信的弹窗*/}
       <WechatBind

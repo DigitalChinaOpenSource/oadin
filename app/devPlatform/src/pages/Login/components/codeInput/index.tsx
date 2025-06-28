@@ -2,10 +2,11 @@ import { Form, Input } from 'antd';
 import React, { useRef, useState } from 'react';
 import styles from '@/pages/Login/loginForm/index.module.scss';
 import { useLoginView } from '@/pages/Login/useLoginView.ts';
-import { message } from 'antd';
+import { App } from 'antd';
 
 const CodeInput = ({ form, validateFiled, codeFiled, placeholder }: { form: any; validateFiled: string; codeFiled: string; placeholder?: string }) => {
-  const { getPhoneCode } = useLoginView();
+  const { getPhoneCode, getEmailCode } = useLoginView();
+  const { message } = App.useApp();
 
   // 60s倒计时
   const [countTime, setCountTime] = useState(60);
@@ -45,10 +46,15 @@ const CodeInput = ({ form, validateFiled, codeFiled, placeholder }: { form: any;
       await form.validateFields([validateFiled]);
       setShowTimeStatus(2);
       createTimer();
+      let res;
+      if (validateFiled === 'email') {
+        res = await getEmailCode({ email: form.getFieldValue(validateFiled) });
+      } else {
+        res = await getPhoneCode({ phone: form.getFieldValue(validateFiled) });
+      }
       // 这里是获取验证码
-      const res = await getPhoneCode({ phone: form.getFieldValue(validateFiled) });
       console.log('验证码获取结果', res);
-      message.success(res.data || res.message || '验证码已发送');
+      message.success(res.message || '验证码已发送');
     } catch (error) {
       console.log('error', error);
     }
@@ -71,6 +77,7 @@ const CodeInput = ({ form, validateFiled, codeFiled, placeholder }: { form: any;
   return (
     <Form.Item
       name={codeFiled}
+      key={codeFiled}
       validateTrigger={['onBlur']}
       rules={[
         {
@@ -87,6 +94,7 @@ const CodeInput = ({ form, validateFiled, codeFiled, placeholder }: { form: any;
       ]}
     >
       <Input
+        key={codeFiled}
         className="formInput"
         maxLength={6}
         placeholder={placeholder ? placeholder : '请输入验证码'}

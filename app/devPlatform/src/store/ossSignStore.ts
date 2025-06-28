@@ -4,12 +4,14 @@ import { httpRequest } from '@/utils/httpRequest.ts';
 import { getUserToken } from '@/utils/getUserToken.ts';
 
 export interface IOssSignProps {
-  accessid: string;
-  host: string;
-  policy: string;
-  signature: string;
+  accessKeyId: string;
+  accessKeySecret: string;
+  securityToken: string; // stsToken
+  bucket: string;
+  region: string;
   dir: string;
   expire: number; //过期时间
+  expiration: string; //过期时间
 }
 
 interface IOssSignStore {
@@ -35,7 +37,6 @@ export const useOssSignStore = create<IOssSignStore>()(
 export const getSign = async (): Promise<IOssSignProps | null> => {
   const currentStore = useOssSignStore.getState();
   const currentOssSign = currentStore.ossSign;
-  console.log(1111111);
   // 检查是否有缓存的签名且未过期
   if (currentOssSign) {
     const nowTimestamp = Math.floor(Date.now() / 1000);
@@ -47,7 +48,7 @@ export const getSign = async (): Promise<IOssSignProps | null> => {
 
   // 签名不存在或已过期，重新获取
   try {
-    const res = await httpRequest.get('/enterprise/oss-sign', null, { Authorization: getUserToken() });
+    const res = await httpRequest.get('/enterprise/oss-sts', null, { headers: { Authorization: getUserToken() } });
     if (res.data) {
       currentStore.setOssSign(res.data);
       return res.data;

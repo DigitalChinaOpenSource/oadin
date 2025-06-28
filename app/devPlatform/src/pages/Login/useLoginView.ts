@@ -1,4 +1,4 @@
-import { IBaseEnterpriseFormProps, IBaseRequestResProps } from '@/pages/Login/types';
+import { IBaseEnterpriseFormProps, IBaseRequestResProps, IEnterpriseCreateFormValues } from '@/pages/Login/types';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { getUserToken } from '@/utils/getUserToken.ts';
 import { useEffect } from 'react';
@@ -70,19 +70,16 @@ export const useLoginView = () => {
     return await poll();
   };
 
-  // 获取手机验证码
+  // 个人/企业 获取手机验证码
   const getPhoneCode = async (params: { phone: string }) => {
-    console.log('获取手机验证码params', params);
     const res = await httpRequest.post<IBaseRequestResProps>('/individual-login/phone/send-code', params);
     console.log('手机验证码res', res);
     return res;
   };
 
-  // 获取邮箱验证码
-  const getEmailCode = async (email: string) => {
-    return new Promise((resolve, reject) => {
-      resolve({ data: true, message: '验证码已发送' });
-    });
+  // 企业 获取邮箱验证码
+  const getEmailCode = async (params: { email: string }) => {
+    return await httpRequest.post<IBaseRequestResProps>('/enterprise/email-code', params);
   };
 
   // 手机号登录/注册
@@ -96,51 +93,37 @@ export const useLoginView = () => {
   const bindPhone = async (phone: string, verificationCode: string, wechatInfo: any) => {};
 
   // 企业账号登录
-  const loginWithEnterprise = async (email: string, password: string) => {
-    return new Promise((resolve, reject) => {
-      // 模拟企业账号登录的 API 调用
-      setTimeout(() => {
-        if (email && password) {
-          resolve({ data: true, message: '登录成功' });
-        } else {
-          reject(new Error('邮箱或密码不能为空'));
-        }
-      }, 1000);
-    });
+  const loginWithEnterprise = async (params: { email: string; password: string }) => {
+    return await httpRequest.post('/enterprise/login', params);
   };
 
   // 找回密码 验证code
-  const getPassWordWithEmailCode = async (email: string, code: string) => {
-    return true;
+  const getPassWordWithEmailCode = async (params: { email: string; emailCode: string }) => {
+    return await httpRequest.post('/enterprise/password/email-auth', params);
   };
 
   // 重置密码
-  const resetPassword = async (email: string, newPassword: string) => {
-    return new Promise((resolve, reject) => {
-      // 模拟重置密码的 API 调用
-      setTimeout(() => {
-        if (email && newPassword) {
-          resolve({ data: true, message: '密码重置成功' });
-        } else {
-          reject(new Error('邮箱或新密码不能为空'));
-        }
-      }, 1000);
-    });
+  const resetPassword = async (params: any) => {
+    return httpRequest.post<IBaseRequestResProps>('/enterprise/password/reset', params);
   };
 
   // 企业邮箱注册
-  const createNewAccount = async (data: IBaseEnterpriseFormProps) => {
-    console.log('Creating new account with data:', data);
-    return true;
+  const createNewAccount = async (params: IEnterpriseCreateFormValues) => {
+    return await httpRequest.post<IBaseRequestResProps>('/enterprise/register', { ...params, agreePrivacy: params.agreed });
   };
 
   // 保存个人认证照片
 
-  // 根据token获取用户信息
+  // 根据token获取个人用户信息
   const getUserInfo = async (params: { token: string }) => {
     const res = await httpRequest.post<IBaseRequestResProps>('/auth/user-info', params);
     console.log('获取微信扫码信息res', res);
     return res.data || null;
+  };
+
+  // 根据token获取企业信息
+  const getEnterpriseInfo = async () => {
+    return await httpRequest.get<IBaseRequestResProps>('/enterprise/user-info', null, { headers: { Authorization: getUserToken() } });
   };
 
   return {
@@ -157,5 +140,6 @@ export const useLoginView = () => {
     getWechatLoginQRCode,
     getWechatInfo,
     pollWechatInfo,
+    getEnterpriseInfo,
   };
 };
