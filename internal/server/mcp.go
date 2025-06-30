@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	ConfigRoot "oadin/config"
@@ -400,6 +401,9 @@ func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.
 		Logo: mcpConfig.Data.Logo,
 	}
 	for _, y := range mcpServers {
+		if y.Command == "" {
+			continue
+		}
 		commandBuilder := hardware.NewCommandBuilder(y.Command).WithArgs(y.Args...)
 		command, args, err := commandBuilder.GetRunCommand()
 		if err != nil {
@@ -414,6 +418,10 @@ func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.
 		break
 	}
 
+	if mcpServerConfig.Command == "" {
+		return nil, errors.New("command must be provided")
+	}
+
 	return &mcpServerConfig, nil
 }
 
@@ -422,7 +430,7 @@ func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	err = M.McpHandler.Start(mcpServerConfig)
+	err = M.McpHandler.Start(ctx, mcpServerConfig)
 	if err != nil {
 		return err
 	}
@@ -509,9 +517,10 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 	}
 
 	return &types.ClientRunToolResponse{
-		CallToolResult: data,
-		Logo:           logo,
-		ToolDesc:       toolDesc,
+		Content:  data.Content,
+		IsError:  data.IsError,
+		Logo:     logo,
+		ToolDesc: toolDesc,
 	}, nil
 }
 
@@ -522,6 +531,6 @@ func (M *MCPServerImpl) ClientMAC(ctx context.Context) error {
 		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
 		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
 	}
-	_, err := M.McpHandler.ClientStart(config)
+	_, err := M.McpHandler.ClientStart(ctx, config)
 	return err
 }
