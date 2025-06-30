@@ -33,7 +33,6 @@ interface StreamRequestOptions {
 
 export function useChatStream() {
   const { addMessage, isLoading, setIsLoading } = useChatStore();
-  const currentSessionId = getSessionIdFromUrl();
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
@@ -489,285 +488,268 @@ export function useChatStream() {
   );
 
   // 重构后的统一流式请求函数
-  const sendStreamRequest = useCallback(
-    async (options: StreamRequestOptions) => {
-      const { content, toolGroupID, isUserMessage = false, isResend = false, sessionId = currentSessionId } = options;
+  const sendStreamRequest = async (options: StreamRequestOptions) => {
+    const { content, toolGroupID, isUserMessage = false, isResend = false } = options;
 
-      if (!content.trim()) return;
-      if (!sessionId) return;
+    if (!content.trim()) return;
 
-      // 取消之前的请求
-      cancelRequest();
-      // 清除流状态
-      clearStreamingState();
+    // 取消之前的请求
+    cancelRequest();
+    // 清除流状态
+    clearStreamingState();
 
-      // 模型检查
-      if (!selectedModel) {
-        handleError(ERROR_MESSAGES.REQUEST.NO_MODEL_SELECTED, null, ErrorType.REQUEST, { shouldCancel: false });
-        return;
-      }
+    // 模型检查
+    if (!selectedModel) {
+      handleError(ERROR_MESSAGES.REQUEST.NO_MODEL_SELECTED, null, ErrorType.REQUEST, { shouldCancel: false });
+      return;
+    }
 
-      // 创建用户消息（仅在需要时）
-      if (isUserMessage) {
-        const userMsg: MessageType = {
-          id: generateUniqueId('user_msg'),
-          role: 'user',
-          contentList: [
-            {
-              id: generateUniqueId('content'),
-              type: 'plain',
-              content: content,
-            },
-          ],
-        };
-        addMessage(userMsg);
-      }
-
-      // 设置加载状态
-      setIsLoading(true);
-
-      // 创建请求控制器
-      abortControllerRef.current = new AbortController();
-      const signal = abortControllerRef.current.signal;
-
-      // 构建请求参数
-      const requestData: ChatRequestParams = {
-        content: toolGroupID ? '' : content, // 如果有toolGroupID，content设为空
-      };
-
-      // 添加会话ID
-      if (sessionId && sessionId.trim()) {
-        requestData.SessionID = sessionId;
-      }
-
-      // 添加工具组ID
-      if (toolGroupID) {
-        requestData.toolGroupID = toolGroupID;
-      }
-
-      // 添加MCP IDs
-      if (selectedMcpIds().length > 0) {
-        requestData.mcpIds = selectedMcpIds();
-      }
-
-      try {
-        const API_BASE_URL = import.meta.env.VITE_HEALTH_API_URL || '';
-
-        // 设置总超时
-        requestState.current.timers.totalTimer = setTimeout(() => {
-          handleError(ERROR_MESSAGES.TIMEOUT.TOTAL, null, ErrorType.TIMEOUT, {
-            shouldCancel: true,
-            appendToContent: true,
-            updateMcpStatus: true,
-          });
-        }, TIMEOUT_CONFIG.TOTAL);
-
-        // 初始化响应内容
-        let responseContent = requestState.current.content.response;
-
-        await createStreamRequest(
-          `${API_BASE_URL}${API_PREFIX}/playground/message/stream`,
+    // 创建用户消息（仅在需要时）
+    if (isUserMessage) {
+      const userMsg: MessageType = {
+        id: generateUniqueId('user_msg'),
+        role: 'user',
+        contentList: [
           {
-            method: 'POST',
-            headers: baseHeaders(),
-            body: JSON.stringify(requestData),
-            openWhenHidden: true,
-            signal,
-            onerror: (error) => {
-              setError(`请求失败: ${error.message}`);
-              clearTimers();
-              setIsLoading(false);
-            },
-            onclose: () => {
-              clearTimers();
-              const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
-              const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
-              console.log('588===>', streamingThinking, tempStreamingThinking);
-              // 如果连接关闭但未完成且有内容，保存部分回复
-              if (isLoading && (response || responseContent)) {
-                const finalContent = (response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
-                const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
-                addMessage(aiMessage);
-              }
-
-              if (!requestState.current.status.isToolCallActive) {
-                setIsLoading(false);
-              }
-            },
+            id: generateUniqueId('content'),
+            type: 'plain',
+            content: content,
           },
-          {
-            onDataReceived: async (response) => {
-              // 清除总超时定时器
-              if (requestState.current.timers.totalTimer) {
-                clearTimeout(requestState.current.timers.totalTimer);
-                requestState.current.timers.totalTimer = null;
-              }
+        ],
+      };
+      addMessage(userMsg);
+    }
 
-              const data = response.data;
+    // 设置加载状态
+    setIsLoading(true);
 
-              // 根据是否有 tool_calls 来设置 isToolCallActive
-              if (data?.tool_calls && data.tool_calls.length > 0) {
-                requestState.current.status.isToolCallActive = true;
-              } else {
-                // 当没有 tool_calls 时，说明工具调用循环结束
-                requestState.current.status.isToolCallActive = false;
-              }
+    // 创建请求控制器
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+    // 构建请求参数
+    const requestData: ChatRequestParams = {
+      content: toolGroupID ? '' : content, // 如果有toolGroupID，content设为空
+      SessionID: getSessionIdFromUrl(),
+    };
 
-              // 处理深度思考内容（在工具调用前保存）
-              if (data?.tool_calls && data.tool_calls.length > 0 && requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
-                const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false);
-                addMessage(thinkingMessage);
+    // 添加工具组ID
+    if (toolGroupID) {
+      requestData.toolGroupID = toolGroupID;
+    }
 
-                // 清除累积的思考内容
-                requestState.current.content.thinkingFromField = '';
-                requestState.current.content.isThinkingActive = false;
-              }
+    // 添加MCP IDs
+    if (selectedMcpIds().length > 0) {
+      requestData.mcpIds = selectedMcpIds();
+    }
 
-              if (data?.tool_calls && data.tool_calls.length > 0) {
-                // 处理工具调用
-                await handleToolCalls(data, responseContent);
-              } else if (data.content || data.thoughts) {
-                // 处理普通文本内容
-                responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestState, false);
-                requestState.current.content.response = responseContent;
-              }
-            },
+    try {
+      const API_BASE_URL = import.meta.env.VITE_HEALTH_API_URL || '';
 
-            onComplete: () => {
-              // 处理进行中的工具调用完成状态
-              const allMessages = useChatStore.getState().messages;
-              const progressToolMessage = findProgressToolMessage(allMessages) as any;
+      // 设置总超时
+      requestState.current.timers.totalTimer = setTimeout(() => {
+        handleError(ERROR_MESSAGES.TIMEOUT.TOTAL, null, ErrorType.TIMEOUT, {
+          shouldCancel: true,
+          appendToContent: true,
+          updateMcpStatus: true,
+        });
+      }, TIMEOUT_CONFIG.TOTAL);
 
-              if (progressToolMessage && !requestState.current.status.isToolCallActive) {
-                const updatedContentList = [...progressToolMessage.contentList];
-                let hasUpdates = false;
+      // 初始化响应内容
+      let responseContent = requestState.current.content.response;
 
-                updatedContentList.forEach((contentItem, index) => {
-                  if (contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress') {
-                    const toolCallResults = contentItem.content.data || [];
-                    const allComplete = toolCallResults.every((tool: any) => tool.status === 'success' || tool.status === 'error');
+      await createStreamRequest(
+        `${API_BASE_URL}${API_PREFIX}/playground/message/stream`,
+        {
+          method: 'POST',
+          headers: baseHeaders(),
+          body: JSON.stringify(requestData),
+          openWhenHidden: true,
+          signal,
+          onerror: (error) => {
+            setError(`请求失败: ${error.message}`);
+            clearTimers();
+            setIsLoading(false);
+          },
+          onclose: () => {
+            clearTimers();
+            const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
+            const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
+            // 如果连接关闭但未完成且有内容，保存部分回复
+            if (isLoading && (response || responseContent)) {
+              const finalContent = (response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
+              const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
+              addMessage(aiMessage);
+            }
 
-                    if (allComplete) {
-                      const hasError = toolCallResults.some((tool: any) => tool.status === 'error');
-                      const finalStatus = hasError ? 'error' : 'success';
-                      // 优先使用contentItem自己的groupId，如果没有再使用全局的lastToolGroupIdRef
-                      // 确保无论哪种情况都有有效的ID可用
-                      const currentGroupId = contentItem.content.groupId || requestState.current.lastToolGroupIdRef;
+            if (!requestState.current.status.isToolCallActive) {
+              setIsLoading(false);
+            }
+          },
+        },
+        {
+          onDataReceived: async (response) => {
+            // 清除总超时定时器
+            if (requestState.current.timers.totalTimer) {
+              clearTimeout(requestState.current.timers.totalTimer);
+              requestState.current.timers.totalTimer = null;
+            }
 
-                      console.log('当前组ID:', currentGroupId, '全局保存的组ID:', requestState.current.lastToolGroupIdRef);
+            const data = response.data;
 
-                      if (currentGroupId) {
-                        const updatedMcpContent = createMcpContentWithGroupId(currentGroupId, finalStatus, toolCallResults, contentItem.content.totalDuration || 0);
-                        console.log('onComplete 更新MCP内容:', updatedMcpContent);
-                        updatedContentList[index] = updatedMcpContent;
-                        hasUpdates = true;
-                      }
+            // 根据是否有 tool_calls 来设置 isToolCallActive
+            if (data?.tool_calls && data.tool_calls.length > 0) {
+              requestState.current.status.isToolCallActive = true;
+            } else {
+              // 当没有 tool_calls 时，说明工具调用循环结束
+              requestState.current.status.isToolCallActive = false;
+            }
+
+            // 处理深度思考内容（在工具调用前保存）
+            if (data?.tool_calls && data.tool_calls.length > 0 && requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
+              const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false);
+              addMessage(thinkingMessage);
+
+              // 清除累积的思考内容
+              requestState.current.content.thinkingFromField = '';
+              requestState.current.content.isThinkingActive = false;
+            }
+
+            if (data?.tool_calls && data.tool_calls.length > 0) {
+              // 处理工具调用
+              await handleToolCalls(data, responseContent);
+            } else if (data.content || data.thoughts) {
+              // 处理普通文本内容
+              responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestState, false);
+              requestState.current.content.response = responseContent;
+            }
+          },
+
+          onComplete: () => {
+            // 处理进行中的工具调用完成状态
+            const allMessages = useChatStore.getState().messages;
+            const progressToolMessage = findProgressToolMessage(allMessages) as any;
+
+            if (progressToolMessage && !requestState.current.status.isToolCallActive) {
+              const updatedContentList = [...progressToolMessage.contentList];
+              let hasUpdates = false;
+
+              updatedContentList.forEach((contentItem, index) => {
+                if (contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress') {
+                  const toolCallResults = contentItem.content.data || [];
+                  const allComplete = toolCallResults.every((tool: any) => tool.status === 'success' || tool.status === 'error');
+
+                  if (allComplete) {
+                    const hasError = toolCallResults.some((tool: any) => tool.status === 'error');
+                    const finalStatus = hasError ? 'error' : 'success';
+                    // 优先使用contentItem自己的groupId，如果没有再使用全局的lastToolGroupIdRef
+                    // 确保无论哪种情况都有有效的ID可用
+                    const currentGroupId = contentItem.content.groupId || requestState.current.lastToolGroupIdRef;
+
+                    console.log('当前组ID:', currentGroupId, '全局保存的组ID:', requestState.current.lastToolGroupIdRef);
+
+                    if (currentGroupId) {
+                      const updatedMcpContent = createMcpContentWithGroupId(currentGroupId, finalStatus, toolCallResults, contentItem.content.totalDuration || 0);
+                      console.log('onComplete 更新MCP内容:', updatedMcpContent);
+                      updatedContentList[index] = updatedMcpContent;
+                      hasUpdates = true;
                     }
                   }
-                });
-
-                if (hasUpdates) {
-                  const finalMessage: MessageType = {
-                    id: progressToolMessage.id,
-                    role: 'assistant',
-                    contentList: updatedContentList,
-                  };
-                  addMessage(finalMessage, true);
                 }
-              }
+              });
 
-              // 处理未保存的思考内容
-              if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
-                const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false);
-                addMessage(thinkingMessage);
-
-                requestState.current.content.thinkingFromField = '';
-                requestState.current.content.isThinkingActive = false;
-              }
-
-              const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
-              const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
-              console.log('693===>', streamingThinking, tempStreamingThinking);
-              // 保存最终消息（仅在没有工具调用活动时）
-              if (!requestState.current.status.isToolCallActive && (response || responseContent)) {
-                const finalContent = response || responseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
-                addMessage(aiMessage);
-
-                // 重置状态
-                requestState.current = {
-                  content: {
-                    response: '',
-                    thinking: '',
-                    thinkingFromField: '',
-                    isThinkingActive: false,
-                  },
-                  status: {
-                    isToolCallActive: false,
-                  },
-                  timers: {
-                    totalTimer: null,
-                  },
-                  lastToolGroupIdRef: requestState.current.lastToolGroupIdRef,
+              if (hasUpdates) {
+                const finalMessage: MessageType = {
+                  id: progressToolMessage.id,
+                  role: 'assistant',
+                  contentList: updatedContentList,
                 };
-                functionIdCacheRef.current = {};
-              } else {
-                const savedToolGroupId = requestState.current.lastToolGroupIdRef;
-                clearStreamingState();
-                requestState.current.lastToolGroupIdRef = savedToolGroupId;
+                addMessage(finalMessage, true);
               }
+            }
 
-              // 只有当没有工具调用活动时才设置 isLoading = false
-              if (!requestState.current.status.isToolCallActive) {
-                setIsLoading(false);
-              }
-              clearTimers();
-            },
+            // 处理未保存的思考内容
+            if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
+              const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false);
+              addMessage(thinkingMessage);
 
-            onFallbackResponse: async (response) => {
-              handleError(ERROR_MESSAGES.RESPONSE.NON_STREAMING, null, ErrorType.PARSING, { shouldCancel: true, appendToContent: false });
-              cancelRequest();
-            },
+              requestState.current.content.thinkingFromField = '';
+              requestState.current.content.isThinkingActive = false;
+            }
+
+            const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
+            const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
+            // 保存最终消息（仅在没有工具调用活动时）
+            if (!requestState.current.status.isToolCallActive && (response || responseContent)) {
+              const finalContent = response || responseContent;
+              const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
+              addMessage(aiMessage);
+
+              // 重置状态
+              requestState.current = {
+                content: {
+                  response: '',
+                  thinking: '',
+                  thinkingFromField: '',
+                  isThinkingActive: false,
+                },
+                status: {
+                  isToolCallActive: false,
+                },
+                timers: {
+                  totalTimer: null,
+                },
+                lastToolGroupIdRef: requestState.current.lastToolGroupIdRef,
+              };
+              functionIdCacheRef.current = {};
+            } else {
+              const savedToolGroupId = requestState.current.lastToolGroupIdRef;
+              clearStreamingState();
+              requestState.current.lastToolGroupIdRef = savedToolGroupId;
+            }
+
+            // 只有当没有工具调用活动时才设置 isLoading = false
+            if (!requestState.current.status.isToolCallActive) {
+              setIsLoading(false);
+            }
+            clearTimers();
           },
-        );
-      } catch (error: any) {
-        handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, error.message || '未知错误'), error, ErrorType.REQUEST);
-      }
-    },
-    [selectedModel, addMessage, cancelRequest, clearStreamingState, currentSessionId, createStreamRequest, clearTimers, handleToolCalls],
-  );
+
+          onFallbackResponse: async (response) => {
+            handleError(ERROR_MESSAGES.RESPONSE.NON_STREAMING, null, ErrorType.PARSING, { shouldCancel: true, appendToContent: false });
+            cancelRequest();
+          },
+        },
+      );
+    } catch (error: any) {
+      handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, error.message || '未知错误'), error, ErrorType.REQUEST);
+    }
+  };
 
   // 简化后的用户消息发送函数
-  const sendChatMessage = useCallback(
-    (userMessage: string) => {
-      if (isLoading) return;
+  const sendChatMessage = (userMessage: string) => {
+    if (isLoading) return;
 
-      sendStreamRequest({
-        content: userMessage,
-        isUserMessage: true,
-      });
-    },
-    [sendStreamRequest, isLoading],
-  );
+    sendStreamRequest({
+      content: userMessage,
+      isUserMessage: true,
+    });
+  };
 
   // 简化后的工具结果继续对话函数
-  const continueConversationWithResult = useCallback(
-    async (toolResult: string) => {
-      try {
-        await sendStreamRequest({
-          content: toolResult,
-          toolGroupID: requestState.current.lastToolGroupIdRef || undefined,
-          isUserMessage: false,
-        });
-      } catch (error: any) {
-        handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.CONTINUE_FAILED, error.message || '未知错误'), error, ErrorType.TOOL);
-      }
-    },
-    [sendStreamRequest],
-  );
+  const continueConversationWithResult = async (toolResult: string) => {
+    try {
+      await sendStreamRequest({
+        content: toolResult,
+        toolGroupID: requestState.current.lastToolGroupIdRef || undefined,
+        isUserMessage: false,
+      });
+    } catch (error: any) {
+      handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.CONTINUE_FAILED, error.message || '未知错误'), error, ErrorType.TOOL);
+    }
+  };
 
-  // 重发消息函数也可以简化
-  const resendLastMessage = useCallback(async () => {
+  // 重发消息
+  const resendLastMessage = async () => {
     if (isResending) return;
 
     try {
@@ -800,7 +782,7 @@ export function useChatStream() {
     } finally {
       setIsResending(false);
     }
-  }, [isResending, sendStreamRequest, addMessage]);
+  };
 
   // 初始化工具调用处理程序引用
   useEffect(() => {
