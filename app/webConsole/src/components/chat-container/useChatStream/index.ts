@@ -217,19 +217,20 @@ export function useChatStream() {
   const cancelRequest = () => {
     const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
     // 如果有生成的内容，保存为消息
-    if (isLoading && (streamingContent || response || streamingThinking)) {
-      const finalContent = (response || streamingContent || streamingThinking) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
-
+    const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
+    if (isLoading && (response || streamingContent || tempStreamingThinking)) {
+      const finalContent = (response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
       // 如果正在进行深度思考，标记为用户取消（错误状态）
-      if (isThinkingActive && thinkingFromField) {
+      if (isThinkingActive || thinkingFromField) {
         setStreamingThinking({
           data: thinkingFromField,
           status: 'error',
         });
       }
-
       // 将 thinking 内容也传入构建消息的函数
-      const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || streamingThinking, thinkingFromField, false);
+
+      const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking, thinkingFromField, false);
+      console.log('构建的AI消息:', aiMessage);
       addMessage(aiMessage);
 
       // 保存当前的toolGroupId，但清除内部状态
@@ -333,7 +334,6 @@ export function useChatStream() {
       const { tool_calls, tool_group_id, id, total_duration } = data;
 
       // 检查是否有深度思考内容需要先保存 - 工具调用时才将思考独立为一条消息
-      // 因为这里是 handleToolCalls 函数，我们知道这里一定是工具调用，所以可以直接保存思考内容
       if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
         // 将深度思考内容作为单独的消息保存
         const thinkingMessage = buildMessageWithThinkContent(
@@ -409,7 +409,7 @@ export function useChatStream() {
           role: 'assistant',
           contentList: currentContentList,
         };
-        console.log('mcpMessage==>', mcpMessage);
+
         addMessage(mcpMessage, !!(tool_group_id || id));
 
         // 执行工具调用
@@ -484,7 +484,6 @@ export function useChatStream() {
           handleToolCallErrorMessage(toolCallResults, currentContentList, id, '', errorMessage, addMessage);
         }
       }
-      // 移除 finally 块中的状态重置，因为 isToolCallActive 现在由 /stream 响应控制
     },
     [selectedMcpIds, setStreamingContent, setError, addMessage],
   );
@@ -582,11 +581,12 @@ export function useChatStream() {
             onclose: () => {
               clearTimers();
               const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
-
+              const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
+              console.log('588===>', streamingThinking, tempStreamingThinking);
               // 如果连接关闭但未完成且有内容，保存部分回复
               if (isLoading && (response || responseContent)) {
                 const finalContent = (response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
-                const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || streamingThinking, thinkingFromField, isThinkingActive);
+                const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
                 addMessage(aiMessage);
               }
 
@@ -604,7 +604,6 @@ export function useChatStream() {
               }
 
               const data = response.data;
-              console.log('处理流式响应:', data);
 
               // 根据是否有 tool_calls 来设置 isToolCallActive
               if (data?.tool_calls && data.tool_calls.length > 0) {
@@ -651,10 +650,15 @@ export function useChatStream() {
                     if (allComplete) {
                       const hasError = toolCallResults.some((tool: any) => tool.status === 'error');
                       const finalStatus = hasError ? 'error' : 'success';
-                      const savedToolGroupId = requestState.current.lastToolGroupIdRef;
+                      // 优先使用contentItem自己的groupId，如果没有再使用全局的lastToolGroupIdRef
+                      // 确保无论哪种情况都有有效的ID可用
+                      const currentGroupId = contentItem.content.groupId || requestState.current.lastToolGroupIdRef;
 
-                      if (savedToolGroupId) {
-                        const updatedMcpContent = createMcpContentWithGroupId(savedToolGroupId, finalStatus, toolCallResults, contentItem.content.totalDuration || 0);
+                      console.log('当前组ID:', currentGroupId, '全局保存的组ID:', requestState.current.lastToolGroupIdRef);
+
+                      if (currentGroupId) {
+                        const updatedMcpContent = createMcpContentWithGroupId(currentGroupId, finalStatus, toolCallResults, contentItem.content.totalDuration || 0);
+                        console.log('onComplete 更新MCP内容:', updatedMcpContent);
                         updatedContentList[index] = updatedMcpContent;
                         hasUpdates = true;
                       }
@@ -682,11 +686,12 @@ export function useChatStream() {
               }
 
               const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
-
+              const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
+              console.log('693===>', streamingThinking, tempStreamingThinking);
               // 保存最终消息（仅在没有工具调用活动时）
               if (!requestState.current.status.isToolCallActive && (response || responseContent)) {
                 const finalContent = response || responseContent;
-                const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || streamingThinking, thinkingFromField, isThinkingActive);
+                const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
                 addMessage(aiMessage);
 
                 // 重置状态

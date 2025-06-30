@@ -7,6 +7,7 @@ import '@res-utiles/ui-components/dist/index.css';
 import { Button, message } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
 import { CopyIcon, ArrowClockwiseIcon, StopIcon } from '@phosphor-icons/react';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import StreamingMessage from '../streaming-message';
@@ -16,7 +17,6 @@ import sendSvg from '@/components/icons/send.svg';
 import realLoading from '@/components/icons/real-loading.svg';
 import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
-import { copyMessageToClipboard } from '../useChatStream/utils';
 import { HeaderContent } from './header-content';
 import EmbedDownloadButton from '../enbed-download-btn';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
@@ -51,7 +51,6 @@ interface ChatMessage extends MessageType {
 export default function ChatView() {
   const { messages, isUploading } = useChatStore();
   // 添加日志以跟踪 messages 更新
-  console.log('ChatView - messages updated:', messages);
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
@@ -75,14 +74,6 @@ export default function ChatView() {
 
     sendChatMessage(message);
   };
-  // 复制消息
-  const handleCopyMessage = (content?: string) => {
-    if (copyMessageToClipboard(content)) {
-      message.success('已复制到剪贴板');
-    } else {
-      message.error('复制失败');
-    }
-  };
 
   // 输入框底部功能区
   const footerContent = (
@@ -92,6 +83,31 @@ export default function ChatView() {
       <SelectMcp />
     </div>
   );
+
+  const copiedFormMessage = (messages: MessageType[]) => {
+    if (!messages || messages.length === 0) return '';
+
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage?.contentList || lastMessage.contentList.length === 0) return '';
+
+    // 收集所有内容
+    const contents: string[] = [];
+
+    // 处理深度思考内容
+    for (const item of lastMessage.contentList) {
+      if (item.type === 'think' && item.content && typeof item.content === 'object' && 'data' in item.content) {
+        contents.push(`${item.content.data}`);
+      } else if (item.type === 'plain' && typeof item.content === 'string') {
+        // 排除"回复已中断"等特殊字符
+        const cleanedContent = item.content.replace(/「回复已中断」/g, '').trim();
+        if (cleanedContent) {
+          contents.push(cleanedContent);
+        }
+      }
+    }
+    const fullContent = contents.join('\n\n');
+    return fullContent || '';
+  };
 
   // 流式消息和控制按钮的底部面板
   const renderBottomPanel = () => {
@@ -130,13 +146,19 @@ export default function ChatView() {
           )}
           {!isLoading && messages.length > 0 && (
             <>
-              <Button
-                type="link"
-                icon={<CopyIcon width={16} />}
-                onClick={() => handleCopyMessage()}
+              <CopyToClipboard
+                text={copiedFormMessage(messages)}
+                onCopy={() => {
+                  message.success('已复制到剪贴板');
+                }}
               >
-                复制
-              </Button>
+                <Button
+                  type="link"
+                  icon={<CopyIcon width={16} />}
+                >
+                  复制
+                </Button>
+              </CopyToClipboard>
               <Button
                 type="link"
                 icon={<ArrowClockwiseIcon width={16} />}
