@@ -272,7 +272,8 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 删除模型
   const { loading: deleteModelLoading, run: fetchDeleteModel } = useRequest(
     async (params: IRequestModelParams) => {
-      await httpRequest.del('/model', params);
+      const data = await httpRequest.del('/model', params);
+      return data || {};
     },
     {
       manual: true,
@@ -286,7 +287,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         if (!error?.handled) {
           message.error('模型删除失败');
         }
-        console.error('删除模型失败:', error);
       },
       onFinally: async () => {
         // 保留当前页码，重新获取数据

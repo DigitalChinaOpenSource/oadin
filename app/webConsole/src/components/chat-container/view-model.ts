@@ -141,13 +141,6 @@ export default function useViewModel() {
     }
   }, [isDownloadEmbed, currentSessionId, selectedModel?.id]);
 
-  useEffect(() => {
-    return () => {
-      setUploadFileList([]);
-      setSelectMcpList([]);
-    };
-  }, []);
-
   // 选择模型后需要将所选择的通知奥丁
   const { run: fetchChooseModelNotify } = useRequest(async (params: { service_name: string; local_provider?: string; remote_provider?: string }) => {
     if (!params?.service_name) return;
@@ -213,7 +206,8 @@ export default function useViewModel() {
         if (!data || data?.length === 0) return;
         const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16' && item.status === 'downloaded');
         setIsDownloadEmbed(isEmbed);
-        const isSelectedModel = data.some((item) => item.id === selectedModel?.id && item.status === 'downloaded');
+
+        const isSelectedModel = data.some((item) => item.model_name === selectedModel?.name && item.status === 'downloaded');
         // 表示当前模型已经被删除了，重新进入初始化
         if (!isSelectedModel) {
           setSelectedModel(null);

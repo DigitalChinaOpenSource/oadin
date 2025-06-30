@@ -3,6 +3,7 @@ export default {
     '10001': 'Please check if the request parameters are correct',
     '20001': 'Please check if the request parameters are correct',
     '30001': 'Please check if the request parameters are correct',
+    '30008': 'model is still running, please wait before trying to perform the delete operation',
 
     '20003': 'Authorization failed, please check the configuration authorization parameters and service provider status',
     '40001': 'Path verification failed, please confirm whether the path exists or whether the path is filled in correctly',
