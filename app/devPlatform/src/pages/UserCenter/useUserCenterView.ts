@@ -62,6 +62,11 @@ export const useUserCenterView = () => {
   // 获取用户协议与隐私政策
   const getUserAgreement = async () => {};
 
+  // 退出登录
+  const logoutUser = async () => {
+    return await httpRequest.post<IBaseRequestResProps>('/logout', null, { headers: { Authorization: getUserToken() } });
+  };
+
   return {
     userInfo,
     getUserInfo,
@@ -72,5 +77,6 @@ export const useUserCenterView = () => {
     getUserAgreement,
     changePassword,
     uploadRealNameAuthPhoto,
+    logoutUser,
   };
 };
