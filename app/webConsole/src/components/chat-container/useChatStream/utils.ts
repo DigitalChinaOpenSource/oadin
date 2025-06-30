@@ -54,7 +54,7 @@ export const fetchGenChatTitle = async () => {
 
   try {
     await httpRequest.post('/playground/session/genTitle', {
-      id: currentSessionId,
+      sessionId: currentSessionId,
     });
   } catch (error) {
     console.error('生成标题失败===>');
