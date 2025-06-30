@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"oadin/internal/types"
 	"oadin/internal/utils"
@@ -472,16 +473,19 @@ func (o *OllamaProvider) PullHandler(cmd *cobra.Command, args []string) error {
 
 // CopyModel 复制模型
 func (o *OllamaProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
-	fmt.Println("Ollama CopyModel: " + req.Source + " to " + req.Destination)
-	c := o.GetDefaultClient()
-
-	if err := c.Do(ctx, http.MethodDelete, "/api/copy", req, nil); err != nil {
-		fmt.Println("[Service] copy model failed : " + err.Error())
-		slog.Error("copye model failed : " + err.Error())
-		// todo: 貌似复制不成功,后续处理
-		return nil
-	}
-
+	go func() {
+		fmt.Println("Will copy model after 3 seconds: " + req.Source + " to " + req.Destination)
+		time.Sleep(1 * time.Second) // 延迟3秒执行
+		ctx := context.Background()
+		c := o.GetDefaultClient() // 假设你已声明o
+		if err := c.Do(ctx, http.MethodPost, "/api/copy", req, nil); err != nil {
+			fmt.Println("[Service] copy model failed : " + err.Error())
+			slog.Error("copy model failed : " + err.Error())
+			// todo: 后续处理
+			return
+		}
+		fmt.Println("Model copy complete: " + req.Destination)
+	}()
 	return nil
 }
 
