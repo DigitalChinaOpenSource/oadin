@@ -66,10 +66,6 @@ const WechatLogin: React.FC = () => {
         <span className="subTitle">未注册的微信号将自动创建 OADIN 账号</span>
       </div>
       <div className={styles.wechatLoginContainer}>
-        {/*<div*/}
-        {/*  id="login_container"*/}
-        {/*  className={styles.login_content}*/}
-        {/*></div>*/}
         <iframe
           className={styles.login_content}
           src={qrcodeUrl}
