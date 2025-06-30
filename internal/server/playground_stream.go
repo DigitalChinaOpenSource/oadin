@@ -36,6 +36,11 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			return
 		}
 
+		// 增加会话标题
+		if session.Title == "" {
+			p.AddSessionTitle(ctx, request)
+		}
+
 		// 获取会话中的所有消息，构建历史上下文
 		messageQuery := &types.ChatMessage{SessionID: request.SessionID}
 		messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
@@ -251,8 +256,6 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						p.MarkToolCallEnd(ctx, request.SessionID, request.ToolGroupID, assistantMsgID)
 					}
 
-					// 异步增加会话标题
-					p.AddSessionTitle(ctx, request)
 					fmt.Println("流式输出完成，保存助手回复", resp)
 					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
@@ -383,7 +386,7 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendStreamMessageRequest) error {
 	sessionCheck := &types.ChatSession{ID: request.SessionID}
 	err := p.Ds.Get(ctx, sessionCheck)
-	if err == nil && sessionCheck.Title == "" {
+	if err == nil && sessionCheck.Title == "" && request.Content != "" {
 		content := request.Content
 		runes := []rune(content)
 		if len(runes) > 10 {
