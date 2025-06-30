@@ -4,7 +4,6 @@ import type { CollapseProps, TabsProps } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
 import { Collapse, Tabs, Tooltip } from 'antd';
 import macpChatSvg from '@/components/icons/mcp-chat.svg';
-import amap from '@/components/icons/amap.png';
 import { CheckCircleIcon } from '@phosphor-icons/react';
 import arrowUp from '@/components/icons/arrow-up.svg';
 import arrowDown from '@/components/icons/arrow-down.svg';

@@ -15,7 +15,7 @@ import { convertMessageFormat } from './utils/historyMessageFormat';
 import embedDownloadEventBus from '@/utils/embedDownload';
 
 export default function useViewModel() {
-  const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
+  const { selectedModel, setSelectedModel } = useSelectedModelStore();
   const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 
@@ -243,7 +243,6 @@ export default function useViewModel() {
       const source = getSessionSource();
 
       setSelectedModel(res);
-      setIsSelectedModel(true);
       setMessages(messages);
 
       // 更新prevModelId，避免模型变化触发新建会话

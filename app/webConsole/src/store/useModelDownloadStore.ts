@@ -10,7 +10,7 @@ interface IModelDownloadStore {
 // 从localStorage获取初始downloadList
 const getInitialDownloadList = (): IModelDataItem[] => {
   const storedList = localStorage.getItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
-  return storedList ? JSON.parse(storedList) : [];
+  return storedList && storedList !== 'undefined' ? JSON.parse(storedList) : [];
 };
 
 const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({

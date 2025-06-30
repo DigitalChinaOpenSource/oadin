@@ -166,9 +166,6 @@ export const getIdByFunction = async (functionParams: IToolParams, ids: string[]
   const resData = await getMcpDeatilByIds(ids);
   const searchDataMap = generateToolMap(resData);
   const mcpId = searchDataMap[functionParams.toolName];
-  const idTool = resData?.mcpTools.find((item) => item.mcpId === mcpId);
-  const toolDesc = idTool?.tools.find((tool) => tool.function.name === functionParams.toolName)?.function.description || '';
-  const toolLogo = idTool?.tools.find((tool) => tool.function.name === functionParams.toolName)?.function.parameters?.logo || '';
   if (mcpId) {
     return {
       mcpId,

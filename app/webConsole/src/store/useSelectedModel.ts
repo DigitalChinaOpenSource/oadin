@@ -6,19 +6,13 @@ const STORAGE_KEY = 'selected_model_store';
 export type selectedModelType = IModelDataItem | null;
 export interface ISelectedModelStore {
   selectedModel: selectedModelType;
-  isSelectedModel: boolean;
   setSelectedModel: (model: selectedModelType | ((currentModel: selectedModelType) => selectedModelType)) => void;
-  setIsSelectedModel: (isSelected: boolean) => void;
 }
 
 const useSelectedModelStore = create<ISelectedModelStore>()(
   persist(
     (set) => ({
       selectedModel: null,
-      isSelectedModel: false,
-      setIsSelectedModel: (isSelected: boolean) => {
-        set({ isSelectedModel: isSelected });
-      },
       setSelectedModel: (model: selectedModelType | ((currentModel: selectedModelType) => selectedModelType)) => {
         if (typeof model === 'function') {
           set((state) => ({ selectedModel: model(state.selectedModel) }));
@@ -32,7 +26,6 @@ const useSelectedModelStore = create<ISelectedModelStore>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         selectedModel: state.selectedModel,
-        isSelectedModel: state.isSelectedModel,
       }),
     },
   ),
