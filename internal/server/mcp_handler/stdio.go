@@ -35,19 +35,7 @@ func NewStdioTransport() *StdioTransport {
 	return &stdioTransportInstance
 }
 
-func (s *StdioTransport) initTransportClient(config *types.MCPServerConfig) (*client.Client, error) {
-	if config.Command == "" {
-		return nil, errors.New("command must be provided")
-	}
-	c, err := s.ClientStart(config)
-	if err == nil {
-		return c, nil
-	} else {
-		return nil, err
-	}
-}
-
-func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
+func (s *StdioTransport) Start(ctx context.Context, config *types.MCPServerConfig) error {
 	serverKey := config.Id
 
 	// 检查是否有正在初始化的客户端
@@ -77,8 +65,7 @@ func (s *StdioTransport) Start(config *types.MCPServerConfig) error {
 	s.Pending[serverKey] = config
 	s.mu.Unlock()
 
-	// 异步初始化客户端
-	cli, err := s.initTransportClient(config)
+	cli, err := s.ClientStart(ctx, config)
 	if err != nil {
 		fmt.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
 		delete(s.Pending, serverKey)
@@ -166,7 +153,7 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	return result, nil
 }
 
-func (s *StdioTransport) ClientStart(config *types.MCPServerConfig) (*client.Client, error) {
+func (s *StdioTransport) ClientStart(ctx context.Context, config *types.MCPServerConfig) (*client.Client, error) {
 	var envVars []string
 	for k, v := range config.Env {
 		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
@@ -182,7 +169,6 @@ func (s *StdioTransport) ClientStart(config *types.MCPServerConfig) (*client.Cli
 	)
 
 	fmt.Println("[MCP] params", config.Id, "command:", config.Command, "args:", config.Args, "env:", envVars)
-	ctx := context.Background()
 
 	if err := stdioTransport.Start(ctx); err != nil {
 		fmt.Printf("failed to start stdio transport: %v", err)
@@ -204,5 +190,6 @@ func (s *StdioTransport) ClientStart(config *types.MCPServerConfig) (*client.Cli
 		return nil, err
 	}
 	fmt.Println("tools", tools.Tools)
+	config.Tools = tools.Tools
 	return c, nil
 }
