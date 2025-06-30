@@ -31,6 +31,7 @@ export interface IModelDataItem {
   smartvision_model_key?: string;
   completedsize?: number;
   totalsize?: number;
+  tools?: boolean; // 是否支持工具调用
   think?: boolean; // 是否支持深度思考
   think_switch?: boolean; // 深度思考是否支持开关
 }
