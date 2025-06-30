@@ -517,9 +517,10 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 	}
 
 	return &types.ClientRunToolResponse{
-		CallToolResult: data,
-		Logo:           logo,
-		ToolDesc:       toolDesc,
+		Content:  data.Content,
+		IsError:  data.IsError,
+		Logo:     logo,
+		ToolDesc: toolDesc,
 	}, nil
 }
 

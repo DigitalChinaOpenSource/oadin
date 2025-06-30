@@ -123,7 +123,7 @@ func (t *OadinCoreServer) GetMyMCPList(c *gin.Context) {
 	}
 	resp, err := t.MCP.GetMyMCPList(c, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "资源不存在"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, resp.Data)
@@ -208,7 +208,13 @@ func (t *OadinCoreServer) ClientRunTool(c *gin.Context) {
 	}
 	outputParamsStr := ""
 	if resp != nil {
-		if b, err := json.Marshal(resp.CallToolResult); err == nil {
+		if b, err := json.Marshal(struct {
+			Content any  `json:"content"`
+			IsError bool `json:"isError"`
+		}{
+			Content: resp.Content,
+			IsError: resp.IsError,
+		}); err == nil {
 			outputParamsStr = string(b)
 		}
 	}
