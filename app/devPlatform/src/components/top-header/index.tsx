@@ -3,19 +3,20 @@ import favicon from '@/assets/favicon.png';
 import DefaultUserIcon from '@/assets/userIcon.svg';
 import CompanyIcon from '@/assets/companyIcon.svg';
 import useAuthStore from '@/store/authStore.ts';
-import { Button, Divider, Popover } from 'antd';
+import { Button, Divider, message, Popover } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useLoginStore from '@/store/loginStore.ts';
+import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 
 export default function TopHeader() {
-  const { user, changeUser } = useAuthStore();
+  const { user, changeUser, logout } = useAuthStore();
   const isPerson = user?.type === 'person';
   const navigate = useNavigate();
   const [showUserPopover, setShowUserPopover] = useState(false);
-  const { logout } = useAuthStore();
   const { setCurrentStep } = useLoginStore();
+  const { logoutUser } = useUserCenterView();
 
   const UserPopover = () => {
     // 进入账号中心
@@ -25,8 +26,8 @@ export default function TopHeader() {
     };
     // 退出登录
     const handleLogout = () => {
+      // logoutUser();
       setCurrentStep('personPhone');
-
       logout();
       navigate('/login');
     };
