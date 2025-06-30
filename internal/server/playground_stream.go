@@ -252,7 +252,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 
 					// 异步增加会话标题
-					go p.AddSessionTitle(request)
+					p.AddSessionTitle(ctx, request)
 					fmt.Println("流式输出完成，保存助手回复", resp)
 					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
@@ -380,9 +380,8 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 }
 
 // 增加会话的标题
-func (p *PlaygroundImpl) AddSessionTitle(request *dto.SendStreamMessageRequest) error {
+func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendStreamMessageRequest) error {
 	sessionCheck := &types.ChatSession{ID: request.SessionID}
-	ctx := context.Background()
 	err := p.Ds.Get(ctx, sessionCheck)
 	if err == nil && sessionCheck.Title == "" {
 		content := request.Content
@@ -392,7 +391,7 @@ func (p *PlaygroundImpl) AddSessionTitle(request *dto.SendStreamMessageRequest) 
 		}
 		title := "新对话 " + time.Now().Format("2006-01-02 15:04:05") + " " + content
 		sessionCheck.Title = title
-		err = p.Ds.Put(context.Background(), sessionCheck)
+		err = p.Ds.Put(ctx, sessionCheck)
 	}
 	slog.Info("AddSessionTitle err", err)
 	fmt.Println("AddSessionTitle err", err)
