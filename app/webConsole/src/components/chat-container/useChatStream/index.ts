@@ -4,6 +4,7 @@ import { baseHeaders } from '@/utils';
 import { API_PREFIX } from '@/constants';
 import { MessageType } from '@res-utiles/ui-components';
 import useChatStore from '@/components/chat-container/store/useChatStore';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';
@@ -21,6 +22,7 @@ import { buildMessageWithThinkContent, handleTextContent } from './thinkContentU
 import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToolCallData } from './types';
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
+import { message } from 'antd';
 
 // 统一的流式请求参数接口
 interface StreamRequestOptions {
@@ -33,6 +35,7 @@ interface StreamRequestOptions {
 
 export function useChatStream() {
   const { addMessage, isLoading, setIsLoading } = useChatStore();
+  const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
 
@@ -229,7 +232,6 @@ export function useChatStream() {
       // 将 thinking 内容也传入构建消息的函数
 
       const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking, thinkingFromField, false);
-      console.log('构建的AI消息:', aiMessage);
       addMessage(aiMessage);
 
       // 保存当前的toolGroupId，但清除内部状态
@@ -492,7 +494,10 @@ export function useChatStream() {
     const { content, toolGroupID, isUserMessage = false, isResend = false } = options;
 
     if (!content.trim()) return;
-
+    if (migratingStatus === 'pending') {
+      message.warning('模型迁移中，请稍后再试');
+      return;
+    }
     // 取消之前的请求
     cancelRequest();
     // 清除流状态
