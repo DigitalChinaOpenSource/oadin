@@ -92,10 +92,6 @@ export const useDownLoad = () => {
             });
 
             setDownloadList((currentList) => {
-              // 处理特殊逻辑，词嵌入模型下载完成后设置状态。在这里处理是因为上面的参数不带 name
-              if (currentList.filter((item) => item.name === 'quentinz/bge-large-zh-v1.5:f16' && item.status === COMPLETED)) {
-                setIsDownloadEmbed(true);
-              }
               return currentList.filter((item) => item.status !== COMPLETED);
             });
           } else if (status === 'canceled') {

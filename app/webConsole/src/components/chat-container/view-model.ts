@@ -15,8 +15,6 @@ import { convertMessageFormat } from './utils/historyMessageFormat';
 
 export default function useViewModel() {
   const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
-  const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
-  const setIsDownloadEmbed = useModelDownloadStore((state) => state.setIsDownloadEmbed);
   const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
 
@@ -24,6 +22,7 @@ export default function useViewModel() {
   const [prevModelId, setPrevModelId] = useState<string | undefined>(selectedModel?.id);
   const [prevSessionId, setPrevSessionId] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const [isDownloadEmbed, setIsDownloadEmbed] = useState<boolean>(false);
 
   const isLoadingHistory = useRef(false);
 
@@ -202,7 +201,7 @@ export default function useViewModel() {
       onSuccess: (data: ModelItem[]) => {
         console.log('获取所有下载模型列表', data);
         if (!data || data?.length === 0) return;
-        const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16');
+        const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16' && item.status === 'downloaded');
         setIsDownloadEmbed(isEmbed);
       },
       onError: () => {

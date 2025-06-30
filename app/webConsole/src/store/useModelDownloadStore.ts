@@ -5,8 +5,6 @@ import { LOCAL_STORAGE_KEYS } from '@/constants';
 interface IModelDownloadStore {
   downloadList: IModelDataItem[];
   setDownloadList: (list: any[] | ((currentList: any[]) => any[])) => void;
-  isDownloadEmbed: boolean;
-  setIsDownloadEmbed: (isDownloadEmbed: boolean) => void;
 }
 
 // 从localStorage获取初始downloadList
@@ -17,7 +15,6 @@ const getInitialDownloadList = (): IModelDataItem[] => {
 
 const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
   downloadList: getInitialDownloadList(),
-  isDownloadEmbed: false,
   setDownloadList: (list: IModelDataItem[] | ((currentList: IModelDataItem[]) => IModelDataItem[])) => {
     if (typeof list === 'function') {
       set((state: IModelDownloadStore) => {
@@ -38,7 +35,6 @@ const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
 
         // 保存到localStorage
         localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(uniqueList));
-        console.log('更新后的下载列表1111:', uniqueList);
         return { downloadList: uniqueList };
       });
     } else {
@@ -57,12 +53,8 @@ const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
 
       // 保存到localStorage
       localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(uniqueList));
-      console.log('更新后的下载列表2222:', uniqueList);
       set({ downloadList: uniqueList });
     }
-  },
-  setIsDownloadEmbed: (isDownloadEmbed: boolean) => {
-    set({ isDownloadEmbed });
   },
 }));
 
