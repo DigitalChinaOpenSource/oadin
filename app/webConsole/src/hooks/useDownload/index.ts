@@ -150,7 +150,7 @@ export const useDownLoad = () => {
         setDownloadList(updatedList);
       }
 
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
+      // localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
     }, 150);
 
     return () => clearTimeout(timeout);

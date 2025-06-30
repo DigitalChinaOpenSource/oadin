@@ -275,8 +275,6 @@ export default function useViewModel() {
       manual: true,
       onSuccess: (data) => {
         if (data.id) {
-          console.log('fetchCreateChat success with id:', data.id);
-
           // 批量更新状态，避免中间状态触发其他 useEffect
           const batchUpdate = () => {
             // 1. 首先清空内容和选择的MCP
