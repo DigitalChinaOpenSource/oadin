@@ -6,6 +6,7 @@ import { IModelPathRes } from '@/types';
 import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
 import { useSettingsViewModel } from '@/components/settings/view-module';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';
+import { time } from 'console';
 
 export function useModelSetting() {
   const { setMigratingStatus } = useModelPathChangeStore();
@@ -83,7 +84,7 @@ export function useModelSetting() {
   const { run: onChangeModelPath } = useRequest(
     async (params: { source_path: string; target_path: string }) => {
       setMigratingStatus('pending');
-      const data = await httpRequest.post('/control_panel/model/filepath', params, { needModelChangeStore: true, setMigratingStatus });
+      const data = await httpRequest.post('/control_panel/model/filepath', params, { needModelChangeStore: true, setMigratingStatus, timeout: 360000 });
       return data || {};
     },
     {
