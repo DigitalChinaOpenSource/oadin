@@ -21,7 +21,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   // 从URL获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
 
-  const { setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
+  const { setSelectedModel } = useSelectedModelStore();
   const [chatHistory, setChatHistory] = useState<IChatHistoryItem[]>([]);
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
 
@@ -128,7 +128,6 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
     }
     if (res) {
       setSelectedModel(res);
-      setIsSelectedModel(true);
       setSessionIdToUrl(sessionId, 'history');
       setMessages(messages);
       setHistoryVisible(false);

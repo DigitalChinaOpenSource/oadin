@@ -82,7 +82,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 选中的模型数据，暂用于配置授权
   const [selectModelData, setSelectModelData] = useState<IModelDataItem>({} as any);
 
-  const { selectedModel, setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
+  const { selectedModel, setSelectedModel } = useSelectedModelStore();
 
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
@@ -279,7 +279,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       onSuccess: (data, params) => {
         message.success('模型删除成功');
         if (params[0].model_name === selectedModel?.name) {
-          setIsSelectedModel(false);
           setSelectedModel(null);
         }
       },

@@ -9,7 +9,7 @@ import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';
 import { httpRequest } from '@/utils/httpRequest';
-import { generateUniqueId, formatErrorMessage } from './utils';
+import { generateUniqueId, formatErrorMessage, fetchGenChatTitle } from './utils';
 import {
   findProgressToolMessage,
   extractToolCallDataByGroupId,
@@ -42,6 +42,7 @@ export function useChatStream() {
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string | { data: string; status: string }>('');
   const [isResending, setIsResending] = useState(false);
+  const [isFirstResponseCompleted, setIsFirstResponseCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 流式请求控制器
@@ -716,6 +717,10 @@ export function useChatStream() {
             if (!requestState.current.status.isToolCallActive) {
               setIsLoading(false);
             }
+            if (!isFirstResponseCompleted) {
+              setIsFirstResponseCompleted(true);
+              fetchGenChatTitle();
+            }
             clearTimers();
           },
 
@@ -802,6 +807,11 @@ export function useChatStream() {
       cleanupResources();
     };
   }, [cleanupResources]);
+
+  const tempCurrentSessionId = getSessionIdFromUrl();
+  useEffect(() => {
+    setIsFirstResponseCompleted(false);
+  }, [tempCurrentSessionId]);
 
   return {
     streamingContent,
