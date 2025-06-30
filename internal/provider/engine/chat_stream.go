@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 )
@@ -35,12 +36,13 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 	serviceReq := &types.ServiceRequest{
 		Service:       "chat",
-		Model:         modelName, // 使用模型名
-		FromFlavor:    "ollama",  // 使用Ollama风格
-		AskStreamMode: true,      // 启用流式输出
+		Model:         modelName,
+		FromFlavor:    "oadin",
+		AskStreamMode: true,
 		Think:         req.Think,
 		HTTP: types.HTTPContent{
-			Body: body,
+			Header: http.Header{},
+			Body:   body,
 		},
 	}
 
