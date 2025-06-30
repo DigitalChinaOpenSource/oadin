@@ -104,13 +104,13 @@ func (t *OadinCoreServer) GenSessionTitle(c *gin.Context) {
 		SessionID string `json:"id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "400", "message": err.Error()})
 		return
 	}
 	err := t.Playground.UpdateSessionTitle(c.Request.Context(), req.SessionID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "404", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
+	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success"})
 }
