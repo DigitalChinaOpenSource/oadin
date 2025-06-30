@@ -31,7 +31,7 @@ export const useUserCenterView = () => {
   const sureDeleteAccount = async (params: IDeleteAccountProps) => {
     if (user.type === 'person') {
       // 个人注销
-      return await httpRequest.del('/individual-login/user/unregister', params, { headers: { Authorization: getUserToken() } });
+      return await httpRequest.post('/individual-login/user/unregister', params, { headers: { Authorization: getUserToken() } });
     } else if (user.type === 'enterprise') {
       // 企业注销
       return await httpRequest.del('/enterprise/account', params, { headers: { Authorization: getUserToken() } });
@@ -46,7 +46,12 @@ export const useUserCenterView = () => {
 
   // 绑定/更改实名认证
   const bindRealNameAuth = async (params: any) => {
-    return await httpRequest.post<IBaseRequestResProps>('/enterprise/licenseSubmit', params, { headers: { Authorization: getUserToken() } });
+    if (user.type === 'person') {
+      return await httpRequest.post('/individual-login/verification/submit', params, { headers: { Authorization: getUserToken() } });
+    } else if (user.type === 'enterprise') {
+      return await httpRequest.post<IBaseRequestResProps>('/enterprise/licenseSubmit', params, { headers: { Authorization: getUserToken() } });
+    }
+    return { code: 400, message: '未知用户类型' };
   };
 
   // 修改密码

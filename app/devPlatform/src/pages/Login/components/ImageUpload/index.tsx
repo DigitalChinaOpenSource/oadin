@@ -2,9 +2,7 @@ import styles from './index.module.scss';
 import { Upload, Image, Button, Form, Spin, App } from 'antd';
 import { PlusOutlined, EyeOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
-import type { UploadFile, UploadProps } from 'antd';
 import { IImageUploadProps } from '@/pages/Login/types';
-import { httpRequest } from '@/utils/httpRequest.ts';
 import { useUserCenterView } from '@/pages/UserCenter/useUserCenterView.ts';
 
 const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpeg', 'image/png'], height = 112, value, onChange, name, rules, bgIcon }: IImageUploadProps) => {
@@ -19,28 +17,10 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
   const customRequest = async (options: any) => {
     console.log('customRequest file', 111111111111);
 
-    const { file, onSuccess, onError } = options;
+    const { file } = options;
     console.log('customRequest file', options);
     setLoading(true);
     try {
-      // 1. 获取 OSS 签名信息
-      // const ossSign = await getOssSign();
-      // if (!ossSign) {
-      //   setLoading(false);
-      //   return;
-      // }
-      // 2. 初始化 OSS 客户端
-      // console.log(ossSign);
-      // const client = new OSS({
-      //   region: ossSign.region,
-      //   accessKeyId: ossSign.accessKeyId,
-      //   bucket: ossSign.bucket,
-      //   secure: true,
-      //   accessKeySecret: ossSign.accessKeySecret,
-      //   stsToken: ossSign.securityToken,
-      // });
-      // console.log('OSS 客户端初始化成功', client);
-      // const result = await client.put(`/${ossSign.dir}${file.name}`, file);
       const formData = new FormData();
       formData.append('file', file);
       formData.append('name', file.name);
@@ -143,12 +123,12 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
                       listType="text"
                       action=""
                       fileList={[]} // 修复：确保 fileList 正确传递
-                      // onChange={handleChange}
                       beforeUpload={beforeUpload}
                       maxCount={1}
                       showUploadList={false}
                       multiple={false}
                       customRequest={customRequest} // 添加自定义上传方法
+                      disabled={loading} // 上传时禁用上传按钮
                     >
                       <Button
                         icon={<ReloadOutlined />}
@@ -167,7 +147,6 @@ const ImageUpload = ({ title = '上传图片', maxSize = 1, accept = ['image/jpe
             listType="picture-card"
             action=""
             fileList={[]} // 修复：确保 fileList 正确传递
-            // onChange={handleChange}
             beforeUpload={beforeUpload}
             maxCount={1}
             className={styles.idCardUpload}

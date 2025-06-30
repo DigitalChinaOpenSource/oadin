@@ -41,17 +41,6 @@ const AuthPerson = () => {
     } catch (error) {
       setLoading(false);
     }
-    try {
-      setLoading(true);
-      const values = await form.validateFields();
-      console.log('提交的表单数据：', values);
-
-      message.success('提交成功！');
-    } catch (error) {
-      setLoading(false);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (

@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "ali-oss": "^6.23.0",
     "i18next": "^25.2.1",
     "react-i18next": "^15.5.2",
     "react-markdown": "^10.1.0",

@@ -4,27 +4,27 @@ import { getUserToken } from '@/utils/getUserToken.ts';
 import { useEffect } from 'react';
 
 export const useLoginView = () => {
-  // 微信登录初始化
-  const initializeWeixinLogin = (redirect_uri: string, id?: string) => {
-    const wxApiBase = 'https://api-aipc.dcclouds.com/api';
-    const state = 'aipc';
-    const wx_redirect_uri = `${wxApiBase}/social-login/wechat/callback`;
-    // 确保 WxLogin 已被正确加载
-    if (window.WxLogin) {
-      new window.WxLogin({
-        id: id || 'login_container',
-        appid: 'wxeb558aaad072a194',
-        scope: 'snsapi_login',
-        fast_login: 0,
-        redirect_uri: encodeURIComponent(wx_redirect_uri),
-        state,
-        stylelite: 1,
-        self_redirect: true,
-      });
-    } else {
-      console.error('WxLogin is not loaded. Please check the script loading.');
-    }
-  };
+  // 微信登录初始化(走后台接口获取二维码地址使用iframe方式)
+  // const initializeWeixinLogin = (redirect_uri: string, id?: string) => {
+  //   const wxApiBase = 'https://api-aipc.dcclouds.com/api';
+  //   const state = 'aipc';
+  //   const wx_redirect_uri = `${wxApiBase}/social-login/wechat/callback`;
+  //   // 确保 WxLogin 已被正确加载
+  //   if (window.WxLogin) {
+  //     new window.WxLogin({
+  //       id: id || 'login_container',
+  //       appid: 'wxeb558aaad072a194',
+  //       scope: 'snsapi_login',
+  //       fast_login: 0,
+  //       redirect_uri: encodeURIComponent(wx_redirect_uri),
+  //       state,
+  //       stylelite: 1,
+  //       self_redirect: true,
+  //     });
+  //   } else {
+  //     console.error('WxLogin is not loaded. Please check the script loading.');
+  //   }
+  // };
 
   // 获取微信登录二维码
   const getWechatLoginQRCode = async () => {
@@ -32,8 +32,6 @@ export const useLoginView = () => {
     console.log('获取微信登录二维码res', qrRes);
     return qrRes;
   };
-
-  // 根据二维码
 
   // 根据微信二维码sessionId 获取用户token等扫码信息
   const getWechatInfo = async (sessionId: string) => {
@@ -57,7 +55,9 @@ export const useLoginView = () => {
       } catch (error: any) {
         console.error('获取微信扫码信息失败:', error);
         if (error.code === 500 || error.code === 400) {
-          isPolling = false;
+          if (!error.message.includes('timeout')) {
+            isPolling = false;
+          }
         }
         return { data: error?.response?.data || null, success: false };
       }
@@ -127,7 +127,7 @@ export const useLoginView = () => {
   };
 
   return {
-    initializeWeixinLogin,
+    // initializeWeixinLogin,
     getPhoneCode,
     getEmailCode,
     loginWithPhone,

@@ -82,7 +82,7 @@ const AccountSetting = ({ goBack }: { goBack: () => void }) => {
         visible={authModalVisible}
         onCancel={() => setAuthModalVisible(false)}
         onConfirm={handleAuthConfirm}
-        userType={'enterprise'}
+        userType={user.type}
       />
     </div>
   );
