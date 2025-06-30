@@ -12,7 +12,7 @@ import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import styles from './index.module.scss';
 
 export default function ChatContainer() {
-  const { historyVisible, setHistoryVisible, isLoading, createNewChat } = useChatStore();
+  const { historyVisible, setHistoryVisible, isLoading } = useChatStore();
   const [open, setOpen] = useState<boolean>(false);
   const vm = useViewModel();
 
@@ -76,7 +76,7 @@ export default function ChatContainer() {
         >
           <div className={styles.chatContent}>
             <ChatModelManage />
-            <ChatView />
+            <ChatView isDownloadEmbed={vm.isDownloadEmbed} />
           </div>
         </Col>
       </Row>

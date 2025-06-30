@@ -19,7 +19,7 @@ import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import { HeaderContent } from './header-content';
 import EmbedDownloadButton from '../enbed-download-btn';
-import useModelDownloadStore from '@/store/useModelDownloadStore';
+import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import './index.scss';
 
 interface IChatViewProps {
@@ -48,11 +48,16 @@ interface ChatMessage extends MessageType {
   contentList?: ChatMessageContent[];
 }
 
-export default function ChatView() {
+interface IChatViewProps {
+  isDownloadEmbed: boolean; // 是否下载词嵌入模型
+}
+
+export default function ChatView(props: IChatViewProps) {
+  const { isDownloadEmbed } = props;
   const { messages, isUploading } = useChatStore();
+  const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
   // 添加日志以跟踪 messages 更新
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
-  const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
   useEffect(() => {
@@ -229,6 +234,7 @@ export default function ChatView() {
                   />
                 ) : (
                   <Button
+                    disabled={migratingStatus === 'pending'}
                     type="primary"
                     style={{ borderRadius: 8, cursor: 'pointer' }}
                     icon={

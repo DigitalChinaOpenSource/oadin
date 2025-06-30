@@ -1,17 +1,21 @@
 import { create } from 'zustand';
 import { IModelDataItem } from '@/types';
+import { LOCAL_STORAGE_KEYS } from '@/constants';
 
 interface IModelDownloadStore {
   downloadList: IModelDataItem[];
   setDownloadList: (list: any[] | ((currentList: any[]) => any[])) => void;
-  isDownloadEmbed: boolean;
-  setIsDownloadEmbed: (isDownloadEmbed: boolean) => void;
 }
 
+// 从localStorage获取初始downloadList
+const getInitialDownloadList = (): IModelDataItem[] => {
+  const storedList = localStorage.getItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
+  return storedList && storedList !== 'undefined' ? JSON.parse(storedList) : [];
+};
+
 const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
-  downloadList: [],
-  isDownloadEmbed: false,
-  setDownloadList: (list: any[] | ((currentList: any[]) => any[])) => {
+  downloadList: getInitialDownloadList(),
+  setDownloadList: (list: IModelDataItem[] | ((currentList: IModelDataItem[]) => IModelDataItem[])) => {
     if (typeof list === 'function') {
       set((state: IModelDownloadStore) => {
         const newList = list(state.downloadList);
@@ -28,6 +32,9 @@ const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
 
         // 对象数组进行去重
         const uniqueList = Array.from(new Map(processedList.map((item) => [JSON.stringify(item), item])).values());
+
+        // 保存到localStorage
+        localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(uniqueList));
         return { downloadList: uniqueList };
       });
     } else {
@@ -43,11 +50,11 @@ const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
       });
 
       const uniqueList = Array.from(new Map(processedList.map((item) => [JSON.stringify(item), item])).values());
+
+      // 保存到localStorage
+      localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(uniqueList));
       set({ downloadList: uniqueList });
     }
-  },
-  setIsDownloadEmbed: (isDownloadEmbed: boolean) => {
-    set({ isDownloadEmbed });
   },
 }));
 

@@ -2,15 +2,14 @@ import { FolderIcon, XCircleIcon } from '@phosphor-icons/react';
 import type { UploadProps, UploadFile } from 'antd';
 import { message } from 'antd';
 import { httpRequest } from '@/utils/httpRequest';
-import useChatStore from '../store/useChatStore';
+import useUploadFileListStore from '../store/useUploadFileListStore';
 import rollingSvg from '@/components/icons/rolling.svg';
 
 export const HeaderContent = () => {
-  const { uploadFileList, setUploadFileList } = useChatStore();
+  const { uploadFileList, setUploadFileList } = useUploadFileListStore();
   const handleRemove = async (file: UploadFile) => {
     try {
       const fileId = file.status === 'done' && file.response?.id;
-      console.log('handleRemove fileId:', file);
       if (fileId) {
         await httpRequest.del('/playground/file', {
           file_id: fileId,

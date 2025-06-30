@@ -4,6 +4,7 @@ import type { UploadProps, UploadFile } from 'antd';
 import { httpRequest } from '@/utils/httpRequest';
 import uploadSvg from '@/components/icons/upload.svg';
 import useChatStore from '../store/useChatStore';
+import useUploadFileListStore from '../store/useUploadFileListStore';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 
 interface UploadToolProps {
@@ -15,7 +16,8 @@ interface UploadToolProps {
 export type FileStatus = 'error' | 'uploading' | 'done';
 
 export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToolProps) {
-  const { uploadFileList, setUploadFileList, setIsUploading } = useChatStore();
+  const { setIsUploading } = useChatStore();
+  const { uploadFileList, setUploadFileList } = useUploadFileListStore();
   // 从URL中获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
   const maxFileSizeBytes = maxFileSize * 1024 * 1024;
@@ -105,7 +107,7 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToo
       };
 
       // 获取当前最新的文件列表状态
-      const currentFileList = useChatStore.getState().uploadFileList;
+      const currentFileList = useUploadFileListStore.getState().uploadFileList;
 
       // 更新列表中的文件状态
       const newFileList = currentFileList
@@ -120,7 +122,7 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToo
       setIsUploading(false);
       onSuccess?.(responseData);
     } catch (error: Error | any) {
-      const currentFileList = useChatStore.getState().uploadFileList;
+      const currentFileList = useUploadFileListStore.getState().uploadFileList;
       const failedFile: UploadFile = {
         ...uploadingFile,
         status: 'error',

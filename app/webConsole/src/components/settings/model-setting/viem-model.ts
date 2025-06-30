@@ -84,7 +84,7 @@ export function useModelSetting() {
   const { run: onChangeModelPath } = useRequest(
     async (params: { source_path: string; target_path: string }) => {
       setMigratingStatus('pending');
-      const data = await httpRequest.post('/control_panel/model/filepath', params, { needModelChangeStore: true, setMigratingStatus, timeout: 360000 });
+      const data = await httpRequest.post('/control_panel/model/filepath', params, { needModelChangeStore: true, setMigratingStatus, timeout: 3600000 });
       return data || {};
     },
     {

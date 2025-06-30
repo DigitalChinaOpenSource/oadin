@@ -5,7 +5,6 @@ import { IUploadFile } from '../types';
 
 interface ChatState {
   messages: MessageType[];
-  uploadFileList: UploadFile[];
   historyVisible: boolean;
   isLoading: boolean;
   isUploading: boolean;
@@ -13,9 +12,7 @@ interface ChatState {
   // 操作方法
   setMessages: (messages: MessageType[]) => void;
   addMessage: (message: MessageType, isReplace?: boolean) => string;
-  setUploadFileList: (files: UploadFile[]) => void;
   setHistoryVisible: (visible: boolean) => void;
-  createNewChat: () => void;
   setIsLoading: (isLoading: boolean) => void;
   setIsUploading: (isUploading: boolean) => void;
 }
@@ -23,7 +20,6 @@ interface ChatState {
 const useChatStore = create<ChatState>((set, get) => ({
   // 初始状态
   messages: [],
-  uploadFileList: [],
   historyVisible: false,
   isLoading: false,
   isUploading: false,
@@ -56,14 +52,7 @@ const useChatStore = create<ChatState>((set, get) => ({
 
     return messageId;
   },
-  setUploadFileList: (files) => set({ uploadFileList: files }),
   setHistoryVisible: (visible) => set({ historyVisible: visible }),
-  createNewChat: () => {
-    set({
-      messages: [],
-      uploadFileList: [],
-    });
-  },
   setIsLoading: (isLoading) => set({ isLoading: isLoading ?? false }),
   setIsUploading: (isUploading) => set({ isUploading: isUploading ?? false }),
 }));

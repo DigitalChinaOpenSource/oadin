@@ -15,6 +15,8 @@ import mcp from '../icons/mcp.svg';
 import mcpac from '../icons/mcpac.svg';
 import type { MenuProps } from 'antd';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
+import { getLocalStorageDownList } from '@/utils';
+import { LOCAL_STORAGE_KEYS } from '@/constants';
 import McpDownloadBox from '@/components/mcp-download-box';
 import mcpAddSvg from '@/components/icons/mcpAdd.svg';
 
@@ -26,7 +28,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
   // 是否展示下载列表弹窗
   const [isDownloadListOpen, setIsDownloadListOpen] = useState(false);
   const { downloadList } = useModelDownloadStore();
-
+  const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
   // 当前选中的菜单项和展开的菜单项
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
@@ -154,7 +156,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
           </div>
         </Popover>
       )}
-      {downloadList.length > 0 && (
+      {tempDownloadList.length > 0 && (
         <Popover
           style={{ padding: 0 }}
           zIndex={1300}
@@ -178,7 +180,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
                 <div className={styles.downloadBtnBox}>
                   <Badge
                     // dot={!!downloadList?.length}
-                    count={downloadList?.length}
+                    count={tempDownloadList?.length}
                     showZero={false}
                     className={styles.badge}
                   >

@@ -10,7 +10,7 @@ import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedMod
 import { getMessageByModel } from '@/i18n';
 
 export default function ModelChecking() {
-  const { setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
+  const { setSelectedModel } = useSelectedModelStore();
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const vm: IMyModelListViewModel = useViewModel();
   const { modelSupportLoading, fetchModelSupport, modelListData } = vm;
@@ -18,7 +18,6 @@ export default function ModelChecking() {
   /// 初始化选择模型
   const onOk = () => {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
-      setIsSelectedModel(true);
       setSelectedModel(selectedStateModel);
 
       const tempParams = { service_name: selectedStateModel.service_name } as any;

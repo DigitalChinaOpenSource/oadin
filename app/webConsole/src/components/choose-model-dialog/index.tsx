@@ -19,7 +19,7 @@ export interface ISelectedDialogProps {
 }
 
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
-  const { selectedModel, setIsSelectedModel, setSelectedModel } = useSelectedModelStore();
+  const { selectedModel, setSelectedModel } = useSelectedModelStore();
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const [activeKey, setActiveKey] = useState<string>('my-models');
   const onChange = (activeKey: string) => {
@@ -31,7 +31,6 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
   }, [selectedModel]);
   const onOk = () => {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
-      setIsSelectedModel(true);
       setSelectedModel(selectedStateModel);
 
       const tempParams = { service_name: selectedStateModel.service_name } as any;

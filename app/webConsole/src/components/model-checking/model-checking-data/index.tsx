@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
 import { ISelectedDialogProps } from '@/components/choose-model-dialog';
 import { selectedModelType } from '@/store/useSelectedModel.ts';
+import useSelectedModelStore from '@/store/useSelectedModel.ts';
 
 export interface ModelCheckingHasdata extends ISelectedDialogProps {
   vm: IMyModelListViewModel;
@@ -12,7 +13,6 @@ export interface ModelCheckingHasdata extends ISelectedDialogProps {
 
 export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
   const { vm, handleAutoSetModel } = props;
-
   const filterModelList = useMemo(() => {
     return vm.modelListData?.length > 0 ? vm.modelListData.splice(0, 2) : [];
   }, [vm.modelListData]);

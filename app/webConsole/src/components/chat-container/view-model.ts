@@ -4,7 +4,8 @@ import { httpRequest } from '@/utils/httpRequest';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
-import useModelDownloadStore from '@/store/useModelDownloadStore';
+import useUploadFileListStore from './store/useUploadFileListStore';
+import { createNewChat } from './utils';
 import { IPlaygroundSession } from './types';
 import { message } from 'antd';
 import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage, getSessionSource } from '@/utils/sessionParamUtils';
@@ -12,18 +13,18 @@ import { IChatDetailItem } from './chat-history-drawer/types';
 import { MessageType } from '@res-utiles/ui-components';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
+import embedDownloadEventBus from '@/utils/embedDownload';
 
 export default function useViewModel() {
-  const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
-  const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
-  const setIsDownloadEmbed = useModelDownloadStore((state) => state.setIsDownloadEmbed);
-  const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
+  const { selectedModel, setSelectedModel } = useSelectedModelStore();
+  const { messages, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
-
+  const { uploadFileList, setUploadFileList } = useUploadFileListStore();
   const [isUploadVisible, setIsUploadVisible] = useState(false);
   const [prevModelId, setPrevModelId] = useState<string | undefined>(selectedModel?.id);
   const [prevSessionId, setPrevSessionId] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const [isDownloadEmbed, setIsDownloadEmbed] = useState<boolean>(false);
 
   const isLoadingHistory = useRef(false);
 
@@ -38,6 +39,15 @@ export default function useViewModel() {
     // 在组件卸载时保存会话ID到sessionStorage
     return () => {
       saveSessionIdToStorage();
+    };
+  }, []);
+
+  useEffect(() => {
+    embedDownloadEventBus.on('embedDownloadComplete', () => {
+      setIsDownloadEmbed(true);
+    });
+    return () => {
+      embedDownloadEventBus.off('embedDownloadComplete');
     };
   }, []);
 
@@ -105,7 +115,7 @@ export default function useViewModel() {
       // 创建新会话
       fetchCreateChat({
         modelId: selectedModel.id,
-        embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
+        embedModelId: isDownloadEmbed ? '87c0b009-2d93-4f00-9662-3330376662613373163373263' : undefined,
       });
     }
 
@@ -191,7 +201,7 @@ export default function useViewModel() {
     [key: string]: unknown;
   }
 
-  // 获取历史对话详情
+  // 获取所有下载的模型
   const { run: fetchAllModels } = useRequest(
     async () => {
       const data = await httpRequest.get<ModelItem[]>('/model');
@@ -200,10 +210,20 @@ export default function useViewModel() {
     {
       manual: true,
       onSuccess: (data: ModelItem[]) => {
-        console.log('获取所有下载模型列表', data);
         if (!data || data?.length === 0) return;
-        const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16');
+        const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16' && item.status === 'downloaded');
         setIsDownloadEmbed(isEmbed);
+        const isSelectedModel = data.some((item) => item.id === selectedModel?.id && item.status === 'downloaded');
+        // 表示当前模型已经被删除了，重新进入初始化
+        if (!isSelectedModel) {
+          setSelectedModel(null);
+          setSessionIdToUrl('');
+          setPrevModelId(undefined);
+          setPrevSessionId(null);
+          setMessages([]);
+          setUploadFileList([]);
+          setSelectMcpList([]);
+        }
       },
       onError: () => {
         message.error('获取所有下载模型列表失败');
@@ -230,14 +250,8 @@ export default function useViewModel() {
       res = await getModelList(remoteParams, modelId);
     }
     if (res) {
-      // 保存来源信息，防止被覆盖
-      const source = getSessionSource();
-
       setSelectedModel(res);
-      setIsSelectedModel(true);
       setMessages(messages);
-
-      // 更新prevModelId，避免模型变化触发新建会话
       setPrevModelId(res.id);
     } else {
       message.error('获取历史记录详情失败，未找到对应模型');
@@ -295,11 +309,12 @@ export default function useViewModel() {
     }
     fetchCreateChat({
       modelId: selectedModel?.id || '',
-      embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
+      embedModelId: isDownloadEmbed ? '87c0b009-2d93-4f00-9662-3330376662613373163373263' : undefined,
     });
   };
 
   return {
+    isDownloadEmbed,
     isUploadVisible,
     setIsUploadVisible,
     handleCreateNewChat,
