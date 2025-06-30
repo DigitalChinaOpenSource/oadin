@@ -59,7 +59,6 @@ const useChatStore = create<ChatState>((set, get) => ({
   setUploadFileList: (files) => set({ uploadFileList: files }),
   setHistoryVisible: (visible) => set({ historyVisible: visible }),
   createNewChat: () => {
-    console.log('createNewChat called');
     set({
       messages: [],
       uploadFileList: [],

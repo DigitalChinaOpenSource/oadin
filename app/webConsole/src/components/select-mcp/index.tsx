@@ -1,8 +1,9 @@
-import { Button, message, Popover } from 'antd';
+import { Button, message, Popover, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import { McpSelectBtn } from '@/components/icons';
 import { SelectMcpDialog } from './dialog.tsx';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import useSelectedModelStore from '@/store/useSelectedModel.ts';
 import { useEffect, useState } from 'react';
 import { useViewModel as useMyMcpViewModel } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
 
@@ -14,6 +15,7 @@ enum selectMcpType {
 
 export const SelectMcp = () => {
   const { selectMcpList } = useSelectMcpStore();
+  const { selectedModel } = useSelectedModelStore();
   const [selectMcpPopOpen, setSelectMcpPopOpen] = useState<boolean>(false);
   const myMcpViewModel = useMyMcpViewModel();
   const { handleMcpListToPage } = myMcpViewModel;
@@ -43,16 +45,22 @@ export const SelectMcp = () => {
           }
         }}
       >
-        <Button
-          icon={
-            <McpSelectBtn
-              width={20}
-              height={20}
-            />
-          }
+        <Tooltip
+          title={!selectedModel?.tools && '所选模型不支持该服务'}
+          placement="top"
         >
-          已选<span className={styles.select_mcp_count_warp}>{selectMcpList.length || 0}</span>
-        </Button>
+          <Button
+            disabled={!selectedModel?.tools}
+            icon={
+              <McpSelectBtn
+                width={20}
+                height={20}
+              />
+            }
+          >
+            已选<span className={styles.select_mcp_count_warp}>{selectMcpList.length || 0}</span>
+          </Button>
+        </Tooltip>
       </Popover>
     </div>
   );

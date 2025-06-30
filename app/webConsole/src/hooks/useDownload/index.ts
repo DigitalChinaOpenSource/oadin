@@ -23,10 +23,11 @@ export const useDownLoad = () => {
 
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
-  downListRef.current = downloadList;
+  const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
+  downListRef.current = tempDownloadList;
 
   // 计算当前下载中的项目
-  const downloadingItems = useMemo(() => downloadList.filter((item) => item.status === IN_PROGRESS), [downloadList]);
+  const downloadingItems = () => tempDownloadList.filter((item: IModelDataItem) => item.status === IN_PROGRESS);
 
   // 开始下载
   const fetchDownloadStart = useCallback(
@@ -66,7 +67,6 @@ export const useDownLoad = () => {
           const { completedsize, progress, status, totalsize, error } = parsedData;
           // 处理错误情况
           if (error) {
-            console.log('下载错误:', error);
             updateDownloadStatus(id, {
               status: error.includes('aborted') ? PAUSED : FAILED,
             });
@@ -90,7 +90,6 @@ export const useDownLoad = () => {
               totalsize,
               can_select: true,
             });
-            console.log('下载完成:', baseUpdates, parsedData);
 
             setDownloadList((currentList) => {
               // 处理特殊逻辑，词嵌入模型下载完成后设置状态。在这里处理是因为上面的参数不带 name
@@ -150,7 +149,7 @@ export const useDownLoad = () => {
         setDownloadList(updatedList);
       }
 
-      localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
+      // localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
     }, 150);
 
     return () => clearTimeout(timeout);

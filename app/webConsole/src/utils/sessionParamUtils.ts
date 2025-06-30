@@ -28,8 +28,6 @@ export const setSessionIdToUrl = (sessionId: string, source?: string): void => {
   const urlParams = new URLSearchParams(window.location.search);
   const currentSessionId = urlParams.get('sessionId');
 
-  console.log('setSessionIdToUrl called with:', sessionId, 'current:', currentSessionId);
-
   // 如果要设置的sessionId与当前URL中的相同，则不做任何操作
   if (sessionId && sessionId === currentSessionId) {
     console.log('Session ID unchanged, skipping URL update');

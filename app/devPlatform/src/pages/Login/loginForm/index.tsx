@@ -6,7 +6,7 @@ import PhoneNumberInput from '@/pages/Login/components/phoneNumberInput';
 import AgreedCheckBox from '@/pages/Login/components/agreedCheckBox';
 import { useLoginView } from '@/pages/Login/useLoginView.ts';
 import useLoginStore from '@/store/loginStore.ts';
-import useAuthStore, { User } from '@/store/authStore.ts';
+import useAuthStore from '@/store/authStore.ts';
 import { useNavigate } from 'react-router-dom';
 
 export interface LoginFormValues {

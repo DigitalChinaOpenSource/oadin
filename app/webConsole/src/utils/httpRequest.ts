@@ -121,13 +121,41 @@ const byzeInstance = createApiInstance(apiBaseURL);
 
 // 创建请求函数，直接调用实例方法，不再包装健康检查
 const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) => ({
-  get: <T = any>(url: string, params?: any, config?: any) => instance.get<any, T>(url, { ...config, params }),
+  get: <T = any>(url: string, params?: any, config?: any) => {
+    const mergedConfig = { ...config };
+    // 如果配置中包含超时设置，则覆盖默认值
+    if (config?.timeout) {
+      mergedConfig.timeout = config.timeout;
+    }
+    return instance.get<any, T>(url, { ...mergedConfig, params });
+  },
 
-  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => instance.post<any, T>(url, data, config),
+  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => {
+    const mergedConfig = { ...config };
+    // 如果配置中包含超时设置，则覆盖默认值
+    if (config?.timeout) {
+      mergedConfig.timeout = config.timeout;
+    }
+    return instance.post<any, T>(url, data, mergedConfig);
+  },
 
-  put: <T = any>(url: string, data?: any, config?: any) => instance.put<any, T>(url, data, config),
+  put: <T = any>(url: string, data?: any, config?: any) => {
+    const mergedConfig = { ...config };
+    // 如果配置中包含超时设置，则覆盖默认值
+    if (config?.timeout) {
+      mergedConfig.timeout = config.timeout;
+    }
+    return instance.put<any, T>(url, data, mergedConfig);
+  },
 
-  del: <T = any>(url: string, data?: any, config?: any) => instance.delete<any, T>(url, { ...config, data }),
+  del: <T = any>(url: string, data?: any, config?: any) => {
+    const mergedConfig = { ...config };
+    // 如果配置中包含超时设置，则覆盖默认值
+    if (config?.timeout) {
+      mergedConfig.timeout = config.timeout;
+    }
+    return instance.delete<any, T>(url, { ...mergedConfig, data });
+  },
 });
 
 export const httpRequest = createRequestFunctions(byzeInstance);
@@ -167,15 +195,42 @@ const createHealthApiInstance = (baseURL: string) => {
 const healthInstance = createHealthApiInstance(healthBaseURL);
 
 export const healthRequest = {
-  get: <T = any>(url: string, params?: any, config?: any) => healthInstance.get<any, T>(url, { ...config, params }),
+  get: <T = any>(url: string, params?: any, config?: any) => {
+    const mergedConfig = { ...config };
+    if (config?.timeout) {
+      mergedConfig.timeout = config.timeout;
+    }
+    return healthInstance.get<any, T>(url, { ...mergedConfig, params });
+  },
 
-  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => healthInstance.post<any, T>(url, data, config),
+  post: <T = any>(url: string, data?: any, config?: Omit<AxiosRequestConfig & IModelChangeStore, 'data'>) => {
+    const mergedConfig = { ...config };
+    if (config?.timeout) {
+      mergedConfig.timeout = config.timeout;
+    }
+    return healthInstance.post<any, T>(url, data, mergedConfig);
+  },
 
-  put: <T = any>(url: string, data?: any, config?: any) => healthInstance.put<any, T>(url, data, config),
+  put: <T = any>(url: string, data?: any, config?: any) => {
+    const mergedConfig = { ...config };
+    if (config?.timeout) {
+      mergedConfig.timeout = config.timeout;
+    }
+    return healthInstance.put<any, T>(url, data, mergedConfig);
+  },
 
-  del: <T = any>(url: string, data?: any, config?: any) => healthInstance.delete<any, T>(url, { ...config, data }),
+  del: <T = any>(url: string, data?: any, config?: any) => {
+    const mergedConfig = { ...config };
+    if (config?.timeout) {
+      mergedConfig.timeout = config.timeout;
+    }
+    return healthInstance.delete<any, T>(url, { ...mergedConfig, data });
+  },
 
-  request: (config: AxiosRequestConfig) => healthInstance.request(config),
+  request: (config: AxiosRequestConfig) => {
+    // 对于直接的request调用也支持超时配置
+    return healthInstance.request(config);
+  },
 };
 
 // 导出一个手动检查健康状态的函数，供需要时调用

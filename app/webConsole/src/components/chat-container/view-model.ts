@@ -32,11 +32,9 @@ export default function useViewModel() {
     const sessionIdFromUrl = urlParams.get('sessionId');
     const sessionIdFromStorage = sessionStorage.getItem('currentSessionId');
 
-    // 如果URL中没有sessionId但sessionStorage中有，则从sessionStorage恢复到URL
     if (!sessionIdFromUrl && sessionIdFromStorage) {
       setSessionIdToUrl(sessionIdFromStorage);
     }
-
     // 在组件卸载时保存会话ID到sessionStorage
     return () => {
       saveSessionIdToStorage();
@@ -45,24 +43,21 @@ export default function useViewModel() {
 
   // 从URL中获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
+  const source = getSessionSource();
 
   useEffect(() => {
     if (initialized) return;
-
-    const sessionId = getSessionIdFromUrl();
-    const source = getSessionSource();
-
     // 如果来源是history，历史记录已经在chat-history-drawer组件中处理，这里不做任何操作
     if (source === 'history') {
-      setPrevSessionId(sessionId);
+      setPrevSessionId(currentSessionId);
       setInitialized(true);
       return;
     }
 
-    if (sessionId && selectedModel?.id) {
+    if (currentSessionId && selectedModel?.id) {
       // 有会话ID且有模型，加载历史记录
-      fetchChatHistoryDetail(sessionId);
-      setPrevSessionId(sessionId);
+      fetchChatHistoryDetail(currentSessionId);
+      setPrevSessionId(currentSessionId);
     } else if (selectedModel?.id) {
       // 无会话ID但有模型，创建新会话
       fetchCreateChat({ modelId: selectedModel.id });
@@ -77,7 +72,6 @@ export default function useViewModel() {
     // 如果会话ID变化了
     if (currentSessionId !== prevSessionId) {
       const source = getSessionSource();
-
       // 来自历史记录的会话变更，已在chat-history-drawer中处理，这里仅更新状态
       if (source === 'history' || source === 'new') {
         setPrevSessionId(currentSessionId);
@@ -275,23 +269,15 @@ export default function useViewModel() {
       manual: true,
       onSuccess: (data) => {
         if (data.id) {
-          console.log('fetchCreateChat success with id:', data.id);
+          // 1. 首先清空内容和选择的MCP
+          setSelectMcpList([]);
+          createNewChat();
 
-          // 批量更新状态，避免中间状态触发其他 useEffect
-          const batchUpdate = () => {
-            // 1. 首先清空内容和选择的MCP
-            setSelectMcpList([]);
-            createNewChat();
+          // 2. 更新会话相关状态
+          setPrevSessionId(data.id);
 
-            // 2. 更新会话相关状态
-            setPrevSessionId(data.id);
-
-            // 3. 最后更新 URL
-            setSessionIdToUrl(data.id, 'new');
-          };
-
-          // 使用 setTimeout 确保状态更新是异步的，避免在渲染过程中触发
-          setTimeout(batchUpdate, 0);
+          // 3. 最后更新 URL
+          setSessionIdToUrl(data.id, 'new');
         }
       },
       onError: () => {},

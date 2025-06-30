@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@res-utiles/ui-components": "^0.0.10",
+    "@res-utiles/ui-components": "^0.0.11",
     "@types/lodash-es": "^4.17.12",
     "@types/react-copy-to-clipboard": "^5.0.7",
     "@vanta/ellipsis-tooltip": "workspace:^",
