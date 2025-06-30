@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"oadin/internal/datastore"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
@@ -97,10 +98,11 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 	serviceReq := &types.ServiceRequest{
 		Service:    "chat",
-		Model:      modelName, // Use the model name instead of ID
-		FromFlavor: "ollama",
+		Model:      modelName,
+		FromFlavor: "oadin",
 		HTTP: types.HTTPContent{
-			Body: body,
+			Header: http.Header{},
+			Body:   body,
 		},
 	}
 	_, ch := schedule.GetScheduler().Enqueue(serviceReq)
