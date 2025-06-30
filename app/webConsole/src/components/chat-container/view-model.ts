@@ -160,7 +160,7 @@ export default function useViewModel() {
     return data || {};
   });
 
-  // 切换会话模型，用于在对话过程中下载完词嵌入后，通知后端
+  // 每次切换会话模型，都需要通知后端
   const { run: fetchChangeModel } = useRequest(async (params: { sessionId: string; modelId: string; embedModelId: string }) => {
     if (!params?.sessionId || !params.modelId || !params.embedModelId) {
       return {};
