@@ -1,14 +1,31 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { IUserType } from '@/pages/UserCenter/types';
 
 export interface User {
+  // username?: string;
+  // nickname?: string;
+  // phone: string;
+  // wechatBind?: boolean;
+  // phoneBind?: boolean;
+  // wechatInfo?: Record<string, any>;
+  // email?: string;
+  id?: string;
   username?: string;
   nickname?: string;
-  phone: string;
-  wechatBind?: boolean;
-  phoneBind?: boolean;
-  wechatInfo?: Record<string, any>;
+  type: IUserType;
+  avatar?: string;
   email?: string;
+  phone: string;
+  enterpriseName?: string; // 企业用户特有字段
+  isRealNameVerified?: boolean; // 是否实名认证
+  idCardFront?: string; // 身份证人像面照片
+  idCardBack?: string; // 身份证国徽面照片
+  isEnterpriseAuth?: boolean; // 是否企业认证
+  wechatBind?: boolean; // 是否绑定微信
+  wechatInfo?: Record<string, any>;
+  wechatName?: string;
+  realNameAuth?: Record<string, any>;
 }
 
 interface AuthState {

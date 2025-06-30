@@ -41,7 +41,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
     if (pathSegments.length > 0) {
       const curPath = location.pathname.endsWith('/') ? location.pathname.slice(0, -1) : location.pathname;
       setSelectedKeys([curPath]);
-      setOpenKeys(collapsed ? [] : [pathSegments[0]]);
+      setOpenKeys(collapsed ? [] : openKeys.includes(pathSegments[0]) ? openKeys : [...openKeys, pathSegments[0]]);
     }
   }, [location.pathname, collapsed]);
 
