@@ -200,7 +200,7 @@ export default function useViewModel() {
     [key: string]: unknown;
   }
 
-  // 获取历史对话详情
+  // 获取所有下载的模型
   const { run: fetchAllModels } = useRequest(
     async () => {
       const data = await httpRequest.get<ModelItem[]>('/model');
@@ -209,10 +209,20 @@ export default function useViewModel() {
     {
       manual: true,
       onSuccess: (data: ModelItem[]) => {
-        console.log('获取所有下载模型列表', data);
         if (!data || data?.length === 0) return;
         const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16' && item.status === 'downloaded');
         setIsDownloadEmbed(isEmbed);
+        const isSelectedModel = data.some((item) => item.id === selectedModel?.id && item.status === 'downloaded');
+        // 表示当前模型已经被删除了，重新进入初始化
+        if (!isSelectedModel) {
+          setSelectedModel(null);
+          setSessionIdToUrl('');
+          setPrevModelId(undefined);
+          setPrevSessionId(null);
+          setMessages([]);
+          setUploadFileList([]);
+          setSelectMcpList([]);
+        }
       },
       onError: () => {
         message.error('获取所有下载模型列表失败');
@@ -239,13 +249,8 @@ export default function useViewModel() {
       res = await getModelList(remoteParams, modelId);
     }
     if (res) {
-      // 保存来源信息，防止被覆盖
-      const source = getSessionSource();
-
       setSelectedModel(res);
       setMessages(messages);
-
-      // 更新prevModelId，避免模型变化触发新建会话
       setPrevModelId(res.id);
     } else {
       message.error('获取历史记录详情失败，未找到对应模型');
