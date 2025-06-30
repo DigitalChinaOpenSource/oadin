@@ -98,3 +98,19 @@ func (t *OadinCoreServer) SendMessageStream(c *gin.Context) {
 		}
 	})
 }
+
+func (t *OadinCoreServer) GenSessionTitle(c *gin.Context) {
+	var req struct {
+		SessionID string `json:"id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+	err := t.Playground.UpdateSessionTitle(c.Request.Context(), req.SessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
+}
