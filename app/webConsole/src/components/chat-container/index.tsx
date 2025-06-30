@@ -76,7 +76,7 @@ export default function ChatContainer() {
         >
           <div className={styles.chatContent}>
             <ChatModelManage />
-            <ChatView />
+            <ChatView isDownloadEmbed={vm.isDownloadEmbed} />
           </div>
         </Col>
       </Row>

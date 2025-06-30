@@ -48,11 +48,15 @@ interface ChatMessage extends MessageType {
   contentList?: ChatMessageContent[];
 }
 
-export default function ChatView() {
+interface IChatViewProps {
+  isDownloadEmbed: boolean; // 是否下载词嵌入模型
+}
+
+export default function ChatView(props: IChatViewProps) {
+  const { isDownloadEmbed } = props;
   const { messages, isUploading } = useChatStore();
   // 添加日志以跟踪 messages 更新
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
-  const isDownloadEmbed = useModelDownloadStore.getState().isDownloadEmbed;
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
   useEffect(() => {

@@ -299,6 +299,7 @@ export default function useViewModel() {
   };
 
   return {
+    isDownloadEmbed,
     isUploadVisible,
     setIsUploadVisible,
     handleCreateNewChat,

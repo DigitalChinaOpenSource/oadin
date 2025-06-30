@@ -19,7 +19,7 @@ import { IDownParseData } from './types';
  * @returns {Object} - 下载相关的状态和方法
  */
 export const useDownLoad = () => {
-  const { downloadList, setDownloadList, setIsDownloadEmbed } = useModelDownloadStore();
+  const { downloadList, setDownloadList } = useModelDownloadStore();
 
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
