@@ -427,7 +427,7 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 			inputParams := msg.InputParams
 			outputParams := msg.OutputParams
 
-			if inputParams != "" && inputParams != "" {
+			if inputParams != "" && outputParams != "" {
 				// 尝试将转义的 JSON 字符串还原为原始 JSON
 				var inputObj interface{}
 				if err := json.Unmarshal([]byte(inputParams), &inputObj); err == nil {
