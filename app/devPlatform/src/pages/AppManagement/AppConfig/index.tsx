@@ -32,8 +32,8 @@ const fetchAppDetail = async (id: string) => {
     osCount: 1,
     updatedAt: new Date().toISOString(),
     description: '这是应用的详细描述信息',
-    supportedModels: [],
-    supportedMcps: [],
+    models: [],
+    mcps: [],
     supportedOs: {
       windows: true,
       macos: false,
@@ -113,8 +113,8 @@ const AppConfig: React.FC<AppConfigProps> = () => {
         form.setFieldsValue({
           name: data.name,
           description: data.description,
-          supportedModels: data.supportedModels || [],
-          supportedMcps: data.supportedMcps || [],
+          models: data.models || [],
+          mcps: data.mcps || [],
         });
       } catch (error) {
         message.error('获取应用详情失败');
@@ -129,16 +129,16 @@ const AppConfig: React.FC<AppConfigProps> = () => {
 
   /// 根据详情数据初始化内部是否已选中数据
   useEffect(() => {
-    if (appDetail?.supportedModels?.length > 0) {
-      setSelectModelsToForm(appDetail?.supportedModels);
+    if (appDetail?.models?.length > 0) {
+      setSelectModelsToForm(appDetail?.models);
     }
-  }, [appDetail?.supportedModels]);
+  }, [appDetail?.models]);
   /// 根据详情数据初始化内部是否已选中数据
   useEffect(() => {
-    if (appDetail?.supportedMcps?.length > 0) {
-      setSelectMcpToForm(appDetail?.supportedMcps);
+    if (appDetail?.mcps?.length > 0) {
+      setSelectMcpToForm(appDetail?.mcps);
     }
-  }, [appDetail?.supportedMcps]);
+  }, [appDetail?.mcps]);
 
   /// 根据选中的模型初始化需要显示的模型
   useEffect(() => {
@@ -157,11 +157,11 @@ const AppConfig: React.FC<AppConfigProps> = () => {
 
   const setSelectModelsToForm = (models: IModelSelectCardItem[]) => {
     setSelectedModels(models);
-    form.setFieldsValue({ supportedModels: transformedCard2Ids(models) });
+    form.setFieldsValue({ models: transformedCard2Ids(models) });
   };
   const setSelectMcpToForm = (models: IModelSelectCardItem[]) => {
     setSelectedMcps(models);
-    form.setFieldsValue({ supportedMcps: transformedCard2Ids(models) });
+    form.setFieldsValue({ mcps: transformedCard2Ids(models) });
   };
 
   const handleBack = () => {
@@ -189,7 +189,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
 
       const result = await updateApp(id!, {
         ...appDetail,
-        ...formValues, // 包含supportedModels和supportedMcps
+        ...formValues,
         supportedOs: osSelection,
       });
       if (result.success) {
@@ -489,7 +489,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
 
                   {/* 隐藏的表单项用于验证 */}
                   <Form.Item
-                    name="supportedModels"
+                    name="models"
                     rules={[{ required: true, message: '请至少选择一个模型' }]}
                     hidden
                   >
@@ -497,7 +497,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                   </Form.Item>
                   {/* 隐藏的表单项用于验证 */}
                   <Form.Item
-                    name="supportedMcps"
+                    name="mcps"
                     rules={[{ required: true, message: '请至少选择一个Mcp' }]}
                     hidden
                   >

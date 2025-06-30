@@ -1,14 +1,12 @@
 import React, { useRef } from 'react';
-import { Button, Tooltip } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import { CopyOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, RobotOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-// import { useIsOverflowed } from '@/hooks/useIsOverflowed';
 import styles from './index.module.scss';
 
 interface AppCardProps {
   app: any;
-  onEdit: (app: any) => void;
   onDelete: (app: any) => void;
   onCopy: (text: string) => void;
 }
@@ -17,13 +15,28 @@ const AppCard: React.FC<AppCardProps> = ({ app, onDelete, onCopy }) => {
   const nameRef = useRef<HTMLDivElement>(null);
   const isOverflowed = true;
   const navigate = useNavigate();
+  const onEdit = () => {
+    if (app?.id) {
+      navigate(`/app-management/config/${app.id}`);
+    } else {
+      message.error('应用ID不存在，无法编辑');
+    }
+  };
   return (
     <div
       className={styles['app-card-wrapper']}
       key={app.id}
     >
       <div className={styles['app-icon-container']}>
-        <RobotOutlined className={styles.icon} />
+        {app.icon ? (
+          <img
+            src={app.icon}
+            alt=""
+            className={styles.icon}
+          />
+        ) : (
+          <RobotOutlined className={styles.icon} />
+        )}
       </div>
       <div className={styles['app-card-wrapper-inner']}>
         <div className={styles['card-main-row']}>
@@ -74,7 +87,7 @@ const AppCard: React.FC<AppCardProps> = ({ app, onDelete, onCopy }) => {
             <Button
               type="text"
               className={styles['action-button']}
-              onClick={() => navigate(`/app-management/config/${app.id}`)}
+              onClick={onEdit}
               icon={<EditOutlined className={styles['button-icon']} />}
             >
               <span className={styles['button-text']}>配置应用</span>

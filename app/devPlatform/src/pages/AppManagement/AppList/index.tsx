@@ -7,85 +7,37 @@ import { PlusOutlined } from '@ant-design/icons';
 import CreateAppModal from './CreateAppModal.tsx';
 import DeleteAppModal from './DeleteAppModal.tsx';
 import styles from './index.module.scss';
+import { addApplication, deleteApplication, getApplicationList } from '@/pages/AppManagement/remote';
+import { NoData } from '@/pages/AppManagement/AppList/noData.tsx';
 
-// 模拟删除接口
+// 删除应用
 const deleteApp = async (id: string) => {
-  console.log('Deleting app:', id);
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return { success: true };
+  return await deleteApplication(id);
 };
-
-// 模拟创建应用接口
+// 创建应用
 const createApp = async (values: { name: string }) => {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return {
-    success: true,
-    data: {
-      id: `app-${Math.random().toString(36).substring(2, 10)}`,
-      name: values.name,
-      appId: `app_${Math.random().toString(36).substring(2, 10)}`,
-      secretKey: `sk_${Math.random().toString(36).substring(2, 15)}`,
-      modelCount: 0,
-      mcpCount: 0,
-      osCount: 0,
-      updatedAt: new Date().toISOString(),
-    },
-  };
+  const data = await addApplication(values);
+  console.info(data, '创建应用返回数据');
+  return data;
 };
 
-// 模拟更新应用接口
-const updateApp = async (id: string, values: { name: string }) => {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return {
-    success: true,
-    data: {
-      id,
-      name: values.name,
-      updatedAt: new Date().toISOString(),
-    },
-  };
-};
+// 查询列表数据
+const fetchApps = async (params: { current: number; pageSize: number; keyword?: string }) => {
+  const { current, pageSize, keyword = '' } = params;
+  console.info(keyword, '搜索数据');
+  return getApplicationList({
+    page: current,
+    size: pageSize,
+    keyword,
+  }).then((res) => {
+    console.log('获取应用列表结果:', res);
+    const filteredApps = res.list;
 
-// 模拟数据
-const mockApps = [
-  // 超长名称测试数据
-  {
-    id: 'long-1',
-    name: '这是一个非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常长的应用名称1',
-    appId: 'long1',
-    secretKey: 'sk_long1',
-    modelCount: 2,
-    mcpCount: 1,
-    osCount: 1,
-    updatedAt: new Date().toISOString(),
-  },
-  // 其余 mock 数据
-  ...Array.from({ length: 23 }).map((_, index) => ({
-    id: `app-${index + 1}`,
-    name: `测试应用${index + 1}`,
-    appId: `${Math.random().toString(36).substring(2, 10)}`,
-    secretKey: `sk_${Math.random().toString(36).substring(2, 15)}`,
-    modelCount: Math.floor(Math.random() * 5) + 1,
-    mcpCount: Math.floor(Math.random() * 3) + 1,
-    osCount: Math.floor(Math.random() * 4) + 1,
-    updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-  })),
-];
-
-// 模拟分页获取数据
-const fetchApps = async (params: { current: number; pageSize: number; search?: string }) => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  const { current, pageSize, search = '' } = params;
-  const filteredApps = mockApps.filter((app) => app.name.toLowerCase().includes(search.toLowerCase()));
-
-  const start = (current - 1) * pageSize;
-  const end = start + pageSize;
-
-  return {
-    data: filteredApps.slice(start, end),
-    total: filteredApps.length,
-    totalAll: mockApps.length,
-  };
+    return {
+      data: filteredApps,
+      total: res.total,
+    };
+  });
 };
 
 const AppManage: React.FC = () => {
@@ -102,7 +54,7 @@ const AppManage: React.FC = () => {
       fetchApps({
         current,
         pageSize,
-        search: searchText,
+        keyword: searchText,
       }),
     {
       refreshDeps: [current, searchText],
@@ -111,8 +63,7 @@ const AppManage: React.FC = () => {
   const [deletingApp, setDeletingApp] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [formModalVisible, setFormModalVisible] = useState(false);
-  const [editingApp, setEditingApp] = useState<any>(null);
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [formMode, setFormMode] = useState<'create'>('create');
   const [formLoading, setFormLoading] = useState(false);
 
   const handleCopy = (text: string) => {
@@ -142,35 +93,19 @@ const AppManage: React.FC = () => {
 
   const showCreateModal = () => {
     setFormMode('create');
-    setEditingApp(null);
-    setFormModalVisible(true);
-  };
-
-  const showEditModal = (app: any) => {
-    setFormMode('edit');
-    setEditingApp(app);
     setFormModalVisible(true);
   };
   const handleFormSubmit = async (values: { name: string }): Promise<void> => {
     setFormLoading(true);
     try {
       if (formMode === 'create') {
-        const res = await createApp(values);
-        if (res.success) {
+        const isCreated = await createApp(values);
+        if (isCreated) {
           message.success('创建成功');
           refresh();
           setFormModalVisible(false);
         }
-      } else {
-        const res = await updateApp(editingApp.id, values);
-        if (res.success) {
-          message.success('更新成功');
-          refresh();
-          setFormModalVisible(false);
-        }
       }
-    } catch (error) {
-      message.error(formMode === 'create' ? '创建失败' : '更新失败');
     } finally {
       setFormLoading(false);
     }
@@ -178,11 +113,11 @@ const AppManage: React.FC = () => {
 
   const handleFormCancel = () => {
     setFormModalVisible(false);
-    setEditingApp(null);
     setFormMode('create');
   };
 
   const handleSearch = (value: string) => {
+    console.info(value);
     setSearchText(value);
     setCurrent(1); // 重置到第一页
   };
@@ -208,7 +143,7 @@ const AppManage: React.FC = () => {
               {searchText ? (
                 <>
                   找到 <strong className={styles.highlight}>{data?.total || 0}</strong> 个应用
-                  <span className={styles['total-count']}>（共 {data?.totalAll || 0} 个）</span>
+                  <span className={styles['total-count']}>（共 {data?.total || 0} 个）</span>
                 </>
               ) : (
                 `已创建 ${data?.total || 0} 个应用`
@@ -219,22 +154,24 @@ const AppManage: React.FC = () => {
             className={styles['search-input']}
             placeholder="搜索应用"
             allowClear
-            value={searchText}
-            onChange={(e) => handleSearch(e.target.value)}
+            onSearch={(e) => handleSearch(e.trim())}
           />
         </div>
 
         <Spin spinning={listLoading}>
           <div className={styles['app-list-container']}>
-            {data?.data.map((app: any) => (
-              <AppCard
-                key={app.id}
-                app={app}
-                onEdit={showEditModal}
-                onDelete={showDeleteModal}
-                onCopy={handleCopy}
-              />
-            ))}
+            {data && data.total > 0 ? (
+              data?.data.map((app: any) => (
+                <AppCard
+                  key={app.id}
+                  app={app}
+                  onDelete={showDeleteModal}
+                  onCopy={handleCopy}
+                />
+              ))
+            ) : (
+              <NoData showCreateModal={showCreateModal} />
+            )}
           </div>
           {data && data.total > 0 && (
             <div className={styles['pagination-container']}>
