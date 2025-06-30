@@ -139,13 +139,11 @@ export const buildMessageWithThinkContent = (
   const openTagCount = (responseContent.match(/<think>/g) || []).length;
   const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
   const hasUnfinishedThink = openTagCount > closeTagCount && !isComplete;
-
   const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
-
   // 只处理来自 thinking 字段的思考内容（两种方式互斥）
   if (thinkingFromField && thinkingFromField.trim()) {
     // 根据是否还在思考中来设置状态
-    const thinkingStatus = isThinkingActive ? 'progress' : 'success';
+    const thinkingStatus = isThinkingActive ? 'progress' : isComplete ? 'success' : 'error';
 
     parsedContents.unshift({
       type: 'think',
@@ -306,7 +304,7 @@ export const handleTextContent = (
     if (requestStateRef.current.content.thinkingFromField) {
       setStreamingThinking({
         data: requestStateRef.current.content.thinkingFromField,
-        status: 'success', // 显式设置为 success
+        status: 'success',
       });
     } else {
       setStreamingThinking({

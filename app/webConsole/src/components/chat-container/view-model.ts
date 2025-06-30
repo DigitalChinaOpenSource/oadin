@@ -76,16 +76,14 @@ export default function useViewModel() {
 
     // 如果会话ID变化了
     if (currentSessionId !== prevSessionId) {
-      console.log('Session ID changed:', { currentSessionId, prevSessionId, getSessionSource: getSessionSource() });
       const source = getSessionSource();
 
       // 来自历史记录的会话变更，已在chat-history-drawer中处理，这里仅更新状态
-      if (source === 'history') {
+      if (source === 'history' || source === 'new') {
         setPrevSessionId(currentSessionId);
       }
       // 其他来源（如URL直接修改或分享链接）且有会话ID，需要加载历史记录
       else if (currentSessionId && !isLoadingHistory.current) {
-        console.log('Loading history from session ID change');
         isLoadingHistory.current = true;
         fetchChatHistoryDetail(currentSessionId);
         setPrevSessionId(currentSessionId);
@@ -106,11 +104,6 @@ export default function useViewModel() {
 
     // 当模型变化时，自动创建新会话
     if (selectedModel.id !== prevModelId && prevModelId !== undefined) {
-      console.log('Model changed, creating new chat:', {
-        oldModelId: prevModelId,
-        newModelId: selectedModel.id,
-      });
-
       // 清空当前对话内容
       createNewChat();
       setSelectMcpList([]);
@@ -171,7 +164,7 @@ export default function useViewModel() {
     return data?.data || {};
   });
 
-  // 获取所有奥丁下载的模型
+  // 查询当前 sessionId 的历史对话
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
       const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
@@ -293,8 +286,8 @@ export default function useViewModel() {
             // 2. 更新会话相关状态
             setPrevSessionId(data.id);
 
-            // 3. 最后更新 URL（这样不会触发 currentSessionId 监听的 useEffect）
-            setSessionIdToUrl(data.id);
+            // 3. 最后更新 URL
+            setSessionIdToUrl(data.id, 'new');
           };
 
           // 使用 setTimeout 确保状态更新是异步的，避免在渲染过程中触发
