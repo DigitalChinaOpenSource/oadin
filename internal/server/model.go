@@ -934,6 +934,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				OllamaId:        smInfo.OllamaId,
 				Think:           smInfo.Think,
 				ThinkSwitch:     smInfo.ThinkSwitch,
+				Tools:           smInfo.Tools,
 			}
 			resultList = append(resultList, modelData)
 
@@ -1095,6 +1096,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					ParamsSize:      jdModelInfo.ParamSize,
 					Think:           jdModelInfo.Think,
 					ThinkSwitch:     jdModelInfo.ThinkSwitch,
+					Tools:           jdModelInfo.Tools,
 				}
 				resultList = append(resultList, modelData)
 			}

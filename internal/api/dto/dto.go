@@ -284,6 +284,7 @@ type RecommendModelData struct {
 	IsDownloaded        bool     `json:"is_downloaded" default:"false"`
 	Think               bool     `json:"think" default:"false"`
 	ThinkSwitch         bool     `json:"think_switch" default:"false"`
+	Tools               bool     `json:"tools" default:"false"`
 }
 
 type ProviderSupportModelData struct {

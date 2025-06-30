@@ -16,6 +16,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // SQLite implements the Datastore interface
@@ -36,7 +37,15 @@ func New(dbPath string) (*SQLite, error) {
 		}
 	}
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	/*
+		logger.Info：打印所有 SQL
+		logger.Warn：只打印慢 SQL 或警告
+		logger.Error：只打印错误
+		logger.Silent：不打印
+	*/
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent), // 新增这一行
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err)
 	}
