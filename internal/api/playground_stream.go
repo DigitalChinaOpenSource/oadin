@@ -101,7 +101,7 @@ func (t *OadinCoreServer) SendMessageStream(c *gin.Context) {
 
 func (t *OadinCoreServer) GenSessionTitle(c *gin.Context) {
 	var req struct {
-		SessionID string `json:"sessionId"`
+		SessionID string `json:"id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})

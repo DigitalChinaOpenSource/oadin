@@ -296,7 +296,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID string) error {
 	sessionCheck := &types.ChatSession{ID: sessionID}
 	err := p.Ds.Get(ctx, sessionCheck)
-	if err != nil {
+	if err != nil || sessionCheck == nil || sessionCheck.ID == "" {
 		slog.Error("Failed to get chat session", "error", err)
 		return err
 	}
@@ -316,12 +316,14 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	history := make([]map[string]string, 0, len(messages)+1)
 	for _, m := range messages {
 		msg := m.(*types.ChatMessage)
-		history = append(history, map[string]string{
-			"role":    msg.Role,
-			"content": msg.Content,
-		})
+		if msg.Role == "user" {
+			history = append(history, map[string]string{
+				"role":    "user",
+				"content": msg.Content,
+			})
+		}
 	}
-	genTitlePrompt := "请用一句话为本次对话生成一个不超过10字的简洁标题，仅输出标题本身。"
+	genTitlePrompt := "请用一句话为本次对话生成一个不超过10字的简洁标题，仅输出标题本身"
 	history = append(history, map[string]string{
 		"role":    "user",
 		"content": genTitlePrompt,
@@ -367,12 +369,12 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 					title = re.ReplaceAllString(title, "")
 					title = strings.TrimSpace(title)
 				}
-				runes := []rune(title)
-				title = string(runes)
 				slog.Info("[DEBUG] TitleGen final title", "title", title)
 				if title != "" {
+					runes := []rune(title)
+					title = string(runes)
 					sessionCheck.Title = title
-					err = p.Ds.Put(context.Background(), sessionCheck)
+					err = p.Ds.Put(ctx, sessionCheck)
 				}
 			}
 		}
@@ -392,7 +394,7 @@ func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendS
 		if len(runes) > 10 {
 			content = string(runes[:10])
 		}
-		title := "新对话 " + time.Now().Format("2006-01-02 15:04:05") + " " + content
+		title := "新对话 " + content
 		sessionCheck.Title = title
 		err = p.Ds.Put(ctx, sessionCheck)
 	}
