@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
@@ -51,9 +52,10 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 	serviceReq := &types.ServiceRequest{
 		Service:    "embed",
 		Model:      modelName,
-		FromFlavor: "ollama",
+		FromFlavor: "oadin",
 		HTTP: types.HTTPContent{
-			Body: body,
+			Header: http.Header{},
+			Body:   body,
 		},
 	}
 	_, ch := schedule.GetScheduler().Enqueue(serviceReq)
