@@ -178,7 +178,8 @@ type ClientRunToolRequest struct {
 }
 
 type ClientRunToolResponse struct {
-	*mcp.CallToolResult
+	Content  any    `json:"content"` // Can be TextContent, ImageContent, AudioContent, or EmbeddedResource
+	IsError  bool   `json:"isError"`
 	Logo     string `json:"logo"`     // 工具调用的MCP图标
 	ToolDesc string `json:"toolDesc"` // 工具描述
 }

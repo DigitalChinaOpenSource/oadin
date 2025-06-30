@@ -28,12 +28,12 @@ func TestMcpClientAndLLM(t *testing.T) {
 		Env:     nil,
 	}
 	mcpService := NewStdioTransport()
-	err := mcpService.Start(&config)
+	ctx := context.Background()
+	err := mcpService.Start(ctx, &config)
 	if err != nil {
 		log.Fatalf("Failed to initialize MCP client: %v", err)
 	}
 
-	ctx := context.Background()
 	tools, err := mcpService.FetchTools(ctx, config.Id)
 	if err != nil {
 		log.Fatalf("Failed to fetch tools: %v", err)
