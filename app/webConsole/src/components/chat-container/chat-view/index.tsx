@@ -71,7 +71,6 @@ export default function ChatView() {
 
   const handleSendMessage = (message: string) => {
     if (!message.trim() || isLoading || isUploading) return;
-
     sendChatMessage(message);
   };
 
