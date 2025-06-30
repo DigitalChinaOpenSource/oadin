@@ -5,8 +5,10 @@ import deepThinkSvg from '@/components/icons/deep-think.svg';
 import { CheckCircleIcon } from '@phosphor-icons/react';
 import arrowUp from '@/components/icons/arrow-up.svg';
 import arrowDown from '@/components/icons/arrow-down.svg';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
-// interface IDeepThinkChatProps {}
 interface IDeepThinkChatProps {
   dataSource?: {
     data: string;
@@ -71,7 +73,13 @@ export default function DeepThinkChat(props: IDeepThinkChatProps) {
         </div>
       </div>
       <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
-        <div className={styles.resultText}>{dataSource?.data}</div>
+        <div className={styles.resultText}>
+          {ReactMarkdown({
+            children: dataSource?.data || '',
+            remarkPlugins: [remarkGfm],
+            rehypePlugins: [rehypeRaw],
+          })}
+        </div>
       </div>
     </div>
   );
