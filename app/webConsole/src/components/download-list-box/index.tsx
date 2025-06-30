@@ -2,6 +2,9 @@ import React, { memo } from 'react';
 import { XIcon, DownloadIcon } from '@phosphor-icons/react';
 import DownloadItem from './download-item';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
+import { getLocalStorageDownList } from '@/utils';
+import { LOCAL_STORAGE_KEYS } from '@/constants';
+import { IModelDataItem } from '@/types';
 import styles from './index.module.scss';
 
 export interface IDownloadListBoxProps {
@@ -13,6 +16,7 @@ export interface IDownloadListBoxProps {
 const DownloadListBox = memo((props: IDownloadListBoxProps) => {
   const { className = '', handleDownload } = props;
   const downloadList = useModelDownloadStore.getState().downloadList;
+  const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
   return (
     <div className={`${className} ${styles.downloadListBox}`}>
       <div className={styles.header}>
@@ -38,7 +42,7 @@ const DownloadListBox = memo((props: IDownloadListBoxProps) => {
         </div>
       </div>
       <div className={styles.downloadList}>
-        {downloadList.map((item) => (
+        {tempDownloadList.map((item: IModelDataItem) => (
           <DownloadItem
             key={`${item.id}`}
             downloadItem={item}
