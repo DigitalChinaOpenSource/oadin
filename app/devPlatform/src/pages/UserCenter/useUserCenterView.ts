@@ -64,7 +64,7 @@ export const useUserCenterView = () => {
 
   // 退出登录
   const logoutUser = async () => {
-    return await httpRequest.post<IBaseRequestResProps>('/logout', null, { headers: { Authorization: getUserToken() } });
+    return await httpRequest.post<IBaseRequestResProps>('/individual-login/logout', undefined, { headers: { Authorization: getUserToken() } });
   };
 
   return {

@@ -223,6 +223,10 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
         onCancelProps={() => {
           setOpen(false);
           // setSelectMcpPopOpen(false);
+          // TODO 关闭添加更多MCP工具弹窗时，重新加载MCP列表加载为第一页（解决在添加更多里面操作mcp之后，mcp列表不刷新问题）
+          //  -- 会重置加载的列表，并且只是在关闭时重新获取，如关闭时添加mcp或取消mcp都还没执行完，则页面还是不会刷新
+          //  -- 如果监听下载mcp的列表 会出爱惜你一个问题 就是选择mcp的列表会经常刷新 可能用户正在操作 突然刷没了
+          // handlePageChange(1, 12);
         }}
       />
       <DetailDrawer

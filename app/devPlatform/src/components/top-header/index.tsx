@@ -26,7 +26,7 @@ export default function TopHeader() {
     };
     // 退出登录
     const handleLogout = () => {
-      // logoutUser();
+      logoutUser();
       setCurrentStep('personPhone');
       logout();
       navigate('/login');
