@@ -4,7 +4,8 @@ import { httpRequest } from '@/utils/httpRequest';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
-import useModelDownloadStore from '@/store/useModelDownloadStore';
+import useUploadFileListStore from './store/useUploadFileListStore';
+import { createNewChat } from './utils';
 import { IPlaygroundSession } from './types';
 import { message } from 'antd';
 import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage, getSessionSource } from '@/utils/sessionParamUtils';
@@ -16,9 +17,9 @@ import embedDownloadEventBus from '@/utils/embedDownload';
 
 export default function useViewModel() {
   const { selectedModel, setSelectedModel } = useSelectedModelStore();
-  const { createNewChat, messages, setUploadFileList, setMessages } = useChatStore();
+  const { messages, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
-
+  const { uploadFileList, setUploadFileList } = useUploadFileListStore();
   const [isUploadVisible, setIsUploadVisible] = useState(false);
   const [prevModelId, setPrevModelId] = useState<string | undefined>(selectedModel?.id);
   const [prevSessionId, setPrevSessionId] = useState<string | null>(null);

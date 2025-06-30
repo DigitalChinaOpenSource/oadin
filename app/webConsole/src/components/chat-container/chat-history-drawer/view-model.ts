@@ -10,13 +10,15 @@ import { MessageType } from '@res-utiles/ui-components';
 import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDrawerProps } from './types';
 import { IModelSquareParams } from '@/types';
 import { convertMessageFormat } from '../utils/historyMessageFormat';
+import { createNewChat } from '../utils';
+
 import dayjs from 'dayjs';
 import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
 
 export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   const { onHistorySelect, onHistoryDrawerClose } = props;
   // 获取对话store
-  const { setHistoryVisible, createNewChat, setMessages } = useChatStore();
+  const { setHistoryVisible, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
   // 从URL获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
