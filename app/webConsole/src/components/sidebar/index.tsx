@@ -119,7 +119,6 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
     }
   }, [mcpDownloadList]);
 
-  console.log('downloadListdownloadList======>', tempDownloadList);
   return (
     <div className={styles.sidebar}>
       <div className={styles.menuContainer}>

@@ -12,6 +12,7 @@ import { IChatDetailItem } from './chat-history-drawer/types';
 import { MessageType } from '@res-utiles/ui-components';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
+import embedDownloadEventBus from '@/utils/embedDownload';
 
 export default function useViewModel() {
   const { selectedModel, setSelectedModel, setIsSelectedModel } = useSelectedModelStore();
@@ -37,6 +38,15 @@ export default function useViewModel() {
     // 在组件卸载时保存会话ID到sessionStorage
     return () => {
       saveSessionIdToStorage();
+    };
+  }, []);
+
+  useEffect(() => {
+    embedDownloadEventBus.on('embedDownloadComplete', () => {
+      setIsDownloadEmbed(true);
+    });
+    return () => {
+      embedDownloadEventBus.off('embedDownloadComplete');
     };
   }, []);
 
@@ -104,7 +114,7 @@ export default function useViewModel() {
       // 创建新会话
       fetchCreateChat({
         modelId: selectedModel.id,
-        embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
+        embedModelId: isDownloadEmbed ? '87c0b009-2d93-4f00-9662-3330376662613373163373263' : undefined,
       });
     }
 
@@ -294,7 +304,7 @@ export default function useViewModel() {
     }
     fetchCreateChat({
       modelId: selectedModel?.id || '',
-      embedModelId: isDownloadEmbed ? 'bc8ca0995fcd651' : undefined,
+      embedModelId: isDownloadEmbed ? '87c0b009-2d93-4f00-9662-3330376662613373163373263' : undefined,
     });
   };
 
