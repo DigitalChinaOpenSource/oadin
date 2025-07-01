@@ -1,4 +1,4 @@
-import { RECOMMEND_MODEL, PIORITY_MODEL } from '@/constants';
+import { PIORITY_MODEL, RECOMMEND_MODEL } from '@/constants';
 import { IModelDataItem } from '@/types';
 // 处理问学模型列表的数据
 export const dealSmartVisionModels = (data: IModelDataItem[]) => {
@@ -10,7 +10,6 @@ export const dealSmartVisionModels = (data: IModelDataItem[]) => {
   const pioritySeq = JSON.parse(JSON.stringify(PIORITY_MODEL));
   const seq = recommendedSeq.concat(pioritySeq);
 
-  console.log('dealSmartVisionModels', data);
   const map = data.reduce((acc: { [key: string]: IModelDataItem }, model) => {
     acc[model.name] = model;
     return acc;

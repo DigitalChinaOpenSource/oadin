@@ -22,7 +22,7 @@ export default defineConfig({
     proxy: {
       [API_PREFIX]: {
         target: 'http://127.0.0.1:16688',
-        // target: 'http://10.3.74.171:16688',
+        // target: 'http://10.3.73.66:16688',
         changeOrigin: true,
         rewrite: (path) => path.replace(new RegExp(`^${API_PREFIX}`), API_PREFIX),
         configure: (proxy, options) => {
@@ -36,7 +36,7 @@ export default defineConfig({
       },
       [API_HEALTH_ENDPOINT]: {
         target: 'http://127.0.0.1:16688',
-        // target: 'http://10.3.74.171:16688',
+        // target: 'http://10.3.73.66:16688',
         changeOrigin: true,
         rewrite: (path) => path.replace(new RegExp(`^${API_HEALTH_ENDPOINT}`), API_HEALTH_ENDPOINT),
         configure: (proxy, options) => {

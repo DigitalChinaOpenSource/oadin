@@ -6,7 +6,6 @@ import { httpRequest } from '@/utils/httpRequest';
 import { useDownLoad } from '@/hooks/useDownload';
 import { message, Modal } from 'antd';
 import { useRequest } from 'ahooks';
-import { dealSmartVisionModels } from './utils';
 import useModelListStore from '@/store/useModelListStore';
 import { convertToMB } from '@/utils';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
@@ -190,10 +189,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         paramsTemp.env_type = 'product';
       }
       const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
-      if (paramsTemp.service_source === 'remote') {
-        // 处理问学模型列表的数据, 把推荐的模型放在前面
-        return dealSmartVisionModels(data?.data || []);
-      }
       return data?.data || [];
     },
     {
