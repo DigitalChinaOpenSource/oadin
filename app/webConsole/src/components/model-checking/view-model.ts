@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react';
-import { IModelDataItem, IModelSourceType, ModelData } from '@/types';
+import { useState } from 'react';
+import { IModelDataItem, ModelData } from '@/types';
 import { httpRequest } from '@/utils/httpRequest';
 import { useRequest } from 'ahooks';
-import useModelListStore from '@/store/useModelListStore';
-import { dealSmartVisionModels } from '@/components/model-manage-tab/model-list-content/utils.ts';
 
 export type ModelSourceType = 'local' | 'remote';
 
@@ -39,10 +37,7 @@ export function useViewModel(): IMyModelListViewModel {
         paramsTemp.env_type = 'product';
       }
       const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
-      if (paramsTemp.service_source === 'remote') {
-        // 处理问学模型列表的数据, 把推荐的模型放在前面
-        return dealSmartVisionModels(data?.data || []);
-      }
+
       return data?.data || [];
     },
     {
