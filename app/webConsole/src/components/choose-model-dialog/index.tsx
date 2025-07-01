@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { message, Modal, Tabs, TabsProps } from 'antd';
 import styles from './index.module.scss';
 import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedModel';
@@ -23,12 +23,27 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const [activeKey, setActiveKey] = useState<string>('my-models');
   const onChange = (activeKey: string) => {
+    // 简单设置标签键，不触发额外的刷新
     setActiveKey(activeKey);
   };
   const { fetchChooseModelNotify } = useViewModel();
+  
+  // 设置选中的模型
   useEffect(() => {
     setSelecteStatedModel(selectedModel);
   }, [selectedModel]);
+  
+  // 对话框打开时的处理，优化以避免不必要的刷新
+  const dialogOpenTimeRef = useRef<number>(0);
+  useEffect(() => {
+    if (props.open) {
+      // 限制频率: 最多3秒一次全局刷新
+      const now = Date.now();
+      if (now - dialogOpenTimeRef.current > 3000) {
+        dialogOpenTimeRef.current = now;
+      }
+    }
+  }, [props.open]);
   const onOk = () => {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
       setSelectedModel(selectedStateModel);
@@ -85,12 +100,10 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
       onOk={onOk}
       {...props}
     >
-      {/* TODO 是否直接卸载当前tab重新加载 */}
       <Tabs
         onChange={onChange}
         activeKey={activeKey}
         items={items}
-        // destroyOnHidden={true}
       />
     </Modal>
   );
