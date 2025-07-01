@@ -58,6 +58,19 @@ func GetMCPList(client *resty.Client, req MCPListRequest) (*MCPListResponse, err
 	if resp.Code != 200 {
 		return nil, fmt.Errorf("API错误: %d", resp.Code)
 	}
+
+	// Reorder resp.Data.List according to the order of MCPIds
+	if len(req.MCPIds) > 0 && len(resp.Data.List) > 0 {
+		for i, id := range req.MCPIds {
+			for j := i; j < len(resp.Data.List); j++ {
+				if resp.Data.List[j].ID == id {
+					resp.Data.List[i], resp.Data.List[j] = resp.Data.List[j], resp.Data.List[i]
+					break
+				}
+			}
+		}
+	}
+
 	return &resp, nil
 }
 
