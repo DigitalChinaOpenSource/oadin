@@ -23,55 +23,58 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
       onCancel={vm.onCancel}
       okText="确认"
     >
-      {vm.providerDetailLoading ? (
-        <div className={styles.loading}>
-          <img
-            src={realLoadingSvg}
-            alt="loading"
-          />
-        </div>
-      ) : (
-        <>
-          <div className={styles.infoName}>基础信息</div>
-          <div className={styles.infoBlock}>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>服务提供商名称:</span>
-              {vm.providerDetail.provider_name}
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>服务提供商厂商名称:</span>
-              {vm.providerDetail.flavor}
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>服务来源:</span>
-              {vm.providerDetail.service_source === 'remote' ? '云端' : '本地'}
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>服务名称:</span>
-              {vm.providerDetail.service_name}
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>服务提供商状态:</span>
-              <div className={vm.providerDetail.status === 1 ? styles.readyStatus : styles.disabledStatus}>
-                <div className={styles.dot}></div>
-                {vm.providerDetail.status === 1 ? '可用' : '禁用'}
-              </div>
+      <>
+        <div className={styles.infoName}>基础信息</div>
+        <div className={styles.infoBlock}>
+          <div className={styles.infoItem}>
+            <span className={styles.infoLabel}>服务提供商名称:</span>
+            {vm.providerDetail.provider_name}
+          </div>
+          <div className={styles.infoItem}>
+            <span className={styles.infoLabel}>服务提供商厂商名称:</span>
+            {vm.providerDetail.flavor}
+          </div>
+          <div className={styles.infoItem}>
+            <span className={styles.infoLabel}>服务来源:</span>
+            {vm.providerDetail.service_source === 'remote' ? '云端' : '本地'}
+          </div>
+          <div className={styles.infoItem}>
+            <span className={styles.infoLabel}>服务名称:</span>
+            {vm.providerDetail.service_name}
+          </div>
+          <div className={styles.infoItem}>
+            <span className={styles.infoLabel}>服务提供商状态:</span>
+            <div className={vm.providerDetail.status === 1 ? styles.readyStatus : styles.disabledStatus}>
+              <div className={styles.dot}></div>
+              {vm.providerDetail.status === 1 ? '可用' : '禁用'}
             </div>
           </div>
-
+        </div>
+        <div className={styles.pageBlock}>
+          <div className={styles.modelTitle}>支持的模型列表</div>
           {vm.providerDetail?.support_model_list?.length > 0 && (
-            <>
-              <div className={styles.pageBlock}>
-                <div className={styles.modelTitle}>支持的模型列表</div>
-                <Pagination
-                  current={vm.providerDetail?.page || 1}
-                  showSizeChanger={false}
-                  pageSize={vm.providerDetail?.page_size || 5}
-                  total={vm.providerDetail?.total_count || 0}
-                  onChange={vm.handlePageChange}
-                  show-less-items
-                />
-              </div>
+            <Pagination
+              current={vm.providerDetail?.page || 1}
+              showSizeChanger={false}
+              pageSize={vm.providerDetail?.page_size || 5}
+              total={vm.providerDetail?.total_count || 0}
+              onChange={vm.handlePageChange}
+              show-less-items
+            />
+          )}
+        </div>
+      </>
+      <div className={styles.modelContainer}>
+        {vm.providerDetailLoading ? (
+          <div className={styles.loading}>
+            <img
+              src={realLoadingSvg}
+              alt="loading"
+            />
+          </div>
+        ) : (
+          <>
+            {vm.providerDetail?.support_model_list?.length > 0 && (
               <div className={styles.modelList}>
                 {(vm.providerDetail?.support_model_list || []).map((model, index) => (
                   <div
@@ -106,15 +109,15 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
                   </div>
                 ))}
               </div>
-            </>
-          )}
+            )}
+          </>
+        )}
+      </div>
 
-          <div className={styles.timeInfo}>
-            <span>创建时间: {vm.formateIsoTime(vm.providerDetail?.created_at)}</span>
-            <span>更新时间: {vm.formateIsoTime(vm.providerDetail?.updated_at)}</span>
-          </div>
-        </>
-      )}
+      <div className={styles.timeInfo}>
+        <span>创建时间: {vm.formateIsoTime(vm.providerDetail?.created_at)}</span>
+        <span>更新时间: {vm.formateIsoTime(vm.providerDetail?.updated_at)}</span>
+      </div>
     </Modal>
   );
 }
