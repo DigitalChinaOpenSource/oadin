@@ -32,6 +32,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
   const debouncedModelPath = useDebounce(modelPathValue, { wait: 1000 });
   const [currentPathSpace, setCurrentPathSpace] = useState<IModelPathSpaceRes>({} as IModelPathSpaceRes);
   const [isFormValid, setIsFormValid] = useState(false);
+  const [oadinHealth, setOadinHealth] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!modalPath) return;
@@ -79,8 +80,27 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
     },
   );
 
+  const checkOadinHealth = async () => {
+    const data = await httpRequest.get('/health');
+    try {
+      if (data?.status === 'UP') {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      setOadinHealth(false);
+      message.error('检查 Oadin 服务状态失败，请稍后重试');
+    }
+  };
   const handleToSavePath = () => {
-    form.submit();
+    checkOadinHealth().then(() => {
+      if (oadinHealth === false) {
+        message.error('Oadin 服务不可用，请检查 Oadin 服务状态');
+        return;
+      }
+      form.submit();
+    });
   };
 
   const onFinish = (values: { modelPath: string }) => {

@@ -14,6 +14,7 @@ import { MessageType } from '@res-utiles/ui-components';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
 import embedDownloadEventBus from '@/utils/embedDownload';
+import { EMBEDMODELID } from '@/constants';
 
 export default function useViewModel() {
   const { selectedModel, setSelectedModel } = useSelectedModelStore();
@@ -115,7 +116,7 @@ export default function useViewModel() {
       // 创建新会话
       fetchCreateChat({
         modelId: selectedModel.id,
-        embedModelId: isDownloadEmbed ? '87c0b009-2d93-4f00-9662-3330376662613373163373263' : undefined,
+        embedModelId: isDownloadEmbed ? EMBEDMODELID : undefined,
       });
     }
 
@@ -136,7 +137,7 @@ export default function useViewModel() {
       fetchChangeModel({
         sessionId: currentSessionId,
         modelId: selectedModel?.id || '',
-        embedModelId: 'bc8ca0995fcd651',
+        embedModelId: EMBEDMODELID,
       });
     }
   }, [isDownloadEmbed, currentSessionId, selectedModel?.id]);
@@ -303,7 +304,7 @@ export default function useViewModel() {
     }
     fetchCreateChat({
       modelId: selectedModel?.id || '',
-      embedModelId: isDownloadEmbed ? '87c0b009-2d93-4f00-9662-3330376662613373163373263' : undefined,
+      embedModelId: isDownloadEmbed ? EMBEDMODELID : undefined,
     });
   };
 

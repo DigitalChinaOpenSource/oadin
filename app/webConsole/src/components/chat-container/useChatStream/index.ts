@@ -417,6 +417,7 @@ export function useChatStream() {
         // 执行工具调用
         const data = await httpRequest.post('/mcp/client/runTool', { messageId: id, ...toolResponse });
         const isToolError = data?.isError === true;
+        const isEmptyResponse = data?.isError === undefined || data?.isError === null;
         const toolErrorMessage = isToolError && Array.isArray(data.content) && data.content.length > 0 ? data.content[0]?.text || ERROR_MESSAGES.TOOL.EXECUTION_FAILED : '';
 
         setStreamingContent(currentContent);
@@ -429,7 +430,7 @@ export function useChatStream() {
           outputParams: isToolError ? toolErrorMessage : data.content[0]?.text || '',
           logo: data.logo,
           desc: data.toolDesc,
-          status: isToolError ? 'error' : 'success',
+          status: isEmptyResponse ? 'empty' : isToolError ? 'error' : 'success',
         } as IToolCallData;
 
         // 两个层次的状态：
@@ -452,7 +453,6 @@ export function useChatStream() {
           role: 'assistant',
           contentList: updatedContentList,
         };
-        console.log('updatedMessage==>', updatedMessage);
         addMessage(updatedMessage, true);
 
         // 处理后续操作
