@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 
 	// PDF
@@ -90,7 +91,11 @@ func ExtractTextFromDocx(filePath string) (string, error) {
 	}
 	defer r.Close()
 	doc := r.Editable()
-	return doc.GetContent(), nil
+	content := doc.GetContent()
+	// 用正则去除所有 <...> 标签，确保只返回纯文本
+	reTag := regexp.MustCompile(`<[^>]+>`)
+	cleanText := reTag.ReplaceAllString(content, "")
+	return cleanText, nil
 }
 
 // 尝试从Excel文件提取文本
@@ -120,8 +125,13 @@ func ExtractTextFromXlsx(filePath string) (string, error) {
 
 // 按chunkSize对纯文本内容分块
 func ChunkTextContent(text string, chunkSize int) []string {
+	reTag := regexp.MustCompile(`<[^>]+>`)
+	cleanText := reTag.ReplaceAllString(text, "")
+	reKeep := regexp.MustCompile(`[\p{Han}\p{L}\p{N}\p{P}\p{Zs}，。！？；：“”‘’、·…—\-\(\)\[\]{}<>《》\n\r\t]+`)
+	filtered := reKeep.FindAllString(cleanText, -1)
+	finalText := strings.Join(filtered, "")
 	var chunks []string
-	runes := []rune(text)
+	runes := []rune(finalText)
 	for i := 0; i < len(runes); i += chunkSize {
 		end := i + chunkSize
 		if end > len(runes) {
