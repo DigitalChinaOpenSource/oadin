@@ -96,6 +96,7 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 50 }: UploadToo
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 300000,
       });
       const responseData = response.data?.data || response.data || response;
       const successFile: UploadFile = {

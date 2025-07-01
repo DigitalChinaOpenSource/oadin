@@ -13,7 +13,7 @@ interface IDeepThinkChatProps {
   dataSource?: {
     data: string;
     status?: 'success' | 'error' | 'progress';
-    coastTime?: number;
+    totalDuration?: number;
   };
 }
 
@@ -51,7 +51,7 @@ export default function DeepThinkChat(props: IDeepThinkChatProps) {
                 fill="#4f4dff"
               />
               <div className={styles.statusText}>已深度思考</div>
-              {dataSource?.coastTime && <div className={styles.coastTime}>（用时 {dataSource?.coastTime} 秒）</div>}
+              {dataSource?.totalDuration && <div className={styles.coastTime}>（用时 {dataSource?.totalDuration} 秒）</div>}
             </>
           )}
         </div>
