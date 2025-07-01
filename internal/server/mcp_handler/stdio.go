@@ -104,7 +104,10 @@ func (s *StdioTransport) Stop(serverKey string) error {
 
 func (s *StdioTransport) FetchTools(ctx context.Context, serverKey string) ([]mcp.Tool, error) {
 	config, exists := s.Pending[serverKey]
-	if !exists && config != nil {
+	if config == nil {
+		return nil, fmt.Errorf("FetchTools failed: %s", serverKey)
+	}
+	if !exists {
 		cli, exists := s.clients[serverKey]
 		if !exists {
 			return nil, errors.New("client not found")
@@ -114,10 +117,6 @@ func (s *StdioTransport) FetchTools(ctx context.Context, serverKey string) ([]mc
 		tools, err := cli.ListTools(ctx, toolsRequest)
 		if err != nil {
 			return nil, err
-		}
-
-		if tools == nil {
-			return nil, errors.New("no tools found")
 		}
 
 		config.Tools = tools.Tools
