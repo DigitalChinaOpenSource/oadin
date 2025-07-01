@@ -116,6 +116,10 @@ func (s *StdioTransport) FetchTools(ctx context.Context, serverKey string) ([]mc
 			return nil, err
 		}
 
+		if tools == nil {
+			return nil, errors.New("no tools found")
+		}
+
 		config.Tools = tools.Tools
 		return tools.Tools, nil
 	}
