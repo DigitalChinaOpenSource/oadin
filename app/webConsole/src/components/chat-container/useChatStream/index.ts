@@ -716,11 +716,13 @@ export function useChatStream() {
             // 只有当没有工具调用活动时才设置 isLoading = false
             if (!requestState.current.status.isToolCallActive) {
               setIsLoading(false);
+              // 这里表示会话已完全结束，再结合第一轮的判断
+              if (!isFirstResponseCompleted) {
+                setIsFirstResponseCompleted(true);
+                fetchGenChatTitle();
+              }
             }
-            if (!isFirstResponseCompleted) {
-              setIsFirstResponseCompleted(true);
-              fetchGenChatTitle();
-            }
+
             clearTimers();
           },
 
