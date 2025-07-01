@@ -7,12 +7,14 @@ import noHistorySvg from '@/components/icons/no-history.svg';
 import EllipsisTooltip from '@vanta/ellipsis-tooltip';
 import { CloseOutlined } from '@ant-design/icons';
 import { IChatHistoryDrawerProps } from './types';
+import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 
 export default function ChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   const { historyLoading, chatHistory, delHistoryLoading, deleteChatHistory, setShowDeleteId, showDeleteId, groupChatHistoryByDate, handleHistoryClick, onHistoryDrawerClose } =
     useChatHistoryDrawer(props);
 
   const grouped = useMemo(() => groupChatHistoryByDate(chatHistory), [chatHistory]);
+
   const renderGroup = (title: string, list: any[]) => {
     if (!list.length) return null;
 
@@ -22,7 +24,7 @@ export default function ChatHistoryDrawer(props: IChatHistoryDrawerProps) {
         <div className={styles.groupList}>
           {list.map((item) => (
             <div
-              className={styles.historyCard}
+              className={`${styles.historyCard} ${item.id === getSessionIdFromUrl() ? styles.currentItem : ''}`}
               key={item.id}
               onClick={() => {
                 if (delHistoryLoading) {
