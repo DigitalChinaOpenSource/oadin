@@ -43,6 +43,8 @@ const updateApp = async (id: string, data: any) => {
   return res;
 };
 
+// 刷新应用的Secret Key
+
 const AppConfig: React.FC<AppConfigProps> = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -185,7 +187,24 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       setSaving(false);
     }
   };
-
+  // 更新应用的Secret Key
+  const refreshAppSecret = async () => {
+    if (id) {
+      const data = await updateAppSecret(id);
+      if (data) {
+        if (appDetail) {
+          // 更新本地状态
+          setAppDetail({
+            ...appDetail,
+            secretKey: data.secretKey,
+          });
+        }
+        message.success('密钥更新成功');
+      } else {
+        message.error('密钥更新失败');
+      }
+    }
+  };
   // 处理编辑应用名称
   const handleEditName = () => {
     setEditNameModalVisible(true);
@@ -391,12 +410,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                       <div className={styles.divider} />
                       <SyncOutlined
                         className={styles.actionIcon}
-                        onClick={async () => {
-                          if (id) {
-                            const data = await updateAppSecret(id);
-                            console.info(data, 'datadatadata');
-                          }
-                        }}
+                        onClick={refreshAppSecret}
                       />
                     </div>
                   </div>

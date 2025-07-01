@@ -15,7 +15,25 @@ export interface IApplicationDetail {
   name: string;
   appId: string;
   secretKey: string;
+}
+export interface IModelSelectCardItemRemote {
+  name: {
+    src: string;
+    zh: string;
+  };
   icon: string;
+  tags: string[];
+  id: string;
+}
+export interface IApplicationRemoteDetail {
+  id: string;
+  models: IModelSelectCardItemRemote[];
+  mcps: IModelSelectCardItemRemote[];
+  os: string[];
+  acknowledged: boolean;
+  name: string;
+  appId: string;
+  secretKey: string;
 }
 
 export interface ISaveApplicationConfigParams {

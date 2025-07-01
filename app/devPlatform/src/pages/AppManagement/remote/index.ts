@@ -1,5 +1,5 @@
 import { httpRequest } from '@/utils/httpRequest.ts';
-import { IApplicationDetail, IApplicationParams, ISaveApplicationConfigParams } from '@/pages/AppManagement/remote/type';
+import { IApplicationDetail, IApplicationParams, IApplicationRemoteDetail, ISaveApplicationConfigParams } from '@/pages/AppManagement/remote/type';
 import { message } from 'antd';
 import { SearchParams } from '@/pages/AppManagement/AppConfig/types.ts';
 
@@ -33,10 +33,29 @@ export const deleteApplication = async (id: string) => {
     return false;
   }
 };
+/// 获取远端的详情数据，转换成本地ui所需要回填的数据结构
 export const getAppDetail = async (id: string): Promise<IApplicationDetail | null> => {
   const data = await httpRequest.get(`/application/${id}`);
   if (data?.code === 200) {
-    return data?.data;
+    const resData: IApplicationRemoteDetail = data?.data;
+    return {
+      id: resData.id,
+      name: resData.name,
+      appId: resData.appId,
+      secretKey: resData.secretKey,
+      os: resData.os || [],
+      models: [],
+      mcps:
+        resData.mcps.map((mcp) => {
+          return {
+            id: mcp.id,
+            avatar: mcp.icon,
+            name: mcp.name?.zh || '',
+            class: mcp.tags || [],
+          };
+        }) || [],
+      acknowledged: true,
+    };
   } else {
     message.error(data?.message || '删除应用失败');
     return null;
@@ -44,13 +63,13 @@ export const getAppDetail = async (id: string): Promise<IApplicationDetail | nul
 };
 
 /// 更新密钥
-export const updateAppSecret = async (id: string): Promise<boolean> => {
+export const updateAppSecret = async (id: string) => {
   const data = await httpRequest.put(`/application/${id}/refresh_secret`);
   if (data?.code === 200) {
-    return true;
+    return data.data;
   } else {
     message.error(data?.message || '更新密钥失败');
-    return false;
+    return null;
   }
 };
 
