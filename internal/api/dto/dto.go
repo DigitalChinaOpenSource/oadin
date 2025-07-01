@@ -194,6 +194,7 @@ type SmartVisionModelData struct {
 	Tags               []string                     `json:"tags"`
 	CredentialParams   []SmartVisionCredentialParam `json:"credentialParams"`
 	CanSelect          bool                         `json:"can_select"`
+	CreatedAt          time.Time                    `json:"created_at"`
 }
 
 type SmartVisionCredentialParam struct {
@@ -256,35 +257,36 @@ type LocalSupportModelData struct {
 }
 
 type RecommendModelData struct {
-	Id                  string   `json:"id"`
-	Service             string   `json:"service_name"`
-	ApiFlavor           string   `json:"api_flavor"`
-	Flavor              string   `json:"flavor"`
-	Method              string   `json:"method" default:"POST"`
-	Desc                string   `json:"desc"`
-	Url                 string   `json:"url"`
-	AuthType            string   `json:"auth_type"`
-	AuthApplyUrl        string   `json:"auth_apply_url"`
-	AuthFields          []string `json:"auth_fields"`
-	Name                string   `json:"name"`
-	ServiceProvider     string   `json:"service_provider_name"`
-	Size                string   `json:"size"`
-	IsRecommended       bool     `json:"is_recommended" default:"false"`
-	Status              string   `json:"status"`
-	Avatar              string   `json:"avatar"`
-	CanSelect           bool     `json:"can_select" default:"false"`
-	Class               []string `json:"class"`
-	OllamaId            string   `json:"ollama_id"`
-	ParamsSize          float32  `json:"params_size"`
-	InputLength         int      `json:"input_length"`
-	OutputLength        int      `json:"output_length"`
-	Source              string   `json:"source"`
-	SmartVisionProvider string   `json:"smartvision_provider"`
-	SmartVisionModelKey string   `json:"smartvision_model_key"`
-	IsDownloaded        bool     `json:"is_downloaded" default:"false"`
-	Think               bool     `json:"think" default:"false"`
-	ThinkSwitch         bool     `json:"think_switch" default:"false"`
-	Tools               bool     `json:"tools" default:"false"`
+	Id                  string    `json:"id"`
+	Service             string    `json:"service_name"`
+	ApiFlavor           string    `json:"api_flavor"`
+	Flavor              string    `json:"flavor"`
+	Method              string    `json:"method" default:"POST"`
+	Desc                string    `json:"desc"`
+	Url                 string    `json:"url"`
+	AuthType            string    `json:"auth_type"`
+	AuthApplyUrl        string    `json:"auth_apply_url"`
+	AuthFields          []string  `json:"auth_fields"`
+	Name                string    `json:"name"`
+	ServiceProvider     string    `json:"service_provider_name"`
+	Size                string    `json:"size"`
+	IsRecommended       bool      `json:"is_recommended" default:"false"`
+	Status              string    `json:"status"`
+	Avatar              string    `json:"avatar"`
+	CanSelect           bool      `json:"can_select" default:"false"`
+	Class               []string  `json:"class"`
+	OllamaId            string    `json:"ollama_id"`
+	ParamsSize          float32   `json:"params_size"`
+	InputLength         int       `json:"input_length"`
+	OutputLength        int       `json:"output_length"`
+	Source              string    `json:"source"`
+	SmartVisionProvider string    `json:"smartvision_provider"`
+	SmartVisionModelKey string    `json:"smartvision_model_key"`
+	IsDownloaded        bool      `json:"is_downloaded" default:"false"`
+	Think               bool      `json:"think" default:"false"`
+	ThinkSwitch         bool      `json:"think_switch" default:"false"`
+	Tools               bool      `json:"tools" default:"false"`
+	CreatedAt           time.Time `json:"created_at"`
 }
 
 type ProviderSupportModelData struct {
