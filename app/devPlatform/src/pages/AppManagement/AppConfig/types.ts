@@ -7,7 +7,9 @@ export interface IModelSelectCardItem {
   id: string;
 }
 export interface SearchParams {
-  searchText?: string;
+  keyword?: string;
+  page?: number;
+  size?: number;
 }
 
 export type searchFunc = (params?: SearchParams) => Promise<ICardDeatilItem[]>;

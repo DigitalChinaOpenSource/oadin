@@ -1,48 +1,26 @@
 export type IModelSourceType = 'local' | 'remote';
 
 export interface IModelDataItem {
-  service_name: string;
   api_flavor: string;
-  flavor: string;
-  method: string;
-  desc: string;
-  url: string;
-  auth_type: string;
-  auth_apply_url: string;
-  auth_fields?: string[];
-  name: string;
-  service_provider_name: string;
-  size: string;
-  is_recommended: boolean;
-  status: number | string;
   avatar: string;
-  can_select: boolean;
   class: string[];
+  description: string;
+  flavor: string;
+  id: string;
+  name: string;
   ollama_id: string;
   params_size: number;
-  input_length?: number;
-  output_length?: number;
-  source?: IModelSourceType;
-  type?: string;
-  id: string;
-  provider?: string;
-  modelKey?: string;
-  currentDownload?: number;
-  is_downloaded?: boolean;
-  update_time?: number;
-  smartvision_provider?: string;
-  smartvision_model_key?: string;
-  completedsize?: number;
-  totalsize?: number;
+  service_source?: IModelSourceType;
+  service_name: string;
   think?: boolean; // 是否支持深度思考
+  think_switch?: boolean; // 是否支持深度思考
+  size: string;
+  updatedAt: number;
 }
 // 模型列表数据类型
 export interface ModelData {
-  data: IModelDataItem[];
-  page: number;
-  page_size: number;
+  list: IModelDataItem[];
   total: number;
-  total_page: number;
 }
 
 export interface CredentialParam {
@@ -94,6 +72,11 @@ export interface IMcpListItem {
   envSchema?: Record<string, Record<string, any>>;
 }
 
+// MCP列表数据类型
+export interface McpData {
+  list: IMcpListItem[];
+  total: number;
+}
 // 问学列表数据类型
 export interface ISmartvisionDataRes {
   data: SmartvisionDataItem[];
@@ -118,8 +101,6 @@ export type ModelSourceType = 'local' | 'remote';
 
 export interface IModelSquareParams {
   flavor?: string;
-  // remote时需要传
-  // 'dev' | 'product'
   env_type?: string;
   service_source: ModelSourceType;
   page_size?: number;
@@ -142,22 +123,7 @@ export interface IMcpListRequestParams {
   /**  每页条数，默认 10 */
   size?: number;
 }
-
-export type cardType = {
-  title: string;
-  content: string;
-  icon?: string;
-  tags: string[];
-  serviceId: string;
-};
-
 export interface ITagsDataItem {
   category: string;
   tags: Record<string, any>[];
-}
-
-export interface IPagination {
-  current: number;
-  pageSize: number;
-  total: number;
 }
