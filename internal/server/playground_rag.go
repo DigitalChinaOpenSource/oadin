@@ -336,6 +336,11 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 		return allChunks[i].Similarity > allChunks[j].Similarity
 	})
 
+	// 只保留相似度最高的3个块
+	if len(allChunks) > 3 {
+		allChunks = allChunks[:3]
+	}
+
 	// 使用配置的选项
 	maxChunks := options.MaxChunks
 	similarityThreshold := options.SimilarityThreshold
