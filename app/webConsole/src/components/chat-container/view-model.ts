@@ -58,9 +58,12 @@ export default function useViewModel() {
 
   useEffect(() => {
     if (initialized) return;
-    // 如果来源是history，历史记录已经在chat-history-drawer组件中处理，这里不做任何操作
     if (source === 'history') {
       setPrevSessionId(currentSessionId);
+      // 如果是来自历史记录且有会话ID，需要加载历史记录
+      if (currentSessionId) {
+        fetchChatHistoryDetail(currentSessionId);
+      }
       setInitialized(true);
       return;
     }
@@ -85,7 +88,6 @@ export default function useViewModel() {
       const source = getSessionSource();
       if (source === 'history' || source === 'new') {
         setPrevSessionId(currentSessionId);
-        return;
       }
       // 其他来源（如URL直接修改或分享链接）且有会话ID，需要加载历史记录
       else if (currentSessionId && !isLoadingHistory.current) {
@@ -107,11 +109,8 @@ export default function useViewModel() {
       return;
     }
 
-    // 检查当前来源，如果是从历史记录选择的，不要创建新会话
-    const currentSource = getSessionSource();
-
     // 当模型变化时，自动创建新会话（但排除历史记录选择的情况）
-    if (selectedModel.id !== prevModelId && prevModelId !== undefined && currentSource !== 'history') {
+    if (selectedModel.id !== prevModelId && prevModelId !== undefined && source !== 'history') {
       // 清空当前对话内容
       createNewChat();
       setSelectMcpList([]);
@@ -292,6 +291,9 @@ export default function useViewModel() {
   );
 
   const handleCreateNewChat = () => {
+    if (messages.length === 0) {
+      return;
+    }
     if (!selectedModel?.id) {
       message.error('请先选择一个模型');
       return;

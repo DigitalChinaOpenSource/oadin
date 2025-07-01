@@ -8,6 +8,4 @@ export const createNewChat = () => {
   useUploadFileListStore.getState().setUploadFileList([]);
   // 清除会话ID和来源参数
   setSessionIdToUrl('');
-  // 重置状态
-  useChatStore.getState().setHistoryVisible(false);
 };

@@ -56,7 +56,6 @@ export default function ChatView(props: IChatViewProps) {
   const { isDownloadEmbed } = props;
   const { messages, isUploading } = useChatStore();
   const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
-  // 添加日志以跟踪 messages 更新
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
@@ -178,7 +177,7 @@ export default function ChatView(props: IChatViewProps) {
       </div>
     );
   };
-
+  console.log('messages===>', messages);
   return (
     <div className="chat-layout">
       <div className="chat-body">
