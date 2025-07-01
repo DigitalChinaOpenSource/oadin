@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
+	"strings"
 )
 
 func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan *types.ChatResponse, <-chan error) {
@@ -37,7 +38,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 	serviceReq := &types.ServiceRequest{
 		Service:       "chat",
 		Model:         modelName,
-		FromFlavor:    "oadin",
+		FromFlavor:    "ollama",
 		AskStreamMode: true,
 		Think:         req.Think,
 		HTTP: types.HTTPContent{
@@ -74,7 +75,16 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			// fmt.Printf("[ChatStream] 收到块，长度: %d\n", len(result.HTTP.Body))
 			// debugLogJSON("[ChatStream] 原始响应内容", result.HTTP.Body)
 			// debugLogJSON("[ChatStream] 收到块内容", result.HTTP.Body) // 调用调试日志函数
-			// fmt.Println("[ChatStream] 收到块内容:", string(result.HTTP.Body))
+
+			// 处理前缀
+			bodyStr := string(result.HTTP.Body)
+			if strings.HasPrefix(bodyStr, "data: ") {
+				bodyStr = strings.TrimPrefix(bodyStr, "data: ")
+				bodyStr = strings.TrimSpace(bodyStr)
+			}
+			// 转回[]byte
+			cleanBody := []byte(bodyStr)
+			fmt.Println("[ChatStream] 收到块内容:", bodyStr)
 
 			// 每个块都是一个完整的JSON对象
 			var ollamaResp ollamaAPIResponse
@@ -85,7 +95,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			model := ""
 
 			// 首先尝试解析为Ollama API标准响应
-			if err := json.Unmarshal(result.HTTP.Body, &ollamaResp); err == nil {
+			if err := json.Unmarshal(cleanBody, &ollamaResp); err == nil {
 				// 提取模型名称
 				model = ollamaResp.Model
 
