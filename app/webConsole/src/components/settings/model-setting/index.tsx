@@ -102,7 +102,8 @@ const ModelSetting: React.FC = () => {
               <div className={styles.storageUse}>
                 {Object.keys(currentPathSpace).length > 0 && (
                   <div className={styles.diskSpace}>
-                    <span>( {currentPathSpace?.total_size}GB</span> / <span>{currentPathSpace?.usage_size}GB</span>，<span className={styles.diskCanUse}> {currentPathSpace?.free_size}GB可用)</span>
+                    <span className={styles.diskCanUse}> （{currentPathSpace?.free_size}GB可用</span>
+                    <span>{currentPathSpace?.total_size}GB</span> / <span>{currentPathSpace?.usage_size}GB）</span>，
                   </div>
                 )}
               </div>
