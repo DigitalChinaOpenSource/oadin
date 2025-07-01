@@ -53,6 +53,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
       if (options.onSelectMcpOkProps) {
         options.onSelectMcpOkProps();
       }
+      setActiveKey('mcpList');
     } else {
       message.warning(getMessageByMcp('requiredMcp', { msg: '暂无添加好的MCP，请添加后，再体验' }));
     }
@@ -100,6 +101,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
     if (options.onCancelProps) {
       options.onCancelProps();
     }
+    setActiveKey('mcpList');
   };
 
   return (
@@ -111,6 +113,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
       width={1000}
       onCancel={handleCancel}
       onOk={onSelectMcpOk}
+      destroyOnHidden={true}
       footer={(_, { OkBtn, CancelBtn }) => (
         <div className={styles.choose_model_footer}>
           <Checkbox

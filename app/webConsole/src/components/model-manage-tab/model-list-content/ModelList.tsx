@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react';
 import styles from '@/components/model-manage-tab/model-list-content/index.module.scss';
 import { List, Radio } from 'antd';
 import type { PaginationConfig } from 'antd/es/pagination';
@@ -17,10 +18,12 @@ export interface IModelList extends ISelectedDialogProps {
   selectVms?: any;
 }
 
-export const ModelList = (props: IModelList) => {
+export const ModelList = React.memo((props: IModelList) => {
   const { vmContent, selectVms, dataSource, selectedStateModel } = props;
-  const renderVmList = () => {
-    let content = (
+  
+  // 使用useMemo优化列表渲染
+  const content = useMemo(() => {
+    let result = (
       <div className={styles.noData}>
         <div className={styles.noDataIcon}>
           <img
@@ -31,8 +34,9 @@ export const ModelList = (props: IModelList) => {
         <div className={styles.noDataText}>暂无匹配的模型</div>
       </div>
     );
+    
     if (vmContent && vmContent.pagenationData.length > 0) {
-      content = (
+      result = (
         <Radio.Group
           value={selectedStateModel?.id}
           style={{ width: '100%' }}
@@ -42,7 +46,7 @@ export const ModelList = (props: IModelList) => {
             dataSource={dataSource ?? vmContent.pagenationData}
             pagination={typeof props?.pagination === 'undefined' ? vmContent?.pagination : props?.pagination}
             renderItem={(item) => (
-              <List.Item>
+              <List.Item key={item.id}>
                 <GeneralCard
                   {...props}
                   mine={vmContent?.mine}
@@ -60,14 +64,14 @@ export const ModelList = (props: IModelList) => {
         </Radio.Group>
       );
     } else if (selectVms) {
-      content = (
+      result = (
         <Radio.Group value={selectedStateModel?.id}>
           <List
             grid={props?.grid}
             dataSource={props.dataSource}
             pagination={false}
             renderItem={(item: IModelDataItem) => (
-              <List.Item>
+              <List.Item key={item.id}>
                 <GeneralCard
                   {...props}
                   isSelectable={props.isSelectable}
@@ -80,7 +84,16 @@ export const ModelList = (props: IModelList) => {
         </Radio.Group>
       );
     }
-    return content;
-  };
-  return <div className={styles.modelCardList}>{renderVmList()}</div>;
-};
+    return result;
+  }, [
+    vmContent?.pagenationData, 
+    dataSource, 
+    selectedStateModel?.id, 
+    props.grid, 
+    props.pagination,
+    props.dataSource,
+    selectVms
+  ]);
+  
+  return <div className={styles.modelCardList}>{content}</div>;
+});

@@ -59,9 +59,16 @@ export const useDownLoad = () => {
         // 如果不存在则添加新项
         ...(!downloadList.some((item) => item.id === id) ? [{ ...params, status: IN_PROGRESS }] : []),
       ]);
-      // 同步更新模型列表中的状态
-      const { setModelListData } = useModelListStore.getState();
-      setModelListData((draft) => draft.map((item) => (item.id === id ? { ...item, status: IN_PROGRESS, currentDownload: 0 } : item)));
+      // 同步更新所有模型列表中的状态
+      const { setModelListData, setMyModelsList, setModelSquareList } = useModelListStore.getState();
+      
+      // 更新函数，统一处理更新逻辑
+      const updateModelStatus = (draft: IModelDataItem[]) => draft.map((item: IModelDataItem) => (item.id === id ? { ...item, status: IN_PROGRESS, currentDownload: 0 } : item));
+      
+      // 更新所有相关状态
+      setModelListData(updateModelStatus);
+      setMyModelsList(updateModelStatus);
+      setModelSquareList(updateModelStatus);
 
       modelDownloadStream(paramsTemp, {
         onmessage: (parsedData: IDownParseData) => {
