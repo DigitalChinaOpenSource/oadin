@@ -123,7 +123,7 @@ export default function AboutUs() {
         </div>
       </div>
 
-      <div className={styles.bottomDesc}>本产品基于AOG服务框架开发，遵循 Apache License2.0 协议开源</div>
+      {/*<div className={styles.bottomDesc}>本产品基于AOG服务框架开发，遵循 Apache License2.0 协议开源</div>*/}
       <UpdateHistory
         open={openHistory}
         onClose={() => setOpenHistory(false)}

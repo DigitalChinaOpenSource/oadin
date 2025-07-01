@@ -10,10 +10,12 @@ import McpAdvanceFilter from '@/pages/AppManagement/AppConfig/ModelSelectModal/M
 import expandSvg from '@/components/icons/expand.svg';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
+import { IPaginationParams } from '@/pages/AppManagement/remote/type';
 
 // 模型选择弹窗
 export interface ModelSelectModalProps {
   open: boolean;
+  pagination: IPaginationParams;
   onCancel: () => void;
   onFinish: (selectedModels: IModelSelectCardItem[]) => void;
   title: string;
@@ -24,7 +26,18 @@ export interface ModelSelectModalProps {
   setDrawerOpenId?: Dispatch<SetStateAction<string>>;
 }
 
-const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ setDrawerOpenId, searchList, onSearch, open, onCancel, onFinish, title, confirmLoading = false, initialSelectedModels = [] }) => {
+const ModelSelectModal: React.FC<ModelSelectModalProps> = ({
+  pagination,
+  setDrawerOpenId,
+  searchList,
+  onSearch,
+  open,
+  onCancel,
+  onFinish,
+  title,
+  confirmLoading = false,
+  initialSelectedModels = [],
+}) => {
   const [form] = Form.useForm();
   /// 当前选中的id
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>(transformedCard2Ids(initialSelectedModels) || []);
@@ -164,6 +177,7 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({ setDrawerOpenId, se
           ) : null}
         </div>
         <ModelContent
+          pagination={pagination}
           setSelectedModelIds={setSelectedModelIds}
           setDrawerOpenId={setDrawerOpenId}
           selectedModelIds={selectedModelIds}

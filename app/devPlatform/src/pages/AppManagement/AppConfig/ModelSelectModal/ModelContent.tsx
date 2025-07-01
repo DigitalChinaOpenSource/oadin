@@ -1,8 +1,9 @@
 import React, { Dispatch, FC, SetStateAction } from 'react';
-import { List } from 'antd';
+import { List, Pagination } from 'antd';
 import { ICardDeatilItem, searchFunc } from '@/pages/AppManagement/AppConfig/types.ts';
 import styles from './ModelSelectModal.module.scss';
 import ModelDeatilCard from '@/pages/AppManagement/AppConfig/ModelDeatilCard';
+import { IPaginationParams } from '@/pages/AppManagement/remote/type';
 
 interface IModelContentProps {
   onSearch: searchFunc;
@@ -11,14 +12,16 @@ interface IModelContentProps {
   selectedModelIds?: string[];
   setSelectedModelIds?: Dispatch<SetStateAction<string[]>>;
   setDrawerOpenId?: Dispatch<SetStateAction<string>>;
+  pagination: IPaginationParams;
 }
 
-export const ModelContent: FC<IModelContentProps> = ({ setDrawerOpenId, selectedModelIds, setSelectedModelIds, showOnlySelecte, onSearch, filterSearchList }) => {
-  const handleSearch = async () => {
-    await onSearch({});
+export const ModelContent: FC<IModelContentProps> = ({ pagination, setDrawerOpenId, selectedModelIds, setSelectedModelIds, showOnlySelecte, onSearch, filterSearchList }) => {
+  const handlePageChange = (page: number, pageSize?: number) => {
+    onSearch({
+      page: page,
+      size: pageSize,
+    });
   };
-  console.info(filterSearchList, '当前渲染的数据列表');
-
   return (
     <div className={styles.mcpCardList}>
       <List
@@ -43,6 +46,14 @@ export const ModelContent: FC<IModelContentProps> = ({ setDrawerOpenId, selected
           </List.Item>
         )}
       />
+      <div className={styles.paginationWarp}>
+        {pagination && pagination?.total > 0 ? (
+          <Pagination
+            {...pagination}
+            onChange={handlePageChange}
+          />
+        ) : null}
+      </div>
     </div>
   );
 };

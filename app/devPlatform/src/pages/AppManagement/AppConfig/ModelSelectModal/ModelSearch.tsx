@@ -13,7 +13,7 @@ interface IModelSearchProps {
 export const ModelSearch: FC<IModelSearchProps> = ({ setSearchText, searchText, onSearch }) => {
   const handleSearch = async () => {
     await onSearch({
-      searchText,
+      keyword: searchText,
     });
   };
 
@@ -41,7 +41,7 @@ export const ModelSearch: FC<IModelSearchProps> = ({ setSearchText, searchText, 
         onClear={async () => {
           setSearchText('');
           await onSearch({
-            searchText: '',
+            keyword: '',
           });
         }}
         onPressEnter={async () => {

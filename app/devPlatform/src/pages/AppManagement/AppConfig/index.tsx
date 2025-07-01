@@ -1,52 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Checkbox, Form, List, message, Spin, Tooltip } from 'antd';
-import { ArrowLeftOutlined, CopyOutlined, EditOutlined, EyeOutlined, InfoCircleOutlined, PlusOutlined, RobotOutlined, SyncOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, CopyOutlined, EditOutlined, EyeInvisibleOutlined, EyeOutlined, InfoCircleOutlined, PlusOutlined, RobotOutlined, SyncOutlined } from '@ant-design/icons';
 import styles from './index.module.scss';
 import CreateAppModal from '../AppList/CreateAppModal.tsx';
 import ModelSelectModal from './ModelSelectModal/ModelSelectModal.tsx';
 import ModelCard from '@/pages/AppManagement/AppConfig/ModelCard/ModelCard.tsx';
-import { availableMcps, availableModels } from '@/pages/AppManagement/AppConfig/mock.ts';
+import { availableMcps } from '@/pages/AppManagement/AppConfig/mock.ts';
 import { transformedCard2Ids, transformedCard2Tags, transformedMcp2Card, transformedModel2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
 import { ICardDeatilItem, IModelSelectCardItem, searchFunc, SearchParams } from '@/pages/AppManagement/AppConfig/types.ts';
 import TagFilter, { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
 import { DetailDrawer } from '@/components/detail_drawer';
+import { getAppDetail, getMcpList, getModelList, saveAppConfig, updateAppName, updateAppSecret } from '@/pages/AppManagement/remote';
+import { optionsWithOS } from '@/pages/AppManagement/AppConfig/staticData.ts';
+import { IApplicationDetail } from '@/pages/AppManagement/remote/type';
+import { McpData, ModelData } from '@/types/model.ts';
 
 interface AppConfigProps {}
 
 export const defaultTag = '全部';
-
+const defaultPageSize = 10;
+const defaultPagination = {
+  total: 0,
+  current: 1,
+  pageSize: defaultPageSize,
+};
 // 模拟获取应用详情的接口
 const fetchAppDetail = async (id: string) => {
-  console.log('Fetching app details for:', id);
-  // 模拟API调用延迟
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  // 模拟返回数据
-  return {
-    id,
-    name: `应用${id}`,
-    appId: `app_${id.slice(0, 8)}`,
-    secretKey: `sk_${id.slice(0, 12)}`,
-    mcpCount: 2,
-    osCount: 1,
-    updatedAt: new Date().toISOString(),
-    description: '这是应用的详细描述信息',
-    models: [],
-    mcps: [],
-    supportedOs: {
-      windows: true,
-      macos: false,
-      ubuntu: true,
-    },
-  };
+  const data = await getAppDetail(id);
+  if (data) {
+    return data;
+  }
 };
 
 // 模拟更新应用的接口
 const updateApp = async (id: string, data: any) => {
   console.log('Updating app:', id, data);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  return { success: true };
+  const res = await saveAppConfig({
+    id,
+    ...data,
+  });
+  return res;
 };
 
 const AppConfig: React.FC<AppConfigProps> = () => {
@@ -54,13 +48,8 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [appDetail, setAppDetail] = useState<any>(null);
-  const [osSelection, setOsSelection] = useState({
-    windows: false,
-    macos: false,
-    ubuntu: false,
-  });
-  const [agreement, setAgreement] = useState(false);
+  const [appDetail, setAppDetail] = useState<IApplicationDetail | null>(null);
+  const [secretKeyIsVisible, setSecretKeyIsVisible] = useState(true);
   const [form] = Form.useForm();
   // 当前打开的抽屉详情ID
   const [drawerOpenId, setDrawerOpenId] = useState<string>('');
@@ -77,6 +66,9 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   const [filterModelTags, setFilterModelTags] = useState<Tag[]>([]);
   const [selectedModelTag, setSelectedModelTag] = useState<string>(defaultTag);
   const [filterModelList, setFilterModelList] = useState<IModelSelectCardItem[]>([]);
+  const [modelPagination, setModelPagination] = useState({
+    total: 0,
+  });
   /// 搜索结果
   const [searchList, setSearchList] = useState<ICardDeatilItem[]>([]);
   // 当前选中的MCP
@@ -85,8 +77,16 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   const [selectedMcpTag, setSelectedMcpTag] = useState<string>(defaultTag);
   const [filterMcpList, setFilterMcpList] = useState<IModelSelectCardItem[]>([]);
   const [searchMcpList, setSearchMcpList] = useState<ICardDeatilItem[]>([]);
+  const [mcpPagination, setMcpPagination] = useState(null);
+  const [pagination, setPagination] = useState(defaultPagination);
   /// 搜索条件
-  const [searchParamsState, setSearchParamsState] = useState<SearchParams>({});
+  const [searchParamsState, setSearchParamsState] = useState<SearchParams>({
+    keyword: '',
+  });
+  /// Mcp搜索条件
+  const [searchMcpParamsState, setSearchMcpParamsState] = useState<SearchParams>({
+    keyword: '',
+  });
 
   // 获取应用详情
   useEffect(() => {
@@ -100,25 +100,21 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       try {
         setLoading(true);
         const data = await fetchAppDetail(id);
-        setAppDetail(data);
+        if (data) {
+          setAppDetail(data);
 
-        // 设置操作系统选择状态
-        if (data.supportedOs) {
-          setOsSelection({
-            windows: data.supportedOs.windows || false,
-            macos: data.supportedOs.macos || false,
-            ubuntu: data.supportedOs.ubuntu || false,
-          });
-        } // 设置表单字段
-        form.setFieldsValue({
-          name: data.name,
-          description: data.description,
-          models: data.models || [],
-          mcps: data.mcps || [],
-        });
+          // 确保表单数据正确初始化
+          const formData = { ...data };
+
+          // 确保 os 字段是一个数组形式
+          if (formData.os && !Array.isArray(formData.os)) {
+            formData.os = [formData.os];
+          }
+
+          form.setFieldsValue(formData);
+        }
       } catch (error) {
         message.error('获取应用详情失败');
-        console.error('Error fetching app details:', error);
       } finally {
         setLoading(false);
       }
@@ -129,21 +125,19 @@ const AppConfig: React.FC<AppConfigProps> = () => {
 
   /// 根据详情数据初始化内部是否已选中数据
   useEffect(() => {
-    if (appDetail?.models?.length > 0) {
-      setSelectModelsToForm(appDetail?.models);
+    if (appDetail && appDetail?.models?.length > 0) {
+      setSelectModelsToForm(appDetail?.models as IModelSelectCardItem[]);
     }
   }, [appDetail?.models]);
   /// 根据详情数据初始化内部是否已选中数据
   useEffect(() => {
-    if (appDetail?.mcps?.length > 0) {
-      setSelectMcpToForm(appDetail?.mcps);
+    if (appDetail && appDetail?.mcps?.length > 0) {
+      setSelectMcpToForm(appDetail?.mcps as IModelSelectCardItem[]);
     }
   }, [appDetail?.mcps]);
 
   /// 根据选中的模型初始化需要显示的模型
   useEffect(() => {
-    console.info(selectedModels, 'selectedModelsselectedModels');
-
     const tags = transformedCard2Tags(selectedModels);
     setFilterModelTags(tags);
     setFilterModelList(selectedModels);
@@ -169,30 +163,16 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   };
   //  保存
   const handleSave = async () => {
-    // 验证协议是否勾选
-    if (!agreement) {
-      message.error('请阅读并同意相关协议');
-      return;
-    }
-
-    // 验证是否选择了至少一个操作系统
-    if (!osSelection.windows && !osSelection.macos && !osSelection.ubuntu) {
-      message.error('请至少选择一个操作系统');
-      return;
-    }
-
     try {
       // 验证表单数据
       const formValues = await form.validateFields();
-
       setSaving(true);
 
       const result = await updateApp(id!, {
-        ...appDetail,
         ...formValues,
-        supportedOs: osSelection,
       });
-      if (result.success) {
+      console.info(result, '更新结果');
+      if (result) {
         // 更新本地状态
         message.success('保存成功');
       } else {
@@ -215,15 +195,18 @@ const AppConfig: React.FC<AppConfigProps> = () => {
   const handleEditNameSubmit = async (values: { name: string }) => {
     try {
       setEditLoading(true);
-
-      // 模拟API调用
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // 更新本地状态
-      setAppDetail({
-        ...appDetail,
-        name: values.name,
-      });
+      if (id) {
+        const data = await updateAppName(id as string, values.name);
+        if (data) {
+          if (appDetail) {
+            // 更新本地状态
+            setAppDetail({
+              ...appDetail,
+              name: values.name,
+            });
+          }
+        }
+      }
 
       setEditNameModalVisible(false);
     } catch (error) {
@@ -233,14 +216,18 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       setEditLoading(false);
     }
   };
-
+  const resetPagination = () => {
+    setPagination(defaultPagination);
+  };
   // 处理打开模型选择弹窗
   const handleOpenModelSelect = () => {
+    resetPagination();
     setModelSelectVisible(true);
   };
 
-  // 处理打开模型选择弹窗
+  // 处理打开MCP选择弹窗
   const handleOpenMcpSelect = () => {
+    resetPagination();
     setMcpSelectVisible(true);
   };
 
@@ -297,25 +284,37 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       setFilterMcpList(selectedMcps);
     }
   };
-
-  const onSearch: searchFunc = async (params?: SearchParams) => {
-    const _searchParams = { ...searchParamsState, ...params };
+  // 模型列表搜索
+  const onSearch: searchFunc = async (params: SearchParams = {}) => {
+    const _searchParams = { ...searchParamsState, page: pagination.current, size: pagination.pageSize, ...params };
     setSearchParamsState(_searchParams);
-    message.info(`搜索条件为:${JSON.stringify(params)}`);
-    /// TODO 接口调用
+    const models: ModelData = await getModelList(_searchParams);
     /// 接口返回的数据进行转换
-    const dealList = transformedModel2Card(availableModels);
+    const dealList = transformedModel2Card(models?.list);
     setSearchList(dealList);
+    setPagination({
+      ...pagination,
+      pageSize: _searchParams.size || defaultPageSize,
+      current: _searchParams.page || 1,
+      total: models.total,
+    });
     return dealList;
   };
-  const onMcpSearch: searchFunc = async (params?: SearchParams) => {
-    const _searchParams = { ...searchParamsState, ...params };
-    setSearchParamsState(_searchParams);
-    message.info(`搜索条件为:${JSON.stringify(params)}`);
-    /// TODO 接口调用
+  // Mcp列表搜索
+  const onMcpSearch: searchFunc = async (params: SearchParams = {}) => {
+    const _searchParams = { ...searchMcpParamsState, page: pagination.current, size: pagination.pageSize, ...params };
+    setSearchMcpParamsState(_searchParams);
+    const mcpList: McpData = await getMcpList(_searchParams);
 
+    console.info(mcpList, '接口返回的Mcp列表');
     const dealList = transformedMcp2Card(availableMcps);
     setSearchMcpList(dealList);
+    setPagination({
+      ...pagination,
+      pageSize: _searchParams.size || defaultPageSize,
+      current: _searchParams.page || 1,
+      total: mcpList.total,
+    });
     return dealList;
   };
 
@@ -380,16 +379,24 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                   </div>
 
                   <div className={styles.appInfoItem}>
-                    <span>Secret Key：****************</span>
+                    <span>Secret Key：{secretKeyIsVisible ? '************' : appDetail?.secretKey}</span>
                     <div className={styles.secretKeyActions}>
-                      <EyeOutlined
-                        className={styles.actionIcon}
-                        onClick={() => message.info('查看密钥')}
-                      />
+                      <span
+                        onClick={() => {
+                          setSecretKeyIsVisible(!secretKeyIsVisible);
+                        }}
+                      >
+                        {secretKeyIsVisible ? <EyeOutlined className={styles.actionIcon} /> : <EyeInvisibleOutlined className={styles.actionIcon} />}
+                      </span>
                       <div className={styles.divider} />
                       <SyncOutlined
                         className={styles.actionIcon}
-                        onClick={() => message.info('更新密钥')}
+                        onClick={async () => {
+                          if (id) {
+                            const data = await updateAppSecret(id);
+                            console.info(data, 'datadatadata');
+                          }
+                        }}
                       />
                     </div>
                   </div>
@@ -505,47 +512,39 @@ const AppConfig: React.FC<AppConfigProps> = () => {
                   </Form.Item>
                 </div>
                 {/* 操作系统 */}
-                <div className={styles.osSection}>
-                  <div className={styles.configLabel}>
-                    <span className={styles.requiredMark}>*</span>
-                    <span>操作系统</span>
-                  </div>
-
-                  <div className={styles.osCheckboxGroup}>
-                    <Checkbox
-                      checked={osSelection.windows}
-                      onChange={(e) => setOsSelection({ ...osSelection, windows: e.target.checked })}
-                    >
-                      Windows
-                    </Checkbox>
-                    <Checkbox
-                      checked={osSelection.macos}
-                      onChange={(e) => setOsSelection({ ...osSelection, macos: e.target.checked })}
-                    >
-                      MacOS
-                    </Checkbox>
-                    <Checkbox
-                      checked={osSelection.ubuntu}
-                      onChange={(e) => setOsSelection({ ...osSelection, ubuntu: e.target.checked })}
-                    >
-                      Ubuntu
-                    </Checkbox>
-                  </div>
-
-                  <div className={styles.tipsBox}>
-                    <InfoCircleOutlined />
-                    <span className={styles.tipsText}>点击获取 快速入门手册 ，您也可以在"文档-安装SDK"路径下查看</span>
-                  </div>
+                <Form.Item
+                  label="操作系统"
+                  name="os"
+                  rules={[{ required: true, message: '请选择操作系统' }]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Checkbox.Group options={optionsWithOS} />
+                </Form.Item>
+                <div
+                  className={styles.tipsBox}
+                  style={{ marginTop: 8, marginBottom: 16 }}
+                >
+                  <InfoCircleOutlined />
+                  <span className={styles.tipsText}>点击获取 快速入门手册 ，您也可以在"文档-安装SDK"路径下查看</span>
                 </div>
                 {/* 协议勾选 */}
                 <div className={styles.agreementSection}>
-                  <Checkbox
-                    className={styles.agreementCheckbox}
-                    checked={agreement}
-                    onChange={(e) => setAgreement(e.target.checked)}
+                  <Form.Item
+                    name="acknowledged"
+                    valuePropName="checked"
+                    rules={[
+                      {
+                        validator: (_, value) => (value ? Promise.resolve() : Promise.reject(new Error('请阅读并同意协议'))),
+                      },
+                    ]}
+                    style={{ marginBottom: 0 }}
                   >
-                    <span className={styles.agreementText}>阅读并同意《腾讯位置服务开放API服务协议》和《腾讯位置服务隐私协议》</span>
-                  </Checkbox>
+                    <Checkbox className={styles.agreementCheckbox}>
+                      <span className={styles.agreementText}>
+                        阅读并同意 <a>《OADIN隐私政策》</a> 和<a>《OADIN用户协议》</a>
+                      </span>
+                    </Checkbox>
+                  </Form.Item>
                 </div>
                 {/* 底部按钮 */}
                 <div className={styles.footerButtons}>
@@ -577,6 +576,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       {/* 模型选择弹窗 */}
       {modelSelectVisible ? (
         <ModelSelectModal
+          pagination={pagination}
           open={modelSelectVisible}
           onCancel={() => setModelSelectVisible(false)}
           onFinish={handleModelSelectConfirm}
@@ -590,11 +590,12 @@ const AppConfig: React.FC<AppConfigProps> = () => {
       {/* MCP选择弹窗 */}
       {mcpSelectVisible ? (
         <ModelSelectModal
+          pagination={pagination}
           setDrawerOpenId={setDrawerOpenId}
           open={mcpSelectVisible}
           onCancel={() => setMcpSelectVisible(false)}
           onFinish={handleMcpSelectConfirm}
-          title="选择模型"
+          title="选择Mcp"
           onSearch={onMcpSearch}
           searchList={searchMcpList}
           initialSelectedModels={selectedMcps}

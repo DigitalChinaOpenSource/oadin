@@ -17,7 +17,6 @@ const deleteApp = async (id: string) => {
 // 创建应用
 const createApp = async (values: { name: string }) => {
   const data = await addApplication(values);
-  console.info(data, '创建应用返回数据');
   return data;
 };
 

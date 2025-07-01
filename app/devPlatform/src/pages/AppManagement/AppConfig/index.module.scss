@@ -271,6 +271,7 @@
 .tipsBox {
   display: flex;
   padding: 5px 16px;
+  margin-top: 16px;
   align-items: center;
   gap: 8px;
   border-radius: 4px;
@@ -287,13 +288,13 @@
   margin-top: 40px;
   margin-bottom: 20px;
 }
-
 .agreementCheckbox {
-  color: $primary-color;
+  margin-right: 12px;
 }
-
 .agreementText {
-  color: $primary-color;
+  a {
+    color: $primary-color;
+  }
 }
 
 // 底部按钮
