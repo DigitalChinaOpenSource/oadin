@@ -58,6 +58,18 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		history := make([]map[string]string, 0, len(messages)+1)
 		for _, m := range messages {
 			msg := m.(*types.ChatMessage)
+			if msg.Role == "assistant" {
+				// 把thinking内容清理掉
+				if strings.Contains(msg.Content, "<think>") && strings.Contains(msg.Content, "</think>") {
+					re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+					msg.Content = re.ReplaceAllString(msg.Content, "")
+					msg.Content = strings.TrimSpace(msg.Content)
+				}
+
+				if msg.Content == "" {
+					continue
+				}
+			}
 			history = append(history, map[string]string{
 				"role":    msg.Role,
 				"content": msg.Content,
@@ -145,39 +157,39 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			select {
 			case resp, ok := <-responseStream:
 				if !ok { // 流结束
-					// 因为有可能最后一个块是完成标记但内容为空
-					slog.Info("流式输出结束，准备保存助手回复", "content_length", len(fullContent))
+					// // 因为有可能最后一个块是完成标记但内容为空
+					// slog.Info("流式输出结束，准备保存助手回复", "content_length", len(fullContent))
 
-					// 显示预览（如果有内容）
-					if len(fullContent) > 0 {
-						previewLen := min(100, len(fullContent))
-						slog.Info("回复内容预览", "content_preview", fullContent[:previewLen])
-					} else {
-						slog.Warn("助手回复内容为空！")
-					}
+					// // 显示预览（如果有内容）
+					// if len(fullContent) > 0 {
+					// 	previewLen := min(100, len(fullContent))
+					// 	slog.Info("回复内容预览", "content_preview", fullContent[:previewLen])
+					// } else {
+					// 	slog.Warn("助手回复内容为空！")
+					// }
 
-					// 将思考内容包装在<think></think>标签中并添加到assistant响应
-					finalContent := fullContent
-					if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
-						// 在正文前添加思考内容，使用<think>标签包装
-						finalContent = fmt.Sprintf("<think>\n%s\n</think>\n\n%s", thoughts, fullContent)
-					}
+					// // 将思考内容包装在<think></think>标签中并添加到assistant响应
+					// finalContent := fullContent
+					// if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+					// 	// 在正文前添加思考内容，使用<think>标签包装
+					// 	finalContent = fmt.Sprintf("<think>\n%s\n</think>\n\n%s", thoughts, fullContent)
+					// }
 
-					assistantMsg := &types.ChatMessage{
-						ID:            assistantMsgID,
-						SessionID:     request.SessionID,
-						Role:          "assistant",
-						Content:       finalContent, // 包含思考内容的完整内容
-						Order:         len(messages) + 1,
-						CreatedAt:     time.Now(),
-						ModelID:       session.ModelID,
-						ModelName:     session.ModelName,
-						TotalDuration: totalDuration, // 这个会在resp.IsComplete赋值
-					}
-					err = p.Ds.Add(ctx, assistantMsg)
-					if err != nil {
-						slog.Error("Failed to save assistant message", "error", err, assistantMsgID)
-					}
+					// assistantMsg := &types.ChatMessage{
+					// 	ID:            assistantMsgID,
+					// 	SessionID:     request.SessionID,
+					// 	Role:          "assistant",
+					// 	Content:       finalContent, // 包含思考内容的完整内容
+					// 	Order:         len(messages) + 1,
+					// 	CreatedAt:     time.Now(),
+					// 	ModelID:       session.ModelID,
+					// 	ModelName:     session.ModelName,
+					// 	TotalDuration: totalDuration, // 这个会在resp.IsComplete赋值
+					// }
+					// err = p.Ds.Add(ctx, assistantMsg)
+					// if err != nil {
+					// 	slog.Error("Failed to save assistant message", "error", err, assistantMsgID)
+					// }
 					return
 				}
 
@@ -214,7 +226,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 
 					// 确保完整内容被保存和返回给客户端
-					if fullContent != "" {
+					if finalContent != "" {
 						assistantMsg := &types.ChatMessage{
 							ID:            assistantMsgID,
 							SessionID:     request.SessionID,
