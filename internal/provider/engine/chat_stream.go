@@ -84,7 +84,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			}
 			// 转回[]byte
 			cleanBody := []byte(bodyStr)
-			fmt.Println("[ChatStream] 收到块内容:", bodyStr)
+			// fmt.Println("[ChatStream] 收到块内容:", bodyStr)
 
 			// 每个块都是一个完整的JSON对象
 			var ollamaResp ollamaAPIResponse
@@ -119,7 +119,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 				if ollamaResp.Message != nil && ollamaResp.Message.Thinking != "" {
 					thoughts = ollamaResp.Message.Thinking
-					fmt.Printf("[ChatStream] 提取到思考内容，长度: %d\n", len(thoughts))
+					// fmt.Printf("[ChatStream] 提取到思考内容，长度: %d\n", len(thoughts))
 				}
 
 				// 提取工具调用(如果有)
