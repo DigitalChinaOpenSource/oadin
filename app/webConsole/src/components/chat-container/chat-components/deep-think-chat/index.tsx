@@ -19,7 +19,6 @@ interface IDeepThinkChatProps {
 
 export default function DeepThinkChat(props: IDeepThinkChatProps) {
   const { dataSource } = props;
-  console.log('dataSource', dataSource);
   const [isExpanded, setIsExpanded] = useState(true);
   return (
     <div className={styles.deepThinkChat}>

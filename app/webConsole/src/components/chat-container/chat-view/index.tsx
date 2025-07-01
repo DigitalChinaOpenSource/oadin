@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChatInput, MessageList, type MessageType, type MessageContentType, registerMessageContents } from '@res-utiles/ui-components';
+import { ChatInput, MessageList, ChatMessageList, type MessageContentType, type ChatMessageItem, registerMessageContents } from '@res-utiles/ui-components';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -31,21 +31,6 @@ interface ChatMessageContent extends MessageContentType {
    * 内容类型
    */
   type: 'message' | 'task' | 'canvas' | 'file' | 'ref';
-}
-
-interface ChatMessage extends MessageType {
-  /**
-   * 所属对话ID
-   */
-  conversationId: string;
-  /**
-   * 消息时间
-   */
-  createdAt?: number;
-  /**
-   * 消息内容列表
-   */
-  contentList?: ChatMessageContent[];
 }
 
 interface IChatViewProps {
@@ -87,7 +72,7 @@ export default function ChatView(props: IChatViewProps) {
     </div>
   );
 
-  const copiedFormMessage = (messages: MessageType[]) => {
+  const copiedFormMessage = (messages: ChatMessageItem[]) => {
     if (!messages || messages.length === 0) return '';
 
     const lastMessage = messages[messages.length - 1];
@@ -177,7 +162,6 @@ export default function ChatView(props: IChatViewProps) {
       </div>
     );
   };
-  console.log('messages===>', messages);
   return (
     <div className="chat-layout">
       <div className="chat-body">
@@ -186,7 +170,7 @@ export default function ChatView(props: IChatViewProps) {
           ref={containerRef}
           onScroll={handleScroll}
         >
-          <MessageList
+          {/* <MessageList
             messages={messages}
             setBubbleProps={(message) => ({
               align: message.role === 'user' ? 'right' : 'left',
@@ -197,8 +181,30 @@ export default function ChatView(props: IChatViewProps) {
             className="chat-message-list"
             contentListClassName="chat-message-content-list"
             bottomPanel={renderBottomPanel()}
-          />
-
+          /> */}
+          <ChatMessageList
+            className="chat-message-list"
+            dataSource={messages}
+            bubbleProps={(message) => ({
+              align: message.role === 'user' ? 'right' : 'left',
+              classNames: {
+                content: message.role === 'user' ? 'user-bubble' : 'ai-bubble',
+              },
+            })}
+            renderContent={({ content, type }) => {
+              if (type === 'plain') {
+                return <MarkdownContent dataSource={content as string} />;
+              }
+              if (type === 'think') {
+                return <DeepThinkChat dataSource={content as any} />;
+              }
+              if (type === 'mcp') {
+                return <McpToolChat dataSource={content as any} />;
+              }
+              return null;
+            }}
+          ></ChatMessageList>
+          <>{renderBottomPanel()}</>
           {/* 错误消息展示 */}
           {/* {error && !isLoading && !isResending && (
             <div

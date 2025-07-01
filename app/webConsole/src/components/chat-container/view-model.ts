@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import useSelectedModelStore from '@/store/useSelectedModel';
+import type { ChatMessageItem } from '@res-utiles/ui-components';
 import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useUploadFileListStore from './store/useUploadFileListStore';
@@ -10,7 +11,6 @@ import { IPlaygroundSession } from './types';
 import { message } from 'antd';
 import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage, getSessionSource } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
-import { MessageType } from '@res-utiles/ui-components';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
 import embedDownloadEventBus from '@/utils/embedDownload';
@@ -181,7 +181,7 @@ export default function useViewModel() {
           ...item,
           id: typeof item.id === 'number' ? String(item.id) : item.id,
         }));
-        const tempData = convertMessageFormat(inputMessages);
+        const tempData = convertMessageFormat(inputMessages) as any;
         fetchModelDetail(data[data.length - 1].modelId || '', tempData, data[data.length - 1].sessionId);
       },
       onError: () => {
@@ -229,7 +229,7 @@ export default function useViewModel() {
   );
 
   // 根据模型id获取模型详情
-  const fetchModelDetail = async (modelId: string, messages: MessageType[], sessionId: string) => {
+  const fetchModelDetail = async (modelId: string, messages: ChatMessageItem[], sessionId: string) => {
     let res;
     const localParams: IModelSquareParams = {
       service_source: 'local',
@@ -248,7 +248,7 @@ export default function useViewModel() {
     }
     if (res) {
       setSelectedModel(res);
-      setMessages(messages);
+      setMessages(messages as ChatMessageItem[]);
       setPrevModelId(res.id);
     } else {
       message.error('获取历史记录详情失败，未找到对应模型');
