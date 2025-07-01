@@ -50,6 +50,7 @@ build_mac:
     - mv oadin pkgroot/oadin/oadin
     - mkdir -p scripts
     - echo '#!/bin/bash' > scripts/postinstall
+    - echo 'exec >> /tmp/oadin_install.log 2>&1' > scripts/postinstall
     - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
     - echo 'mkdir -p "$USER_HOME/Oadin"' >> scripts/postinstall
     - echo 'set -x' >> scripts/postinstall
