@@ -53,9 +53,13 @@ export const fetchGenChatTitle = async () => {
   if (!currentSessionId) return;
 
   try {
-    await httpRequest.post('/playground/session/genTitle', {
-      sessionId: currentSessionId,
-    });
+    await httpRequest.post(
+      '/playground/session/genTitle',
+      {
+        sessionId: currentSessionId,
+      },
+      { timeout: 300000 },
+    );
   } catch (error) {
     console.error('生成标题失败===>');
   }

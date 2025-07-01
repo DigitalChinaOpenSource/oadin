@@ -104,7 +104,7 @@ const createApiInstance = (baseURL: string) => {
           error.handled = true;
         }
       } else if (error?.request) {
-        message.error(i18n.t('errors.network'));
+        message.error(i18n.t('errors.service_error'));
         error.handled = true;
       } else {
         message.error(error?.message || i18n.t('errors.service_error'));

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 import { Button, Tooltip } from 'antd';
 import uploadSvg from '@/components/icons/upload.svg';
 import { useDownLoad } from '@/hooks/useDownload';
+import { EMBEDMODELID } from '@/constants';
 
 const EmbedDownloadButton = React.memo(() => {
   const { fetchDownloadStart } = useDownLoad();
@@ -12,7 +13,7 @@ const EmbedDownloadButton = React.memo(() => {
       service_name: 'embed',
       source: 'local',
       service_provider_name: 'local_ollama_embed',
-      id: '87c0b009-2d93-4f00-9662-3330376662613373163373263',
+      id: EMBEDMODELID,
     } as any);
   }, []);
 

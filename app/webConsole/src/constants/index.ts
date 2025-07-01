@@ -19,3 +19,5 @@ export const LOCAL_STORAGE_KEYS = {
 export const API_VERSION = 'v0.2';
 export const API_PREFIX = `/oadin/${API_VERSION}`;
 export const API_HEALTH_ENDPOINT = '/health';
+
+export const EMBEDMODELID = '87c0b009-2d93-4f00-9662-333037666261373163373263'; // 词嵌入模型ID
