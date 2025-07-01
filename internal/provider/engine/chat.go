@@ -99,7 +99,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 	serviceReq := &types.ServiceRequest{
 		Service:    "chat",
 		Model:      modelName,
-		FromFlavor: "oadin",
+		FromFlavor: "ollama",
 		HTTP: types.HTTPContent{
 			Header: http.Header{},
 			Body:   body,
