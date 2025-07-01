@@ -48,6 +48,8 @@
 
 .more_model_warp {
   cursor: pointer;
+  width: 168px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,10 +58,14 @@
   font-style: normal;
   font-weight: 400;
   margin-bottom: 40px;
+  border-radius: 8px;
   img {
     width: 14px;
     height: 14px;
     margin-right: 8px;
+  }
+  &:hover {
+    background-color: #f5f8ff;
   }
 }
 .button {
