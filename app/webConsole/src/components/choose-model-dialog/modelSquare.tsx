@@ -13,6 +13,7 @@ export const ModelSquare = (props: ISelectedDialogProps) => {
     modelSearchVal: vmSearch.modelSearchVal,
     modelSourceVal: vmSearch.modelSourceVal,
     mine: false,
+    pageType: props.isDialog ? 1 : 0,
   });
   return (
     <ModelManageTab
