@@ -94,7 +94,7 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
                       ))}
                     </div>
                     <div className={styles.modelRight}>
-                      {vm.providerDetail?.provider_name}
+                      {model.flavor}
                       <div className={styles.line}></div>
                       {Boolean(model.params_size) && (
                         <>
