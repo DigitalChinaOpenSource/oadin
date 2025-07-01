@@ -65,12 +65,19 @@ func (s *StdioTransport) Start(ctx context.Context, config *types.MCPServerConfi
 	s.Pending[serverKey] = config
 	s.mu.Unlock()
 
+	start := time.Now() // 记录开始时间
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
 	cli, err := s.ClientStart(ctx, config)
 	if err != nil {
 		fmt.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
 		delete(s.Pending, serverKey)
 		return err
 	}
+	elapsed := time.Since(start) // 计算耗时
+	fmt.Printf("ClientMcpStart 运行时间: %v\n", elapsed)
+
 	fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
 	slog.Info("[MCP] Initialized client for server", "server_id", config.Id)
 	s.mu.Lock()
