@@ -52,7 +52,7 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 	serviceReq := &types.ServiceRequest{
 		Service:    "embed",
 		Model:      modelName,
-		FromFlavor: "oadin",
+		FromFlavor: "ollama",
 		HTTP: types.HTTPContent{
 			Header: http.Header{},
 			Body:   body,
