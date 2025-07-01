@@ -91,8 +91,8 @@
     }
 
     &:hover {
-      background-color: #ebf0ff;
-      border: 1px solid #4f4dff;
+      background-color: #f5f8ff;
+      border: 1px solid #f5f8ff;
       box-sizing: border-box;
 
       .groupRight {
@@ -100,6 +100,15 @@
         align-items: center;
         justify-content: center;
       }
+    }
+  }
+  .currentItem {
+    background-color: #ebf0ff;
+    border: 1px solid #4f4dff;
+    box-sizing: border-box;
+    &:hover {
+      background-color: #ebf0ff;
+      border: 1px solid #4f4dff;
     }
   }
 }
