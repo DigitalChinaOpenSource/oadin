@@ -50,13 +50,28 @@ build_mac:
     - mv oadin pkgroot/oadin/oadin
     - mkdir -p scripts
     - echo '#!/bin/bash' > scripts/postinstall
-    - echo 'exec >> /tmp/oadin_install.log 2>&1' > scripts/postinstall
     - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
     - echo 'mkdir -p "$USER_HOME/Oadin"' >> scripts/postinstall
     - echo 'set -x' >> scripts/postinstall
     - echo 'cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"' >> scripts/postinstall
     - echo 'ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin' >> scripts/postinstall
-    - echo 'su - "$USER" -c "byze server start -d && sleep 2 && byze server stop && sleep 1 && byze server start -d"' >> scripts/postinstall
+    - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
+    - echo 'SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')' >> scripts/postinstall
+    - echo 'SHELL_NAME=$(basename "$SHELL_PATH")' >> scripts/postinstall
+    - echo 'if [ "$SHELL_NAME" = "zsh" ]; then' >> scripts/postinstall
+    - echo '  RC_FILE="$USER_HOME/.zshrc"' >> scripts/postinstall
+    - echo 'elif [ "$SHELL_NAME" = "bash" ]; then' >> scripts/postinstall
+    - echo '  RC_FILE="$USER_HOME/.bash_profile"' >> scripts/postinstall
+    - echo 'else' >> scripts/postinstall
+    - echo '  RC_FILE=""'  >> scripts/postinstall
+    - echo 'fi' >> scripts/postinstall
+    - echo 'if [ -n "$RC_FILE" ] && [ -f "$RC_FILE"]; then' >> scripts/postinstall
+    - echo '  echo 1111 > $USER_HOME/test.txt' >> scripts/postinstall
+    - echo '  su - "$USER" -c "source ~/$RC_FILE && oadin server start -d"' >> scripts/postinstall
+    - echo 'else' >> scripts/postinstall
+    - echo '  echo 2222 > $USER_HOME/test.txt' >> scripts/postinstall
+    - echo '  su - "$USER" -c "oadin server start -d"' >> scripts/postinstall
+    - echo 'fi' >> scripts/postinstall
     - chmod +x scripts/postinstall
     - |
       pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./scripts oadin.pkg
