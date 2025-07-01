@@ -200,13 +200,19 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       manual: true,
       onSuccess: (data) => {
         // 处理一些数据格式
-        const dataWithSource = (data || []).map(
+        let dataWithSource = (data || []).map(
           (item) =>
             ({
               ...item,
               currentDownload: 0,
             }) as any,
         );
+        if (props.pageType === 1) {
+          dataWithSource = dataWithSource.filter((item) => {
+            return item.class.every((c_item: string) => !c_item.includes('嵌入模型'));
+          });
+        }
+
         setListData(dataWithSource);
         setPagination({
           ...pagination,

@@ -85,10 +85,12 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
       onOk={onOk}
       {...props}
     >
+      {/* TODO 是否直接卸载当前tab重新加载 */}
       <Tabs
         onChange={onChange}
         activeKey={activeKey}
         items={items}
+        // destroyOnHidden={true}
       />
     </Modal>
   );
