@@ -65,6 +65,8 @@ build_mac:
     - echo '  RC_FILE=""' >> scripts/postinstall
     - echo 'fi' >> scripts/postinstall
     - echo 'echo "USER=$USER_HOME" >> $USER_HOME/test.txt' >> scripts/postinstall
+    - echo 'echo "SHELL_PATH=$SHELL_PATH" >> $USER_HOME/test.txt' >> scripts/postinstall
+    - echo 'echo "SHELL_NAME=$SHELL_NAME" >> $USER_HOME/test.txt' >> scripts/postinstall
     - echo 'echo "RC_FILE=$RC_FILE" >> $USER_HOME/test.txt' >> scripts/postinstall
     - echo 'if [ -n "$RC_FILE" ] && [ -f "$RC_FILE" ]; then' >> scripts/postinstall
     - echo '  echo 1111 >> $USER_HOME/test.txt' >> scripts/postinstall
