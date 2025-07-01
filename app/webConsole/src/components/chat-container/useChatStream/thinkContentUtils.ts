@@ -289,7 +289,7 @@ export const handleTextContent = (
     requestStateRef.current.content.thinking = thinkContents;
     setStreamingThinking({
       data: thinkContents,
-      status: 'success',
+      status: 'progress',
     });
 
     // 提取纯文本内容
