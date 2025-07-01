@@ -83,9 +83,9 @@ export default function useViewModel() {
     // 如果会话ID变化了
     if (currentSessionId !== prevSessionId) {
       const source = getSessionSource();
-      // 来自历史记录的会话变更，已在chat-history-drawer中处理，这里仅更新状态
       if (source === 'history' || source === 'new') {
         setPrevSessionId(currentSessionId);
+        return;
       }
       // 其他来源（如URL直接修改或分享链接）且有会话ID，需要加载历史记录
       else if (currentSessionId && !isLoadingHistory.current) {
@@ -102,13 +102,16 @@ export default function useViewModel() {
 
     // 如果没有选定模型，清除URL中的sessionId和source参数
     if (!selectedModel) {
-      setSessionIdToUrl(''); // 传入空字符串会清除sessionId和source参数
+      setSessionIdToUrl('');
       setPrevSessionId(null);
       return;
     }
 
-    // 当模型变化时，自动创建新会话
-    if (selectedModel.id !== prevModelId && prevModelId !== undefined) {
+    // 检查当前来源，如果是从历史记录选择的，不要创建新会话
+    const currentSource = getSessionSource();
+
+    // 当模型变化时，自动创建新会话（但排除历史记录选择的情况）
+    if (selectedModel.id !== prevModelId && prevModelId !== undefined && currentSource !== 'history') {
       // 清空当前对话内容
       createNewChat();
       setSelectMcpList([]);
@@ -278,14 +281,9 @@ export default function useViewModel() {
       manual: true,
       onSuccess: (data) => {
         if (data.id) {
-          // 1. 首先清空内容和选择的MCP
           setSelectMcpList([]);
           createNewChat();
-
-          // 2. 更新会话相关状态
           setPrevSessionId(data.id);
-
-          // 3. 最后更新 URL
           setSessionIdToUrl(data.id, 'new');
         }
       },
@@ -294,10 +292,6 @@ export default function useViewModel() {
   );
 
   const handleCreateNewChat = () => {
-    if (messages.length === 0) {
-      return;
-    }
-
     if (!selectedModel?.id) {
       message.error('请先选择一个模型');
       return;

@@ -30,7 +30,7 @@ export interface IGeneralCardProps extends ISelectedDialogProps {
   mine?: boolean;
 }
 
-export default function GeneralCard(props: IGeneralCardProps) {
+const GeneralCard = React.memo((props: IGeneralCardProps) => {
   const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData, mine, setSelecteStatedModel, selectedStateModel } = props;
   const toolTipsText = props?.selectTooltip ?? '请先下载/授权，再体验';
 
@@ -281,4 +281,13 @@ export default function GeneralCard(props: IGeneralCardProps) {
       {!isDetail && modelSourceVal === 'remote' && <div className={styles.handlebar}>{remoteStatusToText(modelData)}</div>}
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // 只在关键属性变化时重新渲染
+  if (prevProps.modelData.id !== nextProps.modelData.id) return false;
+  if (prevProps.modelData.status !== nextProps.modelData.status) return false;
+  if (prevProps.modelData.currentDownload !== nextProps.modelData.currentDownload) return false;
+  if (prevProps.selectedStateModel?.id !== nextProps.selectedStateModel?.id) return false;
+  return true;
+});
+
+export default GeneralCard;

@@ -12,7 +12,7 @@ export const HeaderContent = () => {
       const fileId = file.status === 'done' && file.response?.id;
       if (fileId) {
         await httpRequest.del('/playground/file', {
-          file_id: fileId,
+          fileId: fileId,
         });
       }
 

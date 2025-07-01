@@ -56,6 +56,10 @@ export interface IModelListContent {
   onModelSearch: (val: string) => void;
   mine?: boolean;
   pageType?: number; // 1 体验中心选择
+  // 自定义设置列表数据的函数
+  customSetListData?: (list: IModelDataItem[]) => void;
+  // 自定义模型列表数据源
+  customModelListData?: IModelDataItem[];
 }
 
 export function useViewModel(props: IModelListContent): IUseViewModel {
@@ -86,7 +90,13 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
   const setListData = (list: IModelDataItem[]) => {
-    setModelListData(list);
+    // 如果提供了自定义的设置列表数据函数，则使用它
+    if (props.customSetListData) {
+      props.customSetListData(list);
+    } else {
+      // 否则使用默认的全局状态管理
+      setModelListData(list);
+    }
     // 初始化或重新设置数据时，都更新本地状态
     setModelListStateData(list);
     // 重置实例ID标识，确保可以追踪当前组件实例
@@ -99,9 +109,12 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   // 使用一个ref记录是否刚删除了模型
   const justDeletedRef = useRef<boolean>(false);
   useEffect(() => {
+    // 使用自定义模型列表数据源或全局模型列表数据
+    const currentModelListData = props.customModelListData || modelListData;
+    
     // 创建一个映射来跟踪当前的下载状态
     const currentDownloadStatusMap: Record<string, any> = {};
-    modelListData.forEach((item) => {
+    currentModelListData.forEach((item) => {
       if (item.id) {
         currentDownloadStatusMap[item.id] = item.status;
       }
@@ -114,7 +127,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     // 如果是刚删除模型的情况或者数据源变化，我们需要强制更新列表
     if (justDeletedRef.current || isInstanceChanged) {
       console.info('检测到模型刚被删除或数据源变化，强制更新modelListStateData');
-      setModelListStateData(modelListData);
+      setModelListStateData(currentModelListData);
       justDeletedRef.current = false;
       // 如果是数据源变化，更新实例ID
       if (isInstanceChanged) {
@@ -125,9 +138,9 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     }
 
     // 检查列表长度是否变化
-    const isLengthChanged = modelListData.length !== modelListStateData.length;
+    const isLengthChanged = currentModelListData.length !== modelListStateData.length;
     if (isLengthChanged) {
-      setModelListStateData(modelListData);
+      setModelListStateData(currentModelListData);
       prevDownloadStatusMapRef.current = { ...currentDownloadStatusMap };
       return;
     }
@@ -156,7 +169,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     if (hasStatusChanged) {
       // 只更新现有项的状态，不处理列表长度变化
       const updatedList = modelListStateData.map((item) => {
-        const downItem = modelListData.find((_item) => _item.id === item.id);
+        const downItem = currentModelListData.find((_item) => _item.id === item.id);
         if (downItem) {
           return {
             ...item,
@@ -174,7 +187,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       // 更新记录的状态
       prevDownloadStatusMapRef.current = { ...currentDownloadStatusMap };
     }
-  }, [modelListData, modelListStateData]);
+  }, [props.customModelListData, modelListData, modelListStateData]);
 
   // 获取模型列表 （本地和云端）
   const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
@@ -225,6 +238,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   useEffect(() => {
     fetchModelPath();
   }, []);
+  
   useEffect(() => {
     onModelSearch('');
     setPagination({ ...pagination, current: 1, total: 0 });
@@ -237,6 +251,14 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     // 注意：instanceIdRef.current 的更新已移至监视 modelListData 的 useEffect 中，
     // 确保数据和 ID 的更新一致
   }, [modelSourceVal, mine]);
+  
+  // 添加新的 useEffect 来监听自定义模型列表数据的变化
+  useEffect(() => {
+    if (props.customModelListData && props.customModelListData.length > 0) {
+      // 当自定义数据源发生变化时，更新本地状态
+      setModelListStateData(props.customModelListData);
+    }
+  }, [props.customModelListData]);
 
   // 获取模型存储路径
   const { run: fetchModelPath } = useRequest(
@@ -335,7 +357,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const pagenationData = useMemo(() => {
     const filteredData = getFilteredData();
     return paginatedData(pagination, filteredData);
-  }, [modelListStateData, modelSearchVal, pagination]);
+  }, [modelListStateData, modelSearchVal, pagination, props.customModelListData]);
 
   const onPageChange = (current: number) => {
     if (isPageSizeChangingRef.current) {
