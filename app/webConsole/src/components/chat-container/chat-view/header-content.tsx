@@ -26,6 +26,8 @@ export const HeaderContent = () => {
       return false;
     }
   };
+
+  if (uploadFileList.length === 0) return null;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
       {uploadFileList.map((file) => (
