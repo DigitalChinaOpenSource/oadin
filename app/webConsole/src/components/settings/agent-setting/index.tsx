@@ -56,7 +56,7 @@ const AgentSetting: React.FC = () => {
             label="代理地址"
             name="endpoint"
             rules={[{ required: true, message: '请输入代理地址' }]}
-            tooltip={'请输入代理地址'}
+            tooltip={'协议类型://代理服务器地址:端口号，示例：http://proxy.example.com:8080'}
           >
             <Input
               autoComplete={'off'}
