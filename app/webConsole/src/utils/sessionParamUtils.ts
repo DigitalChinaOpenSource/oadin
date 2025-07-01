@@ -24,6 +24,7 @@ export const getSessionIdFromUrl = (): string => {
  * @param sessionId 要设置的会话ID
  */
 export const setSessionIdToUrl = (sessionId: string, source?: string): void => {
+  console.log('setSessionIdToUrl', sessionId, source);
   // 获取当前URL中的sessionId，避免重复设置相同值
   const urlParams = new URLSearchParams(window.location.search);
   const currentSessionId = urlParams.get('sessionId');

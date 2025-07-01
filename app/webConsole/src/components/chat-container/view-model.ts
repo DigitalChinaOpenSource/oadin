@@ -102,13 +102,16 @@ export default function useViewModel() {
 
     // 如果没有选定模型，清除URL中的sessionId和source参数
     if (!selectedModel) {
-      setSessionIdToUrl(''); // 传入空字符串会清除sessionId和source参数
+      setSessionIdToUrl('');
       setPrevSessionId(null);
       return;
     }
 
-    // 当模型变化时，自动创建新会话
-    if (selectedModel.id !== prevModelId && prevModelId !== undefined) {
+    // 检查当前来源，如果是从历史记录选择的，不要创建新会话
+    const currentSource = getSessionSource();
+
+    // 当模型变化时，自动创建新会话（但排除历史记录选择的情况）
+    if (selectedModel.id !== prevModelId && prevModelId !== undefined && currentSource !== 'history') {
       // 清空当前对话内容
       createNewChat();
       setSelectMcpList([]);
