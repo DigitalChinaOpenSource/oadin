@@ -362,19 +362,39 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 		var title string
 		if err == nil && resp != nil {
 			defer resp.Body.Close()
-			var result struct {
-				Content string `json:"content"`
-				Message struct {
-					Content string `json:"content"`
-				} `json:"message"`
+			var oadinResp struct {
+				BusinessCode int             `json:"business_code"`
+				Message      string          `json:"message"`
+				Data         json.RawMessage `json:"data"`
 			}
-			decodeErr := json.NewDecoder(resp.Body).Decode(&result)
-			fmt.Println("[DEBUG] TitleGen HTTP resp", "decodeErr", decodeErr, "respContent", result.Content, "msgContent", result.Message.Content)
-			if decodeErr == nil {
-				if len(result.Content) > 0 {
-					title = result.Content
-				} else if len(result.Message.Content) > 0 {
-					title = result.Message.Content
+			decodeErr := json.NewDecoder(resp.Body).Decode(&oadinResp)
+
+			if decodeErr == nil && oadinResp.BusinessCode == 10000 {
+				var chatResp struct {
+					Choices []struct {
+						Message struct {
+							Content string `json:"content"`
+						} `json:"message"`
+					} `json:"choices"`
+				}
+
+				if err := json.Unmarshal(oadinResp.Data, &chatResp); err == nil && len(chatResp.Choices) > 0 {
+					title = chatResp.Choices[0].Message.Content
+					fmt.Println("[DEBUG] TitleGen parsed from Oadin response:", title)
+				} else {
+					var legacyResult struct {
+						Content string `json:"content"`
+						Message struct {
+							Content string `json:"content"`
+						} `json:"message"`
+					}
+					if err := json.Unmarshal(oadinResp.Data, &legacyResult); err == nil {
+						if len(legacyResult.Content) > 0 {
+							title = legacyResult.Content
+						} else if len(legacyResult.Message.Content) > 0 {
+							title = legacyResult.Message.Content
+						}
+					}
 				}
 				if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
 					re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
