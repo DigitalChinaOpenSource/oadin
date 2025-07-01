@@ -218,7 +218,7 @@ export default function ChatView(props: IChatViewProps) {
             className="chat-input"
             renderSendButton={({ onClick, inputValue }) => (
               <>
-                {isLoading || isUploading ? (
+                {isLoading ? (
                   <Button
                     icon={
                       <StopIcon
@@ -234,7 +234,7 @@ export default function ChatView(props: IChatViewProps) {
                   />
                 ) : (
                   <Button
-                    disabled={migratingStatus === 'pending'}
+                    disabled={migratingStatus === 'pending' || isUploading}
                     type="primary"
                     style={{ borderRadius: 8, cursor: 'pointer' }}
                     icon={

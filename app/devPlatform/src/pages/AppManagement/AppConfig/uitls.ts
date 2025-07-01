@@ -95,9 +95,9 @@ export const transformedModel2Card = (modalLists: IModelDataItem[]): ICardDeatil
       name: item.name,
       avatar: item.avatar || 'https://byzer.ai/byzer-logo.png',
       class: item.class || [],
-      desc: item.desc,
-      source: item?.source || 'local',
-      update_time: item?.update_time || 0,
+      desc: item.description,
+      source: item?.service_source || 'local',
+      update_time: item?.updatedAt || 0,
       flavor: item.flavor || '',
     };
   });
