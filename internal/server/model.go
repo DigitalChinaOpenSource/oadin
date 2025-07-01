@@ -1152,13 +1152,30 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 	resData.Data = resultList
 
 	sort.Slice(resultList, func(i, j int) bool {
-		if resultList[i].IsRecommended && !resultList[j].IsRecommended {
+		a := resultList[i]
+		b := resultList[j]
+
+		if a.IsRecommended && !b.IsRecommended {
 			return true
 		}
-		if !resultList[i].IsRecommended && resultList[j].IsRecommended {
+		if !a.IsRecommended && b.IsRecommended {
 			return false
 		}
-		return resultList[i].CreatedAt.After(resultList[j].CreatedAt)
+
+		if a.IsRecommended && b.IsRecommended {
+			if a.CanSelect && b.CanSelect {
+				return a.CreatedAt.After(b.CreatedAt)
+			}
+			if a.CanSelect && !b.CanSelect {
+				return true
+			}
+			if !a.CanSelect && b.CanSelect {
+				return false
+			}
+			return false
+		}
+
+		return a.CreatedAt.After(b.CreatedAt)
 	})
 
 	return &dto.GetSupportModelResponse{
