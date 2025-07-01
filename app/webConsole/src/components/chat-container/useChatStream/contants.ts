@@ -16,7 +16,7 @@ export const ERROR_MESSAGES = {
   },
   // 连接错误
   CONNECTION: {
-    INTERRUPTED: '\n\n[消息传输中断]',
+    INTERRUPTED: '\n\n「消息传输中断」',
     RESPONSE_INTERRUPTED: '\n\n「回复已中断」',
     READ_FAILED: '读取响应内容失败: {0}',
   },
