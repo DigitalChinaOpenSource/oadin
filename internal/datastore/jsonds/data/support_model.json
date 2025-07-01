@@ -110,7 +110,6 @@
     "service_source": "local",
     "size": "1.1GB",
     "think": true,
-    "think_switch": true,
     "tools": true
   },
   {
@@ -129,7 +128,6 @@
     "service_source": "local",
     "size": "4.7GB",
     "think": true,
-    "think_switch": true,
     "tools": true
   },
   {
@@ -148,7 +146,6 @@
     "service_source": "local",
     "size": "4.9GB",
     "think": true,
-    "think_switch": true,
     "tools": true
   },
   {
@@ -167,7 +164,6 @@
     "service_source": "local",
     "size": "9.0GB",
     "think": true,
-    "think_switch": true,
     "tools": true
   },
   {
