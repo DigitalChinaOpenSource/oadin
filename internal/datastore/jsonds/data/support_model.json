@@ -111,7 +111,7 @@
     "size": "1.1GB",
     "think": true,
     "think_switch": true,
-    "tools": true
+    "tools": false
   },
   {
     "api_flavor": "ollama",
@@ -130,7 +130,7 @@
     "size": "4.7GB",
     "think": true,
     "think_switch": true,
-    "tools": true
+    "tools": false
   },
   {
     "api_flavor": "ollama",
@@ -149,7 +149,7 @@
     "size": "4.9GB",
     "think": true,
     "think_switch": true,
-    "tools": true
+    "tools": false
   },
   {
     "api_flavor": "ollama",
@@ -168,7 +168,7 @@
     "size": "9.0GB",
     "think": true,
     "think_switch": true,
-    "tools": true
+    "tools": false
   },
   {
     "api_flavor": "ollama",
