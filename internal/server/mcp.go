@@ -426,10 +426,13 @@ func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.
 }
 
 func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
+	start := time.Now() // 记录开始时间
 	mcpServerConfig, err := M.getMCPConfig(ctx, id)
 	if err != nil {
 		return err
 	}
+	elapsed := time.Since(start) // 计算耗时
+	fmt.Printf("getMCPConfig 运行时间: %v\n", elapsed)
 	err = M.McpHandler.Start(ctx, mcpServerConfig)
 	if err != nil {
 		return err
