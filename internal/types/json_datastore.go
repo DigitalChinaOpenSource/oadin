@@ -23,7 +23,7 @@ type SupportModel struct {
 	Think         bool      `json:"think"`
 	ThinkSwitch   bool      `json:"think_switch"`
 	Tools         bool      `json:"tools"`   // 是否支持工具调用
-	Context       int       `json:"context"` // 上下文长度
+	Context       float32   `json:"context"` // 上下文长度
 }
 
 func (s *SupportModel) TableName() string {
