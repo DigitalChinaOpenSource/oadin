@@ -244,7 +244,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 
 					// 处理多轮工具调用
-					if fullContent == "" && len(resp.ToolCalls) > 0 {
+					if len(resp.ToolCalls) > 0 {
 						if request.ToolGroupID == "" {
 							if userMsg != nil {
 								p.AddToolCall(ctx, request.SessionID, userMsg.ID, assistantMsgID, resp.TotalDuration)
@@ -450,12 +450,11 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 				}
 
 				history = append(history, map[string]string{
-					"role":       "assistant",
-					"content":    "",
-					"tool_calls": inputParams,
+					"role":    "assistant",
+					"content": fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", msg.Name, inputParams),
 				})
 				history = append(history, map[string]string{
-					"role":    "tool",
+					"role":    "user",
 					"content": outputParams,
 				})
 			}
