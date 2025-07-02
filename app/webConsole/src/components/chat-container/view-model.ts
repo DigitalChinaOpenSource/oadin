@@ -37,6 +37,13 @@ export default function useViewModel() {
     const sessionIdFromUrl = urlParams.get('sessionId');
     const sessionIdFromStorage = sessionStorage.getItem('currentSessionId');
 
+    // 页面刷新时，如果URL中有source=new，就将它删掉
+    if (source === 'new') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('source');
+      window.history.replaceState({}, '', url);
+    }
+
     if (!sessionIdFromUrl && sessionIdFromStorage) {
       setSessionIdToUrl(sessionIdFromStorage);
     }
