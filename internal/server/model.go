@@ -1062,7 +1062,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					AuthType:            types.AuthTypeCredentials,
 					AuthFields:          authFields,
 					AuthApplyUrl:        "",
-					ServiceProvider:     fmt.Sprintf("%s_%s_%s", request.ServiceSource, request.Flavor, types.ServiceChat),
+					ServiceProvider:     fmt.Sprintf("%s_%s_%s", request.ServiceSource, types.FlavorSmartVision, types.ServiceChat),
 					CanSelect:           canSelect,
 					IsRecommended:       false,
 					Source:              types.ServiceSourceRemote,
