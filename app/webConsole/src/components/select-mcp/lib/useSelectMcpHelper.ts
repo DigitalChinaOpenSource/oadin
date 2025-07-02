@@ -44,7 +44,6 @@ export function useSelectRemoteHelper() {
       },
       onError: (error) => {
         console.error('启动MCP服务失败:', error);
-        message.error('启动MCP服务失败');
       },
     },
   );

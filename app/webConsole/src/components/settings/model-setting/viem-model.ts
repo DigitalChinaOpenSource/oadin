@@ -40,7 +40,6 @@ export function useModelSetting() {
       },
       onError: (error) => {
         console.error('获取模型存储路径失败:', error);
-        setModelPath('测试路径' + Math.random());
       },
     },
   );

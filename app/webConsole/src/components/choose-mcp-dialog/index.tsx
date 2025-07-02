@@ -54,6 +54,8 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
         options.onSelectMcpOkProps();
       }
       setActiveKey('mcpList');
+      setShowOnlySelectedMyMcp(false);
+      setShowOnlySelectedMcpList(false);
     } else {
       message.warning(getMessageByMcp('requiredMcp', { msg: '暂无添加好的MCP，请添加后，再体验' }));
     }
@@ -102,6 +104,8 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
       options.onCancelProps();
     }
     setActiveKey('mcpList');
+    setShowOnlySelectedMyMcp(false);
+    setShowOnlySelectedMcpList(false);
   };
 
   return (

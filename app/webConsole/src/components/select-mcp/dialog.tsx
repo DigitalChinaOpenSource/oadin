@@ -45,6 +45,7 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   // 处理单个项目的选择
   const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
     if (checked) {
+      console.info('选择了MCP:', item);
       if (checkMcpLength(selectMcpList.length)) {
         setSelectMcpList([...selectMcpList, item]);
         // 启动MCP
@@ -171,7 +172,7 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
 
       <List
         loadMore={loadMore}
-        style={{ height: '440px', overflowY: 'scroll', overflowX: 'hidden' }}
+        style={{ height: '440px', overflowY: 'auto', overflowX: 'hidden' }}
         dataSource={filteredData}
         renderItem={(item) => (
           <List.Item
