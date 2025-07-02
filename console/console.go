@@ -32,11 +32,13 @@ const RouteJson = `{
   "path": "/",
   "children": [
     {
+      "path": "/model-experience"
+    },
+    {
       "path": "/model-manage",
       "children": [
         { "path": "/model-list" },
-        { "path": "/my-model-list" },
-        { "path": "/model-experience" }
+        { "path": "/my-model-list"}
       ]
     },
     {

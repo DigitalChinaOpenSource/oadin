@@ -24,8 +24,3 @@ func (t *OadinCoreServer) ToggleSessionThinking(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
-
-func (t *OadinCoreServer) HandleToolCalls(c *gin.Context) {
-	resp := t.Playground.HandleToolCalls(c.Request.Context(), "c9625fa2-9b79-4439-93c7-ae64a2eb4303", "adf21327-cdfe-4d44-8887-96d19bb4f352")
-	c.JSON(http.StatusOK, resp)
-}
