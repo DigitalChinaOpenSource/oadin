@@ -424,7 +424,7 @@ type ModifyModelFilePathResponse struct {
 }
 
 type ProxyRequest struct {
-	Endpoint string `json:"endpoint" `
+	Endpoint string `json:"endpoint" validate:"required"`
 	Username string `json:"username" `
 	Password string `json:"password" `
 }
