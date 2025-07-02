@@ -21,8 +21,6 @@ export function useSettingsViewModel() {
       },
       onError: (error) => {
         console.error('获取模型存储路径失败:', error);
-        setOllamaRegistry('ccccc');
-        setSystemProxy({ enabled: true, endpoint: '12345', username: 'qwe', password: 'asd' });
       },
     },
   );

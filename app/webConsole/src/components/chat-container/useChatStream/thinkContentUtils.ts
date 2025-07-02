@@ -34,7 +34,7 @@ interface RequestState {
  */
 export const parseThinkContent = (content: string, hasUnfinishedThink: boolean = false, totalDuration?: number): Array<ParsedContent> => {
   const result: Array<ParsedContent> = [];
-
+  console.log('totalDuration===>', totalDuration);
   // 正则表达式匹配 <think> 和 </think> 标签
   const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
   let lastIndex = 0;
@@ -266,7 +266,7 @@ export const handleTextContent = (
     const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;
     const hasUnfinishedThink = openTagCount > closeTagCount;
 
-    const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink);
+    const parsedContents = parseThinkContent(responseContent, hasUnfinishedThink, data.total_duration);
     const thinkContents = parsedContents
       .filter((item) => item.type === 'think')
       .map((item) => {
@@ -278,9 +278,15 @@ export const handleTextContent = (
       .join('\n\n');
 
     requestStateRef.current.content.thinking = thinkContents;
+
+    // 根据是否有未闭合的 <think> 标签来设置状态
+    // 如果有未闭合的标签，状态为 'progress'；如果所有标签都闭合，状态为 'success'
+    const thinkingStatus = hasUnfinishedThink ? 'progress' : 'success';
+
     setStreamingThinking({
       data: thinkContents,
-      status: 'progress',
+      status: thinkingStatus,
+      ...(thinkingStatus === 'success' && data.total_duration && { totalDuration: data.total_duration }),
     });
 
     // 提取纯文本内容

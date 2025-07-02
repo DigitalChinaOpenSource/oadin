@@ -170,18 +170,6 @@ export default function ChatView(props: IChatViewProps) {
           ref={containerRef}
           onScroll={handleScroll}
         >
-          {/* <MessageList
-            messages={messages}
-            setBubbleProps={(message) => ({
-              align: message.role === 'user' ? 'right' : 'left',
-              classNames: {
-                content: message.role === 'user' ? 'user-bubble' : 'ai-bubble',
-              },
-            })}
-            className="chat-message-list"
-            contentListClassName="chat-message-content-list"
-            bottomPanel={renderBottomPanel()}
-          /> */}
           <ChatMessageList
             className="chat-message-list"
             dataSource={messages}
@@ -196,7 +184,6 @@ export default function ChatView(props: IChatViewProps) {
                 return <MarkdownContent dataSource={content as string} />;
               }
               if (type === 'think') {
-                // console.log('think-content===>', content);
                 return <DeepThinkChat dataSource={content as any} />;
               }
               if (type === 'mcp') {

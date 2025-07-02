@@ -15,6 +15,7 @@ export default function MainLayout() {
   // 获取和更新奥丁服务的健康状态
   const { fetchByzeServerStatus } = useByzeServerCheckStore();
   useEffect(() => {
+    fetchByzeServerStatus();
     const interval = setInterval(() => {
       fetchByzeServerStatus();
     }, 30000);
