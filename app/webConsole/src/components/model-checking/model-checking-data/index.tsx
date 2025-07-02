@@ -4,7 +4,6 @@ import { useEffect, useMemo } from 'react';
 import { ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
 import { ISelectedDialogProps } from '@/components/choose-model-dialog';
 import { selectedModelType } from '@/store/useSelectedModel.ts';
-import useSelectedModelStore from '@/store/useSelectedModel.ts';
 
 export interface ModelCheckingHasdata extends ISelectedDialogProps {
   vm: IMyModelListViewModel;
@@ -12,7 +11,7 @@ export interface ModelCheckingHasdata extends ISelectedDialogProps {
 }
 
 export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
-  const { vm, handleAutoSetModel } = props;
+  const { vm, handleAutoSetModel, selectedStateModel } = props;
   const filterModelList = useMemo(() => {
     return vm.modelListData?.length > 0 ? vm.modelListData.splice(0, 2) : [];
   }, [vm.modelListData]);
@@ -31,11 +30,13 @@ export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
     }
     return { gutter: 16, column: 1 };
   };
+  console.info(selectedStateModel, '当前选中的值');
   return (
     <>
       <div className={styles.recommendText}>为你推荐以下模型</div>
       <ModelList
         {...props}
+        selectedStateModel={selectedStateModel}
         selectVms={vm}
         isSelectable={true}
         grid={grid()}

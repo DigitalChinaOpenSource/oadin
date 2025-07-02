@@ -111,7 +111,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   useEffect(() => {
     // 使用自定义模型列表数据源或全局模型列表数据
     const currentModelListData = props.customModelListData || modelListData;
-    
+
     // 创建一个映射来跟踪当前的下载状态
     const currentDownloadStatusMap: Record<string, any> = {};
     currentModelListData.forEach((item) => {
@@ -217,7 +217,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         );
         if (props.pageType === 1) {
           dataWithSource = dataWithSource.filter((item) => {
-            return item.class.every((c_item: string) => !c_item.includes('嵌入模型'));
+            return item.class.every((c_item: string) => !c_item.includes('嵌入'));
           });
         }
 
@@ -238,7 +238,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   useEffect(() => {
     fetchModelPath();
   }, []);
-  
+
   useEffect(() => {
     onModelSearch('');
     setPagination({ ...pagination, current: 1, total: 0 });
@@ -251,7 +251,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     // 注意：instanceIdRef.current 的更新已移至监视 modelListData 的 useEffect 中，
     // 确保数据和 ID 的更新一致
   }, [modelSourceVal, mine]);
-  
+
   // 添加新的 useEffect 来监听自定义模型列表数据的变化
   useEffect(() => {
     if (props.customModelListData && props.customModelListData.length > 0) {
