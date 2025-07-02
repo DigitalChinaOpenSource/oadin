@@ -99,11 +99,13 @@ export default function ModelChecking() {
             )}
           </div>
         </div>
-        <ChooseModelDialog
-          selectedOuterStateModel={selectedStateModel}
-          open={open}
-          onCancel={() => setOpen(false)}
-        />
+        {open && (
+          <ChooseModelDialog
+            selectedOuterStateModel={selectedStateModel}
+            open={open}
+            onCancel={() => setOpen(false)}
+          />
+        )}
       </div>
     </Skeleton>
   );
