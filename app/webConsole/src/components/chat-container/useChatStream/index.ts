@@ -223,12 +223,12 @@ export function useChatStream() {
     const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
     // 如果有生成的内容，保存为消息
     const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
-    if (isLoading && (response || streamingContent || tempStreamingThinking)) {
-      const finalContent = (response || streamingContent) + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
+    if (isLoading && (response || streamingContent || tempStreamingThinking || thinkingFromField)) {
+      const finalContent = (response || streamingContent || '') + ERROR_MESSAGES.CONNECTION.RESPONSE_INTERRUPTED;
       // 如果正在进行深度思考，标记为用户取消（错误状态）
       if (isThinkingActive || thinkingFromField) {
         setStreamingThinking({
-          data: thinkingFromField,
+          data: thinkingFromField || '',
           status: 'error',
         });
       }
@@ -338,8 +338,9 @@ export function useChatStream() {
       const { tool_calls, tool_group_id, id, total_duration } = data;
 
       // 检查是否有深度思考内容需要先保存 - 工具调用时才将思考独立为一条消息
-      if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
-        // 将深度思考内容作为单独的消息保存
+      // 注意：只有在有深度思考内容且当前响应内容为空的情况下才单独保存
+      // 如果有响应内容，则应该与思考内容一起放在同一个消息中
+      if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '' && (!currentContent || currentContent.trim() === '')) {
         const thinkingMessage = buildMessageWithThinkContent(
           '', // 正文内容为空
           true, // 标记为完成
@@ -581,8 +582,8 @@ export function useChatStream() {
             const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
             const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
             // 如果连接关闭但未完成且有内容，保存部分回复
-            if (isLoading && (response || responseContent)) {
-              const finalContent = (response || responseContent) + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
+            if (isLoading && (response || responseContent || thinkingFromField)) {
+              const finalContent = (response || responseContent || '') + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
               const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
               addMessage(aiMessage);
             }
@@ -674,20 +675,11 @@ export function useChatStream() {
               }
             }
 
-            // 处理未保存的思考内容
-            if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
-              const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false, requestState.current.content.thinkingTotalDuration);
-              addMessage(thinkingMessage);
-
-              requestState.current.content.thinkingFromField = '';
-              requestState.current.content.isThinkingActive = false;
-            }
-
             const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
             const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
             // 保存最终消息（仅在没有工具调用活动时）
-            if (!requestState.current.status.isToolCallActive && (response || responseContent)) {
-              const finalContent = response || responseContent;
+            if (!requestState.current.status.isToolCallActive && (response || responseContent || thinkingFromField)) {
+              const finalContent = response || responseContent || '';
               const aiMessage = buildMessageWithThinkContent(
                 finalContent,
                 true,
