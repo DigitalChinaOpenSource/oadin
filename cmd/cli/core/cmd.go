@@ -1443,9 +1443,12 @@ func ListenModelEngineHealth() {
 
 			engineList = append(engineList, sp.Flavor)
 		}
-
-		for _, engine := range engineList {
-			if engine == types.FlavorOllama {
+		for _, engineName := range engineList {
+			if engineName == types.FlavorOllama {
+				engineConfig := OllamaEngine.GetConfig()
+				if engineConfig.StartStatus != 1 {
+					continue
+				}
 				err := OllamaEngine.HealthCheck()
 				if err != nil {
 					err = OllamaEngine.InitEnv()
