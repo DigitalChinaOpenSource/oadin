@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
+import { type ChatMessageItem } from '@res-utiles/ui-components';
 import { message } from 'antd';
 import { ModelData } from '@/types';
 import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
-import { MessageType } from '@res-utiles/ui-components';
 import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDrawerProps } from './types';
 import { IModelSquareParams } from '@/types';
 import { convertMessageFormat } from '../utils/historyMessageFormat';
@@ -30,7 +30,6 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   // 获取历史对话记录
   const { loading: historyLoading, run: fetchChatHistory } = useRequest(
     async () => {
-      if (!currentSessionId) return;
       const data = await httpRequest.get<IChatHistoryItem[]>('/playground/sessions');
       return data || {};
     },
@@ -88,7 +87,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
       manual: true,
       onSuccess: (data: any) => {
         if (!data || !data.length) return message.error('获取历史对话记录失败');
-        const tempData = convertMessageFormat(data);
+        const tempData = convertMessageFormat(data) as any;
         fetchModelDetail(data[data.length - 1].modelId, tempData, data[data.length - 1].sessionId);
       },
       onError: () => {
@@ -111,7 +110,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   };
 
   // 根据模型id获取模型详情
-  const fetchModelDetail = async (modelId: string, messages: MessageType[], sessionId: string) => {
+  const fetchModelDetail = async (modelId: string, messages: ChatMessageItem[], sessionId: string) => {
     let res;
     const localParams: IModelSquareParams = {
       service_source: 'local',

@@ -27,9 +27,6 @@ export const useDownLoad = () => {
   const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
   downListRef.current = tempDownloadList;
 
-  // 计算当前下载中的项目
-  const downloadingItems = () => tempDownloadList.filter((item: IModelDataItem) => item.status === IN_PROGRESS);
-
   // 开始下载
   const fetchDownloadStart = useCallback(
     (params: IModelDataItem) => {
@@ -61,10 +58,10 @@ export const useDownLoad = () => {
       ]);
       // 同步更新所有模型列表中的状态
       const { setModelListData, setMyModelsList, setModelSquareList } = useModelListStore.getState();
-      
+
       // 更新函数，统一处理更新逻辑
       const updateModelStatus = (draft: IModelDataItem[]) => draft.map((item: IModelDataItem) => (item.id === id ? { ...item, status: IN_PROGRESS, currentDownload: 0 } : item));
-      
+
       // 更新所有相关状态
       setModelListData(updateModelStatus);
       setMyModelsList(updateModelStatus);
@@ -147,6 +144,7 @@ export const useDownLoad = () => {
 
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {
+    console.log('useEffect刷新===>', downloadList);
     const timeout = setTimeout(() => {
       const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
       if (downListLocal.length > 0) {
@@ -165,6 +163,8 @@ export const useDownLoad = () => {
 
   // 监听浏览器刷新 暂停所有模型下载 并且缓存下载列表
   usePageRefreshListener(() => {
+    const downloadingItems = tempDownloadList.filter((item: IModelDataItem) => item.status === IN_PROGRESS);
+    console.log('usePageRefreshListener===>', downloadingItems);
     // 存储正在下载的列表
     localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(downloadingItems));
 

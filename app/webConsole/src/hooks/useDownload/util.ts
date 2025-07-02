@@ -54,12 +54,12 @@ export const checkIsMaxDownloadCount = ({ modelList, downList, id }: any) => {
 const lastUpdateTime = {
   global: 0,
   myModels: 0,
-  modelSquare: 0
+  modelSquare: 0,
 };
 const pendingUpdates = {
   global: new Map(),
   myModels: new Map(),
-  modelSquare: new Map()
+  modelSquare: new Map(),
 };
 const THROTTLE_INTERVAL = 500; // 节流间隔，毫秒
 
@@ -68,11 +68,8 @@ export function updateDownloadStatus(id: string, updates: any) {
   const { setDownloadList, downloadList } = useModelDownloadStore.getState();
   const { setModelListData, setMyModelsList, setModelSquareList } = useModelListStore.getState();
 
-  // 查找要更新的项目
-  const itemToUpdate = downloadList?.find((item) => item.id === id);
   const now = Date.now();
 
-  // 总是立即更新下载列表，因为这个对性能影响较小
   setDownloadList((draft: any[]): any[] => {
     if (!draft || !Array.isArray(draft) || draft?.length === 0) {
       return [];
@@ -91,7 +88,7 @@ export function updateDownloadStatus(id: string, updates: any) {
     // 清空待更新队列
     const globalUpdates = new Map(pendingUpdates.global);
     pendingUpdates.global.clear();
-    
+
     setModelListData((draft: any[]): any[] => {
       if (!Array.isArray(draft) || draft.length === 0) {
         return [];
@@ -113,39 +110,42 @@ export function updateDownloadStatus(id: string, updates: any) {
     // 将更新放入待处理队列
     const existingUpdates = pendingUpdates.global.get(id) || {};
     pendingUpdates.global.set(id, { ...existingUpdates, ...updates });
-    
+
     // 设置定时器在节流间隔后处理
     if (pendingUpdates.global.size === 1) {
-      setTimeout(() => {
-        const globalUpdates = new Map(pendingUpdates.global);
-        pendingUpdates.global.clear();
-        lastUpdateTime.global = Date.now();
-        
-        setModelListData((draft: any[]): any[] => {
-          if (!Array.isArray(draft) || draft.length === 0) {
-            return [];
-          }
-          return draft.map((item) => {
-            const itemUpdates = globalUpdates.get(item.id);
-            if (itemUpdates) {
-              return { ...item, ...itemUpdates };
+      setTimeout(
+        () => {
+          const globalUpdates = new Map(pendingUpdates.global);
+          pendingUpdates.global.clear();
+          lastUpdateTime.global = Date.now();
+
+          setModelListData((draft: any[]): any[] => {
+            if (!Array.isArray(draft) || draft.length === 0) {
+              return [];
             }
-            return item;
+            return draft.map((item) => {
+              const itemUpdates = globalUpdates.get(item.id);
+              if (itemUpdates) {
+                return { ...item, ...itemUpdates };
+              }
+              return item;
+            });
           });
-        });
-      }, THROTTLE_INTERVAL - (now - lastUpdateTime.global));
+        },
+        THROTTLE_INTERVAL - (now - lastUpdateTime.global),
+      );
     }
   }
-  
+
   // 对"我的模型"和"模型广场"列表使用相同的节流逻辑
   // 这里只展示"我的模型"的实现，"模型广场"类似
-  
+
   // 更新"我的模型"列表（使用节流）
   if (now - lastUpdateTime.myModels > THROTTLE_INTERVAL) {
     lastUpdateTime.myModels = now;
     const myModelsUpdates = new Map(pendingUpdates.myModels);
     pendingUpdates.myModels.clear();
-    
+
     setMyModelsList((draft: any[]): any[] => {
       if (!Array.isArray(draft) || draft.length === 0) {
         return [];
@@ -164,35 +164,38 @@ export function updateDownloadStatus(id: string, updates: any) {
   } else {
     const existingUpdates = pendingUpdates.myModels.get(id) || {};
     pendingUpdates.myModels.set(id, { ...existingUpdates, ...updates });
-    
+
     if (pendingUpdates.myModels.size === 1) {
-      setTimeout(() => {
-        const myModelsUpdates = new Map(pendingUpdates.myModels);
-        pendingUpdates.myModels.clear();
-        lastUpdateTime.myModels = Date.now();
-        
-        setMyModelsList((draft: any[]): any[] => {
-          if (!Array.isArray(draft) || draft.length === 0) {
-            return [];
-          }
-          return draft.map((item) => {
-            const itemUpdates = myModelsUpdates.get(item.id);
-            if (itemUpdates) {
-              return { ...item, ...itemUpdates };
+      setTimeout(
+        () => {
+          const myModelsUpdates = new Map(pendingUpdates.myModels);
+          pendingUpdates.myModels.clear();
+          lastUpdateTime.myModels = Date.now();
+
+          setMyModelsList((draft: any[]): any[] => {
+            if (!Array.isArray(draft) || draft.length === 0) {
+              return [];
             }
-            return item;
+            return draft.map((item) => {
+              const itemUpdates = myModelsUpdates.get(item.id);
+              if (itemUpdates) {
+                return { ...item, ...itemUpdates };
+              }
+              return item;
+            });
           });
-        });
-      }, THROTTLE_INTERVAL - (now - lastUpdateTime.myModels));
+        },
+        THROTTLE_INTERVAL - (now - lastUpdateTime.myModels),
+      );
     }
   }
-  
+
   // 更新"模型广场"列表（使用节流）
   if (now - lastUpdateTime.modelSquare > THROTTLE_INTERVAL) {
     lastUpdateTime.modelSquare = now;
     const modelSquareUpdates = new Map(pendingUpdates.modelSquare);
     pendingUpdates.modelSquare.clear();
-    
+
     setModelSquareList((draft: any[]): any[] => {
       if (!Array.isArray(draft) || draft.length === 0) {
         return [];
@@ -211,26 +214,29 @@ export function updateDownloadStatus(id: string, updates: any) {
   } else {
     const existingUpdates = pendingUpdates.modelSquare.get(id) || {};
     pendingUpdates.modelSquare.set(id, { ...existingUpdates, ...updates });
-    
+
     if (pendingUpdates.modelSquare.size === 1) {
-      setTimeout(() => {
-        const modelSquareUpdates = new Map(pendingUpdates.modelSquare);
-        pendingUpdates.modelSquare.clear();
-        lastUpdateTime.modelSquare = Date.now();
-        
-        setModelSquareList((draft: any[]): any[] => {
-          if (!Array.isArray(draft) || draft.length === 0) {
-            return [];
-          }
-          return draft.map((item) => {
-            const itemUpdates = modelSquareUpdates.get(item.id);
-            if (itemUpdates) {
-              return { ...item, ...itemUpdates };
+      setTimeout(
+        () => {
+          const modelSquareUpdates = new Map(pendingUpdates.modelSquare);
+          pendingUpdates.modelSquare.clear();
+          lastUpdateTime.modelSquare = Date.now();
+
+          setModelSquareList((draft: any[]): any[] => {
+            if (!Array.isArray(draft) || draft.length === 0) {
+              return [];
             }
-            return item;
+            return draft.map((item) => {
+              const itemUpdates = modelSquareUpdates.get(item.id);
+              if (itemUpdates) {
+                return { ...item, ...itemUpdates };
+              }
+              return item;
+            });
           });
-        });
-      }, THROTTLE_INTERVAL - (now - lastUpdateTime.modelSquare));
+        },
+        THROTTLE_INTERVAL - (now - lastUpdateTime.modelSquare),
+      );
     }
   }
 }

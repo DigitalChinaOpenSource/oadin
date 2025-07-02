@@ -99,9 +99,9 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
                     <div className={styles.modelRight}>
                       {model.flavor}
                       <div className={styles.line}></div>
-                      {Boolean(model.params_size) && (
+                      {Boolean(model.context) && (
                         <>
-                          上下文长度: {model.params_size}k<div className={styles.line}></div>
+                          上下文长度: {model.context}k<div className={styles.line}></div>
                         </>
                       )}
                       <>{vm.providerDetail.service_source === 'remote' ? <>{model.is_downloaded ? '已授权' : '未授权'}</> : <>{model.is_downloaded ? '已下载' : '未下载'}</>}</>

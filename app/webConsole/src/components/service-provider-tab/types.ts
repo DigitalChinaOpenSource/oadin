@@ -53,6 +53,7 @@ export interface ISupportModel {
   input_length: number;
   output_length: number;
   is_downloaded: boolean;
+  context?: number;
 }
 
 export interface IProviderDetailData {
