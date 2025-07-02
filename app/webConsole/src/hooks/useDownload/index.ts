@@ -24,6 +24,7 @@ export const useDownLoad = () => {
 
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
+  const hasUserTriggeredDownload = useRef(false); // 标记用户是否主动触发了下载
   const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
   downListRef.current = tempDownloadList;
 
@@ -42,6 +43,9 @@ export const useDownLoad = () => {
       // if (isMaxNum) return;
       // 兼容处理第一条数据id===0的场景
       if (id === undefined || id === null) return;
+
+      // 标记用户主动触发了下载
+      hasUserTriggeredDownload.current = true;
 
       const paramsTemp = {
         model_name: name,
@@ -146,13 +150,16 @@ export const useDownLoad = () => {
   useEffect(() => {
     console.log('useEffect刷新===>', downloadList);
     const timeout = setTimeout(() => {
-      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
-      if (downListLocal.length > 0) {
-        const updatedList = downListLocal.map((item: IModelDataItem) => ({
-          ...item,
-          status: item.status === IN_PROGRESS ? PAUSED : item.status,
-        }));
-        setDownloadList(updatedList);
+      // 只有在用户没有主动触发下载的情况下，才从localStorage恢复并暂停进行中的下载
+      if (!hasUserTriggeredDownload.current) {
+        const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
+        if (downListLocal.length > 0) {
+          const updatedList = downListLocal.map((item: IModelDataItem) => ({
+            ...item,
+            status: item.status === IN_PROGRESS ? PAUSED : item.status,
+          }));
+          setDownloadList(updatedList);
+        }
       }
 
       // localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);

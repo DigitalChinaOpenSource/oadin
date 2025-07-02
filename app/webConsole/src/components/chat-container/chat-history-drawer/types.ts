@@ -1,4 +1,4 @@
-import type { MessageType } from '@res-utiles/ui-components';
+import type { ChatMessageItem } from '@res-utiles/ui-components';
 
 export interface IChatHistoryItem {
   id: string | number;
@@ -31,5 +31,5 @@ export interface GroupedChatHistory {
 
 export interface IChatHistoryDrawerProps {
   onHistoryDrawerClose?: () => void;
-  onHistorySelect?: (historyId: string, historyMessages: MessageType[]) => void;
+  onHistorySelect?: (historyId: string, historyMessages: ChatMessageItem[]) => void;
 }

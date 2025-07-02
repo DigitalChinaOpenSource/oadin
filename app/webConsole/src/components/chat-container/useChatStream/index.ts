@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { fetchEventSource, FetchEventSourceInit } from '@microsoft/fetch-event-source';
 import { baseHeaders } from '@/utils';
 import { API_PREFIX } from '@/constants';
-import { MessageType } from '@res-utiles/ui-components';
+import { ChatMessageItem } from '@res-utiles/ui-components';
 import useChatStore from '@/components/chat-container/store/useChatStore';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
@@ -152,7 +152,7 @@ export function useChatStream() {
 
         // 如果有更新，保存消息
         if (hasUpdates) {
-          const errorMessage: MessageType = {
+          const errorMessage: ChatMessageItem = {
             id: progressToolMessage.id,
             role: 'assistant',
             contentList: updatedContentList,
@@ -406,7 +406,7 @@ export function useChatStream() {
           currentContentList = updateContentListWithMcpByGroupId(currentContentList, mcpContent, tool_group_id);
         }
 
-        const mcpMessage: MessageType = {
+        const mcpMessage: ChatMessageItem = {
           id: tool_group_id || id,
           role: 'assistant',
           contentList: currentContentList,
@@ -448,7 +448,7 @@ export function useChatStream() {
           updatedContentList = updateContentListWithMcpByGroupId(currentContentList, updatedMcpContent, tool_group_id);
         }
 
-        const updatedMessage: MessageType = {
+        const updatedMessage: ChatMessageItem = {
           id: tool_group_id || id,
           role: 'assistant',
           contentList: updatedContentList,
@@ -512,7 +512,7 @@ export function useChatStream() {
 
     // 创建用户消息（仅在需要时）
     if (isUserMessage) {
-      const userMsg: MessageType = {
+      const userMsg: ChatMessageItem = {
         id: generateUniqueId('user_msg'),
         role: 'user',
         contentList: [
@@ -664,7 +664,7 @@ export function useChatStream() {
               });
 
               if (hasUpdates) {
-                const finalMessage: MessageType = {
+                const finalMessage: ChatMessageItem = {
                   id: progressToolMessage.id,
                   role: 'assistant',
                   contentList: updatedContentList,
