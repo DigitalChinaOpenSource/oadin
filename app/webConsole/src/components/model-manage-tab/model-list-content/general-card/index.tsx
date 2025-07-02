@@ -1,11 +1,8 @@
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import { Button, Tooltip, message, Radio } from 'antd';
+import { Button, message, Radio, Tooltip } from 'antd';
 import { IModelAuth } from '../../types';
 import { IModelDataItem, IModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
-import { DownloadSimpleIcon, GlobeIcon, ArrowClockwiseIcon, SpinnerIcon, GearSixIcon, TrashIcon, HardDrivesIcon } from '@phosphor-icons/react';
+import { ArrowClockwiseIcon, DownloadSimpleIcon, GearSixIcon, GlobeIcon, HardDrivesIcon, SpinnerIcon, TrashIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import React, { MouseEvent } from 'react';
@@ -268,7 +265,8 @@ const GeneralCard = React.memo(
 
         <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>
           {isDetail ? (
-            <>{ReactMarkdown({ children: modelData?.desc, remarkPlugins: [remarkGfm], rehypePlugins: [rehypeRaw] })}</>
+            // <>{ReactMarkdown({ children: modelData?.desc, remarkPlugins: [remarkGfm], rehypePlugins: [rehypeRaw] })}</>
+            modelData?.desc || '暂无模型简介'
           ) : (
             <Tooltip title={<div style={{ maxHeight: '100px', overflow: 'auto' }}>{modelData?.desc}</div>}>{modelData?.desc || '暂无模型简介'}</Tooltip>
           )}
@@ -292,6 +290,7 @@ const GeneralCard = React.memo(
     // 只在关键属性变化时重新渲染
     if (prevProps.modelData.id !== nextProps.modelData.id) return false;
     if (prevProps.modelData.status !== nextProps.modelData.status) return false;
+    if (prevProps.modelData.can_select !== nextProps.modelData.can_select) return false;
     if (prevProps.modelData.currentDownload !== nextProps.modelData.currentDownload) return false;
     if (prevProps.selectedStateModel?.id !== nextProps.selectedStateModel?.id) return false;
     return true;
