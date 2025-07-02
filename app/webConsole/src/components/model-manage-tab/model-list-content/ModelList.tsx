@@ -20,7 +20,7 @@ export interface IModelList extends ISelectedDialogProps {
 
 export const ModelList = React.memo((props: IModelList) => {
   const { vmContent, selectVms, dataSource, selectedStateModel } = props;
-  
+
   // 使用useMemo优化列表渲染
   const content = useMemo(() => {
     let result = (
@@ -31,10 +31,10 @@ export const ModelList = React.memo((props: IModelList) => {
             alt="no-data"
           />
         </div>
-        <div className={styles.noDataText}>暂无匹配的模型</div>
+        <div className={styles.noDataText}>暂无模型</div>
       </div>
     );
-    
+
     if (vmContent && vmContent.pagenationData.length > 0) {
       result = (
         <Radio.Group
@@ -85,15 +85,7 @@ export const ModelList = React.memo((props: IModelList) => {
       );
     }
     return result;
-  }, [
-    vmContent?.pagenationData, 
-    dataSource, 
-    selectedStateModel?.id, 
-    props.grid, 
-    props.pagination,
-    props.dataSource,
-    selectVms
-  ]);
-  
+  }, [vmContent?.pagenationData, dataSource, selectedStateModel?.id, props.grid, props.pagination, props.dataSource, selectVms]);
+
   return <div className={styles.modelCardList}>{content}</div>;
 });

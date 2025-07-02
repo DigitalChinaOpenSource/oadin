@@ -85,7 +85,7 @@ export default function ServiceProviderManageTab() {
                           alt="no-data"
                         />
                       </div>
-                      <div className={styles.noDataText}>暂无匹配的模型</div>
+                      <div className={styles.noDataText}>暂无模型</div>
                     </div>
                   )}
                 </>

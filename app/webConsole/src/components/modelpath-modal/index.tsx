@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import { Modal, Input, Form, message } from 'antd';
 import { useRequest, useDebounce } from 'ahooks';
-import { httpRequest } from '@/utils/httpRequest';
+import { httpRequest, healthRequest } from '@/utils/httpRequest';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
@@ -81,7 +81,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
   );
 
   const checkOadinHealth = async () => {
-    const data = await httpRequest.get('/health');
+    const data = await healthRequest.get('/health');
     try {
       if (data?.status === 'UP') {
         return true;
@@ -167,8 +167,8 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
 
           {Object.keys(currentPathSpace).length > 0 && (
             <div className={styles.diskSpace}>
-              <span>总容量 {currentPathSpace?.total_size}GB</span> ｜ 已使用 <span>{currentPathSpace?.usage_size}GB</span>，
-              <span className={styles.diskCanUse}>剩余 {currentPathSpace?.free_size}GB</span>
+              已使用 <span>{currentPathSpace?.usage_size}GB</span> ｜ <span>总容量 {currentPathSpace?.total_size}GB</span> ，
+              <span className={styles.diskCanUse}>{currentPathSpace?.free_size}GB 可用</span>
             </div>
           )}
         </div>
