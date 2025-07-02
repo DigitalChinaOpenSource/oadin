@@ -4,7 +4,7 @@ import { ModelCheckingNodata } from './model-checking-nodata';
 import moreModel from '@/components/icons/moreModel.png';
 import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import { useEffect, useMemo, useState } from 'react';
-import { useViewModel, IMyModelListViewModel } from './view-model.ts';
+import { IMyModelListViewModel, useViewModel } from './view-model.ts';
 import { ModelCheckingHasdata } from '@/components/model-checking/model-checking-data';
 import useSelectedModelStore, { selectedModelType } from '@/store/useSelectedModel.ts';
 import { getMessageByModel } from '@/i18n';
@@ -100,6 +100,7 @@ export default function ModelChecking() {
           </div>
         </div>
         <ChooseModelDialog
+          selectedOuterStateModel={selectedStateModel}
           open={open}
           onCancel={() => setOpen(false)}
         />

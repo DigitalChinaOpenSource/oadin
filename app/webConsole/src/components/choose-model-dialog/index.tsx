@@ -10,6 +10,7 @@ import { getMessageByModel } from '@/i18n';
 export interface IChooseModelDialog {
   onCancel: () => void;
   open?: boolean;
+  selectedOuterStateModel?: selectedModelType;
 }
 
 export interface ISelectedDialogProps {
@@ -20,6 +21,7 @@ export interface ISelectedDialogProps {
 
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
   const { selectedModel, setSelectedModel } = useSelectedModelStore();
+  const { selectedOuterStateModel } = props;
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
   const [activeKey, setActiveKey] = useState<string>('my-models');
   const onChange = (activeKey: string) => {
@@ -27,12 +29,12 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
     setActiveKey(activeKey);
   };
   const { fetchChooseModelNotify } = useViewModel();
-  
+
   // 设置选中的模型
   useEffect(() => {
-    setSelecteStatedModel(selectedModel);
-  }, [selectedModel]);
-  
+    setSelecteStatedModel(selectedOuterStateModel || selectedModel);
+  }, [selectedModel, selectedOuterStateModel]);
+
   // 对话框打开时的处理，优化以避免不必要的刷新
   const dialogOpenTimeRef = useRef<number>(0);
   useEffect(() => {
