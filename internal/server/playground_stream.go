@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -340,80 +339,41 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 		"role":    "user",
 		"content": genTitlePrompt,
 	})
-	payload := map[string]interface{}{
-		"model":    sessionCheck.ModelName,
-		"messages": history,
-		"stream":   false,
-		"think":    false,
+
+	modelEngine := engine.NewEngine() // 构建聊天请求
+	chatRequest := &types.ChatRequest{
+		Model:    sessionCheck.ModelName,
+		Messages: history,
+		Stream:   false,
+		Think:    false,
 	}
 
-	slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
-	fmt.Println("[DEBUG] TitleGen HTTP payload", "payload", payload)
-	client := &http.Client{}
-	payloadBytes, marshalErr := json.Marshal(payload)
-	if marshalErr != nil {
-		slog.Error("Failed to marshal payload to JSON", "error", marshalErr)
-		return marshalErr
+	res, err := modelEngine.Chat(ctx, chatRequest)
+	if err != nil {
+		fmt.Println("Failed to generate title", "error", err)
+		slog.Error("Failed to generate title", "error", err)
+		return err
 	}
-	req, err := http.NewRequest("POST", "http://localhost:16688/oadin/v0.2/services/chat", strings.NewReader(string(payloadBytes)))
-	if err == nil {
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := client.Do(req)
-		var title string
-		if err == nil && resp != nil {
-			defer resp.Body.Close()
-			var oadinResp struct {
-				BusinessCode int             `json:"business_code"`
-				Message      string          `json:"message"`
-				Data         json.RawMessage `json:"data"`
-			}
-			decodeErr := json.NewDecoder(resp.Body).Decode(&oadinResp)
 
-			if decodeErr == nil && oadinResp.BusinessCode == 10000 {
-				var chatResp struct {
-					Choices []struct {
-						Message struct {
-							Content string `json:"content"`
-						} `json:"message"`
-					} `json:"choices"`
-				}
-
-				if err := json.Unmarshal(oadinResp.Data, &chatResp); err == nil && len(chatResp.Choices) > 0 {
-					title = chatResp.Choices[0].Message.Content
-					fmt.Println("[DEBUG] TitleGen parsed from Oadin response:", title)
-				} else {
-					var legacyResult struct {
-						Content string `json:"content"`
-						Message struct {
-							Content string `json:"content"`
-						} `json:"message"`
-					}
-					if err := json.Unmarshal(oadinResp.Data, &legacyResult); err == nil {
-						if len(legacyResult.Content) > 0 {
-							title = legacyResult.Content
-						} else if len(legacyResult.Message.Content) > 0 {
-							title = legacyResult.Message.Content
-						}
-					}
-				}
-				if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
-					re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
-					title = re.ReplaceAllString(title, "")
-					title = strings.TrimSpace(title)
-				}
-				slog.Info("[DEBUG] TitleGen final title", "title", title)
-				if title != "" {
-					runes := []rune(title)
-					title = string(runes)
-					sessionCheck.Title = title
-					err = p.Ds.Put(ctx, sessionCheck)
-				}
-			}
+	title := res.Content
+	if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
+		re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+		title = re.ReplaceAllString(title, "")
+		title = strings.TrimSpace(title)
+	}
+	if title != "" {
+		runes := []rune(title)
+		title = string(runes)
+		sessionCheck.Title = title
+		err = p.Ds.Put(ctx, sessionCheck)
+		if err != nil {
+			fmt.Println("Failed to generate title put", "error", err)
+			slog.Error("Failed to generate title put", "error", err)
+			return err
 		}
 	}
 
-	fmt.Println("UpdateSessionTitle err", err)
-	return err
+	return nil
 }
 
 // 增加会话的标题
@@ -490,11 +450,12 @@ func (p *PlaygroundImpl) HandleToolCalls(ctx context.Context, sessionId string, 
 				}
 
 				history = append(history, map[string]string{
-					"role":    "assistant",
-					"content": fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", msg.Name, inputParams),
+					"role":       "assistant",
+					"content":    "",
+					"tool_calls": inputParams,
 				})
 				history = append(history, map[string]string{
-					"role":    "user",
+					"role":    "tool",
 					"content": outputParams,
 				})
 			}
