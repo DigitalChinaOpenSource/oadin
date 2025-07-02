@@ -67,9 +67,8 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
         message.success('删除对话历史记录成功');
         // 如果删除的是当前会话的历史记录，则清空当前会话(能否新建一个对话)
         if (params[0] === currentSessionId) {
-          setSessionIdToUrl(''); // 清除URL中的sessionId
-          createNewChat();
-          setSelectMcpList([]);
+          props.handleCreateNewChat?.();
+          setHistoryVisible(false);
         }
         if (!data) return;
       },
