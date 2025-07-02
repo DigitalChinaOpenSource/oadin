@@ -55,19 +55,24 @@ build_mac:
     - echo 'set -x' >> scripts/postinstall
     - echo 'cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"' >> scripts/postinstall
     - echo 'ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin' >> scripts/postinstall
-    - echo 'USER_HOME=$(eval echo ~${SUDO_USER:-$USER})' >> scripts/postinstall
-    - echo 'SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')' >> scripts/postinstall
+    - echo "SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')" >> scripts/postinstall
     - echo 'SHELL_NAME=$(basename "$SHELL_PATH")' >> scripts/postinstall
     - echo 'if [ "$SHELL_NAME" = "zsh" ]; then' >> scripts/postinstall
-    - echo '  RC_FILE=".zshrc"' >> scripts/postinstall
+    - echo '  RC_FILE="$USER_HOME/.zshrc"' >> scripts/postinstall
     - echo 'elif [ "$SHELL_NAME" = "bash" ]; then' >> scripts/postinstall
-    - echo '  RC_FILE=".bash_profile"' >> scripts/postinstall
+    - echo '  RC_FILE="$USER_HOME/.bash_profile"' >> scripts/postinstall
     - echo 'else' >> scripts/postinstall
-    - echo '  RC_FILE=""'  >> scripts/postinstall
+    - echo '  RC_FILE=""' >> scripts/postinstall
     - echo 'fi' >> scripts/postinstall
-    - echo 'if [ -n "$RC_FILE" ]; then' >> scripts/postinstall
-    - echo '  su - "$USER" -c "source ~/$RC_FILE; oadin server start -d"' >> scripts/postinstall
+    - echo 'echo "USER=$USER_HOME" >> $USER_HOME/test.txt' >> scripts/postinstall
+    - echo 'echo "SHELL_PATH=$SHELL_PATH" >> $USER_HOME/test.txt' >> scripts/postinstall
+    - echo 'echo "SHELL_NAME=$SHELL_NAME" >> $USER_HOME/test.txt' >> scripts/postinstall
+    - echo 'echo "RC_FILE=$RC_FILE" >> $USER_HOME/test.txt' >> scripts/postinstall
+    - echo 'if [ -n "$RC_FILE" ] && [ -f "$RC_FILE" ]; then' >> scripts/postinstall
+    - echo '  echo 1111 >> $USER_HOME/test.txt' >> scripts/postinstall
+    - echo '  su - "$USER" -c "source $RC_FILE && oadin server start -d"' >> scripts/postinstall
     - echo 'else' >> scripts/postinstall
+    - echo '  echo 2222 >> $USER_HOME/test.txt' >> scripts/postinstall
     - echo '  su - "$USER" -c "oadin server start -d"' >> scripts/postinstall
     - echo 'fi' >> scripts/postinstall
     - chmod +x scripts/postinstall

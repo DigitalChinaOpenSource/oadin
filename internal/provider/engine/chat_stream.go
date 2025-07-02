@@ -94,6 +94,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				Message      struct {
 					Content   string           `json:"content"`
 					Role      string           `json:"role"`
+					Thinking  string           `json:"thinking"`
 					ToolCalls []types.ToolCall `json:"tool_calls,omitempty"`
 				} `json:"message"`
 				Model string `json:"model"`
