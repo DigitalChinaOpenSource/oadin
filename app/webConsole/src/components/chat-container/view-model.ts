@@ -28,6 +28,9 @@ export default function useViewModel() {
   const [isDownloadEmbed, setIsDownloadEmbed] = useState<boolean>(false);
 
   const isLoadingHistory = useRef(false);
+  useEffect(() => {
+    fetchAllModels();
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -127,10 +130,6 @@ export default function useViewModel() {
   }, [selectedModel, initialized, prevModelId, isDownloadEmbed]);
 
   useEffect(() => {
-    fetchAllModels();
-  }, []);
-
-  useEffect(() => {
     if (isDownloadEmbed && currentSessionId && selectedModel?.id) {
       const tempParams = {
         service_name: 'embed',
@@ -146,6 +145,12 @@ export default function useViewModel() {
         sessionId: currentSessionId,
         modelId: selectedModel?.id || '',
         embedModelId: EMBEDMODELID,
+      });
+    } else if (!currentSessionId && selectedModel?.id) {
+      // 删除当前正在使用的会话历史记录，需要新建
+      fetchCreateChat({
+        modelId: selectedModel.id,
+        embedModelId: isDownloadEmbed ? EMBEDMODELID : undefined,
       });
     }
   }, [isDownloadEmbed, currentSessionId, selectedModel?.id]);

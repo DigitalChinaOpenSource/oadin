@@ -34,7 +34,6 @@ interface RequestState {
  */
 export const parseThinkContent = (content: string, hasUnfinishedThink: boolean = false, totalDuration?: number): Array<ParsedContent> => {
   const result: Array<ParsedContent> = [];
-  console.log('totalDuration===>', totalDuration);
   // 正则表达式匹配 <think> 和 </think> 标签
   const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
   let lastIndex = 0;
