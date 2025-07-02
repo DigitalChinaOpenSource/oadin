@@ -301,6 +301,7 @@ export default function useViewModel() {
     fetchCreateChat({
       modelId: selectedModel?.id || '',
       embedModelId: isDownloadEmbed ? EMBEDMODELID : undefined,
+      modelName: selectedModel?.name || '',
     });
   };
 
