@@ -67,7 +67,8 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	// Stop the engine before migration to avoid errors caused by processes still using the files.
 	engine := provider.GetModelEngine("ollama")
 	_ = engine.StopEngine()
-
+	engineConfig := engine.GetConfig()
+	engineConfig.StartStatus = 0
 	isSourceDirEmpty := utils.IsDirEmpty(req.SourcePath)
 	if !isSourceDirEmpty {
 		sourcePathSize, err := utils.GetFilePathTotalSize(req.SourcePath)
@@ -121,6 +122,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if err != nil {
 		return nil, err
 	}
+	engineConfig.StartStatus = 1
 
 	res := &dto.ModifyModelFilePathResponse{}
 	res.Bcode = *bcode.ControlPanelCode
