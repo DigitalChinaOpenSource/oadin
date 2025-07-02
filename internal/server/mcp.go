@@ -166,7 +166,7 @@ func (M *MCPServerImpl) GetCategories(ctx context.Context) (*rpc.CategoryListRes
 
 func (M *MCPServerImpl) GetMyMCPList(ctx context.Context, request *rpc.MCPListRequest) (*rpc.MCPListResponse, error) {
 	// 先获取属于我的mcp数据, 带入条件去查询列表数据
-	configs, err := M.Ds.List(ctx, &types.McpUserConfig{}, &datastore.ListOptions{SortBy: []datastore.SortOption{{Key: "created_at", Order: datastore.SortOrderDescending}}})
+	configs, err := M.Ds.List(ctx, &types.McpUserConfig{}, &datastore.ListOptions{SortBy: []datastore.SortOption{{Key: "updated_at", Order: datastore.SortOrderDescending}}})
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +360,7 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	if len(toolIds) > 0 {
 		con.Kits = strings.Join(toolIds, ",")
 	} else {
-		con.Kits = "" // 如果没有禁用的工具，设为空字符串
+		con.Kits = "default tool," // 如果没有禁用的工具，设为空字符串
 	}
 
 	err = M.Ds.Put(c.Request.Context(), con)
