@@ -92,7 +92,7 @@ export default function useViewModel() {
 
   const { run: fetchAllModels } = useRequest(
     async () => {
-      const data = await httpRequest.get<any[]>('/model');
+      const data = await httpRequest.get('/model');
       return data || [];
     },
     {

@@ -64,9 +64,3 @@ export const fetchGenChatTitle = async () => {
     console.error('生成标题失败===>');
   }
 };
-
-export const fetchCheckEngineStatus = async (): Promise<boolean> => {
-  const res = await healthRequest.get('/engine/health');
-  // 1 可用；0 不可用；
-  return res.status === 1;
-};

@@ -20,7 +20,8 @@ import { useChatStream } from '@/components/chat-container/useChatStream';
 import { HeaderContent } from './header-content';
 import EmbedDownloadButton from '../enbed-download-btn';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
-import { fetchCheckEngineStatus } from '../useChatStream/utils';
+import useSelectedModelStore from '@/store/useSelectedModel';
+import { fetchCheckEngineStatus, chechIsModelDownloaded } from '../utils';
 import './index.scss';
 
 interface IChatViewProps {
@@ -41,6 +42,7 @@ interface IChatViewProps {
 export default function ChatView(props: IChatViewProps) {
   const { isDownloadEmbed } = props;
   const { messages, isUploading } = useChatStore();
+  const { selectedModel } = useSelectedModelStore();
   const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
@@ -66,7 +68,13 @@ export default function ChatView(props: IChatViewProps) {
       message.error('模型引擎异常，请检查当前模型引擎的服务状态');
       return;
     }
-    sendChatMessage(messageString);
+    const isModelDownloaded = await chechIsModelDownloaded(selectedModel?.name || '');
+    if (!isModelDownloaded) {
+      const text = selectedModel?.source === 'local' ? '模型未下载，请先下载模型' : '模型未授权，请先授权';
+      message.error(text);
+      return;
+    }
+    await sendChatMessage(messageString);
   };
 
   // 输入框底部功能区
