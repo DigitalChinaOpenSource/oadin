@@ -74,9 +74,30 @@ export default function McpCard(props: IMcpCardProps) {
     }
   }, [mcpDownloadList]);
 
+  // status为0表示未添加，1表示已添加---isAdd为true表示未添加，false表示已添加
   const isAdd = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
+
   return (
-    <div className={styles.mcpCard}>
+    <div
+      className={styles.mcpCard}
+      onClick={(e) => {
+        // 添加检查，如果已经有Popover或Modal操作正在进行，则不触发卡片点击
+        if (showOperate || showMcpModal) {
+          return;
+        }
+        // 如果是弹窗
+        if (isSelectable) {
+          // 如果是已添加的MCP
+          if (!isAdd) {
+            if (selectTemporaryMcpItems.find((item) => item.id === mcpData.id)) {
+              handleItemSelect(mcpData, false);
+            } else {
+              handleItemSelect(mcpData, true);
+            }
+          }
+        }
+      }}
+    >
       <div className={styles.cardHeader}>
         <div className={styles.cardTitle}>
           {/* logo */}
@@ -151,11 +172,19 @@ export default function McpCard(props: IMcpCardProps) {
         <div className={styles.updateName}>{mcpData?.updatedAt && formatUnixTime(mcpData?.updatedAt) + '更新'}</div>
         {/*{!!mcpData.status && <div className={styles.mcpStatus}>已添加</div>}*/}
       </div>
-      <div className={styles.cardOperate}>
+      <div
+        className={styles.cardOperate}
+        onClick={(e) => {
+          // 防止卡片点击事件触发
+          e.stopPropagation();
+        }}
+      >
         <Button
           type={'text'}
           icon={<ExclamationCircleOutlined />}
-          onClick={() => handelMcpCardClick(mcpData?.id)}
+          onClick={() => {
+            handelMcpCardClick(mcpData?.id);
+          }}
         >
           查看详情
         </Button>
@@ -165,7 +194,9 @@ export default function McpCard(props: IMcpCardProps) {
             type={'link'}
             icon={<PlusCircleOutlined />}
             loading={showLoading || authMcpLoading || downMcpLoading || cancelMcpLoading}
-            onClick={async () => {
+            onClick={async (e) => {
+              e.stopPropagation();
+              e.preventDefault();
               const data = await clickBefore();
               if (data) await handleAddMcp(data);
             }}
@@ -178,10 +209,22 @@ export default function McpCard(props: IMcpCardProps) {
             trigger="click"
             arrow={false}
             open={showOperate}
-            onOpenChange={(visible) => setShowOperate(visible)}
+            onOpenChange={(visible) => {
+              setShowOperate(visible);
+              // 给事件处理一个延时，避免冒泡到卡片
+              // if (!visible) {
+              //   setTimeout(() => {}, 100);
+              // }
+            }}
             styles={{ body: { padding: 0 } }}
             content={
-              <div className={styles.moreOperate}>
+              <div
+                className={styles.moreOperate}
+                onClick={(e) => {
+                  // 阻止所有点击事件冒泡到卡片
+                  e.stopPropagation();
+                }}
+              >
                 <div
                   className={styles.operateBtn}
                   onClick={async () => {
@@ -195,7 +238,11 @@ export default function McpCard(props: IMcpCardProps) {
                   className={styles.operateBtn}
                   onClick={() => {
                     setShowOperate(false);
-                    isMyMcp ? handleCancelMcp(isMyMcp, props.handleMcpListToPage) : handleCancelMcp();
+                    if (isMyMcp) {
+                      handleCancelMcp(isMyMcp, props.handleMcpListToPage);
+                    } else {
+                      handleCancelMcp();
+                    }
                   }}
                 >
                   取消添加
