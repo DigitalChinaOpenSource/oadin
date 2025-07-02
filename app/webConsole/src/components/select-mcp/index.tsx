@@ -59,7 +59,7 @@ export const SelectMcp = () => {
               />
             }
           >
-            已选<span className={styles.select_mcp_count_warp}>{selectMcpList.length || 0}</span>
+            启用<span className={styles.select_mcp_count_warp}>{selectMcpList.length || 0}</span>
           </Button>
         </Tooltip>
       </Popover>
