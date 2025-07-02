@@ -1,6 +1,6 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import styles from './index.module.scss';
-import { Button, Checkbox, message, Popover } from 'antd';
+import { Button, Checkbox, message, Popover, Tooltip } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
 import { DotsThreeCircleIcon, GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
@@ -82,7 +82,7 @@ export default function McpCard(props: IMcpCardProps) {
   }, [mcpDownloadList]);
 
   // status为0表示未添加，1表示已添加---isAdd为true表示未添加，false表示已添加
-  const isAdd = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
+  const isDisabled = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
 
   return (
     <div
@@ -95,7 +95,7 @@ export default function McpCard(props: IMcpCardProps) {
         // 如果是弹窗
         if (isSelectable) {
           // 如果是已添加的MCP
-          if (!isAdd) {
+          if (!isDisabled) {
             if (selectTemporaryMcpItems.find((item) => item.id === mcpData.id)) {
               handleItemSelect(mcpData, false);
             } else {
@@ -147,16 +147,16 @@ export default function McpCard(props: IMcpCardProps) {
         </div>
 
         {isSelectable ? (
-          <div>
+          <Tooltip title={isDisabled ? '请先添加后，再体验' : ''}>
             <Checkbox
               checked={selectTemporaryMcpItems
                 .map((item) => {
                   return item?.id;
                 })
                 .includes(mcpData.id)}
-              disabled={isAdd}
+              disabled={isDisabled}
             />
-          </div>
+          </Tooltip>
         ) : null}
       </div>
       <div style={{ height: '24px' }}>
@@ -195,7 +195,7 @@ export default function McpCard(props: IMcpCardProps) {
           查看详情
         </Button>
         <div className={styles.splitLine}></div>
-        {isAdd && (
+        {isDisabled && (
           <Button
             type={'link'}
             icon={<PlusCircleOutlined />}
