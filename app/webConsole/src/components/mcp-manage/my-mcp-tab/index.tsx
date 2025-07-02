@@ -37,7 +37,7 @@ export default function MyMcpTab(props: IMyMcpTabProps) {
               title: '我的MCP',
               count: vm.pagination.total ?? 0,
             })}
-        {renderSearch({ vm })}
+        {!showOnlySelectedMyMcp && renderSearch({ vm })}
       </>
     ),
   });

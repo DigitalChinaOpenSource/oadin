@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
+import favicon from '@/assets/favicon.png';
 
 interface IAboutUsView {
   name: string;
@@ -13,10 +14,12 @@ interface IAboutUsView {
 }
 
 const testData = {
-  name: 'About Us',
-  version: '1.0.0',
-  description: 'About Us',
-  logo: '',
+  name: 'OADIN',
+  enName: 'Open AIPC Development INfrastructure',
+  version: '',
+  description:
+    '奥丁是基于AOG （AIPC OPEN GATEWAY）框架设计的创新式端侧能力平台，它通过智能化管理本地模型及云端模型、提供丰富的MCP工具生态和强大的服务监控功能，帮助开发者高效构建和优化Al应用，赋予开发者智慧的工具和无限的可能性',
+  logo: favicon,
   officialWebsite: '',
   copyright:
     '© 2025 奥丁团队 版权所有。保留所有权利。  \n' +
@@ -39,7 +42,7 @@ export function useAboutUsView() {
     {
       manual: true,
       onSuccess: (data) => {
-        setAboutDetails(data);
+        setAboutDetails({ ...data, copyright: testData.copyright });
       },
       onError: (error) => {
         console.error('获取模型列表失败:', error);

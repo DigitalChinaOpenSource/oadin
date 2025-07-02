@@ -51,7 +51,8 @@ export default function AboutUs() {
             <div className={styles.header}>
               <div className={styles.headerIcon}>
                 <img
-                  src={aboutDetails?.logo || favicon}
+                  // src={aboutDetails?.logo || favicon}
+                  src={favicon}
                   alt=""
                 />
               </div>
