@@ -19,6 +19,7 @@ const createSessionRequestSchema = {
     properties: {
         title: { type: "string" },
         modelId: { type: "string" },
+        modelName: { type: "string" },
         embedModelId: { type: "string" }
     },
     required: ["modelId"]
