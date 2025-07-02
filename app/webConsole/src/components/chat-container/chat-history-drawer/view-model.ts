@@ -7,6 +7,7 @@ import { ModelData } from '@/types';
 import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import useUploadFileStore from '../store/useUploadFileListStore';
 import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDrawerProps } from './types';
 import { IModelSquareParams } from '@/types';
 import { convertMessageFormat } from '../utils/historyMessageFormat';
@@ -20,6 +21,7 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   // 获取对话store
   const { setHistoryVisible, setMessages } = useChatStore();
   const { setSelectMcpList } = useSelectMcpStore();
+  const { setUploadFileList } = useUploadFileStore();
   // 从URL获取当前会话ID
   const currentSessionId = getSessionIdFromUrl();
 
@@ -141,7 +143,9 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
     if (delHistoryLoading) {
       return;
     }
-
+    setSelectMcpList([]);
+    setMessages([]);
+    setUploadFileList([]);
     try {
       // 获取详细对话内容
       const historyDetail = await fetchChatHistoryDetail(id);
