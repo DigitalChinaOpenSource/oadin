@@ -261,16 +261,13 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   }, [props.customModelListData]);
 
   // 获取模型存储路径
-  const { run: fetchModelPath } = useRequest(
+  const { run: fetchModelPath, data: modelPathData } = useRequest(
     async () => {
       const res = await httpRequest.get<IModelPathRes>('/control_panel/model/filepath');
       return res || {};
     },
     {
       manual: true,
-      onSuccess: async (data) => {
-        await onCheckPathSpace(data?.path || '');
-      },
       onError: (error) => {
         console.error('获取模型存储路径失败:', error);
       },
@@ -379,7 +376,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     setSelectModelData(modelData || ({} as any));
   }, []);
 
-  const { run: onCheckPathSpace, data: currentPathSpace } = useRequest(
+  const { runAsync: onCheckPathSpace } = useRequest(
     async (path: string) => {
       const data = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
       return data || {};
@@ -420,8 +417,9 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       });
     }
   };
-  const startDownload = (modelData: IModelDataItem) => {
+  const startDownload = async (modelData: IModelDataItem) => {
     const modelSizeMb = convertToMB(modelData.size || '0MB');
+    const currentPathSpace = await onCheckPathSpace(modelPathData?.path || '');
     const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
     if (modelSizeMb > freeSpaceMb) {
       message.warning('当前路径下的磁盘空间不足，无法下载该模型');
