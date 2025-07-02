@@ -84,6 +84,8 @@ func cleanModelId(modelId string) string {
 }
 
 func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error) {
+	req.Stream = false
+
 	body, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -99,7 +101,8 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 	serviceReq := &types.ServiceRequest{
 		Service:    "chat",
 		Model:      modelName,
-		FromFlavor: "ollama",
+		FromFlavor: "oadin",
+		Think:      req.Think,
 		HTTP: types.HTTPContent{
 			Header: http.Header{},
 			Body:   body,
@@ -115,6 +118,44 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 		// Log the raw response for debugging
 		fmt.Printf("[Chat] Raw response received, length: %d\n", len(result.HTTP.Body))
 		fmt.Printf("[Chat] Raw response content: %s\n", string(result.HTTP.Body))
+
+		var oadinResp types.OadinAPIResponse
+		if err := json.Unmarshal(result.HTTP.Body, &oadinResp); err == nil && oadinResp.BusinessCode == 10000 {
+
+			dataBytes, err := json.Marshal(oadinResp.Data)
+			if err != nil {
+				return nil, fmt.Errorf("解析Oadin响应data字段失败: %v", err)
+			}
+
+			var chatResp types.OadinChatResponse
+			if err := json.Unmarshal(dataBytes, &chatResp); err != nil {
+				return nil, fmt.Errorf("解析Oadin聊天响应结构失败: %v", err)
+			}
+
+			if len(chatResp.Choices) == 0 {
+				return nil, fmt.Errorf("Oadin响应中没有choices选项")
+			}
+
+			response := &types.ChatResponse{
+				ID:         chatResp.ID,
+				Object:     chatResp.Object,
+				Model:      chatResp.Model,
+				Content:    chatResp.Choices[0].Message.Content,
+				Thoughts:   chatResp.Choices[0].Message.Thinking,
+				ToolCalls:  chatResp.Choices[0].Message.ToolCalls,
+				IsComplete: chatResp.Choices[0].FinishReason != "",
+			}
+
+			fmt.Printf("[Chat] Oadin API解析成功，内容长度：%d\n", len(response.Content))
+			if len(response.ToolCalls) > 0 {
+				fmt.Printf("[Chat] Oadin API检测到工具调用，数量：%d\n", len(response.ToolCalls))
+			}
+			if response.Thoughts != "" {
+				fmt.Printf("[Chat] Oadin API检测到思考内容，长度：%d\n", len(response.Thoughts))
+			}
+			return response, nil
+		}
+
 		// 尝试直接解析成完整的ChatResponse
 		var response types.ChatResponse
 		if err := json.Unmarshal(result.HTTP.Body, &response); err == nil && response.Content != "" {
@@ -122,7 +163,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			return &response, nil
 		}
 
-		// 尝试解析为Ollama API标准响应格式
+
 		var ollamaResp ollamaAPIResponse
 		if err := json.Unmarshal(result.HTTP.Body, &ollamaResp); err == nil {
 			// 构建ChatResponse
@@ -168,17 +209,20 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 			// 创建响应对象
 			resp := &types.ChatResponse{
-				Content:    content,
-				Model:      model,
-				IsComplete: isComplete,
-				Object:     "chat.completion",
-				ToolCalls:  toolCalls,
-				Thoughts:   thoughts, // 添加思考内容
+				Content:       content,
+				Model:         model,
+				IsComplete:    isComplete,
+				Object:        "chat.completion",
+				ToolCalls:     toolCalls,
+				Thoughts:      thoughts,
+				TotalDuration: ollamaResp.TotalDuration,
 			}
+			fmt.Printf("[Chat] 兼容Ollama格式解析成功，内容长度: %d\n", len(content))
 			return resp, nil
 		}
 
 		// 如果上述方法都失败，回退到使用通用map解析
+		fmt.Printf("[Chat] 标准解析方式失败，尝试通用map解析\n")
 		var data map[string]interface{}
 		if err := json.Unmarshal(result.HTTP.Body, &data); err != nil {
 			return nil, fmt.Errorf("无法解析API响应: %v", err)
@@ -189,6 +233,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 		model := ""
 		var toolCalls []types.ToolCall
 		var thoughts string
+		var totalDuration int64
 
 		// 尝试提取message.content (Ollama /api/chat)
 		if msg, ok := data["message"].(map[string]interface{}); ok {
@@ -237,6 +282,11 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			model = m
 		}
 
+		// 提取处理时间
+		if td, ok := data["total_duration"].(float64); ok {
+			totalDuration = int64(td)
+		}
+
 		// 若还没有提取到工具调用，尝试从顶层提取
 		if len(toolCalls) == 0 {
 			if tc, ok := data["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
@@ -254,13 +304,15 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 		// 创建响应对象
 		resp := &types.ChatResponse{
-			Content:    content,
-			Model:      model,
-			IsComplete: isComplete,
-			Object:     "chat.completion",
-			ToolCalls:  toolCalls,
-			Thoughts:   thoughts, // 添加思考内容
+			Content:       content,
+			Model:         model,
+			IsComplete:    isComplete,
+			Object:        "chat.completion",
+			ToolCalls:     toolCalls,
+			Thoughts:      thoughts,
+			TotalDuration: totalDuration,
 		}
+		fmt.Printf("[Chat] 通用解析成功，内容长度: %d\n", len(content))
 		return resp, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()

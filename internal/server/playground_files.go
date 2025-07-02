@@ -29,9 +29,9 @@ import (
 // 上传文件
 func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFileRequest, fileHeader io.Reader, filename string, filesize int64) (*dto.UploadFileResponse, error) {
 	// 验证文件大小
-	const maxFileSize = 50 * 1024 * 1024 // 50MB
+	const maxFileSize = 10 * 1024 * 1024 // 10MB
 	if filesize > maxFileSize {
-		err := fmt.Errorf("文件大小超过限制")
+		err := fmt.Errorf("文件大小超过限制 (最大10MB)")
 		slog.Error("File validation failed", "error", err, "filename", filename)
 		return nil, err
 	}

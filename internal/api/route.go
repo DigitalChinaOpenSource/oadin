@@ -81,7 +81,6 @@ func InjectRouter(e *OadinCoreServer) {
 	mcpApi.POST("/client/stop", e.ClientMcpStop)
 	mcpApi.POST("/client/getTools", e.ClientGetTools)
 	mcpApi.POST("/client/runTool", e.ClientRunTool)
-	mcpApi.POST("/client/mac", e.ClientMAC)
 
 	// Apis related to system
 	systemApi := r.Group("system")
@@ -107,7 +106,6 @@ func InjectRouter(e *OadinCoreServer) {
 	playgroundApi.POST("/file/process", e.ProcessFile)
 	playgroundApi.POST("/session/model", e.ChangeSessionModel)
 	playgroundApi.POST("/session/thinking", e.ToggleSessionThinking)
-	playgroundApi.GET("/testjson", e.HandleToolCalls)
 
 	slog.Info("Gateway started", "host", config.GlobalOadinEnvironment.ApiHost)
 }
