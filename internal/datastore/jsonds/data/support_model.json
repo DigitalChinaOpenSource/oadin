@@ -16,7 +16,8 @@
     "think": true,
     "think_switch": true,
     "tools": true,
-    "size": "523MB"
+    "size": "523MB",
+    "context": 40
   },
   {
     "id": "4e15fa62-5710-4b7a-87dc-8b0cceb9ecc2",
@@ -35,7 +36,8 @@
     "size": "1.4GB",
     "think": true,
     "think_switch": true,
-    "tools": true
+    "tools": true,
+    "context": 40
   },
   {
     "id": "6746afb6-4b39-42d1-bab6-eeeb2f67aeca",
@@ -54,7 +56,8 @@
     "size": "2.6GB",
     "think": true,
     "think_switch": true,
-    "tools": true
+    "tools": true,
+    "context": 40
   },
   {
     "id": "43aeb3d7-314c-4323-86ee-aaa7e8c03110",
@@ -73,7 +76,8 @@
     "size": "5.2GB",
     "think": true,
     "think_switch": true,
-    "tools": true
+    "tools": true,
+    "context": 40
   },
   {
     "id": "9721e8b8-9d6f-4b72-97ab-6f76924ed3db",
@@ -92,7 +96,8 @@
     "size": "9.3GB",
     "think": true,
     "think_switch": true,
-    "tools": true
+    "tools": true,
+    "context": 40
   },
   {
     "api_flavor": "ollama",
@@ -110,8 +115,7 @@
     "service_source": "local",
     "size": "1.1GB",
     "think": true,
-    "think_switch": true,
-    "tools": false
+    "context": 128
   },
   {
     "api_flavor": "ollama",
@@ -129,8 +133,7 @@
     "service_source": "local",
     "size": "4.7GB",
     "think": true,
-    "think_switch": true,
-    "tools": false
+    "context": 128
   },
   {
     "api_flavor": "ollama",
@@ -148,8 +151,7 @@
     "service_source": "local",
     "size": "4.9GB",
     "think": true,
-    "think_switch": true,
-    "tools": false
+    "context": 128
   },
   {
     "api_flavor": "ollama",
@@ -167,8 +169,7 @@
     "service_source": "local",
     "size": "9.0GB",
     "think": true,
-    "think_switch": true,
-    "tools": false
+    "context": 128
   },
   {
     "api_flavor": "ollama",
@@ -185,7 +186,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "398MB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -202,7 +204,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "986MB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -219,7 +222,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "1.9GB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -236,7 +240,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "4.7GB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -253,7 +258,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "9.0GB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -269,7 +275,8 @@
     "params_size": 1.5,
     "service_name": "chat",
     "service_source": "local",
-    "size": "3.6GB"
+    "size": "3.6GB",
+    "context": 128
   },
   {
     "api_flavor": "ollama",
@@ -286,7 +293,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "531MB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -303,7 +311,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "986MB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -320,7 +329,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "1.9GB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -337,7 +347,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "4.7GB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -354,7 +365,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "9.0GB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -370,7 +382,8 @@
     "params_size": 1.5,
     "service_name": "chat",
     "service_source": "local",
-    "size": "866MB"
+    "size": "866MB",
+    "context": 128
   },
   {
     "api_flavor": "ollama",
@@ -386,7 +399,8 @@
     "params_size": 9,
     "service_name": "chat",
     "service_source": "local",
-    "size": "5.0GB"
+    "size": "5.0GB",
+    "context": 128
   },
   {
     "api_flavor": "ollama",
@@ -403,7 +417,8 @@
     "think":true,
     "service_name": "chat",
     "service_source": "local",
-    "size": "935MB"
+    "size": "935MB",
+    "context": 4
   },
   {
     "api_flavor": "ollama",
@@ -420,7 +435,8 @@
     "think":true,
     "service_name": "chat",
     "service_source": "local",
-    "size": "4.4GB"
+    "size": "4.4GB",
+    "context": 4
   },
   {
     "api_flavor": "ollama",
@@ -437,7 +453,8 @@
     "params_size": 9,
     "service_name": "chat",
     "service_source": "local",
-    "size": "5.5GB"
+    "size": "5.5GB",
+    "context": 128
   },
   {
     "api_flavor": "ollama",
@@ -453,7 +470,8 @@
     "params_size": 14,
     "service_name": "chat",
     "service_source": "local",
-    "size": "8.9GB"
+    "size": "8.9GB",
+    "context": 4
   },
   {
     "api_flavor": "ollama",
@@ -470,7 +488,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "352MB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -487,7 +506,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "935MB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -504,7 +524,8 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "4.4GB",
-    "tools": true
+    "tools": true,
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -520,7 +541,8 @@
     "params_size": 16,
     "service_name": "chat",
     "service_source": "local",
-    "size": "8.9GB"
+    "size": "8.9GB",
+    "context": 4
   },
   {
     "api_flavor": "ollama",
@@ -536,7 +558,8 @@
     "params_size": 7,
     "service_name": "chat",
     "service_source": "local",
-    "size": "4.2GB"
+    "size": "4.2GB",
+    "context": 64
   },
   {
     "api_flavor": "ollama",
@@ -552,7 +575,8 @@
     "params_size": 0.5,
     "service_name": "chat",
     "service_source": "local",
-    "size": "395MB"
+    "size": "395MB",
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -568,7 +592,8 @@
     "params_size": 1.8,
     "service_name": "chat",
     "service_source": "local",
-    "size": "1.1GB"
+    "size": "1.1GB",
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -584,7 +609,8 @@
     "params_size": 4,
     "service_name": "chat",
     "service_source": "local",
-    "size": "2.3GB"
+    "size": "2.3GB",
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -600,7 +626,8 @@
     "params_size": 7,
     "service_name": "chat",
     "service_source": "local",
-    "size": "4.5GB"
+    "size": "4.5GB",
+    "context": 32
   },
   {
     "api_flavor": "ollama",
@@ -616,7 +643,8 @@
     "params_size": 7,
     "service_name": "chat",
     "service_source": "local",
-    "size": "4.0GB"
+    "size": "4.0GB",
+    "context": 4
   },
   {
     "api_flavor": "ollama",
@@ -631,7 +659,8 @@
     "ollama_id": "0a109f422b47",
     "service_name": "embed",
     "service_source": "local",
-    "size": "274MB"
+    "size": "274MB",
+    "context": 2
   },
   {
     "api_flavor": "ollama",
@@ -646,7 +675,8 @@
     "ollama_id": "468836162de7",
     "service_name": "embed",
     "service_source": "local",
-    "size": "670MB"
+    "size": "670MB",
+    "context": 0.5
   },
   {
     "api_flavor": "ollama",
@@ -661,7 +691,8 @@
     "ollama_id": "790764642607",
     "service_name": "embed",
     "service_source": "local",
-    "size": "1.2GB"
+    "size": "1.2GB",
+    "context": 8
   },
   {
     "api_flavor": "ollama",
@@ -676,7 +707,8 @@
     "ollama_id": "21ab8b9b0545",
     "service_name": "embed",
     "service_source": "local",
-    "size": "669MB"
+    "size": "669MB",
+    "context": 0.5
   },
   {
     "api_flavor": "ollama",
@@ -691,7 +723,8 @@
     "ollama_id": "bc8ca0995fcd651",
     "service_name": "embed",
     "service_source": "local",
-    "size": "671MB"
+    "size": "671MB",
+    "context": 0.5
   },
   {
     "api_flavor": "ollama",
@@ -706,7 +739,8 @@
     "ollama_id": "cd232613fa6f",
     "service_name": "embed",
     "service_source": "local",
-    "size": "205MB"
+    "size": "205MB",
+    "context": 0.5
   },
   {
     "api_flavor": "ollama",
@@ -721,7 +755,8 @@
     "ollama_id": "5de93a84837d",
     "service_name": "embed",
     "service_source": "local",
-    "size": "1.2GB"
+    "size": "1.2GB",
+    "context": 8
   },
   {
     "api_flavor": "ollama",
@@ -736,7 +771,8 @@
     "ollama_id": "1a37926bf842",
     "service_name": "embed",
     "service_source": "local",
-    "size": "563MB"
+    "size": "563MB",
+    "context": 0.5
   },
   {
     "api_flavor": "baidu",
@@ -751,7 +787,8 @@
     "name": "ernie-3.5-8k",
     "output_length": 5000,
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 8
   },
   {
     "api_flavor": "aliyun",
@@ -766,7 +803,8 @@
     "max_output": 8192,
     "name": "qwen-max",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 32
   },
   {
     "api_flavor": "aliyun",
@@ -781,7 +819,8 @@
     "max_output": 8192,
     "name": "qwen-plus",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 128
   },
   {
     "api_flavor": "aliyun",
@@ -796,7 +835,8 @@
     "max_output": 1000000,
     "name": "qwen-turbo",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 100
   },
   {
     "api_flavor": "aliyun",
@@ -811,7 +851,8 @@
     "max_output": 10000000,
     "name": "qwen-long",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 100
   },
   {
     "api_flavor": "tencent",
@@ -826,7 +867,8 @@
     "max_output": 4000,
     "name": "hunyuan-turbo",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 28
   },
   {
     "api_flavor": "tencent",
@@ -841,7 +883,8 @@
     "max_output": 64000,
     "name": "hunyuan-t1-latest",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 28
   },
   {
     "api_flavor": "tencent",
@@ -856,7 +899,8 @@
     "max_output": 4000,
     "name": "hunyuan-large",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 28
   },
   {
     "api_flavor": "tencent",
@@ -871,7 +915,8 @@
     "max_output": 2000,
     "name": "hunyuan-standard",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 30
   },
   {
     "api_flavor": "tencent",
@@ -886,7 +931,8 @@
     "max_output": 8000,
     "name": "hunyuan-turbos-latest",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 24
   },
   {
     "api_flavor": "deepseek",
@@ -902,7 +948,8 @@
     "name": "deepseek-resoning",
     "think": true,
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 64
   },
   {
     "api_flavor": "deepseek",
@@ -918,7 +965,8 @@
     "think": true,
     "name": "deepseek-chat",
     "service_name": "chat",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 4
   },
   {
     "api_flavor": "tencent",
@@ -933,7 +981,8 @@
     "max_output": 0,
     "name": "hunyuan-embedding",
     "service_name": "embed",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 4
   },
   {
     "api_flavor": "baidu",
@@ -948,7 +997,8 @@
     "max_output": 0,
     "name": "embedding-v1",
     "service_name": "embed",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 0.5
   },
   {
     "api_flavor": "aliyun",
@@ -963,7 +1013,8 @@
     "max_output": 0,
     "name": "text-embedding-v1",
     "service_name": "embed",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 51
   },
   {
     "api_flavor": "aliyun",
@@ -978,7 +1029,8 @@
     "max_output": 0,
     "name": "text-embedding-v2",
     "service_name": "embed",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 51
   },
   {
     "api_flavor": "aliyun",
@@ -993,7 +1045,8 @@
     "max_output": 0,
     "name": "text-embedding-v3",
     "service_name": "embed",
-    "service_source": "remote"
+    "service_source": "remote",
+    "context": 8
   },
   {
     "api_flavor": "aliyun",

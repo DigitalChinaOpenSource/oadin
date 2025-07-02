@@ -37,7 +37,6 @@ type MCPServer interface {
 	ClientMcpStop(ctx context.Context, ids []string) error
 	ClientGetTools(ctx context.Context, mcpId string) ([]mcp.Tool, error)
 	ClientRunTool(ctx context.Context, req *types.ClientRunToolRequest) (*types.ClientRunToolResponse, error)
-	ClientMAC(ctx context.Context) error
 }
 
 type MCPServerImpl struct {
@@ -361,7 +360,7 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	if len(toolIds) > 0 {
 		con.Kits = strings.Join(toolIds, ",")
 	} else {
-		con.Kits = "" // 如果没有禁用的工具，设为空字符串
+		con.Kits = "default tool," // 如果没有禁用的工具，设为空字符串
 	}
 
 	err = M.Ds.Put(c.Request.Context(), con)
@@ -426,10 +425,13 @@ func (M *MCPServerImpl) getMCPConfig(ctx context.Context, mcpId string) (*types.
 }
 
 func (M *MCPServerImpl) ClientMcpStart(ctx context.Context, id string) error {
+	start := time.Now() // 记录开始时间
 	mcpServerConfig, err := M.getMCPConfig(ctx, id)
 	if err != nil {
 		return err
 	}
+	elapsed := time.Since(start) // 计算耗时
+	fmt.Printf("getMCPConfig 运行时间: %v\n", elapsed)
 	err = M.McpHandler.Start(ctx, mcpServerConfig)
 	if err != nil {
 		return err
@@ -522,15 +524,4 @@ func (M *MCPServerImpl) ClientRunTool(ctx context.Context, req *types.ClientRunT
 		Logo:     logo,
 		ToolDesc: toolDesc,
 	}, nil
-}
-
-func (M *MCPServerImpl) ClientMAC(ctx context.Context) error {
-	config := &types.MCPServerConfig{
-		Id:      "mac",
-		Command: "/Users/aipc/Library/Application Support/Oadin/runtime/bun",
-		Args:    []string{"x", "-y", "@amap/amap-maps-mcp-server"},
-		Env:     map[string]string{"AMAP_MAPS_API_KEY": "486fe8946aa80aa2baf26d840b6fa6a0"},
-	}
-	_, err := M.McpHandler.ClientStart(ctx, config)
-	return err
 }

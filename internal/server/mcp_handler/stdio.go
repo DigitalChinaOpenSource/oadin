@@ -65,12 +65,19 @@ func (s *StdioTransport) Start(ctx context.Context, config *types.MCPServerConfi
 	s.Pending[serverKey] = config
 	s.mu.Unlock()
 
+	start := time.Now() // 记录开始时间
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
 	cli, err := s.ClientStart(ctx, config)
 	if err != nil {
 		fmt.Printf("[MCP] Failed to initialize client for server: %s, error: %v", config.Id, err)
 		delete(s.Pending, serverKey)
 		return err
 	}
+	elapsed := time.Since(start) // 计算耗时
+	fmt.Printf("ClientMcpStart 运行时间: %v\n", elapsed)
+
 	fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
 	slog.Info("[MCP] Initialized client for server", "server_id", config.Id)
 	s.mu.Lock()
@@ -103,24 +110,9 @@ func (s *StdioTransport) Stop(serverKey string) error {
 }
 
 func (s *StdioTransport) FetchTools(ctx context.Context, serverKey string) ([]mcp.Tool, error) {
-	config, exists := s.Pending[serverKey]
+	config, _ := s.Pending[serverKey]
 	if config == nil {
 		return nil, fmt.Errorf("FetchTools failed: %s", serverKey)
-	}
-	if !exists {
-		cli, exists := s.clients[serverKey]
-		if !exists {
-			return nil, errors.New("client not found")
-		}
-
-		toolsRequest := mcp.ListToolsRequest{}
-		tools, err := cli.ListTools(ctx, toolsRequest)
-		if err != nil {
-			return nil, err
-		}
-
-		config.Tools = tools.Tools
-		return tools.Tools, nil
 	}
 
 	if len(config.Tools) == 0 {

@@ -953,6 +953,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				Think:           smInfo.Think,
 				ThinkSwitch:     smInfo.ThinkSwitch,
 				Tools:           smInfo.Tools,
+				Context:         smInfo.Context,
 				CreatedAt:       smInfo.CreatedAt,
 			}
 			resultList = append(resultList, modelData)
