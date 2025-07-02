@@ -88,12 +88,16 @@ func (o *OllamaProvider) StartEngine() error {
 	cmd := exec.Command(execFile, "serve")
 	// 通過啟動命令設置代理
 	proxyHttp, proxyHttps := o.StartEngineWithProxy()
+	env := os.Environ()
 	if proxyHttp != "" {
-		cmd.Env = append(os.Environ(),
-			proxyHttp,
-			proxyHttps,
-		)
+		env = append(env, proxyHttp)
 	}
+	if proxyHttps != "" {
+		env = append(env, proxyHttps)
+	}
+	cmd.Env = env
+	slog.Error("Starting Ollama Engine env----------------------------", env)
+
 	if runtime.GOOS == "windows" {
 		utils.SetCmdSysProcAttr(cmd)
 	}
@@ -217,11 +221,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	case "darwin":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources")
-		if runtime.GOARCH == "amd64" {
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
-		} else {
-			downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-arm64.zip"
-		}
+		downloadUrl = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/macos/Ollama-darwin.zip"
 	default:
 		return nil
 	}
@@ -344,10 +344,13 @@ func (o *OllamaProvider) InitEnv() error {
 	if currModelPath != "" {
 		modelPath = currModelPath
 	}
+	slog.Info("[Init Env] start model..." + modelPath)
 	err = os.Setenv("OLLAMA_MODELS", modelPath)
 	if err != nil {
 		return fmt.Errorf("failed to set OLLAMA_MODELS: %w", err)
 	}
+	ollamaModels := os.Getenv("OLLAMA_MODELS")
+	slog.Info("[Init Env] end model...ollama" + ollamaModels)
 
 	if utils.IpexOllamaSupportGPUStatus() {
 		err = os.Setenv("OLLAMA_NUM_GPU", "999")
