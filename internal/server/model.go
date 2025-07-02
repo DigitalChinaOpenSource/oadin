@@ -1151,32 +1151,28 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 	}
 	resData.Data = resultList
 
-	sort.Slice(resultList, func(i, j int) bool {
-		a := resultList[i]
-		b := resultList[j]
+	// If in model marketplace, prioritize the recommended models in the sorting.
+	if !request.Mine {
+		sort.Slice(resultList, func(i, j int) bool {
+			a := resultList[i]
+			b := resultList[j]
 
-		if a.IsRecommended && !b.IsRecommended {
-			return true
-		}
-		if !a.IsRecommended && b.IsRecommended {
-			return false
-		}
-
-		if a.IsRecommended && b.IsRecommended {
-			if a.CanSelect && b.CanSelect {
-				return a.CreatedAt.After(b.CreatedAt)
-			}
-			if a.CanSelect && !b.CanSelect {
+			if a.IsRecommended && !b.IsRecommended {
 				return true
 			}
-			if !a.CanSelect && b.CanSelect {
+			if !a.IsRecommended && b.IsRecommended {
 				return false
 			}
 			return false
-		}
+		})
+	}
 
-		return a.CreatedAt.After(b.CreatedAt)
-	})
+	// If the models are download, sort them only by the download time in chronological order.
+	if request.Mine {
+		sort.Slice(resultList, func(i, j int) bool {
+			return resultList[i].CreatedAt.After(resultList[j].CreatedAt)
+		})
+	}
 
 	return &dto.GetSupportModelResponse{
 		*bcode.ModelCode,
