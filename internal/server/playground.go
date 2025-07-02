@@ -100,7 +100,15 @@ func (p *PlaygroundImpl) GetModelById(ctx context.Context, modelId string) *type
 func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateSessionRequest) (*dto.CreateSessionResponse, error) {
 	supportModel := p.GetModelById(ctx, request.ModelId)
 	if supportModel == nil || supportModel.Id == "" {
-		return nil, fmt.Errorf("模型不存在或未找到: %s", request.ModelId)
+		slog.Error("Model not found", "model_id", request.ModelId)
+		// ModelName用请求中的值
+		if request.ModelName == "" {
+			return nil, fmt.Errorf("模型未找到或未指定，请检查模型ID: %s", request.ModelId)
+		}
+		supportModel = &types.SupportModel{
+			Id:   request.ModelId,
+			Name: request.ModelName,
+		}
 	}
 	session := &types.ChatSession{
 		ID:           uuid.New().String(),
