@@ -194,6 +194,7 @@ type SmartVisionModelData struct {
 	Tags               []string                     `json:"tags"`
 	CredentialParams   []SmartVisionCredentialParam `json:"credentialParams"`
 	CanSelect          bool                         `json:"can_select"`
+	CreatedAt          time.Time                    `json:"created_at"`
 }
 
 type SmartVisionCredentialParam struct {
@@ -286,6 +287,8 @@ type RecommendModelData struct {
 	ThinkSwitch         bool     `json:"think_switch" default:"false"`
 	Tools               bool     `json:"tools" default:"false"`
 	Context             int      `json:"context" default:"0"`
+	CreatedAt           time.Time `json:"created_at"`
+
 }
 
 type ProviderSupportModelData struct {
@@ -425,7 +428,7 @@ type ModifyModelFilePathResponse struct {
 }
 
 type ProxyRequest struct {
-	Endpoint string `json:"endpoint" `
+	Endpoint string `json:"endpoint" validate:"required"`
 	Username string `json:"username" `
 	Password string `json:"password" `
 }

@@ -132,7 +132,7 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	}
 	if len(runModels.Models) != 0 {
 		slog.Error("无法切换代理启用状态，当前有模型正在运行，请先停止模型")
-		return err
+		return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，当前有模型正在运行，请先停止模型")
 	} else {
 		err = engine.StopEngine()
 		if err != nil {

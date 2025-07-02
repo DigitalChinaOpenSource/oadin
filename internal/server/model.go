@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -214,6 +215,13 @@ func (s *ModelImpl) GetModels(ctx context.Context, request *dto.GetModelsRequest
 		tmp.UpdatedAt = dsModel.UpdatedAt
 
 		respData = append(respData, *tmp)
+	}
+
+	// Sort the response data by CreatedAt in descending order (newest first).
+	if len(respData) > 1 {
+		sort.Slice(respData, func(i, j int) bool {
+			return respData[i].CreatedAt.After(respData[j].CreatedAt)
+		})
 	}
 
 	return &dto.GetModelsResponse{
@@ -811,6 +819,11 @@ func GetSmartVisionModelData(ctx context.Context, envType string) ([]dto.SmartVi
 			canSelect = false
 		}
 		model.CanSelect = canSelect
+
+		if canSelect {
+			model.CreatedAt = modelQuery.CreatedAt
+		}
+
 		resData = append(resData, model)
 	}
 	return resData, nil
@@ -905,6 +918,11 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 			if modelQuery.Status != "downloaded" {
 				canSelect = false
 			}
+
+			if canSelect {
+				smInfo.CreatedAt = modelQuery.CreatedAt
+			}
+
 			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(smInfo.Flavor, smInfo.ServiceName)
 			authFields := []string{""}
 			if providerServiceDefaultInfo.AuthType == types.AuthTypeToken {
@@ -936,6 +954,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				ThinkSwitch:     smInfo.ThinkSwitch,
 				Tools:           smInfo.Tools,
 				Context:         smInfo.Context,
+				CreatedAt:       smInfo.CreatedAt,
 			}
 			resultList = append(resultList, modelData)
 
@@ -997,6 +1016,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					Class:               d.Tags,
 					SmartVisionProvider: d.Provider,
 					SmartVisionModelKey: d.ModelKey,
+					CreatedAt:           d.CreatedAt,
 				}
 				resultList = append(resultList, modelData)
 			}
@@ -1043,13 +1063,14 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					AuthType:            types.AuthTypeCredentials,
 					AuthFields:          authFields,
 					AuthApplyUrl:        "",
-					ServiceProvider:     fmt.Sprintf("%s_%s_%s", request.ServiceSource, request.Flavor, types.ServiceChat),
+					ServiceProvider:     fmt.Sprintf("%s_%s_%s", request.ServiceSource, types.FlavorSmartVision, types.ServiceChat),
 					CanSelect:           canSelect,
 					IsRecommended:       false,
 					Source:              types.ServiceSourceRemote,
 					Class:               d.Tags,
 					SmartVisionProvider: d.Provider,
 					SmartVisionModelKey: d.ModelKey,
+					CreatedAt:           d.CreatedAt,
 				}
 				resultList = append(resultList, modelData)
 			}
@@ -1098,6 +1119,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 					Think:           jdModelInfo.Think,
 					ThinkSwitch:     jdModelInfo.ThinkSwitch,
 					Tools:           jdModelInfo.Tools,
+					CreatedAt:       jdModelInfo.CreatedAt,
 				}
 				resultList = append(resultList, modelData)
 			}
@@ -1129,6 +1151,30 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 		}
 	}
 	resData.Data = resultList
+
+	// If in model marketplace, prioritize the recommended models in the sorting.
+	if !request.Mine {
+		sort.Slice(resultList, func(i, j int) bool {
+			a := resultList[i]
+			b := resultList[j]
+
+			if a.IsRecommended && !b.IsRecommended {
+				return true
+			}
+			if !a.IsRecommended && b.IsRecommended {
+				return false
+			}
+			return false
+		})
+	}
+
+	// If the models are download, sort them only by the download time in chronological order.
+	if request.Mine {
+		sort.Slice(resultList, func(i, j int) bool {
+			return resultList[i].CreatedAt.After(resultList[j].CreatedAt)
+		})
+	}
+
 	return &dto.GetSupportModelResponse{
 		*bcode.ModelCode,
 		resData,
