@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest';
 import useSelectedModelStore from '@/store/useSelectedModel';
+import type { ChatMessageItem } from '@res-utiles/ui-components';
 import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useUploadFileListStore from './store/useUploadFileListStore';
@@ -10,7 +11,6 @@ import { IPlaygroundSession } from './types';
 import { message } from 'antd';
 import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage, getSessionSource } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
-import { MessageType } from '@res-utiles/ui-components';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
 import embedDownloadEventBus from '@/utils/embedDownload';
@@ -58,9 +58,12 @@ export default function useViewModel() {
 
   useEffect(() => {
     if (initialized) return;
-    // 如果来源是history，历史记录已经在chat-history-drawer组件中处理，这里不做任何操作
     if (source === 'history') {
       setPrevSessionId(currentSessionId);
+      // 如果是来自历史记录且有会话ID，需要加载历史记录
+      if (currentSessionId) {
+        fetchChatHistoryDetail(currentSessionId);
+      }
       setInitialized(true);
       return;
     }
@@ -85,7 +88,6 @@ export default function useViewModel() {
       const source = getSessionSource();
       if (source === 'history' || source === 'new') {
         setPrevSessionId(currentSessionId);
-        return;
       }
       // 其他来源（如URL直接修改或分享链接）且有会话ID，需要加载历史记录
       else if (currentSessionId && !isLoadingHistory.current) {
@@ -107,11 +109,8 @@ export default function useViewModel() {
       return;
     }
 
-    // 检查当前来源，如果是从历史记录选择的，不要创建新会话
-    const currentSource = getSessionSource();
-
     // 当模型变化时，自动创建新会话（但排除历史记录选择的情况）
-    if (selectedModel.id !== prevModelId && prevModelId !== undefined && currentSource !== 'history') {
+    if (selectedModel.id !== prevModelId && prevModelId !== undefined && source !== 'history') {
       // 清空当前对话内容
       createNewChat();
       setSelectMcpList([]);
@@ -182,7 +181,7 @@ export default function useViewModel() {
           ...item,
           id: typeof item.id === 'number' ? String(item.id) : item.id,
         }));
-        const tempData = convertMessageFormat(inputMessages);
+        const tempData = convertMessageFormat(inputMessages) as any;
         fetchModelDetail(data[data.length - 1].modelId || '', tempData, data[data.length - 1].sessionId);
       },
       onError: () => {
@@ -230,7 +229,7 @@ export default function useViewModel() {
   );
 
   // 根据模型id获取模型详情
-  const fetchModelDetail = async (modelId: string, messages: MessageType[], sessionId: string) => {
+  const fetchModelDetail = async (modelId: string, messages: ChatMessageItem[], sessionId: string) => {
     let res;
     const localParams: IModelSquareParams = {
       service_source: 'local',
@@ -249,7 +248,7 @@ export default function useViewModel() {
     }
     if (res) {
       setSelectedModel(res);
-      setMessages(messages);
+      setMessages(messages as ChatMessageItem[]);
       setPrevModelId(res.id);
     } else {
       message.error('获取历史记录详情失败，未找到对应模型');
@@ -292,6 +291,9 @@ export default function useViewModel() {
   );
 
   const handleCreateNewChat = () => {
+    if (messages.length === 0) {
+      return;
+    }
     if (!selectedModel?.id) {
       message.error('请先选择一个模型');
       return;
