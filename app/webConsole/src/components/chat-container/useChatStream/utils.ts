@@ -1,5 +1,5 @@
 import useChatStore from '@/components/chat-container/store/useChatStore';
-import { httpRequest } from '@/utils/httpRequest';
+import { healthRequest, httpRequest } from '@/utils/httpRequest';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 // 生成唯一ID的工具函数
 export function generateUniqueId(prefix: string = 'id'): string {
@@ -63,4 +63,10 @@ export const fetchGenChatTitle = async () => {
   } catch (error) {
     console.error('生成标题失败===>');
   }
+};
+
+export const fetchCheckEngineStatus = async (): Promise<boolean> => {
+  const res = await healthRequest.get('/engine/health');
+  // 1 可用；0 不可用；
+  return res.status === 1;
 };

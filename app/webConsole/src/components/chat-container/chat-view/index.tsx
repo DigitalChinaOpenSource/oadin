@@ -20,6 +20,7 @@ import { useChatStream } from '@/components/chat-container/useChatStream';
 import { HeaderContent } from './header-content';
 import EmbedDownloadButton from '../enbed-download-btn';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import { fetchCheckEngineStatus } from '../useChatStream/utils';
 import './index.scss';
 
 interface IChatViewProps {
@@ -58,9 +59,14 @@ export default function ChatView(props: IChatViewProps) {
     }
   };
 
-  const handleSendMessage = (message: string) => {
-    if (!message.trim() || isLoading || isUploading) return;
-    sendChatMessage(message);
+  const handleSendMessage = async (messageString: string) => {
+    if (!messageString.trim() || isLoading || isUploading) return;
+    const isEngineAvailable = await fetchCheckEngineStatus();
+    if (!isEngineAvailable) {
+      message.error('模型引擎异常，请检查当前模型引擎的服务状态');
+      return;
+    }
+    sendChatMessage(messageString);
   };
 
   // 输入框底部功能区
