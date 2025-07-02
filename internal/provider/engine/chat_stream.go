@@ -77,7 +77,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			}
 			// 转回[]byte
 			cleanBody := []byte(bodyStr)
-			fmt.Println("[ChatStream] 收到块内容:", bodyStr)
+			// fmt.Println("[ChatStream] 收到块内容:", bodyStr)
 
 			// 每个块都是一个完整的JSON对象
 			var content string
