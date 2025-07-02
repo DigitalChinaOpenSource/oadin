@@ -158,8 +158,6 @@ export const buildMessageWithThinkContent = (
       },
     });
   }
-  // 注意：这里不再处理 thinkingContent，因为它来自 <think> 标签
-  // <think> 标签的内容已经在 parseThinkContent 中被处理了
 
   const contentList = parsedContents.map((item) => ({
     id: generateUniqueId('content'),
