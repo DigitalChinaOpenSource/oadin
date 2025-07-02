@@ -92,9 +92,10 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				Finished     bool   `json:"finished"`
 				Id           string `json:"id"`
 				Message      struct {
-					Content  string `json:"content"`
-					Role     string `json:"role"`
-					Thinking string `json:"thinking"`
+					Content   string           `json:"content"`
+					Role      string           `json:"role"`
+					Thinking  string           `json:"thinking"`
+					ToolCalls []types.ToolCall `json:"tool_calls,omitempty"`
 				} `json:"message"`
 				Model string `json:"model"`
 			}
@@ -112,6 +113,10 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				if streamChunk.Message.Content != "" {
 					content = streamChunk.Message.Content
 					fmt.Printf("[ChatStream] 从直接流式格式提取内容，长度: %d\n", len(content))
+				}
+
+				if len(streamChunk.Message.ToolCalls) > 0 {
+					toolCalls = append(toolCalls, streamChunk.Message.ToolCalls...)
 				}
 
 				// 检查是否完成
