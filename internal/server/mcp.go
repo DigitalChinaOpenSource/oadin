@@ -166,7 +166,7 @@ func (M *MCPServerImpl) GetCategories(ctx context.Context) (*rpc.CategoryListRes
 
 func (M *MCPServerImpl) GetMyMCPList(ctx context.Context, request *rpc.MCPListRequest) (*rpc.MCPListResponse, error) {
 	// 先获取属于我的mcp数据, 带入条件去查询列表数据
-	configs, err := M.Ds.List(ctx, &types.McpUserConfig{}, &datastore.ListOptions{SortBy: []datastore.SortOption{{Key: "created_at", Order: datastore.SortOrderDescending}}})
+	configs, err := M.Ds.List(ctx, &types.McpUserConfig{}, &datastore.ListOptions{SortBy: []datastore.SortOption{{Key: "updated_at", Order: datastore.SortOrderDescending}}})
 	if err != nil {
 		return nil, err
 	}

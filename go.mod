@@ -7,6 +7,7 @@ toolchain go1.24.3
 require (
 	github.com/MatusOllah/slogcolor v1.6.0
 	github.com/StackExchange/wmi v1.2.1
+	github.com/asg017/sqlite-vec-go-bindings v0.1.6
 	github.com/blues/jsonata-go v1.5.4
 	github.com/fatih/color v1.18.0
 	github.com/getlantern/systray v1.2.2
@@ -40,7 +41,6 @@ require (
 require (
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d // indirect
-	github.com/asg017/sqlite-vec-go-bindings v0.1.6 // indirect
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
