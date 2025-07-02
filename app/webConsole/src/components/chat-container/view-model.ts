@@ -132,10 +132,16 @@ export default function useViewModel() {
 
   useEffect(() => {
     if (isDownloadEmbed && currentSessionId && selectedModel?.id) {
-      fetchChooseModelNotify({
+      const tempParams = {
         service_name: 'embed',
-        local_provider: 'local_ollama_embed',
-      });
+      } as any;
+      if (selectedModel.source === 'local') {
+        tempParams.local_provider = selectedModel.service_provider_name;
+      } else if (selectedModel.source === 'remote') {
+        tempParams.remote_provider = selectedModel.service_provider_name;
+      }
+      fetchChooseModelNotify(tempParams);
+
       fetchChangeModel({
         sessionId: currentSessionId,
         modelId: selectedModel?.id || '',

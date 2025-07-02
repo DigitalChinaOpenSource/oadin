@@ -30,115 +30,96 @@ export interface IGeneralCardProps extends ISelectedDialogProps {
   mine?: boolean;
 }
 
-const GeneralCard = React.memo((props: IGeneralCardProps) => {
-  const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData, mine, setSelecteStatedModel, selectedStateModel } = props;
-  const toolTipsText = props?.selectTooltip ?? '请先下载/授权，再体验';
+const GeneralCard = React.memo(
+  (props: IGeneralCardProps) => {
+    const { isDetail, onCardClick, modelSourceVal, onDeleteConfirm, onModelAuthVisible, onDownloadConfirm, modelData, mine, setSelecteStatedModel, selectedStateModel } = props;
+    const toolTipsText = props?.selectTooltip ?? '请先下载/授权，再体验';
 
-  const { migratingStatus } = useModelPathChangeStore();
-  const statusToText = (item: IModelDataItem) => {
-    const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
-    const { status, can_select } = item;
-    if (status === IN_PROGRESS)
-      return (
-        <Button
-          className={styles.downloadedBtn}
-          icon={
-            <SpinnerIcon
-              width={16}
-              height={16}
-              fill="#344054"
-            />
-          }
-        >
-          下载中
-        </Button>
-      );
-    if (can_select || status === COMPLETED || mine)
-      return (
-        <Button
-          disabled={props.isSelectable}
-          className={styles.downloadedBtn}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (migratingStatus === 'pending') {
-              message.warning('模型存储路径正在变更中，请稍后操作');
-              return;
+    const { migratingStatus } = useModelPathChangeStore();
+    const statusToText = (item: IModelDataItem) => {
+      const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
+      const { status, can_select } = item;
+      if (status === IN_PROGRESS)
+        return (
+          <Button
+            className={styles.downloadedBtn}
+            icon={
+              <SpinnerIcon
+                width={16}
+                height={16}
+                fill="#344054"
+              />
             }
-            onDeleteConfirm?.(modelData);
-          }}
-          icon={
-            <TrashIcon
-              width={16}
-              height={16}
-              fill="#344054"
-            />
-          }
-        >
-          删除模型
-        </Button>
-      );
-    else if (!can_select || status === FAILED || status === PAUSED)
-      return (
-        <Button
-          type="primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (migratingStatus === 'pending') {
-              message.warning('模型存储路径正在变更中，请稍后操作');
-              return;
+          >
+            下载中
+          </Button>
+        );
+      if (can_select || status === COMPLETED || mine)
+        return (
+          !props.isSelectable && (
+            <Button
+              disabled={props.isSelectable}
+              className={styles.downloadedBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (migratingStatus === 'pending') {
+                  message.warning('模型存储路径正在变更中，请稍后操作');
+                  return;
+                }
+                onDeleteConfirm?.(modelData);
+              }}
+              icon={
+                <TrashIcon
+                  width={16}
+                  height={16}
+                  fill="#344054"
+                />
+              }
+            >
+              删除模型
+            </Button>
+          )
+        );
+      else if (!can_select || status === FAILED || status === PAUSED)
+        return (
+          <Button
+            type="primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (migratingStatus === 'pending') {
+                message.warning('模型存储路径正在变更中，请稍后操作');
+                return;
+              }
+              onDownloadConfirm?.(modelData);
+            }}
+            icon={
+              <DownloadSimpleIcon
+                width={16}
+                height={16}
+                fill="#ffffff"
+              />
             }
-            onDownloadConfirm?.(modelData);
-          }}
-          icon={
-            <DownloadSimpleIcon
-              width={16}
-              height={16}
-              fill="#ffffff"
-            />
-          }
-        >
-          下载
-        </Button>
-      );
-  };
+          >
+            下载
+          </Button>
+        );
+    };
 
-  const remoteStatusToText = (item: IModelDataItem) => {
-    const { can_select } = item;
-    if (can_select) {
-      return (
-        <Button
-          className={styles.updateSetting}
-          variant="filled"
-          icon={
-            <ArrowClockwiseIcon
-              width={16}
-              height={16}
-              fill="#344054"
-            />
-          }
-          onClick={(e) => {
-            e.stopPropagation();
-            if (migratingStatus === 'pending') {
-              message.warning('模型存储路径正在变更中，请稍后操作');
-              return;
+    const remoteStatusToText = (item: IModelDataItem) => {
+      const { can_select } = item;
+      if (can_select) {
+        return (
+          <Button
+            className={styles.updateSetting}
+            variant="filled"
+            icon={
+              <ArrowClockwiseIcon
+                width={16}
+                height={16}
+                fill="#344054"
+              />
             }
-            onModelAuthVisible?.({
-              visible: true,
-              type: 'update',
-              modelData: modelData,
-            });
-          }}
-        >
-          更新授权
-        </Button>
-      );
-    }
-    return (
-      <>
-        <Button
-          type="primary"
-          onClick={(e) => {
-            {
+            onClick={(e) => {
               e.stopPropagation();
               if (migratingStatus === 'pending') {
                 message.warning('模型存储路径正在变更中，请稍后操作');
@@ -146,148 +127,175 @@ const GeneralCard = React.memo((props: IGeneralCardProps) => {
               }
               onModelAuthVisible?.({
                 visible: true,
-                type: 'config',
+                type: 'update',
                 modelData: modelData,
               });
+            }}
+          >
+            更新授权
+          </Button>
+        );
+      }
+      return (
+        <>
+          <Button
+            type="primary"
+            onClick={(e) => {
+              {
+                e.stopPropagation();
+                if (migratingStatus === 'pending') {
+                  message.warning('模型存储路径正在变更中，请稍后操作');
+                  return;
+                }
+                onModelAuthVisible?.({
+                  visible: true,
+                  type: 'config',
+                  modelData: modelData,
+                });
+              }
+            }}
+            icon={
+              <GearSixIcon
+                width={16}
+                height={16}
+                fill="#ffffff"
+              />
             }
-          }}
-          icon={
-            <GearSixIcon
-              width={16}
-              height={16}
-              fill="#ffffff"
-            />
-          }
-        >
-          配置授权
-        </Button>
-      </>
-    );
-  };
-
-  const handleSelectModelData = (e: MouseEvent<HTMLElement>) => {
-    e.stopPropagation();
-    const tempSelectedModel = selectedStateModel?.id && selectedStateModel?.id === modelData?.id ? ({} as IModelDataItem) : modelData;
-    setSelecteStatedModel?.(tempSelectedModel);
-  };
-
-  const convertProviderName = (flavor: string): string => {
-    const providerMap: Record<string, string> = {
-      deepseek: '深度求索',
-      aliyun: '阿里巴巴',
-      Yi: '灵一万物',
-      zhipuAi: '智谱清言',
+          >
+            配置授权
+          </Button>
+        </>
+      );
     };
 
-    return providerMap[flavor] || flavor;
-  };
+    const handleSelectModelData = (e: MouseEvent<HTMLElement>) => {
+      e.stopPropagation();
+      const tempSelectedModel = selectedStateModel?.id && selectedStateModel?.id === modelData?.id ? ({} as IModelDataItem) : modelData;
+      setSelecteStatedModel?.(tempSelectedModel);
+    };
 
-  return (
-    <div
-      className={`${styles.generalCard} ${!isDetail ? styles.generalCardHover : styles.generalCardDetail}`}
-      onClick={(e) => {
-        if (props.isSelectable) {
-          if (modelData?.can_select) {
-            handleSelectModelData(e);
+    const convertProviderName = (flavor: string): string => {
+      const providerMap: Record<string, string> = {
+        deepseek: '深度求索',
+        aliyun: '阿里巴巴',
+        Yi: '灵一万物',
+        zhipuAi: '智谱清言',
+      };
+
+      return providerMap[flavor] || flavor;
+    };
+
+    return (
+      <div
+        className={`${styles.generalCard} ${!isDetail ? styles.generalCardHover : styles.generalCardDetail}`}
+        onClick={(e) => {
+          if (props.isSelectable) {
+            if (modelData?.can_select) {
+              handleSelectModelData(e);
+            } else {
+              message.warning(toolTipsText);
+            }
           } else {
-            message.warning(toolTipsText);
+            onCardClick?.(true, modelData);
           }
-        } else {
-          onCardClick?.(true, modelData);
-        }
-      }}
-    >
-      {/* 推荐使用，定位右上角 */}
-      {modelData?.is_recommended && !props.isSelectable && <div className={styles.recommend}>推荐使用</div>}
-      <div className={styles.cardHeader}>
-        <div className={styles.cardTitle}>
-          {/* logo */}
-          <div className={styles.avatar}>
-            <img
-              alt=""
-              src={modelData?.avatar}
-              width={24}
-            />
-            {modelData?.is_recommended && props.isSelectable ? (
-              <span>
-                <img
-                  src={recommendedIcon}
-                  alt=""
-                />
-              </span>
-            ) : null}
-          </div>
-          {/* 名称 */}
-          <Tooltip title={modelData?.name}>
-            <div className={styles.title}>{modelData?.name}</div>
-          </Tooltip>
-          {/* 本地还是云端 */}
-          <div className={styles.localOrCloud}>
-            {modelSourceVal === 'local' ? (
-              <>
-                <HardDrivesIcon
-                  width={16}
-                  height={16}
-                  fill="#898ea3"
-                />
-                <div className={styles.localOrCloudText}>本地</div>
-              </>
-            ) : (
-              <>
-                <GlobeIcon
-                  width={16}
-                  height={16}
-                  fill="#898ea3"
-                />
-                <div className={styles.localOrCloudText}>云端</div>
-              </>
-            )}
+        }}
+      >
+        {/* 推荐使用，定位右上角 */}
+        {modelData?.is_recommended && !props.isSelectable && <div className={styles.recommend}>推荐使用</div>}
+        <div className={styles.cardHeader}>
+          <div className={styles.cardTitle}>
+            {/* logo */}
+            <div className={styles.avatar}>
+              <img
+                alt=""
+                src={modelData?.avatar}
+                width={24}
+              />
+              {modelData?.is_recommended && props.isSelectable ? (
+                <span>
+                  <img
+                    src={recommendedIcon}
+                    alt=""
+                  />
+                </span>
+              ) : null}
+            </div>
+            {/* 名称 */}
+            <Tooltip title={modelData?.name}>
+              <div className={styles.title}>{modelData?.name}</div>
+            </Tooltip>
+            {/* 本地还是云端 */}
+            <div className={styles.localOrCloud}>
+              {modelSourceVal === 'local' ? (
+                <>
+                  <HardDrivesIcon
+                    width={16}
+                    height={16}
+                    fill="#898ea3"
+                  />
+                  <div className={styles.localOrCloudText}>本地</div>
+                </>
+              ) : (
+                <>
+                  <GlobeIcon
+                    width={16}
+                    height={16}
+                    fill="#898ea3"
+                  />
+                  <div className={styles.localOrCloudText}>云端</div>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      {props.isSelectable ? (
-        <div className={styles.actionsWarp}>
-          <Tooltip title={modelData?.can_select ? null : toolTipsText}>
-            <Radio
-              disabled={!modelData?.can_select}
-              value={modelData?.id}
-              key={modelData?.id}
-              onClick={(e: MouseEvent<HTMLElement>) => handleSelectModelData(e)}
-            />
-          </Tooltip>
+        {props.isSelectable ? (
+          <div className={styles.actionsWarp}>
+            <Tooltip title={modelData?.can_select ? null : toolTipsText}>
+              <Radio
+                disabled={!modelData?.can_select}
+                value={modelData?.id}
+                key={modelData?.id}
+                onClick={(e: MouseEvent<HTMLElement>) => handleSelectModelData(e)}
+              />
+            </Tooltip>
+          </div>
+        ) : null}
+
+        <TagsRender
+          tags={(modelData?.class || []).concat([modelData?.size])}
+          highlightNums={(modelData?.class || []).length}
+        />
+
+        <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>
+          {isDetail ? (
+            <>{ReactMarkdown({ children: modelData?.desc, remarkPlugins: [remarkGfm], rehypePlugins: [rehypeRaw] })}</>
+          ) : (
+            <Tooltip title={<div style={{ maxHeight: '100px', overflow: 'auto' }}>{modelData?.desc}</div>}>{modelData?.desc || '暂无模型简介'}</Tooltip>
+          )}
         </div>
-      ) : null}
 
-      <TagsRender
-        tags={(modelData?.class || []).concat([modelData?.size])}
-        highlightNums={(modelData?.class || []).length}
-      />
+        <div
+          className={styles.infoWrapper}
+          style={props.isSelectable && modelData.can_select && modelSourceVal === 'local' ? { opacity: 1, transform: 'none' } : {}}
+        >
+          <div className={styles.providerName}>{convertProviderName(modelData.flavor)}</div>
 
-      <div className={`${isDetail ? styles.contentWrapperDetail : styles.contentWrapper}`}>
-        {isDetail ? (
-          <>{ReactMarkdown({ children: modelData?.desc, remarkPlugins: [remarkGfm], rehypePlugins: [rehypeRaw] })}</>
-        ) : (
-          <Tooltip title={<div style={{ maxHeight: '100px', overflow: 'auto' }}>{modelData?.desc}</div>}>{modelData?.desc || '暂无模型简介'}</Tooltip>
-        )}
+          {modelData?.can_select && modelSourceVal === 'local' && <div className={styles.modelStatus}>已下载</div>}
+          {modelData?.can_select && modelSourceVal === 'remote' && <div className={styles.modelStatus}>已授权</div>}
+        </div>
+        {!isDetail && modelSourceVal === 'local' && <div className={styles.handlebar}>{statusToText(modelData)}</div>}
+        {!isDetail && modelSourceVal === 'remote' && <div className={styles.handlebar}>{remoteStatusToText(modelData)}</div>}
       </div>
-
-      <div className={styles.infoWrapper}>
-        <div className={styles.providerName}>{convertProviderName(modelData.flavor)}</div>
-
-        {modelData?.can_select && modelSourceVal === 'local' && <div className={styles.modelStatus}>已下载</div>}
-        {modelData?.can_select && modelSourceVal === 'remote' && <div className={styles.modelStatus}>已授权</div>}
-      </div>
-      {!isDetail && modelSourceVal === 'local' && <div className={styles.handlebar}>{statusToText(modelData)}</div>}
-      {!isDetail && modelSourceVal === 'remote' && <div className={styles.handlebar}>{remoteStatusToText(modelData)}</div>}
-    </div>
-  );
-}, (prevProps, nextProps) => {
-  // 只在关键属性变化时重新渲染
-  if (prevProps.modelData.id !== nextProps.modelData.id) return false;
-  if (prevProps.modelData.status !== nextProps.modelData.status) return false;
-  if (prevProps.modelData.currentDownload !== nextProps.modelData.currentDownload) return false;
-  if (prevProps.selectedStateModel?.id !== nextProps.selectedStateModel?.id) return false;
-  return true;
-});
+    );
+  },
+  (prevProps, nextProps) => {
+    // 只在关键属性变化时重新渲染
+    if (prevProps.modelData.id !== nextProps.modelData.id) return false;
+    if (prevProps.modelData.status !== nextProps.modelData.status) return false;
+    if (prevProps.modelData.currentDownload !== nextProps.modelData.currentDownload) return false;
+    if (prevProps.selectedStateModel?.id !== nextProps.selectedStateModel?.id) return false;
+    return true;
+  },
+);
 
 export default GeneralCard;

@@ -55,6 +55,7 @@ export function useChatStream() {
       thinking: '',
       thinkingFromField: '',
       isThinkingActive: false,
+      thinkingTotalDuration: undefined as number | undefined,
     },
     status: {
       isToolCallActive: false, // 移除 hasReceivedData
@@ -190,6 +191,7 @@ export function useChatStream() {
         thinking: '',
         thinkingFromField: '',
         isThinkingActive: false,
+        thinkingTotalDuration: undefined,
       },
       status: {
         isToolCallActive: false,
@@ -243,6 +245,7 @@ export function useChatStream() {
           thinking: '',
           thinkingFromField: '',
           isThinkingActive: false,
+          thinkingTotalDuration: undefined,
         },
         status: {
           isToolCallActive: false,
@@ -271,7 +274,6 @@ export function useChatStream() {
         // 检查响应状态
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'Unknown error');
-          console.error('流式请求打开失败:', response.status, response.statusText, errorText);
           throw new Error(`服务器返回错误: ${response.status} ${response.statusText} - ${errorText}`);
         }
         // 检查Content-Type是否为EventStream
@@ -460,9 +462,7 @@ export function useChatStream() {
           // 调用继续对话函数，处理后续流式响应
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
         } else if (isToolError) {
-          console.error('工具调用失败:', toolErrorMessage);
           const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
-          // 使用 handleTextContent 处理错误内容
           handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState, false);
           requestState.current.content.response = errorContent;
         } else {
@@ -601,7 +601,6 @@ export function useChatStream() {
             }
 
             const data = response.data;
-
             // 根据是否有 tool_calls 来设置 isToolCallActive
             if (data?.tool_calls && data.tool_calls.length > 0) {
               requestState.current.status.isToolCallActive = true;
@@ -610,9 +609,14 @@ export function useChatStream() {
               requestState.current.status.isToolCallActive = false;
             }
 
+            // 保存 total_duration 到 requestState
+            if (data.total_duration !== undefined) {
+              requestState.current.content.thinkingTotalDuration = data.total_duration;
+            }
+
             // 处理深度思考内容（在工具调用前保存）
             if (data?.tool_calls && data.tool_calls.length > 0 && requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
-              const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false);
+              const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false, data.total_duration);
               addMessage(thinkingMessage);
 
               // 清除累积的思考内容
@@ -651,11 +655,8 @@ export function useChatStream() {
                     // 确保无论哪种情况都有有效的ID可用
                     const currentGroupId = contentItem.content.groupId || requestState.current.lastToolGroupIdRef;
 
-                    console.log('当前组ID:', currentGroupId, '全局保存的组ID:', requestState.current.lastToolGroupIdRef);
-
                     if (currentGroupId) {
                       const updatedMcpContent = createMcpContentWithGroupId(currentGroupId, finalStatus, toolCallResults, contentItem.content.totalDuration || 0);
-                      console.log('onComplete 更新MCP内容:', updatedMcpContent);
                       updatedContentList[index] = updatedMcpContent;
                       hasUpdates = true;
                     }
@@ -675,7 +676,7 @@ export function useChatStream() {
 
             // 处理未保存的思考内容
             if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
-              const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false);
+              const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false, requestState.current.content.thinkingTotalDuration);
               addMessage(thinkingMessage);
 
               requestState.current.content.thinkingFromField = '';
@@ -687,7 +688,14 @@ export function useChatStream() {
             // 保存最终消息（仅在没有工具调用活动时）
             if (!requestState.current.status.isToolCallActive && (response || responseContent)) {
               const finalContent = response || responseContent;
-              const aiMessage = buildMessageWithThinkContent(finalContent, true, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
+              const aiMessage = buildMessageWithThinkContent(
+                finalContent,
+                true,
+                thinking || tempStreamingThinking,
+                thinkingFromField,
+                isThinkingActive,
+                requestState.current.content.thinkingTotalDuration,
+              );
               addMessage(aiMessage);
 
               // 重置状态
@@ -697,6 +705,7 @@ export function useChatStream() {
                   thinking: '',
                   thinkingFromField: '',
                   isThinkingActive: false,
+                  thinkingTotalDuration: undefined,
                 },
                 status: {
                   isToolCallActive: false,
