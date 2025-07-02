@@ -67,7 +67,7 @@ export default function McpList(props: IMcpListProps) {
         setFilteredData(mcpListData);
       }
     }
-  }, [showOnlySelectedMyMcp, showOnlySelectedMcpList, mcpListData, activeKey]);
+  }, [showOnlySelectedMyMcp, showOnlySelectedMcpList, mcpListData, activeKey, selectTemporaryMcpItems]);
   return (
     <div className={styles.mcpCardList}>
       {pageLoading ? (
