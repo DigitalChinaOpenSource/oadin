@@ -24,11 +24,9 @@ export const useDownLoad = () => {
 
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
+  const hasUserTriggeredDownload = useRef(false); // 标记用户是否主动触发了下载
   const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
   downListRef.current = tempDownloadList;
-
-  // 计算当前下载中的项目
-  const downloadingItems = () => tempDownloadList.filter((item: IModelDataItem) => item.status === IN_PROGRESS);
 
   // 开始下载
   const fetchDownloadStart = useCallback(
@@ -46,6 +44,9 @@ export const useDownLoad = () => {
       // 兼容处理第一条数据id===0的场景
       if (id === undefined || id === null) return;
 
+      // 标记用户主动触发了下载
+      hasUserTriggeredDownload.current = true;
+
       const paramsTemp = {
         model_name: name,
         service_name: service_name || 'chat',
@@ -61,10 +62,10 @@ export const useDownLoad = () => {
       ]);
       // 同步更新所有模型列表中的状态
       const { setModelListData, setMyModelsList, setModelSquareList } = useModelListStore.getState();
-      
+
       // 更新函数，统一处理更新逻辑
       const updateModelStatus = (draft: IModelDataItem[]) => draft.map((item: IModelDataItem) => (item.id === id ? { ...item, status: IN_PROGRESS, currentDownload: 0 } : item));
-      
+
       // 更新所有相关状态
       setModelListData(updateModelStatus);
       setMyModelsList(updateModelStatus);
@@ -147,14 +148,18 @@ export const useDownLoad = () => {
 
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {
+    console.log('useEffect刷新===>', downloadList);
     const timeout = setTimeout(() => {
-      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
-      if (downListLocal.length > 0) {
-        const updatedList = downListLocal.map((item: IModelDataItem) => ({
-          ...item,
-          status: item.status === IN_PROGRESS ? PAUSED : item.status,
-        }));
-        setDownloadList(updatedList);
+      // 只有在用户没有主动触发下载的情况下，才从localStorage恢复并暂停进行中的下载
+      if (!hasUserTriggeredDownload.current) {
+        const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
+        if (downListLocal.length > 0) {
+          const updatedList = downListLocal.map((item: IModelDataItem) => ({
+            ...item,
+            status: item.status === IN_PROGRESS ? PAUSED : item.status,
+          }));
+          setDownloadList(updatedList);
+        }
       }
 
       // localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
@@ -165,6 +170,8 @@ export const useDownLoad = () => {
 
   // 监听浏览器刷新 暂停所有模型下载 并且缓存下载列表
   usePageRefreshListener(() => {
+    const downloadingItems = tempDownloadList.filter((item: IModelDataItem) => item.status === IN_PROGRESS);
+    console.log('usePageRefreshListener===>', downloadingItems);
     // 存储正在下载的列表
     localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(downloadingItems));
 

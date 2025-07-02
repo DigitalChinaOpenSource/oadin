@@ -221,6 +221,7 @@ export default function ChatView(props: IChatViewProps) {
             placeholder="输入消息..."
             onSend={handleSendMessage}
             className="chat-input"
+            textareaMaxHeight={70}
             renderSendButton={({ onClick, inputValue }) => (
               <>
                 {isLoading ? (

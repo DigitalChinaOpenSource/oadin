@@ -12,7 +12,7 @@ export interface IDetailDrawer extends DrawerProps {
 
 export const DetailDrawer: React.FC<IDetailDrawer> = (options: IDetailDrawer) => {
   const { id } = options;
-
+  console.info(id, 'id');
   const { fetchMcpDetail, mcpDetail } = useMcpDetail(id);
   useEffect(() => {
     if (id) {

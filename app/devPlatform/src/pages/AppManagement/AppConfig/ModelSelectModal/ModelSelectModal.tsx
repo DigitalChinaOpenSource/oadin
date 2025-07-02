@@ -62,15 +62,17 @@ const ModelSelectModal: React.FC<ModelSelectModalProps> = ({
     {
       manual: true,
       onSuccess: (data) => {
-        console.log('tagsData===>', data);
-        setTagsData(data || []);
-        // 初始化标签数据
-        const initData = data.reduce((acc: Record<string, any>, item: any) => {
-          acc[item.category] = [];
-          return acc;
-        }, {});
-        console.info(initData, 'initData');
-        setCheckedValues(initData);
+        console.log('tagsData===>', data.data);
+        setTagsData(data.data || []);
+        if (data.data) {
+          // 初始化标签数据
+          const initData = data.data.reduce((acc: Record<string, any>, item: any) => {
+            acc[item.category] = [];
+            return acc;
+          }, {});
+          console.info(initData, 'initData');
+          setCheckedValues(initData);
+        }
       },
 
       onError: (error) => {

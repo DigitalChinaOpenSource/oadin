@@ -1,11 +1,11 @@
-import { MessageType } from '@res-utiles/ui-components';
+import { ChatMessageItem } from '@res-utiles/ui-components';
 import { IToolCallData } from './types';
 import { generateUniqueId } from './utils';
 
 /**
  * 查找进行中的工具调用消息
  */
-export const findProgressToolMessage = (messages: MessageType[]) => {
+export const findProgressToolMessage = (messages: ChatMessageItem[]) => {
   return messages.find((msg) => msg.contentList?.some((contentItem: any) => contentItem.type === 'mcp' && typeof contentItem.content === 'object' && contentItem.content.status === 'progress'));
 };
 
@@ -117,7 +117,7 @@ export const handleToolCallErrorMessage = (
   currentToolMessageId: string,
   toolGroupId: string,
   errorMessage: string,
-  addMessage: (msg: MessageType, isUpdate?: boolean) => string,
+  addMessage: (msg: ChatMessageItem, isUpdate?: boolean) => string,
 ) => {
   if (toolCallResults.length > 0) {
     // 更新最后一个工具的状态为错误
@@ -144,7 +144,7 @@ export const handleToolCallErrorMessage = (
     const errorContentList = updateContentListWithMcpByGroupId(currentContentList, errorMcpContent, toolGroupId);
 
     // 构建错误消息，使用 toolGroupId 作为消息 ID
-    const errorMsg: MessageType = {
+    const errorMsg: ChatMessageItem = {
       id: toolGroupId || generateUniqueId('mcp_error_msg'),
       role: 'assistant',
       contentList: errorContentList,
@@ -153,7 +153,7 @@ export const handleToolCallErrorMessage = (
     addMessage(errorMsg, !!toolGroupId);
   } else {
     // 创建新的错误消息，使用 toolGroupId 作为消息 ID
-    const mcpErrorMessage: MessageType = {
+    const mcpErrorMessage: ChatMessageItem = {
       id: toolGroupId || generateUniqueId('mcp_error_msg'),
       role: 'assistant',
       contentList: [

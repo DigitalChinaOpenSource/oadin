@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { useSearchParams } from 'react-router-dom';
+
 interface PostParamsType {
   keyword?: string;
   page: number;
@@ -24,7 +25,7 @@ export const useMcpTools = ({ id }: { id?: string }) => {
   const { loading: toolsLoading, run: getTolls } = useRequest(
     async () => {
       if (serviceId) {
-        const data = await httpRequest.post(`/mcp/${serviceId}/tools/search`, postParams);
+        const data = await httpRequest.post(`/mcp/tools/${serviceId}`, postParams);
         if (!data) throw new Error('获取工具函数列表失败');
         return data;
       } else {

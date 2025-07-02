@@ -1,5 +1,5 @@
 import { generateUniqueId } from './utils';
-import { MessageType } from '@res-utiles/ui-components';
+import { ChatMessageItem } from '@res-utiles/ui-components';
 
 interface ParsedContent {
   type: 'think' | 'plain';
@@ -126,7 +126,7 @@ export const parseThinkContent = (content: string, hasUnfinishedThink: boolean =
  * @param thinkingContent 来自 <think> 标签的思考内容
  * @param thinkingFromField 来自 thinking 字段的思考内容
  * @param isThinkingActive thinking 字段是否还在活跃状态
- * @returns MessageType 对象
+ * @returns ChatMessageItem 对象
  */
 export const buildMessageWithThinkContent = (
   responseContent: string,
@@ -134,7 +134,7 @@ export const buildMessageWithThinkContent = (
   thinkingContent?: string | { data: string; status: string },
   thinkingFromField?: string,
   isThinkingActive: boolean = false,
-): MessageType => {
+): ChatMessageItem => {
   // 检查是否有未闭合的 <think> 标签
   const openTagCount = (responseContent.match(/<think>/g) || []).length;
   const closeTagCount = (responseContent.match(/<\/think>/g) || []).length;

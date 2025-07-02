@@ -207,9 +207,10 @@
   }
   p {
     width: 100%;
-    white-space: normal;
+    // white-space: normal;
     word-wrap: break-word;
     word-break: normal;
     margin-top: 0;
+    white-space: pre-wrap;
   }
 }

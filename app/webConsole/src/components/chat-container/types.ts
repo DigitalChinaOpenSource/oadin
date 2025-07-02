@@ -5,6 +5,7 @@ export interface IPlaygroundSession {
   embedModelId?: string; // RAG 场景下使用
   ragEnabled?: boolean; // 是否启用 RAG
   fileIds?: string[]; // RAG 场景下关联文件
+  modelName?: string;
 }
 
 export interface IUploadFile {
