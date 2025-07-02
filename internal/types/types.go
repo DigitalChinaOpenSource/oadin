@@ -144,6 +144,7 @@ type EngineRecommendConfig struct {
 	DownloadPath   string `json:"download_path"`
 	ExecPath       string `json:"exec_path"`
 	ExecFile       string `json:"exec_file"`
+	StartStatus    int    `json:"start_status"`
 }
 
 type MCPServerConfig struct {
