@@ -9,6 +9,7 @@ import (
 type CreateSessionRequest struct {
 	Title        string `json:"title"`
 	ModelId      string `json:"modelId"`
+	ModelName    string `json:"modelName"`
 	EmbedModelId string `json:"embedModelId"`
 }
 
