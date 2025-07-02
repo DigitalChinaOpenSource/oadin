@@ -6,7 +6,6 @@ import { IModelPathRes } from '@/types';
 import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
 import { useSettingsViewModel } from '@/components/settings/view-module';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';
-import { time } from 'console';
 
 export function useModelSetting() {
   const { setMigratingStatus } = useModelPathChangeStore();
@@ -47,7 +46,7 @@ export function useModelSetting() {
   );
 
   // 获取当前路径的空间信息
-  const { run: onCheckPathSpace } = useRequest(
+  const { runAsync: onCheckPathSpace } = useRequest(
     async (path: string) => {
       const data = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
       return data || {};
@@ -56,9 +55,11 @@ export function useModelSetting() {
       manual: true,
       onSuccess: (data) => {
         setCurrentPathSpace(data);
+        return data;
       },
       onError: (error) => {
         setCurrentPathSpace({} as IModelPathSpaceRes);
+        return error;
       },
     },
   );

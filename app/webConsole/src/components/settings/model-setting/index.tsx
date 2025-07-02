@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Form, Input, Tooltip, Button, Space } from 'antd';
+import React, { useEffect } from 'react';
+import { Button, Form, Input, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import ModelPathModal from '@/components/modelpath-modal';
 import { useModelSetting } from '@/components/settings/model-setting/viem-model.ts';
@@ -39,8 +39,13 @@ const ModelSetting: React.FC = () => {
   };
 
   // 更改目录按钮点击事件
-  const handleChangeDir = () => {
-    onModelPathVisible();
+  const handleChangeDir = async () => {
+    // 校验源路径是否可用
+    onCheckPathSpace(modelPath)
+      .then((res) => {
+        onModelPathVisible();
+      })
+      .catch(() => {});
   };
 
   useEffect(() => {
