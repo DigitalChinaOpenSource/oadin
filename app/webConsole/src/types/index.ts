@@ -13,6 +13,7 @@ export interface IModelDataItem {
   name: string;
   service_provider_name: string;
   size: string;
+  context: number;
   is_recommended: boolean;
   status: number | string;
   avatar: string;
