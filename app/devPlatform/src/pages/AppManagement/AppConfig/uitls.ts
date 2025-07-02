@@ -1,8 +1,8 @@
 import { ICardDeatilItem, IModelSelectCardItem } from '@/pages/AppManagement/AppConfig/types.ts';
 import { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
 import { defaultTag } from '@/pages/AppManagement/AppConfig/index.tsx';
-import { message } from 'antd';
 import { IMcpListItem, IModelDataItem } from '@/types/model.ts';
+import { message } from 'antd';
 
 export const transformedAll2Card = (allList: ICardDeatilItem[]): IModelSelectCardItem[] => {
   return allList.map((item) => {

@@ -196,6 +196,7 @@ export default function ChatView(props: IChatViewProps) {
                 return <MarkdownContent dataSource={content as string} />;
               }
               if (type === 'think') {
+                // console.log('think-content===>', content);
                 return <DeepThinkChat dataSource={content as any} />;
               }
               if (type === 'mcp') {
