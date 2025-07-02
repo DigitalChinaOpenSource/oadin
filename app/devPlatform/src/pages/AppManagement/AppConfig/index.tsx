@@ -6,7 +6,6 @@ import styles from './index.module.scss';
 import CreateAppModal from '../AppList/CreateAppModal.tsx';
 import ModelSelectModal from './ModelSelectModal/ModelSelectModal.tsx';
 import ModelCard from '@/pages/AppManagement/AppConfig/ModelCard/ModelCard.tsx';
-import { availableMcps } from '@/pages/AppManagement/AppConfig/mock.ts';
 import { transformedCard2Ids, transformedCard2Tags, transformedMcp2Card, transformedModel2Card } from '@/pages/AppManagement/AppConfig/uitls.ts';
 import { ICardDeatilItem, IModelSelectCardItem, searchFunc, SearchParams } from '@/pages/AppManagement/AppConfig/types.ts';
 import TagFilter, { Tag } from '@/pages/AppManagement/AppConfig/TagFilter/TagFilter.tsx';
@@ -326,7 +325,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
     const mcpList: McpData = await getMcpList(_searchParams);
 
     console.info(mcpList, '接口返回的Mcp列表');
-    const dealList = transformedMcp2Card(availableMcps);
+    const dealList = transformedMcp2Card(mcpList.list);
     setSearchMcpList(dealList);
     setPagination({
       ...pagination,
@@ -336,7 +335,7 @@ const AppConfig: React.FC<AppConfigProps> = () => {
     });
     return dealList;
   };
-
+  console.info(drawerOpenId, '当前的drawerOpenId');
   if (loading) {
     return (
       <div className={styles.loadingContainer}>

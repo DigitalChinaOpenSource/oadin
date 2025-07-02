@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { List, Checkbox, Button, Input } from 'antd';
+import { Button, Checkbox, Input, List } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
@@ -194,7 +194,10 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
                     return item?.id;
                   })
                   .includes(item.id)}
-                onChange={(e) => handleItemSelect(item, e.target.checked)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleItemSelect(item, e.target.checked);
+                }}
                 style={{ marginRight: 16 }}
               />
               <div className={styles.select_mcp_title_logo}>

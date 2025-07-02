@@ -19,9 +19,10 @@ export default function McpSquareTab(props: IMyMcpTabProps) {
           title: 'MCP广场',
           count: vm.pagination.total ?? 0,
         })}
-        {renderSearch({
-          vm,
-        })}
+        {!showOnlySelectedMcpList &&
+          renderSearch({
+            vm,
+          })}
         {vm.collapsed && (
           <Tooltip title="展开筛选">
             <div
@@ -54,7 +55,7 @@ export default function McpSquareTab(props: IMyMcpTabProps) {
         pageLoading={vm.mcpListLoading}
       />
     ),
-    filterNode: (
+    filterNode: !showOnlySelectedMcpList && (
       <McpAdvanceFilter
         isDialog={isDialog}
         collapsed={vm.collapsed}

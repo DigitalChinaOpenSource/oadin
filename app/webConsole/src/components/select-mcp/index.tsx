@@ -1,4 +1,4 @@
-import { Button, message, Popover, Tooltip } from 'antd';
+import { Button, Popover, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import { McpSelectBtn } from '@/components/icons';
 import { SelectMcpDialog } from './dialog.tsx';
@@ -18,6 +18,7 @@ export const SelectMcp = () => {
   const { selectedModel } = useSelectedModelStore();
   const [selectMcpPopOpen, setSelectMcpPopOpen] = useState<boolean>(false);
   const myMcpViewModel = useMyMcpViewModel();
+
   const { handleMcpListToPage } = myMcpViewModel;
   // 根据selectMcpList长度确定类型
   const selectType = selectMcpList.length > 0 ? selectMcpType.selected : selectMcpType.default;

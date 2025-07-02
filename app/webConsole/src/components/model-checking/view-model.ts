@@ -44,13 +44,17 @@ export function useViewModel(): IMyModelListViewModel {
       manual: true,
       onSuccess: (data) => {
         // 处理一些数据格式
-        const dataWithSource = (data || []).map(
-          (item) =>
-            ({
-              ...item,
-              currentDownload: 0,
-            }) as any,
-        );
+        let dataWithSource = (data || [])
+          .map(
+            (item) =>
+              ({
+                ...item,
+                currentDownload: 0,
+              }) as any,
+          )
+          .filter((item) => {
+            return item.class.every((c_item: string) => !c_item.includes('嵌入'));
+          });
         setModelListData(dataWithSource);
       },
       onError: (error) => {
