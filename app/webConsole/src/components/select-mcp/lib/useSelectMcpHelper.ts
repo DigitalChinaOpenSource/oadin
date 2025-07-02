@@ -3,7 +3,6 @@ import { message } from 'antd';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
-import { getMessageByMcp } from '@/i18n';
 
 // 定义MCP列表ID参数接口
 export interface IMcpListIds {
@@ -23,11 +22,6 @@ export interface IMcpUpdateResult {
  */
 export const checkMcpLength = (mcpListLength: number): boolean => {
   if (mcpListLength > 4) {
-    message.warning(
-      getMessageByMcp('maxSelectMcp', {
-        msg: '为保障服务稳定运行与优质体验，建议您选择的MCP工具不要超过5个。',
-      }),
-    );
     return false;
   }
   return true;

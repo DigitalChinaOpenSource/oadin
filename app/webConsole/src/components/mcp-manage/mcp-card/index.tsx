@@ -1,6 +1,6 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import styles from './index.module.scss';
-import { Button, Checkbox, Popover } from 'antd';
+import { Button, Checkbox, message, Popover } from 'antd';
 import { IMcpListItem } from '../mcp-square-tab/types';
 import { DotsThreeCircleIcon, GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
@@ -13,6 +13,7 @@ import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import EllipsisTooltip from '@vanta/ellipsis-tooltip';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 import { checkMcpLength } from '@/components/select-mcp/lib/useSelectMcpHelper';
+import { getMessageByMcp } from '@/i18n';
 
 export interface IMcpCardProps {
   // 模型数据
@@ -42,6 +43,12 @@ export default function McpCard(props: IMcpCardProps) {
     if (checked) {
       if (checkMcpLength(selectTemporaryMcpItems.length)) {
         setSelectTemporaryMcpItems?.([...(selectTemporaryMcpItems ?? []), item]);
+      } else {
+        message.warning(
+          getMessageByMcp('maxSelectMcp', {
+            msg: '为保障服务稳定运行与优质体验，建议您选择的MCP工具不要超过5个。',
+          }),
+        );
       }
     } else {
       setSelectTemporaryMcpItems?.(selectTemporaryMcpItems.filter((mcpItem) => mcpItem?.id !== item?.id));
@@ -148,7 +155,6 @@ export default function McpCard(props: IMcpCardProps) {
                 })
                 .includes(mcpData.id)}
               disabled={isAdd}
-              onChange={(e) => handleItemSelect(mcpData, e.target.checked)}
             />
           </div>
         ) : null}
