@@ -361,7 +361,7 @@ func (M *MCPServerImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolRequest
 	if len(toolIds) > 0 {
 		con.Kits = strings.Join(toolIds, ",")
 	} else {
-		con.Kits = "" // 如果没有禁用的工具，设为空字符串
+		con.Kits = "default tool," // 如果没有禁用的工具，设为空字符串
 	}
 
 	err = M.Ds.Put(c.Request.Context(), con)

@@ -92,8 +92,9 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				Finished     bool   `json:"finished"`
 				Id           string `json:"id"`
 				Message      struct {
-					Content string `json:"content"`
-					Role    string `json:"role"`
+					Content  string `json:"content"`
+					Role     string `json:"role"`
+					Thinking string `json:"thinking"`
 				} `json:"message"`
 				Model string `json:"model"`
 			}
