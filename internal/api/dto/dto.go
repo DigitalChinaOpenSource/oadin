@@ -285,6 +285,7 @@ type RecommendModelData struct {
 	Think               bool     `json:"think" default:"false"`
 	ThinkSwitch         bool     `json:"think_switch" default:"false"`
 	Tools               bool     `json:"tools" default:"false"`
+	Context             int      `json:"context" default:"0"`
 }
 
 type ProviderSupportModelData struct {

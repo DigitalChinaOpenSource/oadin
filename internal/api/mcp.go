@@ -256,12 +256,3 @@ func (t *OadinCoreServer) ClientGetTools(c *gin.Context) {
 	res.Tools = mcpTools
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": res})
 }
-
-func (t *OadinCoreServer) ClientMAC(c *gin.Context) {
-	err := t.MCP.ClientMAC(c)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": "500", "message": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
-}
