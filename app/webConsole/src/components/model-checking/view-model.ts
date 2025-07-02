@@ -44,7 +44,7 @@ export function useViewModel(): IMyModelListViewModel {
       manual: true,
       onSuccess: (data) => {
         // 处理一些数据格式
-        let dataWithSource = (data || [])
+        const dataWithSource = (data || [])
           .map(
             (item) =>
               ({
