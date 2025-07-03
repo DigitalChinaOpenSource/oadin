@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Input, List, Spin } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
@@ -33,6 +33,12 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
       // 组件卸载时清空数据
       setAllList([]);
       setFilteredData([]);
+
+      // 取消所有未完成的请求
+      abortControllersRef.current.forEach((controller) => {
+        controller.abort();
+      });
+      abortControllersRef.current.clear();
     };
   }, []);
   const { setSelectMcpList, selectMcpList, drawerOpenId, setDrawerOpenId } = useSelectMcpStore();
@@ -43,6 +49,8 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   // 搜索关键字
   const [searchValue, setSearchValue] = useState<string>('');
   const [startMcpNow, setStartMcpNow] = useState<Record<string, number>>({});
+  // 存储每个 MCP 的 AbortController，用于取消请求
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
   // 处理单个项目的选择
   const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
@@ -54,11 +62,36 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
           ...prevState,
           [item?.id as string]: 2,
         }));
+
+        // 创建 AbortController 用于取消请求
+        const controller = new AbortController();
+        // 存储 AbortController 以便后续取消
+        abortControllersRef.current.set(item.id as string, controller);
+
         // 启动MCP
-        startMcps({
+        const startPromise = startMcps({
           ids: [item?.id as string],
-        })
+        });
+
+        // 设置当请求被取消时的处理
+        const cancelHandler = () => {
+          console.info('MCP启动请求已取消:', item.id);
+          setStartMcpNow((prevState) => ({
+            ...prevState,
+            [item?.id as string]: 0, // 重置状态
+          }));
+        };
+
+        // 将请求和取消处理关联起来
+        controller.signal.addEventListener('abort', cancelHandler);
+
+        startPromise
           .then((res) => {
+            if (controller.signal.aborted) {
+              // 如果请求已被取消，不做任何处理
+              return;
+            }
+
             const { successIds = [], errorIds = [] } = res;
             /// 当前这条启用成功
             if (successIds && successIds.indexOf(item.id) > -1) {
@@ -77,6 +110,11 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
             }
           })
           .catch((error) => {
+            if (controller.signal.aborted) {
+              // 如果请求已被取消，不处理错误
+              return;
+            }
+
             console.error('启动MCP失败:', error);
             setStartMcpNow((prevState) => ({
               ...prevState,
@@ -84,7 +122,11 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
             }));
           })
           .finally(() => {
-            console.info('加载完毕');
+            if (!controller.signal.aborted) {
+              console.info('加载完毕');
+              // 请求完成后移除 AbortController
+              abortControllersRef.current.delete(item.id as string);
+            }
           });
       }
     } else {
@@ -212,15 +254,25 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
         renderItem={(item) => (
           <List.Item
             actions={[
-              <Button
-                type="link"
-                size="small"
-                onClick={() => {
-                  /// 取消当前这个id对应的接口
-                }}
-              >
-                取消
-              </Button>,
+              ...(startMcpNow[item?.id as string] === 2
+                ? [
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={() => {
+                        /// 取消当前这个id对应的接口
+                        abortControllersRef.current.get(item.id as string)?.abort();
+                        abortControllersRef.current.delete(item.id as string); // 移除已取消的请求
+                        setStartMcpNow((prevState) => ({
+                          ...prevState,
+                          [item?.id as string]: 0,
+                        }));
+                      }}
+                    >
+                      取消
+                    </Button>,
+                  ]
+                : []),
               <Button
                 type="link"
                 size="small"
@@ -261,7 +313,7 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
               </div>
               <div>
                 <div>{item.name.zh}</div>
-                <div style={{ width: '260px' }}>
+                <div style={{ width: '220px' }}>
                   <TagsRender tags={item.tags} />
                 </div>
               </div>
