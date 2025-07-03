@@ -299,6 +299,18 @@ export default function useViewModel() {
     }
   }, [initialized, currentSessionId, prevSessionId, selectedModel, prevModelId, source, fetchChatHistoryDetail, handleCreateNewChat, setPrevSessionId, setPrevModelId]);
 
+  // 切换模型时，如果已下载了，就更新 embed 模型 ID
+  useEffect(() => {
+    if (selectedModel && isDownloadEmbed && currentSessionId) {
+      fetchEmebdModelId({
+        sessionId: currentSessionId,
+        modelId: selectedModel.id,
+        modelName: selectedModel.name,
+        embedModelId: EMBEDMODELID,
+      });
+    }
+  }, [selectedModel, currentSessionId, isDownloadEmbed]);
+
   return {
     isDownloadEmbed,
     isUploadVisible,
