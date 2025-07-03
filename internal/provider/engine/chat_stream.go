@@ -77,7 +77,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			}
 			// 转回[]byte
 			cleanBody := []byte(bodyStr)
-			// fmt.Println("[ChatStream] 收到块内容:", bodyStr)
+			fmt.Println("[ChatStream] 收到块内容:", bodyStr)
 
 			// 每个块都是一个完整的JSON对象
 			var content string
@@ -104,7 +104,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			if err := json.Unmarshal(cleanBody, &streamChunk); err == nil {
 				// 成功解析为直接流式格式
 				parseSucceeded = true
-				fmt.Printf("[ChatStream] 解析为直接流式格式成功\n")
+				// fmt.Printf("[ChatStream] 解析为直接流式格式成功\n")
 
 				// 提取模型名称
 				model = streamChunk.Model
@@ -112,7 +112,12 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				// 提取内容
 				if streamChunk.Message.Content != "" {
 					content = streamChunk.Message.Content
-					fmt.Printf("[ChatStream] 从直接流式格式提取内容，长度: %d\n", len(content))
+					// fmt.Printf("[ChatStream] 从直接流式格式提取内容，长度: %d\n", len(content))
+				}
+
+				if streamChunk.Message.Thinking != "" {
+					thoughts = streamChunk.Message.Thinking
+					// fmt.Printf("[ChatStream] 从直接流式格式提取内容，长度: %d\n", len(content))
 				}
 
 				if len(streamChunk.Message.ToolCalls) > 0 {
