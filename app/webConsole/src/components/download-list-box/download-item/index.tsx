@@ -100,7 +100,7 @@ export default function DownloadItem(props: IDownloadItemProps) {
 
       <div className={styles.speedSizeStatus}>
         <div className={styles.speedSize}>
-          {downloadItem.completedsize && downloadItem.totalsize && (
+          {Boolean(downloadItem.completedsize && downloadItem.totalsize) && (
             <>
               <span>{downloadItem.completedsize} MB/</span>
               <span>{downloadItem.totalsize} MB</span>

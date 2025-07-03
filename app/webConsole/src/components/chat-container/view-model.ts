@@ -53,17 +53,27 @@ export default function useViewModel() {
   const isLoadingHistory = useRef(false);
 
   // 合并相关的请求函数
-  const { run: fetchChooseModelNotify } = useRequest(async (params: { service_name: string; local_provider?: string; remote_provider?: string; hybrid_policy?: string }) => {
-    if (!params?.service_name) return;
-    const data = await httpRequest.put('/service', { ...params });
-    return data || {};
-  });
+  const { run: fetchChooseModelNotify } = useRequest(
+    async (params: { service_name: string; local_provider?: string; remote_provider?: string; hybrid_policy?: string }) => {
+      if (!params?.service_name) return;
+      const data = await httpRequest.put('/service', { ...params });
+      return data || {};
+    },
+    {
+      manual: true,
+    },
+  );
 
-  const { run: fetchEmebdModelId } = useRequest(async (params: IChangeModelParams) => {
-    if (!params?.sessionId || !params.modelId || !params.embedModelId || !params.modelName) return {};
-    const data = await httpRequest.post('/playground/session/model', { ...params });
-    return data?.data || {};
-  });
+  const { run: fetchEmebdModelId } = useRequest(
+    async (params: IChangeModelParams) => {
+      if (!params?.sessionId || !params.modelId || !params.embedModelId || !params.modelName) return {};
+      const data = await httpRequest.post('/playground/session/model', { ...params });
+      return data?.data || {};
+    },
+    {
+      manual: true,
+    },
+  );
 
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
@@ -98,12 +108,10 @@ export default function useViewModel() {
     {
       manual: true,
       onSuccess: (data: any[]) => {
-        if (!data || data?.length === 0) return;
-
-        const isEmbed = data.some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16' && item.status === 'downloaded');
+        const isEmbed = (data || []).some((item) => item.model_name === 'quentinz/bge-large-zh-v1.5:f16' && item.status === 'downloaded');
         setIsDownloadEmbed(isEmbed);
 
-        const isSelectedModel = data.some((item) => item.model_name === selectedModel?.name && item.status === 'downloaded');
+        const isSelectedModel = (data || []).some((item) => item.model_name === selectedModel?.name && item.status === 'downloaded');
         if (!isSelectedModel) {
           // 重置所有状态
           setSelectedModel(null);
