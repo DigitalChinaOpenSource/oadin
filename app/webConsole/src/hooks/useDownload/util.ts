@@ -3,6 +3,8 @@ import { message } from 'antd';
 
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelListStore from '@/store/useModelListStore';
+import embedDownloadEventBus from '@/utils/embedDownload';
+import { DOWNLOAD_STATUS } from '@/constants';
 
 // 监听浏览器刷新 并执行某些操作
 export const usePageRefreshListener = (onRefresh: () => void) => {
@@ -70,16 +72,27 @@ export function updateDownloadStatus(id: string, updates: any) {
 
   const now = Date.now();
 
+  // 检查是否是嵌入模型完成下载的特殊情况
+  const isEmbedModelCompleted = updates.status === DOWNLOAD_STATUS.COMPLETED && downloadList.some((item) => item.id === id && item.name === 'quentinz/bge-large-zh-v1.5:f16');
+
   // 更新下载列表
   if (!downloadList || !Array.isArray(downloadList) || downloadList?.length === 0) {
     setDownloadList([]);
   } else {
-    const updatedDownloadList = downloadList.map((item) => {
+    let updatedDownloadList = downloadList.map((item) => {
       if (item.id === id) {
         return { ...item, ...updates };
       }
       return item;
     });
+
+    // 处理嵌入模型完成下载的特殊逻辑
+    if (isEmbedModelCompleted) {
+      embedDownloadEventBus.emit('embedDownloadComplete');
+      // 移除所有已完成的下载项
+      updatedDownloadList = updatedDownloadList.filter((item) => item.status !== DOWNLOAD_STATUS.COMPLETED);
+    }
+
     setDownloadList(updatedDownloadList);
   }
 
