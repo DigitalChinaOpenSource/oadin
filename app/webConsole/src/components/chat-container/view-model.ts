@@ -7,7 +7,7 @@ import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useUploadFileListStore from './store/useUploadFileListStore';
 import { createNewChat } from './utils';
-import { IPlaygroundSession } from './types';
+import { IPlaygroundSession, IChangeModelParams } from './types';
 import { message } from 'antd';
 import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage, getSessionSource } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
@@ -59,7 +59,7 @@ export default function useViewModel() {
     return data || {};
   });
 
-  const { run: fetchChangeModel } = useRequest(async (params: { sessionId: string; modelId: string; embedModelId: string }) => {
+  const { run: fetchChangeModel } = useRequest(async (params: IChangeModelParams) => {
     if (!params?.sessionId || !params.modelId || !params.embedModelId) return {};
     const data = await httpRequest.post('/playground/session/model', { ...params });
     return data?.data || {};
@@ -288,12 +288,13 @@ export default function useViewModel() {
 
   useEffect(() => {
     if (!currentSessionId || !selectedModel?.id) return;
-
-    fetchChangeModel({
+    const params = {
       sessionId: currentSessionId,
       modelId: selectedModel?.id || '',
-      embedModelId: EMBEDMODELID,
-    });
+      modelName: selectedModel?.name || '',
+      embedModelId: isDownloadEmbed ? EMBEDMODELID : undefined,
+    };
+    fetchChangeModel(params);
   }, [currentSessionId, selectedModel, fetchChooseModelNotify, fetchChangeModel]);
 
   return {
