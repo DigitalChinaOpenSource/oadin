@@ -80,7 +80,7 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 10 }: UploadToo
       message.error(validationResult.errorMessage);
       return false;
     }
-    if (selectedModel) {
+    if (selectedModel && currentSessionId) {
       fetchEmebdModelId({
         sessionId: currentSessionId,
         modelId: selectedModel.id,
