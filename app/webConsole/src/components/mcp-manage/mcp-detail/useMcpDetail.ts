@@ -8,12 +8,14 @@ import { message, Modal } from 'antd';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
+import { useSelectRemoteHelper } from '@/components/select-mcp/lib/useSelectMcpHelper.ts';
 
 export const useMcpDetail = (id?: string | number, setMcpListData?: (value: ((prevState: IMcpListItem[]) => IMcpListItem[]) | IMcpListItem[]) => void) => {
   const navigate = useNavigate();
   const serviceId = id;
   const { addMcpDownloadItemInit, addMcpDownloadItem } = useMcpDownloadStore();
-  const { setSelectMcpList } = useSelectMcpStore();
+  const { selectMcpList, setSelectMcpList } = useSelectMcpStore();
+  const { stopMcps } = useSelectRemoteHelper();
   const [mcpDetail, setMcpDetail] = useState<McpDetailType | null>(null);
   const [showMcpModal, setShowMcpModal] = useState(false);
 
@@ -64,6 +66,12 @@ export const useMcpDetail = (id?: string | number, setMcpListData?: (value: ((pr
           }),
         );
         message.success('mcp添加成功');
+        // 添加成功后，判断是否是对话中已选的mcp，如果是则清除该已选mcp
+        if (selectMcpList.find((item) => item.id === serviceId)) {
+          // 如果是已选的mcp，则先停止mcp
+          stopMcps({ ids: [serviceId as string] }); // 停止远端mcp
+          setSelectMcpList((preList) => preList.filter((item) => item.id !== serviceId));
+        }
       },
       onError: (error) => {
         console.error('下载本地mcp失败:', error);
@@ -146,7 +154,12 @@ export const useMcpDetail = (id?: string | number, setMcpListData?: (value: ((pr
           }),
         );
         // 取消添加成功后，判断是否是对话中已选的mcp，如果是则清除该已选mcp
-        setSelectMcpList((preList) => preList.filter((item) => item.id !== serviceId));
+        if (selectMcpList.find((item) => item.id === serviceId)) {
+          // 如果是已选的mcp，则先停止mcp
+          stopMcps({ ids: [serviceId as string] }); // 停止远端mcp
+          setSelectMcpList((preList) => preList.filter((item) => item.id !== serviceId));
+        }
+
         message.success('取消添加mcp成功');
         // 如果是在我的mcp列表页，删除mcp时刷新页面到第一页
         if (params[0] && params[1]) {
