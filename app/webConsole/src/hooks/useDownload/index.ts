@@ -25,7 +25,6 @@ export const useDownLoad = () => {
 
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
-  const hasUserTriggeredDownload = useRef(false); // 标记用户是否主动触发了下载
   const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
   downListRef.current = tempDownloadList;
 
@@ -44,9 +43,6 @@ export const useDownLoad = () => {
       // if (isMaxNum) return;
       // 兼容处理第一条数据id===0的场景
       if (id === undefined || id === null) return;
-
-      // 标记用户主动触发了下载
-      hasUserTriggeredDownload.current = true;
 
       const paramsTemp = {
         model_name: name,
@@ -77,6 +73,7 @@ export const useDownLoad = () => {
           const { completedsize, progress, status, totalsize, error } = parsedData;
           // 处理错误情况
           if (error) {
+            console.log('error===>', error);
             updateDownloadStatus(id, {
               status: error.includes('aborted') ? PAUSED : FAILED,
             });
@@ -114,19 +111,19 @@ export const useDownLoad = () => {
             const updateCompletedModel = (draft: IModelDataItem[]) => {
               // 检查模型是否已在列表中
               const existingModelIndex = draft.findIndex(item => item.id === id);
-              
+
               // 如果模型已存在，更新它的状态
               if (existingModelIndex >= 0) {
-                return draft.map((item: IModelDataItem) => 
+                return draft.map((item: IModelDataItem) =>
                   item.id === id ? { ...item, ...completedUpdates } : item
                 );
-              } 
+              }
               // 如果模型不存在，将它添加到列表中
               else {
                 // 从当前下载列表中获取完整的模型信息
                 const downloadItem = downloadList.find(item => item.id === id);
                 if (!downloadItem) return draft; // 安全检查
-                
+
                 const completedModel = {
                   ...downloadItem, // 使用下载列表中的完整模型信息
                   ...completedUpdates, // 添加完成状态的更新
@@ -138,27 +135,27 @@ export const useDownLoad = () => {
 
             // 直接更新三个列表
             console.log(`模型下载完成，ID: ${id}，准备更新列表`);
-            
+
             // 获取当前列表状态
             const currentModelListData = useModelListStore.getState().modelListData;
             const currentMyModelsList = useModelListStore.getState().myModelsList;
             const currentModelSquareList = useModelListStore.getState().modelSquareList;
-            
+
             console.log(`当前列表状态: 全部模型(${currentModelListData.length}), 我的模型(${currentMyModelsList.length}), 模型广场(${currentModelSquareList.length})`);
-            
+
             setModelListData(updateCompletedModel);
             setMyModelsList(updateCompletedModel); // 这里会处理模型不存在的情况
             setModelSquareList(updateCompletedModel);
-            
+
             console.log("模型列表状态更新完成");
 
             // 2. 然后使用常规方法更新下载状态
             updateDownloadStatus(id, completedUpdates);
-            
+
             // 发布一个事件，通知模型下载完成
             // 这里可以添加一个自定义事件，但为了简单，我们使用一个console.log
             console.log("模型下载完成，ID:", id, "状态:", completedUpdates);
-            
+
             // 立即发出一个事件，可以被其他组件捕获
             const downloadCompleteEvent = new CustomEvent('modelDownloadComplete', {
               detail: { id, completedUpdates, timestamp: Date.now() }
@@ -205,18 +202,13 @@ export const useDownLoad = () => {
 
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {
-    console.log('useEffect刷新===>', downloadList);
     const timeout = setTimeout(() => {
-      // 只有在用户没有主动触发下载的情况下，才从localStorage恢复并暂停进行中的下载
-      if (!hasUserTriggeredDownload.current) {
-        const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
-        if (downListLocal.length > 0) {
-          const updatedList = downListLocal.map((item: IModelDataItem) => ({
-            ...item,
-            status: item.status === IN_PROGRESS ? PAUSED : item.status,
-          }));
-          setDownloadList(updatedList);
-        }
+      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
+      if (downListLocal.length > 0) {
+        const updatedList = downListLocal.map((item: IModelDataItem) => ({
+          ...item,
+        }));
+        setDownloadList(updatedList);
       }
 
       // localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
@@ -254,13 +246,14 @@ export const useDownLoad = () => {
     if (!hasCompletedItems) return;
     // 创建定时器，定期检查并清理已完成的下载项
     intervalRef.current = setInterval(() => {
-      setDownloadList((currentList) => {
-        const completedItems = currentList.filter((item) => item.status === COMPLETED);
-        if (completedItems.length === 0) return currentList; // 没有变化，返回原列表
+      const currentList = useModelDownloadStore.getState().downloadList;
+      const completedItems = currentList.filter((item) => item.status === COMPLETED);
+      if (completedItems.length === 0) return; // 没有变化，不执行更新
 
-        const newList = currentList.filter((item) => item.status !== COMPLETED);
-        return newList.length === currentList.length ? currentList : newList;
-      });
+      const newList = currentList.filter((item) => item.status !== COMPLETED);
+      if (newList.length !== currentList.length) {
+        setDownloadList(newList);
+      }
     }, 2000);
 
     // 确保组件卸载时清理定时器

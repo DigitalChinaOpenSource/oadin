@@ -1,6 +1,9 @@
 import useChatStore from '../store/useChatStore';
 import useUploadFileListStore from '../store/useUploadFileListStore';
 import { setSessionIdToUrl } from '@/utils/sessionParamUtils';
+import { healthRequest, httpRequest } from '@/utils/httpRequest';
+import { IModelDataItem } from '@/types';
+
 export const createNewChat = () => {
   // 清空当前对话内容
   useChatStore.getState().setMessages([]);
@@ -8,4 +11,29 @@ export const createNewChat = () => {
   useUploadFileListStore.getState().setUploadFileList([]);
   // 清除会话ID和来源参数
   setSessionIdToUrl('');
+};
+
+export const fetchCheckEngineStatus = async (): Promise<boolean> => {
+  const res = await healthRequest.get('/engine/health');
+  // 1 可用；0 不可用；
+  return res.status === 1;
+};
+
+interface ModelInfo {
+  model_name?: string;
+  provider_name?: string;
+  status?: string;
+  created_at?: string | Date;
+  updated_at?: string | Date;
+}
+
+export const fetchAllModels = async (): Promise<ModelInfo[]> => {
+  const data = await httpRequest.get('/model');
+  return data || [];
+};
+
+export const chechIsModelDownloaded = async (modelName: string): Promise<boolean> => {
+  const data = await fetchAllModels();
+  const model = data.find((item) => item.model_name === modelName);
+  return model?.status === 'downloaded';
 };

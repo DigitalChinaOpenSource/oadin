@@ -80,11 +80,17 @@ export default function ChatContainer() {
           </div>
         </Col>
       </Row>
-      {historyVisible && <ChatHistoryDrawer onHistoryDrawerClose={() => setHistoryVisible(false)} />}
+      {historyVisible && (
+        <ChatHistoryDrawer
+          onHistoryDrawerClose={() => setHistoryVisible(false)}
+          handleCreateNewChat={vm.handleCreateNewChat}
+        />
+      )}
       {open && (
         <ChooseModelDialog
           open={true}
           onCancel={() => setOpen(false)}
+          fromWhere="chat-container"
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 import useChatStore from '@/components/chat-container/store/useChatStore';
-import { httpRequest } from '@/utils/httpRequest';
+import { healthRequest, httpRequest } from '@/utils/httpRequest';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 // 生成唯一ID的工具函数
 export function generateUniqueId(prefix: string = 'id'): string {

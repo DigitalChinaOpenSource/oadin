@@ -8,9 +8,11 @@ import type { ListGridType } from 'antd/es/list';
 import { useEffect, useState } from 'react';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { ITemporaryMcpListItem } from '@/components/choose-mcp-dialog';
+import { setMcpListDataType } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
 
 interface IMcpListProps extends IMcpCommonProps {
   mcpListData: IMcpListItem[];
+  setMcpListData: setMcpListDataType;
   pagination: {
     current: number;
     pageSize: number;
@@ -40,6 +42,7 @@ export default function McpList(props: IMcpListProps) {
     isDialog,
     handleMcpListToPage,
     isMyMcp = false,
+    setMcpListData,
   } = props;
 
   const { setDrawerOpenId } = useSelectMcpStore();
@@ -96,6 +99,7 @@ export default function McpList(props: IMcpListProps) {
                 selectTemporaryMcpItems={selectTemporaryMcpItems}
                 isSelectable={isSelectable}
                 mcpData={item}
+                setMcpListData={setMcpListData}
                 handelMcpCardClick={(id) => {
                   handleDetail(id as string);
                 }}

@@ -32,4 +32,5 @@ export interface GroupedChatHistory {
 export interface IChatHistoryDrawerProps {
   onHistoryDrawerClose?: () => void;
   onHistorySelect?: (historyId: string, historyMessages: ChatMessageItem[]) => void;
+  handleCreateNewChat?: () => void;
 }
