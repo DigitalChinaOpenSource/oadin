@@ -1,12 +1,10 @@
 import styles from './index.module.scss';
 import TagsRender from '@/components/tags-render';
-import { Tooltip } from 'antd';
 import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import { GlobeIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import defaultPng from '@/assets/favicon.png';
-import EllipsisTooltip from '@vanta/ellipsis-tooltip';
+import EllipsisTooltip from '@/components/ellipsis-tooltip';
 
 export default function DetailDesc(props: { mcpDetail: McpDetailType }) {
   const { logo, tags, name, abstract, updatedAt, supplier, hosted } = props.mcpDetail;
