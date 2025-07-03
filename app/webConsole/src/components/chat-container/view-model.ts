@@ -212,13 +212,9 @@ export default function useViewModel() {
       if (selectedModel) {
         const tempParams = {
           service_name: 'embed',
-          hybrid_policy: `always_${selectedModel.source}`,
+          hybrid_policy: 'always_local',
+          local_provider: 'local_ollama_embed',
         } as any;
-        if (selectedModel.source === 'local') {
-          tempParams.local_provider = selectedModel.service_provider_name;
-        } else if (selectedModel.source === 'remote') {
-          tempParams.remote_provider = selectedModel.service_provider_name;
-        }
         fetchChooseModelNotify(tempParams);
       }
     };

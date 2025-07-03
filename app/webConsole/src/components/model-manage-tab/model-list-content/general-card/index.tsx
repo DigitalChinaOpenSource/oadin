@@ -259,7 +259,7 @@ const GeneralCard = React.memo(
         ) : null}
 
         <TagsRender
-          tags={(modelData?.class || []).concat([modelData?.size, `${modelData?.context}k`])}
+          tags={(modelData?.class || []).concat([modelData?.size, modelData.source === 'local' ? `${modelData?.context}k` : ''])}
           highlightNums={(modelData?.class || []).length}
         />
 
