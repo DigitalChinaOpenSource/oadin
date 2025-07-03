@@ -59,7 +59,7 @@ export default function useViewModel() {
     return data || {};
   });
 
-  const { run: fetchChangeModel } = useRequest(async (params: IChangeModelParams) => {
+  const { run: fetchEmebdModelId } = useRequest(async (params: IChangeModelParams) => {
     if (!params?.sessionId || !params.modelId || !params.embedModelId || !params.modelName) return {};
     const data = await httpRequest.post('/playground/session/model', { ...params });
     return data?.data || {};
@@ -215,7 +215,7 @@ export default function useViewModel() {
           hybrid_policy: 'always_local',
           local_provider: 'local_ollama_embed',
         });
-        fetchChangeModel({
+        fetchEmebdModelId({
           sessionId: currentSessionId,
           modelId: selectedModel.id,
           modelName: selectedModel.name,
@@ -290,17 +290,6 @@ export default function useViewModel() {
       setPrevModelId(selectedModel?.id);
     }
   }, [initialized, currentSessionId, prevSessionId, selectedModel, prevModelId, source, fetchChatHistoryDetail, handleCreateNewChat, setPrevSessionId, setPrevModelId]);
-
-  useEffect(() => {
-    if (!currentSessionId || !selectedModel?.id) return;
-    const params = {
-      sessionId: currentSessionId,
-      modelId: selectedModel?.id || '',
-      modelName: selectedModel?.name || '',
-      embedModelId: isDownloadEmbed ? EMBEDMODELID : undefined,
-    };
-    fetchChangeModel(params);
-  }, [currentSessionId, selectedModel, fetchChooseModelNotify, fetchChangeModel]);
 
   return {
     isDownloadEmbed,

@@ -22,7 +22,26 @@ export default function CopyrightNotice({ open, onClose, notice }: ICopyrightNot
       footer={<Button onClick={onClose}>关闭</Button>}
     >
       <div className={styles.markdownBody}>
-        <>{ReactMarkdown({ children: notice || '这里是版权声明内容', remarkPlugins: [remarkGfm], rehypePlugins: [rehypeRaw] })}</>
+        <>
+          {ReactMarkdown({
+            children: notice || '这里是版权声明内容',
+            remarkPlugins: [remarkGfm],
+            rehypePlugins: [rehypeRaw],
+            components: {
+              // 自定义链接渲染逻辑
+              a: ({ node, ...props }) => {
+                // 确保所有链接都在新窗口打开
+                return (
+                  <a
+                    {...props}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                );
+              },
+            },
+          })}
+        </>
       </div>
     </Modal>
   );

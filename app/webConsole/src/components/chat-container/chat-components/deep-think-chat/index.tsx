@@ -77,6 +77,19 @@ export default function DeepThinkChat(props: IDeepThinkChatProps) {
             children: dataSource?.data || '',
             remarkPlugins: [remarkGfm],
             rehypePlugins: [rehypeRaw],
+            components: {
+              // 自定义链接渲染逻辑
+              a: ({ node, ...props }) => {
+                // 确保所有链接都在新窗口打开
+                return (
+                  <a
+                    {...props}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                );
+              },
+            },
           })}
         </div>
       </div>
