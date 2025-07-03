@@ -53,14 +53,14 @@ export default function useViewModel() {
   const isLoadingHistory = useRef(false);
 
   // 合并相关的请求函数
-  const { run: fetchChooseModelNotify } = useRequest(async (params: { service_name: string; local_provider?: string; remote_provider?: string }) => {
+  const { run: fetchChooseModelNotify } = useRequest(async (params: { service_name: string; local_provider?: string; remote_provider?: string; hybrid_policy?: string }) => {
     if (!params?.service_name) return;
     const data = await httpRequest.put('/service', { ...params });
     return data || {};
   });
 
   const { run: fetchChangeModel } = useRequest(async (params: IChangeModelParams) => {
-    if (!params?.sessionId || !params.modelId || !params.embedModelId) return {};
+    if (!params?.sessionId || !params.modelId || !params.embedModelId || !params.modelName) return {};
     const data = await httpRequest.post('/playground/session/model', { ...params });
     return data?.data || {};
   });
@@ -209,13 +209,18 @@ export default function useViewModel() {
     // 3. 监听 embed 下载事件
     const handleEmbedComplete = () => {
       setIsDownloadEmbed(true);
-      if (selectedModel) {
-        const tempParams = {
+      if (selectedModel && currentSessionId) {
+        fetchChooseModelNotify({
           service_name: 'embed',
           hybrid_policy: 'always_local',
           local_provider: 'local_ollama_embed',
-        } as any;
-        fetchChooseModelNotify(tempParams);
+        });
+        fetchChangeModel({
+          sessionId: currentSessionId,
+          modelId: selectedModel.id,
+          modelName: selectedModel.name,
+          embedModelId: EMBEDMODELID,
+        });
       }
     };
     embedDownloadEventBus.on('embedDownloadComplete', handleEmbedComplete);
