@@ -5,7 +5,11 @@ import { httpRequest } from '@/utils/httpRequest';
 import uploadSvg from '@/components/icons/upload.svg';
 import useChatStore from '../store/useChatStore';
 import useUploadFileListStore from '../store/useUploadFileListStore';
+import useSelectedModelStore from '@/store/useSelectedModel';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
+import { IChangeModelParams } from '../types';
+import { useRequest } from 'ahooks';
+import { EMBEDMODELID } from '@/constants';
 
 interface UploadToolProps {
   maxFiles?: number;
@@ -16,6 +20,7 @@ interface UploadToolProps {
 export type FileStatus = 'error' | 'uploading' | 'done';
 
 export default function UploadTool({ maxFiles = 1, maxFileSize = 10 }: UploadToolProps) {
+  const { selectedModel } = useSelectedModelStore();
   const { setIsUploading } = useChatStore();
   const { uploadFileList, setUploadFileList } = useUploadFileListStore();
   // 从URL中获取当前会话ID
@@ -66,6 +71,17 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 10 }: UploadToo
     }
     return true;
   };
+
+  const { run: fetchEmebdModelId } = useRequest(
+    async (params: IChangeModelParams) => {
+      if (!params?.sessionId || !params.modelId || !params.embedModelId || !params.modelName) return {};
+      const data = await httpRequest.post('/playground/session/model', { ...params });
+      return data?.data || {};
+    },
+    {
+      manual: true,
+    },
+  );
 
   // 自定义上传请求
   const customUploadRequest: UploadProps['customRequest'] = async ({ file, onProgress, onSuccess, onError }) => {
@@ -122,6 +138,14 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 10 }: UploadToo
       setUploadFileList(newFileList);
       setIsUploading(false);
       onSuccess?.(responseData);
+      if (selectedModel) {
+        fetchEmebdModelId({
+          sessionId: currentSessionId,
+          modelId: selectedModel.id,
+          modelName: selectedModel.name,
+          embedModelId: EMBEDMODELID,
+        });
+      }
     } catch (error: Error | any) {
       const currentFileList = useUploadFileListStore.getState().uploadFileList;
       const failedFile: UploadFile = {

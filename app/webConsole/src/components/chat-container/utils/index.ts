@@ -1,8 +1,9 @@
 import useChatStore from '../store/useChatStore';
+import { useRequest } from 'ahooks';
 import useUploadFileListStore from '../store/useUploadFileListStore';
 import { setSessionIdToUrl } from '@/utils/sessionParamUtils';
 import { healthRequest, httpRequest } from '@/utils/httpRequest';
-import { IModelDataItem } from '@/types';
+import { IChangeModelParams } from '../types';
 
 export const createNewChat = () => {
   // 清空当前对话内容

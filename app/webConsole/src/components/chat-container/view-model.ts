@@ -64,17 +64,6 @@ export default function useViewModel() {
     },
   );
 
-  const { run: fetchEmebdModelId } = useRequest(
-    async (params: IChangeModelParams) => {
-      if (!params?.sessionId || !params.modelId || !params.embedModelId || !params.modelName) return {};
-      const data = await httpRequest.post('/playground/session/model', { ...params });
-      return data?.data || {};
-    },
-    {
-      manual: true,
-    },
-  );
-
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
       const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
@@ -223,12 +212,6 @@ export default function useViewModel() {
           hybrid_policy: 'always_local',
           local_provider: 'local_ollama_embed',
         });
-        fetchEmebdModelId({
-          sessionId: currentSessionId,
-          modelId: selectedModel.id,
-          modelName: selectedModel.name,
-          embedModelId: EMBEDMODELID,
-        });
       }
     };
     embedDownloadEventBus.on('embedDownloadComplete', handleEmbedComplete);
@@ -298,18 +281,6 @@ export default function useViewModel() {
       setPrevModelId(selectedModel?.id);
     }
   }, [initialized, currentSessionId, prevSessionId, selectedModel, prevModelId, source, fetchChatHistoryDetail, handleCreateNewChat, setPrevSessionId, setPrevModelId]);
-
-  // 切换模型时，如果已下载了，就更新 embed 模型 ID
-  useEffect(() => {
-    if (selectedModel && isDownloadEmbed && currentSessionId) {
-      fetchEmebdModelId({
-        sessionId: currentSessionId,
-        modelId: selectedModel.id,
-        modelName: selectedModel.name,
-        embedModelId: EMBEDMODELID,
-      });
-    }
-  }, [selectedModel, currentSessionId, isDownloadEmbed]);
 
   return {
     isDownloadEmbed,
