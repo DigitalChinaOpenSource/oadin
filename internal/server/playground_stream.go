@@ -311,6 +311,11 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 		slog.Error("Failed to get chat session", "error", err)
 		return err
 	}
+
+	if sessionCheck.Title != "" {
+		return nil // 如果已经有标题了，就不再生成
+	}
+
 	// 获取会话中的所有消息，构建历史上下文
 	messageQuery := &types.ChatMessage{SessionID: sessionID}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
@@ -327,12 +332,22 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	history := make([]map[string]string, 0, len(messages)+1)
 	for _, m := range messages {
 		msg := m.(*types.ChatMessage)
-		if msg.Role == "user" {
-			history = append(history, map[string]string{
-				"role":    "user",
-				"content": msg.Content,
-			})
+		if msg.Role == "assistant" {
+			// 把thinking内容清理掉
+			if strings.Contains(msg.Content, "<think>") && strings.Contains(msg.Content, "</think>") {
+				re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+				msg.Content = re.ReplaceAllString(msg.Content, "")
+				msg.Content = strings.TrimSpace(msg.Content)
+			}
+
+			if msg.Content == "" {
+				continue
+			}
 		}
+		history = append(history, map[string]string{
+			"role":    msg.Role,
+			"content": msg.Content,
+		})
 	}
 	genTitlePrompt := "请用一句话为本次对话生成一个不超过10字的简洁标题，仅输出标题本身"
 	history = append(history, map[string]string{
@@ -348,12 +363,16 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 		Think:    false,
 	}
 
+	// fmt.Println("generate title request:", chatRequest)
+
 	res, err := modelEngine.Chat(ctx, chatRequest)
 	if err != nil {
 		fmt.Println("Failed to generate title", "error", err)
 		slog.Error("Failed to generate title", "error", err)
 		return err
 	}
+
+	// fmt.Printf("generate title res: %v\n", res)
 
 	title := res.Content
 	if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {

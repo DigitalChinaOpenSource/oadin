@@ -106,6 +106,9 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 
 	if settings.SystemProxy.Endpoint == "" && enabled {
 		slog.Error("代理地址不能为空，请先设置代理地址")
+		settings.SystemProxy.Enabled = temp // 回滚代理启用状态
+		// 将修改后的设置写回用户配置文件
+		err = cache.WriteSystemSettings(settings)
 		return bcode.HttpError(bcode.ControlPanelSystemError, "代理地址不能为空，请先设置代理地址")
 	}
 
@@ -124,6 +127,12 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	// 探查ollama服务是否在运行模型
 	engine := provider.GetModelEngine("ollama")
+
+	err := engine.HealthCheck()
+	if err != nil {
+		slog.Error("无法切换代理启用状态，ollama服务已关闭", "error", err)
+		return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务已关闭")
+	}
 
 	runModels, err := engine.GetRunModels(ctx)
 	if err != nil {
