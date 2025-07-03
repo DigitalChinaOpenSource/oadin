@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"oadin/internal/datastore"
 	"oadin/internal/schedule"
@@ -98,11 +99,26 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 	// Debug log to trace model conversion
 	fmt.Printf("[Chat] Model conversion: %s -> %s\n", originalModel, modelName)
 
+	hybridPolicy := "default"
+	ds := datastore.GetDefaultDatastore()
+	sp := &types.Service{
+		Name:   "chat",
+		Status: 1,
+	}
+	err = ds.Get(context.Background(), sp)
+	if err != nil {
+		slog.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
+	} else {
+		hybridPolicy = sp.HybridPolicy
+	}
+	hybridPolicy = sp.HybridPolicy
+
 	serviceReq := &types.ServiceRequest{
-		Service:    "chat",
-		Model:      modelName,
-		FromFlavor: "oadin",
-		Think:      req.Think,
+		Service:      "chat",
+		Model:        modelName,
+		FromFlavor:   "oadin",
+		HybridPolicy: hybridPolicy,
+		Think:        req.Think,
 		HTTP: types.HTTPContent{
 			Header: http.Header{},
 			Body:   body,
@@ -162,7 +178,6 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 			fmt.Printf("[Chat] 直接解析成功，内容长度：%d\n", len(response.Content))
 			return &response, nil
 		}
-
 
 		var ollamaResp ollamaAPIResponse
 		if err := json.Unmarshal(result.HTTP.Body, &ollamaResp); err == nil {
