@@ -1043,19 +1043,14 @@ func CheckOadinServer(cmd *cobra.Command, args []string) {
 		}
 		err = cmd.Run()
 		if err != nil {
-			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
-			err = cmd.Run()
+			slog.Info("Model engine not exist...")
+			slog.Info("model engine not exist, start download...")
+			err := engineProvider.InstallEngine()
 			if err != nil {
-				slog.Info("Model engine not exist...")
-				slog.Info("model engine not exist, start download...")
-				err := engineProvider.InstallEngine()
-				if err != nil {
-					fmt.Println("Install model engine failed :", err.Error())
-					slog.Error("Install model engine failed :", err.Error())
-					log.Fatalf("Install model engine failed err %s", err.Error())
-					return
-				}
-
+				fmt.Println("Install model engine failed :", err.Error())
+				slog.Error("Install model engine failed :", err.Error())
+				log.Fatalf("Install model engine failed err %s", err.Error())
+				return
 			}
 			slog.Info("Model engine download completed...")
 		}
