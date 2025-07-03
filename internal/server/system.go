@@ -127,7 +127,14 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	// 探查ollama服务是否在运行模型
 	engine := provider.GetModelEngine("ollama")
-
+	engineConfig := engine.GetConfig()
+	if engineConfig.StartStatus == 0 {
+		return bcode.HttpError(bcode.ErrModelEngineIsBeingOperatedOn, "无法切换代理启用状态，当前有模型正在运行，请先停止模型")
+	}
+	engineConfig.StartStatus = 0
+	defer func() {
+		engineConfig.StartStatus = 1
+	}()
 	err := engine.HealthCheck()
 	if err != nil {
 		slog.Error("无法切换代理启用状态，ollama服务已关闭", "error", err)
@@ -148,12 +155,16 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 			slog.Error("停止引擎失败", "error", err)
 			return err
 		}
-
+		err = engine.InitEnv()
+		if err != nil {
+			return err
+		}
 		err = engine.StartEngine()
 		if err != nil {
 			slog.Error("启动引擎失败", "error", err)
 			return err
 		}
+
 	}
 	return nil
 
