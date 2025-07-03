@@ -164,15 +164,19 @@ func (t *OadinCoreServer) ClientMcpStart(c *gin.Context) {
 		return
 	}
 	var message string
+	var successIds []string
+	var errorIds []string
 	for _, id := range req.Ids {
 		err := t.MCP.ClientMcpStart(c, id)
 		if err != nil {
 			message = message + fmt.Sprintf("MCP %s 启动失败: %s", id, err.Error())
+			errorIds = append(errorIds, id)
 		} else {
 			message = message + fmt.Sprintf("MCP %s 启动成功", id)
+			successIds = append(successIds, id)
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "200", "message": "success", "data": message})
+	c.JSON(http.StatusOK, gin.H{"code": "200", "message": message, "data": map[string][]string{"successIds": successIds, "errorIds": errorIds}})
 }
 
 func (t *OadinCoreServer) ClientMcpStop(c *gin.Context) {

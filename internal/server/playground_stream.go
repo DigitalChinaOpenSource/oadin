@@ -308,12 +308,13 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	sessionCheck := &types.ChatSession{ID: sessionID}
 	err := p.Ds.Get(ctx, sessionCheck)
 	if err != nil || sessionCheck == nil || sessionCheck.ID == "" {
-		slog.Error("Failed to get chat session", "error", err)
+		fmt.Println("Failed to get chat session", "error", err)
 		return err
 	}
 
-	if sessionCheck.Title != "" {
-		return nil // 如果已经有标题了，就不再生成
+	// 检查会话标题开头是否是指定的格式
+	if !strings.HasPrefix(sessionCheck.Title, "新对话 ") {
+		return nil
 	}
 
 	// 获取会话中的所有消息，构建历史上下文
@@ -324,7 +325,7 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 		},
 	})
 	if err != nil {
-		slog.Error("Failed to list chat messages", "error", err)
+		fmt.Println("Failed to list chat messages", "error", err)
 		return err
 	}
 
