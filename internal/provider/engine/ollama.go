@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var OllamaStartStatus int
+var OllamaStartStatus = 1
 
 type OllamaProvider struct {
 	EngineConfig *types.EngineRecommendConfig
