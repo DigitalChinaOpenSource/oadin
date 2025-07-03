@@ -23,6 +23,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var OllamaStartStatus = 1
+
 type OllamaProvider struct {
 	EngineConfig *types.EngineRecommendConfig
 }
@@ -236,6 +238,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		DownloadPath:   downloadPath,
 		ExecPath:       execPath,
 		ExecFile:       execFile,
+		StartStatus:    OllamaStartStatus,
 	}
 }
 

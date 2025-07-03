@@ -48,6 +48,16 @@ func GetFilePathSize(ctx context.Context, req *dto.GetPathDiskSizeInfoRequest) (
 }
 
 func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathRequest) (*dto.ModifyModelFilePathResponse, error) {
+	engine := provider.GetModelEngine("ollama")
+	runningModels, _ := engine.GetRunModels(ctx)
+	if len(runningModels.Models) > 0 {
+		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelIsRunning
+	}
+	_ = engine.StopEngine()
+	engineConfig := engine.GetConfig()
+	if engineConfig.StartStatus == 0 {
+		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelEngineIsBeingOperatedOn
+	}
 	if req.TargetPath == req.SourcePath {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
 	}
@@ -65,9 +75,8 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	}
 
 	// Stop the engine before migration to avoid errors caused by processes still using the files.
-	engine := provider.GetModelEngine("ollama")
 	_ = engine.StopEngine()
-
+	engineConfig.StartStatus = 0
 	isSourceDirEmpty := utils.IsDirEmpty(req.SourcePath)
 	if !isSourceDirEmpty {
 		sourcePathSize, err := utils.GetFilePathTotalSize(req.SourcePath)
@@ -121,6 +130,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if err != nil {
 		return nil, err
 	}
+	engineConfig.StartStatus = 1
 
 	res := &dto.ModifyModelFilePathResponse{}
 	res.Bcode = *bcode.ControlPanelCode
