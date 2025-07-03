@@ -1,6 +1,6 @@
-import { useCallback, useRef, useEffect, useMemo } from 'react';
-import { modelDownloadStream, abortDownload } from './download';
-import { usePageRefreshListener, checkIsMaxDownloadCount, updateDownloadStatus } from './util';
+import { useCallback, useEffect, useRef } from 'react';
+import { abortDownload, modelDownloadStream } from './download';
+import { updateDownloadStatus, usePageRefreshListener } from './util';
 import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
 import { IModelDataItem } from '@/types';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
@@ -9,6 +9,7 @@ import { getLocalStorageDownList } from '@/utils';
 import embedDownloadEventBus from '@/utils/embedDownload';
 
 import { IDownParseData } from './types';
+
 /**
  * 下载操作
  * request.body => {
@@ -91,14 +92,16 @@ export const useDownLoad = () => {
 
           // 根据状态更新下载项
           if (status === 'success') {
-            updateDownloadStatus(id, {
+            // 1. 先直接更新全局状态（不使用节流）
+            const { setModelListData, setMyModelsList, setModelSquareList } = useModelListStore.getState();
+            const completedUpdates = {
               ...baseUpdates,
               currentDownload: 100,
               status: COMPLETED,
               completedsize: totalsize,
               totalsize,
               can_select: true,
-            });
+            };
 
             setDownloadList((currentList) => {
               // 处理特殊逻辑，词嵌入模型下载完成后设置状态。在这里处理是因为上面的参数不带 name
@@ -107,6 +110,60 @@ export const useDownLoad = () => {
               }
               return currentList.filter((item) => item.status !== COMPLETED);
             });
+            // 更新或添加已完成的模型到列表
+            const updateCompletedModel = (draft: IModelDataItem[]) => {
+              // 检查模型是否已在列表中
+              const existingModelIndex = draft.findIndex(item => item.id === id);
+              
+              // 如果模型已存在，更新它的状态
+              if (existingModelIndex >= 0) {
+                return draft.map((item: IModelDataItem) => 
+                  item.id === id ? { ...item, ...completedUpdates } : item
+                );
+              } 
+              // 如果模型不存在，将它添加到列表中
+              else {
+                // 从当前下载列表中获取完整的模型信息
+                const downloadItem = downloadList.find(item => item.id === id);
+                if (!downloadItem) return draft; // 安全检查
+                
+                const completedModel = {
+                  ...downloadItem, // 使用下载列表中的完整模型信息
+                  ...completedUpdates, // 添加完成状态的更新
+                };
+                console.log("添加新完成模型到列表：", completedModel);
+                return [...draft, completedModel];
+              }
+            };
+
+            // 直接更新三个列表
+            console.log(`模型下载完成，ID: ${id}，准备更新列表`);
+            
+            // 获取当前列表状态
+            const currentModelListData = useModelListStore.getState().modelListData;
+            const currentMyModelsList = useModelListStore.getState().myModelsList;
+            const currentModelSquareList = useModelListStore.getState().modelSquareList;
+            
+            console.log(`当前列表状态: 全部模型(${currentModelListData.length}), 我的模型(${currentMyModelsList.length}), 模型广场(${currentModelSquareList.length})`);
+            
+            setModelListData(updateCompletedModel);
+            setMyModelsList(updateCompletedModel); // 这里会处理模型不存在的情况
+            setModelSquareList(updateCompletedModel);
+            
+            console.log("模型列表状态更新完成");
+
+            // 2. 然后使用常规方法更新下载状态
+            updateDownloadStatus(id, completedUpdates);
+            
+            // 发布一个事件，通知模型下载完成
+            // 这里可以添加一个自定义事件，但为了简单，我们使用一个console.log
+            console.log("模型下载完成，ID:", id, "状态:", completedUpdates);
+            
+            // 立即发出一个事件，可以被其他组件捕获
+            const downloadCompleteEvent = new CustomEvent('modelDownloadComplete', {
+              detail: { id, completedUpdates, timestamp: Date.now() }
+            });
+            document.dispatchEvent(downloadCompleteEvent);
           } else if (status === 'canceled') {
             updateDownloadStatus(id, {
               ...baseUpdates,

@@ -90,15 +90,18 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
   const setListData = (list: IModelDataItem[]) => {
+    // 创建一个深拷贝，避免引用问题
+    const listCopy = JSON.parse(JSON.stringify(list));
+    
     // 如果提供了自定义的设置列表数据函数，则使用它
     if (props.customSetListData) {
-      props.customSetListData(list);
+      props.customSetListData(listCopy);
     } else {
       // 否则使用默认的全局状态管理
-      setModelListData(list);
+      setModelListData(listCopy);
     }
     // 初始化或重新设置数据时，都更新本地状态
-    setModelListStateData(list);
+    setModelListStateData(listCopy);
     // 重置实例ID标识，确保可以追踪当前组件实例
     instanceIdRef.current = `${modelSourceVal}-${mine ? 'mine' : 'all'}`;
   };
@@ -257,8 +260,20 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     if (props.customModelListData && props.customModelListData.length > 0) {
       // 当自定义数据源发生变化时，更新本地状态
       setModelListStateData(props.customModelListData);
+      
+      // 同时更新分页信息中的total
+      const filteredData = props.customModelListData.filter((model) => 
+        !modelSearchVal || 
+        (model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase()))
+      );
+      
+      console.log("customModelListData变化，更新pagination.total:", filteredData.length);
+      setPagination(prev => ({
+        ...prev,
+        total: filteredData.length
+      }));
     }
-  }, [props.customModelListData]);
+  }, [props.customModelListData, modelSearchVal]);
 
   // 获取模型存储路径
   const { run: fetchModelPath, data: modelPathData } = useRequest(
