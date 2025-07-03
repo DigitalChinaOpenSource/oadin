@@ -279,6 +279,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				} else if resp.Thoughts != "" {
 					// 收集思考内容，但不再单独存储
 					thoughts += resp.Thoughts
+					if resp.TotalDuration > 0 {
+						resp.TotalDuration = resp.TotalDuration / int64(time.Second)
+					}
 					respChan <- resp
 				} else {
 					slog.Debug("跳过空内容块")
