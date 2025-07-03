@@ -5,7 +5,7 @@ import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
-import { useSelectRemoteHelper, updateMcp } from '@/components/select-mcp/lib/useSelectMcpHelper';
+import { updateMcp, useSelectRemoteHelper } from '@/components/select-mcp/lib/useSelectMcpHelper';
 import { getMessageByMcp } from '@/i18n';
 
 export type IChooseMcpDialog = ModalProps & {
@@ -26,17 +26,20 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
   const { setSelectMcpList, selectMcpList } = useSelectMcpStore();
   const { startMcps, stopMcps } = useSelectRemoteHelper();
 
+  const [startLoading, setStartLoading] = useState<boolean>(false);
+
   useEffect(() => {
     setSelectTemporaryMcpItems(selectMcpList);
   }, [selectMcpList]);
-  const onSelectMcpOk = () => {
+  const onSelectMcpOk = async () => {
+    setStartLoading(true);
     if (selectTemporaryMcpItems.length > 0) {
       /// 启用关闭模型
       const { startList, stopList } = updateMcp(selectMcpList, selectTemporaryMcpItems);
 
       // 仅当有需要启动的MCP时调用startMcps
       if (startList.length > 0) {
-        startMcps({
+        await startMcps({
           ids: startList.map((item) => item.id.toString()),
         });
       }
@@ -54,6 +57,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
         options.onSelectMcpOkProps();
       }
       setActiveKey('mcpList');
+      setStartLoading(false);
       setShowOnlySelectedMyMcp(false);
       setShowOnlySelectedMcpList(false);
     } else {
@@ -117,6 +121,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
       width={1000}
       onCancel={handleCancel}
       onOk={onSelectMcpOk}
+      confirmLoading={startLoading}
       destroyOnHidden={true}
       footer={(_, { OkBtn, CancelBtn }) => (
         <div className={styles.choose_model_footer}>

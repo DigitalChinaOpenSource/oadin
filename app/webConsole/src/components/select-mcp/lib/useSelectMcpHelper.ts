@@ -32,21 +32,18 @@ export const checkMcpLength = (mcpListLength: number): boolean => {
  * @returns 返回启动和停止MCP的函数
  */
 export function useSelectRemoteHelper() {
-  // 启动MCP服务
-  const { run: startMcps, loading: startLoading } = useRequest(
-    async (params: IMcpListIds) => {
-      return await httpRequest.post('/mcp/client/start', params);
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        console.info('启动MCP服务成功:', data);
-      },
-      onError: (error) => {
-        console.error('启动MCP服务失败:', error);
-      },
-    },
-  );
+  // // 启动MCP服务
+  // const { runAsync: startMcps, loading: startLoading } = useRequest(
+  //   async (params: IMcpListIds) => {
+  //     return await httpRequest.post('/mcp/client/start', params);
+  //   },
+  //   {
+  //     manual: true,
+  //   },
+  // );
+  const startMcps = async (params: IMcpListIds) => {
+    return await httpRequest.post('/mcp/client/start', params);
+  };
 
   // 停止MCP服务
   const { run: stopMcps, loading: stopLoading } = useRequest(
@@ -68,7 +65,6 @@ export function useSelectRemoteHelper() {
   return {
     startMcps,
     stopMcps,
-    startLoading,
     stopLoading,
   };
 }

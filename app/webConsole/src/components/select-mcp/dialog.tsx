@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Checkbox, Input, List } from 'antd';
+import { Button, Checkbox, Input, List, Spin } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
@@ -11,6 +11,7 @@ import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
 import { DetailDrawer } from '@/components/detail_drawer';
 import { checkMcpLength, useSelectRemoteHelper } from '@/components/select-mcp/lib/useSelectMcpHelper';
+import { LoadingOutlined } from '@ant-design/icons';
 
 interface ISelectMcpDialogProps {
   setSelectMcpPopOpen: (bool: boolean) => void;
@@ -41,20 +42,53 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   const [showOnlySelected, setShowOnlySelected] = useState<boolean>(false);
   // 搜索关键字
   const [searchValue, setSearchValue] = useState<string>('');
+  const [startMcpNow, setStartMcpNow] = useState<Record<string, number>>({});
 
   // 处理单个项目的选择
   const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
     if (checked) {
       console.info('选择了MCP:', item);
       if (checkMcpLength(selectMcpList.length)) {
-        setSelectMcpList([...selectMcpList, item]);
+        /// 1 失败， 0成功， 2进行中
+        setStartMcpNow((prevState) => ({
+          ...prevState,
+          [item?.id as string]: 2,
+        }));
         // 启动MCP
         startMcps({
           ids: [item?.id as string],
-        });
+        })
+          .then((res) => {
+            const { successIds = [], errorIds = [] } = res;
+            /// 当前这条启用成功
+            if (successIds && successIds.indexOf(item.id) > -1) {
+              setStartMcpNow((prevState) => ({
+                ...prevState,
+                [item?.id as string]: 0,
+              }));
+
+              setSelectMcpList((prevList) => [...prevList, item]);
+            }
+            if (errorIds && errorIds.indexOf(item.id) > -1) {
+              setStartMcpNow((prevState) => ({
+                ...prevState,
+                [item?.id as string]: 1,
+              }));
+            }
+          })
+          .catch((error) => {
+            console.error('启动MCP失败:', error);
+            setStartMcpNow((prevState) => ({
+              ...prevState,
+              [item?.id as string]: 1,
+            }));
+          })
+          .finally(() => {
+            console.info('加载完毕');
+          });
       }
     } else {
-      setSelectMcpList(selectMcpList.filter((mcpItem) => mcpItem?.id !== item?.id));
+      setSelectMcpList((prevList) => prevList.filter((mcpItem) => mcpItem?.id !== item?.id));
       // 停止MCP
       stopMcps({
         ids: [item?.id as string],
@@ -101,6 +135,7 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   const onLoadMore = () => {
     handlePageChange(pagination.current + 1, 12);
   };
+  console.info(startMcpNow, '当前的状态');
   const loadMore =
     pagination?.total > pagination.current * 12 && !mcpListLoading && !showOnlySelected ? (
       <div
@@ -181,6 +216,15 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
                 type="link"
                 size="small"
                 onClick={() => {
+                  /// 取消当前这个id对应的接口
+                }}
+              >
+                取消
+              </Button>,
+              <Button
+                type="link"
+                size="small"
+                onClick={() => {
                   setDrawerOpenId(item?.id as string);
                 }}
               >
@@ -189,18 +233,26 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
             ]}
           >
             <div className={styles.select_mcp_title_warp}>
-              <Checkbox
-                checked={selectMcpList
-                  .map((item) => {
-                    return item?.id;
-                  })
-                  .includes(item.id)}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  handleItemSelect(item, e.target.checked);
-                }}
-                style={{ marginRight: 16 }}
-              />
+              {startMcpNow[item?.id as string] === 2 ? (
+                <Spin
+                  style={{ marginRight: 16 }}
+                  indicator={<LoadingOutlined spin />}
+                  size="small"
+                ></Spin>
+              ) : (
+                <Checkbox
+                  checked={selectMcpList
+                    .map((item) => {
+                      return item?.id;
+                    })
+                    .includes(item.id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleItemSelect(item, e.target.checked);
+                  }}
+                  style={{ marginRight: 16 }}
+                />
+              )}
               <div className={styles.select_mcp_title_logo}>
                 <img
                   src={item?.logo?.trim() ? item.logo : defaultLogo}
