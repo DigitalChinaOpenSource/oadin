@@ -5,9 +5,12 @@ import { IMcpListRequestParams, IMcpListData, IMcpListItem, IPagination, ITagsDa
 import { useNavigate } from 'react-router-dom';
 import usePageParamsStore from '@/store/usePageParamsStore.ts';
 
+export type setMcpListDataType = (value: ((prevState: IMcpListItem[]) => IMcpListItem[]) | IMcpListItem[]) => void;
+
 export interface IUseViewModelReturn {
   mcpListLoading: boolean;
   mcpListData: IMcpListItem[];
+  setMcpListData: setMcpListDataType;
   handelMcpCardClick: (serviceId: string | number) => void;
   onMcpInputSearch: (inputSearchVal: string) => void;
   collapsed: boolean;
@@ -220,6 +223,7 @@ export function useViewModel(): IMyMcpTabReturn {
   return {
     mcpListLoading,
     mcpListData,
+    setMcpListData,
     handelMcpCardClick,
     onMcpInputSearch,
     collapsed,

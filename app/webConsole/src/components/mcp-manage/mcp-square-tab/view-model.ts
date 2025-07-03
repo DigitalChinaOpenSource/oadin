@@ -189,6 +189,7 @@ export function useViewModel(): IUseViewModelReturn {
   return {
     mcpListLoading,
     mcpListData,
+    setMcpListData,
     handelMcpCardClick,
     onMcpInputSearch,
     collapsed,

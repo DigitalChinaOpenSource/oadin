@@ -53,6 +53,7 @@ export default function McpSquareTab(props: IMyMcpTabProps) {
         handelMcpCardClick={vm.handelMcpCardClick}
         pagination={vm.pagination}
         pageLoading={vm.mcpListLoading}
+        setMcpListData={vm.setMcpListData}
       />
     ),
     filterNode: !showOnlySelectedMcpList && (

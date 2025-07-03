@@ -14,10 +14,12 @@ import EllipsisTooltip from '@vanta/ellipsis-tooltip';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
 import { checkMcpLength } from '@/components/select-mcp/lib/useSelectMcpHelper';
 import { getMessageByMcp } from '@/i18n';
+import { setMcpListDataType } from '@/components/mcp-manage/my-mcp-tab/view-model.ts';
 
 export interface IMcpCardProps {
   // 模型数据
   mcpData: IMcpListItem;
+  setMcpListData: setMcpListDataType;
   handelMcpCardClick: (mcpId: string | number) => void;
   isSelectable?: boolean;
   selectTemporaryMcpItems?: IMcpListItem[];
@@ -27,9 +29,12 @@ export interface IMcpCardProps {
 }
 
 export default function McpCard(props: IMcpCardProps) {
-  const { mcpData, handelMcpCardClick, isSelectable, setSelectTemporaryMcpItems, selectTemporaryMcpItems = [], isMyMcp = false } = props;
+  const { mcpData, setMcpListData, handelMcpCardClick, isSelectable, setSelectTemporaryMcpItems, selectTemporaryMcpItems = [], isMyMcp = false } = props;
 
-  const { fetchMcpDetail, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail(mcpData.id);
+  const { fetchMcpDetail, mcpDetail, handleAddMcp, handleCancelMcp, cancelMcpLoading, downMcpLoading, authMcpLoading, handleAuthMcp, showMcpModal, setShowMcpModal } = useMcpDetail(
+    mcpData.id,
+    setMcpListData,
+  );
 
   // 获取全局的下载中和失败的mcp
   const { mcpDownloadList } = useMcpDownloadStore();
@@ -77,12 +82,18 @@ export default function McpCard(props: IMcpCardProps) {
       setShowLoading(false);
       if (currentItem.downStatus === 'success') {
         fetchMcpDetail();
+        // 如果下载成功，则更新MCP列表
+        setMcpListData?.((preList: IMcpListItem[]) =>
+          preList.map((item: IMcpListItem) => {
+            return item.id === currentItem.mcpDetail?.id ? { ...item, status: 1 } : item;
+          }),
+        );
       }
     }
   }, [mcpDownloadList]);
 
-  // status为0表示未添加，1表示已添加---isAdd为true表示未添加，false表示已添加
-  const isDisabled = mcpDetail ? mcpDetail?.status === 0 : mcpData?.status === 0;
+  // status为0表示未添加，1表示已添加
+  const isDisabled = mcpData?.status === 0;
 
   return (
     <div
@@ -194,7 +205,10 @@ export default function McpCard(props: IMcpCardProps) {
         >
           查看详情
         </Button>
-        <div className={styles.splitLine}></div>
+        {/*mcp服务菜单下的显示分割线*/}
+        {!isSelectable && <div className={styles.splitLine}></div>}
+        {/*mcp选择弹窗且未添加的MCP显示分割现*/}
+        {isSelectable && isDisabled && <div className={styles.splitLine}></div>}
         {isDisabled && (
           <Button
             type={'link'}
@@ -210,65 +224,68 @@ export default function McpCard(props: IMcpCardProps) {
             立即添加
           </Button>
         )}
-        {(mcpDetail ? mcpDetail?.status === 1 : mcpData?.status === 1) && (
-          <Popover
-            trigger="click"
-            arrow={false}
-            open={showOperate}
-            onOpenChange={(visible) => {
-              setShowOperate(visible);
-              // 给事件处理一个延时，避免冒泡到卡片
-              // if (!visible) {
-              //   setTimeout(() => {}, 100);
-              // }
-            }}
-            styles={{ body: { padding: 0 } }}
-            content={
-              <div
-                className={styles.moreOperate}
-                onClick={(e) => {
-                  // 阻止所有点击事件冒泡到卡片
-                  e.stopPropagation();
+        {!isSelectable && (
+          <>
+            {!isDisabled && (
+              <Popover
+                trigger="click"
+                arrow={false}
+                open={showOperate}
+                onOpenChange={(visible) => {
+                  setShowOperate(visible);
                 }}
+                styles={{ body: { padding: 0 } }}
+                content={
+                  <div
+                    className={styles.moreOperate}
+                    onClick={(e) => {
+                      // 阻止所有点击事件冒泡到卡片
+                      e.stopPropagation();
+                    }}
+                  >
+                    <div
+                      className={styles.operateBtn}
+                      onClick={async () => {
+                        setShowOperate(false);
+                        await handleAddMcp(mcpDetail as McpDetailType);
+                      }}
+                    >
+                      更新
+                    </div>
+                    <div
+                      className={styles.operateBtn}
+                      onClick={() => {
+                        if (selectTemporaryMcpItems.find((item) => item.id === mcpData.id)) {
+                          return message.info('请先取消选择后，再进行操作');
+                        }
+                        setShowOperate(false);
+                        if (isMyMcp) {
+                          handleCancelMcp(isMyMcp, props.handleMcpListToPage);
+                        } else {
+                          handleCancelMcp();
+                        }
+                      }}
+                    >
+                      取消添加
+                    </div>
+                  </div>
+                }
               >
-                <div
-                  className={styles.operateBtn}
+                <Button
+                  type={'text'}
+                  icon={<DotsThreeCircleIcon />}
                   onClick={async () => {
-                    setShowOperate(false);
-                    await handleAddMcp(mcpDetail as McpDetailType);
+                    setShowOperate(!showOperate);
+                    await clickBefore();
                   }}
+                  disabled={mcpData?.envRequired === 0}
+                  loading={showLoading || authMcpLoading || downMcpLoading || cancelMcpLoading}
                 >
-                  更新
-                </div>
-                <div
-                  className={styles.operateBtn}
-                  onClick={() => {
-                    setShowOperate(false);
-                    if (isMyMcp) {
-                      handleCancelMcp(isMyMcp, props.handleMcpListToPage);
-                    } else {
-                      handleCancelMcp();
-                    }
-                  }}
-                >
-                  取消添加
-                </div>
-              </div>
-            }
-          >
-            <Button
-              type={'text'}
-              icon={<DotsThreeCircleIcon />}
-              onClick={async () => {
-                setShowOperate(!showOperate);
-                await clickBefore();
-              }}
-              disabled={mcpData?.envRequired === 0}
-              loading={showLoading || authMcpLoading || downMcpLoading || cancelMcpLoading}
-            >
-              更多操作
-            </Button>
-          </Popover>
+                  更多操作
+                </Button>
+              </Popover>
+            )}
+          </>
         )}
       </div>
       {mcpDetail && (
