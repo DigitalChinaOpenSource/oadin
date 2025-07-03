@@ -22,30 +22,28 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, th
   return (
     <div className="chat-message-bubble ai-bubble">
       <div>{typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data && <DeepThinkChat dataSource={{ data: thinkingContent.data, status: thinkingContent.status as any }} />}</div>
-      {content && (
-        <div style={{ marginTop: typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data ? '16px' : 'unset' }}>
-          <>
-            {ReactMarkdown({
-              children: content || '',
-              remarkPlugins: [remarkGfm],
-              rehypePlugins: [rehypeRaw],
-              components: {
-                // 自定义链接渲染逻辑
-                a: ({ node, ...props }) => {
-                  // 确保所有链接都在新窗口打开
-                  return (
-                    <a
-                      {...props}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    />
-                  );
-                },
+      <div style={{ marginTop: typeof thinkingContent === 'string' ? thinkingContent : thinkingContent?.data ? '16px' : 'unset' }}>
+        <>
+          {ReactMarkdown({
+            children: content || '',
+            remarkPlugins: [remarkGfm],
+            rehypePlugins: [rehypeRaw],
+            components: {
+              // 自定义链接渲染逻辑
+              a: ({ node, ...props }) => {
+                // 确保所有链接都在新窗口打开
+                return (
+                  <a
+                    {...props}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                );
               },
-            })}
-          </>
-        </div>
-      )}
+            },
+          })}
+        </>
+      </div>
     </div>
   );
 };
