@@ -52,17 +52,16 @@ export const parseThinkContent = (content: string, hasUnfinishedThink: boolean =
     }
 
     // 添加 <think> 标签内的内容，使用新格式
-    const thinkContent = match[1].trim();
-    if (thinkContent) {
-      result.push({
-        type: 'think',
-        content: {
-          data: thinkContent,
-          status: 'success',
-          totalDuration: totalDuration,
-        },
-      });
-    }
+    const thinkContent = match[1];
+    // 只要有 <think> 标签就添加，即使内容为空
+    result.push({
+      type: 'think',
+      content: {
+        data: thinkContent,
+        status: 'success',
+        totalDuration: totalDuration,
+      },
+    });
 
     lastIndex = match.index + match[0].length;
   }
@@ -83,17 +82,16 @@ export const parseThinkContent = (content: string, hasUnfinishedThink: boolean =
       }
 
       // 添加未闭合的 think 内容
-      const unfinishedThinkContent = content.substring(lastThinkIndex + 7).trim(); // +7 是 <think> 的长度
-      if (unfinishedThinkContent) {
-        result.push({
-          type: 'think',
-          content: {
-            data: unfinishedThinkContent,
-            status: 'error',
-            totalDuration: totalDuration,
-          },
-        });
-      }
+      const unfinishedThinkContent = content.substring(lastThinkIndex + 7); // +7 是 <think> 的长度
+      // 只要有未闭合的 <think> 标签就添加，即使内容为空
+      result.push({
+        type: 'think',
+        content: {
+          data: unfinishedThinkContent,
+          status: 'error',
+          totalDuration: totalDuration,
+        },
+      });
       // 更新 lastIndex 到内容末尾，避免重复处理
       lastIndex = content.length;
     }
@@ -296,17 +294,29 @@ export const handleTextContent = (
 
     setStreamingContent(plainContents);
   } else {
-    requestStateRef.current.content.thinking = '';
-    if (requestStateRef.current.content.thinkingFromField) {
-      setStreamingThinking({
-        data: requestStateRef.current.content.thinkingFromField,
-        status: 'success',
-      });
-    } else {
+    // 如果当前内容中没有 <think> 标签，但之前已经有思考内容，保持思考状态
+    // 只有当完全没有思考内容时，才清空思考状态
+    const hasExistingThinking = requestStateRef.current.content.thinking || requestStateRef.current.content.thinkingFromField;
+
+    if (!hasExistingThinking) {
+      // 完全没有思考内容时，清空思考状态
       setStreamingThinking({
         data: '',
         status: 'success',
       });
+    } else {
+      // 有现有思考内容时，保持其状态
+      if (requestStateRef.current.content.thinkingFromField) {
+        setStreamingThinking({
+          data: requestStateRef.current.content.thinkingFromField,
+          status: 'success',
+        });
+      } else if (requestStateRef.current.content.thinking) {
+        setStreamingThinking({
+          data: requestStateRef.current.content.thinking,
+          status: 'success',
+        });
+      }
     }
 
     setStreamingContent(responseContent);

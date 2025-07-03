@@ -18,7 +18,7 @@ export default function ModelChecking() {
   /// 初始化选择模型
   const onOk = () => {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
-      setSelectedModel(selectedStateModel);
+      setSelectedModel(null);
 
       const tempParams = { service_name: selectedStateModel.service_name, hybrid_policy: `always_${selectedStateModel.source}` } as any;
       if (selectedStateModel.source === 'local') {
@@ -27,6 +27,7 @@ export default function ModelChecking() {
         tempParams.remote_provider = selectedStateModel.service_provider_name;
       }
       vm.fetchChooseModelNotify(tempParams);
+      setSelectedModel(selectedStateModel);
     } else {
       message.warning(
         getMessageByModel('noSelectModel', {
