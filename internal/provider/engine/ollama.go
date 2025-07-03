@@ -80,7 +80,7 @@ func (o *OllamaProvider) StartEngine() error {
 	case "windows":
 		execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
 	case "darwin":
-		execFile = "/Applications/Ollama.app/Contents/Resources/ollama"
+		execFile = "/Applications/Ollama.app/Contents/Resources"
 	case "linux":
 		execFile = "ollama"
 	default:
