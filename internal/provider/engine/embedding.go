@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"oadin/internal/datastore"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
@@ -40,13 +41,11 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 
 	fmt.Printf("[Embedding] Embed 模型: %s -> %s\n", originalModel, modelName)
 
-
 	req.Model = modelName
 
 	if len(req.Input) == 0 {
 		return nil, fmt.Errorf("embedding input cannot be empty")
 	}
-
 
 	slog.Info("[Embedding] 正在生成向量",
 		"model", req.Model,
@@ -74,14 +73,28 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 		"input_sample", inputSample,
 		"body_size", len(body))
 
-
 	headers := http.Header{}
 	headers.Set("Content-Type", "application/json")
 
+	hybridPolicy := "default"
+	ds := datastore.GetDefaultDatastore()
+	sp := &types.Service{
+		Name:   "embed",
+		Status: 1,
+	}
+	err = ds.Get(context.Background(), sp)
+	if err != nil {
+		slog.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
+	} else {
+		hybridPolicy = sp.HybridPolicy
+	}
+	hybridPolicy = sp.HybridPolicy
+
 	serviceReq := &types.ServiceRequest{
-		Service:    "embed",
-		Model:      modelName,
-		FromFlavor: "oadin",
+		Service:      "embed",
+		Model:        modelName,
+		FromFlavor:   "oadin",
+		HybridPolicy: hybridPolicy,
 		HTTP: types.HTTPContent{
 			Header: headers,
 			Body:   body,
@@ -100,7 +113,6 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 			return nil, result.Error
 		}
 
-
 		responsePreview := "empty"
 		if len(result.HTTP.Body) > 0 {
 			previewLength := 100
@@ -118,16 +130,16 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 		if err := json.Unmarshal(result.HTTP.Body, &directData); err == nil && len(directData) > 0 {
 			slog.Info("[Embedding] 成功解析为直接数据数组",
 				"array_length", len(directData))
-				
+
 			resp := &types.EmbeddingResponse{
 				Object: "list", // 默认对象类型
 				Model:  req.Model,
 				Usage: types.EmbeddingUsage{
 					PromptTokens: 0,
-					TotalTokens: 0,
+					TotalTokens:  0,
 				},
 			}
-			
+
 			for _, item := range directData {
 				if embVector, ok := item["embedding"].([]interface{}); ok {
 					embedding := make([]float32, len(embVector))
@@ -139,7 +151,7 @@ func (e *Engine) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequ
 					resp.Embeddings = append(resp.Embeddings, embedding)
 				}
 			}
-			
+
 			if len(resp.Embeddings) > 0 {
 				slog.Info("[Embedding] 成功从直接数据数组提取向量",
 					"embedding_count", len(resp.Embeddings),
