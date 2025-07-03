@@ -51,7 +51,7 @@ export const SelectMcp = () => {
           placement="top"
         >
           <Button
-            disabled={!selectedModel?.tools}
+            // disabled={!selectedModel?.tools}
             icon={
               <McpSelectBtn
                 width={20}

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { API_PREFIX, API_HEALTH_ENDPOINT, API_ENGINE_HEALTH_ENDPOINT } from './src/constants';
+import { API_ENGINE_HEALTH_ENDPOINT, API_HEALTH_ENDPOINT, API_PREFIX } from './src/constants';
 
 export default defineConfig({
   base: './',
@@ -22,6 +22,7 @@ export default defineConfig({
     proxy: {
       [API_PREFIX]: {
         target: 'http://127.0.0.1:16688',
+        // target: 'http://10.3.74.171:16688',
         // target: 'http://10.3.73.120:16688',
         changeOrigin: true,
         rewrite: (path) => path.replace(new RegExp(`^${API_PREFIX}`), API_PREFIX),

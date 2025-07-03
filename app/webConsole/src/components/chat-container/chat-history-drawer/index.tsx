@@ -4,7 +4,7 @@ import { useChatHistoryDrawer } from '@/components/chat-container/chat-history-d
 import styles from './index.module.scss';
 import { TrashIcon } from '@phosphor-icons/react';
 import noHistorySvg from '@/components/icons/no-history.svg';
-import EllipsisTooltip from '@vanta/ellipsis-tooltip';
+import EllipsisTooltip from '@/components/ellipsis-tooltip';
 import { CloseOutlined } from '@ant-design/icons';
 import { IChatHistoryDrawerProps } from './types';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';

@@ -8,6 +8,7 @@ import { message, Modal } from 'antd';
 import { useRequest } from 'ahooks';
 import useModelListStore from '@/store/useModelListStore';
 import { convertToMB } from '@/utils';
+import { setSessionIdToUrl } from '@/utils/sessionParamUtils';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
 
 interface IPagenation {
@@ -92,7 +93,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const setListData = (list: IModelDataItem[]) => {
     // 创建一个深拷贝，避免引用问题
     const listCopy = JSON.parse(JSON.stringify(list));
-    
+
     // 如果提供了自定义的设置列表数据函数，则使用它
     if (props.customSetListData) {
       props.customSetListData(listCopy);
@@ -260,17 +261,14 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     if (props.customModelListData && props.customModelListData.length > 0) {
       // 当自定义数据源发生变化时，更新本地状态
       setModelListStateData(props.customModelListData);
-      
+
       // 同时更新分页信息中的total
-      const filteredData = props.customModelListData.filter((model) => 
-        !modelSearchVal || 
-        (model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase()))
-      );
-      
-      console.log("customModelListData变化，更新pagination.total:", filteredData.length);
-      setPagination(prev => ({
+      const filteredData = props.customModelListData.filter((model) => !modelSearchVal || (model.name && model.name.toLowerCase().includes(modelSearchVal.toLowerCase())));
+
+      console.log('customModelListData变化，更新pagination.total:', filteredData.length);
+      setPagination((prev) => ({
         ...prev,
-        total: filteredData.length
+        total: filteredData.length,
       }));
     }
   }, [props.customModelListData, modelSearchVal]);
@@ -316,6 +314,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
         message.success('模型删除成功');
         if (params[0].model_name === selectedModel?.name) {
           setSelectedModel(null);
+          setSessionIdToUrl('');
         }
       },
       onError: (error: Error & { handled?: boolean }) => {
