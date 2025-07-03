@@ -146,7 +146,7 @@ export default function ChatView(props: IChatViewProps) {
               重试
             </Button>
           )}
-          {!isLoading && messages.length > 0 && (
+          {!error && !isLoading && messages.length > 0 && (
             <>
               <CopyToClipboard
                 text={copiedFormMessage(messages)}
@@ -165,7 +165,6 @@ export default function ChatView(props: IChatViewProps) {
                 type="link"
                 icon={<ArrowClockwiseIcon width={16} />}
                 onClick={resendLastMessage}
-                loading={isResending}
                 disabled={isResending}
               >
                 重新发送

@@ -207,7 +207,21 @@ export default function useViewModel() {
     }
 
     // 3. 监听 embed 下载事件
-    const handleEmbedComplete = () => setIsDownloadEmbed(true);
+    const handleEmbedComplete = () => {
+      setIsDownloadEmbed(true);
+      if (selectedModel) {
+        const tempParams = {
+          service_name: 'embed',
+          hybrid_policy: `always_${selectedModel.source}`,
+        } as any;
+        if (selectedModel.source === 'local') {
+          tempParams.local_provider = selectedModel.service_provider_name;
+        } else if (selectedModel.source === 'remote') {
+          tempParams.remote_provider = selectedModel.service_provider_name;
+        }
+        fetchChooseModelNotify(tempParams);
+      }
+    };
     embedDownloadEventBus.on('embedDownloadComplete', handleEmbedComplete);
 
     // 4. 清理函数
@@ -276,27 +290,15 @@ export default function useViewModel() {
     }
   }, [initialized, currentSessionId, prevSessionId, selectedModel, prevModelId, source, fetchChatHistoryDetail, handleCreateNewChat, setPrevSessionId, setPrevModelId]);
 
-  // 处理 embed 下载完成后的逻辑
   useEffect(() => {
-    if (!isDownloadEmbed || !currentSessionId || !selectedModel?.id) return;
+    if (!currentSessionId || !selectedModel?.id) return;
 
-    const tempParams = {
-      service_name: 'embed',
-    } as any;
-
-    if (selectedModel.source === 'local') {
-      tempParams.local_provider = selectedModel.service_provider_name;
-    } else if (selectedModel.source === 'remote') {
-      tempParams.remote_provider = selectedModel.service_provider_name;
-    }
-
-    fetchChooseModelNotify(tempParams);
     fetchChangeModel({
       sessionId: currentSessionId,
       modelId: selectedModel?.id || '',
       embedModelId: EMBEDMODELID,
     });
-  }, [isDownloadEmbed, currentSessionId, selectedModel, fetchChooseModelNotify, fetchChangeModel]);
+  }, [currentSessionId, selectedModel, fetchChooseModelNotify, fetchChangeModel]);
 
   return {
     isDownloadEmbed,

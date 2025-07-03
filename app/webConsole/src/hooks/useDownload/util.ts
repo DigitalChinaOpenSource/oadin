@@ -70,17 +70,18 @@ export function updateDownloadStatus(id: string, updates: any) {
 
   const now = Date.now();
 
-  setDownloadList((draft: any[]): any[] => {
-    if (!draft || !Array.isArray(draft) || draft?.length === 0) {
-      return [];
-    }
-    return draft.map((item) => {
+  // 更新下载列表
+  if (!downloadList || !Array.isArray(downloadList) || downloadList?.length === 0) {
+    setDownloadList([]);
+  } else {
+    const updatedDownloadList = downloadList.map((item) => {
       if (item.id === id) {
         return { ...item, ...updates };
       }
       return item;
     });
-  });
+    setDownloadList(updatedDownloadList);
+  }
 
   // 使用节流方式更新全局模型列表
   if (now - lastUpdateTime.global > THROTTLE_INTERVAL) {
