@@ -19,13 +19,21 @@ export const fetchCheckEngineStatus = async (): Promise<boolean> => {
   return res.status === 1;
 };
 
-export const fetchAllModels = async (): Promise<IModelDataItem[]> => {
+interface ModelInfo {
+  model_name?: string;
+  provider_name?: string;
+  status?: string;
+  created_at?: string | Date;
+  updated_at?: string | Date;
+}
+
+export const fetchAllModels = async (): Promise<ModelInfo[]> => {
   const data = await httpRequest.get('/model');
   return data || [];
 };
 
 export const chechIsModelDownloaded = async (modelName: string): Promise<boolean> => {
   const data = await fetchAllModels();
-  const model = data.find((item) => item.name === modelName);
+  const model = data.find((item) => item.model_name === modelName);
   return model?.status === 'downloaded';
 };
