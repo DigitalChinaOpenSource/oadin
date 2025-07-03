@@ -175,6 +175,7 @@ export default function ChatView(props: IChatViewProps) {
       </div>
     );
   };
+  console.log('messages===>', messages);
   return (
     <div className="chat-layout">
       <div className="chat-body">

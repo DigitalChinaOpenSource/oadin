@@ -337,29 +337,44 @@ export function useChatStream() {
     async (data: IStreamData, currentContent: any) => {
       const { tool_calls, tool_group_id, id, total_duration } = data;
 
-      // 检查是否有深度思考内容需要先保存 - 工具调用时才将思考独立为一条消息
-      // 注意：只有在有深度思考内容且当前响应内容为空的情况下才单独保存
-      // 如果有响应内容，则应该与思考内容一起放在同一个消息中
-      if (requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '' && (!currentContent || currentContent.trim() === '')) {
-        const thinkingMessage = buildMessageWithThinkContent(
-          '', // 正文内容为空
+      // 检查是否有累积的内容需要先保存（包括思考内容和普通内容）
+      const { thinking, thinkingFromField, response } = requestState.current.content;
+      const hasAccumulatedThinking = (thinking && thinking.trim() !== '') || (thinkingFromField && thinkingFromField.trim() !== '');
+      const hasAccumulatedContent = (currentContent && currentContent.trim() !== '') || (response && response.trim() !== '');
+
+      // 如果有累积的思考内容或普通内容，需要在工具调用前保存为一条消息
+      if (hasAccumulatedThinking || hasAccumulatedContent) {
+        const contentToSave = currentContent || response || '';
+
+        // 构建包含思考和普通内容的消息
+        const accumulatedMessage = buildMessageWithThinkContent(
+          contentToSave,
           true, // 标记为完成
-          '', // 不使用thinking字段
-          requestState.current.content.thinkingFromField, // 使用累积的thinkingFromField
-          false, // 已经完成
+          thinking || '', // 来自 <think> 标签的思考内容
+          thinkingFromField || '', // 来自 thoughts 字段的思考内容
+          false, // 已经完成，不再活跃
+          data.total_duration,
         );
 
-        // 添加深度思考消息
-        addMessage(thinkingMessage);
+        // 添加累积内容消息
+        addMessage(accumulatedMessage);
 
-        // 清除累积的思考内容，避免重复显示
+        // 清除累积的内容，避免重复显示
+        requestState.current.content.thinking = '';
         requestState.current.content.thinkingFromField = '';
+        requestState.current.content.response = '';
+        requestState.current.content.isThinkingActive = false;
+
+        // 清除流式显示状态
+        setStreamingContent('');
+        setStreamingThinking('');
       }
 
-      // 如果返回的 content 为空且有 tool_calls，保存 tool_group_id 用于下一次请求
-      if ((!currentContent || currentContent.trim() === '') && tool_calls && tool_calls.length > 0 && tool_group_id) {
+      // 修改：只要有 tool_calls 和 tool_group_id，就保存用于下一次请求
+      if (tool_calls && tool_calls.length > 0 && tool_group_id) {
         requestState.current.lastToolGroupIdRef = tool_group_id;
       }
+
       if (!tool_calls || tool_calls.length === 0) {
         requestState.current.lastToolGroupIdRef = null;
         return;
@@ -488,14 +503,14 @@ export function useChatStream() {
         }
       }
     },
-    [selectedMcpIds, setStreamingContent, setError, addMessage],
+    [selectedMcpIds, setStreamingContent, setStreamingThinking, setError, addMessage],
   );
 
   // 重构后的统一流式请求函数
   const sendStreamRequest = async (options: StreamRequestOptions) => {
     const { content, toolGroupID, isUserMessage = false, isResend = false } = options;
 
-    if (!content.trim()) return;
+    if (!toolGroupID && !content.trim()) return;
     if (migratingStatus === 'pending') {
       message.warning('模型迁移中，请稍后再试');
       return;
@@ -535,7 +550,7 @@ export function useChatStream() {
     const signal = abortControllerRef.current.signal;
     // 构建请求参数
     const requestData: ChatRequestParams = {
-      content: toolGroupID ? '' : content, // 如果有toolGroupID，content设为空
+      content: toolGroupID ? '' : content, // 如果有 toolGroupID，content 设为空
       SessionID: getSessionIdFromUrl(),
     };
 
@@ -615,18 +630,8 @@ export function useChatStream() {
               requestState.current.content.thinkingTotalDuration = data.total_duration;
             }
 
-            // 处理深度思考内容（在工具调用前保存）
-            if (data?.tool_calls && data.tool_calls.length > 0 && requestState.current.content.thinkingFromField && requestState.current.content.thinkingFromField.trim() !== '') {
-              const thinkingMessage = buildMessageWithThinkContent('', true, '', requestState.current.content.thinkingFromField, false, data.total_duration);
-              addMessage(thinkingMessage);
-
-              // 清除累积的思考内容
-              requestState.current.content.thinkingFromField = '';
-              requestState.current.content.isThinkingActive = false;
-            }
-
             if (data?.tool_calls && data.tool_calls.length > 0) {
-              // 处理工具调用
+              // 处理工具调用（在 handleToolCalls 中已经处理了内容保存）
               await handleToolCalls(data, responseContent);
             } else if (data.content || data.thoughts) {
               // 处理普通文本内容
