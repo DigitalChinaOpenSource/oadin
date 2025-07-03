@@ -92,6 +92,7 @@ services:
                           "stream": $stream,
                           "messages": messages,
                           "tools": tools,
+                          "think": think,
                           "keep_alive": keep_alive,
                           "options": {
                               "seed": seed,
