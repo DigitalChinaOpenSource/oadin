@@ -130,6 +130,7 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 
 	err := engine.HealthCheck()
 	if err != nil {
+		slog.Error("无法切换代理启用状态，ollama服务已关闭", "error", err)
 		return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务已关闭")
 	}
 
