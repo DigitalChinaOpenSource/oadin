@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"oadin/internal/datastore"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"strings"
@@ -33,10 +34,25 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 	fmt.Printf("[ChatStream] Final request body: %s\n", string(body))
 	slog.Info("[ChatStream] Final request body: ", string(body))
 
+	hybridPolicy := "default"
+	ds := datastore.GetDefaultDatastore()
+	sp := &types.Service{
+		Name:   "chat",
+		Status: 1,
+	}
+	err = ds.Get(context.Background(), sp)
+	if err != nil {
+		slog.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
+	} else {
+		hybridPolicy = sp.HybridPolicy
+	}
+	hybridPolicy = sp.HybridPolicy
+
 	serviceReq := &types.ServiceRequest{
 		Service:       "chat",
 		Model:         modelName,
 		FromFlavor:    "oadin",
+		HybridPolicy:  hybridPolicy,
 		AskStreamMode: true,
 		Think:         req.Think,
 		HTTP: types.HTTPContent{
