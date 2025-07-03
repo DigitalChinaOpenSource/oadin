@@ -20,7 +20,7 @@ export default function ModelChecking() {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
       setSelectedModel(selectedStateModel);
 
-      const tempParams = { service_name: selectedStateModel.service_name } as any;
+      const tempParams = { service_name: selectedStateModel.service_name, hybrid_policy: `always_${selectedStateModel.source}` } as any;
       if (selectedStateModel.source === 'local') {
         tempParams.local_provider = selectedStateModel.service_provider_name;
       } else if (selectedStateModel.source === 'remote') {

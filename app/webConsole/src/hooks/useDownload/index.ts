@@ -24,7 +24,6 @@ export const useDownLoad = () => {
 
   const { FAILED, IN_PROGRESS, COMPLETED, PAUSED } = DOWNLOAD_STATUS;
   const downListRef = useRef<any[]>([]);
-  const hasUserTriggeredDownload = useRef(false); // 标记用户是否主动触发了下载
   const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
   downListRef.current = tempDownloadList;
 
@@ -43,9 +42,6 @@ export const useDownLoad = () => {
       // if (isMaxNum) return;
       // 兼容处理第一条数据id===0的场景
       if (id === undefined || id === null) return;
-
-      // 标记用户主动触发了下载
-      hasUserTriggeredDownload.current = true;
 
       const paramsTemp = {
         model_name: name,
@@ -76,6 +72,7 @@ export const useDownLoad = () => {
           const { completedsize, progress, status, totalsize, error } = parsedData;
           // 处理错误情况
           if (error) {
+            console.log('error===>', error);
             updateDownloadStatus(id, {
               status: error.includes('aborted') ? PAUSED : FAILED,
             });
@@ -98,14 +95,6 @@ export const useDownLoad = () => {
               completedsize: totalsize,
               totalsize,
               can_select: true,
-            });
-
-            setDownloadList((currentList) => {
-              // 处理特殊逻辑，词嵌入模型下载完成后设置状态。在这里处理是因为上面的参数不带 name
-              if (currentList.filter((item) => item.name === 'quentinz/bge-large-zh-v1.5:f16' && item.status === COMPLETED)) {
-                embedDownloadEventBus.emit('embedDownloadComplete');
-              }
-              return currentList.filter((item) => item.status !== COMPLETED);
             });
           } else if (status === 'canceled') {
             updateDownloadStatus(id, {
@@ -148,18 +137,13 @@ export const useDownLoad = () => {
 
   // 刷新页面时从本地存储中获取下载列表
   useEffect(() => {
-    console.log('useEffect刷新===>', downloadList);
     const timeout = setTimeout(() => {
-      // 只有在用户没有主动触发下载的情况下，才从localStorage恢复并暂停进行中的下载
-      if (!hasUserTriggeredDownload.current) {
-        const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
-        if (downListLocal.length > 0) {
-          const updatedList = downListLocal.map((item: IModelDataItem) => ({
-            ...item,
-            status: item.status === IN_PROGRESS ? PAUSED : item.status,
-          }));
-          setDownloadList(updatedList);
-        }
+      const downListLocal = getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
+      if (downListLocal.length > 0) {
+        const updatedList = downListLocal.map((item: IModelDataItem) => ({
+          ...item,
+        }));
+        setDownloadList(updatedList);
       }
 
       // localStorage.removeItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
@@ -197,13 +181,14 @@ export const useDownLoad = () => {
     if (!hasCompletedItems) return;
     // 创建定时器，定期检查并清理已完成的下载项
     intervalRef.current = setInterval(() => {
-      setDownloadList((currentList) => {
-        const completedItems = currentList.filter((item) => item.status === COMPLETED);
-        if (completedItems.length === 0) return currentList; // 没有变化，返回原列表
+      const currentList = useModelDownloadStore.getState().downloadList;
+      const completedItems = currentList.filter((item) => item.status === COMPLETED);
+      if (completedItems.length === 0) return; // 没有变化，不执行更新
 
-        const newList = currentList.filter((item) => item.status !== COMPLETED);
-        return newList.length === currentList.length ? currentList : newList;
-      });
+      const newList = currentList.filter((item) => item.status !== COMPLETED);
+      if (newList.length !== currentList.length) {
+        setDownloadList(newList);
+      }
     }, 2000);
 
     // 确保组件卸载时清理定时器

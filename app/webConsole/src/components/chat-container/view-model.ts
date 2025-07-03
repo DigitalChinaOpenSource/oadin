@@ -7,7 +7,7 @@ import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useUploadFileListStore from './store/useUploadFileListStore';
 import { createNewChat } from './utils';
-import { IPlaygroundSession } from './types';
+import { IPlaygroundSession, IChangeModelParams } from './types';
 import { message } from 'antd';
 import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage, getSessionSource } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
@@ -59,7 +59,7 @@ export default function useViewModel() {
     return data || {};
   });
 
-  const { run: fetchChangeModel } = useRequest(async (params: { sessionId: string; modelId: string; embedModelId: string }) => {
+  const { run: fetchChangeModel } = useRequest(async (params: IChangeModelParams) => {
     if (!params?.sessionId || !params.modelId || !params.embedModelId) return {};
     const data = await httpRequest.post('/playground/session/model', { ...params });
     return data?.data || {};
@@ -92,7 +92,7 @@ export default function useViewModel() {
 
   const { run: fetchAllModels } = useRequest(
     async () => {
-      const data = await httpRequest.get<any[]>('/model');
+      const data = await httpRequest.get('/model');
       return data || [];
     },
     {
@@ -207,7 +207,17 @@ export default function useViewModel() {
     }
 
     // 3. 监听 embed 下载事件
-    const handleEmbedComplete = () => setIsDownloadEmbed(true);
+    const handleEmbedComplete = () => {
+      setIsDownloadEmbed(true);
+      if (selectedModel) {
+        const tempParams = {
+          service_name: 'embed',
+          hybrid_policy: 'always_local',
+          local_provider: 'local_ollama_embed',
+        } as any;
+        fetchChooseModelNotify(tempParams);
+      }
+    };
     embedDownloadEventBus.on('embedDownloadComplete', handleEmbedComplete);
 
     // 4. 清理函数
@@ -276,27 +286,16 @@ export default function useViewModel() {
     }
   }, [initialized, currentSessionId, prevSessionId, selectedModel, prevModelId, source, fetchChatHistoryDetail, handleCreateNewChat, setPrevSessionId, setPrevModelId]);
 
-  // 处理 embed 下载完成后的逻辑
   useEffect(() => {
-    if (!isDownloadEmbed || !currentSessionId || !selectedModel?.id) return;
-
-    const tempParams = {
-      service_name: 'embed',
-    } as any;
-
-    if (selectedModel.source === 'local') {
-      tempParams.local_provider = selectedModel.service_provider_name;
-    } else if (selectedModel.source === 'remote') {
-      tempParams.remote_provider = selectedModel.service_provider_name;
-    }
-
-    fetchChooseModelNotify(tempParams);
-    fetchChangeModel({
+    if (!currentSessionId || !selectedModel?.id) return;
+    const params = {
       sessionId: currentSessionId,
       modelId: selectedModel?.id || '',
-      embedModelId: EMBEDMODELID,
-    });
-  }, [isDownloadEmbed, currentSessionId, selectedModel, fetchChooseModelNotify, fetchChangeModel]);
+      modelName: selectedModel?.name || '',
+      embedModelId: isDownloadEmbed ? EMBEDMODELID : undefined,
+    };
+    fetchChangeModel(params);
+  }, [currentSessionId, selectedModel, fetchChooseModelNotify, fetchChangeModel]);
 
   return {
     isDownloadEmbed,

@@ -20,6 +20,8 @@ import { useChatStream } from '@/components/chat-container/useChatStream';
 import { HeaderContent } from './header-content';
 import EmbedDownloadButton from '../enbed-download-btn';
 import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import useSelectedModelStore from '@/store/useSelectedModel';
+import { fetchCheckEngineStatus, chechIsModelDownloaded } from '../utils';
 import './index.scss';
 
 interface IChatViewProps {
@@ -40,6 +42,7 @@ interface IChatViewProps {
 export default function ChatView(props: IChatViewProps) {
   const { isDownloadEmbed } = props;
   const { messages, isUploading } = useChatStore();
+  const { selectedModel } = useSelectedModelStore();
   const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
   const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
@@ -58,9 +61,20 @@ export default function ChatView(props: IChatViewProps) {
     }
   };
 
-  const handleSendMessage = (message: string) => {
-    if (!message.trim() || isLoading || isUploading) return;
-    sendChatMessage(message);
+  const handleSendMessage = async (messageString: string) => {
+    if (!messageString.trim() || isLoading || isUploading) return;
+    const isEngineAvailable = await fetchCheckEngineStatus();
+    if (!isEngineAvailable) {
+      message.error('模型引擎异常，请检查当前模型引擎的服务状态');
+      return;
+    }
+    const isModelDownloaded = await chechIsModelDownloaded(selectedModel?.name || '');
+    if (!isModelDownloaded) {
+      const text = selectedModel?.source === 'local' ? '模型未下载，请先下载模型' : '模型未授权，请先授权';
+      message.error(text);
+      return;
+    }
+    await sendChatMessage(messageString);
   };
 
   // 输入框底部功能区
@@ -132,7 +146,7 @@ export default function ChatView(props: IChatViewProps) {
               重试
             </Button>
           )}
-          {!isLoading && messages.length > 0 && (
+          {!error && !isLoading && messages.length > 0 && (
             <>
               <CopyToClipboard
                 text={copiedFormMessage(messages)}
@@ -151,7 +165,6 @@ export default function ChatView(props: IChatViewProps) {
                 type="link"
                 icon={<ArrowClockwiseIcon width={16} />}
                 onClick={resendLastMessage}
-                loading={isResending}
                 disabled={isResending}
               >
                 重新发送
@@ -162,6 +175,7 @@ export default function ChatView(props: IChatViewProps) {
       </div>
     );
   };
+  console.log('messages===>', messages);
   return (
     <div className="chat-layout">
       <div className="chat-body">
