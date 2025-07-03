@@ -63,11 +63,11 @@ export default function ChatView(props: IChatViewProps) {
 
   const handleSendMessage = async (messageString: string) => {
     if (!messageString.trim() || isLoading || isUploading) return;
-    const isEngineAvailable = await fetchCheckEngineStatus();
-    if (!isEngineAvailable) {
-      message.error('模型引擎异常，请检查当前模型引擎的服务状态');
-      return;
-    }
+    // const isEngineAvailable = await fetchCheckEngineStatus();
+    // if (!isEngineAvailable) {
+    //   message.error('模型引擎异常，请检查当前模型引擎的服务状态');
+    //   return;
+    // }
     const isModelDownloaded = await chechIsModelDownloaded(selectedModel?.name || '');
     if (!isModelDownloaded) {
       const text = selectedModel?.source === 'local' ? '模型未下载，请先下载模型' : '模型未授权，请先授权';
