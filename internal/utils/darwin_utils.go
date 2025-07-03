@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
+	"strings"
 	"syscall"
 
 	"github.com/shirou/gopsutil/mem"
