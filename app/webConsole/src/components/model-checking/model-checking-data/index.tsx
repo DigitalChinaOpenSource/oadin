@@ -13,7 +13,13 @@ export interface ModelCheckingHasdata extends ISelectedDialogProps {
 export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
   const { vm, handleAutoSetModel, selectedStateModel } = props;
   const filterModelList = useMemo(() => {
-    return vm.modelListData?.length > 0 ? vm.modelListData.splice(0, 2) : [];
+    console.log('ModelCheckingHasdata - 模型列表长度:', vm.modelListData?.length);
+    if (!vm.modelListData?.length) return [];
+    
+    // 使用slice而不是splice，避免修改原始数组
+    const filtered = vm.modelListData.slice(0, 2);
+    console.log('ModelCheckingHasdata - 过滤后模型列表:', filtered);
+    return filtered;
   }, [vm.modelListData]);
 
   useEffect(() => {

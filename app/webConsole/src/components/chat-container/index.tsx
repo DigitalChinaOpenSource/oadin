@@ -90,6 +90,7 @@ export default function ChatContainer() {
         <ChooseModelDialog
           open={true}
           onCancel={() => setOpen(false)}
+          fromWhere="chat-container"
         />
       )}
     </div>

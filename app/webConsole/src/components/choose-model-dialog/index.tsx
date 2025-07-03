@@ -11,19 +11,21 @@ export interface IChooseModelDialog {
   onCancel: () => void;
   open?: boolean;
   selectedOuterStateModel?: selectedModelType;
+  fromWhere?: 'model-checking' | 'chat-container';
 }
 
 export interface ISelectedDialogProps {
   isDialog?: boolean;
   selectedStateModel?: selectedModelType;
   setSelecteStatedModel?: Dispatch<SetStateAction<selectedModelType>>;
+  fromWhere?: 'model-checking' | 'chat-container';
 }
 
 export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseModelDialog) => {
   const { selectedModel, setSelectedModel } = useSelectedModelStore();
   const { selectedOuterStateModel } = props;
   const [selectedStateModel, setSelecteStatedModel] = useState<selectedModelType>(null);
-  const [activeKey, setActiveKey] = useState<string>('my-models');
+  const [activeKey, setActiveKey] = useState<string>(props?.fromWhere === 'model-checking' ? 'model-square' : 'my-models');
   const onChange = (activeKey: string) => {
     // 简单设置标签键，不触发额外的刷新
     setActiveKey(activeKey);
@@ -48,8 +50,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
   }, [props.open]);
   const onOk = () => {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
-      setSelectedModel(selectedStateModel);
-
+      setSelectedModel(null);
       const tempParams = { service_name: selectedStateModel.service_name, hybrid_policy: `always_${selectedStateModel.source}` } as any;
       if (selectedStateModel.source === 'local') {
         tempParams.local_provider = selectedStateModel.service_provider_name;
@@ -57,7 +58,7 @@ export const ChooseModelDialog: React.FC<IChooseModelDialog> = (props: IChooseMo
         tempParams.remote_provider = selectedStateModel.service_provider_name;
       }
       fetchChooseModelNotify(tempParams);
-
+      setSelectedModel(selectedStateModel);
       props.onCancel();
     } else {
       message.warning(
