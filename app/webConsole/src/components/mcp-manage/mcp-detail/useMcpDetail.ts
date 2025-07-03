@@ -6,11 +6,14 @@ import { McpDetailType } from '@/components/mcp-manage/mcp-detail/type.ts';
 import testDta from './mcp_schema.json';
 import { message, Modal } from 'antd';
 import useMcpDownloadStore from '@/store/useMcpDownloadStore.ts';
+import { IMcpListItem } from '@/components/mcp-manage/mcp-square-tab/types.ts';
+import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 
-export const useMcpDetail = (id?: string | number) => {
+export const useMcpDetail = (id?: string | number, setMcpListData?: (value: ((prevState: IMcpListItem[]) => IMcpListItem[]) | IMcpListItem[]) => void) => {
   const navigate = useNavigate();
   const serviceId = id;
   const { addMcpDownloadItemInit, addMcpDownloadItem } = useMcpDownloadStore();
+  const { setSelectMcpList } = useSelectMcpStore();
   const [mcpDetail, setMcpDetail] = useState<McpDetailType | null>(null);
   const [showMcpModal, setShowMcpModal] = useState(false);
 
@@ -54,6 +57,12 @@ export const useMcpDetail = (id?: string | number) => {
           ...(mcpDetail as McpDetailType),
           status: 1,
         });
+        // 如果是列表页操作，且mcp添加成功，则更新mcp列表的对应状态
+        setMcpListData?.((preList: IMcpListItem[]) =>
+          preList.map((item: IMcpListItem) => {
+            return item.id === serviceId ? { ...item, status: 1 } : item;
+          }),
+        );
         message.success('mcp添加成功');
       },
       onError: (error) => {
@@ -130,6 +139,14 @@ export const useMcpDetail = (id?: string | number) => {
           ...(mcpDetail as McpDetailType),
           status: 0,
         });
+        // 取消添加mcp成功后，更新mcp列表， 将对应item的状态改为0
+        setMcpListData?.((preList: IMcpListItem[]) =>
+          preList.map((item: IMcpListItem) => {
+            return item.id === serviceId ? { ...item, status: 0 } : item;
+          }),
+        );
+        // 取消添加成功后，判断是否是对话中已选的mcp，如果是则清除该已选mcp
+        setSelectMcpList((preList) => preList.filter((item) => item.id !== serviceId));
         message.success('取消添加mcp成功');
         // 如果是在我的mcp列表页，删除mcp时刷新页面到第一页
         if (params[0] && params[1]) {
