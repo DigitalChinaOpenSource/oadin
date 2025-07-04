@@ -27,14 +27,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		defer close(errChan)
 
 		sendError := func(err error) {
-			errorResp := &types.ChatResponse{
-				ID:         uuid.New().String(),
-				Object:     "chat.completion.chunk",
-				Content:    err.Error(),
-				IsComplete: true,
-				Type:       "error",
-			}
-			respChan <- errorResp
+			errChan <- err
 		}
 
 		// 获取会话
