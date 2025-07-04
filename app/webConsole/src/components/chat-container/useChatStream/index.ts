@@ -40,7 +40,6 @@ export function useChatStream() {
   const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
-  const { uploadFileList } = useUploadFileListStore();
 
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string | { data: string; status: string }>('');
@@ -538,6 +537,7 @@ export function useChatStream() {
 
     // 创建用户消息（仅在需要时）
     if (isUserMessage) {
+      const uploadFileList = useUploadFileListStore.getState().uploadFileList || [];
       const userMsg: ChatMessageItem = {
         id: generateUniqueId('user_msg'),
         role: 'user',
@@ -546,7 +546,7 @@ export function useChatStream() {
             id: generateUniqueId('content'),
             type: 'plain',
             content: content,
-            attachmentFiles: uploadFileList,
+            attachmentFiles: uploadFileList.length > 0 ? uploadFileList : undefined,
           },
         ],
       };
