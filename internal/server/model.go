@@ -152,7 +152,8 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 			}
 		}
 		deleteReq := &types.DeleteRequest{
-			Model: request.ModelName,
+			Model:          request.ModelName,
+			OllamaRegistry: m.OllamaRegistry,
 		}
 
 		err = modelEngine.DeleteModel(ctx, deleteReq)
@@ -345,11 +346,14 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 							copyModelRequest.Source = extractRegistryModelName(req.Model)
 							copyModelRequest.Destination = ExtractModelName(req.Model)
 							// 通过api复制模型
+							// Copying model from private registry to local model store: {smartvision-registry.dcclouds.com/library/qwen3:0.6b qwen3:0.6b}
+							fmt.Println("Copying model from private registry to local model store:", copyModelRequest)
 							err := providerEngine.CopyModel(ctx, &copyModelRequest)
 							if err != nil {
 								newErrorCh <- err
 								return
 							}
+							m.OllamaRegistry = ExtractRegistryName(copyModelRequest.Source)
 						}
 
 						m.Status = "downloaded"
@@ -1204,6 +1208,17 @@ func extractRegistryModelName(fullName string) string {
 	fullName = strings.TrimPrefix(fullName, "https://")
 	fullName = strings.TrimPrefix(fullName, "http://")
 	return fullName
+}
+
+// 从smartvision-registry.dcclouds.com/library/qwen3:0.6b提取到smartvision-registry.dcclouds.com
+func ExtractRegistryName(fullName string) string {
+	// 找到第一个"/"的位置
+	idx := strings.Index(fullName, "/")
+	if idx == -1 {
+		// 没有"/"，直接返回原始字符串
+		return fullName
+	}
+	return fullName[:idx]
 }
 
 // ExtractModelName 提取模型名
