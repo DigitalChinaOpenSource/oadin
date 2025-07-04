@@ -88,11 +88,19 @@ func (t *OadinCoreServer) SendMessageStream(c *gin.Context) {
 				return false
 			}
 
-			// 处理错误
-			errResp := gin.H{"error": err.Error()}
-			data, _ := json.Marshal(errResp)
+			errResponse := dto.StreamMessageResponse{
+				Bcode: bcode.SuccessCode, 
+				Data: dto.MessageChunk{
+					Content:    err.Error(),
+					IsComplete: true,
+					Type:       "error",
+				},
+			}
+			data, _ := json.Marshal(errResponse)
+			c.Writer.Write([]byte("data: "))
 			c.Writer.Write(data)
-			c.Writer.Write([]byte("\n"))
+			c.Writer.Write([]byte("\n\n"))
+			c.Writer.Flush()
 
 			return false
 		}
