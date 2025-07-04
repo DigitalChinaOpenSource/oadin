@@ -38,21 +38,19 @@
   }
   .pagination {
     margin-top: 8px;
-    margin-top: 0 auto;
-  }
-  .noData {
-    position: relative;
-    top: 200px;
-    width: 100%;
-    text-align: center;
-    font-size: 14px;
-    color: #344054;
-    img {
-      width: 100px;
-    }
   }
 }
 
+.noData {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  color: #344054;
+  img {
+    width: 100px;
+  }
+}
 .loading {
   position: relative;
   top: 300px;

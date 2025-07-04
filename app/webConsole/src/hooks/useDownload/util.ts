@@ -74,6 +74,16 @@ export function updateDownloadStatus(id: string, updates: any) {
 
   // 检查是否是嵌入模型完成下载的特殊情况
   const isEmbedModelCompleted = updates.status === DOWNLOAD_STATUS.COMPLETED && downloadList.some((item) => item.id === id && item.name === 'quentinz/bge-large-zh-v1.5:f16');
+  
+  // 检查是否是模型下载完成
+  const isModelCompleted = updates.status === DOWNLOAD_STATUS.COMPLETED;
+  
+  console.log('updateDownloadStatus被调用:', {
+    id,
+    updates,
+    isModelCompleted,
+    currentMyModelsListLength: useModelListStore.getState().myModelsList.length
+  });
 
   // 更新下载列表
   if (!downloadList || !Array.isArray(downloadList) || downloadList?.length === 0) {
@@ -161,19 +171,54 @@ export function updateDownloadStatus(id: string, updates: any) {
     pendingUpdates.myModels.clear();
 
     setMyModelsList((draft: any[]): any[] => {
-      if (!Array.isArray(draft) || draft.length === 0) {
-        return [];
+      // 确保draft是数组，如果不是或为空，创建一个新数组
+      const currentList = Array.isArray(draft) ? draft : [];
+      
+      // 检查模型是否已存在
+      const existingIndex = currentList.findIndex(item => item.id === id);
+      
+      if (existingIndex >= 0) {
+        // 更新现有模型
+        return currentList.map((item) => {
+          const itemUpdates = myModelsUpdates.get(item.id);
+          if (itemUpdates) {
+            return { ...item, ...itemUpdates };
+          }
+          if (item.id === id) {
+            return { ...item, ...updates };
+          }
+          return item;
+        });
+      } else {
+        // 如果是下载完成状态，且模型不存在，添加新模型
+        if (updates.status === 2) { // COMPLETED
+          console.log('添加新完成的模型到myModelsList:', id);
+          // 从下载列表获取完整的模型信息
+          const { downloadList } = useModelDownloadStore.getState();
+          const downloadItem = downloadList.find(item => item.id === id);
+          
+          if (downloadItem) {
+            const newModel = {
+              ...downloadItem,
+              ...updates,
+              can_select: true
+            };
+            return [...currentList, newModel];
+          }
+        }
+        
+        // 否则只更新现有项目
+        return currentList.map((item) => {
+          const itemUpdates = myModelsUpdates.get(item.id);
+          if (itemUpdates) {
+            return { ...item, ...itemUpdates };
+          }
+          if (item.id === id) {
+            return { ...item, ...updates };
+          }
+          return item;
+        });
       }
-      return draft.map((item) => {
-        const itemUpdates = myModelsUpdates.get(item.id);
-        if (itemUpdates) {
-          return { ...item, ...itemUpdates };
-        }
-        if (item.id === id) {
-          return { ...item, ...updates };
-        }
-        return item;
-      });
     });
   } else {
     const existingUpdates = pendingUpdates.myModels.get(id) || {};
@@ -187,16 +232,37 @@ export function updateDownloadStatus(id: string, updates: any) {
           lastUpdateTime.myModels = Date.now();
 
           setMyModelsList((draft: any[]): any[] => {
-            if (!Array.isArray(draft) || draft.length === 0) {
-              return [];
-            }
-            return draft.map((item) => {
+            // 确保draft是数组，如果不是或为空，创建一个新数组
+            const currentList = Array.isArray(draft) ? draft : [];
+            
+            // 应用所有待处理的更新
+            let updatedList = currentList.map((item) => {
               const itemUpdates = myModelsUpdates.get(item.id);
               if (itemUpdates) {
                 return { ...item, ...itemUpdates };
               }
               return item;
             });
+            
+            // 检查是否有需要添加的新完成模型
+            myModelsUpdates.forEach((updates, modelId) => {
+              if (updates.status === 2 && !updatedList.find(item => item.id === modelId)) {
+                console.log('延迟添加新完成的模型到myModelsList:', modelId);
+                const { downloadList } = useModelDownloadStore.getState();
+                const downloadItem = downloadList.find(item => item.id === modelId);
+                
+                if (downloadItem) {
+                  const newModel = {
+                    ...downloadItem,
+                    ...updates,
+                    can_select: true
+                  };
+                  updatedList.push(newModel);
+                }
+              }
+            });
+            
+            return updatedList;
           });
         },
         THROTTLE_INTERVAL - (now - lastUpdateTime.myModels),

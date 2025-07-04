@@ -126,46 +126,6 @@ export function useViewModel(): IMyModelListViewModel {
     // 这样可以确保UI总是反映最新的数据状态
     setModelListData(myModelsList);
   }, [myModelsList]);
-  //
-  // // 监听模型下载完成事件，直接更新现有数据而不重新请求
-  // useEffect(() => {
-  //   const handleModelDownloadComplete = (event: CustomEvent) => {
-  //     console.log("ModelChecking - 收到模型下载完成事件:", event.detail);
-  //     const { id, completedUpdates } = event.detail;
-  //
-  //     // 直接更新本地状态中的模型数据
-  //     setModelListData(currentList => {
-  //       const updatedList = currentList.map(item => {
-  //         if (item.id === id) {
-  //           console.log("ModelChecking - 更新现有模型状态:", item.name, completedUpdates);
-  //           return { ...item, ...completedUpdates };
-  //         }
-  //         return item;
-  //       });
-  //
-  //       // 如果模型不在列表中，从全局状态获取并添加
-  //       const modelExists = currentList.some(item => item.id === id);
-  //       if (!modelExists) {
-  //         const globalState = useModelListStore.getState().myModelsList;
-  //         const newModel = globalState.find(item => item.id === id);
-  //         if (newModel) {
-  //           console.log("ModelChecking - 添加新完成的模型到列表:", newModel.name);
-  //           return [...updatedList, newModel];
-  //         }
-  //       }
-  //
-  //       return updatedList;
-  //     });
-  //   };
-  //
-  //   // 添加事件监听器
-  //   document.addEventListener('modelDownloadComplete', handleModelDownloadComplete as EventListener);
-  //
-  //   return () => {
-  //     // 清理事件监听器
-  //     document.removeEventListener('modelDownloadComplete', handleModelDownloadComplete as EventListener);
-  //   };
-  // }, []); // 不依赖任何状态，避免重复绑定
 
   return {
     modelSupportLoading,

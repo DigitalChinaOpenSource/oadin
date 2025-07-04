@@ -37,10 +37,6 @@ export default function ModelChecking() {
       );
     }
   };
-  useEffect(() => {
-    console.info(selectedStateModel, 'selectedStateModelselectedStateModel的值');
-  }, [selectedStateModel]);
-
   const handleAutoSetModel = (data: selectedModelType) => {
     setSelecteStatedModel(data);
   };
