@@ -21,7 +21,7 @@ interface IModelPathModalProps {
 export default memo(function ModelPathModal(props: IModelPathModalProps) {
   const { modalPath, onModelPathVisible, onChangeModelPath, updateModelPath } = props;
 
-  const downloadList = useModelDownloadStore.getState().downloadList;
+  const downloadList = useModelDownloadStore((state) => state.downloadList);
   const { IN_PROGRESS } = DOWNLOAD_STATUS;
   const { setMigratingStatus } = useModelPathChangeStore();
   const { checkByzeStatus, setCheckByzeServerLoading } = useByzeServerCheckStore();

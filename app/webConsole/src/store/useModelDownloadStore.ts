@@ -4,7 +4,7 @@ import { LOCAL_STORAGE_KEYS } from '@/constants';
 
 interface IModelDownloadStore {
   downloadList: IModelDataItem[];
-  setDownloadList: (list: IModelDataItem[]) => void;
+  setDownloadList: (list: IModelDataItem[] | ((currentList: IModelDataItem[]) => IModelDataItem[])) => void;
 }
 
 // 从localStorage获取初始downloadList
@@ -15,9 +15,14 @@ const getInitialDownloadList = (): IModelDataItem[] => {
 
 const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
   downloadList: getInitialDownloadList(),
-  setDownloadList: (list: IModelDataItem[]) => {
+  setDownloadList: (list: IModelDataItem[] | ((currentList: IModelDataItem[]) => IModelDataItem[])) => {
+    // 支持函数式更新
+    const newList = typeof list === 'function' ? list(get().downloadList) : list;
+    
+    console.log('Store更新下载列表，新列表长度:', newList.length, '项目IDs:', newList.map(item => item.id));
+    
     // 处理词嵌入模型的avatar
-    const processedList = list.map((item) => {
+    const processedList = newList.map((item) => {
       if (item.name === 'quentinz/bge-large-zh-v1.5:f16') {
         return {
           ...item,
