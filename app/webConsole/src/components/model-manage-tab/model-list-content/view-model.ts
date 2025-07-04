@@ -92,19 +92,22 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   const { fetchDownloadStart } = useDownLoad();
 
   // 封装获取模型列表的通用方法
-  const fetchModelSquareData = useCallback(async (params: IModelSquareParams) => {
-    const paramsTemp = {
-      ...params,
-      page_size: 999,
-      // 只有在params中没有指定mine的情况下才使用props.mine
-      mine: params.mine !== undefined ? params.mine : mine,
-    };
-    if (params?.service_source === 'remote') {
-      paramsTemp.env_type = 'product';
-    }
-    const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
-    return data?.data || [];
-  }, [mine]);
+  const fetchModelSquareData = useCallback(
+    async (params: IModelSquareParams) => {
+      const paramsTemp = {
+        ...params,
+        page_size: 999,
+        // 只有在params中没有指定mine的情况下才使用props.mine
+        mine: params.mine !== undefined ? params.mine : mine,
+      };
+      if (params?.service_source === 'remote') {
+        paramsTemp.env_type = 'product';
+      }
+      const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
+      return data?.data || [];
+    },
+    [mine],
+  );
 
   // setListData 函数用于更新模型列表数据
   const setListData = (list: IModelDataItem[]) => {
@@ -211,37 +214,34 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   }, [props.customModelListData, modelListData, modelListStateData]);
 
   // 获取模型列表 （本地和云端）
-  const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
-    fetchModelSquareData,
-    {
-      manual: true,
-      onSuccess: (data) => {
-        // 处理一些数据格式
-        let dataWithSource = (data || []).map(
-          (item) =>
-            ({
-              ...item,
-              currentDownload: 0,
-            }) as any,
-        );
-        if (props.pageType === 1) {
-          dataWithSource = dataWithSource.filter((item) => {
-            return item.class.every((c_item: string) => !c_item.includes('嵌入'));
-          });
-        }
-
-        setListData(dataWithSource);
-        setPagination({
-          ...pagination,
-          total: dataWithSource.length,
+  const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(fetchModelSquareData, {
+    manual: true,
+    onSuccess: (data) => {
+      // 处理一些数据格式
+      let dataWithSource = (data || []).map(
+        (item) =>
+          ({
+            ...item,
+            currentDownload: 0,
+          }) as any,
+      );
+      if (props.pageType === 1) {
+        dataWithSource = dataWithSource.filter((item) => {
+          return item.class.every((c_item: string) => !c_item.includes('嵌入'));
         });
-      },
-      onError: (error) => {
-        console.error('获取模型列表失败:', error);
-        setListData([]);
-      },
+      }
+
+      setListData(dataWithSource);
+      setPagination({
+        ...pagination,
+        total: dataWithSource.length,
+      });
     },
-  );
+    onError: (error) => {
+      console.error('获取模型列表失败:', error);
+      setListData([]);
+    },
+  });
 
   useEffect(() => {
     onModelSearch('');
@@ -506,21 +506,23 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     });
 
     // 无论是否是我的模型，强制刷新全局存储
-    const { setMyModelsList } = useModelListStore.getState();
-    
-    // 重新获取我的本地模型
-    const myModelsData = await fetchModelSquareData({
-      service_source: 'remote',
-      mine: true,
-    });
+    const { setMyModelsList, myModelsList } = useModelListStore.getState();
+    const isMyModelByRemote = myModelsList.filter((item) => item.source === 'remote' && item.can_select).length > 0;
+    if (isMyModelByRemote || myModelsList.length === 0) {
+      // 重新获取我的本地模型
+      const myModelsData = await fetchModelSquareData({
+        service_source: 'remote',
+        mine: true,
+      });
 
-    // 处理数据并更新到我的模型存储
-    if (myModelsData && myModelsData.length > 0) {
-      const processedData = myModelsData.map((item) => ({
-        ...item,
-        currentDownload: 0,
-      }));
-      setMyModelsList(processedData);
+      // 处理数据并更新到我的模型存储
+      if (myModelsData && myModelsData.length > 0) {
+        const processedData = myModelsData.map((item) => ({
+          ...item,
+          currentDownload: 0,
+        }));
+        setMyModelsList(processedData);
+      }
     }
   };
 
