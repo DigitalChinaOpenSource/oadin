@@ -76,6 +76,7 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 		slog.Error("重启Ollama失败", "error", err)
 		// 回滚代理设置
 		settings.SystemProxy = tempProxy // 清空代理设置
+		cache.WriteSystemSettings(settings)
 		return bcode.HttpError(bcode.ControlPanelSystemError, "重启Ollama失败")
 	}
 
