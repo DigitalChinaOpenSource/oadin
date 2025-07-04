@@ -62,6 +62,8 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 	settings.SystemProxy.Username = req.Username
 	settings.SystemProxy.Password = req.Password
 	settings.SystemProxy.Endpoint = req.Endpoint
+	// 设置代理状态
+	settings.SystemProxy.Enabled = true
 
 	// 将修改后的设置写回用户配置文件
 	err = cache.WriteSystemSettings(settings)
@@ -76,11 +78,10 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 		slog.Error("重启Ollama失败", "error", err)
 		// 回滚代理设置
 		settings.SystemProxy = tempProxy // 清空代理设置
-		return bcode.HttpError(bcode.ControlPanelSystemError, "重启Ollama失败")
+		cache.WriteSystemSettings(settings)
+		return err
 	}
 
-	// 设置代理状态
-	settings.SystemProxy.Enabled = true
 	// 将修改后的设置写回用户配置文件
 	err = cache.WriteSystemSettings(settings)
 	if err != nil {
@@ -127,7 +128,14 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	// 探查ollama服务是否在运行模型
 	engine := provider.GetModelEngine("ollama")
-
+	engineConfig := engine.GetConfig()
+	if engineConfig.StartStatus == 0 {
+		return bcode.HttpError(bcode.ErrModelEngineIsBeingOperatedOn, "无法切换代理启用状态，当前有模型正在运行，请先停止模型")
+	}
+	engineConfig.StartStatus = 0
+	defer func() {
+		engineConfig.StartStatus = 1
+	}()
 	err := engine.HealthCheck()
 	if err != nil {
 		slog.Error("无法切换代理启用状态，ollama服务已关闭", "error", err)
@@ -137,7 +145,7 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	runModels, err := engine.GetRunModels(ctx)
 	if err != nil {
 		slog.Error("获取正在运行的模型失败", "error", err)
-		return err
+		return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，有正在运行的模型")
 	}
 	if len(runModels.Models) != 0 {
 		slog.Error("无法切换代理启用状态，当前有模型正在运行，请先停止模型")
@@ -146,14 +154,18 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 		err = engine.StopEngine()
 		if err != nil {
 			slog.Error("停止引擎失败", "error", err)
-			return err
+			return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务无法重启")
 		}
-
+		err = engine.InitEnv()
+		if err != nil {
+			return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务无法重启")
+		}
 		err = engine.StartEngine()
 		if err != nil {
 			slog.Error("启动引擎失败", "error", err)
-			return err
+			return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务无法重启")
 		}
+
 	}
 	return nil
 
