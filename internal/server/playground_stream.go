@@ -26,12 +26,23 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		defer close(respChan)
 		defer close(errChan)
 
+		sendError := func(err error) {
+			errorResp := &types.ChatResponse{
+				ID:         uuid.New().String(),
+				Object:     "chat.completion.chunk",
+				Content:    err.Error(),
+				IsComplete: true,
+				Type:       "error",
+			}
+			respChan <- errorResp
+		}
+
 		// 获取会话
 		session := &types.ChatSession{ID: request.SessionID}
 		err := p.Ds.Get(ctx, session)
 		if err != nil {
 			slog.Error("Failed to get chat session", "error", err)
-			errChan <- err
+			sendError(err)
 			return
 		}
 
@@ -49,7 +60,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		})
 		if err != nil {
 			slog.Error("Failed to list chat messages", "error", err)
-			errChan <- err
+			sendError(err)
 			return
 		}
 
@@ -113,7 +124,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			err = p.Ds.Add(ctx, userMsg)
 			if err != nil {
 				slog.Error("Failed to save user message", "error", err)
-				errChan <- err
+				sendError(err)
 				return
 			}
 		}
@@ -292,12 +303,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				if !ok {
 					return
 				}
-				// 转发错误
-				errChan <- err
+				sendError(err)
 				return
 			case <-ctx.Done():
-				// 上下文取消
-				errChan <- ctx.Err()
+				sendError(ctx.Err())
 				return
 			}
 		}
