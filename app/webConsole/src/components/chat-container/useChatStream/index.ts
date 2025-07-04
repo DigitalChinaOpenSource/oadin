@@ -456,10 +456,11 @@ export function useChatStream() {
 
         // 两个层次的状态：
         // 1. 单个工具状态（上面已更新）：由 /runTool 结果决定 ('success'/'error')
-        // 2. MCP 组状态：完全由 isToolCallActive 控制
-        //    - 在 handleToolCalls 中必然 isToolCallActive = true，所以组状态为 'progress'
-        //    - 只有在 onComplete 中当 isToolCallActive = false 时，才设置最终组状态
-        const mcpGroupStatus = 'progress'; // 在工具调用过程中始终为 progress
+        // 2. MCP 组状态：根据工具调用结果决定
+        //    - 如果工具调用出错，整个组状态立即变为 'error'
+        //    - 如果工具调用成功但还有后续工具调用，保持 'progress'
+        //    - 如果工具调用成功且没有后续工具调用，在 onComplete 中设置最终状态
+        const mcpGroupStatus = isToolError || isEmptyResponse ? 'error' : 'progress';
 
         // 更新最终消息
         let updatedMcpContent;
@@ -480,7 +481,7 @@ export function useChatStream() {
         if (!isToolError && toolCallHandlersRef.current.continueConversation) {
           // 调用继续对话函数，处理后续流式响应
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
-        } else if (isToolError) {
+        } else if (isToolError || isEmptyResponse) {
           const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
           handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState, false);
           requestState.current.content.response = errorContent;

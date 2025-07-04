@@ -90,6 +90,23 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
   const isPageSizeChangingRef = useRef(false);
   const { fetchDownloadStart } = useDownLoad();
+
+  // 封装获取模型列表的通用方法
+  const fetchModelSquareData = useCallback(async (params: IModelSquareParams) => {
+    const paramsTemp = {
+      ...params,
+      page_size: 999,
+      // 只有在params中没有指定mine的情况下才使用props.mine
+      mine: params.mine !== undefined ? params.mine : mine,
+    };
+    if (params?.service_source === 'remote') {
+      paramsTemp.env_type = 'product';
+    }
+    const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
+    return data?.data || [];
+  }, [mine]);
+
+  // setListData 函数用于更新模型列表数据
   const setListData = (list: IModelDataItem[]) => {
     // 创建一个深拷贝，避免引用问题
     const listCopy = JSON.parse(JSON.stringify(list));
@@ -195,19 +212,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
   // 获取模型列表 （本地和云端）
   const { loading: modelSupportLoading, run: fetchModelSupport } = useRequest(
-    async (params: IModelSquareParams) => {
-      const paramsTemp = {
-        ...params,
-        page_size: 999,
-        // 只有在params中没有指定mine的情况下才使用props.mine
-        mine: params.mine !== undefined ? params.mine : mine,
-      };
-      if (params?.service_source === 'remote') {
-        paramsTemp.env_type = 'product';
-      }
-      const data = await httpRequest.get<ModelData>('/control_panel/model/square', paramsTemp);
-      return data?.data || [];
-    },
+    fetchModelSquareData,
     {
       manual: true,
       onSuccess: (data) => {
@@ -237,11 +242,6 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
     },
   );
-
-  // 必须，下载时需要获取当前路径的存储空间
-  useEffect(() => {
-    fetchModelPath();
-  }, []);
 
   useEffect(() => {
     onModelSearch('');
@@ -274,7 +274,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   }, [props.customModelListData, modelSearchVal]);
 
   // 获取模型存储路径
-  const { run: fetchModelPath, data: modelPathData } = useRequest(
+  const { runAsync: fetchModelPath, data: modelPathData } = useRequest(
     async () => {
       const res = await httpRequest.get<IModelPathRes>('/control_panel/model/filepath');
       return res || {};
@@ -286,6 +286,7 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
       },
     },
   );
+
   // 根据搜索值和分页参数更新分页数据
   const prevModelSearchValRef = useRef(modelSearchVal);
 
@@ -392,8 +393,13 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
 
   const { runAsync: onCheckPathSpace } = useRequest(
     async (path: string) => {
+      if (!path) {
+        console.error('查询当前存储路径失败，路径为空，检查请求数据');
+        // 返回一个具有默认值的对象，而不是空对象
+        return { free_size: 0, total_size: 0 } as IModelPathSpaceRes;
+      }
       const data = await httpRequest.get<IModelPathSpaceRes>('/control_panel/path/space', { path });
-      return data || {};
+      return data || { free_size: 0, total_size: 0 };
     },
     {
       manual: true,
@@ -432,17 +438,34 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
     }
   };
   const startDownload = async (modelData: IModelDataItem) => {
-    const modelSizeMb = convertToMB(modelData.size || '0MB');
-    const currentPathSpace = await onCheckPathSpace(modelPathData?.path || '');
-    const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
-    if (modelSizeMb > freeSpaceMb) {
-      message.warning('当前路径下的磁盘空间不足，无法下载该模型');
-      return;
-    } else {
+    try {
+      // 1. 首先获取模型存储路径
+      const modelPathInfo = await fetchModelPath();
+      const modelPath = modelPathInfo?.path;
+
+      if (!modelPath) {
+        message.error('无法获取模型存储路径，请检查配置');
+        return;
+      }
+
+      // 2. 检查磁盘空间
+      const currentPathSpace = await onCheckPathSpace(modelPath);
+      const modelSizeMb = convertToMB(modelData.size || '0MB');
+      const freeSpaceMb = (currentPathSpace?.free_size || 0) * 1024;
+
+      if (modelSizeMb > freeSpaceMb) {
+        message.warning('当前路径下的磁盘空间不足，无法下载该模型');
+        return;
+      }
+
+      // 3. 开始下载
       fetchDownloadStart({
         ...modelData,
         status: DOWNLOAD_STATUS.IN_PROGRESS,
       });
+    } catch (error) {
+      console.error('准备下载失败:', error);
+      message.error('无法准备下载，请稍后重试');
     }
   };
 
@@ -469,15 +492,36 @@ export function useViewModel(props: IModelListContent): IUseViewModel {
   };
   // 授权成功刷新列表
   const onModelAuthSuccess = async () => {
+    // 获取更新后的模型列表
     await fetchModelSupport({
       service_source: modelSourceVal,
       mine: mine,
     });
+
+    // 更新分页信息
     const filteredData = getFilteredData();
     setPagination({
       ...pagination,
       total: filteredData.length,
     });
+
+    // 无论是否是我的模型，强制刷新全局存储
+    const { setMyModelsList } = useModelListStore.getState();
+    
+    // 重新获取我的本地模型
+    const myModelsData = await fetchModelSquareData({
+      service_source: 'remote',
+      mine: true,
+    });
+
+    // 处理数据并更新到我的模型存储
+    if (myModelsData && myModelsData.length > 0) {
+      const processedData = myModelsData.map((item) => ({
+        ...item,
+        currentDownload: 0,
+      }));
+      setMyModelsList(processedData);
+    }
   };
 
   return {

@@ -13,12 +13,10 @@ export interface ModelCheckingHasdata extends ISelectedDialogProps {
 export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
   const { vm, handleAutoSetModel, selectedStateModel } = props;
   const filterModelList = useMemo(() => {
-    console.log('ModelCheckingHasdata - 模型列表长度:', vm.modelListData?.length);
     if (!vm.modelListData?.length) return [];
-    
+
     // 使用slice而不是splice，避免修改原始数组
     const filtered = vm.modelListData.slice(0, 2);
-    console.log('ModelCheckingHasdata - 过滤后模型列表:', filtered);
     return filtered;
   }, [vm.modelListData]);
 
@@ -36,7 +34,6 @@ export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
     }
     return { gutter: 16, column: 1 };
   };
-  console.info(selectedStateModel, '当前选中的值');
   return (
     <>
       <div className={styles.recommendText}>为你推荐以下模型</div>

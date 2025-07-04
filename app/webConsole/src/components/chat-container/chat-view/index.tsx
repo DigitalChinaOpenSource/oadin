@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { ChatInput, MessageList, ChatMessageList, type MessageContentType, type ChatMessageItem, registerMessageContents } from '@res-utiles/ui-components';
+import React, { useEffect } from 'react';
+import { ChatInput, ChatMessageList, type MessageContentType, type ChatMessageItem, registerMessageContents } from '@res-utiles/ui-components';
+import '@res-utiles/ui-components/dist/index.css';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -65,7 +66,7 @@ export default function ChatView(props: IChatViewProps) {
     if (!messageString.trim() || isLoading || isUploading) return;
     const isEngineAvailable = await fetchCheckEngineStatus();
     if (!isEngineAvailable) {
-      message.error('模型引擎异常，请检查当前模型引擎的服务状态');
+      message.error('发送失败，暂无法使用本地模型，请稍后再试');
       return;
     }
     const isModelDownloaded = await chechIsModelDownloaded(selectedModel?.name || '');
@@ -175,7 +176,7 @@ export default function ChatView(props: IChatViewProps) {
       </div>
     );
   };
-  console.log('messages===>', messages);
+
   return (
     <div className="chat-layout">
       <div className="chat-body">

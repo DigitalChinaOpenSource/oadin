@@ -27,8 +27,14 @@ const useModelDownloadStore = create<IModelDownloadStore>((set, get) => ({
       return item;
     });
 
-    // 对象数组进行去重
-    const uniqueList = Array.from(new Map(processedList.map((item) => [JSON.stringify(item), item])).values());
+    // 使用 id 作为唯一标识符进行去重，而不是整个对象内容
+    const uniqueMap = new Map<string, IModelDataItem>();
+    processedList.forEach(item => {
+      if (item.id) {
+        uniqueMap.set(item.id, item);
+      }
+    });
+    const uniqueList = Array.from(uniqueMap.values());
 
     // 保存到localStorage
     localStorage.setItem(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST, JSON.stringify(uniqueList));
