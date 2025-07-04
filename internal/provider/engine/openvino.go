@@ -10,6 +10,8 @@ import (
 	"oadin/internal/utils/client"
 )
 
+var OpenvinoStartStatus int
+
 type OpenvinoProvider struct {
 	EngineConfig *types.EngineRecommendConfig
 }

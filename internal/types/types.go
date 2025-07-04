@@ -121,7 +121,9 @@ type CopyModelRequest struct {
 
 // DeleteRequest is the request passed to [Client.Delete].
 type DeleteRequest struct {
-	Model string `json:"model"`
+	Model          string `json:"model"`
+	Insecure       bool   `json:"insecure,omitempty"`
+	OllamaRegistry string `json:"ollama_registry,omitempty"` // 私有仓库地址
 }
 
 // [PullProgressFunc] and [PushProgressFunc].
@@ -144,6 +146,7 @@ type EngineRecommendConfig struct {
 	DownloadPath   string `json:"download_path"`
 	ExecPath       string `json:"exec_path"`
 	ExecFile       string `json:"exec_file"`
+	StartStatus    int    `json:"start_status"`
 }
 
 type MCPServerConfig struct {
