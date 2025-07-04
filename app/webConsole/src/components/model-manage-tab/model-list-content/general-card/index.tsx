@@ -168,6 +168,7 @@ const GeneralCard = React.memo(
     const handleSelectModelData = (e: MouseEvent<HTMLElement>) => {
       e.stopPropagation();
       const tempSelectedModel = selectedStateModel?.id && selectedStateModel?.id === modelData?.id ? ({} as IModelDataItem) : modelData;
+      console.info(tempSelectedModel, 'tempSelectedModeltempSelectedModeltempSelectedModeltempSelectedModel');
       setSelecteStatedModel?.(tempSelectedModel);
     };
 
