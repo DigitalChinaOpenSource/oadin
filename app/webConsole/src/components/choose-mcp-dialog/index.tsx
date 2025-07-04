@@ -32,16 +32,22 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
     setSelectTemporaryMcpItems(selectMcpList);
   }, [selectMcpList]);
   const onSelectMcpOk = async () => {
-    setStartLoading(true);
     if (selectTemporaryMcpItems.length > 0) {
+      setStartLoading(true);
       /// 启用关闭模型
       const { startList, stopList } = updateMcp(selectMcpList, selectTemporaryMcpItems);
 
       // 仅当有需要启动的MCP时调用startMcps
+      let successIds: string[] = [];
       if (startList.length > 0) {
-        await startMcps({
-          ids: startList.map((item) => item.id.toString()),
-        });
+        try {
+          const res = await startMcps({
+            ids: startList.map((item) => item.id.toString()),
+          });
+          successIds = res.successIds;
+        } catch (e) {
+          console.log('启动MCP失败:', e);
+        }
       }
 
       // 仅当有需要停止的MCP时调用stopMcps
@@ -51,7 +57,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
         });
       }
       // // 更新全局状态
-      setSelectMcpList(selectTemporaryMcpItems);
+      setSelectMcpList(selectTemporaryMcpItems.filter((item) => successIds.includes(item.id.toString())));
       // 关闭模态框
       if (options.onSelectMcpOkProps) {
         options.onSelectMcpOkProps();

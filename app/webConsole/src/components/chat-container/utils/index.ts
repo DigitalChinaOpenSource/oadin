@@ -1,9 +1,7 @@
 import useChatStore from '../store/useChatStore';
-import { useRequest } from 'ahooks';
 import useUploadFileListStore from '../store/useUploadFileListStore';
 import { setSessionIdToUrl } from '@/utils/sessionParamUtils';
 import { healthRequest, httpRequest } from '@/utils/httpRequest';
-import { IChangeModelParams } from '../types';
 
 export const createNewChat = () => {
   // 清空当前对话内容
@@ -12,6 +10,7 @@ export const createNewChat = () => {
   useUploadFileListStore.getState().setUploadFileList([]);
   // 清除会话ID和来源参数
   setSessionIdToUrl('');
+  sessionStorage.setItem('isGenChatTitle', 'false');
 };
 
 export const fetchCheckEngineStatus = async (): Promise<boolean> => {

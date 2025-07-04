@@ -197,24 +197,25 @@ export default function ChatView(props: IChatViewProps) {
             renderContent={(messageContent) => {
               const { content, type, attachmentFiles } = messageContent;
               if (type === 'plain') {
-                return (
-                  <div className={'user-question'}>
-                    {/*{!!attachmentFiles && (*/}
-                    {/*  <div className={'user-question-files'}>*/}
-                    {/*    <span>引用文件:</span>*/}
-                    {/*    {(attachmentFiles as UploadFile[]).map((file) => (*/}
-                    {/*      <div*/}
-                    {/*        key={file.uid}*/}
-                    {/*        className={'upload-file-item'}*/}
-                    {/*      >*/}
-                    {/*        {file.name}*/}
-                    {/*      </div>*/}
-                    {/*    ))}*/}
-                    {/*  </div>*/}
-                    {/*)}*/}
-                    <MarkdownContent dataSource={content as string} />
-                  </div>
-                );
+                return <MarkdownContent dataSource={content as string} />;
+                // return !!attachmentFiles ? (
+                //   <div className={'user-question'}>
+                //     <div className={'user-question-files'}>
+                //       <span>引用文件:</span>
+                //       {(attachmentFiles as UploadFile[]).map((file) => (
+                //         <div
+                //           key={file.uid}
+                //           className={'upload-file-item'}
+                //         >
+                //           {file.name}
+                //         </div>
+                //       ))}
+                //     </div>
+                //     <MarkdownContent dataSource={content as string} />
+                //   </div>
+                // ) : (
+                //   <MarkdownContent dataSource={content as string} />
+                // );
               }
               if (type === 'think') {
                 return <DeepThinkChat dataSource={content as any} />;
