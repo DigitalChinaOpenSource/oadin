@@ -132,9 +132,13 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	if engineConfig.StartStatus == 0 {
 		return bcode.HttpError(bcode.ErrModelEngineIsBeingOperatedOn, "无法切换代理启用状态，当前有模型正在运行，请先停止模型")
 	}
-	engineConfig.StartStatus = 0
+	OperateStatus := engine.GetOperateStatus()
+	if OperateStatus == 0 {
+		return bcode.ErrModelEngineIsBeingOperatedOn
+	}
+	engine.SetOperateStatus(0)
 	defer func() {
-		engineConfig.StartStatus = 1
+		engine.SetOperateStatus(1)
 	}()
 	err := engine.HealthCheck()
 	if err != nil {
