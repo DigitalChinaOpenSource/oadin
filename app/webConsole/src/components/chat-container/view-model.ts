@@ -14,6 +14,7 @@ import { IChatDetailItem } from './chat-history-drawer/types';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
 import embedDownloadEventBus from '@/utils/embedDownload';
+import { useChatStream } from './useChatStream';
 import { EMBEDMODELID } from '@/constants';
 
 /** 封装一些自定义hooks */
@@ -49,6 +50,7 @@ export default function useViewModel() {
   const { initialized, setInitialized, isDownloadEmbed, setIsDownloadEmbed } = useInitialization();
   const { prevSessionId, setPrevSessionId, currentSessionId, source } = useSessionManagement();
   const { selectedModel, setSelectedModel, prevModelId, setPrevModelId } = useModelManagement();
+  const { cancelRequest } = useChatStream();
 
   const isLoadingHistory = useRef(false);
 
@@ -219,6 +221,7 @@ export default function useViewModel() {
     // 4. 清理函数
     return () => {
       saveSessionIdToStorage();
+      cancelRequest();
       embedDownloadEventBus.off('embedDownloadComplete', handleEmbedComplete);
     };
   }, []); // 只在组件挂载时执行一次
