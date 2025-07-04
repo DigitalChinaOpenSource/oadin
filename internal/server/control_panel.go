@@ -49,11 +49,13 @@ func GetFilePathSize(ctx context.Context, req *dto.GetPathDiskSizeInfoRequest) (
 
 func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathRequest) (*dto.ModifyModelFilePathResponse, error) {
 	engine := provider.GetModelEngine("ollama")
+	if err := engine.HealthCheck(); err != nil {
+		return nil, bcode.ErrModelEngineNotRun
+	}
 	runningModels, _ := engine.GetRunModels(ctx)
 	if len(runningModels.Models) > 0 {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelIsRunning
 	}
-	_ = engine.StopEngine()
 	engineConfig := engine.GetConfig()
 	if engineConfig.StartStatus == 0 {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelEngineIsBeingOperatedOn
@@ -62,6 +64,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	defer func() {
 		engineConfig.StartStatus = 1
 	}()
+	_ = engine.StopEngine()
 	if req.TargetPath == req.SourcePath {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
 	}
