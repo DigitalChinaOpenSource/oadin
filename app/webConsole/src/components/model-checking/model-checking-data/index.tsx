@@ -23,15 +23,14 @@ export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
   }, [vm.modelListData]);
 
   useEffect(() => {
-    console.log('ModelCheckingHasdata: filterModelList 变化，长度:', filterModelList.length);
-    // if (filterModelList.length > 0) {
-    //   const modelData = filterModelList.find((item: selectedModelType) => !!item?.can_select);
-    //   console.log('ModelCheckingHasdata: 查找可选择的模型:', modelData ? `找到模型 ${modelData.name}` : '未找到可选择模型');
-    //   if (modelData) {
-    //     handleAutoSetModel(modelData as selectedModelType);
-    //   }
-    // }
-  }, [filterModelList]);
+    // 只有在没有选中模型的情况下才自动选择第一个
+    if (filterModelList.length > 0 && !selectedStateModel) {
+      const modelData = filterModelList.find((item: selectedModelType) => !!item?.can_select);
+      if (modelData) {
+        handleAutoSetModel(modelData as selectedModelType);
+      }
+    }
+  }, [filterModelList, selectedStateModel, handleAutoSetModel]);
 
   const grid = () => {
     if (filterModelList?.length > 1) {
