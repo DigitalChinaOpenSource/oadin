@@ -23,10 +23,12 @@ import { IStreamData, StreamCallbacks, ChatRequestParams, ChatResponseData, IToo
 import { ERROR_MESSAGES, TIMEOUT_CONFIG, ErrorType } from './contants';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 import { message } from 'antd';
+import useUploadFileListStore from '@/components/chat-container/store/useUploadFileListStore.ts';
 
 // 统一的流式请求参数接口
 interface StreamRequestOptions {
   content: string;
+  attachmentFiles?: []; // 附件文件列表名称
   toolGroupID?: string;
   isUserMessage?: boolean; // 是否需要创建用户消息
   isResend?: boolean;
@@ -38,6 +40,7 @@ export function useChatStream() {
   const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
   const { selectedModel } = useSelectedModelStore();
   const { selectedMcpIds } = useSelectMcpStore();
+  const { uploadFileList } = useUploadFileListStore();
 
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string | { data: string; status: string }>('');
@@ -536,6 +539,7 @@ export function useChatStream() {
             id: generateUniqueId('content'),
             type: 'plain',
             content: content,
+            attachmentFiles: uploadFileList,
           },
         ],
       };

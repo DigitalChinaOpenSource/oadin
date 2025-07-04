@@ -214,3 +214,15 @@
     white-space: pre-wrap;
   }
 }
+
+.user-question {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+  .user-question-files {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+}
