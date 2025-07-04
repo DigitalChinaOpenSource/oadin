@@ -9,7 +9,7 @@ import useUploadFileListStore from './store/useUploadFileListStore';
 import { createNewChat } from './utils';
 import { IPlaygroundSession, IChangeModelParams } from './types';
 import { message } from 'antd';
-import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage, getSessionSource } from '@/utils/sessionParamUtils';
+import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
@@ -28,9 +28,8 @@ function useInitialization() {
 function useSessionManagement() {
   const [prevSessionId, setPrevSessionId] = useState<string | null>(null);
   const currentSessionId = getSessionIdFromUrl();
-  const source = getSessionSource();
 
-  return { prevSessionId, setPrevSessionId, currentSessionId, source };
+  return { prevSessionId, setPrevSessionId, currentSessionId };
 }
 
 function useModelManagement() {
@@ -48,11 +47,12 @@ export default function useViewModel() {
 
   // 使用自定义 hooks
   const { initialized, setInitialized, isDownloadEmbed, setIsDownloadEmbed } = useInitialization();
-  const { prevSessionId, setPrevSessionId, currentSessionId, source } = useSessionManagement();
+  const { prevSessionId, setPrevSessionId, currentSessionId } = useSessionManagement();
   const { selectedModel, setSelectedModel, prevModelId, setPrevModelId } = useModelManagement();
   const { cancelRequest } = useChatStream();
 
   const isLoadingHistory = useRef(false);
+  const isLoadingHistoryModel = useRef(false);
 
   // 合并相关的请求函数
   const { run: fetchChooseModelNotify } = useRequest(
@@ -132,7 +132,7 @@ export default function useViewModel() {
           setSelectMcpList([]);
           createNewChat();
           setPrevSessionId(data.id);
-          setSessionIdToUrl(data.id, 'new');
+          setSessionIdToUrl(data.id);
         }
       },
       onError: () => {},
@@ -176,9 +176,14 @@ export default function useViewModel() {
       }
 
       if (res) {
+        isLoadingHistoryModel.current = true;
         setSelectedModel(res);
         setMessages(messages as ChatMessageItem[]);
         setPrevModelId(res.id);
+        // 在下一个事件循环中重置标志，确保useEffect能正确判断
+        setTimeout(() => {
+          isLoadingHistoryModel.current = false;
+        }, 0);
       } else {
         message.error('获取历史记录详情失败，未找到对应模型');
       }
@@ -194,12 +199,6 @@ export default function useViewModel() {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionIdFromUrl = urlParams.get('sessionId');
     const sessionIdFromStorage = sessionStorage.getItem('currentSessionId');
-
-    if (source === 'new') {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('source');
-      window.history.replaceState({}, '', url);
-    }
 
     if (!sessionIdFromUrl && sessionIdFromStorage) {
       setSessionIdToUrl(sessionIdFromStorage);
@@ -224,34 +223,23 @@ export default function useViewModel() {
       cancelRequest();
       embedDownloadEventBus.off('embedDownloadComplete', handleEmbedComplete);
     };
-  }, []); // 只在组件挂载时执行一次
+  }, []);
 
   // 合并初始化和会话管理逻辑
   useEffect(() => {
     if (initialized) return;
 
-    // 初始化逻辑
-    if (source === 'history') {
+    // 初始化逻辑：如果有 sessionId，加载历史记录；如果没有且有模型，创建新会话
+    if (currentSessionId) {
       setPrevSessionId(currentSessionId);
-      if (currentSessionId) {
-        fetchChatHistoryDetail(currentSessionId);
-      }
-      setInitialized(true);
-      return;
-    }
-
-    if (currentSessionId && selectedModel?.id) {
       fetchChatHistoryDetail(currentSessionId);
-      setPrevSessionId(currentSessionId);
-    }
-
-    if (!currentSessionId && selectedModel?.id) {
+    } else if (selectedModel?.id) {
       handleCreateNewChat();
       setPrevModelId(selectedModel.id);
     }
 
     setInitialized(true);
-  }, [initialized, selectedModel, currentSessionId, source, fetchChatHistoryDetail, handleCreateNewChat, setPrevModelId, setPrevSessionId]);
+  }, [initialized, selectedModel, currentSessionId, fetchChatHistoryDetail, handleCreateNewChat, setPrevModelId, setPrevSessionId]);
 
   // 处理会话 ID 和模型变化
   useEffect(() => {
@@ -259,18 +247,16 @@ export default function useViewModel() {
 
     // 会话ID变化处理
     if (currentSessionId !== prevSessionId && !isLoadingHistory.current) {
-      const currentSource = getSessionSource();
-      if (currentSource === 'history' || currentSource === 'new') {
-        setPrevSessionId(currentSessionId);
-      } else if (currentSessionId) {
+      if (currentSessionId) {
         isLoadingHistory.current = true;
         fetchChatHistoryDetail(currentSessionId);
-        setPrevSessionId(currentSessionId);
       }
+      setPrevSessionId(currentSessionId);
     }
 
     // 模型变化处理
-    if (selectedModel?.id !== prevModelId && prevModelId !== undefined && source !== 'history') {
+    // 只有在不是加载历史记录模型时，才创建新会话
+    if (selectedModel?.id !== prevModelId && prevModelId !== undefined && !isLoadingHistoryModel.current) {
       if (selectedModel) {
         handleCreateNewChat();
       } else {
@@ -279,11 +265,10 @@ export default function useViewModel() {
       }
     }
 
-    // 更新 prevModelId
     if (selectedModel?.id !== prevModelId) {
       setPrevModelId(selectedModel?.id);
     }
-  }, [initialized, currentSessionId, prevSessionId, selectedModel, prevModelId, source, fetchChatHistoryDetail, handleCreateNewChat, setPrevSessionId, setPrevModelId]);
+  }, [initialized, currentSessionId, prevSessionId, selectedModel, prevModelId, fetchChatHistoryDetail, handleCreateNewChat, setPrevSessionId, setPrevModelId]);
 
   return {
     isDownloadEmbed,

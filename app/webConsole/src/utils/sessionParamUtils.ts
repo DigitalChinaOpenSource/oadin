@@ -23,7 +23,7 @@ export const getSessionIdFromUrl = (): string => {
  * 设置会话ID到URL中并保存到sessionStorage
  * @param sessionId 要设置的会话ID
  */
-export const setSessionIdToUrl = (sessionId: string, source?: string): void => {
+export const setSessionIdToUrl = (sessionId: string): void => {
   // 获取当前URL中的sessionId，避免重复设置相同值
   const urlParams = new URLSearchParams(window.location.search);
   const currentSessionId = urlParams.get('sessionId');
@@ -39,26 +39,10 @@ export const setSessionIdToUrl = (sessionId: string, source?: string): void => {
   if (sessionId) {
     // 设置会话ID
     url.searchParams.set('sessionId', sessionId);
-
-    // 处理source参数
-    if (source) {
-      // 明确设置source参数
-      url.searchParams.set('source', source);
-    } else {
-      // 如果没有提供source参数，保留当前URL中的source参数(如果有)
-      const currentSource = url.searchParams.get('source');
-      if (!currentSource) {
-        // 如果当前URL中没有source，则移除它
-        url.searchParams.delete('source');
-      }
-      // 如果有，则保持不变
-    }
-
     // 同时保存到sessionStorage
     sessionStorage.setItem('currentSessionId', sessionId);
   } else {
     url.searchParams.delete('sessionId');
-    url.searchParams.delete('source');
     sessionStorage.removeItem('currentSessionId');
   }
 
