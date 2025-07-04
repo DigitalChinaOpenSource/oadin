@@ -15,7 +15,7 @@ export interface IDownloadListBoxProps {
 
 const DownloadListBox = memo((props: IDownloadListBoxProps) => {
   const { className = '', handleDownload } = props;
-  const downloadList = useModelDownloadStore.getState().downloadList;
+  const downloadList = useModelDownloadStore((state) => state.downloadList);
   const tempDownloadList = downloadList.length > 0 ? downloadList : getLocalStorageDownList(LOCAL_STORAGE_KEYS.MODEL_DOWNLOAD_LIST);
   return (
     <div className={`${className} ${styles.downloadListBox}`}>

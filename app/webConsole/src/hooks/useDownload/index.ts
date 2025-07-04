@@ -50,12 +50,23 @@ export const useDownLoad = () => {
         provider_name: service_provider_name || 'local_ollama_chat',
       };
 
-      // 更新下载列表
-      setDownloadList([
-        ...downloadList.map((item) => (item.id === id ? { ...item, status: IN_PROGRESS } : item)),
-        // 如果不存在则添加新项
-        ...(!downloadList.some((item) => item.id === id) ? [{ ...params, status: IN_PROGRESS }] : []),
-      ]);
+      // 更新下载列表 - 使用函数式更新避免状态竞争
+      setDownloadList((currentList: IModelDataItem[]) => {
+        console.log('开始下载，当前列表长度:', currentList.length, '要添加的模型ID:', id);
+
+        // 检查是否已存在
+        const existingIndex = currentList.findIndex((item: IModelDataItem) => item.id === id);
+
+        if (existingIndex >= 0) {
+          // 如果存在，更新状态
+          console.log('模型已存在，更新状态:', id);
+          return currentList.map((item: IModelDataItem) => (item.id === id ? { ...item, status: IN_PROGRESS } : item));
+        } else {
+          // 如果不存在，添加新项
+          console.log('添加新模型到下载列表:', id, '新列表长度将为:', currentList.length + 1);
+          return [...currentList, { ...params, status: IN_PROGRESS }];
+        }
+      });
       // 同步更新所有模型列表中的状态
       const { setModelListData, setMyModelsList, setModelSquareList } = useModelListStore.getState();
 
