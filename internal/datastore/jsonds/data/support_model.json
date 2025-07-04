@@ -488,7 +488,7 @@
     "service_name": "chat",
     "service_source": "local",
     "size": "352MB",
-    "tools": true,
+    "tools": false,
     "context": 32
   },
   {

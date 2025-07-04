@@ -23,6 +23,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var OllamaStartStatus = 1
+
 type OllamaProvider struct {
 	EngineConfig *types.EngineRecommendConfig
 }
@@ -236,6 +238,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		DownloadPath:   downloadPath,
 		ExecPath:       execPath,
 		ExecFile:       execFile,
+		StartStatus:    OllamaStartStatus,
 	}
 }
 
@@ -412,6 +415,18 @@ func (o *OllamaProvider) DeleteModel(ctx context.Context, req *types.DeleteReque
 		return err
 	}
 
+	// 如果用户设置了Ollama仓库地址，则将其添加到请求中，再次删除源头引用
+	if req.OllamaRegistry != "" {
+		req.Insecure = true // 设置为true以允许不安全的连接
+		req.Model = req.OllamaRegistry + "/library/" + req.Model
+		fmt.Println("[DeleteModel] Using private registry:", req.Model)
+
+		if err := c.Do(ctx, http.MethodDelete, "/api/delete", req, nil); err != nil {
+			slog.Error("Delete model failed : " + err.Error())
+			return err
+		}
+
+	}
 	return nil
 }
 
