@@ -23,10 +23,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var OllamaStartStatus = 1
+var OllamaOperateStatus = 1
 
 type OllamaProvider struct {
 	EngineConfig *types.EngineRecommendConfig
+}
+
+type OllamaUnloadModelRequest struct {
+	Model     string `json:"model"`
+	KeepAlive int64  `json:"keep_alive"`
 }
 
 func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
@@ -53,6 +58,15 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 	ollamaProvider.EngineConfig = ollamaProvider.GetConfig()
 
 	return ollamaProvider
+}
+
+func (o *OllamaProvider) GetOperateStatus() int {
+	return OllamaOperateStatus
+}
+
+func (o *OllamaProvider) SetOperateStatus(status int) {
+	OllamaOperateStatus = status
+	slog.Info("Ollama operate status set to", "status", OllamaOperateStatus)
 }
 
 func (o *OllamaProvider) GetDefaultClient() *client.Client {
@@ -114,6 +128,7 @@ func (o *OllamaProvider) StartEngine() error {
 	}
 	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
 	err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
+	fmt.Sprintf("ollama pid %d", cmd.Process.Pid)
 	if err != nil {
 		return fmt.Errorf("failed to write pid file: %v", err)
 	}
@@ -238,7 +253,6 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		DownloadPath:   downloadPath,
 		ExecPath:       execPath,
 		ExecFile:       execFile,
-		StartStatus:    OllamaStartStatus,
 	}
 }
 
@@ -515,6 +529,22 @@ func (o *OllamaProvider) GetRunModels(ctx context.Context) (*types.ListResponse,
 		return nil, err
 	}
 	return &lr, nil
+}
+
+func (o *OllamaProvider) UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error {
+	c := o.GetDefaultClient()
+	for _, model := range req.Models {
+		reqBody := &OllamaUnloadModelRequest{
+			Model:     model,
+			KeepAlive: 0, // 默认为0，表示不保留模型
+		}
+		if err := c.Do(ctx, http.MethodPost, "/api/generate", reqBody, nil); err != nil {
+			slog.Error("Unload model failed : " + err.Error())
+			return err
+		}
+		slog.Info("Ollama: Model %s unloaded successfully\n", model)
+	}
+	return nil
 }
 
 // 替換為私倉拉取模型, 為防止出現中斷, 不做異常處理

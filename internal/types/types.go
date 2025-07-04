@@ -78,6 +78,10 @@ type ListResponse struct {
 	Models []ListModelResponse `json:"models"`
 }
 
+type UnloadModelRequest struct {
+	Models []string `json:"models"`
+}
+
 // ListModelResponse is a single model description in [ListResponse].
 type ListModelResponse struct {
 	Name       string       `json:"name"`

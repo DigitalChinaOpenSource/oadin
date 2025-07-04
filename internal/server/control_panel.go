@@ -56,13 +56,13 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if len(runningModels.Models) > 0 {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelIsRunning
 	}
-	engineConfig := engine.GetConfig()
-	if engineConfig.StartStatus == 0 {
+	OperateStatus := engine.GetOperateStatus()
+	if OperateStatus == 0 {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelEngineIsBeingOperatedOn
 	}
-	engineConfig.StartStatus = 0
+	engine.SetOperateStatus(0)
 	defer func() {
-		engineConfig.StartStatus = 1
+		engine.SetOperateStatus(1)
 	}()
 	_ = engine.StopEngine()
 	if req.TargetPath == req.SourcePath {
