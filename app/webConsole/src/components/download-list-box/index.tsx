@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { XIcon, DownloadIcon } from '@phosphor-icons/react';
+import { DownloadIcon, XIcon } from '@phosphor-icons/react';
 import DownloadItem from './download-item';
 import useModelDownloadStore from '../../store/useModelDownloadStore';
 import { getLocalStorageDownList } from '@/utils';
