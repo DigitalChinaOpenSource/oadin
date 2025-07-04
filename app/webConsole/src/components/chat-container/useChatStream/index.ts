@@ -457,7 +457,7 @@ export function useChatStream() {
         //    - 如果工具调用出错，整个组状态立即变为 'error'
         //    - 如果工具调用成功但还有后续工具调用，保持 'progress'
         //    - 如果工具调用成功且没有后续工具调用，在 onComplete 中设置最终状态
-        const mcpGroupStatus = isToolError ? 'error' : 'progress';
+        const mcpGroupStatus = isToolError || isEmptyResponse ? 'error' : 'progress';
 
         // 更新最终消息
         let updatedMcpContent;
@@ -478,7 +478,7 @@ export function useChatStream() {
         if (!isToolError && toolCallHandlersRef.current.continueConversation) {
           // 调用继续对话函数，处理后续流式响应
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
-        } else if (isToolError) {
+        } else if (isToolError || isEmptyResponse) {
           const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
           handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState, false);
           requestState.current.content.response = errorContent;
