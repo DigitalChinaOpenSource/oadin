@@ -61,12 +61,13 @@ export function useChatStream() {
       thinkingTotalDuration: undefined as number | undefined,
     },
     status: {
-      isToolCallActive: false, // 移除 hasReceivedData
+      isToolCallActive: false,
     },
     timers: {
       totalTimer: null as NodeJS.Timeout | null,
     },
     lastToolGroupIdRef: null as string | null,
+    lastDataPacket: null as any, // 保存最后一个数据包
   });
   const toolCallHandlersRef = useRef<{
     continueConversation: ((result: string) => Promise<void>) | null;
@@ -203,6 +204,7 @@ export function useChatStream() {
         totalTimer: null,
       },
       lastToolGroupIdRef: null,
+      lastDataPacket: null,
     };
     functionIdCacheRef.current = {};
   }, []);
@@ -257,6 +259,7 @@ export function useChatStream() {
           totalTimer: null,
         },
         lastToolGroupIdRef: savedToolGroupId,
+        lastDataPacket: null,
       };
       functionIdCacheRef.current = {};
 
@@ -622,13 +625,15 @@ export function useChatStream() {
             }
 
             const data = response.data;
+            // 保存最后一个数据包，用于在 onComplete 中检查
+            requestState.current.lastDataPacket = data;
+
             // 根据是否有 tool_calls 来设置 isToolCallActive
             if (data?.tool_calls && data.tool_calls.length > 0) {
               requestState.current.status.isToolCallActive = true;
-            } else {
-              // 当没有 tool_calls 时，说明工具调用循环结束
-              requestState.current.status.isToolCallActive = false;
             }
+            // 注意：这里不再在没有 tool_calls 时立即设置 isToolCallActive = false
+            // 因为工具调用是异步的，需要等待完整的工具调用流程结束
 
             // 保存 total_duration 到 requestState
             if (data.total_duration !== undefined) {
@@ -646,6 +651,23 @@ export function useChatStream() {
           },
 
           onComplete: () => {
+            // 检查最后一个数据包是否包含 tool_calls
+            const lastDataPacket = requestState.current.lastDataPacket;
+            const hasToolCallsInLastPacket = lastDataPacket?.tool_calls && lastDataPacket.tool_calls.length > 0;
+
+            // 如果最后一个数据包包含 tool_calls，表示 MCP 工具调用还在进行中
+            // 此时应该保持 isLoading 和 isToolCallActive 为 true
+            if (hasToolCallsInLastPacket) {
+              // 确保工具调用状态保持为 true
+              requestState.current.status.isToolCallActive = true;
+              // 不设置 isLoading = false，让工具调用流程继续
+              clearTimers();
+              return;
+            }
+
+            // 只有当最后一个数据包不包含 tool_calls 时，才处理完成逻辑
+            requestState.current.status.isToolCallActive = false;
+
             // 处理进行中的工具调用完成状态
             const allMessages = useChatStore.getState().messages;
             const progressToolMessage = findProgressToolMessage(allMessages) as any;
@@ -716,6 +738,7 @@ export function useChatStream() {
                   totalTimer: null,
                 },
                 lastToolGroupIdRef: requestState.current.lastToolGroupIdRef,
+                lastDataPacket: null,
               };
               functionIdCacheRef.current = {};
             } else {
