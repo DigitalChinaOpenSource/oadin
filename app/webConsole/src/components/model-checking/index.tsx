@@ -15,6 +15,7 @@ export default function ModelChecking() {
   const vm: IMyModelListViewModel = useViewModel();
   const { modelSupportLoading, fetchModelSupport, modelListData } = vm;
   const [open, setOpen] = useState<boolean>(false);
+
   /// 初始化选择模型
   const onOk = () => {
     if (selectedStateModel && Object.keys(selectedStateModel).length > 0) {
@@ -36,6 +37,9 @@ export default function ModelChecking() {
       );
     }
   };
+  useEffect(() => {
+    console.info(selectedStateModel, 'selectedStateModelselectedStateModel的值');
+  }, [selectedStateModel]);
 
   const handleAutoSetModel = (data: selectedModelType) => {
     setSelecteStatedModel(data);
@@ -49,7 +53,7 @@ export default function ModelChecking() {
     fetchModelSupport({
       service_source: 'local',
     });
-  }, []);
+  }, [fetchModelSupport]);
 
   return (
     <Skeleton loading={modelSupportLoading}>
@@ -105,7 +109,6 @@ export default function ModelChecking() {
             selectedOuterStateModel={selectedStateModel}
             open={open}
             onCancel={() => setOpen(false)}
-            fromWhere="model-checking"
           />
         )}
       </div>
