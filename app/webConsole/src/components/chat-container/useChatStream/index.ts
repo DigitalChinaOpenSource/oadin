@@ -45,7 +45,6 @@ export function useChatStream() {
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [streamingThinking, setStreamingThinking] = useState<string | { data: string; status: string }>('');
   const [isResending, setIsResending] = useState(false);
-  const [isFirstResponseCompleted, setIsFirstResponseCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 流式请求控制器
@@ -95,6 +94,7 @@ export function useChatStream() {
       toolGroupId?: string;
     } = {},
   ) => {
+    console.log('handleError', message, originalError, errorType, options);
     const { shouldCancel = true, appendToContent = false, updateMcpStatus = true, toolGroupId } = options;
 
     // 设置错误状态
@@ -162,7 +162,7 @@ export function useChatStream() {
             role: 'assistant',
             contentList: updatedContentList,
           };
-
+          console.log('errorMessage', errorMessage);
           addMessage(errorMessage, true);
         }
       }
@@ -311,6 +311,7 @@ export function useChatStream() {
         }
       },
       onerror: (err) => {
+        console.log('onerror314', err);
         const errorMessage = err.message ? formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, err.message) : '请求发送错误';
 
         handleError(errorMessage, err, ErrorType.REQUEST, {
@@ -329,6 +330,7 @@ export function useChatStream() {
 
       // 连接关闭处理
       onclose: () => {
+        console.log('onclose');
         clearTimers();
         if (options.onclose) {
           options.onclose();
@@ -484,15 +486,16 @@ export function useChatStream() {
         if (!isToolError && toolCallHandlersRef.current.continueConversation) {
           // 调用继续对话函数，处理后续流式响应
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
-        } else if (isToolError || isEmptyResponse) {
-          const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
-          handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState, false);
-          requestState.current.content.response = errorContent;
+          // } else if (isToolError || isEmptyResponse) {
+          //   const errorContent = currentContent + `\n\n[工具调用失败: ${toolErrorMessage}]`;
+          //   handleTextContent({ content: errorContent, is_complete: true }, '', setStreamingContent, setStreamingThinking, requestState, false);
+          //   requestState.current.content.response = errorContent;
         } else {
           console.error('工具调用处理程序未初始化');
           setError('工具调用处理失败: 内部错误');
         }
       } catch (error: any) {
+        console.log('error496', error);
         const errorMessage = error.message || '未知错误';
         handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.EXECUTION_FAILED, errorMessage), error, ErrorType.TOOL, {
           shouldCancel: false,
@@ -596,6 +599,7 @@ export function useChatStream() {
           openWhenHidden: true,
           signal,
           onerror: (error) => {
+            console.log('error599', error);
             setError(`请求失败: ${error.message}`);
             clearTimers();
             setIsLoading(false);
@@ -684,8 +688,6 @@ export function useChatStream() {
                   if (allComplete) {
                     const hasError = toolCallResults.some((tool: any) => tool.status === 'error');
                     const finalStatus = hasError ? 'error' : 'success';
-                    // 优先使用contentItem自己的groupId，如果没有再使用全局的lastToolGroupIdRef
-                    // 确保无论哪种情况都有有效的ID可用
                     const currentGroupId = contentItem.content.groupId || requestState.current.lastToolGroupIdRef;
 
                     if (currentGroupId) {
@@ -722,7 +724,6 @@ export function useChatStream() {
               );
               addMessage(aiMessage);
 
-              // 重置状态
               requestState.current = {
                 content: {
                   response: '',
@@ -747,13 +748,14 @@ export function useChatStream() {
               requestState.current.lastToolGroupIdRef = savedToolGroupId;
             }
 
-            // 只有当没有工具调用活动时才设置 isLoading = false
             if (!requestState.current.status.isToolCallActive) {
               setIsLoading(false);
-              // 这里表示会话已完全结束，再结合第一轮的判断
-              if (!isFirstResponseCompleted) {
-                setIsFirstResponseCompleted(true);
-                fetchGenChatTitle();
+              // 表示会话已完全结束，检查是否需要生成标题
+              const isGenChatTitle = sessionStorage.getItem('isGenChatTitle');
+              if (isGenChatTitle !== 'false') {
+                fetchGenChatTitle().finally(() => {
+                  sessionStorage.setItem('isGenChatTitle', 'false');
+                });
               }
             }
 
@@ -767,6 +769,7 @@ export function useChatStream() {
         },
       );
     } catch (error: any) {
+      console.log('error770', error);
       handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, error.message || '未知错误'), error, ErrorType.REQUEST);
     }
   };
@@ -843,11 +846,6 @@ export function useChatStream() {
       cleanupResources();
     };
   }, [cleanupResources]);
-
-  const tempCurrentSessionId = getSessionIdFromUrl();
-  useEffect(() => {
-    setIsFirstResponseCompleted(false);
-  }, [tempCurrentSessionId]);
 
   return {
     streamingContent,
