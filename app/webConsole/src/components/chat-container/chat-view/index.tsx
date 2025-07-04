@@ -4,7 +4,8 @@ import '@res-utiles/ui-components/dist/index.css';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { Button, message } from 'antd';
+import '@res-utiles/ui-components/dist/index.css';
+import { Button, message, type UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
 import { CopyIcon, ArrowClockwiseIcon, StopIcon } from '@phosphor-icons/react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
@@ -193,9 +194,27 @@ export default function ChatView(props: IChatViewProps) {
                 content: message.role === 'user' ? 'user-bubble' : 'ai-bubble',
               },
             })}
-            renderContent={({ content, type }) => {
+            renderContent={(messageContent) => {
+              const { content, type, attachmentFiles } = messageContent;
               if (type === 'plain') {
-                return <MarkdownContent dataSource={content as string} />;
+                return (
+                  <div className={'user-question'}>
+                    {/*{!!attachmentFiles && (*/}
+                    {/*  <div className={'user-question-files'}>*/}
+                    {/*    <span>引用文件:</span>*/}
+                    {/*    {(attachmentFiles as UploadFile[]).map((file) => (*/}
+                    {/*      <div*/}
+                    {/*        key={file.uid}*/}
+                    {/*        className={'upload-file-item'}*/}
+                    {/*      >*/}
+                    {/*        {file.name}*/}
+                    {/*      </div>*/}
+                    {/*    ))}*/}
+                    {/*  </div>*/}
+                    {/*)}*/}
+                    <MarkdownContent dataSource={content as string} />
+                  </div>
+                );
               }
               if (type === 'think') {
                 return <DeepThinkChat dataSource={content as any} />;
