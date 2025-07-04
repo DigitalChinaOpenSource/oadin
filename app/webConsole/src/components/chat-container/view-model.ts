@@ -145,7 +145,7 @@ export default function useViewModel() {
       return;
     }
     const params = {
-      modelId: selectedModel?.source === 'local' ? selectedModel?.id : selectedModel?.name || '',
+      modelId: selectedModel?.id,
       embedModelId: isDownloadEmbed ? EMBEDMODELID : undefined,
       modelName: selectedModel?.name || '',
     };
