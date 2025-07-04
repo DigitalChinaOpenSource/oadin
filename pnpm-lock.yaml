@@ -79,34 +79,6 @@ importers:
         specifier: ^6.3.1
         version: 6.3.5(@types/node@22.15.33)(sass@1.89.2)
 
-  app/devPlatform:
-    dependencies:
-      i18next:
-        specifier: ^25.2.1
-        version: 25.2.1(typescript@5.8.3)
-      react-i18next:
-        specifier: ^15.5.2
-        version: 15.5.3(i18next@25.2.1(typescript@5.8.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)
-      react-markdown:
-        specifier: ^10.1.0
-        version: 10.1.0(@types/react@18.3.23)(react@18.3.1)
-      rehype-raw:
-        specifier: ^7.0.0
-        version: 7.0.0
-      remark-gfm:
-        specifier: ^4.0.1
-        version: 4.0.1
-    devDependencies:
-      eslint-plugin-react-hooks:
-        specifier: ^5.2.0
-        version: 5.2.0(eslint@9.29.0)
-      eslint-plugin-react-refresh:
-        specifier: ^0.4.19
-        version: 0.4.20(eslint@9.29.0)
-      globals:
-        specifier: ^16.0.0
-        version: 16.2.0
-
   app/webConsole:
     dependencies:
       '@microsoft/fetch-event-source':
@@ -121,9 +93,6 @@ importers:
       '@types/react-copy-to-clipboard':
         specifier: ^5.0.7
         version: 5.0.7
-      '@vanta/ellipsis-tooltip':
-        specifier: workspace:^
-        version: link:../../packages/ellipsis-tooltip
       i18next:
         specifier: ^25.2.1
         version: 25.2.1(typescript@5.8.3)
@@ -154,9 +123,6 @@ importers:
       sass:
         specifier: ^1.87.0
         version: 1.89.2
-      test:
-        specifier: workspace:^
-        version: link:../../packages/test
       use-immer:
         specifier: ^0.11.0
         version: 0.11.0(immer@10.1.1)(react@18.3.1)
@@ -176,10 +142,6 @@ importers:
       globals:
         specifier: ^16.0.0
         version: 16.2.0
-
-  packages/ellipsis-tooltip: {}
-
-  packages/test: {}
 
 packages:
 
