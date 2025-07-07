@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 import type { ChatMessageItem } from '@res-utiles/ui-components';
-import type { UploadFile } from 'antd';
-import { IUploadFile } from '../types';
 
 interface ChatState {
   messages: ChatMessageItem[];
@@ -33,8 +31,6 @@ const useChatStore = create<ChatState>((set, get) => ({
 
     set((state) => {
       const messages = [...state.messages];
-
-      // 如果是替换模式，查找并替换相同ID的消息
       if (isReplace) {
         const msgIndex = messages.findIndex((msg) => msg.id === messageId);
         if (msgIndex >= 0) {

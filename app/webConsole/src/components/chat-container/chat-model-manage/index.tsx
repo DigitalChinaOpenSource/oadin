@@ -1,22 +1,14 @@
-import { useState, useEffect } from 'react';
-import { message, Tooltip } from 'antd';
+import { useState } from 'react';
 import { httpRequest } from '@/utils/httpRequest';
 import { useRequest } from 'ahooks';
 import thinkSvg from '@/components/icons/think.svg';
 import nothinkSvg from '@/components/icons/no-think.svg';
 import TagsRender from '@/components/tags-render';
 import useSelectedModelStore from '@/store/useSelectedModel';
-import useChatStore from '../store/useChatStore';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
-
 import styles from './index.module.scss';
 
-interface IChatModelManageProps {
-  currModelData?: any;
-  onChooseModel?: (modelData: any) => void;
-}
-
-export default function ChatModelManage(props: IChatModelManageProps) {
+export default function ChatModelManage() {
   const { selectedModel } = useSelectedModelStore();
   const currentSessionId = getSessionIdFromUrl();
 

@@ -1,5 +1,5 @@
 import { FolderIcon, XCircleIcon } from '@phosphor-icons/react';
-import type { UploadProps, UploadFile } from 'antd';
+import type { UploadFile } from 'antd';
 import { message } from 'antd';
 import { httpRequest } from '@/utils/httpRequest';
 import useUploadFileListStore from '../store/useUploadFileListStore';
@@ -16,9 +16,7 @@ export const HeaderContent = () => {
         });
       }
 
-      // 无论是否调用接口，都从列表中移除
       setUploadFileList(uploadFileList.filter((f) => f.uid !== file.uid));
-      // message.success(`已删除文件: ${file.name}`);
 
       return true;
     } catch (error: Error | any) {

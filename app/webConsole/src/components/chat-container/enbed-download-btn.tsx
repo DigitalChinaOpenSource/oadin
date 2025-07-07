@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { Button, Tooltip } from 'antd';
 import uploadSvg from '@/components/icons/upload.svg';
 import { useDownLoad } from '@/hooks/useDownload';

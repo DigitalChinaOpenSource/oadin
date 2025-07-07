@@ -329,7 +329,6 @@ export function useChatStream() {
 
       // 连接关闭处理
       onclose: () => {
-        console.log('onclose');
         clearTimers();
         if (options.onclose) {
           options.onclose();

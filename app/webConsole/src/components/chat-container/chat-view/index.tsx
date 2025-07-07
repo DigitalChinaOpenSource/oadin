@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ChatInput, ChatMessageList, type MessageContentType, type ChatMessageItem, registerMessageContents } from '@res-utiles/ui-components';
+import { ChatInput, ChatMessageList, type MessageContentType, type ChatMessageItem } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -37,7 +37,7 @@ interface ChatMessageContent extends MessageContentType {
 }
 
 interface IChatViewProps {
-  isDownloadEmbed: boolean; // 是否下载词嵌入模型
+  isDownloadEmbed: boolean;
 }
 
 export default function ChatView(props: IChatViewProps) {
@@ -63,6 +63,7 @@ export default function ChatView(props: IChatViewProps) {
   };
 
   const handleSendMessage = async (messageString: string) => {
+    console.log('messageString===>', messageString);
     if (!messageString.trim() || isLoading || isUploading) return;
     const isEngineAvailable = await fetchCheckEngineStatus();
     if (!isEngineAvailable) {
@@ -303,10 +304,3 @@ const MarkdownContent = ({ dataSource }: { dataSource?: string }) => {
     </div>
   );
 };
-
-registerMessageContents({
-  // @ts-ignore
-  plain: MarkdownContent,
-  think: (props: any) => <DeepThinkChat dataSource={props.dataSource} />,
-  mcp: (props: any) => <McpToolChat dataSource={props.dataSource} />,
-});

@@ -85,8 +85,8 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1
       '@res-utiles/ui-components':
-        specifier: ^0.0.11
-        version: 0.0.11(@floating-ui/dom@1.7.1)(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.0.13
+        version: 0.0.13(@floating-ui/dom@1.7.2)(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -478,20 +478,20 @@ packages:
     resolution: {integrity: sha512-1+WqvgNMhmlAambTvT3KPtCl/Ibr68VldY2XY40SL1CE0ZXiakFR/cbTspaF5HsnpDMvcYYoJHfl4980NBjGag==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@floating-ui/core@1.7.1':
-    resolution: {integrity: sha512-azI0DrjMMfIug/ExbBaeDVJXcY0a7EPvPjb2xAJPa4HeimBX+Z18HK8QQR3jb6356SnDDdxx+hinMLcJEDdOjw==}
+  '@floating-ui/core@1.7.2':
+    resolution: {integrity: sha512-wNB5ooIKHQc+Kui96jE/n69rHFWAVoxn5CAzL1Xdd8FG03cgY3MLO+GF9U3W737fYDSgPWA6MReKhBQBop6Pcw==}
 
-  '@floating-ui/dom@1.7.1':
-    resolution: {integrity: sha512-cwsmW/zyw5ltYTUeeYJ60CnQuPqmGwuGVhG9w0PRaRKkAyi38BT5CKrpIbb+jtahSwUl04cWzSx9ZOIxeS6RsQ==}
+  '@floating-ui/dom@1.7.2':
+    resolution: {integrity: sha512-7cfaOQuCS27HD7DX+6ib2OrnW+b4ZBwDNnCcT0uTyidcmyWb03FnQqJybDBoCnpdxwBSfA94UAYlRCt7mV+TbA==}
 
-  '@floating-ui/react-dom@2.1.3':
-    resolution: {integrity: sha512-huMBfiU9UnQ2oBwIhgzyIiSpVgvlDstU8CX0AF+wS+KzmYMs0J2a3GwuFHV1Lz+jlrQGeC1fF+Nv0QoumyV0bA==}
+  '@floating-ui/react-dom@2.1.4':
+    resolution: {integrity: sha512-JbbpPhp38UmXDDAu60RJmbeme37Jbgsm7NrHGgzYYFKmblzRUh6Pa641dII6LsjwF4XlScDrde2UAzDo/b9KPw==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@floating-ui/utils@0.2.9':
-    resolution: {integrity: sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==}
+  '@floating-ui/utils@0.2.10':
+    resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -1009,8 +1009,8 @@ packages:
   '@remirror/core-constants@3.0.0':
     resolution: {integrity: sha512-42aWfPrimMfDKDi4YegyS7x+/0tlzaqwPQCULLanv3DMIlu96KTJR0fM5isWX2UViOqlGnX6YFgqWepcX+XMNg==}
 
-  '@res-utiles/ui-components@0.0.11':
-    resolution: {integrity: sha512-9RiKStgvVzgs1gA3ICTjHcFXwsvjRvy6+WOxVCcKcieV7K7MlbnO0aAId248a3ZjsNp4yq25Hc/W2gq3LlVqMQ==}
+  '@res-utiles/ui-components@0.0.13':
+    resolution: {integrity: sha512-4SgeJcbRRp/+xXda7zUxB9+f6e5Ys/FNyYWq7S990FJCCT/e2KLsOVixElfSBPUWoGUozyhhhkFGOk4ndhH3+A==}
     peerDependencies:
       react: ^19.1.0
       react-dom: ^19.1.0
@@ -3856,22 +3856,22 @@ snapshots:
       '@eslint/core': 0.15.1
       levn: 0.4.1
 
-  '@floating-ui/core@1.7.1':
+  '@floating-ui/core@1.7.2':
     dependencies:
-      '@floating-ui/utils': 0.2.9
+      '@floating-ui/utils': 0.2.10
 
-  '@floating-ui/dom@1.7.1':
+  '@floating-ui/dom@1.7.2':
     dependencies:
-      '@floating-ui/core': 1.7.1
-      '@floating-ui/utils': 0.2.9
+      '@floating-ui/core': 1.7.2
+      '@floating-ui/utils': 0.2.10
 
-  '@floating-ui/react-dom@2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@floating-ui/react-dom@2.1.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@floating-ui/dom': 1.7.1
+      '@floating-ui/dom': 1.7.2
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@floating-ui/utils@0.2.9': {}
+  '@floating-ui/utils@0.2.10': {}
 
   '@humanfs/core@0.19.1': {}
 
@@ -4106,7 +4106,7 @@ snapshots:
 
   '@radix-ui/react-popper@1.2.7(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@floating-ui/react-dom': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@floating-ui/react-dom': 2.1.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-arrow': 1.1.7(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-compose-refs': 1.1.2(@types/react@18.3.23)(react@18.3.1)
       '@radix-ui/react-context': 1.1.2(@types/react@18.3.23)(react@18.3.1)
@@ -4346,7 +4346,7 @@ snapshots:
 
   '@remirror/core-constants@3.0.0': {}
 
-  '@res-utiles/ui-components@0.0.11(@floating-ui/dom@1.7.1)(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@res-utiles/ui-components@0.0.13(@floating-ui/dom@1.7.2)(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/react-dropdown-menu': 2.1.15(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-select': 2.2.5(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -4360,7 +4360,7 @@ snapshots:
       '@tiptap/extension-text': 3.0.0-beta.8(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))
       '@tiptap/extensions': 3.0.0-beta.8(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)
       '@tiptap/pm': 3.0.0-beta.8
-      '@tiptap/react': 3.0.0-beta.8(@floating-ui/dom@1.7.1)(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tiptap/react': 3.0.0-beta.8(@floating-ui/dom@1.7.2)(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tiptap/starter-kit': 3.0.0-beta.8
       '@tiptap/suggestion': 3.0.0-beta.8(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)
       class-variance-authority: 0.7.1
@@ -4457,7 +4457,7 @@ snapshots:
 
   '@tiptap/extension-bubble-menu@3.0.0-beta.8(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)':
     dependencies:
-      '@floating-ui/dom': 1.7.1
+      '@floating-ui/dom': 1.7.2
       '@tiptap/core': 3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8)
       '@tiptap/pm': 3.0.0-beta.8
     optional: true
@@ -4483,9 +4483,9 @@ snapshots:
     dependencies:
       '@tiptap/extensions': 3.0.0-beta.8(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)
 
-  '@tiptap/extension-floating-menu@3.0.0-beta.8(@floating-ui/dom@1.7.1)(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)':
+  '@tiptap/extension-floating-menu@3.0.0-beta.8(@floating-ui/dom@1.7.2)(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)':
     dependencies:
-      '@floating-ui/dom': 1.7.1
+      '@floating-ui/dom': 1.7.2
       '@tiptap/core': 3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8)
       '@tiptap/pm': 3.0.0-beta.8
     optional: true
@@ -4585,7 +4585,7 @@ snapshots:
       prosemirror-transform: 1.10.4
       prosemirror-view: 1.40.0
 
-  '@tiptap/react@3.0.0-beta.8(@floating-ui/dom@1.7.1)(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tiptap/react@3.0.0-beta.8(@floating-ui/dom@1.7.2)(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tiptap/core': 3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8)
       '@tiptap/pm': 3.0.0-beta.8
@@ -4596,7 +4596,7 @@ snapshots:
       use-sync-external-store: 1.5.0(react@18.3.1)
     optionalDependencies:
       '@tiptap/extension-bubble-menu': 3.0.0-beta.8(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)
-      '@tiptap/extension-floating-menu': 3.0.0-beta.8(@floating-ui/dom@1.7.1)(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)
+      '@tiptap/extension-floating-menu': 3.0.0-beta.8(@floating-ui/dom@1.7.2)(@tiptap/core@3.0.0-beta.8(@tiptap/pm@3.0.0-beta.8))(@tiptap/pm@3.0.0-beta.8)
     transitivePeerDependencies:
       - '@floating-ui/dom'
 

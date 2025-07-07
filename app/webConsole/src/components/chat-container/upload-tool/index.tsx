@@ -178,7 +178,7 @@ export default function UploadTool({ maxFiles = 1, maxFileSize = 10 }: UploadToo
               alt="上传"
             />
           }
-          disabled={uploadFileList.some((file) => file.status === 'uploading')} // 如果有文件正在上传，禁用按钮
+          disabled={uploadFileList.some((file) => file.status === 'uploading')}
         />
       </Tooltip>
     </Upload>

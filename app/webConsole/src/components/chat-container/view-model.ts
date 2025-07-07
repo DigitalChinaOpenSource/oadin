@@ -7,7 +7,7 @@ import useChatStore from './store/useChatStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useUploadFileListStore from './store/useUploadFileListStore';
 import { createNewChat } from './utils';
-import { IPlaygroundSession, IChangeModelParams } from './types';
+import { IPlaygroundSession } from './types';
 import { message } from 'antd';
 import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage } from '@/utils/sessionParamUtils';
 import { IChatDetailItem } from './chat-history-drawer/types';
@@ -17,7 +17,6 @@ import embedDownloadEventBus from '@/utils/embedDownload';
 import { useChatStream } from './useChatStream';
 import { EMBEDMODELID } from '@/constants';
 
-/** 封装一些自定义hooks */
 function useInitialization() {
   const [initialized, setInitialized] = useState(false);
   const [isDownloadEmbed, setIsDownloadEmbed] = useState<boolean>(false);
@@ -45,7 +44,6 @@ export default function useViewModel() {
   const { setUploadFileList } = useUploadFileListStore();
   const [isUploadVisible, setIsUploadVisible] = useState(false);
 
-  // 使用自定义 hooks
   const { initialized, setInitialized, isDownloadEmbed, setIsDownloadEmbed } = useInitialization();
   const { prevSessionId, setPrevSessionId, currentSessionId } = useSessionManagement();
   const { selectedModel, setSelectedModel, prevModelId, setPrevModelId } = useModelManagement();
@@ -54,7 +52,6 @@ export default function useViewModel() {
   const isLoadingHistory = useRef(false);
   const isLoadingHistoryModel = useRef(false);
 
-  // 合并相关的请求函数
   const { run: fetchChooseModelNotify } = useRequest(
     async (params: { service_name: string; local_provider?: string; remote_provider?: string; hybrid_policy?: string }) => {
       if (!params?.service_name) return;
@@ -225,7 +222,6 @@ export default function useViewModel() {
     };
   }, []);
 
-  // 合并初始化和会话管理逻辑
   useEffect(() => {
     if (initialized) return;
 
@@ -241,7 +237,6 @@ export default function useViewModel() {
     setInitialized(true);
   }, [initialized, selectedModel, currentSessionId, fetchChatHistoryDetail, handleCreateNewChat, setPrevModelId, setPrevSessionId]);
 
-  // 处理会话 ID 和模型变化
   useEffect(() => {
     if (!initialized) return;
 

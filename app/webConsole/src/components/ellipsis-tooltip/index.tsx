@@ -55,9 +55,8 @@ const Content: FC<{
 
   useEffect(() => {
     if (!ref.current) return;
-    // checkOverflow(); // 初始渲染后主动检测一次
 
-    const ob = new ResizeObserver(() => checkOverflow(ref.current!)); // 创建ResizeObserver实例
+    const ob = new ResizeObserver(() => checkOverflow(ref.current!));
     ob.observe(ref.current);
     return () => {
       ob.disconnect();

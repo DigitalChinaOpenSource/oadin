@@ -104,7 +104,7 @@ export function convertMessageFormat(inputArray: InputMessage[]): OutputMessage[
       const hasError: boolean = item.toolCalls.some((toolCall) => !toolCall.status);
       const overallStatus: 'success' | 'error' = hasError ? 'error' : 'success';
 
-      // 创建 mcp 消息（放在前面）
+      // 创建 mcp 消息，放在前面
       results.push({
         id: item.id,
         role: item.role,
@@ -134,7 +134,7 @@ export function convertMessageFormat(inputArray: InputMessage[]): OutputMessage[
         const thinkContent: string = match[1].trim();
         const afterThink: string = content.substring(match.index! + match[0].length).trim();
 
-        // 添加 think 前的内容（如果存在）
+        // 添加 think 前的内容
         if (beforeThink) {
           plainMessage.contentList.push({
             id: generateUniqueId('content'),
@@ -153,7 +153,7 @@ export function convertMessageFormat(inputArray: InputMessage[]): OutputMessage[
           },
         } as ThinkContent);
 
-        // 添加 think 后的内容（如果存在）
+        // 添加 think 后的内容
         if (afterThink) {
           plainMessage.contentList.push({
             id: generateUniqueId('content'),
@@ -172,7 +172,7 @@ export function convertMessageFormat(inputArray: InputMessage[]): OutputMessage[
 
       results.push(plainMessage);
     } else {
-      // 没有 toolCalls 的情况，按原逻辑处理
+      // 没有 toolCalls
       const singleMessage: OutputMessage = {
         id: item.id,
         role: item.role,
@@ -204,7 +204,7 @@ export function convertMessageFormat(inputArray: InputMessage[]): OutputMessage[
           },
         } as ThinkContent);
 
-        // 添加 think 后的内容（如果存在）
+        // 添加 think 后的内容
         if (afterThink) {
           singleMessage.contentList.push({
             id: generateUniqueId('content'),

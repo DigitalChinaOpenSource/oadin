@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 export default function ByzeErrorTip() {
   // 奥丁服务状态
-  const { checkByzeStatus, fetchByzeServerStatus } = useByzeServerCheckStore();
+  const { checkByzeStatus } = useByzeServerCheckStore();
 
   // 使用 ref 记录上一次的状态
   const prevStatusRef = useRef(checkByzeStatus);

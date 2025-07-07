@@ -11,7 +11,6 @@ import useUploadFileStore from '../store/useUploadFileListStore';
 import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDrawerProps } from './types';
 import { IModelSquareParams } from '@/types';
 import { convertMessageFormat } from '../utils/historyMessageFormat';
-import { createNewChat } from '../utils';
 
 import dayjs from 'dayjs';
 import { getSessionIdFromUrl, setSessionIdToUrl } from '@/utils/sessionParamUtils';
