@@ -132,10 +132,12 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	if engineConfig.StartStatus == 0 {
 		return bcode.HttpError(bcode.ErrModelEngineIsBeingOperatedOn, "无法切换代理启用状态，当前ollama服务已加锁，请稍后再重试")
 	}
-	engineConfig.StartStatus = 0
-	defer func() {
-		engineConfig.StartStatus = 1
-	}()
+	OperateStatus := engine.GetOperateStatus()
+	if OperateStatus == 0 {
+		return bcode.ErrModelEngineIsBeingOperatedOn
+	}
+	engine.SetOperateStatus(0)
+	defer engine.SetOperateStatus(1)
 	err := engine.HealthCheck()
 	if err != nil {
 		slog.Error("无法切换代理启用状态，ollama服务已关闭", "error", err)
