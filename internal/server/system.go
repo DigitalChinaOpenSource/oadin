@@ -126,20 +126,25 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 }
 
 func (s *SystemImpl) RestartOllama(ctx context.Context) error {
-	// 探查ollama服务是否在运行模型
 	engine := provider.GetModelEngine("ollama")
+
+	// 检查ollama服务是否被占用加锁
 	OperateStatus := engine.GetOperateStatus()
 	if OperateStatus == 0 {
-		return bcode.ErrModelEngineIsBeingOperatedOn
+		return bcode.HttpError(bcode.ErrModelEngineIsBeingOperatedOn, "无法切换代理启用状态，当前ollama服务已加锁，请稍后再重试")
 	}
 	engine.SetOperateStatus(0)
+	// 操作结束进行解锁
 	defer engine.SetOperateStatus(1)
+
+	// 检查ollama服务是否运行
 	err := engine.HealthCheck()
 	if err != nil {
 		slog.Error("无法切换代理启用状态，ollama服务已关闭", "error", err)
 		return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务已关闭")
 	}
 
+	// 检查是否有正在运行的模型
 	runModels, err := engine.GetRunModels(ctx)
 	if err != nil {
 		slog.Error("获取正在运行的模型失败", "error", err)
@@ -147,6 +152,10 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	}
 	if len(runModels.Models) != 0 {
 		slog.Error("无法切换代理启用状态，当前有模型正在运行，请先停止模型")
+		// 打印正在运行的模型信息
+		for _, model := range runModels.Models {
+			slog.Error("正在运行的模型", "model", model.Name)
+		}
 		return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，当前有模型正在运行，请先停止模型")
 	} else {
 		err = engine.StopEngine()
