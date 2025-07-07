@@ -4,7 +4,7 @@ import MainLayout from '../components/main-layout';
 import McpSquareTab from '@/components/mcp-manage/mcp-square-tab';
 import MyMcpTab from '@/components/mcp-manage/my-mcp-tab';
 import McpDetail from '../components/mcp-manage/mcp-detail';
-import ModelChat from '../pages/model-chat'; // 新增对话页面
+import ModelChat from '../pages/model-chat';
 import ServiceProviderManage from '@/components/service-provider-tab';
 import ModelSetting from '@/components/settings/model-setting';
 import AgentSetting from '@/components/settings/agent-setting';

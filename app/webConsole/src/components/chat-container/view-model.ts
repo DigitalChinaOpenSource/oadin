@@ -13,7 +13,7 @@ import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage } from '
 import { IChatDetailItem } from './chat-history-drawer/types';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
-import embedDownloadEventBus from '@/utils/embedDownload';
+import embedDownloadEventBus from '@/utils/embedDownloadEventBus';
 import { useChatStream } from './useChatStream';
 import { EMBEDMODELID } from '@/constants';
 

@@ -3,7 +3,7 @@ import { message } from 'antd';
 
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import useModelListStore from '@/store/useModelListStore';
-import embedDownloadEventBus from '@/utils/embedDownload';
+import embedDownloadEventBus from '@/utils/embedDownloadEventBus';
 import { DOWNLOAD_STATUS } from '@/constants';
 
 // 监听浏览器刷新 并执行某些操作

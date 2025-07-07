@@ -21,17 +21,12 @@ export default function McpManage() {
     },
   ];
 
-  // const onChange = (key: string) => {
-  //   // console.log(key);
-  // };
-
   return (
     <Tabs
       className={styles.mcpManage}
       defaultActiveKey={mcpFrom ?? 'mcpList'}
       items={mcpTabItems}
       tabBarStyle={{ borderBottom: 'none' }}
-      // onChange={onChange}
     />
   );
 }
