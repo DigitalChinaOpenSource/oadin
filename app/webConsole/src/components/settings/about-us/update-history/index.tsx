@@ -1,5 +1,5 @@
 import { Drawer } from 'antd';
-import { useUpdateHistory } from '@/components/settings/about-us/update-history/view.module.ts';
+import { useUpdateHistory } from './view-model';
 interface IUpdateHistoryProps {
   open: boolean;
   onClose: () => void;

@@ -1,5 +1,5 @@
 import styles from './index.module.scss';
-import { useRecommendedClient } from '@/components/mcp-manage/mcp-detail/recommended-client/view.module.ts';
+import { useRecommendedClient } from '@/components/mcp-manage/mcp-detail/recommended-client/view-model';
 import { CardItemProps } from '@/components/mcp-manage/mcp-detail/recommended-client/type.ts';
 
 const CardItem = (props: CardItemProps) => {

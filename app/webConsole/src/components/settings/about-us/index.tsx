@@ -7,8 +7,7 @@ import { useEffect, useState } from 'react';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore.ts';
 import CopyrightNotice from '@/components/settings/about-us/copyright-notice';
 import Feedback from '@/components/settings/about-us/feedback';
-import { useAboutUsView } from '@/components/settings/about-us/view.module.ts';
-import FetchLoading from '@/components/fetch-loading';
+import { useAboutUsView } from '@/components/settings/about-us/view-model';
 export default function AboutUs() {
   // 更新日志
   const [openHistory, setOpenHistory] = useState(false);
