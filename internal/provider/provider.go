@@ -10,6 +10,8 @@ import (
 
 // ModelServiceProvider local model engine
 type ModelServiceProvider interface {
+	GetOperateStatus() int
+	SetOperateStatus(status int)
 	GetDefaultClient() *client.Client
 	InstallEngine() error
 	StartEngine() error
@@ -24,6 +26,7 @@ type ModelServiceProvider interface {
 	GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error)
 	CopyModel(ctx context.Context, req *types.CopyModelRequest) error
 	GetRunModels(ctx context.Context) (*types.ListResponse, error)
+	UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error
 
 	Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error)
 	ChatStream(ctx context.Context, req *types.ChatRequest) (chan *types.ChatResponse, chan error)
