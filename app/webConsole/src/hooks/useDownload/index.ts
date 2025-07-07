@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { abortDownload, modelDownloadStream } from './download';
-import { updateDownloadStatus, usePageRefreshListener } from './util';
+import { updateDownloadStatus, usePageRefreshListener, checkIsMaxDownloadCount } from './util';
 import { DOWNLOAD_STATUS, LOCAL_STORAGE_KEYS } from '@/constants';
 import { IModelDataItem } from '@/types';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
@@ -32,14 +32,14 @@ export const useDownLoad = () => {
     (params: IModelDataItem) => {
       const { id, source, service_provider_name, service_name, name } = params;
 
-      // TODO: BUG单上要求不限制下载数量（是否还需在确认）
       // 最大下载数量
-      // const isMaxNum = checkIsMaxDownloadCount({
-      //   downList: downListRef.current,
-      //   id,
-      // } as any);
-      // // 检查是否超过最大下载数量
-      // if (isMaxNum) return;
+      const isMaxNum = checkIsMaxDownloadCount({
+        modelList: useModelListStore.getState().myModelsList,
+        downList: downListRef.current,
+        id,
+      } as any);
+      // 检查是否超过最大下载数量
+      if (isMaxNum) return;
       // 兼容处理第一条数据id===0的场景
       if (id === undefined || id === null) return;
 
