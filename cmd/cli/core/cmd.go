@@ -1449,8 +1449,8 @@ func ListenModelEngineHealth() {
 		}
 		for _, engineName := range engineList {
 			if engineName == types.FlavorOllama {
-				engineConfig := OllamaEngine.GetConfig()
-				if engineConfig.StartStatus != 1 {
+				operateStatus := OllamaEngine.GetOperateStatus()
+				if operateStatus == 0 {
 					continue
 				}
 				err := OllamaEngine.HealthCheck()
