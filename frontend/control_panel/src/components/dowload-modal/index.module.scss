@@ -1,0 +1,46 @@
+.downloadItem {
+    padding: 16px;
+    background-color: #F7F7F7;
+
+    .avatar {
+        width: 24px;
+        height: 24px;
+        padding: 2px;
+        border: 1px solid var(--border-color);
+        object-fit: contain;
+        border-radius: 2px;
+        background-color: white;
+    }
+}
+
+.progressBar {
+    width: 100%;
+    height: 4px;
+    background-color: #fff;
+    border-radius: 99px;
+    overflow: hidden;
+    position: relative;
+
+    .progress {
+        height: 100%;
+        background-color: var(--color-primary);
+        width: 0;
+        /* This will be dynamically set */
+        transition: width 0.3s ease-in-out;
+    }
+}
+
+.loading {
+    animation: loading 1s linear infinite;
+}
+
+@keyframes loading {
+    0% {
+        transform: rotate(0deg);
+        transform-origin: center;
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

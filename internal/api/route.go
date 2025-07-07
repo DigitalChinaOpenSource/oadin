@@ -1,6 +1,18 @@
-// Apache v2 license
-// Copyright (C) 2024 Intel Corporation
-// SPDX-License-Identifier: Apache-2.0
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
 
 package api
 
@@ -15,6 +27,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"intel.com/aog/config"
+	"intel.com/aog/internal/constants"
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/provider"
 	"intel.com/aog/internal/types"
@@ -31,7 +44,7 @@ func InjectRouter(e *AOGCoreServer) {
 	e.Router.Handle(http.MethodGet, "/update/status", updateAvailableHandler)
 	e.Router.Handle(http.MethodPost, "/update", updateHandler)
 
-	r := e.Router.Group("/aog/" + version.AOGVersion)
+	r := e.Router.Group("/" + constants.AppName + "/" + version.AOGVersion)
 
 	// service import / export
 	r.Handle(http.MethodPost, "/service/export", e.ExportService)
@@ -55,6 +68,12 @@ func InjectRouter(e *AOGCoreServer) {
 	r.Handle(http.MethodGet, "/model/recommend", e.GetRecommendModels)
 	r.Handle(http.MethodGet, "/model/support", e.GetModelList)
 
+	r.Handle(http.MethodGet, "/control_panel/dashboard", e.GetDashBoardHandler)
+	r.Handle(http.MethodGet, "/control_panel/modellist", e.GetSupportModelListCombine)
+	r.Handle(http.MethodPost, "/control_panel/set_default", e.SetDefaultModelHandler)
+	r.Handle(http.MethodGet, "/control_panel/about", e.GetProductInfoHandler)
+	r.Handle(http.MethodPost, "/control_panel/modelkey", e.GetModelkeyHandler)
+
 	slog.Info("Gateway started", "host", config.GlobalAOGEnvironment.ApiHost)
 }
 
@@ -67,7 +86,7 @@ func healthHeader(c *gin.Context) {
 }
 
 func engineHealthHandler(c *gin.Context) {
-	var data = make(map[string]string)
+	data := make(map[string]string)
 	for _, modelEngineName := range types.SupportModelEngine {
 		engine := provider.GetModelEngine(modelEngineName)
 		err := engine.HealthCheck()
@@ -86,7 +105,7 @@ func getVersion(c *gin.Context) {
 
 func getEngineVersion(c *gin.Context) {
 	ctx := c.Request.Context()
-	var data = make(map[string]string)
+	data := make(map[string]string)
 	for _, modelEngineName := range types.SupportModelEngine {
 		engine := provider.GetModelEngine(modelEngineName)
 		var respData types.EngineVersionResponse
@@ -109,7 +128,6 @@ func updateAvailableHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, map[string]string{"message": ""})
 	}
-
 }
 
 func updateHandler(c *gin.Context) {

@@ -1,0 +1,57 @@
+.aboutWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.listTitle {
+    line-height: 28px;
+    font-size: 20px;
+    padding: 26px 24px;
+    color: white;
+    background-color: #183544;
+    margin: 0 -24px;
+    position: relative;
+
+    img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+
+    }
+}
+
+.commonTitle {
+    font-size: 20px;
+    line-height: 28px;
+
+}
+
+.tipContainer {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background-color: #F3F3F3;
+    width: 100%;
+}
+
+.serviceItem {
+    display: flex;
+    gap: 24px;
+    padding: 12px 24px;
+    background-color: #F3F3F3;
+    color: var(--color-primary);
+    align-items: center;
+    cursor: pointer;
+
+    &:hover {
+        color: #004A86;
+    }
+
+    img {
+        width: 32px;
+        height: 32px;
+    }
+}

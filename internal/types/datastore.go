@@ -1,7 +1,31 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package types
 
 import (
 	"time"
+)
+
+const (
+	// Database table names
+	TableService         = "aog_service"
+	TableServiceProvider = "aog_service_provider"
+	TableModel           = "aog_model"
+	TableVersionUpdate   = "aog_version_update_record"
 )
 
 // Service  table structure
@@ -11,6 +35,8 @@ type Service struct {
 	RemoteProvider string    `gorm:"column:remote_provider;not null;default:''" json:"remote_provider"`
 	LocalProvider  string    `gorm:"column:local_provider;not null;default:''" json:"local_provider"`
 	Status         int       `gorm:"column:status;not null;default:1" json:"status"`
+	CanInstall     int       `gorm:"column:can_install;not null;default:0" json:"can_install"`
+	Avatar         string    `gorm:"column:avatar;not null;default:''" json:"avatar"`
 	CreatedAt      time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt      time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
@@ -28,7 +54,7 @@ func (t *Service) PrimaryKey() string {
 }
 
 func (t *Service) TableName() string {
-	return "aog_service"
+	return TableService
 }
 
 func (t *Service) Index() map[string]interface{} {
@@ -73,7 +99,7 @@ func (t *ServiceProvider) PrimaryKey() string {
 }
 
 func (t *ServiceProvider) TableName() string {
-	return "aog_service_provider"
+	return TableServiceProvider
 }
 
 func (t *ServiceProvider) Index() map[string]interface{} {
@@ -98,12 +124,15 @@ func (t *ServiceProvider) Index() map[string]interface{} {
 
 // Model  table structure
 type Model struct {
-	ID           int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`
-	ModelName    string    `gorm:"column:model_name;not null" json:"model_name"`
-	ProviderName string    `gorm:"column:provider_name" json:"provider_name"`
-	Status       string    `gorm:"column:status;not null" json:"status"`
-	CreatedAt    time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt    time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
+	ID            int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`
+	ModelName     string    `gorm:"column:model_name;not null" json:"model_name"`
+	ProviderName  string    `gorm:"column:provider_name" json:"provider_name"`
+	Status        string    `gorm:"column:status;not null" json:"status"`
+	ServiceName   string    `gorm:"column:service_name" json:"service_name"`
+	ServiceSource string    `gorm:"column:service_source" json:"service_source"`
+	IsDefault     bool      `gorm:"column:is_default" json:"is_default"`
+	CreatedAt     time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt     time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
 func (t *Model) SetCreateTime(time time.Time) {
@@ -119,7 +148,7 @@ func (t *Model) PrimaryKey() string {
 }
 
 func (t *Model) TableName() string {
-	return "aog_model"
+	return TableModel
 }
 
 func (t *Model) Index() map[string]interface{} {
@@ -130,6 +159,10 @@ func (t *Model) Index() map[string]interface{} {
 
 	if t.ProviderName != "" {
 		index["provider_name"] = t.ProviderName
+	}
+
+	if t.ServiceName != "" {
+		index["service_name"] = t.ServiceName
 	}
 
 	return index
@@ -158,7 +191,7 @@ func (t *VersionUpdateRecord) PrimaryKey() string {
 }
 
 func (t *VersionUpdateRecord) TableName() string {
-	return "aog_version_update_record"
+	return TableVersionUpdate
 }
 
 func (t *VersionUpdateRecord) Index() map[string]interface{} {

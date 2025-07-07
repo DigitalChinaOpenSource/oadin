@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package server
 
 import (
@@ -44,19 +60,18 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 	sp := &types.ServiceProvider{}
 	sp.ProviderName = request.ProviderName
 
-	isExist, err := ds.IsExist(ctx, sp)
-	if err != nil {
-		return nil, err
-	}
-	if isExist {
-		return nil, bcode.ErrAIGCServiceProviderIsExist
-	}
+	// isExist, err := ds.IsExist(ctx, sp)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if isExist {
+	// 	return nil, bcode.ErrAIGCServiceProviderIsExist
+	// }
 	providerServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, request.ServiceName)
 
 	sp.ServiceName = request.ServiceName
 	sp.ServiceSource = request.ServiceSource
 	sp.Flavor = request.ApiFlavor
-	sp.AuthType = request.AuthType
 	sp.AuthType = request.AuthType
 	if request.AuthType != types.AuthTypeNone && request.AuthKey == "" {
 		return nil, bcode.ErrProviderAuthInfoLost
@@ -127,7 +142,7 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 					Stream: &stream,
 				}
 				m := new(types.Model)
-				m.ModelName = strings.ToLower(mName)
+				m.ModelName = mName
 				m.ProviderName = request.ProviderName
 				err = s.Ds.Get(ctx, m)
 				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -135,7 +150,7 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 					return nil, bcode.ErrServer
 				} else if errors.Is(err, datastore.ErrEntityInvalid) {
 					m.Status = "downloading"
-					err = s.Ds.Add(ctx, m)
+					err = s.Ds.Put(ctx, m)
 					if err != nil {
 						return nil, bcode.ErrAddModel
 					}
@@ -169,7 +184,7 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 				UpdatedAt:    time.Now(),
 			}
 
-			err = ds.Add(ctx, model)
+			err := ds.Put(ctx, model)
 			if err != nil {
 				return nil, err
 			}
@@ -177,7 +192,7 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 		sp.Status = 1
 	}
 
-	err = ds.Add(ctx, sp)
+	err := ds.Put(ctx, sp)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +272,7 @@ func (s *ServiceProviderImpl) DeleteServiceProvider(ctx context.Context, request
 		for _, m := range list {
 			dsModel := m.(*types.Model)
 			tmpModel := &types.Model{
-				ModelName: strings.ToLower(dsModel.ModelName),
+				ModelName: dsModel.ModelName,
 			}
 			count, err := ds.Count(ctx, tmpModel, &datastore.FilterOptions{})
 			if err != nil || count > 1 {
@@ -359,9 +374,9 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 	sp.UpdatedAt = time.Now()
 
 	for _, modelName := range request.Models {
-		model := types.Model{ProviderName: sp.ProviderName, ModelName: modelName}
-		if request.ServiceSource == types.ServiceSourceLocal {
-			model = types.Model{ProviderName: sp.ProviderName, ModelName: strings.ToLower(modelName)}
+		model := types.Model{ProviderName: sp.ProviderName, ModelName: modelName, ServiceSource: sp.ServiceSource, ServiceName: sp.ServiceName}
+		if request.ServiceSource == types.ServiceSourceLocal && request.ProviderName == types.FlavorOllama {
+			model = types.Model{ProviderName: sp.ProviderName, ModelName: modelName}
 		}
 
 		err = ds.Get(ctx, &model)
@@ -370,14 +385,48 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 		}
 		server := ChooseCheckServer(*sp, model.ModelName)
 		if server == nil {
+			model.Status = "failed"
+			err = ds.Put(ctx, sp)
+			if err != nil {
+				return nil, err
+			}
+			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+				return nil, err
+			} else if errors.Is(err, datastore.ErrEntityInvalid) {
+				err = ds.Add(ctx, &model)
+				if err != nil {
+					return nil, err
+				}
+			}
+			err = ds.Put(ctx, &model)
+			if err != nil {
+				return nil, err
+			}
 			return nil, bcode.ErrProviderIsUnavailable
 		}
 		checkRes := server.CheckServer()
 		if !checkRes {
+			model.Status = "failed"
+			err = ds.Put(ctx, sp)
+			if err != nil {
+				return nil, err
+			}
+			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+				return nil, err
+			} else if errors.Is(err, datastore.ErrEntityInvalid) {
+				err = ds.Add(ctx, &model)
+				if err != nil {
+					return nil, err
+				}
+			}
+			err = ds.Put(ctx, &model)
+			if err != nil {
+				return nil, err
+			}
 			return nil, bcode.ErrProviderIsUnavailable
 		}
-		model.Status = "downloaded"
 		err = ds.Get(ctx, &model)
+		model.Status = "downloaded"
 		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 			return nil, err
 		} else if errors.Is(err, datastore.ErrEntityInvalid) {
@@ -575,12 +624,14 @@ func (e *CheckEmbeddingServer) CheckServer() bool {
 	type RequestBody struct {
 		Model          string   `json:"model"`
 		Input          []string `json:"input"`
+		Inputs         []string `json:"inputs"`
 		Dimensions     int      `json:"dimensions"`
 		EncodingFormat string   `json:"encoding_format"`
 	}
 	requestBody := RequestBody{
 		Model:          e.ModelName,
 		Input:          []string{"test text"},
+		Inputs:         []string{"test text"},
 		Dimensions:     1024,
 		EncodingFormat: "float",
 	}

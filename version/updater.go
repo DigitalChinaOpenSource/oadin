@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package version
 
 import (
@@ -6,7 +22,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	"io"
 	"log/slog"
 	"net/http"
@@ -19,19 +34,28 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
+	"intel.com/aog/internal/constants"
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
 )
 
+const (
+	DefaultAppSecret           = "39ee3ba7b2003ee239d700b53da8dfa4c29f09ee5a460b9641a8bc9d89eac99a"
+	DefaultUpdateCheckURLBase  = "https://api-aipc-test.dcclouds.com"
+	DefaultUpdateCheckInterval = 60 * 60 * time.Second
+)
+
 var (
 	// awawit provide
-	UpdateCheckUrlBase = "https://api-aipc-test.dcclouds.com"
-	//UpdateCheckUrlBase  = "http://10.3.74.123:3000"
-	UpdateCheckInterval = 60 * 60 * time.Second
+	UpdateCheckUrlBase = DefaultUpdateCheckURLBase
+	// UpdateCheckUrlBase  = "http://10.3.74.123:3000"
+	UpdateCheckInterval = DefaultUpdateCheckInterval
 
-	AppKey    = "aog"
-	AppSecret = "39ee3ba7b2003ee239d700b53da8dfa4c29f09ee5a460b9641a8bc9d89eac99a"
+	AppKey    = constants.AppName
+	AppSecret = DefaultAppSecret
 )
 
 type UpdateRequest struct {
@@ -101,7 +125,6 @@ func UpdaterAuth() (UpdateAuthResponse, error) {
 	res := UpdateAuthResponse{}
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequest("POST", authUrl, bytes.NewBuffer(reqData))
-
 	if err != nil {
 		return UpdateAuthResponse{}, err
 	}
@@ -128,7 +151,6 @@ func UpdaterAuth() (UpdateAuthResponse, error) {
 		return UpdateAuthResponse{}, err
 	}
 	return res, nil
-
 }
 
 func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
@@ -150,7 +172,6 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 	}
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), bytes.NewBuffer(reqData))
-
 	if err != nil {
 		slog.Warn(fmt.Sprintf("failed to check for update: %s", err))
 		return false, updateResp

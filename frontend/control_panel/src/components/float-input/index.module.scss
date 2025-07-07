@@ -1,0 +1,78 @@
+.floatInputWrap {
+    position: relative;
+    width: 300px;
+    height: 42px;
+    border: 1px solid #808080;
+
+
+
+    :global(.ant-input) {
+        border: none;
+        height: 38px !important;
+        padding: 12px 16px 0 16px !important;
+    }
+
+    :global(.ant-input:focus) {
+        box-shadow: none;
+
+
+    }
+
+    :global(.ant-input-affix-wrapper) {
+        padding: 0;
+        padding-right: 8px;
+        border: none;
+
+    }
+
+    // :global(.ant-input-affix-wrapper) {
+    //     border: 1px solid transparent !important;
+
+    // }
+
+    // :global(.ant-input-affix-wrapper-focused) {
+    //     border: none !important;
+
+    // }
+}
+
+.floatLabel {
+    font-size: 14px;
+    color: #aaa;
+    margin-bottom: 2px;
+    padding-left: 4px;
+    line-height: 1.2;
+    background: transparent;
+    pointer-events: none;
+}
+
+.floatingLabel {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    pointer-events: none;
+    background: transparent;
+    padding: 0 2px;
+    transition: all 0.2s cubic-bezier(.4, 0, .2, 1);
+    font-size: 14px;
+    z-index: 2;
+}
+
+.floating {
+    top: 2px;
+    left: 16px;
+    font-size: 12px;
+
+    background: transparent;
+    transform: none;
+}
+
+// 兼容 antd Input 的 padding
+:global(.ant-input) {
+    background: transparent;
+    z-index: 1;
+    height: 40px;
+    font-size: 16px;
+}

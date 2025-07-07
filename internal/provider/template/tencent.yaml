@@ -2,6 +2,9 @@ version: "0.1"
 name: tencent # the name should be aligned with file name
 services:
   models:
+    task_type: "model-list"
+    protocol: "HTTP"
+    expose_protocol: "HTTP"
     url: "https://api.hunyuan.cloud.tencent.com/v1/models"
     endpoints: [ "GET /v1/models" ]  # request to this will use this flavor
     extra_url: ""
@@ -35,6 +38,9 @@ services:
             }
 
   chat: # service name defined by aog
+    task_type: "text-generation"
+    protocol: "HTTP"
+    expose_protocol: "HTTP"
     url: "https://api.hunyuan.cloud.tencent.com/v1/chat/completions"
     endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
     extra_url: ""
@@ -156,6 +162,9 @@ services:
             }
 
   embed:
+    task_type: "embedding"
+    protocol: "HTTP"
+    expose_protocol: "HTTP"
     url: "https://api.hunyuan.cloud.tencent.com/v1/embeddings"
     endpoints: [ "POST /v1/embeddings" ] # request to this will use this flavor
     extra_url: ""
@@ -216,6 +225,9 @@ services:
                  "data": data
             }
   text-to-image:
+    task_type: "text-to-image"
+    protocol: "HTTP"
+    expose_protocol: "HTTP"
     url: "https://hunyuan.tencentcloudapi.com/"
     endpoints: [ "POST /v1/text-to-image" ] # request to this will use this flavor
     extra_url: ""

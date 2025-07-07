@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package engine
 
 import (
@@ -11,12 +27,43 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"time"
 
 	"intel.com/aog/internal/client"
+	"intel.com/aog/internal/constants"
 	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
+)
+
+const (
+	// Default configuration
+	DefaultPort = "16677"
+	DefaultHost = constants.DefaultHost + ":" + DefaultPort
+
+	// ipex-llm-ollama related
+	IpexLlamaDir    = "ipex-llm-ollama"
+	OllamaBatchFile = "ollama-serve.bat"
+
+	// Windows download URLs
+	WindowsAllGPUURL   = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-all.zip"
+	WindowsNvidiaURL   = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64.zip"
+	WindowsAMDURL      = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm.zip"
+	WindowsIntelArcURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ipex-llm-ollama.zip"
+	WindowsBaseURL     = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-base.zip"
+
+	// Linux download URLs
+	LinuxURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/linux/OllamaSetup.exe"
+
+	// macOS download URLs
+	MacOSIntelURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/macos/Ollama-darwin.zip"
+
+	// Archive commands
+	TarCommand     = "tar"
+	TarExtractFlag = "-xf"
+	TarDestFlag    = "-C"
+	UnzipCommand   = "unzip"
+	UnzipDestFlag  = "-d"
+	MoveCommand    = "mv"
 )
 
 type OllamaProvider struct {
@@ -54,15 +101,15 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 
 func (o *OllamaProvider) GetDefaultClient() *client.Client {
 	// default host
-	host := "127.0.0.1:16677"
+	host := DefaultHost
 	if o.EngineConfig.Host != "" {
 		host = o.EngineConfig.Host
 	}
 
 	// default scheme
-	scheme := "http"
-	if o.EngineConfig.Scheme == "https" {
-		scheme = "https"
+	scheme := types.ProtocolHTTP
+	if o.EngineConfig.Scheme == types.ProtocolHTTPS {
+		scheme = types.ProtocolHTTPS
 	}
 
 	return client.NewClient(&url.URL{
@@ -76,13 +123,9 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 	execFile := "ollama"
 	switch runtime.GOOS {
 	case "windows":
-		if utils.IpexOllamaSupportGPUStatus() {
-			logger.EngineLogger.Info("[Ollama] start ipex-llm-ollama...")
-			execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
-			logger.EngineLogger.Info("[Ollama] exec file path: " + execFile)
-		} else {
-			execFile = "ollama.exe"
-		}
+		logger.EngineLogger.Info("[Ollama] start ipex-llm-ollama...")
+		execFile = o.EngineConfig.ExecPath + "/" + o.EngineConfig.ExecFile
+		logger.EngineLogger.Info("[Ollama] exec file path: " + execFile)
 	case "darwin":
 		execFile = "/Applications/Ollama.app/Contents/Resources/ollama"
 	case "linux":
@@ -117,7 +160,7 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 		}()
 	} else {
 		if utils.IpexOllamaSupportGPUStatus() {
-			cmd := exec.Command(o.EngineConfig.ExecPath + "/ollama-serve.bat")
+			cmd := exec.Command(o.EngineConfig.ExecPath + "/" + OllamaBatchFile)
 			err := cmd.Start()
 			if err != nil {
 				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
@@ -194,51 +237,57 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			return nil
 		}
 	}
+	dataDir, err := utils.GetAOGDataDir()
+	if err != nil {
+		slog.Error("Get Byze data dir failed", "error", err)
+		return nil
+	}
 
 	execFile := ""
 	execPath := ""
 	downloadUrl := ""
-	enginePath := ""
+	enginePath := fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 	switch runtime.GOOS {
 	case "windows":
-		if utils.IpexOllamaSupportGPUStatus() {
+		execFile = "ollama.exe"
+		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+
+		switch utils.DetectGpuModel() {
+		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
+			downloadUrl = WindowsAllGPUURL
+		case types.GPUTypeNvidia:
+			downloadUrl = WindowsNvidiaURL
+		case types.GPUTypeAmd:
+			downloadUrl = WindowsAMDURL
+		case types.GPUTypeIntelArc:
 			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
-			execFile = "ollama.exe"
-			downloadUrl = "http://120.232.136.73:31619/aogdev/ollama-intel-2.3.0b20250429-win.zip"
-			enginePath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
-		} else {
-			execFile = "ollama.exe"
-			execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-			downloadUrl = "http://120.232.136.73:31619/aogdev/OllamaSetup.exe"
-			enginePath = fmt.Sprintf("%s/%s", userDir, "ollama")
+			downloadUrl = WindowsIntelArcURL
+		default:
+			downloadUrl = WindowsBaseURL
 		}
+
 	case "linux":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-		downloadUrl = "http://120.232.136.73:31619/aogdev/OllamaSetup.exe"
+		downloadUrl = LinuxURL
 	case "darwin":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", "ollama")
-		if runtime.GOARCH == "amd64" {
-			downloadUrl = "http://120.232.136.73:31619/aogdev/Ollama-darwin.zip"
-		} else {
-			downloadUrl = "http://120.232.136.73:31619/aogdev/Ollama-arm64.zip"
-		}
+		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources")
+		downloadUrl = MacOSIntelURL
 	default:
-		logger.EngineLogger.Error("[Ollama] unsupported operating system: " + runtime.GOOS)
 		return nil
 	}
 
 	return &types.EngineRecommendConfig{
-		Host:           "127.0.0.1:16677",
-		Origin:         "127.0.0.1",
-		Scheme:         "http",
-		RecommendModel: "deepseek-r1:7b",
+		Host:           DefaultHost,
+		Origin:         constants.DefaultHost,
+		Scheme:         types.ProtocolHTTP,
+		EnginePath:     enginePath,
+		RecommendModel: constants.RecommendModel,
 		DownloadUrl:    downloadUrl,
 		DownloadPath:   downloadPath,
-		EnginePath:     enginePath,
-		ExecPath:       execPath,
 		ExecFile:       execFile,
+		ExecPath:       execPath,
 	}
 }
 
@@ -282,21 +331,17 @@ func (o *OllamaProvider) InstallEngine() error {
 		}
 		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
 		if _, err = os.Stat(appPath); os.IsNotExist(err) {
-			unzipCmd := exec.Command("unzip", file, "-d", o.EngineConfig.DownloadPath)
+			unzipCmd := exec.Command(UnzipCommand, file, UnzipDestFlag, o.EngineConfig.DownloadPath)
 			if err := unzipCmd.Run(); err != nil {
 				return fmt.Errorf("failed to unzip file: %v", err)
 			}
 			appPath = filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
 		}
 
-		//cmd := exec.Command("open", appPath)
-		//if err := cmd.Run(); err != nil {
-		//	return fmt.Errorf("failed to open ollama installer: %v", err)
-		//}
 		// move it to Applications
 		applicationPath := filepath.Join("/Applications/", "Ollama.app")
 		if _, err = os.Stat(applicationPath); os.IsNotExist(err) {
-			mvCmd := exec.Command("mv", appPath, "/Applications/")
+			mvCmd := exec.Command(MoveCommand, appPath, "/Applications/")
 			if err := mvCmd.Run(); err != nil {
 				return fmt.Errorf("failed to move ollama to Applications: %v", err)
 			}
@@ -310,32 +355,28 @@ func (o *OllamaProvider) InstallEngine() error {
 				slog.Error("Get user home dir failed: ", err.Error())
 				return err
 			}
-			ipexPath := fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			ipexPath := fmt.Sprintf("%s/%s", userDir)
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
-					unzipCmd := exec.Command("tar", "-xf", file, "-C", ipexPath)
+					unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
 					if err := unzipCmd.Run(); err != nil {
 						return fmt.Errorf("failed to unzip file: %v", err)
 					}
 				}
 			}
 
-		} else { // Handle other operating systems
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-			defer cancel()
-			cmd := exec.CommandContext(ctx, file)
-			_, err := cmd.CombinedOutput()
-			if err != nil {
-				// 如果是超时错误
-				if ctx.Err() == context.DeadlineExceeded {
-					fmt.Println("cmd execute timeout")
-					return err
+		} else if runtime.GOOS == "windows" {
+			ipexPath := o.EngineConfig.ExecPath
+			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
+				os.MkdirAll(ipexPath, 0o755)
+				unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
+				if err := unzipCmd.Run(); err != nil {
+					return fmt.Errorf("failed to unzip file: %v", err)
 				}
-				fmt.Printf("cmd execute error: %v\n", err)
-				return err
 			}
-			return nil
+		} else {
+			return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 		}
 	}
 	slog.Info("[Install Engine] model engine install completed")
@@ -360,6 +401,8 @@ func (o *OllamaProvider) InitEnv() error {
 func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequest, fn types.PullProgressFunc) (*types.ProgressResponse, error) {
 	logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name)
 
+	o.ListModels(ctx)
+
 	c := o.GetDefaultClient()
 	ctx, cancel := context.WithCancel(ctx)
 	modelArray := append(client.ModelClientMap[req.Model], cancel)
@@ -382,7 +425,10 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 	ctx, cancel := context.WithCancel(ctx)
 	modelArray := append(client.ModelClientMap[req.Model], cancel)
 	client.ModelClientMap[req.Model] = modelArray
-	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req)
+	reqHeader := make(map[string]string)
+	reqHeader["Content-Type"] = "application/json"
+	reqHeader["Accept"] = "application/json"
+	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req, reqHeader)
 	logger.EngineLogger.Info("[Ollama] Pull model success: " + req.Name + " , mode: stream")
 
 	return dataCh, errCh

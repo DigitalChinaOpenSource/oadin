@@ -2,6 +2,9 @@ version: "0.1"
 name: ollama # the name should be aligned with file name
 services:
     models:
+        task_type: "model-list"
+        protocol: "HTTP"
+        expose_protocol: "HTTP"
         url: "http://127.0.0.1:16677/api/tags"
         endpoints: ["GET /api/tags"] # request to this will use this flavor
         extra_url: ""
@@ -48,6 +51,9 @@ services:
                       }
 
     chat: # service name defined by aog
+        task_type: "text-generation"
+        protocol: "HTTP"
+        expose_protocol: "HTTP"
         url: "http://127.0.0.1:16677/api/chat"
         endpoints: ["POST /api/chat"] # request to this will use this flavor
         extra_url: ""
@@ -171,6 +177,9 @@ services:
                           Content-Type: application/x-ndjson
 
     generate:
+        task_type: "text-generation"
+        protocol: "HTTP"
+        expose_protocol: "HTTP"
         url: "http://127.0.0.1:16677/api/generate"
         endpoints: ["POST /api/generate"] # request to this will use this flavor
         extra_url: ""
@@ -291,6 +300,7 @@ services:
                           Content-Type: application/x-ndjson
 
     embed:
+        task_type: "embedding"
         url: "http://127.0.0.1:16677/api/embed"
         endpoints: [ "POST /api/embed"] # request to this will use this flavor
         extra_url: ""

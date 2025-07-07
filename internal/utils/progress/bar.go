@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package progress
 
 import (
@@ -7,6 +23,14 @@ import (
 	"time"
 
 	"golang.org/x/term"
+)
+
+const (
+	// Progress bar characters
+	ProgressBarFull  = "█"
+	ProgressBarEmpty = " "
+	ProgressBarLeft  = "▕"
+	ProgressBarRight = "▏"
 )
 
 type Bar struct {
@@ -132,17 +156,17 @@ func (b *Bar) String() string {
 	f := termWidth - pre.Len() - suf.Len() - 5
 	n := int(float64(f) * b.percent() / 100)
 
-	mid.WriteString(" ▕")
+	mid.WriteString(" " + ProgressBarLeft)
 
 	if n > 0 {
-		mid.WriteString(repeat("█", n))
+		mid.WriteString(repeat(ProgressBarFull, n))
 	}
 
 	if f-n > 0 {
-		mid.WriteString(repeat(" ", f-n))
+		mid.WriteString(repeat(ProgressBarEmpty, f-n))
 	}
 
-	mid.WriteString("▏ ")
+	mid.WriteString(ProgressBarRight + " ")
 
 	return pre.String() + mid.String() + suf.String()
 }

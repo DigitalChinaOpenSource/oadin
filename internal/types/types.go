@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package types
 
 import (
@@ -6,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"intel.com/aog/internal/utils"
+	"intel.com/aog/internal/constants"
 )
 
 const (
@@ -25,12 +41,23 @@ const (
 	AuthTypeNone   = "none"
 	AuthTypeApiKey = "apikey"
 	AuthTypeToken  = "token"
+	AuthTypeSign   = "sign"
 
-	ServiceChat        = "chat"
-	ServiceModels      = "models"
-	ServiceGenerate    = "generate"
-	ServiceEmbed       = "embed"
-	ServiceTextToImage = "text-to-image"
+	ServiceChat           = "chat"
+	ServiceModels         = "models"
+	ServiceGenerate       = "generate"
+	ServiceEmbed          = "embed"
+	ServiceTextToImage    = "text-to-image"
+	ServiceTextToSpeech   = "text-to-speech"
+	ServiceSpeechToText   = "speech-to-text"
+	ServiceTextToVideo    = "text-to-video"
+	ServiceSpeechToTextWS = "speech-to-text-ws"
+
+	ServiceChatAvatar         = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/chat.svg"
+	ServiceTextToImageAvatar  = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/text-to-image.svg"
+	ServiceEmbedAvatar        = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/Embed.svg"
+	ServiceGenerateAvatar     = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/Generate.svg"
+	ServiceSpeechToTextAvatar = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/Speech-to-text.svg"
 
 	ImageTypeUrl    = "url"
 	ImageTypePath   = "path"
@@ -40,9 +67,13 @@ const (
 	HybridPolicyLocal   = "always_local"
 	HybridPolicyRemote  = "always_remote"
 
-	ProtocolHTTP  = "HTTP"
-	ProtocolHTTPS = "HTTPS"
-	ProtocolGRPC  = "GRPC"
+	ProtocolHTTP        = "HTTP"
+	ProtocolHTTPS       = "HTTPS"
+	ProtocolGRPC        = "GRPC"
+	ProtocolGRPC_STREAM = "GRPC_STREAM"
+
+	ExposeProtocolHTTP      = "HTTP"
+	ExposeProtocolWEBSOCKET = "WEBSOCKET"
 
 	LogLevelDebug = "debug"
 	LogLevelInfo  = "info"
@@ -54,15 +85,32 @@ const (
 
 	VersionRecordStatusInstalled = 1
 	VersionRecordStatusUpdated   = 2
+
+	WSTaskTypeAudio = "audio"
+
+	AudioWav  = "wav"
+	AudioMp3  = "mp3"
+	AudioM4a  = "m4a"
+	AudioOgg  = "ogg"
+	AudioFlac = "flac"
+	AudioAac  = "aac"
+	AudioMp4  = "mp4"
+
+	GPUTypeNvidia    = "Nvidia"
+	GPUTypeAmd       = "AMD"
+	GPUTypeIntelArc  = "Intel Arc"
+	GPUTypeIntelCore = "Intel Core"
+	GPUTypeNone      = "None"
 )
 
 var (
-	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate, ServiceTextToImage}
+	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate, ServiceTextToImage, ServiceSpeechToText, ServiceSpeechToTextWS}
 	SupportHybridPolicy = []string{HybridPolicyDefault, HybridPolicyLocal, HybridPolicyRemote}
-	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeToken}
+	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeSign, AuthTypeToken}
 	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorOpenvino}
 	SupportModelEngine  = []string{FlavorOpenvino, FlavorOllama}
 	SupportImageType    = []string{ImageTypeUrl, ImageTypeBase64, ImageTypePath}
+	SupportAudioType    = []string{AudioWav, AudioMp3}
 )
 
 type HTTPContent struct {
@@ -71,7 +119,7 @@ type HTTPContent struct {
 }
 
 func (hc HTTPContent) String() string {
-	return fmt.Sprintf("HTTPContent{Header: %+v, Body: %s}", hc.Header, utils.BodyToString(hc.Header, hc.Body))
+	return fmt.Sprintf("HTTPContent{Header: %+v, Body: %s}", hc.Header, string(hc.Body))
 }
 
 type HTTPErrorResponse struct {
@@ -81,7 +129,7 @@ type HTTPErrorResponse struct {
 }
 
 func (hc *HTTPErrorResponse) Error() string {
-	return fmt.Sprintf("HTTPErrorResponse{StatusCode: %d, Header: %+v, Body: %s}", hc.StatusCode, hc.Header, utils.BodyToString(hc.Header, hc.Body))
+	return fmt.Sprintf("HTTPErrorResponse{StatusCode: %d, Header: %+v, Body: %s}", hc.StatusCode, hc.Header, string(hc.Body))
 }
 
 // ConversionStepDef NOTE: we use YAML instead of JSON here because it's easier to read and write
@@ -188,4 +236,10 @@ type EngineRecommendConfig struct {
 	EnginePath     string `json:"engine_path"`
 	ExecPath       string `json:"exec_path"`
 	ExecFile       string `json:"exec_file"`
+}
+
+type PathDiskSizeInfo struct {
+	FreeSize  int `json:"free_size"`
+	TotalSize int `json:"total_size"`
+	UsageSize int `json:"usage_size"`
 }

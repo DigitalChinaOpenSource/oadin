@@ -1,7 +1,24 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package sqlite
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -11,8 +28,8 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
 	"intel.com/aog/internal/datastore"
+	"intel.com/aog/internal/provider/template"
 	"intel.com/aog/internal/types"
 )
 
@@ -49,6 +66,7 @@ func (ds *SQLite) Init() error {
 		&types.ServiceProvider{},
 		&types.Service{},
 		&types.Model{},
+		&types.VersionUpdateRecord{},
 	); err != nil {
 		return fmt.Errorf("failed to initialize database tables: %v", err)
 	}
@@ -66,36 +84,77 @@ func (ds *SQLite) insertInitialData() error {
 	if err := ds.db.Model(&types.Service{}).Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to count initial data: %v", err)
 	}
-
+	var servicesProviderCount int64
+	if err := ds.db.Model(&types.Service{}).Count(&servicesProviderCount).Error; err != nil {
+		return fmt.Errorf("failed to count initial data: %v", err)
+	}
 	if count == 0 {
 		initService := make([]*types.Service, 0)
 		initService = append(initService, &types.Service{
 			Name:         "chat",
 			HybridPolicy: "default",
-			Status:       1,
+			Status:       -1,
+			CanInstall:   1,
+			Avatar:       types.ServiceChatAvatar,
 		}, &types.Service{
 			Name:         "models",
 			HybridPolicy: "default",
-			Status:       1,
+			Status:       -1,
+			CanInstall:   0,
 		}, &types.Service{
 			Name:         "embed",
 			HybridPolicy: "default",
-			Status:       1,
+			Status:       -1,
+			CanInstall:   1,
+			Avatar:       types.ServiceEmbedAvatar,
 		}, &types.Service{
 			Name:         "generate",
 			HybridPolicy: "default",
-			Status:       1,
+			Status:       -1,
+			CanInstall:   1,
+			Avatar:       types.ServiceGenerateAvatar,
 		}, &types.Service{
 			Name:         "text-to-image",
+			HybridPolicy: "always_remote",
+			Status:       -1,
+			CanInstall:   1,
+			Avatar:       types.ServiceTextToImageAvatar,
+		}, &types.Service{
+			Name:         "speech-to-text",
 			HybridPolicy: "default",
-			Status:       1,
+			Status:       -1,
+			CanInstall:   1,
+			Avatar:       types.ServiceSpeechToTextAvatar,
+		}, &types.Service{
+			Name:         "speech-to-text-ws",
+			HybridPolicy: "default",
+			Status:       -1,
+			CanInstall:   1,
+			Avatar:       types.ServiceSpeechToTextAvatar,
 		})
 
 		if err := ds.db.CreateInBatches(initService, len(initService)).Error; err != nil {
 			return fmt.Errorf("failed to create initial service: %v", err)
 		}
 	}
+	if servicesProviderCount == 0 {
+		var serviceProviders []*types.ServiceProvider
+		serviceProviderData, err := template.FlavorTemplateFs.ReadFile("service_provider_data.json")
+		if err != nil {
+			return fmt.Errorf("failed to read service provider data: %v", err)
+		}
+		if err := json.Unmarshal(serviceProviderData, &serviceProviders); err != nil {
+			return fmt.Errorf("failed to unmarshal service provider data: %v", err)
+		}
+		initServiceProvider := make([]*types.ServiceProvider, 0)
+		for _, serviceProvider := range serviceProviders {
+			initServiceProvider = append(initServiceProvider, serviceProvider)
+		}
+		if err := ds.db.CreateInBatches(initServiceProvider, len(initServiceProvider)).Error; err != nil {
+			return fmt.Errorf("failed to create initial service: %v", err)
+		}
 
+	}
 	return nil
 }
 

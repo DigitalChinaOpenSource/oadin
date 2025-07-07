@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package api
 
 import (
@@ -10,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-
 	"intel.com/aog/internal/api/dto"
 	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/server"
@@ -78,17 +93,18 @@ func (t *AOGCoreServer) CreateModelStream(c *gin.Context) {
 				select {
 				case err, _ := <-errCh:
 					if err != nil {
-						fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
+						fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
 						flusher.Flush()
 						return
 					}
 				}
 				// 数据通道关闭，发送结束标记
-				//fmt.Fprintf(w, "event: end\ndata: [DONE]\n\n")
+
 				// fmt.Fprintf(w, "\n[DONE]\n\n")
-				//flusher.Flush()
+				// flusher.Flush()
 				// 通道中没有数据，再结束推送
 				if data == nil {
+					fmt.Fprintf(w, "data: {\"status\": \"success\"}\n\n")
 					return
 				}
 			}
@@ -104,7 +120,7 @@ func (t *AOGCoreServer) CreateModelStream(c *gin.Context) {
 			// 使用SSE格式发送到前端
 			// fmt.Fprintf(w, "data: %s\n\n", response)
 			if resp.Completed > 0 || resp.Status == "success" {
-				fmt.Fprintf(w, "%s\n\n", string(data))
+				fmt.Fprintf(w, "data: %s\n\n", string(data))
 				flusher.Flush()
 			}
 
@@ -113,9 +129,9 @@ func (t *AOGCoreServer) CreateModelStream(c *gin.Context) {
 				log.Printf("Error: %v", err)
 				// 发送错误信息到前端
 				if strings.Contains(err.Error(), "context cancel") {
-					fmt.Fprintf(w, "{\"status\": \"canceled\", \"data\":\"%v\"}\n\n", err)
+					fmt.Fprintf(w, "data: {\"status\": \"canceled\", \"data\":\"%v\"}\n\n", err)
 				} else {
-					fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
+					fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
 				}
 
 				flusher.Flush()
@@ -123,7 +139,7 @@ func (t *AOGCoreServer) CreateModelStream(c *gin.Context) {
 			}
 
 		case <-ctx.Done():
-			fmt.Fprintf(w, "{\"status\": \"error\", \"data\":\"timeout\"}\n\n")
+			fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"timeout\"}\n\n")
 			flusher.Flush()
 			return
 		}

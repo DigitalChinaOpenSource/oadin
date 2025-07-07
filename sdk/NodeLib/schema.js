@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 const { str } = require("ajv");
 
 // ========== 服务管理 ==========
@@ -408,9 +424,9 @@ const recommendModelsResponse = {
 const SmartvisionModelSupportRequest = {
     type: "object",
     properties: {
-        EnvType: { type: "string", enum: ["dev", "product"] }
+        env_type: { type: "string", enum: ["dev", "product"] }
     },
-    required: ["EnvType"]
+    required: ["env_type"]
 };
 
 const SmartvisionModelSupport = {
@@ -555,10 +571,7 @@ const textToImageRequest = {
     type: "object",
     properties: {
         model: { type: "string" },
-        prompt: { type: "string" },
-        n: { type: "integer" },
-        size: { type: "string"},
-        image: { type: "string" }
+        prompt: { type: "string" }
     },
     required: ["prompt"]
 };
@@ -569,12 +582,7 @@ const textToImageResponse = {
         data: {
             type: "object",
             properties: {
-                url: { 
-                    type: "array",
-                    items: {
-                        type: "string"
-                    }
-                }
+                url: { type: "string" }
             },
         },
         id: { type: "string" },
@@ -621,6 +629,44 @@ const embeddingResponse = {
     required: ["model", "data"]
 };
 
+const speechToTextRequest = {
+    type: "object",
+    properties: {
+        model: { type: "string" },
+        audio: { type: "string" },
+        language: { type: "string" }
+    }
+};
+
+const speechToTextResponse = {
+    type: "object",
+    properties: {
+        business_code: { type: "integer" },
+        message: { type: "string" },
+        data: { 
+            type: "object",
+            properties: {
+                data: {
+                    type: "object",
+                    properties: {
+                        segments: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    end: { type: "string" },
+                                    id: { type: "integer"},
+                                    start: { type: "string"},
+                                    text: { type: "string"}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+};
 
 module.exports = {
     getServicesSchema,
@@ -650,6 +696,8 @@ module.exports = {
     textToImageRequest,
     textToImageResponse,
     embeddingRequest,
-    embeddingResponse
+    embeddingResponse,
+    speechToTextRequest,
+    speechToTextResponse
 };
     

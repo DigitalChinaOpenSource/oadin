@@ -4,7 +4,7 @@
     "name": "ernie-3.5-8k",
     "description": "",
     "class": "文本生成",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/baidu.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
     "provider": "baidu",
     "max_input": 8000,
     "max_output": 5000
@@ -12,7 +12,7 @@
   {
     "name": "qwen-max",
     "description": "通义千问系列效果最好的模型，适合复杂、多步骤的任务。",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
     "class": "文本生成",
     "provider": "aliyun",
     "max_input": 30720,
@@ -22,7 +22,7 @@
     "name": "qwen-plus",
     "description": "基于 Qwen2.5 模型训练的 QwQ 推理模型，通过强化学习大幅度提升了模型推理能力。模型数学代码等核心指标（AIME 24/25、LiveCodeBench）以及部分通用指标（IFEval、LiveBench等）达到DeepSeek-R1 满血版水平。",
     "class": "文本生成",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
     "provider": "aliyun",
     "max_input": 129024,
     "max_output": 8192
@@ -31,7 +31,7 @@
     "name": "qwen-turbo",
     "description": "通义千问系列速度最快、成本极低的模型，适合简单任务。",
     "class": "文本生成",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
     "provider": "aliyun",
     "max_input": 1000000,
     "max_output": 1000000
@@ -40,7 +40,7 @@
     "name": "qwen-long",
     "description": "通义千问系列上下文窗口最长，能力均衡且成本较低的模型，适合长文本分析、信息抽取、总结摘要和分类打标等任务。",
     "class": "文本生成",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
     "provider": "aliyun",
     "max_input": 10000000,
     "max_output": 10000000
@@ -49,7 +49,7 @@
     "name": "hunyuan-turbo",
     "description": "通义千问系列上下文窗口最长，能力均衡且成本较低的模型，适合长文本分析、信息抽取、总结摘要和分类打标等任务。",
     "class": "文本生成",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
     "provider": "tencent",
     "max_input": 28000,
     "max_output": 4000
@@ -58,7 +58,7 @@
     "name": "hunyuan-t1-latest",
     "description": "业内首个超大规模 Hybrid-Transformer-Mamba 推理模型，扩展推理能力，超强解码速度，进一步对齐人类偏好。",
     "class": "文本生成",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
     "provider": "tencent",
     "max_input": 28000,
     "max_output": 64000
@@ -67,7 +67,7 @@
     "name": "hunyuan-large",
     "description": "Hunyuan-large 模型总参数量约 389B，激活参数量约 52B，是当前业界参数规模最大、效果最好的 Transformer 架构的开源 MoE 模型。",
     "class": "文本生成",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
     "provider": "tencent",
     "max_input": 28000,
     "max_output": 4000
@@ -76,7 +76,7 @@
     "name": "hunyuan-standard",
     "description": "采用更优的路由策略，同时缓解了负载均衡和专家趋同的问题。\nMOE-32K 性价比相对更高，在平衡效果、价格的同时，可实现对长文本输入的处理。",
     "class": "文本生成",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
     "provider": "tencent",
     "max_input": 30000,
     "max_output": 2000
@@ -85,7 +85,7 @@
     "name": "hunyuan-turbos-latest",
     "description": "统一数学解题步骤的风格，加强数学多轮问答。\n文本创作优化回答风格，去除AI味，增加文采。",
     "class": "文本生成",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
     "provider": "tencent",
     "max_input": 24000,
     "max_output": 8000
@@ -94,7 +94,7 @@
     "name": "deepseek-resoning",
     "description": "deepseek-resoning是 DeepSeek 推出的推理模型。在输出最终回答之前，模型会先输出一段思维链内容，以提升最终答案的准确性。我们的 API 向用户开放 deepseek-reasoner 思维链的内容，以供用户查看、展示、蒸馏使用。",
     "class": "文本生成",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
     "provider": "deepseek",
     "max_input": 64000,
     "max_output": 64000
@@ -103,7 +103,7 @@
       "name": "deepseek-chat",
       "description": "deepseek-resoning是 DeepSeek 推出的对话模型（deepseek-v3）。",
       "class": "文本生成",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/deepseek.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
       "provider": "deepseek",
       "max_input": 0,
       "max_output": 0
@@ -114,7 +114,7 @@
       "name": "hunyuan-embedding",
       "description": "",
       "class": "文本向量化",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
       "provider": "tencent",
       "max_input": 0,
       "max_output": 0
@@ -123,7 +123,7 @@
       "name": "embedding-v1",
       "description": "",
       "class": "文本向量化",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/baidu.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
       "provider": "baidu",
       "max_input": 384,
       "max_output": 0
@@ -132,7 +132,7 @@
       "name": "text-embedding-v1",
       "description": "",
       "class": "文本向量化",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
       "provider": "aliyun",
       "max_input": 512000,
       "max_output": 0
@@ -141,7 +141,7 @@
       "name": "text-embedding-v2",
       "description": "",
       "class": "文本向量化",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
       "provider": "aliyun",
       "max_input": 512000,
       "max_output": 0
@@ -150,7 +150,7 @@
       "name": "text-embedding-v3",
       "description": "",
       "class": "文本向量化",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
       "provider": "aliyun",
       "max_input": 81920,
       "max_output": 0
@@ -162,7 +162,7 @@
       "name": "wanx2.1-t2i-turbo",
       "description": "生成速度快、效果全面、性价比高。对应通义万相官网2.1极速模型。",
       "class": "文生图",
-      "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+      "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
       "provider": "aliyun",
       "max_input": 0,
       "max_output": 0
@@ -170,7 +170,7 @@
       "name": "wanx2.1-t2i-plus",
       "description": "生成图像细节更丰富，速度较慢。对应通义万相官网2.1专业模型。",
       "class": "文生图",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
       "provider": "aliyun",
       "max_input": 0,
       "max_output": 0
@@ -178,7 +178,7 @@
       "name": "wanx2.0-t2i-turbo",
       "description": "擅长质感人像，速度中等、成本较低。对应通义万相官网2.0极速模型。",
       "class": "文生图",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
       "provider": "aliyun",
       "max_input": 0,
       "max_output": 0
@@ -186,7 +186,7 @@
       "name": "irag-1.0",
       "description": "",
       "class": "文生图",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/baidu.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
       "provider": "baidu",
       "max_input": 200,
       "max_output": 0
@@ -194,7 +194,7 @@
       "name": "hunyuan-DiT",
       "description": "",
       "class": "文生图",
-    "avatar": "http://120.232.136.73:31619/byzedev/model_avatar/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
       "provider": "tencent",
       "max_input": 0,
       "max_output": 0

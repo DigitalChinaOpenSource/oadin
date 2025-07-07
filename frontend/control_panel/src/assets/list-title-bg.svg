@@ -1,0 +1,22 @@
+<svg width="1440" height="80" viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+<mask id="mask0_84_1603" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="80">
+<rect width="1440" height="80" fill="#183544"/>
+</mask>
+<g mask="url(#mask0_84_1603)">
+<rect x="-14" y="-41" width="71.5" height="71.5" fill="white" fill-opacity="0.05"/>
+<rect x="85" y="64" width="26" height="26" fill="white" fill-opacity="0.05"/>
+<rect x="182" y="28" width="12" height="12" fill="white" fill-opacity="0.1"/>
+<rect x="194" y="40" width="84" height="84" fill="white" fill-opacity="0.05"/>
+<rect x="269.913" y="78.0625" width="10.725" height="10.725" fill="white" fill-opacity="0.1"/>
+<rect x="303.875" y="79.8501" width="107.25" height="107.25" fill="white" fill-opacity="0.1"/>
+<rect x="433" y="-20" width="60" height="60" fill="white" fill-opacity="0.03"/>
+<rect x="667" y="20" width="19" height="19" fill="white" fill-opacity="0.1"/>
+<rect x="655" y="8" width="12" height="12" fill="white" fill-opacity="0.05"/>
+<rect x="862" y="52" width="72" height="72" fill="white" fill-opacity="0.03"/>
+<rect x="1091" y="-24" width="57.2" height="57.2" fill="white" fill-opacity="0.05"/>
+<rect x="1148" y="33" width="11" height="11" fill="white" fill-opacity="0.1"/>
+<rect x="1349" y="33" width="9" height="9" fill="white" fill-opacity="0.1"/>
+<rect x="1358" y="14" width="19" height="19" fill="white" fill-opacity="0.1"/>
+<rect x="1383" y="44" width="71" height="71" fill="white" fill-opacity="0.05"/>
+</g>
+</svg>

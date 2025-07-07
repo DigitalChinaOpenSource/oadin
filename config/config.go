@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package config
 
 import (
@@ -15,10 +31,45 @@ import (
 	"github.com/MatusOllah/slogcolor"
 	"github.com/fatih/color"
 	"github.com/spf13/pflag"
-
 	"intel.com/aog/internal/client"
+	"intel.com/aog/internal/constants"
+	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
 	"intel.com/aog/version"
+)
+
+const (
+	// Log levels
+	LogLevelDebug = "debug"
+	LogLevelWarn  = "warn"
+	LogLevelError = "error"
+
+	// Default configurations
+	DefaultLogLevel = "ERROR"
+	DefaultVerbose  = "info"
+	DefaultRootDir  = "./"
+
+	// Database types
+	DatastoreSQLite = "sqlite"
+
+	// Database file
+	DefaultDatabaseFile = "aog.db"
+
+	// Directory names
+	LogsDirectory = "logs"
+
+	// File names
+	ServerLogFile  = "server.log"
+	ConsoleLogFile = "console.log"
+
+	// Time formats
+	DefaultTimeFormat = "2006-01-02 15:04:05"
+
+	// Log file expiration in days
+	DefaultLogExpireDays = 7
+
+	// Environment variable keys
+	EnvAOGHost = "AOG_HOST"
 )
 
 var GlobalAOGEnvironment *AOGEnvironment
@@ -29,7 +80,6 @@ type AOGEnvironment struct {
 	DatastoreType     string // type of the datastore
 	Verbose           string // debug, info or warn
 	RootDir           string // root directory for all assets such as config files
-	WorkDir           string // current work directory
 	APIVersion        string // version of this core app layer (gateway etc.)
 	SpecVersion       string // version of the core specification this app layer supports
 	LogDir            string // logs dir
@@ -55,25 +105,26 @@ func NewAOGClient() *AOGClient {
 }
 
 // Host returns the scheme and host. Host can be configured via the AOG_HOST environment variable.
-// Default is scheme "http" and host "127.0.0.1:16688"
+// Default is scheme host and host "127.0.0.1:16688"
 func Host() *url.URL {
-	defaultPort := "16688"
+	defaultPort := constants.DefaultHTTPPort
 
-	s := strings.TrimSpace(Var("AOG_HOST"))
+	s := strings.TrimSpace(Var(EnvAOGHost))
 	scheme, hostport, ok := strings.Cut(s, "://")
 	switch {
 	case !ok:
-		scheme, hostport = "http", s
-	case scheme == "http":
-		defaultPort = "80"
-	case scheme == "https":
-		defaultPort = "443"
+		scheme, hostport = types.ProtocolHTTP, s
+	case scheme == types.ProtocolHTTP:
+		defaultPort = constants.DefaultHTTPPort80
+	case scheme == types.ProtocolHTTPS:
+		defaultPort = constants.DefaultHTTPSPort
 	}
 
 	hostport, path, _ := strings.Cut(hostport, "/")
 	host, port, err := net.SplitHostPort(hostport)
 	if err != nil {
-		host, port = "127.0.0.1", defaultPort
+		// host, port = "127.0.0.1", defaultPort
+		host, port = constants.DefaultHost, defaultPort
 		if ip := net.ParseIP(strings.Trim(hostport, "[]")); ip != nil {
 			host = ip.String()
 		} else if hostport != "" {
@@ -101,26 +152,21 @@ func Var(key string) string {
 func NewAOGEnvironment() *AOGEnvironment {
 	once.Do(func() {
 		env := AOGEnvironment{
-			ApiHost:           "127.0.0.1:16688",
-			Datastore:         "aog.db",
-			DatastoreType:     "sqlite",
-			LogDir:            "logs",
-			LogHTTP:           "server.log",
-			LogLevel:          "DEBUG",
-			LogFileExpireDays: 7,
-			Verbose:           "info",
-			RootDir:           "./",
-			WorkDir:           "./",
+			ApiHost:           constants.DefaultHost + ":" + constants.DefaultHTTPPort,
+			Datastore:         DefaultDatabaseFile,
+			DatastoreType:     DatastoreSQLite,
+			LogDir:            LogsDirectory,
+			LogHTTP:           ServerLogFile,
+			LogLevel:          DefaultLogLevel,
+			LogFileExpireDays: DefaultLogExpireDays,
+			Verbose:           DefaultVerbose,
+			RootDir:           DefaultRootDir,
 			APIVersion:        version.AOGVersion,
 			SpecVersion:       version.AOGVersion,
-			ConsoleLog:        "console.log",
+			ConsoleLog:        ConsoleLogFile,
 		}
-		cwd, err := os.Getwd()
-		if err != nil {
-			panic("[GetEnv] Failed to get current working directory")
-		}
-		env.WorkDir = cwd
 
+		var err error
 		env.RootDir, err = utils.GetAOGDataDir()
 		if err != nil {
 			panic("[Init Env] get user dir failed: " + err.Error())
@@ -129,7 +175,6 @@ func NewAOGEnvironment() *AOGEnvironment {
 		env.LogDir = filepath.Join(env.RootDir, env.LogDir)
 		env.LogHTTP = filepath.Join(env.LogDir, env.LogHTTP)
 		env.ConsoleLog = filepath.Join(env.LogDir, env.ConsoleLog)
-
 		if err := os.MkdirAll(env.LogDir, 0o750); err != nil {
 			panic("[Init Env] create logs path : " + err.Error())
 		}
@@ -181,9 +226,9 @@ func (s *AOGEnvironment) Flags() *FlagSets {
 
 func (s *AOGEnvironment) SetSlogColor() {
 	opts := slogcolor.DefaultOptions
-	if s.Verbose == "debug" {
+	if s.Verbose == LogLevelDebug {
 		opts.Level = slog.LevelDebug
-	} else if s.Verbose == "warn" {
+	} else if s.Verbose == LogLevelWarn {
 		opts.Level = slog.LevelWarn
 	} else {
 		opts.Level = slog.LevelInfo
@@ -192,8 +237,8 @@ func (s *AOGEnvironment) SetSlogColor() {
 	opts.MsgColor = color.New(color.FgHiYellow)
 
 	slog.SetDefault(slog.New(slogcolor.NewHandler(os.Stderr, opts)))
-	_, _ = color.New(color.FgHiCyan).Println(">>>>>> AOG Open Gateway Starting : " + time.Now().Format("2006-01-02 15:04:05") + "\n\n")
+	_, _ = color.New(color.FgHiCyan).Println(">>>>>> AOG Open Gateway Starting : " + time.Now().Format(DefaultTimeFormat) + "\n\n")
 	defer func() {
-		_, _ = color.New(color.FgHiGreen).Println("\n\n<<<<<< AOG Open Gateway Stopped : " + time.Now().Format("2006-01-02 15:04:05"))
+		_, _ = color.New(color.FgHiGreen).Println("\n\n<<<<<< AOG Open Gateway Stopped : " + time.Now().Format(DefaultTimeFormat))
 	}()
 }

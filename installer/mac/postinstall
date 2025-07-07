@@ -1,0 +1,9 @@
+#!/bin/bash
+USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
+mkdir -p "$USER_HOME/AOG"
+exec > "$USER_HOME/AOG/aog-install.log" 2>&1
+set -x
+cp -f /Users/Shared/AOG/aog "$USER_HOME/AOG/aog"
+ln -sf "$USER_HOME/AOG/aog" /usr/local/bin/aog
+sleep 2
+su - "$USER" -c "aog server start -d"

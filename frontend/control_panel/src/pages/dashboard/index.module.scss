@@ -1,0 +1,24 @@
+.categoryTitle {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+    padding: 12px 0;
+    text-align: center;
+    color: white;
+    background-color: var(--color-primary);
+}
+
+.card {
+    background-color: #F7F7F7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 242px;
+    overflow-y: auto;
+
+}
+
+.serviceIcon {
+    width: 72px;
+
+}

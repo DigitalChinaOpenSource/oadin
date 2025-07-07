@@ -1,10 +1,23 @@
-// Apache v2 license
-// Copyright (C) 2024 Intel Corporation
-// SPDX-License-Identifier: Apache-2.0
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
 
 package schedule
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,12 +27,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shirou/gopsutil/cpu"
 	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/event"
 	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/types"
 	"intel.com/aog/internal/utils"
+	"intel.com/aog/internal/utils/bcode"
 )
 
 type ServiceTaskEventType int
@@ -184,16 +196,16 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 		location = types.ServiceSourceRemote
 	} else if task.Request.HybridPolicy == "default" {
 		if model == "" {
-			gpuUtilization, err := utils.GetGpuInfo()
-			if err != nil {
-				cpuTotalPercent, _ := cpu.Percent(15*time.Second, false)
-				if cpuTotalPercent[0] > 80.0 {
-					location = types.ServiceSourceRemote
-				}
-			}
-			if gpuUtilization >= 80.0 {
-				location = types.ServiceSourceRemote
-			}
+			//gpuUtilization, err := utils.GetGpuInfo()
+			//if err != nil {
+			//cpuTotalPercent, _ := cpu.Percent(15*time.Second, false)
+			//if cpuTotalPercent[0] > 80.0 {
+			//	location = types.ServiceSourceRemote
+			//}
+			//}
+			//if gpuUtilization >= 80.0 {
+			//	location = types.ServiceSourceRemote
+			//}
 		}
 	}
 	ds := datastore.GetDefaultDatastore()
@@ -203,15 +215,18 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 
 	err := ds.Get(context.Background(), service)
 	if err != nil {
-		return nil, fmt.Errorf("service not found: %s", task.Request.Service)
+		logger.LogicLogger.Error("[Schedule] Failed to get service", "error", err, "service", task.Request.Service)
+		return nil, bcode.ErrServiceRecordNotFound
 	}
 
 	if service.LocalProvider == "" && service.RemoteProvider == "" {
-		return nil, fmt.Errorf("service %s does not have local or remote provider", task.Request.Service)
+		logger.LogicLogger.Error("[Schedule] Service ", task.Request.Service, " does not have local or remote provider")
+		return nil, bcode.ErrNotExistDefaultProvider
 	}
 
 	m := &types.Model{
-		ModelName: task.Request.Model,
+		ModelName:   task.Request.Model,
+		ServiceName: task.Request.Service,
 	}
 
 	// Provider Selection
@@ -230,10 +245,12 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	} else {
 		err := ds.Get(context.Background(), m)
 		if err != nil {
-			return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+			logger.LogicLogger.Error("[Schedule] model not found", "error", err, "model", task.Request.Model)
+			return nil, bcode.ErrModelRecordNotFound
 		}
 		if m.Status != "downloaded" {
-			return nil, fmt.Errorf("model installing %s of Service %s, please wait", location, task.Request.Service)
+			logger.LogicLogger.Error("[Schedule] model installing", "model", task.Request.Model, "status", m.Status)
+			return nil, bcode.ErrModelUnDownloaded
 		}
 
 		providerName = m.ProviderName
@@ -241,18 +258,19 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 
 	sp := &types.ServiceProvider{
 		ProviderName: providerName,
-		
 	}
 	err = ds.Get(context.Background(), sp)
 	if err != nil {
-		return nil, fmt.Errorf("service provider not found for %s of Service %s", location, task.Request.Service)
+		logger.LogicLogger.Error("[Schedule] service provider not found for ", location, " of Service ", task.Request.Service)
+		return nil, bcode.ErrProviderNotExist
 	}
 
 	location = sp.ServiceSource
 	providerProperties := &types.ServiceProviderProperties{}
 	err = json.Unmarshal([]byte(sp.Properties), providerProperties)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal service provider properties: %v", err)
+		logger.LogicLogger.Error("[Schedule] failed to unmarshal service provider properties", "error", err, "properties", sp.Properties)
+		return nil, bcode.ErrUnmarshalProviderProperties
 	}
 	// Non-query model services do not require model validation
 	if task.Request.Service != types.ServiceModels {
@@ -262,24 +280,39 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 				m := &types.Model{
 					ProviderName: sp.ProviderName,
 				}
-				sortOption := []datastore.SortOption{
-					{Key: "updated_at", Order: -1},
-				}
+				// 先查找 is_default=true 且 downloaded 的模型
 				ms, err := ds.List(context.Background(), m, &datastore.ListOptions{
 					FilterOptions: datastore.FilterOptions{
 						Queries: []datastore.FuzzyQueryOption{
 							{Key: "status", Query: "downloaded"},
+							{Key: "is_default", Query: "true"},
 						},
 					},
-					SortBy: sortOption,
 				})
-				if err != nil {
-					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+
+				if err == nil && len(ms) > 0 {
+					model = ms[0].(*types.Model).ModelName
+				} else {
+					// 没有default，再查找第一个downloaded模型
+					sortOption := []datastore.SortOption{
+						{Key: "updated_at", Order: -1},
+					}
+					ms, err := ds.List(context.Background(), m, &datastore.ListOptions{
+						FilterOptions: datastore.FilterOptions{
+							Queries: []datastore.FuzzyQueryOption{
+								{Key: "status", Query: "downloaded"},
+							},
+						},
+						SortBy: sortOption,
+					})
+					if err != nil {
+						return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+					}
+					if len(ms) == 0 {
+						return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
+					}
+					model = ms[0].(*types.Model).ModelName
 				}
-				if len(ms) == 0 {
-					return nil, fmt.Errorf("model not found for %s of Service %s", location, task.Request.Service)
-				}
-				model = ms[0].(*types.Model).ModelName
 			case types.ServiceSourceRemote:
 				defaultInfo := GetProviderServiceDefaultInfo(sp.Flavor, task.Request.Service)
 				model = defaultInfo.DefaultModel
@@ -292,22 +325,6 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	// pick the smallest priority number, which means the most preferred
 	// if more than one candidate for the same priority, pick the 1st one
 	// TODO(Strategies to be discussed later)
-	//model := task.Request.Model
-	//if task.Request.Model != "" && len(ms) > 0 {
-	//	curPriority := 8
-	//	for _, m := range ms {
-	//		priority := modelPriority(task.Request.Model, m.(*types.Model).ModelName)
-	//		if priority < curPriority {
-	//			curPriority = priority
-	//			model = m.(*types.Model).ModelName
-	//		}
-	//	}
-	//	if model != task.Request.Model {
-	//		slog.Warn("[Schedule] Model mismatch between Request and Service Provider",
-	//			"expect_model", task.Request.Model, "selected_model", model,
-	//			"id_service_provider", sp.ProviderName, "all_models")
-	//	}
-	//}
 
 	// Stream Mode Selection
 	// ================
@@ -331,11 +348,19 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	// ================
 	// TODO: XPU selection
 
+	// 从YAML配置中获取服务协议类型
+	flavorDef := GetFlavorDef(sp.Flavor)
+	protocol := ""
+	if serviceDef, exists := flavorDef.Services[task.Request.Service]; exists {
+		protocol = serviceDef.Protocol
+	}
+
 	return &types.ServiceTarget{
 		Location:        location,
 		Stream:          stream,
 		Model:           model,
 		ToFavor:         sp.Flavor,
+		Protocol:        protocol, // 设置Protocol字段
 		ServiceProvider: sp,
 	}, nil
 }
@@ -356,7 +381,7 @@ func (ss *BasicServiceScheduler) schedule() {
 		ss.addToList(task, "running")
 		task.Schedule.IsRunning = true
 		task.Schedule.TimeRun = time.Now()
-		logger.LogicLogger.Info("[Schedule] Start to run the task", "taskid", task.Schedule.Id, "service", task.Request.Service,
+		logger.LogicLogger.Info("[Schedule] Start to run the task", "taskID", task.Schedule.Id, "service", task.Request.Service,
 			"location", task.Target.Location, "service_provider", task.Target.ServiceProvider)
 		// REALLY run the task
 		go func() {
@@ -395,30 +420,35 @@ func GetScheduler() ServiceScheduler {
 func InvokeService(fromFlavor string, service string, request *http.Request) (uint64, chan *types.ServiceResult, error) {
 	logger.LogicLogger.Info("[Service] Invoking Service", "fromFlavor", fromFlavor, "service", service)
 
-	body, err := io.ReadAll(request.Body)
-	if err != nil {
-		return 0, nil, err
+	if request.Method != http.MethodGet && request.Method != http.MethodPost {
+		logger.LogicLogger.Error("[Service] Unsupported request method", "method", request.Method)
+		return 0, nil, bcode.ErrUnSupportRequestMethod
 	}
 
-	event.SysEvents.NotifyHTTPRequest("receive_service_request", request.Method,
-		request.URL.String(), request.Header, body)
+	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		logger.LogicLogger.Error("[Service] Failed to read request body", "error", err)
+		return 0, nil, bcode.ErrReadRequestBody
+	}
 
-	if request.Method == http.MethodGet {
+	// 重新设置请求体，以便后续处理可能需要再次读取
+	request.Body = io.NopCloser(bytes.NewReader(body))
+
+	wsConnID := request.Header.Get("X-WebSocket-ConnID")
+	isWebSocket := wsConnID != ""
+
+	if request.Method == http.MethodGet && !isWebSocket {
 		queryParams := request.URL.Query()
 		queryParamsJSON, err := json.Marshal(queryParams)
 		if err != nil {
 			logger.LogicLogger.Error("[Service] Failed to unmarshal GET request", "error", err, "body", string(body))
-			return 0, nil, err
+			return 0, nil, bcode.ErrUnmarshalRequestBody
 		}
 		logger.LogicLogger.Debug("[Service] GET Request Query Params", "params", string(queryParamsJSON))
 
 		body = queryParamsJSON
-	} // TODO: handle the case that the body is not json and not text
-	if request.Method == http.MethodPost &&
-		!strings.Contains(request.Header.Get("Content-Type"), "application/json") &&
-		!strings.Contains(request.Header.Get("Content-Type"), "text/plain") {
-		panic("TO SUPPORT non JSON or non text request")
 	}
+
 	hybridPolicy := "default"
 	if service != "" {
 		ds := datastore.GetDefaultDatastore()
@@ -442,13 +472,58 @@ func InvokeService(fromFlavor string, service string, request *http.Request) (ui
 		HybridPolicy:    hybridPolicy,
 	}
 
-	err = json.Unmarshal(body, &serviceRequest)
-	if err != nil {
-		logger.LogicLogger.Error("[Service] Failed to unmarshal POST request", "error", err, "body", string(body))
-		return 0, nil, err
+	// 根据Content-Type决定如何处理请求体
+	contentType := request.Header.Get("Content-Type")
+	isBinary := strings.Contains(contentType, "application/octet-stream") ||
+		strings.Contains(contentType, "audio/") ||
+		strings.Contains(contentType, "video/") ||
+		strings.Contains(contentType, "image/")
+
+	// 处理WebSocket相关信息
+	if isWebSocket {
+		// 如果是WebSocket请求，添加相关标记
+		serviceRequest.WebSocketConnID = wsConnID
+
+		// 记录WebSocket请求特有的日志
+		logger.LogicLogger.Debug("[Service] Processing WebSocket request",
+			"wsConnID", wsConnID,
+			"contentType", contentType,
+			"isBinary", isBinary,
+			"bodySize", len(body))
+
+		// 如果是二进制数据，使用更适合的日志格式
+		if isBinary {
+			logger.LogicLogger.Debug("[Service] Binary WebSocket data received",
+				"wsConnID", wsConnID,
+				"bodySize", len(body),
+				"firstBytes", fmt.Sprintf("%x", body[:utils.Min(20, len(body))]))
+		}
 	}
 
-	taskid, ch := GetScheduler().Enqueue(&serviceRequest)
+	// 只有当不是二进制数据时，才尝试解析JSON
+	if !isBinary {
+		err = json.Unmarshal(body, &serviceRequest)
+		if err != nil {
+			// 对于WebSocket文本消息，可能是特定指令而不是完整的JSON结构
+			if isWebSocket {
+				logger.LogicLogger.Debug("[Service] WebSocket message is not valid JSON, treating as raw message",
+					"wsConnID", wsConnID,
+					"error", err)
+			} else {
+				logger.LogicLogger.Error("[Service] Failed to unmarshal POST request", "error", err, "body", string(body))
+				return 0, nil, err
+			}
+		}
+	}
 
-	return taskid, ch, err
+	taskID, ch := GetScheduler().Enqueue(&serviceRequest)
+
+	// 对于WebSocket请求，记录分配的taskID
+	if isWebSocket {
+		logger.LogicLogger.Info("[Service] WebSocket request enqueued",
+			"wsConnID", wsConnID,
+			"taskID", taskID)
+	}
+
+	return taskID, ch, err
 }

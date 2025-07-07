@@ -14,6 +14,9 @@
 *.bk
 bk.*
 
+# yarn
+.yarn/
+.yarnrc.yml
 
 # temporary demos
 /demo/
@@ -41,6 +44,7 @@ bk.*
 # IDE files
 .idea/
 .vscode/
+.cursor/
 *.db
 aog
 
@@ -51,6 +55,14 @@ aog
 # .NET build directories
 /bin/
 /obj/
+/docs/swagger/*
+
+build.sh
+
+/console/dist/*
+
+# fronted node_modules
+/fronted/**/node_modules/
 
 # 
 

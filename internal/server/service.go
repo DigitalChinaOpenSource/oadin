@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package server
 
 import (
@@ -12,6 +28,7 @@ import (
 	"time"
 
 	"intel.com/aog/internal/api/dto"
+	"intel.com/aog/internal/constants"
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/provider"
@@ -20,6 +37,12 @@ import (
 	"intel.com/aog/internal/utils"
 	"intel.com/aog/internal/utils/bcode"
 	"intel.com/aog/version"
+)
+
+const (
+	// Download URLs
+	OllamaEngineDownloadURL   = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ipex-llm-ollama-win.zip"
+	OpenvinoEngineDownloadURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/windows/ovms_windows.zip"
 )
 
 type AIGCService interface {
@@ -42,9 +65,21 @@ func NewAIGCService() AIGCService {
 }
 
 func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.CreateAIGCServiceRequest) (*dto.CreateAIGCServiceResponse, error) {
+	if request.ServiceSource == "" {
+		request.ServiceSource = types.ServiceSourceLocal
+	}
+
+	service := &types.Service{Name: request.ServiceName}
+	err := s.Ds.Get(ctx, service)
+	if err == nil {
+		service.Status = 2
+		_ = s.Ds.Put(ctx, service)
+	}
+
 	sp := &types.ServiceProvider{}
 	m := &types.Model{}
-
+	mIsExist := false
+	providerServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, request.ServiceName)
 	sp.ProviderName = request.ProviderName
 	sp.ServiceSource = request.ServiceSource
 	sp.Method = http.MethodPost
@@ -54,18 +89,17 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 	sp.ServiceName = request.ServiceName
 	sp.Desc = request.Desc
 	sp.Flavor = request.ApiFlavor
+	if request.Url == "" {
+		sp.URL = providerServiceInfo.RequestUrl
+	}
 
 	if request.ApiFlavor == types.FlavorOllama && request.ServiceName == types.ServiceTextToImage {
 		return nil, fmt.Errorf("Ollama not support  text-to-image service")
 	}
 
 	m.ProviderName = request.ProviderName
-	providerServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, request.ServiceName)
 	if request.ServiceSource == types.ServiceSourceRemote {
 		sp.URL = request.Url
-		if request.Url == "" {
-			sp.URL = providerServiceInfo.RequestUrl
-		}
 		sp.AuthType = request.AuthType
 		if request.AuthType != types.AuthTypeNone && request.AuthKey == "" {
 			return nil, bcode.ErrProviderAuthInfoLost
@@ -78,7 +112,16 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 		}
 		sp.Properties = request.Properties
 
+		m.ServiceSource = types.ServiceSourceRemote
+		m.ServiceName = request.ServiceName
 		m.ModelName = providerServiceInfo.DefaultModel
+
+		// 在创建后置为0
+		err := s.Ds.Get(ctx, service)
+		if err == nil {
+			service.Status = 0
+			_ = s.Ds.Put(ctx, service)
+		}
 	} else {
 		recommendConfig := getRecommendConfig(request.ServiceName)
 		// Check if ollama is installed locally and if it is available.
@@ -90,6 +133,11 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 		}
 		if request.ApiFlavor != recommendConfig.ModelEngine {
 			request.ApiFlavor = recommendConfig.ModelEngine
+			sp.Flavor = recommendConfig.ModelEngine
+		}
+
+		if request.ProviderName == "" {
+			sp.ProviderName = fmt.Sprintf("%s_%s_%s", request.ServiceSource, request.ApiFlavor, request.ServiceName)
 		}
 
 		cmd := exec.Command(engineConfig.ExecFile, "-h")
@@ -138,8 +186,22 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 
 		err = engineProvider.HealthCheck()
 		if err != nil {
+			service := &types.Service{Name: request.ServiceName}
+			err := s.Ds.Get(ctx, service)
+			if err == nil {
+				service.Status = -1
+				_ = s.Ds.Put(ctx, service)
+			}
 			logger.LogicLogger.Error(recommendConfig.ModelEngine + "failed start...")
 			return nil, bcode.ErrAIGCServiceStartEngine
+		}
+
+		// 在创建后置为0
+		service := &types.Service{Name: request.ServiceName}
+		err = s.Ds.Get(ctx, service)
+		if err == nil {
+			service.Status = 0
+			_ = s.Ds.Put(ctx, service)
 		}
 
 		sp.URL = providerServiceInfo.RequestUrl
@@ -147,6 +209,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 		sp.AuthKey = ""
 		sp.ExtraJSONBody = ""
 		sp.ExtraHeaders = ""
+		// TODO This needs to be obtained dynamically later.
 		sp.Properties = `{"max_input_tokens":2048,"supported_response_mode":["stream","sync"],"mode_is_changeable":true,"xpu":["GPU"]}`
 		sp.Status = 0
 
@@ -168,6 +231,8 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 
 			m.ProviderName = sp.ProviderName
 			m.ModelName = recommendConfig.ModelName
+			m.ServiceName = request.ServiceName
+			m.ServiceSource = types.ServiceSourceLocal
 
 			err = s.Ds.Get(ctx, m)
 			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -180,6 +245,8 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 					logger.LogicLogger.Error("Add model to db error:", err)
 					return nil, bcode.ErrAddModel
 				}
+			} else {
+				mIsExist = true
 			}
 
 			if !isPulled {
@@ -199,43 +266,55 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 				if err != nil {
 					return nil, bcode.ErrAddModel
 				}
+				// 本地已存在模型则将 Status 置为 1
+				checkServer := ChooseCheckServer(*sp, m.ModelName)
+				if checkServer != nil {
+					service.Status = 1
+					_ = s.Ds.Put(ctx, service)
+				}
 			}
 		}
 
-		if request.ServiceName == types.ServiceChat {
-			generateProviderServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, types.ServiceGenerate)
-			generateSp := &types.ServiceProvider{}
-			generateSp.ProviderName = strings.Replace(request.ProviderName, "chat", "generate", -1)
-			generateSp.ServiceSource = request.ServiceSource
-			generateSp.AuthType = request.AuthType
-			generateSp.Status = sp.Status
-			generateSp.Method = http.MethodPost
-			if request.Method != "" {
-				generateSp.Method = request.Method
-			}
-			generateSp.ServiceName = strings.Replace(request.ServiceName, "chat", "generate", -1)
-			generateSp.Desc = strings.Replace(request.Desc, "chat", "generate", -1)
-			generateSp.Flavor = request.ApiFlavor
-			generateSp.URL = generateProviderServiceInfo.RequestUrl
+		// get current service  task_type
+		currentServiceInfo := schedule.GetProviderServiceDefaultInfo(request.ApiFlavor, request.ServiceName)
+		providerServices := schedule.GetProviderServices(request.ApiFlavor)
 
-			generateSpIsExist, err := s.Ds.IsExist(ctx, generateSp)
-			if err != nil {
-				generateSpIsExist = false
-			}
+		for serviceName, serviceInfo := range providerServices {
+			if serviceInfo.TaskType == currentServiceInfo.TaskType && serviceName != request.ServiceName {
+				// create related service provider
+				relatedSp := &types.ServiceProvider{}
+				relatedSp.ProviderName = strings.Replace(request.ProviderName, request.ServiceName, serviceName, -1)
+				relatedSp.ServiceSource = request.ServiceSource
+				relatedSp.AuthType = request.AuthType
+				relatedSp.Status = sp.Status
+				relatedSp.Method = http.MethodPost
+				relatedSp.ServiceName = serviceName
+				relatedSp.Desc = strings.Replace(request.Desc, request.ServiceName, serviceName, -1)
+				relatedSp.Flavor = request.ApiFlavor
+				relatedSp.URL = serviceInfo.RequestUrl
 
-			if !generateSpIsExist {
-				err := s.Ds.Add(ctx, generateSp)
+				// check if related service provider already exists
+				isExist, err := s.Ds.IsExist(ctx, relatedSp)
 				if err != nil {
-					logger.LogicLogger.Error("Service Provider model already exist")
-					return nil, bcode.ErrModelIsExist
+					isExist = false
+				}
+
+				if !isExist {
+					err := s.Ds.Put(ctx, relatedSp)
+					if err != nil {
+						logger.LogicLogger.Error("Service Provider model already exist")
+						return nil, bcode.ErrModelIsExist
+					}
+				}
+
+				err = DefaultProviderProcess(ctx, serviceName, relatedSp.ServiceSource, relatedSp.ProviderName)
+				if err != nil {
+					logger.LogicLogger.Error("Failed to process related service",
+						"service", serviceName,
+						"error", err)
+					return nil, err
 				}
 			}
-
-			err = DefaultProviderProcess(ctx, types.ServiceGenerate, generateSp.ServiceSource, generateSp.ProviderName)
-			if err != nil {
-				return nil, err
-			}
-
 		}
 	}
 
@@ -246,7 +325,6 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 	}
 
 	// Check whether the service provider model already exists.
-	mIsExist, err := s.Ds.IsExist(ctx, m)
 	if spIsExist && mIsExist {
 		logger.LogicLogger.Error("Service Provider model already exist")
 		return nil, bcode.ErrModelIsExist
@@ -254,7 +332,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 
 	// todo: pending transaction processing
 	if !spIsExist {
-		err = s.Ds.Add(ctx, sp)
+		err = s.Ds.Put(ctx, sp)
 		if err != nil {
 			logger.LogicLogger.Error("Add service provider error: %s", err.Error())
 			return nil, bcode.ErrAIGCServiceAddProvider
@@ -280,7 +358,7 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 			}
 			modelIsExist, err := s.Ds.IsExist(ctx, modelService)
 			if !modelIsExist {
-				err = s.Ds.Add(ctx, modelService)
+				err = s.Ds.Put(ctx, modelService)
 				if err != nil {
 					logger.LogicLogger.Error("Add model service error: %s", err.Error())
 					return nil, bcode.ErrAddModelService
@@ -446,7 +524,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 				}
 				modelObj := new(types.Model)
 				modelObj.ProviderName = tmpSp.ProviderName
-				modelObj.ModelName = strings.ToLower(m)
+				modelObj.ModelName = m
 
 				err = s.Ds.Get(ctx, modelObj)
 				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -454,7 +532,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 					return nil, bcode.ErrServer
 				} else if errors.Is(err, datastore.ErrEntityInvalid) {
 					modelObj.Status = "downloading"
-					err = s.Ds.Add(ctx, modelObj)
+					err = s.Ds.Put(ctx, modelObj)
 					if err != nil {
 						return nil, bcode.ErrAddModel
 					}
@@ -485,7 +563,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 
 				isExist, err := s.Ds.IsExist(ctx, tmpModel)
 				if err != nil || !isExist {
-					err := s.Ds.Add(ctx, tmpModel)
+					err := s.Ds.Put(ctx, tmpModel)
 					if err != nil {
 						return nil, bcode.ErrAddModel
 					}
@@ -514,7 +592,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			}
 
 		} else {
-			err := s.Ds.Add(ctx, tmpSp)
+			err := s.Ds.Put(ctx, tmpSp)
 			if err != nil {
 				return nil, err
 			}
@@ -542,7 +620,7 @@ func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.Import
 			}
 
 			if !generateSpIsExist {
-				err := s.Ds.Add(ctx, generateSp)
+				err := s.Ds.Put(ctx, generateSp)
 				if err != nil {
 					logger.LogicLogger.Error("Service Provider model already exist")
 					return nil, bcode.ErrModelIsExist
@@ -745,38 +823,50 @@ func getRecommendConfig(service string) types.RecommendConfig {
 	recommendModelList := recommendModelMap[service]
 	switch service {
 	case types.ServiceChat:
-		modelName := "deepseek-r1:7b"
+		modelName := constants.DefaultChatModelName
 		if len(recommendModelList) > 0 {
 			modelName = recommendModelList[0].Name
 		}
 		return types.RecommendConfig{
 			ModelEngine:       types.FlavorOllama,
 			ModelName:         modelName,
-			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-win.zip",
+			EngineDownloadUrl: OllamaEngineDownloadURL,
 		}
 	case types.ServiceEmbed:
 		return types.RecommendConfig{
 			ModelEngine:       types.FlavorOllama,
-			ModelName:         "bge-m3",
-			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-win.zip",
+			ModelName:         constants.DefaultEmbedModelName,
+			EngineDownloadUrl: OllamaEngineDownloadURL,
 		}
 	case types.ServiceModels:
 		return types.RecommendConfig{}
 	case types.ServiceGenerate:
-		modelName := "deepseek-r1:7b"
+		modelName := constants.DefaultChatModelName
 		if len(recommendModelList) > 0 {
 			modelName = recommendModelList[0].Name
 		}
 		return types.RecommendConfig{
 			ModelEngine:       types.FlavorOllama,
 			ModelName:         modelName,
-			EngineDownloadUrl: "http://120.232.136.73:31619/aogdev/ipex-llm-ollama-win.zip",
+			EngineDownloadUrl: OllamaEngineDownloadURL,
 		}
 	case types.ServiceTextToImage:
 		return types.RecommendConfig{
 			ModelEngine:       types.FlavorOpenvino,
-			ModelName:         "OpenVINO/stable-diffusion-v1-5-fp16-ov",
-			EngineDownloadUrl: "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/ovms_windows.zip",
+			ModelName:         constants.DefaultTextToImageModel,
+			EngineDownloadUrl: OpenvinoEngineDownloadURL,
+		}
+	case types.ServiceSpeechToText:
+		return types.RecommendConfig{
+			ModelEngine:       types.FlavorOpenvino,
+			ModelName:         constants.DefaultSpeechToTextModel,
+			EngineDownloadUrl: OpenvinoEngineDownloadURL,
+		}
+	case types.ServiceSpeechToTextWS:
+		return types.RecommendConfig{
+			ModelEngine:       types.FlavorOpenvino,
+			ModelName:         constants.DefaultSpeechToTextModel,
+			EngineDownloadUrl: OpenvinoEngineDownloadURL,
 		}
 	default:
 		return types.RecommendConfig{}

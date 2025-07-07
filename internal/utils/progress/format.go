@@ -1,46 +1,45 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package progress
 
 import (
 	"fmt"
 	"math"
 	"strconv"
-)
 
-const (
-	Thousand = 1000
-	Million  = Thousand * 1000
-	Billion  = Million * 1000
-)
-
-const (
-	Byte = 1
-
-	KiloByte = Byte * 1000
-	MegaByte = KiloByte * 1000
-	GigaByte = MegaByte * 1000
-	TeraByte = GigaByte * 1000
-
-	KibiByte = Byte * 1024
-	MebiByte = KibiByte * 1024
-	GibiByte = MebiByte * 1024
+	"intel.com/aog/internal/constants"
 )
 
 func HumanNumber(b uint64) string {
 	switch {
-	case b >= Billion:
-		number := float64(b) / Billion
+	case b >= constants.Billion:
+		number := float64(b) / constants.Billion
 		if number == math.Floor(number) {
 			return fmt.Sprintf("%.0fB", number) // no decimals if whole number
 		}
 		return fmt.Sprintf("%.1fB", number) // one decimal if not a whole number
-	case b >= Million:
-		number := float64(b) / Million
+	case b >= constants.Million:
+		number := float64(b) / constants.Million
 		if number == math.Floor(number) {
 			return fmt.Sprintf("%.0fM", number) // no decimals if whole number
 		}
 		return fmt.Sprintf("%.2fM", number) // two decimals if not a whole number
-	case b >= Thousand:
-		return fmt.Sprintf("%.0fK", float64(b)/Thousand)
+	case b >= constants.Thousand:
+		return fmt.Sprintf("%.0fK", float64(b)/constants.Thousand)
 	default:
 		return strconv.FormatUint(b, 10)
 	}
@@ -51,17 +50,17 @@ func HumanBytes(b int64) string {
 	var unit string
 
 	switch {
-	case b >= TeraByte:
-		value = float64(b) / TeraByte
+	case b >= constants.TeraByte:
+		value = float64(b) / constants.TeraByte
 		unit = "TB"
-	case b >= GigaByte:
-		value = float64(b) / GigaByte
+	case b >= constants.GigaByte:
+		value = float64(b) / constants.GigaByte
 		unit = "GB"
-	case b >= MegaByte:
-		value = float64(b) / MegaByte
+	case b >= constants.MegaByte:
+		value = float64(b) / constants.MegaByte
 		unit = "MB"
-	case b >= KiloByte:
-		value = float64(b) / KiloByte
+	case b >= constants.KiloByte:
+		value = float64(b) / constants.KiloByte
 		unit = "KB"
 	default:
 		return fmt.Sprintf("%d B", b)
@@ -81,12 +80,12 @@ func HumanBytes(b int64) string {
 
 func HumanBytes2(b uint64) string {
 	switch {
-	case b >= GibiByte:
-		return fmt.Sprintf("%.1f GiB", float64(b)/GibiByte)
-	case b >= MebiByte:
-		return fmt.Sprintf("%.1f MiB", float64(b)/MebiByte)
-	case b >= KibiByte:
-		return fmt.Sprintf("%.1f KiB", float64(b)/KibiByte)
+	case b >= constants.GibiByte:
+		return fmt.Sprintf("%.1f GiB", float64(b)/constants.GibiByte)
+	case b >= constants.MebiByte:
+		return fmt.Sprintf("%.1f MiB", float64(b)/constants.MebiByte)
+	case b >= constants.KibiByte:
+		return fmt.Sprintf("%.1f KiB", float64(b)/constants.KibiByte)
 	default:
 		return fmt.Sprintf("%d B", b)
 	}

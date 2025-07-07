@@ -1,0 +1,114 @@
+.card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    padding: 16px 24px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--Background-color-background-weak, #F7F7F7);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    align-self: stretch;
+    justify-content: space-between;
+
+    .headerLeft {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+}
+
+.avatarWrap {
+
+    width: 32px;
+    height: 32px;
+    border-radius: 2px;
+    border: 1px solid var(--border-color);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+
+}
+
+.avatar {
+    width: 24px;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+}
+
+
+.name {
+    color: var(--text-color-text-normal, #262626);
+    font-family: var(--Heading-Heading-Hero-Font, Roboto);
+    font-size: var(--Heading-Heading-Hero-Size, 20px);
+    font-style: normal;
+    font-weight: 400;
+    line-height: var(--Heading-Heading-Hero-Line-Height, 28px);
+    letter-spacing: var(--Heading-Heading-Hero-Tracking, 0px);
+
+
+}
+
+.link {
+    color: var(--text-Primary-color-text-primary-strong, #004A86);
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+
+    }
+}
+
+
+.infoRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vendor,
+.context,
+.status {
+    color: var(--text-color-text-normal, #262626);
+    font-family: var(--Body-Body-md-Font, Roboto);
+    font-size: var(--Body-Body-md-Size, 14px);
+    font-style: normal;
+    font-weight: 400;
+    line-height: var(--Body-Body-md-Line-Height, 22px);
+    letter-spacing: var(--Body-Body-md-Tracking, 0px);
+}
+
+.divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border-color-border-strong, #808080);
+    display: inline-block;
+}
+
+.desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    color: var(--text-color-text-weak-1, #808080);
+    font-family: var(--Body-Body-md-Font, Roboto);
+    font-size: var(--Body-Body-md-Size, 14px);
+    font-style: normal;
+    font-weight: 400;
+    line-height: var(--Body-Body-md-Line-Height, 22px);
+    letter-spacing: var(--Body-Body-md-Tracking, 0px);
+    text-overflow: ellipsis;
+    white-space: normal;
+    gap: 24px;
+    align-items: flex-start;
+
+    height: auto;
+}

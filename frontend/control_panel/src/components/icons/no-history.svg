@@ -1,0 +1,24 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M45 15C40.5817 15 37 18.5817 37 23L85 23C89.4183 23 93 26.5817 93 31V95C97.4183 95 101 91.4183 101 87V23C101 18.5817 97.4183 15 93 15H45Z" fill="url(#paint0_linear_2044_19702)"/>
+<path d="M93 95V31C93 26.5817 89.4183 23 85 23L37 23C32.5817 23 29 26.5817 29 31V95C29 99.4183 32.5817 103 37 103H85C89.4183 103 93 99.4183 93 95Z" fill="url(#paint1_linear_2044_19702)"/>
+<path d="M39 39C39 37.8954 39.8954 37 41 37H65C66.1046 37 67 37.8954 67 39C67 40.1046 66.1046 41 65 41H41C39.8954 41 39 40.1046 39 39Z" fill="white"/>
+<path d="M39 49C39 47.8954 39.8954 47 41 47H77C78.1046 47 79 47.8954 79 49C79 50.1046 78.1046 51 77 51H41C39.8954 51 39 50.1046 39 49Z" fill="white"/>
+<path d="M39 59C39 57.8954 39.8954 57 41 57H57C58.1046 57 59 57.8954 59 59C59 60.1046 58.1046 61 57 61H41C39.8954 61 39 60.1046 39 59Z" fill="white"/>
+<path d="M95 95L109 95" stroke="#9DA3BB" stroke-width="3" stroke-linecap="round"/>
+<path d="M76 90L88 103" stroke="#9DA3BB" stroke-width="3" stroke-linecap="round"/>
+<path d="M26 104L77 104" stroke="#9DA3BB" stroke-width="3" stroke-linecap="round"/>
+<path d="M10 104L20 104" stroke="#9DA3BB" stroke-width="3" stroke-linecap="round"/>
+<circle cx="10" cy="34" r="5" fill="#C2DBFF"/>
+<circle cx="111" cy="51" r="3" fill="#5429FF" fill-opacity="0.6"/>
+<circle cx="65" cy="78" r="12.5" fill="white" stroke="#9DA3BB" stroke-width="3"/>
+<defs>
+<linearGradient id="paint0_linear_2044_19702" x1="65" y1="15" x2="65" y2="103" gradientUnits="userSpaceOnUse">
+<stop stop-color="#C2DBFF"/>
+<stop offset="1" stop-color="#C2DBFF" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="paint1_linear_2044_19702" x1="61" y1="23" x2="61" y2="103" gradientUnits="userSpaceOnUse">
+<stop stop-color="#5429FF" stop-opacity="0.6"/>
+<stop offset="1" stop-color="#5429FF" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>

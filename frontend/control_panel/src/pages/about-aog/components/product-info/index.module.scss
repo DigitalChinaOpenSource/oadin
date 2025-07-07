@@ -1,0 +1,68 @@
+.aboutWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.productWrapper {
+    display: flex;
+    gap: 24px;
+    background-color: #F7F7F7;
+    padding: 24px;
+
+
+    .productImage {
+        padding: 16px 32px;
+        background-color: #00AEEF;
+        line-height: 48px;
+        color: #FFF;
+        align-self: flex-start;
+    }
+
+    .productName {
+        font-size: 20px;
+        line-height: 28px;
+        color: #000;
+    }
+
+    .productVersion {
+        padding: 0 8px;
+        background-color: #E9E9E9;
+        font-size: 12px;
+        line-height: 20px;
+    }
+
+    .statusDot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+    }
+
+    .checkStatus {
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--color-primary);
+        line-height: 22px;
+
+        &:hover {
+            color: #004A86;
+        }
+    }
+
+    .checking {
+        animation: checking 1s linear infinite;
+    }
+
+}
+
+@keyframes checking {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

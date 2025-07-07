@@ -2,7 +2,7 @@
 
 [中文](README.md) | English
 
-This is the preview version v0.3.0 of AOG. More features and stability are continuously being
+This is the preview version v0.4.0 of AOG. More features and stability are continuously being
 improved. Please submit Issues for any defects found.
 
 The current version supports chat, embed and text-to-image services, with ollama and OpenVINO model server supported at the lower level. More
@@ -224,7 +224,7 @@ version will provide more services related to text-to-image and voice.
 For example, you can use `curl` to test the chat service on Windows.
 
 ```sh
-curl -X POST http://localhost:16688/aog/v0.3/services/chat -X POST 
+curl -X POST http://localhost:16688/aog/v0.4/services/chat -X POST 
   -H "Content-Type: application/json" 
   -d "{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is the sky blue?\"}],\"stream\":false}"
 ```
@@ -237,13 +237,13 @@ application by simply changing the endpoint URL.
 
 For example, if you are using OpenAI's chat completion service, you only need to replace the
 endpoint URL from `https://api.openai.com/v1/chat/completions` to
-`http://localhost:16688/aog/v0.3/api_flavors/openai/v1/chat/completions`.
+`http://localhost:16688/aog/v0.4/api_flavors/openai/v1/chat/completions`.
 
 NOTE Please note that the new URL for calling AOG is located at `api_flavors/openai`, and the rest
 of the URL is the same as the original OpenAI API, i.e., `/v1/chat/completions`.
 
 If you are using the ollama API, you can replace the endpoint URL from
-`https://localhost:11434/api/chat` to `http://localhost:16688/aog/v0.3/api_flavors/ollama/api/chat`.
+`https://localhost:11434/api/chat` to `http://localhost:16688/aog/v0.4/api_flavors/ollama/api/chat`.
 Similarly, it is located at `api_flavors/ollama`, and the rest of the URL is the same as the
 original ollama API, i.e., `/api/chat`.
 
@@ -262,7 +262,7 @@ application.
 
 ```json
 {
-  "version": "0.3",
+  "version": "0.4",
   "service": {
     "chat": {
       "models": ["qwen2.5:0.5b", "qwen2.5:7b"]

@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package server
 
 import (
@@ -15,6 +31,7 @@ import (
 	"intel.com/aog/internal/datastore"
 	"intel.com/aog/internal/logger"
 	"intel.com/aog/internal/provider"
+	"intel.com/aog/internal/provider/engine"
 	"intel.com/aog/internal/provider/template"
 	"intel.com/aog/internal/schedule"
 	"intel.com/aog/internal/types"
@@ -78,6 +95,8 @@ func (s *ModelImpl) CreateModel(ctx context.Context, request *dto.CreateModelReq
 	m := new(types.Model)
 	m.ProviderName = sp.ProviderName
 	m.ModelName = request.ModelName
+	m.ServiceName = request.ServiceName
+	m.ServiceSource = request.ServiceSource
 
 	err = s.Ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
@@ -130,7 +149,7 @@ func (s *ModelImpl) DeleteModel(ctx context.Context, request *dto.DeleteModelReq
 		return nil, bcode.ErrModelRecordNotFound
 	}
 
-	//Call engin to delete model.
+	// Call engin to delete model.
 	if m.Status == "downloaded" {
 		modelEngine := provider.GetModelEngine(sp.Flavor)
 		deleteReq := &types.DeleteRequest{
@@ -195,6 +214,9 @@ func (s *ModelImpl) GetModels(ctx context.Context, request *dto.GetModelsRequest
 		tmp.Status = dsModel.Status
 		tmp.CreatedAt = dsModel.CreatedAt
 		tmp.UpdatedAt = dsModel.UpdatedAt
+		tmp.ServiceName = dsModel.ServiceName
+		tmp.ServiceSource = dsModel.ServiceSource
+		tmp.IsDefault = dsModel.IsDefault
 
 		respData = append(respData, *tmp)
 	}
@@ -217,7 +239,7 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 	} else {
 		// get default service provider
 		// todo Currently only chat and generate services support pulling models.
-		if request.ServiceName != types.ServiceChat && request.ServiceName != types.ServiceGenerate && request.ServiceName != types.ServiceEmbed {
+		if request.ServiceName != types.ServiceChat && request.ServiceName != types.ServiceGenerate && request.ServiceName != types.ServiceEmbed && request.ServiceName != types.ServiceTextToImage && request.ServiceName != types.ServiceSpeechToText {
 			newErrChan <- bcode.ErrServer
 			return newDataChan, newErrChan
 		}
@@ -237,6 +259,29 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 			sp.ProviderName = service.RemoteProvider
 		}
 	}
+
+	if request.Size != "" {
+		// 判断剩余空间
+		providerEngine := provider.GetModelEngine(sp.Flavor)
+		var modelSavePath string
+		switch eng := providerEngine.(type) {
+		case *engine.OpenvinoProvider:
+			modelSavePath = fmt.Sprintf("%s/models", eng.EngineConfig.EnginePath)
+		case *engine.OllamaProvider:
+			modelSavePath = eng.EngineConfig.DownloadPath
+		}
+		modelSizeGB := utils.ParseSizeToGB(request.Size)
+		diskInfo, err := utils.SystemDiskSize(modelSavePath)
+		if err != nil {
+			newErrChan <- fmt.Errorf("Cannot Get Disk Size: %w", err)
+			return newDataChan, newErrChan
+		}
+		if float64(diskInfo.FreeSize) < modelSizeGB {
+			newErrChan <- fmt.Errorf("No enough disk space, need at least %.2f GB", modelSizeGB)
+			return newDataChan, newErrChan
+		}
+	}
+
 	err := ds.Get(ctx, sp)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		// todo debug log output
@@ -247,8 +292,11 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 		return newDataChan, newErrChan
 	}
 	m := new(types.Model)
-	m.ModelName = strings.ToLower(request.ModelName)
+	m.ModelName = request.ModelName
 	m.ProviderName = sp.ProviderName
+	m.ServiceName = request.ServiceName
+	m.ServiceSource = request.ServiceSource
+
 	err = ds.Get(ctx, m)
 	if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 		newErrChan <- err
@@ -260,18 +308,20 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 		}
 	}
 	modelName := request.ModelName
+	// todo
+	sp.Flavor = strings.Split(sp.ProviderName, "_")[1]
 	providerEngine := provider.GetModelEngine(sp.Flavor)
 	steam := true
 	req := types.PullModelRequest{
-		Model:  modelName,
-		Stream: &steam,
+		Model:     modelName,
+		Stream:    &steam,
+		ModelType: request.ServiceName,
 	}
 	dataChan, errChan := providerEngine.PullModelStream(ctx, &req)
 
 	newDataCh := make(chan []byte, 100)
 	newErrorCh := make(chan error, 1)
 	go func() {
-
 		defer close(newDataCh)
 		defer close(newErrorCh)
 		for {
@@ -279,7 +329,7 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 			case data, ok := <-dataChan:
 				if !ok {
 					if data == nil {
-						client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
+						client.ModelClientMap[request.ModelName] = nil
 						return
 					}
 				}
@@ -343,7 +393,7 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 					return
 				}
 				log.Printf("Error: %v", err)
-				client.ModelClientMap[strings.ToLower(request.ModelName)] = nil
+				client.ModelClientMap[request.ModelName] = nil
 				if err != nil && strings.Contains(err.Error(), "context cancel") {
 					if strings.Contains(err.Error(), "context cancel") {
 						newErrorCh <- err
@@ -360,7 +410,6 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 			case <-ctx.Done():
 				newErrorCh <- ctx.Err()
 			}
-
 		}
 	}()
 	return newDataCh, newErrorCh
@@ -401,6 +450,55 @@ func AsyncPullModel(sp *types.ServiceProvider, m *types.Model, pullReq *types.Pu
 		return
 	}
 
+	// 查询该 service 下所有模型
+	service := &types.Service{Name: sp.ServiceName}
+	err = ds.Get(ctx, service)
+	if err != nil {
+		logger.LogicLogger.Error("[Pull model] Get service error:", err.Error())
+		return
+	}
+	modelList, err := ds.List(ctx, &types.Model{ServiceName: sp.ServiceName}, &datastore.ListOptions{})
+	if err != nil {
+		logger.LogicLogger.Error("[Pull model] List models error:", err.Error())
+		return
+	}
+
+	// 查找是否有默认模型
+	var hasDefault bool
+	var defaultModel *types.Model
+	for _, v := range modelList {
+		model := v.(*types.Model)
+		if model.IsDefault {
+			hasDefault = true
+			defaultModel = model
+			break
+		}
+	}
+
+	service.Status = 0
+	if hasDefault {
+		// 只校验默认模型状态
+		checkServer := ChooseCheckServer(*sp, defaultModel.ModelName)
+		if checkServer != nil && checkServer.CheckServer() {
+			service.Status = 1
+		}
+	} else {
+		// 没有默认模型则依次校验
+		for _, v := range modelList {
+			model := v.(*types.Model)
+			checkServer := ChooseCheckServer(*sp, model.ModelName)
+			if checkServer != nil && checkServer.CheckServer() {
+				service.Status = 1
+				break
+			}
+		}
+	}
+
+	err = ds.Put(ctx, service)
+	if err != nil {
+		logger.LogicLogger.Error("[Pull model] Update service status error:", err.Error())
+	}
+
 	if sp.Status == 0 {
 		checkServer := ChooseCheckServer(*sp, m.ModelName)
 		if checkServer == nil {
@@ -423,47 +521,28 @@ func AsyncPullModel(sp *types.ServiceProvider, m *types.Model, pullReq *types.Pu
 			logger.LogicLogger.Error("[Pull model] Update service provider error: ", err.Error())
 			return
 		}
-		if sp.ServiceName == types.ServiceChat {
-			generateSp := new(types.ServiceProvider)
-			generateSp.ProviderName = strings.Replace(sp.ProviderName, "chat", "generate", -1)
-			err = ds.Get(ctx, generateSp)
-			if err != nil && errors.Is(err, datastore.ErrEntityInvalid) {
-				logger.LogicLogger.Error("[Pull model] Update service provider error: service provider not found")
-				return
-			}
-			generateCheckServer := ChooseCheckServer(*sp, m.ModelName)
-			if generateCheckServer == nil {
-				logger.LogicLogger.Error("[Pull model] Update service provider error: service_name is not unavailable")
-				return
-			}
-			generateCheckServerStatus := generateCheckServer.CheckServer()
-			if !generateCheckServerStatus {
-				logger.LogicLogger.Error("[Pull model] Update service provider error: server is unavailable")
-				return
-			}
-			generateSp.Status = 1
-			err = ds.Put(ctx, generateSp)
-			if err != nil {
-				logger.LogicLogger.Error("[Pull model] Update service provider error: ", err.Error())
-				return
-			}
-		}
-
 	}
-	if sp.ServiceName == types.ServiceChat {
-		generateM := &types.Model{}
 
-		generateM.ProviderName = strings.Replace(sp.ProviderName, "chat", "generate", -1)
-		generateM.ModelName = m.ModelName
-		generateM.Status = "downloaded"
+	currentServiceInfo := schedule.GetProviderServiceDefaultInfo(sp.Flavor, sp.ServiceName)
+	providerServices := schedule.GetProviderServices(sp.Flavor)
 
-		// Check whether the service provider model already exists.
-		generateMIsExist, err := ds.IsExist(ctx, generateM)
-		if !generateMIsExist {
-			err = ds.Add(ctx, generateM)
+	for serviceName, serviceInfo := range providerServices {
+		if serviceInfo.TaskType == currentServiceInfo.TaskType && serviceName != sp.ServiceName {
+			relatedM := &types.Model{}
+			relatedM.ModelName = m.ModelName
+			relatedM.ProviderName = strings.Replace(sp.ProviderName, sp.ServiceName, serviceName, -1)
+			relatedM.Status = "downloaded"
+
+			relatedMIsExist, err := ds.IsExist(ctx, relatedM)
 			if err != nil {
-				logger.LogicLogger.Error("Add model error: %s", err.Error())
-				return
+				relatedMIsExist = false
+			}
+			if !relatedMIsExist {
+				err = ds.Add(ctx, relatedM)
+				if err != nil {
+					logger.LogicLogger.Error("Add model error: %s", err.Error())
+					return
+				}
 			}
 		}
 	}
@@ -481,7 +560,7 @@ type MemoryModelsInfo struct {
 }
 
 func RecommendModels() (map[string][]dto.RecommendModelData, error) {
-	var recommendModelDataMap = make(map[string][]dto.RecommendModelData)
+	recommendModelDataMap := make(map[string][]dto.RecommendModelData)
 	memoryInfo, err := utils.GetMemoryInfo()
 	if err != nil {
 		return nil, err
@@ -571,7 +650,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			return &dto.RecommendModelResponse{Data: nil}, err
 		}
 		flavor = "ollama"
-		//service := "chat"
+		// service := "chat"
 		var resModelNameList []string
 
 		for modelService, modelInfo := range recommendModel {
@@ -580,7 +659,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			for _, model := range modelInfo {
 				localModelInfo := localOllamaModelMap[model.Name]
 				modelQuery := new(types.Model)
-				modelQuery.ModelName = strings.ToLower(model.Name)
+				modelQuery.ModelName = model.Name
 				modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
 				canSelect := true
 				err := ds.Get(context.Background(), modelQuery)
@@ -616,7 +695,7 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 			for _, localModel := range modelInfo {
 				if !utils.Contains(resModelNameList, localModel.Name) {
 					modelQuery := new(types.Model)
-					modelQuery.ModelName = strings.ToLower(localModel.Name)
+					modelQuery.ModelName = localModel.Name
 					modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
 					canSelect := true
 					err := ds.Get(context.Background(), modelQuery)

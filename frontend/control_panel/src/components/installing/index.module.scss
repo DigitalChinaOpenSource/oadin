@@ -1,0 +1,21 @@
+.installingContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.rect {
+    animation: rect-move-loop 2s linear infinite;
+}
+
+@keyframes rect-move-loop {
+    0% {
+        transform: translateX(-144px);
+    }
+
+    100% {
+        transform: translateX(272px);
+
+    }
+}

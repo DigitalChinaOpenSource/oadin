@@ -1,8 +1,16 @@
-# AogLib使用说明
+# AOGLib使用说明
 
 ## 1. 介绍
 
-AogLib 将协助开发者使用 AOG。
+AOGLib 将协助开发者使用 AOG（白泽模型框架）。
+
+现在 AOGLib 提供了以下功能：
+
+检查 aog 服务是否存在
+
+检查 aog.exe 是否下载
+
+下载 aog.exe
 
 ## 2. 使用
 
@@ -16,41 +24,35 @@ npm install aog-lib-1.0.0.tgz
 然后在项目中引入该 Node Module：
 
 ``` JavaScript
-const AogLib = require('aog-lib');
+const AOGLib = require('aog-lib');
 
-const aog = new AogLib();
+const aog = new AOGLib();
 
-// check if aog.exe is available
-aog.IsAogAvailiable().then((result) => {
+// 检查 aog 服务是否存在
+aog.isAOGAvailable().then((result) => {
     console.log(result);
 });
 
-// check if aog.exe is existed
-aog.IsAogExisted().then((result) => {
+// 检查 aog.exe 是否下载
+const existed = aog.isAOGExisted();
+console.log(existed);
+
+// 下载 aog.exe
+aog.downloadAOG().then((result) => {
     console.log(result);
 });
 
-// download aog.exe
-aog.DownloadAog().then((result) => {
+// 启动 aog 服务
+aog.startAOG().then((result) => {
     console.log(result);
 });
 
-// install aog.exe
-aog.InstallAog().then((result) => {
+// 查看当前服务
+aog.getServices().then((result) => {
     console.log(result);
 });
 
-// run `aog install chat`
-aog.InstallChat().then((result) => {
-    console.log(result);
-});
-
-// aog get services
-aog.GetServices().then((result) => {
-    console.log(result);
-});
-
-// aog install service
+// 创建新服务
 const data = {
     service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
@@ -59,59 +61,59 @@ const data = {
     provider_name: "local_ollama_chat/remote_openai_chat/...",
     auth_type: "none/apikey",
     auth_key: "your_api_key",
-}; // required: service_name, service_source, hybrid_policy, flavor_name, provider_name
+}; // 必填service_name, service_source, hybrid_policy, flavor_name, provider_name
 
-aog.CreateService(data).then((result) => {
+aog.installService(data).then((result) => {
     console.log(result);
 });
 
-// aog edit service
+// 更新服务
 const data = {
     service_name: "chat/embed/generate/text-to-image",
     hybrid_policy: "default/always_local/always_remote",
     remote_provider: "",
     local_provider: ""
-}; // required: service_name
+}; // 必填service_name
 
-aog.UpdateService(data).then((result) => {
+aog.updateService(data).then((result) => {
     console.log(result);
 });
 
-// aog get models
-aog.GetModels().then((result) => {
+// 查看模型
+aog.getModels().then((result) => {
     console.log(result);
 });
 
-// aog install model
+// 安装模型
 const data = {
     model_name: "llama2",
     service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
     provider_name: "local_ollama_chat/remote_openai_chat/...",
-}; // required: model_name, service_name, service_source
+}; // 必填model_name, service_name, service_source
 
-aog.InstallModel(data).then((result) => {
+aog.installModel(data).then((result) => {
     console.log(result);
 });
 
-// aog delete model
+// 卸载模型
 const data = {
     model_name: "llama2",
     service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
     provider_name: "local_ollama_chat/remote_openai_chat/...",
-}; // required: model_name, service_name, service_source
+}; // 必填model_name, service_name, service_source
 
-aog.DeleteModel(data).then((result) => {
+aog.deleteModel(data).then((result) => {
     console.log(result);
 });
 
-// aog get service_providers
-aog.GetServiceProviders().then((result) => {
+// 查看服务提供商
+aog.getServiceProviders().then((result) => {
     console.log(result);
 });
 
-// aog install serice_provider
+// 新增模型提供商
 const data = {
     service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
@@ -125,12 +127,12 @@ const data = {
     extra_headers: {},
     extra_json_body: {},
     properties: {}
-}; // required: ervice_name, service_source, flavor_name, provider_name
-bzye.InstallserviceProvider(data).then((result) => {
+}; // 必填service_name, service_source, flavor_name, provider_name
+aog.installServiceProvider(data).then((result) => {
     console.log(result);
 });
 
-// aog edit serice_provider
+// 更新模型提供商
 const data = {
     service_name: "chat/embed/generate/text-to-image",
     service_source: "remote/local",
@@ -144,55 +146,56 @@ const data = {
     extra_headers: {},
     extra_json_body: {},
     properties: {}
-}; // required: service_name, service_source, flavor_name, provider_name
+}; // 必填service_name, service_source, flavor_name, provider_name
 
-bzye.updateServiceProvider(data).then((result) => {
+aog.updateServiceProvider(data).then((result) => {
     console.log(result);
 });
 
-// aog delete serice_provider
+// 删除服务提供商
 const data = {
     provider_name: ""
-}; // required: provider_name
+};
 
-aog.DeleteServiceProvider(data).then((reult) => {
+aog.deleteServiceProvider(data).then((result) => {
     console.log(result);
 });
 
-// aog import config
-aog.ImportConfig("path/to/.aog").then((result) => {
+// 导入配置文件
+aog.importConfig("path/to/.aog").then((result) => {
     console.log(result);
 });
 
-// aog export config
+// 导出配置文件
 const data = {
     service_name: "chat/embed/generate/text-to-image"
 };
 
-aog.ExportConfig(data).then((result) => {
+aog.exportConfig(data).then((result) => { // 不填data则导出全部
     console.log(result);
 });
 
-// aog get models available
-aog.GetModelsAvailiable().then((result) => {
+// 获取模型列表（查看ollama的模型）
+// aog.getModelsAvailiable() 方法已移除或重命名，请使用 getModels()
+aog.getModels().then((result) => {
     console.log(result);
 });
 
-// aog get models recommended
-aog.GetModelsRecommended().then((result) => {
+// 获取推荐模型列表
+aog.getModelsRecommended().then((result) => {
     console.log(result);
 });
 
-// aog get models supported
+// 获取支持模型列表
 const data = {
     service_source: "remote/local",
-    flavor: "ollama/openai/..." 
-}; // required: service_source, flavor
-aog.GetModelsSurpported().then((result) => {
+    flavor: "ollama/openai/..." // local 则默认为ollama
+}; // 必填service_source, flavor
+aog.getModelsSupported(data).then((result) => {
     console.log(result);
 });
 
-// chat stream
+// Chat服务（流式）
 const data = {
     model: "deepseek-r1:7b",
     stream: true,
@@ -206,7 +209,7 @@ const data = {
     max_tokens: 100,
 }
 
-aog.Chat(data).then((chatStream) => {
+aog.chat(data).then((chatStream) => {
     chatStream.on('data', (data) => {
         console.log(data);
     });
@@ -218,7 +221,7 @@ aog.Chat(data).then((chatStream) => {
     });
 });
 
-// Chat
+// Chat服务（非流式）
 const data = {
     model: "deepseek-r1:7b",
     stream: false,
@@ -232,17 +235,17 @@ const data = {
     max_tokens: 100,
 }
 
-aog.Chat(data).then((result) => {
+aog.chat(data).then((result) => {
     console.log(result);
 });
 
-// generate stream
+// 生文服务（流式）
 const data = {
     model: "deepseek-r1:7b",
     stream: true,
     prompt: "你好",
 }
-aog.Generate(data).then((generateStream) => {
+aog.generate(data).then((generateStream) => {
     generateStream.on('data', (data) => {
         console.log(data);
     });
@@ -254,24 +257,34 @@ aog.Generate(data).then((generateStream) => {
     });
 });
 
-// generate
+// 生文服务（非流式）
 const data = {
     model: "deepseek-r1:7b",
     stream: false,
     prompt: "你好",
 }
-aog.Generate(data).then((result) => {
+aog.generate(data).then((result) => {
     console.log(result);
 });
 
-// text to image
+// 文生图服务
 const data = {
     model: "wanx2.1-t2i-turbo",
-    prompt: "A beautiful landscape with mountains and a river",
+    prompt: "一间有着精致窗户的花店，漂亮的木质门，摆放着花朵",
 }
 
-aog.TextToImage(data).then((result) => {
+aog.textToImage(data).then((result) => {
     console.log(result);
 });
 
+// 语音识别服务
+const data = {
+    model: "NamoLi/whisper-large-v3-ov",
+    audio: "C:/Users/Lenovo/Downloads/中.mp3",
+    language: "zh"
+}
+
+aog.speechToText(data).then(response => {
+    console.log( response);
+});
 ```

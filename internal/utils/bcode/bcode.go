@@ -1,13 +1,42 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package bcode
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
 	"intel.com/aog/internal/datastore"
+	"intel.com/aog/internal/logger"
+)
+
+const (
+	// Common HTTP status codes
+	HTTPStatusOK                  = 200
+	HTTPStatusBadRequest          = 400
+	HTTPStatusUnauthorized        = 401
+	HTTPStatusForbidden           = 403
+	HTTPStatusNotFound            = 404
+	HTTPStatusInternalServerError = 500
+	HTTPStatusBadGateway          = 502
 )
 
 // Error Code of AOG contains 5 digits, the first 3 digits should be reversed and indicates the category of concept
@@ -15,22 +44,22 @@ import (
 // For example, business code 11001 should split to 110 and 01, it means the code belongs to the 011 category env, and it's the 01 number error.
 
 // SuccessCode a success code
-var SuccessCode = NewBcode(200, 200, "success")
+var SuccessCode = NewBcode(HTTPStatusOK, HTTPStatusOK, "success")
 
 // ErrServer an unexpected mistake.
-var ErrServer = NewBcode(500, 500, "The service has lapsed.")
+var ErrServer = NewBcode(HTTPStatusInternalServerError, HTTPStatusInternalServerError, "The service has lapsed.")
 
 // ErrForbidden check user perms failure
-var ErrForbidden = NewBcode(403, 403, "403 Forbidden")
+var ErrForbidden = NewBcode(HTTPStatusForbidden, HTTPStatusForbidden, "403 Forbidden")
 
 // ErrUnauthorized check user auth failure
-var ErrUnauthorized = NewBcode(401, 401, "401 Unauthorized")
+var ErrUnauthorized = NewBcode(HTTPStatusUnauthorized, HTTPStatusUnauthorized, "401 Unauthorized")
 
 // ErrNotFound the request resource is not found
-var ErrNotFound = NewBcode(404, 404, "404 Not Found")
+var ErrNotFound = NewBcode(HTTPStatusNotFound, HTTPStatusNotFound, "404 Not Found")
 
 // ErrUpstreamNotFound the proxy upstream is not found
-var ErrUpstreamNotFound = NewBcode(502, 502, "Upstream not found")
+var ErrUpstreamNotFound = NewBcode(HTTPStatusBadGateway, HTTPStatusBadGateway, "Upstream not found")
 
 // Bcode business error code
 type Bcode struct {
@@ -95,7 +124,7 @@ func ReturnError(c *gin.Context, err error) {
 	if errors.As(err, &validErr) {
 		c.JSON(http.StatusBadRequest, Bcode{
 			HTTPCode:     http.StatusBadRequest,
-			BusinessCode: 400,
+			BusinessCode: HTTPStatusBadRequest,
 			Message:      err.Error(),
 		})
 		return
@@ -103,7 +132,37 @@ func ReturnError(c *gin.Context, err error) {
 
 	c.JSON(http.StatusInternalServerError, Bcode{
 		HTTPCode:     http.StatusInternalServerError,
-		BusinessCode: 500,
+		BusinessCode: HTTPStatusInternalServerError,
 		Message:      err.Error(),
 	})
+}
+
+// WrapError wraps a Bcode error with the original error's message
+// This preserves the error code while providing more context
+// It also prevents error nesting if the original error is already a Bcode
+func WrapError(bcodeErr *Bcode, originalErr error) error {
+	if originalErr == nil {
+		return bcodeErr
+	}
+
+	// Check if originalErr is already a Bcode error
+	var existingBcode *Bcode
+	if errors.As(originalErr, &existingBcode) {
+		// Error is already a Bcode, don't nest errors
+		return originalErr
+	}
+
+	return fmt.Errorf("%w: %v", bcodeErr, originalErr)
+}
+
+// LogAndReturnError logs the detailed error and returns it
+// This is useful for server errors that should be logged but also returned to the client
+func LogAndReturnError(bcodeErr *Bcode, originalErr error, logFields ...interface{}) error {
+	if originalErr != nil {
+		logger.LogicLogger.Error(bcodeErr.Message, append([]interface{}{"error", originalErr}, logFields...)...)
+	} else {
+		logger.LogicLogger.Error(bcodeErr.Message, logFields...)
+	}
+	// Return the wrapped error so the client gets the context
+	return WrapError(bcodeErr, originalErr)
 }

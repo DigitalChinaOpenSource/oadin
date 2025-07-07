@@ -1,0 +1,1065 @@
+[
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Deepseek-r1-1.5B 是 Deepseek 团队研发的语言模型，约15亿参数，属于Deepseek-R1模型系列中的轻量级版本，适合基础任务和低资源环境。",
+    "flavor": "deepseek",
+    "id": "8370398b-5407-402f-a325-336631643637356231393937",
+    "name": "deepseek-r1:1.5b",
+    "ollama_id": "a42b25d8c10a",
+    "params_size": 1.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "1.1GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Deepseek-r1-7B 是一款 Deepseek 团队研发的模型，主要用于大模型推理场景，具有70亿参数，适用于多种应用场景。",
+    "flavor": "deepseek",
+    "id": "e11bc188-2882-4069-a7ce-316664653130336435353138",
+    "name": "deepseek-r1:7b",
+    "ollama_id": "0a8c26691023",
+    "params_size": 7,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.7GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "‌Deepseek-r1-8B‌是一款基于 Llama 架构的语言模型，拥有80亿的参数数量，经过深度蒸馏处理，使得模型在复杂的自然语言处理任务中表现出色，同时节省计算资源‌。",
+    "flavor": "deepseek",
+    "id": "cce2636f-f7ed-429e-9002-613165393436386336656136",
+    "name": "deepseek-r1:8b",
+    "ollama_id": "28f8fd6cdc67",
+    "params_size": 8,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.9GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Deepseek-r1-14B 是 Deepseek 团队研发的大规模语言模型，其参数量达到140亿。该模型在自然语言处理任务中表现出色，能够提供高质量的语言理解和生成能力。",
+    "flavor": "deepseek",
+    "id": "81d25018-1657-46f4-8ceb-373164326466363934393536",
+    "name": "deepseek-r1:14b",
+    "ollama_id": "ea35dfe18182",
+    "params_size": 14,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "9.0GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-0.5B 是aliyun通义千问团队推出的第三代小参数模型，约5亿参数，属于轻量级模型‌，提供代码生成、文本理解等核心能力，适合轻量级自然语言任务。‌",
+    "flavor": "aliyun",
+    "id": "413583ae-d856-417d-9c8a-636665303365613262383430",
+    "name": "qwen2.5:0.5b",
+    "ollama_id": "a8b0c5157701",
+    "params_size": 0.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "398MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-1.5B 是aliyun通义千问团队推出的第三代轻量级模型，约15亿参数，在保持轻量化的同时，通过架构优化与数据扩展实现了与更大规模模型相近的推理能力。",
+    "flavor": "aliyun",
+    "id": "8fe5daf1-ba66-45de-a431-396463333637613730383364",
+    "name": "qwen2.5:1.5b",
+    "ollama_id": "65ec06548149",
+    "params_size": 1.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "986MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-3B 是aliyun通义千问团队推出的第三代模型，约30亿参数，覆盖中文、英文、日文等 29 种语言，在保持端侧部署优势的同时，通过架构优化实现了与 7B 参数模型相近的任务处理能力‌。",
+    "flavor": "aliyun",
+    "id": "f43f36c1-479a-4af7-89d6-363663353031373238306138",
+    "name": "qwen2.5:3b",
+    "ollama_id": "357c53fb659c",
+    "params_size": 3,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "1.9GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-7B 是aliyun通义千问团队推出的第三代模型，约70亿参数，在长文本处理、多语言支持和专业领域任务中展现了与更大规模模型相近的性能，是平衡算力成本与任务精度的优选方案。",
+    "flavor": "aliyun",
+    "id": "76376bdc-004c-47d2-8d73-353934396164333833636331",
+    "name": "qwen2.5:7b",
+    "ollama_id": "845dbda0ea48",
+    "params_size": 7,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.7GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-14B 是aliyun通义千问团队推出的第三代大模型，约147亿参数，支持多语言，在数学推理、代码生成和多语言任务中表现卓越。",
+    "flavor": "aliyun",
+    "id": "8a5da271-8b27-4919-bb76-613938383630333061373964",
+    "name": "qwen2.5:14b",
+    "ollama_id": "7cdf5a0187d5",
+    "params_size": 14,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "9.0GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "deepscaler-1.5B 是基于 ‌Deepseek-R1-Distilled-Qwen-1.5B 通过强化学习微调优化的语言模型，约15亿参数，适用于轻量化设备部署与实时交互场景。",
+    "flavor": "deepseek",
+    "id": "df7ac73f-b4b3-4a79-b27e-626235656530613563636263",
+    "name": "deepscaler:1.5b",
+    "ollama_id": "0031bcf7459f",
+    "params_size": 1.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "3.6GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-coder-0.5B 是aliyun通义千问团队推出的编程向第三代模型，约5亿参数，基于 Qwen2.5 架构‌与 Transformer 解码器‌设计，支持 Python 等92种编程语言。",
+    "flavor": "aliyun",
+    "id": "c00cf249-3991-4cab-aa4f-623661656531643236373630",
+    "name": "qwen2.5-coder:0.5b",
+    "ollama_id": "d392ed348d5b",
+    "params_size": 0.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "531MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-coder-1.5B 是aliyun通义千问团队推出的编程向第三代模型，约15亿参数，支持 92 种编程语言，针对轻量化设备提供高效代码生成、补全与修复能力。",
+    "flavor": "aliyun",
+    "id": "0cfb19fa-2d26-4482-a2e6-306238393134366532333036",
+    "name": "qwen2.5-coder:1.5b",
+    "ollama_id": "6d3abb8d2d53",
+    "params_size": 1.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "986MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-coder-3B 是aliyun通义千问团队推出的编程向第三代模型，约30亿参数，基于 Qwen2.5 架构‌与 Transformer 解码器‌设计，重点增强多语言代码生成与优化能力，适用于中等复杂度编程任务。",
+    "flavor": "aliyun",
+    "id": "0819f663-b588-47bc-bf1a-656266393731633932316266",
+    "name": "qwen2.5-coder:3b",
+    "ollama_id": "e7149271c296",
+    "params_size": 3,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "1.9GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-coder-7B 是aliyun通义千问团队推出的编程向第三代模型，约70亿参数，支持 92 种编程语言，重点提升代码推理与修复能力，适用于复杂编程任务。",
+    "flavor": "aliyun",
+    "id": "54904615-fb6f-404e-8446-313064663266663633373663",
+    "name": "qwen2.5-coder:7b",
+    "ollama_id": "2b0496514337",
+    "params_size": 7,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.7GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2.5-coder-14B 是aliyun通义千问团队推出的编程向第三代大模型，约140亿参数，支持 92 种编程语言，重点优化大型代码库协同开发与复杂逻辑推理能力。",
+    "flavor": "aliyun",
+    "id": "187c6954-a781-4f8f-a4a2-383531646433623239343837",
+    "name": "qwen2.5-coder:14b",
+    "ollama_id": "3028237cc8c5",
+    "params_size": 14,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "9.0GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/yi.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "yi-coder-1.5B 是零一万物开源的 1.5 亿参数‌编程助手模型‌，支持52种编程语言‌‌，擅长代码生成、代码补全和调试任务‌。",
+    "flavor": "Yi",
+    "id": "f34e6517-8213-4be2-871e-386535343432393331383939",
+    "name": "yi-coder:1.5b",
+    "ollama_id": "186c460ee707",
+    "params_size": 1.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "866MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/yi.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "yi-coder-9B 是零一万物开源的90亿参数‌代码模型‌，支持52种编程语言‌‌，在代码生成、调试与补全任务中性能超越同规模模型，适用于复杂项目级开发‌。",
+    "flavor": "Yi",
+    "id": "d25e82de-95bc-4c0b-a507-626537626131336334623934",
+    "name": "yi-coder:9b",
+    "ollama_id": "39c63e7675d7",
+    "params_size": 9,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "5.0GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2-math-1.5B 是aliyun通义千问团队推出的数学与推理向第二代模型，约15亿参数，适用于多步逻辑推理与竞赛数学题求解‌。",
+    "flavor": "aliyun",
+    "id": "31ee3e7e-51a8-4a60-a20a-383131623536363061383533",
+    "name": "qwen2-math:1.5b",
+    "ollama_id": "a4fdda0c6cc5",
+    "params_size": 1.5,
+    "think":true,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "935MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2-math-7B 是aliyun通义千问团队推出的数学与推理向第二代模型，约70亿参数，擅长多步逻辑推理与竞赛数学题求解‌，支持中英双语数学问题解析‌。",
+    "flavor": "aliyun",
+    "id": "3421af88-f447-43f8-a7d3-356539626463303364616134",
+    "name": "qwen2-math:7b",
+    "ollama_id": "28cc3a337734",
+    "params_size": 7,
+    "think":true,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.4GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/glm.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "glm4:9B 是清华zhipuAi开源的90亿参数‌多模态对话模型‌,支持26种语言,具备代码执行、网页浏览及多模态交互能力‌。",
+    "flavor": "zhipuAi",
+    "id": "0ce77296-e636-4794-af32-613663656161343664383131",
+    "name": "glm4:9b",
+    "ollama_id": "5b699761eca5",
+    "think": true,
+    "params_size": 9,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "5.5GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Deepseek-coder-v2:16B 是深度求索推出的160亿参数‌代码大模型‌，支持338种编程语言‌的代码生成与理解任务‌。",
+    "flavor": "deepseek",
+    "id": "b27b54f2-914b-4357-9149-303033663639616266363837",
+    "name": "deepseek-coder-v2:16b",
+    "ollama_id": "63fb193b3a9b",
+    "params_size": 14,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "8.9GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2-0.5B 是aliyun通义千问团队推出的第二代模型，约5亿参数，面向入门级应用和小型任务开发‌。",
+    "flavor": "aliyun",
+    "id": "95deb322-1756-453a-8d94-303161663535646363623732",
+    "name": "qwen2:0.5b",
+    "ollama_id": "6f48b936a09f",
+    "params_size": 0.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "352MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2-1.5B 是aliyun通义千问团队推出的第二代模型，约15亿参数，擅长文本分类、数学推理等任务‌。",
+    "flavor": "aliyun",
+    "id": "155e7f18-81a0-4467-b904-623962333138626537363966",
+    "name": "qwen2:1.5b",
+    "ollama_id": "f6daf2b25194",
+    "params_size": 1.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "935MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen2-7B 是aliyun通义千问团队推出的第二代模型，约70亿参数，支持 ‌27 种语言。",
+    "flavor": "aliyun",
+    "id": "f5a3eec7-7cbf-4ee8-965c-626636383239376166306533",
+    "name": "qwen2:7b",
+    "ollama_id": "dd314f039b9d",
+    "params_size": 7,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.4GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Deepseek-v2:16B 是 Deepseek 团队开发的升级版大语言模型，约160亿参数，擅长代码生成、数学推理等任务‌。",
+    "flavor": "deepseek",
+    "id": "584e8ed1-7412-4ff9-86d4-656330303138623739653336",
+    "name": "deepseek-v2:16b",
+    "ollama_id": "7c8c332f2df7",
+    "params_size": 16,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "8.9GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "codeQwen-7B 是aliyun通义千问团队推出的编程模型，约70亿参数，支持多语言编程，作为通义灵码的核心技术底座提供高效编程辅助‌。",
+    "flavor": "aliyun",
+    "id": "398c9e2c-2049-432e-a4d2-336434323037663434323635",
+    "name": "codeqwen:7b",
+    "ollama_id": "df352abf55b1",
+    "params_size": 7,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.2GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen-0.5B 是aliyun通义千问团队推出的轻量级模型，约5亿参数，专为低成本部署设计，适用于入门级AI应用场景‌。",
+    "flavor": "aliyun",
+    "id": "f0a80611-1cee-458b-84e4-356132313463393138356638",
+    "name": "qwen:0.5b",
+    "ollama_id": "b5dc5e784f2a",
+    "params_size": 0.5,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "395MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen-1.8B 是aliyun通义千问团队推出的模型，约18亿参数，具备多语言处理能力‌与‌稀疏注意力机制‌‌，适用于轻量化场景下的文本生成、问答等任务‌。",
+    "flavor": "aliyun",
+    "id": "007205d8-7c85-4a61-ac09-386366653639343665376434",
+    "name": "qwen:1.8b",
+    "ollama_id": "b6e8ec2e7126",
+    "params_size": 1.8,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "1.1GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen-4B 是aliyun通义千问团队推出的模型，约40亿参数，支持多语言，适用于本地化代码生成、文档分析等中等负载场景‌。",
+    "flavor": "aliyun",
+    "id": "12dd9b46-a18b-43ba-a87f-316261316336636466356233",
+    "name": "qwen:4b",
+    "ollama_id": "d53d04290064",
+    "params_size": 4,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "2.3GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen-7B 是aliyun通义千问团队推出的模型，约70亿参数，适用于文本生成、智能问答及本地化知识库构建等中高负载场景‌。",
+    "flavor": "aliyun",
+    "id": "150fc9f8-73c0-44f8-a00b-363865643336653338383462",
+    "name": "qwen:7b",
+    "ollama_id": "2091ee8c8d8f",
+    "params_size": 7,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.5GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Deepseek-llm-7B 是 Deepseek 团队开发的中文/多语言大模型，约70亿参数，在数学推理、代码生成等任务中表现优异‌。",
+    "flavor": "deepseek",
+    "id": "49321b3f-fceb-4c90-85fc-643563376131356439626463",
+    "name": "deepseek-llm:7b",
+    "ollama_id": "9aab369a853b",
+    "params_size": 7,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.0GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/Nomic.png",
+    "class": [
+      "嵌入模型"
+    ],
+    "description": "nomic-embed-text是一个具有大型标记上下文窗口的高性能开放嵌入模型，也是一个基于 Sentence Transformers 库的句子嵌入模型，专门用于特征提取和句子相似度计算。在多个任务上表现出色，特别是在分类、检索和聚类任务中。",
+    "flavor": "Nomic",
+    "id": "5106a180-2faa-4700-86d1-613631623633373561616566",
+    "name": "nomic-embed-text",
+    "ollama_id": "0a109f422b47",
+    "service_name": "embed",
+    "service_source": "local",
+    "size": "274MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/Mixedbread.png",
+    "class": [
+      "嵌入模型"
+    ],
+    "description": "mxbai-embed-large来自mixedbread.ai的最先进的大型嵌入模型，该模型在 MTEB 上实现了 Bert-large 规模模型的 SOTA 性能。其性能超越了 OpenAItext-embedding-3-large模型等商业模型，并与其 20 倍规模模型的性能相当,在没有 MTEB 数据重叠的情况下进行训练，这表明该模型在多个领域、任务和文本长度方面具有良好的泛化能力。",
+    "flavor": "Mixedbread",
+    "id": "0448c94a-5caa-4583-bef0-633735666539366164393339",
+    "name": "mxbai-embed-large",
+    "ollama_id": "468836162de7",
+    "service_name": "embed",
+    "service_source": "local",
+    "size": "670MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/BAAI.png",
+    "class": [
+      "嵌入模型"
+    ],
+    "description": "BGE-M3 是 BAAI 推出的一款新机型，以多功能、多语言和多粒度的多功能性而著称。",
+    "flavor": "BAAI",
+    "id": "40b25b4d-0a1e-408a-a066-656562333330323439663535",
+    "name": "bge-m3:567m",
+    "ollama_id": "790764642607",
+    "service_name": "embed",
+    "service_source": "local",
+    "size": "1.2GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/Snowflake.png",
+    "class": [
+      "嵌入模型"
+    ],
+    "description": "snowflake-arctic-embed是一套文本嵌入模型，专注于创建针对性能优化的高质量检索模型。\n\n这些模型利用现有的开源文本表示模型（例如 bert-base-uncased）进行训练，并在多阶段流水线中进行训练以优化其检索性能。",
+    "flavor": "Snowflake",
+    "id": "fb6c6f6d-b707-4012-9f43-353463643533313165616636",
+    "name": "snowflake-arctic-embed",
+    "ollama_id": "21ab8b9b0545",
+    "service_name": "embed",
+    "service_source": "local",
+    "size": "669MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/BAAI.png",
+    "class": [
+      "嵌入模型"
+    ],
+    "description": "bge-large可以将任何文本映射到低维密集向量，用于检索、分类、聚类或语义搜索等任务。它也可以用于 LLM 的向量数据库。",
+    "flavor": "BAAI",
+    "id": "87c0b009-2d93-4f00-9662-333037666261373163373263",
+    "name": "quentinz/bge-large-zh-v1.5:f16",
+    "ollama_id": "bc8ca0995fcd651",
+    "service_name": "embed",
+    "service_source": "local",
+    "size": "671MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/BAAI.png",
+    "class": [
+      "嵌入模型"
+    ],
+    "description": "bge-large可以将任何文本映射到低维密集向量，用于检索、分类、聚类或语义搜索等任务。它也可以用于 LLM 的向量数据库。",
+    "flavor": "BAAI",
+    "id": "5d204ef2-fc6a-4545-9c98-306139646136346637613561",
+    "name": "quentinz/bge-base-zh-v1.5:f16",
+    "ollama_id": "cd232613fa6f",
+    "service_name": "embed",
+    "service_source": "local",
+    "size": "205MB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/Snowflake.png",
+    "class": [
+      "嵌入模型"
+    ],
+    "description": "Snowflake 的前沿嵌入模型。Arctic Embed 2.0 增加了多语言支持，同时又不牺牲英语的性能或可扩展性。",
+    "flavor": "Snowflake",
+    "id": "fc047dcd-78fd-49c9-b33c-616264326336376333653936",
+    "name": "snowflake-arctic-embed2",
+    "ollama_id": "5de93a84837d",
+    "service_name": "embed",
+    "service_source": "local",
+    "size": "1.2GB"
+  },
+  {
+    "api_flavor": "ollama",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/IBM.png",
+    "class": [
+      "嵌入模型"
+    ],
+    "description": "IBM Granite Embedding 278M 模型是纯文本密集双编码器嵌入模型,适用于多语言用例。这些模型旨在为给定的文本块生成固定长度的向量表示，可用于文本相似性、检索和搜索应用。",
+    "flavor": "IBM",
+    "id": "d8c109c0-f063-48a5-9b4d-613139303566303732386335",
+    "name": "granite-embedding:278m",
+    "ollama_id": "1a37926bf842",
+    "service_name": "embed",
+    "service_source": "local",
+    "size": "563MB"
+  },
+  {
+    "api_flavor": "baidu",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "",
+    "flavor": "baidu",
+    "id": "8bb09185-1681-4277-8837-353835333363363235313064",
+    "input_length": 8000,
+    "name": "ernie-3.5-8k",
+    "output_length": 5000,
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "通义千问系列效果最好的模型，适合复杂、多步骤的任务。",
+    "flavor": "aliyun",
+    "id": "5a862bce-3679-4c7c-bd14-616233363335323136616633",
+    "max_input": 30720,
+    "max_output": 8192,
+    "name": "qwen-max",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "基于 Qwen2.5 模型训练的 QwQ 推理模型，通过强化学习大幅度提升了模型推理能力。模型数学代码等核心指标（AIME 24/25、LiveCodeBench）以及部分通用指标（IFEval、LiveBench等）达到DeepSeek-R1 满血版水平。",
+    "flavor": "aliyun",
+    "id": "ccd2bca0-547d-4e56-98ac-386131336330303536303435",
+    "max_input": 129024,
+    "max_output": 8192,
+    "name": "qwen-plus",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "通义千问系列速度最快、成本极低的模型，适合简单任务。",
+    "flavor": "aliyun",
+    "id": "faf74f1d-d94e-4918-b834-336162623739373834656130",
+    "max_input": 1000000,
+    "max_output": 1000000,
+    "name": "qwen-turbo",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "通义千问系列上下文窗口最长，能力均衡且成本较低的模型，适合长文本分析、信息抽取、总结摘要和分类打标等任务。",
+    "flavor": "aliyun",
+    "id": "adb25aea-4231-4cf9-8cea-313465653137306235323937",
+    "max_input": 10000000,
+    "max_output": 10000000,
+    "name": "qwen-long",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "tencent",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "通义千问系列上下文窗口最长，能力均衡且成本较低的模型，适合长文本分析、信息抽取、总结摘要和分类打标等任务。",
+    "flavor": "tencent",
+    "id": "c99cb190-6269-4741-91f0-363366313566373363346539",
+    "max_input": 28000,
+    "max_output": 4000,
+    "name": "hunyuan-turbo",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "tencent",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "业内首个超大规模 Hybrid-Transformer-Mamba 推理模型，扩展推理能力，超强解码速度，进一步对齐人类偏好。",
+    "flavor": "tencent",
+    "id": "457ff64a-1683-4f38-b15b-333666623366656562326466",
+    "max_input": 28000,
+    "max_output": 64000,
+    "name": "hunyuan-t1-latest",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "tencent",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Hunyuan-large 模型总参数量约 389B，激活参数量约 52B，是当前业界参数规模最大、效果最好的 Transformer 架构的开源 MoE 模型。",
+    "flavor": "tencent",
+    "id": "99d2e8fc-4360-4515-a059-356334313837376464653636",
+    "max_input": 28000,
+    "max_output": 4000,
+    "name": "hunyuan-large",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "tencent",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "采用更优的路由策略，同时缓解了负载均衡和专家趋同的问题。\nMOE-32K 性价比相对更高，在平衡效果、价格的同时，可实现对长文本输入的处理。",
+    "flavor": "tencent",
+    "id": "c9eae45e-0a5b-4995-83c0-323935393530373034656662",
+    "max_input": 30000,
+    "max_output": 2000,
+    "name": "hunyuan-standard",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "tencent",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "统一数学解题步骤的风格，加强数学多轮问答。\n文本创作优化回答风格，去除AI味，增加文采。",
+    "flavor": "tencent",
+    "id": "c1c634c8-b7ee-4dd2-93dd-643439666434623534396564",
+    "max_input": 24000,
+    "max_output": 8000,
+    "name": "hunyuan-turbos-latest",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "deepseek",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "deepseek-resoning是 DeepSeek 推出的推理模型。在输出最终回答之前，模型会先输出一段思维链内容，以提升最终答案的准确性。我们的 API 向用户开放 deepseek-reasoner 思维链的内容，以供用户查看、展示、蒸馏使用。",
+    "flavor": "deepseek",
+    "id": "da96ac96-515b-4706-8c59-663138303364336463333236",
+    "max_input": 64000,
+    "max_output": 64000,
+    "name": "deepseek-resoning",
+    "think": true,
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "deepseek",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "deepseek-resoning是 DeepSeek 推出的对话模型（deepseek-v3）。",
+    "flavor": "deepseek",
+    "id": "88f7a912-6ded-4fc0-89c9-343236623138363739373630",
+    "max_input": 0,
+    "max_output": 0,
+    "think": true,
+    "name": "deepseek-chat",
+    "service_name": "chat",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "tencent",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "class": [
+      "文本向量化"
+    ],
+    "description": "",
+    "flavor": "tencent",
+    "id": "4bba3240-63d2-4002-b3a6-636538396336646639653533",
+    "max_input": 0,
+    "max_output": 0,
+    "name": "hunyuan-embedding",
+    "service_name": "embed",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "baidu",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
+    "class": [
+      "文本向量化"
+    ],
+    "description": "",
+    "flavor": "baidu",
+    "id": "dc252a06-ea7d-4bfc-8403-303132323737333832356533",
+    "max_input": 384,
+    "max_output": 0,
+    "name": "embedding-v1",
+    "service_name": "embed",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文本向量化"
+    ],
+    "description": "",
+    "flavor": "aliyun",
+    "id": "a540bf9e-ca8d-4c36-8927-343466303236633766393239",
+    "max_input": 512000,
+    "max_output": 0,
+    "name": "text-embedding-v1",
+    "service_name": "embed",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文本向量化"
+    ],
+    "description": "",
+    "flavor": "aliyun",
+    "id": "25c33cd6-280e-4498-a3cf-623535633838383834623432",
+    "max_input": 512000,
+    "max_output": 0,
+    "name": "text-embedding-v2",
+    "service_name": "embed",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文本向量化"
+    ],
+    "description": "",
+    "flavor": "aliyun",
+    "id": "a970a6df-d623-46b1-b402-376230336162666464346332",
+    "max_input": 81920,
+    "max_output": 0,
+    "name": "text-embedding-v3",
+    "service_name": "embed",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文生图"
+    ],
+    "description": "生成速度快、效果全面、性价比高。对应通义万相官网2.1极速模型。",
+    "flavor": "aliyun",
+    "id": "07cd2cf5-30ce-45e8-9c7a-616237666561323539333038",
+    "max_input": 0,
+    "max_output": 0,
+    "name": "wanx2.1-t2i-turbo",
+    "service_name": "text-to-image",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文生图"
+    ],
+    "description": "生成图像细节更丰富，速度较慢。对应通义万相官网2.1专业模型。",
+    "flavor": "aliyun",
+    "id": "084e31a8-9e18-4223-8cf0-633031303339363037353365",
+    "max_input": 0,
+    "max_output": 0,
+    "name": "wanx2.1-t2i-plus",
+    "service_name": "text-to-image",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "aliyun",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "class": [
+      "文生图"
+    ],
+    "description": "擅长质感人像，速度中等、成本较低。对应通义万相官网2.0极速模型。",
+    "flavor": "aliyun",
+    "id": "c4754885-63c6-49b1-ae75-343634613065666337366463",
+    "max_input": 0,
+    "max_output": 0,
+    "name": "wanx2.0-t2i-turbo",
+    "service_name": "text-to-image",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "baidu",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
+    "class": [
+      "文生图"
+    ],
+    "description": "",
+    "flavor": "baidu",
+    "id": "f9283701-a775-4b49-b7b1-336133653434363365663635",
+    "max_input": 200,
+    "max_output": 0,
+    "name": "irag-1.0",
+    "service_name": "text-to-image",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor": "tencent",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "class": [
+      "文生图"
+    ],
+    "description": "",
+    "flavor": "tencent",
+    "id": "864704fd-4894-4850-97f9-653531346536366637333963",
+    "max_input": 0,
+    "max_output": 0,
+    "name": "hunyuan-DiT",
+    "service_name": "text-to-image",
+    "service_source": "remote"
+  },
+  {
+    "api_flavor":"openvino",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "class":[
+      "文生图"
+    ],
+    "description": "",
+    "flavor": "openvino",
+    "id": "7d4b6476",
+    "max_input": 0,
+    "max_output": 0,
+    "name":"OpenVINO/stable-diffusion-v1-5-fp16-ov",
+    "service_name":"text-to-image",
+    "service_source":"local",
+    "size":"3.1GB"
+  },
+  {
+    "api_flavor":"openvino",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "class":[
+      "文生图"
+    ],
+    "description": "",
+    "flavor": "openvino",
+    "id": "1ef250f0",
+    "max_input": 0,
+    "max_output": 0,
+    "name":"OpenVINO/FLUX.1-schnell-fp16-ov",
+    "service_name":"text-to-image",
+    "service_source":"local",
+    "size": "34GB"
+  },
+  {
+    "api_flavor":"openvino",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "class":[
+      "文生图"
+    ],
+    "description": "",
+    "flavor": "openvino",
+    "id": "a781cc51",
+    "max_input": 0,
+    "max_output": 0,
+    "name":"OpenVINO/FLUX.1-schnell-int8-ov",
+    "service_name":"text-to-image",
+    "service_source":"local",
+    "size": "17GB"
+  },
+  {
+    "api_flavor":"openvino",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "class":[
+      "文生图"
+    ],
+    "description": "",
+    "flavor": "openvino",
+    "id": "a550a9eb",
+    "max_input": 0,
+    "max_output": 0,
+    "name":"OpenVINO/stable-diffusion-v1-5-int8-ov",
+    "service_name":"text-to-image",
+    "service_source":"local",
+    "size": "2.3GB"
+  },
+  {
+    "api_flavor":"openvino",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "class":[
+      "文生图"
+    ],
+    "description": "",
+    "flavor": "openvino",
+    "id": "8e898f06",
+    "max_input": 0,
+    "max_output": 0,
+    "name":"OpenVINO/LCM_Dreamshaper_v7-fp16-ov",
+    "service_name":"text-to-image",
+    "service_source":"local",
+    "size": "1.3GB"
+  },
+  {
+    "api_flavor":"openvino",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "class":[
+      "语音识别"
+    ],
+    "description": "",
+    "flavor": "openvino",
+    "id": "0b39a78b",
+    "max_input": 0,
+    "max_output": 0,
+    "name":"NamoLi/whisper-large-v3-ov",
+    "service_name":"speech-to-text",
+    "service_source":"local",
+    "size": "5.75GB"
+  },
+  {
+    "api_flavor":"openvino",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "class":[
+      "语音识别"
+    ],
+    "description": "",
+    "flavor": "openvino",
+    "id": "0b39a78b",
+    "max_input": 0,
+    "max_output": 0,
+    "name":"NamoLi/whisper-large-v3-ov",
+    "service_name":"speech-to-text-ws",
+    "service_source":"local",
+    "size": "5.75GB"
+  }
+]

@@ -1,0 +1,66 @@
+.modelItem {
+    padding: 8px 16px;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 252px;
+    box-sizing: border-box;
+}
+
+.modelImage {
+    width: 32px;
+    height: 32px;
+    border-radius: 2px;
+    border: 1px solid var(--border-color);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+        width: 24px;
+    }
+
+}
+
+.modelName {
+    color: var(--color-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.showMore {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    line-height: 22px;
+}
+
+.addModelBtn {
+    gap: 0;
+
+    .addModelText {
+        opacity: 0;
+        width: 0;
+        margin-left: 0;
+        transition: all 0.5s;
+        white-space: nowrap;
+    }
+
+    &:hover,
+    &:focus {
+        // gap: 8px;
+
+        .addModelText {
+            margin-left: 8px;
+            opacity: 1;
+            width: 90px;
+        }
+    }
+}

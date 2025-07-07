@@ -2,6 +2,9 @@ version: "0.1"
 name: baidu # the name should be aligned with file name
 services:
     chat: # service name defined by aog
+        task_type: "text-generation"
+        protocol: "HTTP"
+        expose_protocol: "HTTP"
         url: "https://qianfan.baidubce.com/v2/chat/completions"
         endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
         extra_url: ""
@@ -122,6 +125,9 @@ services:
                           }]
                       }
     embed:
+        task_type: "embedding"
+        protocol: "HTTP"
+        expose_protocol: "HTTP"
         url: "https://qianfan.baidubce.com/v2/embeddings"
         endpoints: [ "POST /v1/embeddings" ] # request to this will use this flavor
         extra_url: ""
@@ -183,6 +189,9 @@ services:
                            "data": data
                       }
     text-to-image:
+        task_type: "text-to-image"
+        protocol: "HTTP"
+        expose_protocol: "HTTP"
         url: "https://qianfan.baidubce.com/v2/images/generations"
         endpoints: ["POST /v1/text-to-image"] # request to this will use this flavor
         extra_url: ""

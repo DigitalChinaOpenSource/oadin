@@ -1,0 +1,73 @@
+.mainLayout {
+  width: 100%;
+  height: calc(100vh);
+  overflow: hidden;
+
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.15);
+    height: 56px;
+    z-index: 1;
+
+    .logo {
+      padding: 16px;
+      background-color: var(--color-primary);
+      ;
+      color: #FFF;
+      font-family: Roboto;
+      font-size: 16px;
+      font-style: normal;
+      font-weight: 500;
+      line-height: 24px;
+    }
+
+    .topMenu {
+      padding-left: 8px;
+      flex: 1;
+
+      :global(.ant-menu-item-selected::after) {
+
+        border-bottom-color: var(--border-Primary-color-border-primary-weak);
+
+
+      }
+
+      :global(.ant-menu) {
+        line-height: 56px;
+        font-weight: 600;
+
+      }
+    }
+
+  }
+
+  .content {
+    //display: flex;
+    //flex-direction: column;
+    //overflow: hidden;
+    //width: 100%;
+    //height: 100%;
+    //padding: 0;
+    background: white;
+    padding: 24px;
+    overflow: auto;
+  }
+
+  .triggerContent {
+    width: 100%;
+    height: 100%;
+    padding: 0 24px;
+
+    .triggerIconContent {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #e4e6eb;
+    }
+  }
+}

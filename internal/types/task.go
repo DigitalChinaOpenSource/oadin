@@ -1,3 +1,19 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package types
 
 import (
@@ -8,7 +24,7 @@ import (
 	"io"
 	"net/http"
 
-	"intel.com/aog/internal/utils"
+	"intel.com/aog/internal/logger"
 )
 
 type ServiceResultType int
@@ -48,7 +64,7 @@ func (sr *ServiceResult) WriteBack(w http.ResponseWriter) {
 				w.Header().Set(k, v[0])
 			}
 			_, _ = w.Write(httpError.Body)
-			// event.SysEvents.NotifyHTTPResponse("send_back_response", httpError.StatusCode, w.Header(), httpError.Body)
+			logger.LogicLogger.Info("send_back_response", httpError.StatusCode, w.Header(), httpError.Body)
 			return
 		}
 
@@ -58,14 +74,12 @@ func (sr *ServiceResult) WriteBack(w http.ResponseWriter) {
 			errBytes = []byte(sr.Error.Error())
 			_, _ = w.Write(errBytes)
 		}
-		// event.SysEvents.NotifyHTTPResponse("send_back_response", http.StatusInternalServerError, w.Header(), errBytes)
 	} else {
 		clear(w.Header())
 		w.WriteHeader(sr.StatusCode)
 		for k, v := range sr.HTTP.Header {
 			w.Header().Set(k, v[0])
 		}
-		// event.SysEvents.NotifyHTTPResponse("send_back_response", sr.StatusCode, w.Header(), sr.HTTP.Body)
 		_, _ = w.Write(sr.HTTP.Body)
 	}
 }
@@ -81,7 +95,7 @@ func (sr *ServiceResult) String() string {
 		stype = "ServiceResultChunk"
 	}
 	return fmt.Sprintf("ServiceResult{Type: %s, TaskId: %d, StatusCode: %d, Error: %v, HTTP {Header: %+v, Body: %s}}",
-		stype, sr.StatusCode, sr.TaskId, sr.Error, sr.HTTP.Header, utils.BodyToString(sr.HTTP.Header, sr.HTTP.Body))
+		stype, sr.StatusCode, sr.TaskId, sr.Error, sr.HTTP.Header, string(sr.HTTP.Body))
 }
 
 // ServiceRequest The body of the OriginalRequest has been read out so need to placed here
@@ -97,11 +111,16 @@ type ServiceRequest struct {
 	RequestExtraUrl       string        `json:"extra_url"`
 	HTTP                  HTTPContent   `json:"-"`
 	OriginalRequest       *http.Request `json:"-"`
+	WebSocketConnID       string        `json:"-"` // WebSocket连接ID，用于关联同一连接上的多个消息
 }
 
 func (sr *ServiceRequest) String() string {
-	return fmt.Sprintf("ServiceRequest{FromFlavor: %s, Service: %s, Model: %s, Stream: %t, Hybrid: %s}",
-		sr.FromFlavor, sr.Service, sr.Model, sr.AskStreamMode, sr.HybridPolicy)
+	wsInfo := ""
+	if sr.WebSocketConnID != "" {
+		wsInfo = fmt.Sprintf(", WebSocketConnID: %s", sr.WebSocketConnID)
+	}
+	return fmt.Sprintf("ServiceRequest{FromFlavor: %s, Service: %s, Model: %s, Stream: %t, Hybrid: %s%s}",
+		sr.FromFlavor, sr.Service, sr.Model, sr.AskStreamMode, sr.HybridPolicy, wsInfo)
 }
 
 type ServiceTarget struct {
@@ -110,6 +129,7 @@ type ServiceTarget struct {
 	Model           string
 	ToFavor         string
 	XPU             string
+	Protocol        string // 服务协议类型，如GRPC_STREAM
 	ServiceProvider *ServiceProvider
 }
 

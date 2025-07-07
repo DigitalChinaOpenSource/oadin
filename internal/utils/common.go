@@ -1,12 +1,31 @@
+//*****************************************************************************
+// Copyright 2025 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//*****************************************************************************
+
 package utils
 
 import (
 	"bufio"
 	"bytes"
 	"crypto/hmac"
+	"crypto/sha1"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -16,15 +35,35 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jaypipes/ghw"
+	"github.com/shirou/gopsutil/disk"
+	"intel.com/aog/internal/types"
 )
 
-var textContentTypes = []string{"text/", "application/json", "application/xml", "application/javascript", "application/x-ndjson"}
+const (
+	// Content types
+	ContentTypeJSON   = "application/json"
+	ContentTypeXML    = "application/xml"
+	ContentTypeJS     = "application/javascript"
+	ContentTypeNDJSON = "application/x-ndjson"
+	ContentTypeText   = "text/"
+
+	// Time conversion constants
+	SecondsPerMinute      = 60
+	SecondsPerHour        = 3600
+	MillisecondsPerSecond = 1000
+
+	// Default timestamp format
+	DefaultSRTTime = "00:00:00,000"
+)
+
+var textContentTypes = []string{ContentTypeText, ContentTypeJSON, ContentTypeXML, ContentTypeJS, ContentTypeNDJSON}
 
 type MemoryInfo struct {
 	Size       int
@@ -179,6 +218,14 @@ func HmacSha256String(s, key string) string {
 	return signature
 }
 
+func HmacSha1String(s, key string) string {
+	hashed := hmac.New(sha1.New, []byte(key))
+	hashed.Write([]byte(s))
+	hmacResult := hashed.Sum(nil)
+	signature := hex.EncodeToString(hmacResult)
+	return signature
+}
+
 // generate nonce str
 const (
 	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -188,7 +235,7 @@ const (
 )
 
 func GenerateNonceString(n int) string {
-	var src = rand.NewSource(time.Now().UnixNano())
+	src := rand.NewSource(time.Now().UnixNano())
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
@@ -361,11 +408,11 @@ func StartAOGServer(logPath string, pidFilePath string) error {
 		return fmt.Errorf("failed to open log file: %v", err)
 	}
 	defer logFile.Close()
-	execCmd := "aog.exe"
-	if runtime.GOOS != "windows" {
-		execCmd = "aog"
+	execFile, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %v", err)
 	}
-	cmd := exec.Command(execCmd, "server", "start")
+	cmd := exec.Command(execFile, "server", "start")
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 
@@ -467,4 +514,248 @@ func ParseImageData(data []byte) ([][]byte, error) {
 	}
 
 	return images, nil
+}
+
+func ParseRequestBody(reqBody []byte) (map[string]interface{}, error) {
+	var body map[string]interface{}
+	if err := json.Unmarshal(reqBody, &body); err != nil {
+		return nil, fmt.Errorf("unmarshal request body: %w", err)
+	}
+	return body, nil
+}
+
+func BuildGetRequestURL(baseURL string, body []byte) (string, error) {
+	queryParams := make(map[string][]string)
+	if err := json.Unmarshal(body, &queryParams); err != nil {
+		return "", err
+	}
+
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", err
+	}
+
+	q := u.Query()
+	for key, values := range queryParams {
+		for _, value := range values {
+			q.Add(key, value)
+		}
+	}
+	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
+
+// GenerateUUID 生成一个唯一的UUID字符串
+func GenerateUUID() string {
+	// 使用时间和随机字符串组合生成唯一ID
+	now := time.Now().UnixNano()
+	random := GenerateNonceString(16)
+	return fmt.Sprintf("%d-%s", now, random)
+}
+
+// DecodeBase64 解码Base64字符串为字节数组
+func DecodeBase64(data string) ([]byte, error) {
+	// 处理可能的URL安全Base64格式
+	data = strings.ReplaceAll(data, "-", "+")
+	data = strings.ReplaceAll(data, "_", "/")
+
+	// 处理不完整的Base64字符串
+	missing := len(data) % 4
+	if missing > 0 {
+		data += strings.Repeat("=", 4-missing)
+	}
+
+	return base64.StdEncoding.DecodeString(data)
+}
+
+func ParseSRTTimestamps(srtContent string) (*int, *int) {
+	var beginTime, endTime *int
+
+	// 检查内容是否为空
+	if srtContent == "" {
+		return nil, nil
+	}
+
+	// 按行分割内容
+	lines := strings.Split(srtContent, "\n")
+
+	// 查找时间戳行 (格式: 00:00:00,000 --> 00:00:00,000)
+	for _, line := range lines {
+		if strings.Contains(line, " --> ") {
+			parts := strings.Split(line, " --> ")
+			if len(parts) == 2 {
+				// 解析开始时间
+				start := ParseTimestamp(parts[0])
+				if start >= 0 {
+					startMs := start
+					if beginTime == nil || startMs < *beginTime {
+						beginTime = &startMs
+					}
+				}
+
+				// 解析结束时间
+				end := ParseTimestamp(parts[1])
+				if end >= 0 {
+					endMs := end
+					if endTime == nil || endMs > *endTime {
+						endTime = &endMs
+					}
+				}
+
+				// 由于我们只需要找到最早的开始时间和最晚的结束时间，可以继续搜索下一个时间戳行
+			}
+		}
+	}
+
+	return beginTime, endTime
+}
+
+// ParseTimestamp 将 SRT 格式的时间戳 (00:00:00,000) 转换为毫秒
+func ParseTimestamp(timestamp string) int {
+	// 去除可能的空白字符
+	timestamp = strings.TrimSpace(timestamp)
+
+	// 分离毫秒部分
+	parts := strings.Split(timestamp, ",")
+	if len(parts) != 2 {
+		return -1
+	}
+
+	timeStr := parts[0] // 00:00:00
+	msStr := parts[1]   // 000
+
+	// 解析时间部分 (小时:分钟:秒)
+	timeParts := strings.Split(timeStr, ":")
+	if len(timeParts) != 3 {
+		return -1
+	}
+
+	hours, errH := strconv.Atoi(timeParts[0])
+	minutes, errM := strconv.Atoi(timeParts[1])
+	seconds, errS := strconv.Atoi(timeParts[2])
+	milliseconds, errMs := strconv.Atoi(msStr)
+
+	if errH != nil || errM != nil || errS != nil || errMs != nil {
+		return -1
+	}
+
+	// 转换为总毫秒数
+	totalMs := hours*3600000 + minutes*60000 + seconds*1000 + milliseconds
+
+	return totalMs
+}
+
+// Min 辅助函数，返回两个整数中的较小值
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// NowUnixMilli 获取当前Unix时间戳（毫秒）
+func NowUnixMilli() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+func ReadImageFileToBase64(filePath string) (string, error) {
+	imgData, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("read image file failed: %w", err)
+	}
+	return base64.StdEncoding.EncodeToString(imgData), nil
+}
+
+func DownloadImageUrlToPath(url string) (string, error) {
+	downLoadPath, err := GetDownloadDir()
+	if err != nil {
+		return "", fmt.Errorf("get download dir failed: %w", err)
+	}
+	savePath, err := DownloadFile(url, downLoadPath)
+	if err != nil {
+		return "", fmt.Errorf("download image file failed: %w", err)
+	}
+	return savePath, nil
+}
+
+func DetectGpuModel() string {
+	gpu, err := ghw.GPU()
+	if err != nil {
+		return types.GPUTypeNone
+	}
+
+	hasNvidia := false
+	hasAMD := false
+	hasIntel := false
+
+	for _, card := range gpu.GraphicsCards {
+		// 转为小写
+		productName := strings.ToLower(card.DeviceInfo.Product.Name)
+		if strings.Contains(productName, "nvidia") {
+			hasNvidia = true
+		} else if strings.Contains(productName, "amd") {
+			hasAMD = true
+		} else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
+			hasIntel = true
+		}
+	}
+
+	if hasNvidia && hasAMD {
+		return types.GPUTypeNvidia + "," + types.GPUTypeAmd
+	} else if hasNvidia {
+		return types.GPUTypeNvidia
+	} else if hasAMD {
+		return types.GPUTypeAmd
+	} else if hasIntel {
+		return types.GPUTypeIntelArc
+	} else {
+		return types.GPUTypeNone
+	}
+}
+
+func SystemDiskSize(path string) (*types.PathDiskSizeInfo, error) {
+	if runtime.GOOS == "windows" {
+		path = filepath.VolumeName(path)
+	}
+	usage, err := disk.Usage(path)
+	if err != nil {
+		return &types.PathDiskSizeInfo{}, err
+	}
+	res := &types.PathDiskSizeInfo{}
+	res.TotalSize = int(usage.Total / 1024 / 1024 / 1024)
+	res.FreeSize = int(usage.Free / 1024 / 1024 / 1024)
+	res.UsageSize = int(usage.Used / 1024 / 1024 / 1024)
+	return res, nil
+}
+
+func ParseSizeToGB(sizeStr string) float64 {
+	s := strings.TrimSpace(strings.ToUpper(sizeStr))
+	re := regexp.MustCompile(`([\d.]+)\s*(GB|MB)`)
+	matches := re.FindStringSubmatch(s)
+	if len(matches) != 3 {
+		return 1
+	}
+	num, _ := strconv.ParseFloat(matches[1], 64)
+	unit := matches[2]
+	if unit == "GB" {
+		return num
+	} else if unit == "MB" {
+		return num / 1024
+	}
+	return 1
+}
+
+// FormatSecondsToSRT 将秒数转换为SRT时间格式 (HH:MM:SS,mmm)
+func FormatSecondsToSRT(secondsStr string) string {
+	seconds, err := strconv.ParseFloat(secondsStr, 64)
+	if err != nil {
+		return DefaultSRTTime
+	}
+
+	hours := int(seconds) / SecondsPerHour
+	minutes := (int(seconds) % SecondsPerHour) / SecondsPerMinute
+	secs := int(seconds) % SecondsPerMinute
+	milliseconds := int((seconds - float64(int(seconds))) * MillisecondsPerSecond)
+
+	return fmt.Sprintf("%02d:%02d:%02d,%03d", hours, minutes, secs, milliseconds)
 }
