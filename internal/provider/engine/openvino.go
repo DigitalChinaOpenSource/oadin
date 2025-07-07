@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 
@@ -10,7 +11,7 @@ import (
 	"oadin/internal/utils/client"
 )
 
-var OpenvinoStartStatus int
+var OpenvinoOperateStatus = 1
 
 type OpenvinoProvider struct {
 	EngineConfig *types.EngineRecommendConfig
@@ -18,6 +19,15 @@ type OpenvinoProvider struct {
 
 func NewOpenvinoProvider(config *types.EngineRecommendConfig) *OpenvinoProvider {
 	return nil
+}
+
+func (o *OpenvinoProvider) GetOperateStatus() int {
+	return OpenvinoOperateStatus
+}
+
+func (o *OpenvinoProvider) SetOperateStatus(status int) {
+	OpenvinoOperateStatus = status
+	slog.Info("Openvino operate status set to", "status", OpenvinoOperateStatus)
 }
 
 func (o *OpenvinoProvider) GetDefaultClient() *client.Client {
@@ -121,4 +131,8 @@ func (o *OpenvinoProvider) GenerateEmbedding(ctx context.Context, req *types.Emb
 
 func (o *OpenvinoProvider) GetRunModels(ctx context.Context) (*types.ListResponse, error) {
 	return nil, nil
+}
+
+func (o *OpenvinoProvider) UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error {
+	return nil
 }
