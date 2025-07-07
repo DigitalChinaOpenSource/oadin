@@ -61,9 +61,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelEngineIsBeingOperatedOn
 	}
 	engine.SetOperateStatus(0)
-	defer func() {
-		engine.SetOperateStatus(1)
-	}()
+	defer engine.SetOperateStatus(1)
 	_ = engine.StopEngine()
 	if req.TargetPath == req.SourcePath {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
