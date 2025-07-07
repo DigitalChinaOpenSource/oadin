@@ -89,10 +89,17 @@ const useMcpDownLoadStore = create<IMcpDownloadStore>()(
                 const elapsedTime = Date.now() - item.startTime;
                 return elapsedTime <= 2 * 60 * 1000 + 5000; // 保留未超过二分钟的项目
               }
+              // 如果发现已经下载成功但还没删除的选项，则在3s后删除
+              if (item.downStatus === 'success') {
+                setTimeout(() => {
+                  get().delMcpDownloadItem(item.mcpDetail?.id as string);
+                }, 3000);
+                return false; // 删除成功的项目
+              }
               return true; // 保留其他状态的项目
             });
             set({ mcpDownloadList: updatedList });
-          }, 30 * 1000); // 每分钟检查一次
+          }, 30 * 1000); // 每30s检查一次
         },
       };
     },
