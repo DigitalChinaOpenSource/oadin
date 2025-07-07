@@ -9,7 +9,7 @@ import TagsRender from '@/components/tags-render';
 import defaultLogo from '@/assets/favicon.png';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
-import { DetailDrawer } from '@/components/detail_drawer';
+import { DetailDrawer } from '@/components/detail-drawer';
 import { checkMcpLength, useSelectRemoteHelper } from '@/components/select-mcp/lib/useSelectMcpHelper';
 import { LoadingOutlined } from '@ant-design/icons';
 

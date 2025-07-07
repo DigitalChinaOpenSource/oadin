@@ -4,7 +4,7 @@ import { GlobeIcon, HardDrivesIcon, XIcon } from '@phosphor-icons/react';
 import styles from './index.module.scss';
 import defaultPng from '@/assets/favicon.png';
 import * as React from 'react';
-import { IDetailDrawer } from '@/components/detail_drawer/index.tsx';
+import { IDetailDrawer } from '@/components/detail-drawer';
 
 interface IDetailDrawerTitle extends IDetailDrawer {
   mcpDetail: McpDetailType;

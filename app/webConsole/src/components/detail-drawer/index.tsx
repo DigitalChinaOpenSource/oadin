@@ -4,7 +4,7 @@ import { useMcpDetail } from '@/components/mcp-manage/mcp-detail/useMcpDetail.ts
 import styles from './index.module.scss';
 import McpOverview from '@/components/mcp-manage/mcp-detail/mcp-overview';
 import McpTools from '@/components/mcp-manage/mcp-detail/mcp-tools';
-import DrawerDetailTitle from '@/components/detail_drawer/title.tsx';
+import DrawerDetailTitle from '@/components/detail-drawer/title';
 
 export interface IDetailDrawer extends DrawerProps {
   id: string;
