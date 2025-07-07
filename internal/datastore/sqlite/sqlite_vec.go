@@ -30,7 +30,6 @@ type VectorDBVec struct {
 // 首先调用 Auto() 在全局初始化时注册所有函数
 func init() {
 	sqlite_vec.Auto()
-	fmt.Println("sqlite-vec: 已调用Auto()注册扩展函数")
 }
 
 func NewVectorDBVec(dbPath string) (*VectorDBVec, error) {
