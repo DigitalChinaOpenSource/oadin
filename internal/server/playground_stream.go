@@ -296,10 +296,34 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				if !ok {
 					return
 				}
-				sendError(err)
+				// 直接将模型/调度错误包装成流式消息推送给前端
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    err.Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
+				return
+			case err, ok := <-errChan:
+				if !ok {
+					return
+				}
+				// 这里将错误包装成流式消息推送给前端
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    err.Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
 				return
 			case <-ctx.Done():
-				sendError(ctx.Err())
+				// 上下文取消，直接包装成流式消息推送给前端
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    ctx.Err().Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
 				return
 			}
 		}
