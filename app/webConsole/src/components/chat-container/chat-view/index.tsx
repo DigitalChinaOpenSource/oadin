@@ -66,7 +66,7 @@ export default function ChatView(props: IChatViewProps) {
     if (!messageString.trim() || isLoading || isUploading) return;
     const isEngineAvailable = await fetchCheckEngineStatus();
     if (!isEngineAvailable) {
-      message.error('发送失败，暂无法使用本地模型，请稍后再试');
+      message.error('发送失败，暂无法使用模型相关功能，请稍后再试');
       return;
     }
     const isModelDownloaded = await chechIsModelDownloaded(selectedModel?.name || '');
