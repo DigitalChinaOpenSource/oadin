@@ -26,12 +26,16 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		defer close(respChan)
 		defer close(errChan)
 
+		sendError := func(err error) {
+			errChan <- err
+		}
+
 		// 获取会话
 		session := &types.ChatSession{ID: request.SessionID}
 		err := p.Ds.Get(ctx, session)
 		if err != nil {
 			slog.Error("Failed to get chat session", "error", err)
-			errChan <- err
+			sendError(err)
 			return
 		}
 
@@ -49,7 +53,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		})
 		if err != nil {
 			slog.Error("Failed to list chat messages", "error", err)
-			errChan <- err
+			sendError(err)
 			return
 		}
 
@@ -113,7 +117,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			err = p.Ds.Add(ctx, userMsg)
 			if err != nil {
 				slog.Error("Failed to save user message", "error", err)
-				errChan <- err
+				sendError(err)
 				return
 			}
 		}
@@ -292,12 +296,34 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				if !ok {
 					return
 				}
-				// 转发错误
-				errChan <- err
+				// 直接将模型/调度错误包装成流式消息推送给前端
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    err.Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
+				return
+			case err, ok := <-errChan:
+				if !ok {
+					return
+				}
+				// 这里将错误包装成流式消息推送给前端
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    err.Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
 				return
 			case <-ctx.Done():
-				// 上下文取消
-				errChan <- ctx.Err()
+				// 上下文取消，直接包装成流式消息推送给前端
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    ctx.Err().Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
 				return
 			}
 		}
