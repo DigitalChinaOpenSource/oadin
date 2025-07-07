@@ -128,10 +128,6 @@ func (s *SystemImpl) SwitchProxy(ctx context.Context, enabled bool) error {
 func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	// 探查ollama服务是否在运行模型
 	engine := provider.GetModelEngine("ollama")
-	engineConfig := engine.GetConfig()
-	if engineConfig.StartStatus == 0 {
-		return bcode.HttpError(bcode.ErrModelEngineIsBeingOperatedOn, "无法切换代理启用状态，当前有模型正在运行，请先停止模型")
-	}
 	OperateStatus := engine.GetOperateStatus()
 	if OperateStatus == 0 {
 		return bcode.ErrModelEngineIsBeingOperatedOn
