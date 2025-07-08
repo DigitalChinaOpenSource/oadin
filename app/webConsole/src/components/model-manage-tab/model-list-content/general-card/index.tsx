@@ -4,7 +4,7 @@ import { IModelDataItem, IModelSourceType } from '@/types';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { ArrowClockwiseIcon, DownloadSimpleIcon, GearSixIcon, GlobeIcon, HardDrivesIcon, SpinnerIcon, TrashIcon } from '@phosphor-icons/react';
 import TagsRender from '@/components/tags-render';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import { useModelPathChangeStore } from '@/store/useModelPathChangeStore';
 import React, { MouseEvent } from 'react';
 import recommendedIcon from '@/components/icons/recommendIcon.png';
 import { ISelectedDialogProps } from '@/components/choose-model-dialog';

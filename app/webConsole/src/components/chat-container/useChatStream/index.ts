@@ -4,7 +4,7 @@ import { baseHeaders } from '@/utils';
 import { API_PREFIX } from '@/constants';
 import { ChatMessageItem } from '@res-utiles/ui-components';
 import useChatStore from '@/components/chat-container/store/useChatStore';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import { useModelPathChangeStore } from '@/store/useModelPathChangeStore';
 import useSelectMcpStore from '@/store/useSelectMcpStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import { getIdByFunction } from '../..//select-mcp/lib/useSelectMcpHelper';

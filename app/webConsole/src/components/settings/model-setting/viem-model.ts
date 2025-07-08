@@ -24,6 +24,8 @@ export function useModelSetting() {
   // 正在查询模型路径和磁盘空间
   const [isCheckingPathSpace, setIsCheckingPathSpace] = useState<boolean>(false);
 
+  const prevMigratingStatusRef = useRef<IStatus>('init');
+
   // 模型存储路径弹窗
   const onModelPathVisible = useCallback(() => {
     setModalPathVisible(!modalPathVisible);
@@ -100,7 +102,6 @@ export function useModelSetting() {
       manual: true,
       onSuccess: (data) => {
         message.success('模型存储路径修改成功');
-        fetchModelPath();
       },
       onError: (error: Error & { handled?: boolean }) => {
         if (!error?.handled) {
@@ -113,6 +114,15 @@ export function useModelSetting() {
   useEffect(() => {
     setModelDownUrl(ollamaRegistry);
   }, [ollamaRegistry]);
+
+  useEffect(() => {
+    // 如果是迁移中到迁移完成才执行一次调用
+    if (prevMigratingStatusRef.current === 'pending' && migratingStatus === 'init') {
+      fetchModelPath();
+    }
+    // 更新之前的状态值
+    prevMigratingStatusRef.current = migratingStatus;
+  }, [migratingStatus]);
 
   return {
     fetchModelPath,

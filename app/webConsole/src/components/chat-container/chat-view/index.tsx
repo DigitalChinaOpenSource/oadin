@@ -20,7 +20,7 @@ import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 import { useChatStream } from '@/components/chat-container/useChatStream';
 import { HeaderContent } from './header-content';
 import EmbedDownloadButton from '../enbed-download-btn';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import { useModelPathChangeStore } from '@/store/useModelPathChangeStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
 import { fetchCheckEngineStatus, chechIsModelDownloaded } from '../utils';
 import './index.scss';

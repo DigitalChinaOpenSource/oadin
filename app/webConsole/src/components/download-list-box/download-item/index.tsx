@@ -2,7 +2,7 @@ import { Image, message, Progress } from 'antd';
 import styles from './index.module.scss';
 import greySpinner from '@/components/icons/greySpinner.svg';
 import { ArrowClockwiseIcon, PlayPauseIcon, PauseIcon, XIcon, XCircleIcon } from '@phosphor-icons/react';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import { useModelPathChangeStore } from '@/store/useModelPathChangeStore';
 import { DOWNLOAD_STATUS } from '@/constants';
 import { useViewModel } from './view-model';
 import { IModelDataItem } from '@/types';
