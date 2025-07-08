@@ -63,7 +63,6 @@ export default function ChatView(props: IChatViewProps) {
   };
 
   const handleSendMessage = async (messageString: string) => {
-    console.log('messageString===>', messageString);
     if (!messageString.trim() || isLoading || isUploading) return;
     const isEngineAvailable = await fetchCheckEngineStatus();
     if (!isEngineAvailable) {

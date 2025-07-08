@@ -11,6 +11,7 @@ import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
 import { DetailDrawer } from '@/components/detail-drawer';
 import { checkMcpLength, useSelectRemoteHelper } from '@/components/select-mcp/lib/useSelectMcpHelper';
+import realLoadingSvg from '@/components/icons/real-loading.svg';
 import { LoadingOutlined } from '@ant-design/icons';
 import { getMessageByMcp } from '@/i18n';
 
@@ -188,7 +189,7 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
   const onLoadMore = () => {
     handlePageChange(pagination.current + 1, 12);
   };
-  console.info(startMcpNow, '当前的状态');
+
   const loadMore =
     pagination?.total > pagination.current * 12 && !mcpListLoading && !showOnlySelected ? (
       <div
@@ -262,6 +263,15 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
         loadMore={loadMore}
         style={{ height: '440px', overflowY: 'auto', overflowX: 'hidden' }}
         dataSource={filteredData}
+        loading={{
+          spinning: mcpListLoading,
+          indicator: (
+            <img
+              src={realLoadingSvg}
+              alt="loading"
+            />
+          ),
+        }}
         renderItem={(item) => (
           <List.Item
             actions={[
