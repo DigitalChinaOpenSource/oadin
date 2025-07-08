@@ -671,6 +671,17 @@ export function useChatStream() {
             // 只有当最后一个数据包不包含 tool_calls 时，才处理完成逻辑
             requestState.current.status.isToolCallActive = false;
 
+            // 兜底方案：如果有正在进行的深度思考，需要将其标记为完成
+            // 最后的数据包没有正确处理、服务器异常关闭连接
+            if (requestState.current.content.isThinkingActive && requestState.current.content.thinkingFromField) {
+              setStreamingThinking({
+                data: requestState.current.content.thinkingFromField,
+                status: 'success',
+                ...(requestState.current.content.thinkingTotalDuration && { totalDuration: requestState.current.content.thinkingTotalDuration }),
+              });
+              requestState.current.content.isThinkingActive = false;
+            }
+
             // 处理进行中的工具调用完成状态
             const allMessages = useChatStore.getState().messages;
             const progressToolMessage = findProgressToolMessage(allMessages) as any;

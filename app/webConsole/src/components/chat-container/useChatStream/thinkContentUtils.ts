@@ -202,17 +202,38 @@ export const handleTextContent = (
         requestStateRef.current.content.thinkingFromField += data.thoughts;
       }
 
+      // 根据是否完成来设置思考状态
+      const thinkingStatus = data.is_complete ? 'success' : 'progress';
+
       // 更新流式思考显示内容
       setStreamingThinking({
         data: requestStateRef.current.content.thinkingFromField || '',
-        status: 'progress',
+        status: thinkingStatus,
+        ...(thinkingStatus === 'success' && data.total_duration && { totalDuration: data.total_duration }),
       });
+
+      // 如果完成了，标记思考状态为非活跃
+      if (data.is_complete) {
+        requestStateRef.current.content.isThinkingActive = false;
+      }
 
       if (hasContent) {
         setStreamingContent(data.content || '');
         responseContent = data.content || '';
       }
     } else if (requestStateRef.current.content.isThinkingActive) {
+      // 当 thoughts 为空但之前在思考状态时，根据 is_complete 决定最终状态
+      const thinkStatus = data.is_complete ? 'success' : isUserCancelled ? 'error' : 'success';
+
+      // 将思考内容状态设置为最终状态
+      if (requestStateRef.current.content.thinkingFromField) {
+        setStreamingThinking({
+          data: requestStateRef.current.content.thinkingFromField,
+          status: thinkStatus,
+          ...(thinkStatus === 'success' && data.total_duration && { totalDuration: data.total_duration }),
+        });
+      }
+
       requestStateRef.current.content.isThinkingActive = false;
 
       if (hasContent) {
@@ -243,8 +264,7 @@ export const handleTextContent = (
 
   // 根据不同的数据类型处理内容累积
   if (data.is_complete) {
-    // 当 is_complete 为 true 时，保持当前累积的内容，不被累加结果覆盖
-    // responseContent 保持不变，避免重复处理
+    responseContent = data.content || '';
   } else if (data.type === 'answer') {
     if (responseContent.length === 0) {
       responseContent = data.content || '';
