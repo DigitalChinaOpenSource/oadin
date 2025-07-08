@@ -10,7 +10,7 @@ import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';
 export function useModelSetting() {
   const { setMigratingStatus } = useModelPathChangeStore();
   // 获取模型下载源地址
-  const { ollamaRegistry, fetchSettingsLoading } = useSettingsViewModel();
+  const { ollamaRegistry } = useSettingsViewModel();
   // 模型存储路径弹窗是否显示
   const [modalPathVisible, setModalPathVisible] = useState<boolean>(false);
   // 接口获取
@@ -21,7 +21,8 @@ export function useModelSetting() {
   const [modelDownUrl, setModelDownUrl] = useState<string>('');
   // 正在进行修改的模型路径
   const [changingModelPath, setChangingModelPath] = useState<string>('');
-
+  // 正在查询模型路径和磁盘空间
+  const [isCheckingPathSpace, setIsCheckingPathSpace] = useState<boolean>(false);
   // 模型存储路径弹窗
   const onModelPathVisible = useCallback(() => {
     setModalPathVisible(!modalPathVisible);
@@ -30,6 +31,7 @@ export function useModelSetting() {
   // 获取模型存储路径
   const { run: fetchModelPath } = useRequest(
     async () => {
+      setIsCheckingPathSpace(true);
       const res = await httpRequest.get<IModelPathRes>('/control_panel/model/filepath');
       return res || {};
     },
@@ -37,9 +39,13 @@ export function useModelSetting() {
       manual: true,
       onSuccess: (data) => {
         setModelPath(data?.path || '');
+        if (data?.path) {
+          onCheckPathSpace(data?.path);
+        }
       },
       onError: (error) => {
         console.error('获取模型存储路径失败:', error);
+        setIsCheckingPathSpace(false);
       },
     },
   );
@@ -54,10 +60,12 @@ export function useModelSetting() {
       manual: true,
       onSuccess: (data) => {
         setCurrentPathSpace(data);
+        setIsCheckingPathSpace(false);
         return data;
       },
       onError: (error) => {
         setCurrentPathSpace({} as IModelPathSpaceRes);
+        setIsCheckingPathSpace(false);
         return error;
       },
     },
@@ -119,5 +127,7 @@ export function useModelSetting() {
     modelDownUrl,
     changingModelPath,
     setChangingModelPath,
+    isCheckingPathSpace,
+    setIsCheckingPathSpace,
   };
 }
