@@ -120,7 +120,9 @@ services:
                           "created_at": created_at,
                           "message": message,
                           "finished": done,
-                          "finish_reason": done_reason
+                          "finish_reason": done_reason,
+                          "total_duration": total_duration,
+                          "eval_duration": load_duration
                       }
 
         stream_response_to_oadin:
@@ -133,7 +135,9 @@ services:
                           "created_at": created_at,
                           "message": message,
                           "finished": done,
-                          "finish_reason": done_reason
+                          "finish_reason": done_reason,
+                          "total_duration": total_duration,
+                          "eval_duration": load_duration
                       }
 
                 - converter: header
