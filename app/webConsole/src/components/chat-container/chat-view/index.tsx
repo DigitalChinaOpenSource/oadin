@@ -64,10 +64,12 @@ export default function ChatView(props: IChatViewProps) {
 
   const handleSendMessage = async (messageString: string) => {
     if (!messageString.trim() || isLoading || isUploading) return;
-    const isEngineAvailable = await fetchCheckEngineStatus();
-    if (!isEngineAvailable) {
-      message.error('发送失败，暂无法使用模型相关功能，请稍后再试');
-      return;
+    if (selectedModel?.source === 'local') {
+      const isEngineAvailable = await fetchCheckEngineStatus();
+      if (!isEngineAvailable) {
+        message.error('发送失败，暂无法使用模型相关功能，请稍后再试');
+        return;
+      }
     }
     const isModelDownloaded = await chechIsModelDownloaded(selectedModel?.name || '');
     if (!isModelDownloaded) {
