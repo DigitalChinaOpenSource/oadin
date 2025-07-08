@@ -176,6 +176,7 @@ export const buildMessageWithThinkContent = (
  * @param setStreamingContent 设置流式内容的函数
  * @param setStreamingThinking 设置流式思考内容的函数
  * @param requestStateRef 请求状态引用
+ * @param isUserCancelled 是否用户取消
  * @returns 更新后的响应内容
  */
 export const handleTextContent = (
@@ -242,7 +243,8 @@ export const handleTextContent = (
 
   // 根据不同的数据类型处理内容累积
   if (data.is_complete) {
-    responseContent = data.content || '';
+    // 当 is_complete 为 true 时，保持当前累积的内容，不被累加结果覆盖
+    // responseContent 保持不变，避免重复处理
   } else if (data.type === 'answer') {
     if (responseContent.length === 0) {
       responseContent = data.content || '';

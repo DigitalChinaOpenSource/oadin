@@ -49,7 +49,6 @@ export function useChatStream() {
   // 流式请求控制器
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 请求状态统一处理
   const requestState = useRef({
     content: {
       response: '',
@@ -67,14 +66,13 @@ export function useChatStream() {
     lastToolGroupIdRef: null as string | null,
     lastDataPacket: null as any, // 保存最后一个数据包
   });
+
   const toolCallHandlersRef = useRef<{
     continueConversation: ((result: string) => Promise<void>) | null;
   }>({ continueConversation: null });
   const functionIdCacheRef = useRef<Record<string, any>>({});
 
-  /**
-   * 清除所有定时器
-   */
+  // 清除所有定时器
   const clearTimers = useCallback(() => {
     if (requestState.current.timers.totalTimer) {
       clearTimeout(requestState.current.timers.totalTimer);
@@ -181,7 +179,6 @@ export function useChatStream() {
     }
   };
 
-  // 清除流式状态
   const clearStreamingState = useCallback(() => {
     setStreamingContent('');
     setStreamingThinking('');
@@ -480,6 +477,11 @@ export function useChatStream() {
         };
         addMessage(updatedMessage, true);
 
+        // 工具调用失败一般就停止了
+        if (isToolError) {
+          requestState.current.status.isToolCallActive = false;
+          setIsLoading(false);
+        }
         // 处理后续操作
         if (!isToolError && toolCallHandlersRef.current.continueConversation) {
           // 调用继续对话函数，处理后续流式响应
@@ -534,7 +536,7 @@ export function useChatStream() {
       return;
     }
 
-    // 创建用户消息（仅在需要时）
+    // 创建用户消息
     if (isUserMessage) {
       const uploadFileList = useUploadFileListStore.getState().uploadFileList || [];
       const userMsg: ChatMessageItem = {
@@ -560,7 +562,7 @@ export function useChatStream() {
     const signal = abortControllerRef.current.signal;
     // 构建请求参数
     const requestData: ChatRequestParams = {
-      content: toolGroupID ? '' : content, // 如果有 toolGroupID，content 设为空
+      content: toolGroupID ? '' : content,
       SessionID: getSessionIdFromUrl(),
     };
 
@@ -605,14 +607,14 @@ export function useChatStream() {
           },
           onclose: () => {
             clearTimers();
-            const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
-            const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
-            // 如果连接关闭但未完成且有内容，保存部分回复
-            if (isLoading && (response || responseContent || thinkingFromField)) {
-              const finalContent = (response || responseContent || '') + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
-              const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
-              addMessage(aiMessage);
-            }
+            // const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
+            // const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
+            // // 如果连接关闭但未完成且有内容，保存部分回复
+            // if (isLoading && (response || responseContent || thinkingFromField)) {
+            //   const finalContent = (response || responseContent || '') + ERROR_MESSAGES.CONNECTION.INTERRUPTED;
+            //   const aiMessage = buildMessageWithThinkContent(finalContent, false, thinking || tempStreamingThinking, thinkingFromField, isThinkingActive);
+            //   addMessage(aiMessage);
+            // }
 
             if (!requestState.current.status.isToolCallActive) {
               setIsLoading(false);
@@ -644,10 +646,8 @@ export function useChatStream() {
             }
 
             if (data?.tool_calls && data.tool_calls.length > 0) {
-              // 处理工具调用（在 handleToolCalls 中已经处理了内容保存）
               await handleToolCalls(data, responseContent);
             } else if (data.content || data.thoughts) {
-              // 处理普通文本内容
               responseContent = handleTextContent(data, responseContent, setStreamingContent, setStreamingThinking, requestState, false);
               requestState.current.content.response = responseContent;
             }
@@ -710,8 +710,9 @@ export function useChatStream() {
 
             const { response, thinking, thinkingFromField, isThinkingActive } = requestState.current.content;
             const tempStreamingThinking = typeof streamingThinking === 'string' ? streamingThinking : streamingThinking.data;
-            // 保存最终消息（仅在没有工具调用活动时）
-            if (!requestState.current.status.isToolCallActive && (response || responseContent || thinkingFromField)) {
+
+            const hasActiveToolGroup = !!requestState.current.lastToolGroupIdRef;
+            if (!requestState.current.status.isToolCallActive && (response || responseContent || thinkingFromField) && !hasActiveToolGroup) {
               const finalContent = response || responseContent || '';
               const aiMessage = buildMessageWithThinkContent(
                 finalContent,

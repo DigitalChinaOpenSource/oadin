@@ -130,7 +130,8 @@
     .mcpStatus {
       flex-shrink: 0;
       display: flex;
-      width: 74px;
+      max-width: 74px;
+      min-width: 74px;
       margin-left: 16px;
     }
     .mcpSuccess {
