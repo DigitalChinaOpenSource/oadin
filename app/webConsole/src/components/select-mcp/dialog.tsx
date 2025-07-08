@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Checkbox, Input, List, Spin } from 'antd';
+import { Button, Checkbox, Input, List, message, Spin } from 'antd';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import styles from './index.module.scss';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
@@ -12,6 +12,7 @@ import { ChooseMcpDialog } from '@/components/choose-mcp-dialog';
 import { DetailDrawer } from '@/components/detail-drawer';
 import { checkMcpLength, useSelectRemoteHelper } from '@/components/select-mcp/lib/useSelectMcpHelper';
 import { LoadingOutlined } from '@ant-design/icons';
+import { getMessageByMcp } from '@/i18n';
 
 interface ISelectMcpDialogProps {
   setSelectMcpPopOpen: (bool: boolean) => void;
@@ -54,9 +55,13 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
 
   // 处理单个项目的选择
   const handleItemSelect = (item: IMcpListItem, checked: boolean) => {
+    console.log(Object.values(startMcpNow).filter((item: number) => item === 2).length, '当前正在启动的数量');
+    // 当前正在启动的数量
+    const isStarting = Object.values(startMcpNow).filter((item: number) => item === 2).length;
     if (checked) {
       console.info('选择了MCP:', item);
-      if (checkMcpLength(selectMcpList.length)) {
+      // 如果没有超过最大数量限制并且正在启动的mcp和已启动成功的mcp数量不超过限制则能够继续添加
+      if (checkMcpLength(selectMcpList.length) && checkMcpLength(isStarting + selectMcpList.length)) {
         /// 1 失败， 0成功， 2进行中
         setStartMcpNow((prevState) => ({
           ...prevState,
@@ -128,6 +133,12 @@ export const SelectMcpDialog = (props: ISelectMcpDialogProps) => {
               abortControllersRef.current.delete(item.id as string);
             }
           });
+      } else {
+        message.warning(
+          getMessageByMcp('maxSelectMcp', {
+            msg: '为保障服务稳定运行与优质体验，建议您选择的MCP工具不要超过5个。',
+          }),
+        );
       }
     } else {
       setSelectMcpList((prevList) => prevList.filter((mcpItem) => mcpItem?.id !== item?.id));
