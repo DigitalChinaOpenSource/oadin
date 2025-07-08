@@ -38,15 +38,18 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
       const { startList, stopList } = updateMcp(selectMcpList, selectTemporaryMcpItems);
 
       // 仅当有需要启动的MCP时调用startMcps
-      let successIds: string[] = [];
+      let errorIds: string[] = [];
+
       if (startList.length > 0) {
         try {
           const res = await startMcps({
             ids: startList.map((item) => item.id.toString()),
           });
-          successIds = res.successIds;
+          errorIds = res.errorIds || [];
         } catch (e) {
           console.log('启动MCP失败:', e);
+          setStartLoading(false);
+          return message.error('所选择的MCP启动失败，请重试');
         }
       }
 
@@ -57,7 +60,7 @@ export const ChooseMcpDialog: React.FC<IChooseMcpDialog> = (options: IChooseMcpD
         });
       }
       // // 更新全局状态
-      setSelectMcpList(selectTemporaryMcpItems.filter((item) => successIds.includes(item.id.toString())));
+      setSelectMcpList(selectTemporaryMcpItems.filter((item) => !errorIds.includes(item.id.toString())));
       // 关闭模态框
       if (options.onSelectMcpOkProps) {
         options.onSelectMcpOkProps();
