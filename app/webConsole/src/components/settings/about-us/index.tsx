@@ -4,7 +4,7 @@ import { Button, Modal } from 'antd';
 import { RightOutlined, ExportOutlined } from '@ant-design/icons';
 import UpdateHistory from '@/components/settings/about-us/update-history';
 import { useEffect, useState } from 'react';
-import useByzeServerCheckStore from '@/store/useByzeServerCheckStore.ts';
+import useOadinServerCheckStore from '@/store/useOadinServerCheckStore';
 import CopyrightNotice from '@/components/settings/about-us/copyright-notice';
 import Feedback from '@/components/settings/about-us/feedback';
 import { useAboutUsView } from '@/components/settings/about-us/view-model';
@@ -16,7 +16,7 @@ export default function AboutUs() {
   // 意见反馈
   const [openFeedback, setOpenFeedback] = useState(false);
   // 奥丁服务状态
-  const { checkByzeStatus, fetchByzeServerStatus, checkByzeServerLoading } = useByzeServerCheckStore();
+  const { checkOadinStatus, fetchOadinServerStatus } = useOadinServerCheckStore();
   // 关于我们详情
   const { aboutDetails, aboutUsLoading, fetchAboutUsDetail } = useAboutUsView();
 
@@ -24,7 +24,7 @@ export default function AboutUs() {
     fetchAboutUsDetail();
   }, []);
 
-  const handleByzeRefresh = () => {
+  const handleOadinRefresh = () => {
     Modal.confirm({
       title: '确认重启吗？',
       okText: '确认',
@@ -33,7 +33,7 @@ export default function AboutUs() {
         style: { backgroundColor: '#4f4dff' },
       },
       async onOk() {
-        await fetchByzeServerStatus(); // 重启byze服务
+        await fetchOadinServerStatus(); // 重启 oadin 服务
       },
       onCancel() {
         console.log('Cancel');
@@ -68,7 +68,7 @@ export default function AboutUs() {
             <div className={styles.serviceStatus}>
               <div>服务状态</div>
               <div className={styles.statusName}>
-                {checkByzeStatus ? (
+                {checkOadinStatus ? (
                   <>
                     <div className={styles.dot}></div>
                     <span className={styles.used}>启用</span>
@@ -83,7 +83,7 @@ export default function AboutUs() {
             </div>
             {/*<Button*/}
             {/*  type="default"*/}
-            {/*  onClick={handleByzeRefresh}*/}
+            {/*  onClick={handleOadinRefresh}*/}
             {/*>*/}
             {/*  重启*/}
             {/*</Button>*/}

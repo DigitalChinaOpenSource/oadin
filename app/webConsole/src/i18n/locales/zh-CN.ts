@@ -15,7 +15,7 @@ export default {
 
     service_error: '服务出错，请检查奥丁服务',
     request_timeout: '服务请求超时，请稍后重试',
-    byze_unavailable: '奥丁服务不可用，请确认奥丁服务启动状态',
+    oadin_unavailable: '奥丁服务不可用，请确认奥丁服务启动状态',
   },
   modelInfo: {
     noSelectModel: '请先选择模型，再体验。',

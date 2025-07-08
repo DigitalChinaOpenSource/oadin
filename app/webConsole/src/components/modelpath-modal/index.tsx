@@ -4,7 +4,7 @@ import { useRequest, useDebounce } from 'ahooks';
 import { httpRequest, healthRequest } from '@/utils/httpRequest';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
 import { useModelPathChangeStore } from '@/store/useModelPathChangeStore';
-import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
+import useOadinServerCheckStore from '@/store/useOadinServerCheckStore';
 import useChatStore from '../chat-container/store/useChatStore';
 import { IModelPathSpaceRes } from '../model-manage-tab/types';
 import { DOWNLOAD_STATUS } from '@/constants';
@@ -24,7 +24,7 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
   const downloadList = useModelDownloadStore((state) => state.downloadList);
   const { IN_PROGRESS } = DOWNLOAD_STATUS;
   const { setMigratingStatus } = useModelPathChangeStore();
-  const { checkByzeStatus, setCheckByzeServerLoading } = useByzeServerCheckStore();
+  const { checkOadinStatus, setCheckOadinServerLoading } = useOadinServerCheckStore();
   const isChatLoading = useChatStore.getState().isLoading;
   const [form] = Form.useForm();
   const formValues = Form.useWatch([], form);
@@ -55,14 +55,14 @@ export default memo(function ModelPathModal(props: IModelPathModalProps) {
   }, [formValues, form]);
 
   useEffect(() => {
-    if (!checkByzeStatus) {
+    if (!checkOadinStatus) {
       onModelPathVisible();
       setMigratingStatus('failed');
-      setCheckByzeServerLoading(false);
+      setCheckOadinServerLoading(false);
     } else {
       setMigratingStatus('init');
     }
-  }, [checkByzeStatus]);
+  }, [checkOadinStatus]);
 
   const { run: onCheckPathSpace } = useRequest(
     async (path: string) => {

@@ -1,4 +1,4 @@
-import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
+import useOadinServerCheckStore from '@/store/useOadinServerCheckStore';
 
 /**
  * 在每次请求前先检查健康状态
@@ -6,13 +6,13 @@ import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
  * @returns Promise<any>
  */
 export async function requestWithHealthCheck<T>(requestFn: () => Promise<T>): Promise<T | undefined> {
-  const { fetchByzeServerStatus, checkByzeStatus } = useByzeServerCheckStore.getState();
+  const { fetchOadinServerStatus, checkOadinStatus } = useOadinServerCheckStore.getState();
 
   // 先发起健康检查
-  await fetchByzeServerStatus();
+  await fetchOadinServerStatus();
 
   // 检查健康状态
-  if (!useByzeServerCheckStore.getState().checkByzeStatus) {
+  if (!checkOadinStatus) {
     // 健康检查未通过，直接中断
     return Promise.reject(new Error('奥丁服务不可用，已拦截请求'));
   }

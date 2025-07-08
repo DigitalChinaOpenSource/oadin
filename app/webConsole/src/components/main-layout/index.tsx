@@ -2,27 +2,27 @@ import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../sidebar';
 import styles from './index.module.scss';
-import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
+import useOadinServerCheckStore from '@/store/useOadinServerCheckStore';
 import { Layout, Tooltip } from 'antd';
 import TopHeader from '@/components/main-layout/top-header';
 import { ArrowLineLeftIcon, ArrowLineRightIcon } from '@phosphor-icons/react';
-import ByzeErrorTip from '@/components/byze-error-tip';
+import OadinErrorTip from '@/components/oadin-error-tip';
 
 export default function MainLayout() {
   const { Header, Content, Sider } = Layout;
   const [collapsed, setCollapsed] = useState(false);
 
   // 获取和更新奥丁服务的健康状态
-  const { fetchByzeServerStatus } = useByzeServerCheckStore();
+  const { fetchOadinServerStatus } = useOadinServerCheckStore();
   useEffect(() => {
-    fetchByzeServerStatus();
+    fetchOadinServerStatus();
     const interval = setInterval(() => {
-      fetchByzeServerStatus();
+      fetchOadinServerStatus();
     }, 30000);
 
     // 清除定时器
     return () => clearInterval(interval);
-  }, [fetchByzeServerStatus]);
+  }, [fetchOadinServerStatus]);
 
   const handleCollapse = (collapsed: boolean) => {
     setCollapsed(collapsed);
@@ -62,7 +62,7 @@ export default function MainLayout() {
       <Header className={styles.header}>
         <TopHeader />
       </Header>
-      <ByzeErrorTip />
+      <OadinErrorTip />
       <Layout>
         <Sider
           theme={'light'}

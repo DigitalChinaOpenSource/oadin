@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
+import useOadinServerCheckStore from '@/store/useOadinServerCheckStore';
 import { message } from 'antd';
 import { API_PREFIX } from '@/constants';
 import i18n from '@/i18n';
@@ -121,7 +121,7 @@ const createApiInstance = (baseURL: string) => {
   return instance;
 };
 
-const byzeInstance = createApiInstance(apiBaseURL);
+const oadinInstance = createApiInstance(apiBaseURL);
 
 // 创建请求函数，直接调用实例方法，不再包装健康检查
 const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) => ({
@@ -162,9 +162,9 @@ const createRequestFunctions = (instance: ReturnType<typeof createApiInstance>) 
   },
 });
 
-export const httpRequest = createRequestFunctions(byzeInstance);
+export const httpRequest = createRequestFunctions(oadinInstance);
 
-// Byze 的健康检查，请求路径不同，需要在底层做特殊处理
+// Oadin 的健康检查，请求路径不同，需要在底层做特殊处理
 const createHealthApiInstance = (baseURL: string) => {
   const instance = axios.create({
     baseURL,
@@ -187,7 +187,7 @@ const createHealthApiInstance = (baseURL: string) => {
     },
     (error) => {
       // 只要 /health 请求出错，统一提示
-      message.error(i18n.t('errors.byze_unavailable'));
+      message.error(i18n.t('errors.oadin_unavailable'));
       error.handled = true;
       return Promise.reject(error);
     },
@@ -238,11 +238,11 @@ export const healthRequest = {
 };
 
 // 导出一个手动检查健康状态的函数，供需要时调用
-export const checkByzeHealth = async () => {
+export const checkOadinHealth = async () => {
   try {
-    const storeState = useByzeServerCheckStore.getState();
-    await storeState.fetchByzeServerStatus();
-    return useByzeServerCheckStore.getState().checkByzeStatus;
+    const storeState = useOadinServerCheckStore.getState();
+    await storeState.fetchOadinServerStatus();
+    return useOadinServerCheckStore.getState().checkOadinStatus;
   } catch (error) {
     console.error('Health check failed:', error);
     return false;
