@@ -14,6 +14,7 @@ export default {
     '40006': 'mcp add failed, please retry!',
 
     service_error: 'Service error, please check the Oadin service',
+    request_timeout: 'Service request timeout. Please try again later',
     oadin_unavailable: 'Oadin service unavailable, please confirm the status of the Oadin service',
   },
   modelInfo: {
