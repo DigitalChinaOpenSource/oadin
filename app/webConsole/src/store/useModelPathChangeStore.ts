@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type IStatus = 'init' | 'failed' | 'pending';
+export type IStatus = 'init' | 'failed' | 'pending';
 
 interface ModelPathChangeState {
   migratingStatus: IStatus; // 用于存储迁移状态
@@ -13,4 +13,4 @@ const useModelPathChangeStore = create<ModelPathChangeState>((set) => ({
   setMigratingStatus: (status: IStatus) => set({ migratingStatus: status }),
 }));
 
-export default useModelPathChangeStore;
+export { useModelPathChangeStore };

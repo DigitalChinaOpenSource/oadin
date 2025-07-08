@@ -105,6 +105,7 @@ export default function ModelChecking() {
             selectedOuterStateModel={selectedStateModel}
             open={open}
             onCancel={() => setOpen(false)}
+            fromWhere="model-checking"
           />
         )}
       </div>

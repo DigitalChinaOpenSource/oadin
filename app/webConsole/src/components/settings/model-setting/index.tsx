@@ -3,8 +3,8 @@ import { Button, Form, Input, Tooltip } from 'antd';
 import styles from './index.module.scss';
 import ModelPathModal from '@/components/modelpath-modal';
 import { useModelSetting } from '@/components/settings/model-setting/viem-model.ts';
-import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';
+import realLoadingSvg from '@/components/icons/real-loading.svg';
+import { useModelPathChangeStore } from '@/store/useModelPathChangeStore.ts';
 
 // 表单数据类型定义
 interface ModelSettingFormValues {
@@ -22,12 +22,12 @@ const ModelSetting: React.FC = () => {
     onChangeModelPath,
     onCheckPathSpace,
     currentPathSpace,
-    setCurrentPathSpace,
     modelDownUrl,
     changeModelDownUrl,
     changeModelDownUrlLoading,
     changingModelPath,
     setChangingModelPath,
+    isCheckingPathSpace,
   } = useModelSetting();
 
   const { migratingStatus } = useModelPathChangeStore();
@@ -45,7 +45,9 @@ const ModelSetting: React.FC = () => {
       .then((res) => {
         onModelPathVisible();
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.log('校验源路径失败', err);
+      });
   };
 
   useEffect(() => {
@@ -53,13 +55,8 @@ const ModelSetting: React.FC = () => {
   }, [modelDownUrl]);
 
   useEffect(() => {
-    if (!modelPath) {
-      fetchModelPath();
-      setCurrentPathSpace({} as IModelPathSpaceRes);
-      return;
-    }
-    onCheckPathSpace(modelPath);
-  }, [modelPath]);
+    fetchModelPath();
+  }, []);
 
   return (
     <div className={styles.modelSetting}>
@@ -104,20 +101,34 @@ const ModelSetting: React.FC = () => {
           <div className={styles.pathLabel}>模型存储路径</div>
           <div className={styles.pathContent}>
             <div className={styles.mainLeft}>
-              <div className={styles.path}>{modelPath}</div>
-              <div className={styles.storageUse}>
-                {Object.keys(currentPathSpace).length > 0 ? (
-                  <div className={styles.diskSpace}>
-                    <span>( {currentPathSpace?.usage_size}GB</span> / <span>{currentPathSpace?.total_size}GB</span>，<span className={styles.diskCanUse}> {currentPathSpace?.free_size}GB可用)</span>
-                  </div>
+              <>
+                {isCheckingPathSpace ? (
+                  <img
+                    style={{ width: 20, height: 20 }}
+                    src={realLoadingSvg}
+                    alt="loading"
+                  />
                 ) : (
-                  '暂无数据'
+                  <>
+                    <div className={styles.path}>{modelPath}</div>
+                    <div className={styles.storageUse}>
+                      {Object.keys(currentPathSpace).length > 0 ? (
+                        <div className={styles.diskSpace}>
+                          <span>( {currentPathSpace?.usage_size}GB</span> / <span>{currentPathSpace?.total_size}GB</span>，
+                          <span className={styles.diskCanUse}> {currentPathSpace?.free_size}GB可用)</span>
+                        </div>
+                      ) : (
+                        '暂无数据'
+                      )}
+                    </div>
+                  </>
                 )}
-              </div>
+              </>
             </div>
             <Tooltip title={isMigrating ? changingModelPath : ''}>
               <Button
                 onClick={handleChangeDir}
+                disabled={isCheckingPathSpace}
                 loading={isMigrating}
               >
                 {isMigrating ? '正在修改至新的存储路径' : '更改'}
