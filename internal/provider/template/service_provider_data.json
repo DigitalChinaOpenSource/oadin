@@ -5,7 +5,7 @@
     "service_source": "local",
     "desc": "Local ollama api/tags",
     "api_flavor": "ollama",
-    "method": "POST",
+    "method": "GET",
     "auth_type": "none",
     "auth_key": "",
     "flavor": "ollama",
