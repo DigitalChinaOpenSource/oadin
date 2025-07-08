@@ -12,7 +12,7 @@ import { ChooseModelDialog } from '@/components/choose-model-dialog';
 import styles from './index.module.scss';
 
 export default function ChatContainer() {
-  const { historyVisible, setHistoryVisible, isLoading } = useChatStore();
+  const { historyVisible, setHistoryVisible, isLoading, messages } = useChatStore();
   const [open, setOpen] = useState<boolean>(false);
   const vm = useViewModel();
 
@@ -49,6 +49,7 @@ export default function ChatContainer() {
               }
               onClick={() => {
                 if (isLoading) return;
+                if (messages.length === 0) return;
                 vm.handleCreateNewChat();
               }}
             />
