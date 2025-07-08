@@ -218,8 +218,19 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						fullContent = originalContent
 					}
 
-					resp.TotalDuration = resp.TotalDuration / int64(time.Second)
-					totalDuration = resp.TotalDuration
+					if resp.TotalDuration > 0 {
+						seconds := float64(resp.TotalDuration) / float64(time.Second)
+						totalDuration = int64(seconds)
+						if totalDuration < 1 {
+							totalDuration = 1
+						}
+						fmt.Printf("使用模型返回的总时长: %.2f秒 -> %d秒\n", seconds, totalDuration)
+					} else {
+						totalDuration = 1
+					}
+
+					resp.TotalDuration = totalDuration
+					fmt.Printf("最终总时长(秒): %d\n", totalDuration)
 
 					// 将思考内容包装在<think></think>标签中并添加到assistant响应
 					finalContent := fullContent
@@ -251,10 +262,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					if len(resp.ToolCalls) > 0 {
 						if request.ToolGroupID == "" {
 							if userMsg != nil {
-								p.AddToolCall(ctx, request.SessionID, userMsg.ID, assistantMsgID, resp.TotalDuration)
+								p.AddToolCall(ctx, request.SessionID, userMsg.ID, assistantMsgID, totalDuration) // 使用已转换好的totalDuration
 							}
 						} else {
-							p.AddToolCall(ctx, request.SessionID, request.ToolGroupID, assistantMsgID, resp.TotalDuration)
+							p.AddToolCall(ctx, request.SessionID, request.ToolGroupID, assistantMsgID, totalDuration) // 使用已转换好的totalDuration
 						}
 					}
 
@@ -271,8 +282,17 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						p.MarkToolCallEnd(ctx, request.SessionID, request.ToolGroupID, assistantMsgID)
 					}
 
-					fmt.Println("流式输出完成，保存助手回复", resp)
-					slog.Info("流式输出完成，保存助手回复", resp)
+					if resp.TotalDuration <= 0 {
+						resp.TotalDuration = totalDuration
+					}
+
+					fmt.Println("流式输出完成，保存助手回复", "id:", resp.ID, "total_duration:", resp.TotalDuration, "content_len:", len(resp.Content))
+					slog.Info("流式输出完成，保存助手回复", "id", resp.ID, "total_duration", resp.TotalDuration, "content_len", len(resp.Content))
+
+					// 打印完整的resp结构以便调试
+					respJSON, _ := json.Marshal(resp)
+					fmt.Println("完整的响应结构:", string(respJSON))
+
 					respChan <- resp
 				} else if len(originalContent) > 0 {
 					// slog.Info("收到非空流式输出块",
@@ -283,9 +303,6 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				} else if resp.Thoughts != "" {
 					// 收集思考内容，但不再单独存储
 					thoughts += resp.Thoughts
-					if resp.TotalDuration > 0 {
-						resp.TotalDuration = resp.TotalDuration / int64(time.Second)
-					}
 					respChan <- resp
 				} else {
 					slog.Debug("跳过空内容块")
@@ -298,10 +315,11 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				}
 				// 直接将模型/调度错误包装成流式消息推送给前端
 				respChan <- &types.ChatResponse{
-					Type:       "error",
-					Content:    err.Error(),
-					IsComplete: true,
-					ID:         assistantMsgID,
+					Type:          "error",
+					Content:       err.Error(),
+					IsComplete:    true,
+					ID:            assistantMsgID,
+					TotalDuration: totalDuration, // 确保错误响应也包含总时长
 				}
 				return
 			case err, ok := <-errChan:
@@ -310,19 +328,21 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				}
 				// 这里将错误包装成流式消息推送给前端
 				respChan <- &types.ChatResponse{
-					Type:       "error",
-					Content:    err.Error(),
-					IsComplete: true,
-					ID:         assistantMsgID,
+					Type:          "error",
+					Content:       err.Error(),
+					IsComplete:    true,
+					ID:            assistantMsgID,
+					TotalDuration: totalDuration,
 				}
 				return
 			case <-ctx.Done():
 				// 上下文取消，直接包装成流式消息推送给前端
 				respChan <- &types.ChatResponse{
-					Type:       "error",
-					Content:    ctx.Err().Error(),
-					IsComplete: true,
-					ID:         assistantMsgID,
+					Type:          "error",
+					Content:       ctx.Err().Error(),
+					IsComplete:    true,
+					ID:            assistantMsgID,
+					TotalDuration: totalDuration,
 				}
 				return
 			}
