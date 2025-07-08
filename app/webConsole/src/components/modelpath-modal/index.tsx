@@ -3,7 +3,7 @@ import { Modal, Input, Form, message } from 'antd';
 import { useRequest, useDebounce } from 'ahooks';
 import { httpRequest, healthRequest } from '@/utils/httpRequest';
 import useModelDownloadStore from '@/store/useModelDownloadStore';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore';
+import { useModelPathChangeStore } from '@/store/useModelPathChangeStore';
 import useByzeServerCheckStore from '@/store/useByzeServerCheckStore';
 import useChatStore from '../chat-container/store/useChatStore';
 import { IModelPathSpaceRes } from '../model-manage-tab/types';

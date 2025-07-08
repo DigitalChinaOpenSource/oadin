@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { message } from 'antd';
 import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { IModelPathRes } from '@/types';
 import { IModelPathSpaceRes } from '@/components/model-manage-tab/types.ts';
 import { useSettingsViewModel } from '@/components/settings/view-module';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';
+import { useModelPathChangeStore, IStatus } from '@/store/useModelPathChangeStore.ts';
 
 export function useModelSetting() {
-  const { setMigratingStatus } = useModelPathChangeStore();
+  const { setMigratingStatus, migratingStatus } = useModelPathChangeStore();
   // 获取模型下载源地址
   const { ollamaRegistry } = useSettingsViewModel();
   // 模型存储路径弹窗是否显示
@@ -23,6 +23,7 @@ export function useModelSetting() {
   const [changingModelPath, setChangingModelPath] = useState<string>('');
   // 正在查询模型路径和磁盘空间
   const [isCheckingPathSpace, setIsCheckingPathSpace] = useState<boolean>(false);
+
   // 模型存储路径弹窗
   const onModelPathVisible = useCallback(() => {
     setModalPathVisible(!modalPathVisible);

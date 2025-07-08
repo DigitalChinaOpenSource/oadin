@@ -4,7 +4,7 @@ import styles from './index.module.scss';
 import ModelPathModal from '@/components/modelpath-modal';
 import { useModelSetting } from '@/components/settings/model-setting/viem-model.ts';
 import realLoadingSvg from '@/components/icons/real-loading.svg';
-import useModelPathChangeStore from '@/store/useModelPathChangeStore.ts';
+import { useModelPathChangeStore } from '@/store/useModelPathChangeStore.ts';
 
 // 表单数据类型定义
 interface ModelSettingFormValues {
