@@ -22,7 +22,7 @@ import { HeaderContent } from './header-content';
 import EmbedDownloadButton from '../enbed-download-btn';
 import { useModelPathChangeStore } from '@/store/useModelPathChangeStore';
 import useSelectedModelStore from '@/store/useSelectedModel';
-import { fetchCheckEngineStatus, chechIsModelDownloaded } from '../utils';
+import { fetchCheckEngineStatus, checkIsModelDownloaded } from '../utils';
 import './index.scss';
 
 interface IChatViewProps {
@@ -71,7 +71,7 @@ export default function ChatView(props: IChatViewProps) {
         return;
       }
     }
-    const isModelDownloaded = await chechIsModelDownloaded(selectedModel?.name || '');
+    const isModelDownloaded = await checkIsModelDownloaded(selectedModel?.name || '');
     if (!isModelDownloaded) {
       const text = selectedModel?.source === 'local' ? '模型未下载，请先下载模型' : '模型未授权，请先授权';
       message.error(text);

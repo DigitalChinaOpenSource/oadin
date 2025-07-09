@@ -32,8 +32,8 @@ export const fetchAllModels = async (): Promise<ModelInfo[]> => {
   return data || [];
 };
 
-export const chechIsModelDownloaded = async (modelName: string): Promise<boolean> => {
+export const checkIsModelDownloaded = async (modelName: string): Promise<boolean> => {
   const data = await fetchAllModels();
-  const model = data.find((item) => item.model_name === modelName);
+  const model = data.find((item) => item.model_name === modelName && item.provider_name === 'local_ollama_chat');
   return model?.status === 'downloaded';
 };
