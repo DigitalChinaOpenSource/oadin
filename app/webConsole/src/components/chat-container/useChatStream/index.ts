@@ -764,9 +764,9 @@ export function useChatStream() {
               setIsLoading(false);
               // 表示会话已完全结束，检查是否需要生成标题
               const isGenChatTitle = sessionStorage.getItem('isGenChatTitle');
-              if (isGenChatTitle !== 'false') {
+              if (isGenChatTitle === 'false') {
                 fetchGenChatTitle().finally(() => {
-                  sessionStorage.setItem('isGenChatTitle', 'false');
+                  sessionStorage.setItem('isGenChatTitle', 'true');
                 });
               }
             }
