@@ -50,16 +50,17 @@ type SendMessageResponse struct {
 
 // 消息信息
 type Message struct {
-	Id        string              `json:"id"`
-	SessionId string              `json:"sessionId"`
-	Role      string              `json:"role"`
-	Content   string              `json:"content"`
-	CreatedAt string              `json:"createdAt"`
-	Thoughts  string              `json:"thoughts,omitempty"`
-	Type      string              `json:"type,omitempty"`
-	ModelId   string              `json:"modelId,omitempty"`
-	ModelName string              `json:"modelName,omitempty"`
-	ToolCalls []types.ToolMessage `json:"toolCalls,omitempty"`
+	Id            string              `json:"id"`
+	SessionId     string              `json:"sessionId"`
+	Role          string              `json:"role"`
+	Content       string              `json:"content"`
+	CreatedAt     string              `json:"createdAt"`
+	Thoughts      string              `json:"thoughts,omitempty"`
+	Type          string              `json:"type,omitempty"`
+	ModelId       string              `json:"modelId,omitempty"`
+	ModelName     string              `json:"modelName,omitempty"`
+	TotalDuration int64               `json:"totalDuration,omitempty"`
+	ToolCalls     []types.ToolMessage `json:"toolCalls,omitempty"`
 }
 
 // 获取会话消息请求
