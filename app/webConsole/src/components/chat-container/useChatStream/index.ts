@@ -521,7 +521,8 @@ export function useChatStream() {
     const { content, toolGroupID, isUserMessage = false, isResend = false } = options;
 
     if (!toolGroupID && !content.trim()) return;
-    if (migratingStatus === 'pending') {
+    // 本地模型才需要校验迁移状态
+    if (migratingStatus === 'pending' && selectedModel?.source === 'local') {
       message.warning('模型迁移中，请稍后再试');
       return;
     }
