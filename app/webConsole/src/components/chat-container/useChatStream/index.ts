@@ -373,7 +373,7 @@ export function useChatStream() {
         setStreamingThinking('');
       }
 
-      // 修改：只要有 tool_calls 和 tool_group_id，就保存用于下一次请求
+      // 只要有 tool_calls 和 tool_group_id，就保存用于下一次请求
       if (tool_calls && tool_calls.length > 0 && tool_group_id) {
         requestState.current.lastToolGroupIdRef = tool_group_id;
       }
@@ -480,10 +480,9 @@ export function useChatStream() {
         // 工具调用失败一般就停止了
         if (isToolError) {
           requestState.current.status.isToolCallActive = false;
-          setIsLoading(false);
         }
         // 处理后续操作
-        if (!isToolError && toolCallHandlersRef.current.continueConversation) {
+        if (toolCallHandlersRef.current.continueConversation) {
           // 调用继续对话函数，处理后续流式响应
           await toolCallHandlersRef.current.continueConversation(data.content[0].text);
           // } else if (isToolError || isEmptyResponse) {

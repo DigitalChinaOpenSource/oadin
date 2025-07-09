@@ -11,31 +11,22 @@ interface StreamingMessageProps {
 }
 
 const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, thinkingContent }) => {
-  const lastContentRef = useRef<string>('');
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastContentLengthRef = useRef(0);
 
   useEffect(() => {
-    // 只有当内容真正发生变化时才滚动
-    if (content && content !== lastContentRef.current) {
-      lastContentRef.current = content;
-
-      // 清除之前的滚动定时器
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      // 使用较小的延迟，减少滚动频率
-      scrollTimeoutRef.current = setTimeout(() => {
-        scroll();
-      }, 100);
+    // 只有当内容长度大量增加时才滚动
+    if (content && content.length > lastContentLengthRef.current + 10) {
+      lastContentLengthRef.current = content.length;
+      scroll();
     }
-
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
   }, [content, scroll]);
+
+  // 思考内容变化时也需要滚动
+  useEffect(() => {
+    if (thinkingContent) {
+      scroll();
+    }
+  }, [thinkingContent, scroll]);
 
   if (!content && !thinkingContent) return null;
 
@@ -52,9 +43,7 @@ const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, th
             remarkPlugins: [remarkGfm],
             rehypePlugins: [rehypeRaw],
             components: {
-              // 自定义链接渲染逻辑
               a: ({ node, ...props }) => {
-                // 确保所有链接都在新窗口打开
                 return (
                   <a
                     {...props}

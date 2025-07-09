@@ -45,7 +45,7 @@ export default function ChatView(props: IChatViewProps) {
   const { messages, isUploading } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
   const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
-  const { containerRef, handleScroll, getIsNearBottom, scrollToBottom, scrollToBottomSmooth } = useScrollToBottom<HTMLDivElement>();
+  const { containerRef, handleScroll, getIsNearBottom, scrollToBottom, scrollToBottomSmooth, forceScrollToBottom } = useScrollToBottom<HTMLDivElement>();
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
   // 消息列表更新时的滚动处理
@@ -55,7 +55,7 @@ export default function ChatView(props: IChatViewProps) {
     }
   }, [messages.length, getIsNearBottom, scrollToBottomSmooth]);
 
-  // 流式消息的滚动处理 - 使用节流
+  // 流式消息的滚动处理
   const chattingMessageControlScroll = useCallback(() => {
     if (getIsNearBottom()) {
       scrollToBottom();
@@ -64,6 +64,7 @@ export default function ChatView(props: IChatViewProps) {
 
   const handleSendMessage = async (messageString: string) => {
     if (!messageString.trim() || isLoading || isUploading) return;
+
     if (selectedModel?.source === 'local') {
       const isEngineAvailable = await fetchCheckEngineStatus();
       if (!isEngineAvailable) {
@@ -71,13 +72,19 @@ export default function ChatView(props: IChatViewProps) {
         return;
       }
     }
+
     const isModelDownloaded = await checkIsModelDownloaded(selectedModel?.name || '');
     if (!isModelDownloaded) {
       const text = selectedModel?.source === 'local' ? '模型未下载，请先下载模型' : '模型未授权，请先授权';
       message.error(text);
       return;
     }
+
     await sendChatMessage(messageString);
+
+    setTimeout(() => {
+      forceScrollToBottom();
+    }, 100);
   };
 
   // 输入框底部功能区
