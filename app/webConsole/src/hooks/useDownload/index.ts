@@ -160,6 +160,16 @@ export const useDownLoad = () => {
             detail: { id, completedUpdates, timestamp: Date.now() },
           });
           document.dispatchEvent(downloadCompleteEvent);
+
+          // 延时清理已完成的下载项（给用户一些时间看到完成状态）
+          setTimeout(() => {
+            const currentList = useModelDownloadStore.getState().downloadList;
+            const newList = currentList.filter((item) => item.status !== COMPLETED);
+            if (newList.length !== currentList.length) {
+              console.log(`延时清理已完成的下载项，清理后剩余: ${newList.length} 个`);
+              setDownloadList(newList);
+            }
+          }, 3000); // 3秒后清理
         } else if (status === 'canceled') {
           updateDownloadStatus(id, {
             ...baseUpdates,
@@ -234,21 +244,24 @@ export const useDownLoad = () => {
   const intervalRef = useRef<any>(null);
   // 监听下载列表，处理已完成的下载项，作为兜底处理
   useEffect(() => {
+    // 清理之前的定时器
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+    
+    // 只要有下载列表就创建定时器，不管是否有已完成的项目
     if (downloadList.length === 0) return;
-    const hasCompletedItems = downloadList.some((item) => item.status === COMPLETED);
-    if (!hasCompletedItems) return;
+    
     // 创建定时器，定期检查并清理已完成的下载项
     intervalRef.current = setInterval(() => {
       const currentList = useModelDownloadStore.getState().downloadList;
       const completedItems = currentList.filter((item) => item.status === COMPLETED);
-      if (completedItems.length === 0) return; // 没有变化，不执行更新
-
-      const newList = currentList.filter((item) => item.status !== COMPLETED);
-      if (newList.length !== currentList.length) {
+      
+      // 如果有已完成的项目，就清除它们
+      if (completedItems.length > 0) {
+        const newList = currentList.filter((item) => item.status !== COMPLETED);
+        console.log(`清理已完成的下载项: ${completedItems.length} 个，剩余: ${newList.length} 个`);
         setDownloadList(newList);
       }
     }, 2000);
