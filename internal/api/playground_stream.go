@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
 
 	"oadin/internal/api/dto"
@@ -36,21 +36,37 @@ func (t *OadinCoreServer) SendMessageStream(c *gin.Context) {
 		}
 	}
 
-	// 设置响应头
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
-	c.Header("Transfer-Encoding", "chunked")
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+
+	ctx := c.Request.Context()
+
+	w := c.Writer
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		fmt.Printf("[API] Flusher不支持\n")
+		http.NotFound(w, c.Request)
+		return
+	}
 
 	// 开始流式处理
-	respChan, errChan := t.Playground.SendMessageStream(c.Request.Context(), &req)
+	respChan, errChan := t.Playground.SendMessageStream(ctx, &req)
 
-	// 写入响应流
-	c.Stream(func(w io.Writer) bool {
+	for {
 		select {
 		case chunk, ok := <-respChan:
 			if !ok {
-				return false // 流结束
+				return // 流结束
+			}
+
+			if chunk.Type == "error" {
+				n, err := fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%s\"}\n\n", chunk.Content)
+				fmt.Printf("[API] 错误消息写入结果: 字节数=%d, 错误=%v\n", n, err)
+				flusher.Flush()
+				return
 			}
 
 			response := dto.StreamMessageResponse{
@@ -62,49 +78,29 @@ func (t *OadinCoreServer) SendMessageStream(c *gin.Context) {
 					IsComplete:    chunk.IsComplete,
 					Thoughts:      chunk.Thoughts,
 					Type:          chunk.Type,
-					ToolCalls:     chunk.ToolCalls,     // 新增，支持Ollama工具调用
-					TotalDuration: chunk.TotalDuration, // 新增总耗时
-					ToolGroupID:   chunk.ToolGroupID,   // 新增工具组ID
+					ToolCalls:     chunk.ToolCalls,
+					TotalDuration: chunk.TotalDuration,
+					ToolGroupID:   chunk.ToolGroupID,
 				},
-			} // 序列化为JSON
+			}
 			data, err := json.Marshal(response)
 			if err != nil {
-				return false // 序列化错误，结束流
+				return
 			}
-
-			// 增加SSE格式的前缀
-			c.Writer.Write([]byte("data: "))
-			// 写入数据
-			c.Writer.Write(data)
-			c.Writer.Write([]byte("\n\n")) // 添加双换行符符合SSE格式
-
-			// 立即刷新写入器，确保数据能及时发送到客户端
-			c.Writer.Flush()
-
-			return !chunk.IsComplete // 如果是最后一块，则结束流
+			fmt.Fprintf(w, "data: %s\n\n", data)
+			flusher.Flush()
+			if chunk.IsComplete {
+				return
+			}
 
 		case err, ok := <-errChan:
 			if !ok || err == nil {
-				return false
+				return
 			}
-
-			errResponse := dto.StreamMessageResponse{
-				Bcode: bcode.SuccessCode, 
-				Data: dto.MessageChunk{
-					Content:    err.Error(),
-					IsComplete: true,
-					Type:       "error",
-				},
-			}
-			data, _ := json.Marshal(errResponse)
-			c.Writer.Write([]byte("data: "))
-			c.Writer.Write(data)
-			c.Writer.Write([]byte("\n\n"))
-			c.Writer.Flush()
-
-			return false
+			flusher.Flush()
+			return
 		}
-	})
+	}
 }
 
 func (t *OadinCoreServer) GenSessionTitle(c *gin.Context) {
