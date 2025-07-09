@@ -75,7 +75,41 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 		// 处理流式响应
 		for result := range ch {
+
+			if result.Type == types.ServiceResultFailed {
+				if result.Error != nil {
+					if httpErr, ok := result.Error.(*types.HTTPErrorResponse); ok {
+						var errorData map[string]interface{}
+						if err := json.Unmarshal(httpErr.Body, &errorData); err == nil {
+							if errMsg, exists := errorData["error"]; exists {
+								if errStr, ok := errMsg.(string); ok {
+									fmt.Printf("[ChatStream] 发送HTTPError解析后的错误: %s\n", errStr)
+									errChan <- fmt.Errorf("%s", errStr)
+									return
+								}
+							}
+							if msg, exists := errorData["message"]; exists {
+								if msgStr, ok := msg.(string); ok {
+									fmt.Printf("[ChatStream] 发送HTTPError message错误: %s\n", msgStr)
+									errChan <- fmt.Errorf("%s", msgStr)
+									return
+								}
+							}
+							errChan <- fmt.Errorf("HTTP %d: %s", httpErr.StatusCode, string(httpErr.Body))
+							return
+						}
+						errChan <- fmt.Errorf("HTTP %d: %s", httpErr.StatusCode, string(httpErr.Body))
+						return
+					}
+					errChan <- result.Error
+					return
+				}
+				errChan <- fmt.Errorf("task failed with unknown error")
+				return
+			}
+
 			if result.Error != nil {
+				fmt.Printf("[ChatStream] 发送旧版错误: %s\n", result.Error.Error())
 				errChan <- result.Error
 				return
 			}
