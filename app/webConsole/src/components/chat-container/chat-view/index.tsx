@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { ChatInput, ChatMessageList, type MessageContentType, type ChatMessageItem } from '@res-utiles/ui-components';
 import '@res-utiles/ui-components/dist/index.css';
 import ReactMarkdown from 'react-markdown';
@@ -45,22 +45,22 @@ export default function ChatView(props: IChatViewProps) {
   const { messages, isUploading } = useChatStore();
   const { selectedModel } = useSelectedModelStore();
   const migratingStatus = useModelPathChangeStore.getState().migratingStatus;
-  const { containerRef, handleScroll, getIsNearBottom, scrollToBottom } = useScrollToBottom<HTMLDivElement>();
+  const { containerRef, handleScroll, getIsNearBottom, scrollToBottom, scrollToBottomSmooth } = useScrollToBottom<HTMLDivElement>();
   const { sendChatMessage, streamingContent, streamingThinking, isLoading, isResending, error, cancelRequest, resendLastMessage } = useChatStream();
 
+  // 消息列表更新时的滚动处理
   useEffect(() => {
-    // 如果消息列表有更新且当前滚动位置接近底部，则自动滚动到底部
     if (messages.length > 0 && getIsNearBottom()) {
-      scrollToBottom();
+      scrollToBottomSmooth();
     }
-  }, [messages.length, getIsNearBottom, scrollToBottom]);
+  }, [messages.length, getIsNearBottom, scrollToBottomSmooth]);
 
-  // 正在生成的消息控制滚动
-  const chattingMessageControlScroll = () => {
+  // 流式消息的滚动处理 - 使用节流
+  const chattingMessageControlScroll = useCallback(() => {
     if (getIsNearBottom()) {
       scrollToBottom();
     }
-  };
+  }, [getIsNearBottom, scrollToBottom]);
 
   const handleSendMessage = async (messageString: string) => {
     if (!messageString.trim() || isLoading || isUploading) return;

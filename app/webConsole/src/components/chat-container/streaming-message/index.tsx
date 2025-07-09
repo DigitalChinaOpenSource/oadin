@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -11,10 +11,30 @@ interface StreamingMessageProps {
 }
 
 const StreamingMessage: React.FC<StreamingMessageProps> = ({ content, scroll, thinkingContent }) => {
+  const lastContentRef = useRef<string>('');
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    if (content) {
-      scroll();
+    // 只有当内容真正发生变化时才滚动
+    if (content && content !== lastContentRef.current) {
+      lastContentRef.current = content;
+
+      // 清除之前的滚动定时器
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // 使用较小的延迟，减少滚动频率
+      scrollTimeoutRef.current = setTimeout(() => {
+        scroll();
+      }, 100);
     }
+
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, [content, scroll]);
 
   if (!content && !thinkingContent) return null;
