@@ -203,7 +203,8 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				resp.ModelName = session.ModelName
 
 				if resp.IsComplete {
-					fmt.Println("收到流式输出完成标记，内容长度:", len(originalContent))
+					fmt.Printf("[PlaygroundStream] 收到流式输出完成标记，原始内容长度: %d，累积内容长度: %d\n", len(originalContent), len(fullContent))
+					fmt.Printf("[PlaygroundStream] 原始内容: '%s'，累积内容: '%s'\n", originalContent, fullContent)
 					slog.Info("收到流式输出完成标记",
 						"is_complete", resp.IsComplete,
 						"content_length", len(originalContent),
@@ -214,8 +215,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						thoughts = thoughts + resp.Thoughts
 					}
 
+					// 确保使用累积的完整内容
 					if len(fullContent) == 0 && len(originalContent) > 0 {
 						fullContent = originalContent
+						fmt.Printf("[PlaygroundStream] 使用原始内容作为完整内容: '%s'\n", fullContent)
 					}
 
 					resp.TotalDuration = resp.TotalDuration / int64(time.Second)
@@ -229,6 +232,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 
 					// 确保完整内容被保存和返回给客户端
+					fmt.Printf("[PlaygroundStream] 准备保存数据库，finalContent长度: %d, 内容: '%s'\n", len(finalContent), finalContent)
 					if finalContent != "" {
 						assistantMsg := &types.ChatMessage{
 							ID:            assistantMsgID,
@@ -244,7 +248,11 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						err = p.Ds.Add(ctx, assistantMsg)
 						if err != nil {
 							slog.Error("Failed to save assistant message on complete", "error", err)
+						} else {
+							fmt.Printf("[PlaygroundStream] 成功保存assistant消息到数据库，ID: %s, 内容长度: %d\n", assistantMsgID, len(finalContent))
 						}
+					} else {
+						fmt.Printf("[PlaygroundStream] 警告：finalContent为空，不保存到数据库！fullContent='%s', thoughts='%s'\n", fullContent, thoughts)
 					}
 
 					// 处理多轮工具调用
@@ -275,10 +283,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
 				} else if len(originalContent) > 0 {
-					// slog.Info("收到非空流式输出块",
-					// 	"content_length", len(originalContent),
-					// 	"is_complete", resp.IsComplete)
+					fmt.Printf("[PlaygroundStream] 累积内容块: '%s', 当前fullContent长度: %d\n", originalContent, len(fullContent))
 					fullContent += resp.Content
+					fmt.Printf("[PlaygroundStream] 累积后fullContent长度: %d\n", len(fullContent))
 					respChan <- resp
 				} else if resp.Thoughts != "" {
 					// 收集思考内容，但不再单独存储
@@ -317,7 +324,112 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				}
 				return
 			case <-ctx.Done():
-				// 上下文取消，直接包装成流式消息推送给前端
+				slog.Info("上下文取消，继续处理剩余流式数据", "session_id", request.SessionID)
+
+				go func() {
+					timeout := time.NewTimer(60 * time.Second)
+					defer timeout.Stop()
+
+					for {
+						select {
+						case resp, ok := <-responseStream:
+							if !ok {
+								fmt.Printf("[PlaygroundStream] 流式数据处理完成，context已取消\n")
+								return
+							}
+
+							// 处理完成块以保存数据
+							if resp.IsComplete {
+								fmt.Printf("[PlaygroundStream] [Context取消] 收到完成块，保存数据\n")
+
+								// 收集思考内容
+								if resp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+									thoughts = thoughts + resp.Thoughts
+								}
+
+								// 使用累积内容
+								if len(fullContent) == 0 && len(resp.Content) > 0 {
+									fullContent = resp.Content
+								}
+
+								resp.TotalDuration = resp.TotalDuration / int64(time.Second)
+								totalDuration = resp.TotalDuration
+
+								// 保存到数据库
+								finalContent := fullContent
+								if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+									finalContent = fmt.Sprintf("<think>%s\n</think>\n%s", thoughts, fullContent)
+								}
+
+								if finalContent != "" {
+									assistantMsg := &types.ChatMessage{
+										ID:            assistantMsgID,
+										SessionID:     request.SessionID,
+										Role:          "assistant",
+										Content:       finalContent,
+										Order:         len(messages) + 1,
+										CreatedAt:     time.Now(),
+										ModelID:       session.ModelID,
+										ModelName:     session.ModelName,
+										TotalDuration: totalDuration,
+									}
+									saveCtx := context.Background()
+									saveCtxWithTimeout, cancel := context.WithTimeout(saveCtx, 10*time.Second)
+									defer cancel()
+
+									err = p.Ds.Add(saveCtxWithTimeout, assistantMsg)
+									if err != nil {
+										fmt.Printf("[PlaygroundStream] [Context取消] 保存失败: %v\n", err)
+									} else {
+										fmt.Printf("[PlaygroundStream] [Context取消] 成功保存到数据库\n")
+									}
+								}
+								return
+							} else if len(resp.Content) > 0 {
+								// 继续累积内容
+								fullContent += resp.Content
+							}
+
+						case <-timeout.C:
+							fmt.Printf("[PlaygroundStream] 等待剩余流式数据超时，保存已累积的内容\n")
+
+							// 即使超时，也要保存已经累积的内容
+							if len(fullContent) > 0 {
+								finalContent := fullContent
+								if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+									finalContent = fmt.Sprintf("<think>%s\n</think>\n%s", thoughts, fullContent)
+								}
+
+								assistantMsg := &types.ChatMessage{
+									ID:            assistantMsgID,
+									SessionID:     request.SessionID,
+									Role:          "assistant",
+									Content:       finalContent,
+									Order:         len(messages) + 1,
+									CreatedAt:     time.Now(),
+									ModelID:       session.ModelID,
+									ModelName:     session.ModelName,
+									TotalDuration: totalDuration,
+								}
+								saveCtx := context.Background()
+								saveCtxWithTimeout, cancel := context.WithTimeout(saveCtx, 10*time.Second)
+								defer cancel()
+
+								err = p.Ds.Add(saveCtxWithTimeout, assistantMsg)
+								if err != nil {
+									fmt.Printf("[PlaygroundStream] [超时] 保存失败: %v\n", err)
+								} else {
+									fmt.Printf("[PlaygroundStream] [超时] 成功保存部分内容到数据库，长度: %d\n", len(finalContent))
+								}
+							} else {
+								fmt.Printf("[PlaygroundStream] [超时] 没有累积内容可保存\n")
+							}
+							return
+						}
+					}
+				}()
+
+				// 立即向前端发送取消消息
 				respChan <- &types.ChatResponse{
 					Type:       "error",
 					Content:    ctx.Err().Error(),
