@@ -42,7 +42,7 @@ export default function ChooseService() {
     setIsModalOpen(true);
   };
   // 判断当前是否正好是 /choose-service 路由
-  if (location.pathname !== '/about-aog/choose-service') {
+  if (location.pathname !== '/about-oadin/choose-service') {
     return <Outlet />;
   }
   return (

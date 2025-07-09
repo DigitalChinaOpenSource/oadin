@@ -33,11 +33,11 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"intel.com/aog/internal/client"
-	"intel.com/aog/internal/client/grpc/grpc_client"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
+	"oadin/internal/client"
+	"oadin/internal/client/grpc/grpc_client"
+	"oadin/internal/logger"
+	"oadin/internal/types"
+	"oadin/internal/utils"
 )
 
 // Invoker defines the interface for service invocation

@@ -26,17 +26,17 @@ import (
 	"runtime"
 	"strings"
 
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/client"
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/provider"
-	"intel.com/aog/internal/provider/engine"
-	"intel.com/aog/internal/provider/template"
-	"intel.com/aog/internal/schedule"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/client"
+	"oadin/internal/datastore"
+	"oadin/internal/logger"
+	"oadin/internal/provider"
+	"oadin/internal/provider/engine"
+	"oadin/internal/provider/template"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
 )
 
 type Model interface {

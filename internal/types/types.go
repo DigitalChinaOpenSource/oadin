@@ -22,14 +22,14 @@ import (
 	"net/http"
 	"time"
 
-	"intel.com/aog/internal/constants"
+	"oadin/internal/constants"
 )
 
 const (
 	ServiceSourceLocal  = "local"
 	ServiceSourceRemote = "remote"
 
-	FlavorAOG      = "aog"
+	FlavorOADIN    = "oadin"
 	FlavorTencent  = "tencent"
 	FlavorDeepSeek = "deepseek"
 	FlavorOpenAI   = "openai"

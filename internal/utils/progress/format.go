@@ -21,7 +21,7 @@ import (
 	"math"
 	"strconv"
 
-	"intel.com/aog/internal/constants"
+	"oadin/internal/constants"
 )
 
 func HumanNumber(b uint64) string {

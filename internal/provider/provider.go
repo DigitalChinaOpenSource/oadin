@@ -19,8 +19,8 @@ package provider
 import (
 	"context"
 
-	"intel.com/aog/internal/provider/engine"
-	"intel.com/aog/internal/types"
+	"oadin/internal/provider/engine"
+	"oadin/internal/types"
 )
 
 // ModelServiceProvider model service provider interface

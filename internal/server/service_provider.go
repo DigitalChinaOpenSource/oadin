@@ -27,13 +27,13 @@ import (
 	"strings"
 	"time"
 
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/provider"
-	"intel.com/aog/internal/schedule"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/logger"
+	"oadin/internal/provider"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 )
 
 type ServiceProvider interface {

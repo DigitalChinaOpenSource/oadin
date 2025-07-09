@@ -18,7 +18,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { upFirstLetter } from '../utils';
 import MainLayout from '../components/main-layout';
 import Dashboard from '@/pages/dashboard';
-import AboutAOG from '@/pages/about-aog'; // 新增关于AOG页面
+import AboutOADIN from '@/pages/about-oadin'; // 新增关于OADIN页面
 import ChooseService from '@/pages/choose-service'; // 新增选择服务页面
 import LocalModels from '@/pages/local-models';
 import ChooseModule from '@/pages/choose-service/chooseModule.tsx'; // 新增选择模块页面
@@ -45,8 +45,8 @@ const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
-        path: '/about-aog',
-        element: <AboutAOG />,
+        path: '/about-oadin',
+        element: <AboutOADIN />,
 
         children: [
           {

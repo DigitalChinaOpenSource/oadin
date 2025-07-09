@@ -1,7 +1,7 @@
 [
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -17,7 +17,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -33,7 +33,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -49,7 +49,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -65,7 +65,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -81,7 +81,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -97,7 +97,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -113,7 +113,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -129,7 +129,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -145,7 +145,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -161,7 +161,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -177,7 +177,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -193,7 +193,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -209,7 +209,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -225,7 +225,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -241,7 +241,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/yi.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/yi.png",
     "class": [
       "文本生成"
     ],
@@ -257,7 +257,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/yi.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/yi.png",
     "class": [
       "文本生成"
     ],
@@ -273,7 +273,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -290,7 +290,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -307,7 +307,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/glm.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/glm.png",
     "class": [
       "文本生成"
     ],
@@ -324,7 +324,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -340,7 +340,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -356,7 +356,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -372,7 +372,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -388,7 +388,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -404,7 +404,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -420,7 +420,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -436,7 +436,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -452,7 +452,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -468,7 +468,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/qwen.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
     "class": [
       "文本生成"
     ],
@@ -484,7 +484,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -500,7 +500,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/Nomic.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/Nomic.png",
     "class": [
       "嵌入模型"
     ],
@@ -515,7 +515,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/Mixedbread.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/Mixedbread.png",
     "class": [
       "嵌入模型"
     ],
@@ -530,7 +530,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/BAAI.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/BAAI.png",
     "class": [
       "嵌入模型"
     ],
@@ -545,7 +545,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/Snowflake.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/Snowflake.png",
     "class": [
       "嵌入模型"
     ],
@@ -560,7 +560,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/BAAI.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/BAAI.png",
     "class": [
       "嵌入模型"
     ],
@@ -575,7 +575,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/BAAI.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/BAAI.png",
     "class": [
       "嵌入模型"
     ],
@@ -590,7 +590,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/Snowflake.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/Snowflake.png",
     "class": [
       "嵌入模型"
     ],
@@ -605,7 +605,7 @@
   },
   {
     "api_flavor": "ollama",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/IBM.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/IBM.png",
     "class": [
       "嵌入模型"
     ],
@@ -620,7 +620,7 @@
   },
   {
     "api_flavor": "baidu",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/baidu.png",
     "class": [
       "文本生成"
     ],
@@ -635,7 +635,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文本生成"
     ],
@@ -650,7 +650,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文本生成"
     ],
@@ -665,7 +665,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文本生成"
     ],
@@ -680,7 +680,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文本生成"
     ],
@@ -695,7 +695,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -710,7 +710,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -725,7 +725,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -740,7 +740,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -755,7 +755,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/tencent.png",
     "class": [
       "文本生成"
     ],
@@ -770,7 +770,7 @@
   },
   {
     "api_flavor": "deepseek",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -786,7 +786,7 @@
   },
   {
     "api_flavor": "deepseek",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/deepseek.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/deepseek.png",
     "class": [
       "文本生成"
     ],
@@ -802,7 +802,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/tencent.png",
     "class": [
       "文本向量化"
     ],
@@ -817,7 +817,7 @@
   },
   {
     "api_flavor": "baidu",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/baidu.png",
     "class": [
       "文本向量化"
     ],
@@ -832,7 +832,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文本向量化"
     ],
@@ -847,7 +847,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文本向量化"
     ],
@@ -862,7 +862,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文本向量化"
     ],
@@ -877,7 +877,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文生图"
     ],
@@ -892,7 +892,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文生图"
     ],
@@ -907,7 +907,7 @@
   },
   {
     "api_flavor": "aliyun",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/aliyun.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/aliyun.png",
     "class": [
       "文生图"
     ],
@@ -922,7 +922,7 @@
   },
   {
     "api_flavor": "baidu",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/baidu.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/baidu.png",
     "class": [
       "文生图"
     ],
@@ -937,7 +937,7 @@
   },
   {
     "api_flavor": "tencent",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/tencent.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/tencent.png",
     "class": [
       "文生图"
     ],
@@ -952,7 +952,7 @@
   },
   {
     "api_flavor":"openvino",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/openvino_logo.png",
     "class":[
       "文生图"
     ],
@@ -968,7 +968,7 @@
   },
   {
     "api_flavor":"openvino",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/openvino_logo.png",
     "class":[
       "文生图"
     ],
@@ -984,7 +984,7 @@
   },
   {
     "api_flavor":"openvino",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/openvino_logo.png",
     "class":[
       "文生图"
     ],
@@ -1000,7 +1000,7 @@
   },
   {
     "api_flavor":"openvino",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/openvino_logo.png",
     "class":[
       "文生图"
     ],
@@ -1016,7 +1016,7 @@
   },
   {
     "api_flavor":"openvino",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/openvino_logo.png",
     "class":[
       "文生图"
     ],
@@ -1032,7 +1032,7 @@
   },
   {
     "api_flavor":"openvino",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/openvino_logo.png",
     "class":[
       "语音识别"
     ],
@@ -1048,7 +1048,7 @@
   },
   {
     "api_flavor":"openvino",
-    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog/icon/openvino_logo.png",
+    "avatar": "http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/openvino_logo.png",
     "class":[
       "语音识别"
     ],

@@ -16,7 +16,7 @@
 #*****************************************************************************
 
 
-# AOG Control Panel Frontend Build Script
+# OADIN Control Panel Frontend Build Script
 # This script automates frontend build and deployment to console directory
 
 set -e  # Exit on error
@@ -57,7 +57,7 @@ check_command() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 
-print_info "AOG Control Panel Frontend Build Script"
+print_info "OADIN Control Panel Frontend Build Script"
 print_info "Project root: $PROJECT_ROOT"
 
 # Check required commands
@@ -169,5 +169,5 @@ else
 fi
 
 print_success "🎉 Control Panel frontend build and deployment completed!"
-print_info "You can now start AOG service and visit http://127.0.0.1:16688/dashboard"
+print_info "You can now start OADIN service and visit http://127.0.0.1:16688/dashboard"
 

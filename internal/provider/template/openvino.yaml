@@ -9,11 +9,11 @@ services:
         endpoints: [""]
         extra_url: ""
         auth_type: ""
-        install_raw_routes: # also install routes without aog prefix in url path
+        install_raw_routes: # also install routes without oadin prefix in url path
         default_model: "OpenVINO/stable-diffusion-v1-5-fp16-ov"
         request_segments: 1 # request
         extra_headers: ""
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -28,7 +28,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -43,7 +43,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -52,7 +52,7 @@ services:
                               "url": local_path
                                   }
                       }
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -70,11 +70,11 @@ services:
         endpoints: [""]
         extra_url: ""
         auth_type: ""
-        install_raw_routes: # also install routes without aog prefix in url path
+        install_raw_routes: # also install routes without oadin prefix in url path
         default_model: "NamoLi/whisper-large-v3-ov"
         request_segments: 1 # request
         extra_headers: ""
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -88,7 +88,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -101,7 +101,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -110,7 +110,7 @@ services:
                               "segments": segments
                                   }
                       }
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -128,11 +128,11 @@ services:
         endpoints: [""]
         extra_url: ""
         auth_type: ""
-        install_raw_routes: # also install routes without aog prefix in url path
+        install_raw_routes: # also install routes without oadin prefix in url path
         default_model: "NamoLi/whisper-large-v3-ov"
         request_segments: 1 # request
         extra_headers: ""
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -146,7 +146,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -159,7 +159,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -168,7 +168,7 @@ services:
                               "segments": segments
                                   }
                       }
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |

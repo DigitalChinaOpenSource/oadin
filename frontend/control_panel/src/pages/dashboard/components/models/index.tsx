@@ -37,7 +37,7 @@ type ModelsProps = {
 };
 export const Models: React.FC<ModelsProps> = (props: ModelsProps) => {
   return props.models.length === 0 ? (
-    <NavLink to={`/about-aog/choose-service/${props.serviceName}/${props.modelType}`}>
+    <NavLink to={`/about-oadin/choose-service/${props.serviceName}/${props.modelType}`}>
       <Button
         type="primary"
         size="large"
@@ -70,7 +70,7 @@ export const Models: React.FC<ModelsProps> = (props: ModelsProps) => {
             </div>
             <NavLink
               title={model.model_name}
-              to={`/about-aog/choose-service/${props.serviceName}/${props.modelType}/${encodeURIComponent(model.model_name)}`}
+              to={`/about-oadin/choose-service/${props.serviceName}/${props.modelType}/${encodeURIComponent(model.model_name)}`}
               className={styles.modelName}
             >
               {model.model_name}
@@ -82,14 +82,14 @@ export const Models: React.FC<ModelsProps> = (props: ModelsProps) => {
       {props.models.length > 2 && (
         <NavLink
           className={styles.showMore}
-          to={`/about-aog/choose-service/${props.serviceName}/${props.modelType}`}
+          to={`/about-oadin/choose-service/${props.serviceName}/${props.modelType}`}
         >
           Show more
           <RightIcon />
         </NavLink>
       )}
 
-      <NavLink to={`/about-aog/choose-service/${props.serviceName}/${props.modelType}`}>
+      <NavLink to={`/about-oadin/choose-service/${props.serviceName}/${props.modelType}`}>
         <Button
           type="primary"
           size="large"

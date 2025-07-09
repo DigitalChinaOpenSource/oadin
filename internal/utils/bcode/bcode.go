@@ -24,8 +24,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/logger"
+	"oadin/internal/datastore"
+	"oadin/internal/logger"
 )
 
 const (
@@ -39,7 +39,7 @@ const (
 	HTTPStatusBadGateway          = 502
 )
 
-// Error Code of AOG contains 5 digits, the first 3 digits should be reversed and indicates the category of concept
+// Error Code of OADIN contains 5 digits, the first 3 digits should be reversed and indicates the category of concept
 // the last two digits indicates the error number
 // For example, business code 11001 should split to 110 and 01, it means the code belongs to the 011 category env, and it's the 01 number error.
 
@@ -73,7 +73,7 @@ func (b *Bcode) Error() string {
 	case b.Message != "":
 		return b.Message
 	default:
-		return "something went wrong, please see the aog server logs for details"
+		return "something went wrong, please see the oadin server logs for details"
 	}
 }
 

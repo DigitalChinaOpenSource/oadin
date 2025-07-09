@@ -16,8 +16,8 @@ REM limitations under the License.
 REM *****************************************************************************
 
 set "USER_HOME=%USERPROFILE%"
-set "AOG_HOME=%USER_HOME%\AOG"
-set "PATH=%AOG_HOME%;%PATH%"
+set "OADIN_HOME=%USER_HOME%\OADIN"
+set "PATH=%OADIN_HOME%;%PATH%"
 
-REM 使用 start 命令独立启动 aog，不依赖父进程
-start "" /b aog server start -d
+REM 使用 start 命令独立启动 oadin，不依赖父进程
+start "" /b oadin server start -d

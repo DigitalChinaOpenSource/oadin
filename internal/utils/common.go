@@ -43,7 +43,7 @@ import (
 
 	"github.com/jaypipes/ghw"
 	"github.com/shirou/gopsutil/disk"
-	"intel.com/aog/internal/types"
+	"oadin/internal/types"
 )
 
 const (
@@ -114,13 +114,13 @@ func GetUserDataDir() (string, error) {
 	return dir, nil
 }
 
-func GetAOGDataDir() (string, error) {
+func GetOADINDataDir() (string, error) {
 	var dir string
 	userDir, err := GetUserDataDir()
 	if err != nil {
 		return "", err
 	}
-	dir = filepath.Join(userDir, "AOG")
+	dir = filepath.Join(userDir, "OADIN")
 	if err = os.MkdirAll(dir, 0o750); err != nil {
 		return "", fmt.Errorf("failed to create directory %s: %v", dir, err)
 	}
@@ -402,7 +402,7 @@ func IsServerRunning() bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-func StartAOGServer(logPath string, pidFilePath string) error {
+func StartOADINServer(logPath string, pidFilePath string) error {
 	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %v", err)
@@ -417,21 +417,21 @@ func StartAOGServer(logPath string, pidFilePath string) error {
 	cmd.Stderr = logFile
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start aog server: %v", err)
+		return fmt.Errorf("failed to start oadin server: %v", err)
 	}
 
 	// Save PID to file.
 	pid := cmd.Process.Pid
-	pidFile := filepath.Join(pidFilePath, "aog.pid")
+	pidFile := filepath.Join(pidFilePath, "oadin.pid")
 	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
 		return fmt.Errorf("failed to save PID to file: %v", err)
 	}
 
-	fmt.Printf("\raog server started with PID: %d\n", cmd.Process.Pid)
+	fmt.Printf("\roadin server started with PID: %d\n", cmd.Process.Pid)
 	return nil
 }
 
-func StopAOGServer(pidFilePath string) error {
+func StopOADINServer(pidFilePath string) error {
 	files, err := filepath.Glob(pidFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to list pid files: %v", err)

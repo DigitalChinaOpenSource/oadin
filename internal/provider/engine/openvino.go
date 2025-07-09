@@ -39,11 +39,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"intel.com/aog/internal/client"
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
+	"oadin/internal/client"
+	"oadin/internal/constants"
+	"oadin/internal/logger"
+	"oadin/internal/types"
+	"oadin/internal/utils"
 )
 
 const (
@@ -351,13 +351,13 @@ func NewOpenvinoProvider(config *types.EngineRecommendConfig) *OpenvinoProvider 
 		}
 	}
 
-	AOGDir, err := utils.GetAOGDataDir()
+	OADINDir, err := utils.GetOADINDataDir()
 	if err != nil {
-		logger.EngineLogger.Error("[OpenVINO] Get AOG data dir failed: " + err.Error())
+		logger.EngineLogger.Error("[OpenVINO] Get OADIN data dir failed: " + err.Error())
 		return nil
 	}
 
-	openvinoPath := fmt.Sprintf("%s/%s/%s", AOGDir, "engine", "openvino")
+	openvinoPath := fmt.Sprintf("%s/%s/%s", OADINDir, "engine", "openvino")
 	if _, err := os.Stat(openvinoPath); os.IsNotExist(err) {
 		err := os.MkdirAll(openvinoPath, 0o750)
 		if err != nil {
@@ -389,10 +389,10 @@ func (o *OpenvinoProvider) StartEngine(mode string) error {
 		logger.EngineLogger.Error("[OpenVINO] Unsupported OS: " + runtime.GOOS)
 		return fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}
-	rootPath, err := utils.GetAOGDataDir()
+	rootPath, err := utils.GetOADINDataDir()
 	if err != nil {
-		logger.EngineLogger.Error("[OpenVINO] Get AOG data dir failed: " + err.Error())
-		return fmt.Errorf("failed get aog dir: %v", err)
+		logger.EngineLogger.Error("[OpenVINO] Get OADIN data dir failed: " + err.Error())
+		return fmt.Errorf("failed get oadin dir: %v", err)
 	}
 
 	modelDir := fmt.Sprintf("%s/models", o.EngineConfig.EnginePath)
@@ -503,10 +503,10 @@ func (o *OpenvinoProvider) GetConfig() *types.EngineRecommendConfig {
 		}
 	}
 
-	AOGDir, err := utils.GetAOGDataDir()
+	OADINDir, err := utils.GetOADINDataDir()
 	if err != nil {
-		slog.Error("Get AOG data dir failed: " + err.Error())
-		logger.EngineLogger.Error("[OpenVINO] Get AOG data dir failed: " + err.Error())
+		slog.Error("Get OADIN data dir failed: " + err.Error())
+		logger.EngineLogger.Error("[OpenVINO] Get OADIN data dir failed: " + err.Error())
 		return nil
 	}
 	execFile := ""
@@ -515,21 +515,21 @@ func (o *OpenvinoProvider) GetConfig() *types.EngineRecommendConfig {
 	enginePath := ""
 	switch runtime.GOOS {
 	case "windows":
-		execPath = fmt.Sprintf("%s/%s", AOGDir, "engine/openvino/ovms")
+		execPath = fmt.Sprintf("%s/%s", OADINDir, "engine/openvino/ovms")
 		execFile = "ovms.exe"
 		downloadUrl = OVMSWindowsDownloadURL
-		enginePath = fmt.Sprintf("%s/%s", AOGDir, "engine/openvino")
+		enginePath = fmt.Sprintf("%s/%s", OADINDir, "engine/openvino")
 	case "linux":
 		// todo 这里需要区分 centos 和 ubuntu(22/24) 的版本 后续实现
 		execFile = "ovms"
-		execPath = fmt.Sprintf("%s/%s", AOGDir, "engine/openvino/ovms")
+		execPath = fmt.Sprintf("%s/%s", OADINDir, "engine/openvino/ovms")
 		downloadUrl = ""
-		enginePath = fmt.Sprintf("%s/%s", AOGDir, "engine/openvino")
+		enginePath = fmt.Sprintf("%s/%s", OADINDir, "engine/openvino")
 	case "darwin":
 		execFile = "ovms"
-		execPath = fmt.Sprintf("%s/%s", AOGDir, "engine/openvino/ovms")
+		execPath = fmt.Sprintf("%s/%s", OADINDir, "engine/openvino/ovms")
 		downloadUrl = ""
-		enginePath = fmt.Sprintf("%s/%s", AOGDir, "engine/openvino")
+		enginePath = fmt.Sprintf("%s/%s", OADINDir, "engine/openvino")
 	default:
 		slog.Error("Unsupported OS: " + runtime.GOOS)
 		logger.EngineLogger.Error("[OpenVINO] Unsupported OS: " + runtime.GOOS)

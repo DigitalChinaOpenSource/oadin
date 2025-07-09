@@ -27,8 +27,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/constants"
+	"oadin/internal/utils/bcode"
 )
 
 type Client struct {

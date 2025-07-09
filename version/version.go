@@ -16,10 +16,10 @@
 
 package version
 
-const AOGVersion = "v0.4"
+const OADINVersion = "v0.4"
 
-const AOGIcon = ""
+const OADINIcon = ""
 
-const AOGName = "AOG"
+const OADINName = "OADIN"
 
-const AOGDescription = "AOG (AIPC Open Gateway) aims to decouple AI applications on AI PCs from the AI services they rely on. It is designed to provide developers with an extremely simple and easy-to-use infrastructure to install local AI services in their development environments and publish their AI applications without packaging their own AI stacks and models."
+const OADINDescription = "OADIN (AIPC Open Gateway) aims to decouple AI applications on AI PCs from the AI services they rely on. It is designed to provide developers with an extremely simple and easy-to-use infrastructure to install local AI services in their development environments and publish their AI applications without packaging their own AI stacks and models."

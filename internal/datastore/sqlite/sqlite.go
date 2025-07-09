@@ -28,9 +28,9 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/provider/template"
-	"intel.com/aog/internal/types"
+	"oadin/internal/datastore"
+	"oadin/internal/provider/template"
+	"oadin/internal/types"
 )
 
 // SQLite implements the Datastore interface

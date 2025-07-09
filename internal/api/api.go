@@ -22,35 +22,35 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"intel.com/aog/internal/server"
+	"oadin/internal/server"
 )
 
-type AOGCoreServer struct {
+type OADINCoreServer struct {
 	Router          *gin.Engine
 	AIGCService     server.AIGCService
 	Model           server.Model
 	ServiceProvider server.ServiceProvider
 }
 
-// NewAOGCoreServer is the constructor of the server structure
-func NewAOGCoreServer() *AOGCoreServer {
+// NewOADINCoreServer is the constructor of the server structure
+func NewOADINCoreServer() *OADINCoreServer {
 	g := gin.Default()
 	err := g.SetTrustedProxies(nil)
 	if err != nil {
 		fmt.Println("SetTrustedProxies failed")
 		return nil
 	}
-	return &AOGCoreServer{
+	return &OADINCoreServer{
 		Router: g,
 	}
 }
 
 // Run is the function to start the server
-func (t *AOGCoreServer) Run(ctx context.Context, address string) error {
+func (t *OADINCoreServer) Run(ctx context.Context, address string) error {
 	return t.Router.Run(address)
 }
 
-func (t *AOGCoreServer) Register() {
+func (t *OADINCoreServer) Register() {
 	t.AIGCService = server.NewAIGCService()
 	t.ServiceProvider = server.NewServiceProvider()
 	t.Model = server.NewModel()

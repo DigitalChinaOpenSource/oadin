@@ -24,14 +24,14 @@ import (
 	"sort"
 	"strings"
 
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/schedule"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/version"
+	"oadin/internal/api/dto"
+	"oadin/internal/datastore"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
+	"oadin/version"
 
-	// "intel.com/aog/internal/utils"
-	"intel.com/aog/internal/utils/bcode"
+	// "oadin/internal/utils"
+	"oadin/internal/utils/bcode"
 )
 
 func myModelFilter(modelList *[]dto.RecommendModelData) {
@@ -422,10 +422,10 @@ func GetDashboard(ctx context.Context) (*dto.DashboardResponse, error) {
 
 func GetProductInfo(ctx context.Context) (*dto.GetProductInfoResponse, error) {
 	return &dto.GetProductInfoResponse{
-		Icon:        version.AOGIcon,
-		ProductName: version.AOGName,
-		Description: version.AOGDescription,
-		Version:     version.AOGVersion,
+		Icon:        version.OADINIcon,
+		ProductName: version.OADINName,
+		Description: version.OADINDescription,
+		Version:     version.OADINVersion,
 	}, nil
 }
 

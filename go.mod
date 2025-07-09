@@ -1,4 +1,4 @@
-module intel.com/aog
+module oadin
 
 go 1.23.4
 

@@ -26,14 +26,14 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/server"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/logger"
+	"oadin/internal/server"
+	"oadin/internal/types"
+	"oadin/internal/utils/bcode"
 )
 
-func (t *AOGCoreServer) CreateModel(c *gin.Context) {
+func (t *OADINCoreServer) CreateModel(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] CreateModel request params:", c.Request.Body)
 	request := new(dto.CreateModelRequest)
 	if err := c.ShouldBindJSON(request); err != nil {
@@ -59,7 +59,7 @@ func (t *AOGCoreServer) CreateModel(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) CreateModelStream(c *gin.Context) {
+func (t *OADINCoreServer) CreateModelStream(c *gin.Context) {
 	request := new(dto.CreateModelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -146,7 +146,7 @@ func (t *AOGCoreServer) CreateModelStream(c *gin.Context) {
 	}
 }
 
-func (t *AOGCoreServer) DeleteModel(c *gin.Context) {
+func (t *OADINCoreServer) DeleteModel(c *gin.Context) {
 	logger.ApiLogger.Error("[API] DeleteModel request params:", c.Request.Body)
 	request := new(dto.DeleteModelRequest)
 	if err := c.Bind(request); err != nil {
@@ -170,7 +170,7 @@ func (t *AOGCoreServer) DeleteModel(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) GetModels(c *gin.Context) {
+func (t *OADINCoreServer) GetModels(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] GetModels request params:", c.Request.Body)
 	request := new(dto.GetModelsRequest)
 	if err := c.Bind(request); err != nil {
@@ -194,7 +194,7 @@ func (t *AOGCoreServer) GetModels(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) CancelModelStream(c *gin.Context) {
+func (t *OADINCoreServer) CancelModelStream(c *gin.Context) {
 	logger.ApiLogger.Error("[API] CancelModelStream request params:", c.Request.Body)
 	request := new(dto.ModelStreamCancelRequest)
 	if err := c.Bind(request); err != nil {
@@ -217,7 +217,7 @@ func (t *AOGCoreServer) CancelModelStream(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (t *AOGCoreServer) GetRecommendModels(c *gin.Context) {
+func (t *OADINCoreServer) GetRecommendModels(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] GetRecommendModels request params:", c.Request.Body)
 	data, err := server.GetRecommendModel()
 	if err != nil {
@@ -229,7 +229,7 @@ func (t *AOGCoreServer) GetRecommendModels(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (t *AOGCoreServer) GetModelList(c *gin.Context) {
+func (t *OADINCoreServer) GetModelList(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] GetModelList request params:", c.Request.Body)
 	request := new(dto.GetModelListRequest)
 	if err := c.Bind(request); err != nil {

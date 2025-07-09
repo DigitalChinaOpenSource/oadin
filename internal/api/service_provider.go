@@ -23,12 +23,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/logger"
+	"oadin/internal/utils/bcode"
 )
 
-func (t *AOGCoreServer) CreateServiceProvider(c *gin.Context) {
+func (t *OADINCoreServer) CreateServiceProvider(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] CreateServiceProvider request params:", c.Request.Body)
 	request := new(dto.CreateServiceProviderRequest)
 	if err := c.Bind(request); err != nil {
@@ -52,7 +52,7 @@ func (t *AOGCoreServer) CreateServiceProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) DeleteServiceProvider(c *gin.Context) {
+func (t *OADINCoreServer) DeleteServiceProvider(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] DeleteServiceProvider request params:", c.Request.Body)
 	request := new(dto.DeleteServiceProviderRequest)
 	if err := c.Bind(request); err != nil {
@@ -76,7 +76,7 @@ func (t *AOGCoreServer) DeleteServiceProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) UpdateServiceProvider(c *gin.Context) {
+func (t *OADINCoreServer) UpdateServiceProvider(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] UpdateServiceProvider request params:", c.Request.Body)
 	request := new(dto.UpdateServiceProviderRequest)
 	if err := c.Bind(request); err != nil {
@@ -100,10 +100,10 @@ func (t *AOGCoreServer) UpdateServiceProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) GetServiceProvider(c *gin.Context) {
+func (t *OADINCoreServer) GetServiceProvider(c *gin.Context) {
 }
 
-func (t *AOGCoreServer) GetServiceProviders(c *gin.Context) {
+func (t *OADINCoreServer) GetServiceProviders(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] GetServiceProviders request params:", c.Request.Body)
 	request := &dto.GetServiceProvidersRequest{}
 	if err := c.ShouldBindJSON(request); err != nil {

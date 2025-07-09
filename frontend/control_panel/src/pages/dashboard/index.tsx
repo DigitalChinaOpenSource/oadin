@@ -49,7 +49,7 @@ export default function Dashboard() {
             vertical
             gap={4}
           >
-            <div className={styles.categoryTitle}>AOG Services</div>
+            <div className={styles.categoryTitle}>OADIN Services</div>
             {installedServices.map((service: Service, index: number) => (
               <div
                 className={styles.card}

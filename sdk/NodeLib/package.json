@@ -1,5 +1,5 @@
 {
-  "name": "aog-lib",
+  "name": "oadin-lib",
   "version": "1.3.0",
   "main": "index.js",
   "scripts": {
@@ -25,7 +25,7 @@
     "tools.js",
     "package.json",
     "README.md",
-    ".aog"
+    ".oadin"
   ],
   "devDependencies": {
     "jest": "^29.7.0"

@@ -12,9 +12,9 @@ services:
         auth_apply_url: https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key?spm=a2c4g.11186623.0.0.110f4d4dZvW4Ml
         default_model: ""
         request_segments: 1 # request
-        install_raw_routes: false # also install routes without aog prefix in url path
+        install_raw_routes: false # also install routes without oadin prefix in url path
         extra_headers: '{}'
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -24,7 +24,7 @@ services:
                           }] 
                       }
 
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -37,7 +37,7 @@ services:
                           "object": "list"
                       }
 
-    chat: # service name defined by aog
+    chat: # service name defined by oadin
         task_type: "text-generation"
         protocol: "HTTP"
         expose_protocol: "HTTP"
@@ -48,10 +48,10 @@ services:
         auth_apply_url: https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key?spm=a2c4g.11186623.0.0.110f4d4dZvW4Ml
         default_model: qwen-plus
         request_segments: 1 # request
-        install_raw_routes: false # also install routes without aog prefix in url path
+        install_raw_routes: false # also install routes without oadin prefix in url path
         extra_headers: '{}'
         support_models: ["qwen-max", "qwen-plus", "qwen-turbo", "qwen-long", "qwen-vl-max"]
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -74,7 +74,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -97,7 +97,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -110,7 +110,7 @@ services:
                           "finish_reason": choices[0].finish_reason
                       }
 
-        stream_response_to_aog:
+        stream_response_to_oadin:
             conversion:
                 - converter: action_if
                   config:
@@ -128,7 +128,7 @@ services:
                           "finish_reason": choices[0].finish_reason
                       }
 
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -144,7 +144,7 @@ services:
                           }]
                       }
 
-        stream_response_from_aog:
+        stream_response_from_oadin:
             epilogue: ["[DONE]"] # openai adds a data: [DONE] at the end
             conversion:
                 - converter: jsonata
@@ -171,10 +171,10 @@ services:
         auth_apply_url: https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key?spm=a2c4g.11186623.0.0.110f4d4dZvW4Ml
         default_model: text-embedding-v1
         request_segments: 1 # request
-        install_raw_routes: false # also install routes without aog prefix in url path# request to this will use this flavor
+        install_raw_routes: false # also install routes without oadin prefix in url path# request to this will use this flavor
         extra_headers: '{}'
         support_models: ["text-embedding-v1", "text-embedding-v2", "text-embedding-v3"]
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -190,7 +190,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -206,7 +206,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -215,7 +215,7 @@ services:
                           "model": model,
                           "data": data
                       }
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -233,12 +233,12 @@ services:
         extra_url: "https://dashscope.aliyuncs.com/api/v1/tasks"
         auth_type: "apikey"
         auth_apply_url: https://help.aliyun.com/zh/model-studio/developer-reference/get-api-key?spm=a2c4g.11186623.0.0.110f4d4dZvW4Ml
-        install_raw_routes: false # also install routes without aog prefix in url path
+        install_raw_routes: false # also install routes without oadin prefix in url path
         default_model: wanx2.1-t2i-turbo
         request_segments: 2 # request
         extra_headers: '{"X-DashScope-Async": "enable"}'
         support_models: ["wanx2.1-t2i-turbo", "wanx2.1-t2i-plus", "wanx2.0-t2i-turbo"]
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -257,7 +257,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -276,7 +276,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -286,7 +286,7 @@ services:
                               "url": [$map(output.results, function($v){$v.url})]
                                   }
                       }
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |

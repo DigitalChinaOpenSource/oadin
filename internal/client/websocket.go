@@ -22,8 +22,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/types"
+	"oadin/internal/logger"
+	"oadin/internal/types"
 )
 
 // WebSocketConnection 表示单个WebSocket连接

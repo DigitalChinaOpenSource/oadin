@@ -30,7 +30,7 @@ import (
 	"sync"
 	"time"
 
-	"intel.com/aog/internal/datastore"
+	"oadin/internal/datastore"
 )
 
 const ModelQueryKey = "name"

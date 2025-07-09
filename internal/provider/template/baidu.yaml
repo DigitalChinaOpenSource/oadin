@@ -1,7 +1,7 @@
 version: "0.1"
 name: baidu # the name should be aligned with file name
 services:
-    chat: # service name defined by aog
+    chat: # service name defined by oadin
         task_type: "text-generation"
         protocol: "HTTP"
         expose_protocol: "HTTP"
@@ -12,10 +12,10 @@ services:
         auth_apply_url: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps
         default_model: ernie-3.5-8k
         request_segments: 1 # request
-        install_raw_routes: false  # also install routes without aog prefix in url path
+        install_raw_routes: false  # also install routes without oadin prefix in url path
         extra_headers: '{}'
         support_models: ["ernie-3.5-8k", ]
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -38,7 +38,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -61,7 +61,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -74,7 +74,7 @@ services:
                           "finish_reason": choices[0].finish_reason
                       }
 
-        stream_response_to_aog:
+        stream_response_to_oadin:
             conversion:
                 - converter: action_if
                   config:
@@ -92,7 +92,7 @@ services:
                           "finish_reason": choices[0].finish_reason
                       }
 
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -108,7 +108,7 @@ services:
                           }]
                       }
 
-        stream_response_from_aog:
+        stream_response_from_oadin:
             epilogue: ["[DONE]"] # openai adds a data: [DONE] at the end
             conversion:
                 - converter: jsonata
@@ -135,10 +135,10 @@ services:
         auth_apply_url: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Um2wxbaps
         default_model: embedding-v1
         request_segments: 1 # request
-        install_raw_routes: false # also install routes without aog prefix in url path# request to this will use this flavor
+        install_raw_routes: false # also install routes without oadin prefix in url path# request to this will use this flavor
         extra_headers: '{}'
         support_models: ["embedding-v1"]
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -154,7 +154,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -170,7 +170,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -179,7 +179,7 @@ services:
                           "model": model,
                           "data": data
                       }
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -196,12 +196,12 @@ services:
         endpoints: ["POST /v1/text-to-image"] # request to this will use this flavor
         extra_url: ""
         auth_type: "apikey"
-        install_raw_routes: false # also install routes without aog prefix in url path
+        install_raw_routes: false # also install routes without oadin prefix in url path
         default_model: irag-1.0
         request_segments: 1 # request
         extra_headers: '{}'
         support_models: ["irag-1.0"]
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -218,7 +218,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -235,7 +235,7 @@ services:
                   config:
                       set:
                           Content-Type: application/json
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -246,7 +246,7 @@ services:
                                "url": [$map(data, function($v){$v.url})]
                                    }
                       }
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |

@@ -19,7 +19,7 @@ package main
 import (
 	"os"
 
-	cli "intel.com/aog/cmd/cli/core"
+	cli "oadin/cmd/cli/core"
 )
 
 func main() {

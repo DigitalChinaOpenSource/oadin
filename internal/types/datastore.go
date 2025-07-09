@@ -22,10 +22,10 @@ import (
 
 const (
 	// Database table names
-	TableService         = "aog_service"
-	TableServiceProvider = "aog_service_provider"
-	TableModel           = "aog_model"
-	TableVersionUpdate   = "aog_version_update_record"
+	TableService         = "oadin_service"
+	TableServiceProvider = "oadin_service_provider"
+	TableModel           = "oadin_model"
+	TableVersionUpdate   = "oadin_version_update_record"
 )
 
 // Service  table structure

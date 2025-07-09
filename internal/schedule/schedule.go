@@ -27,11 +27,11 @@ import (
 	"strings"
 	"time"
 
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/datastore"
+	"oadin/internal/logger"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
 )
 
 type ServiceTaskEventType int

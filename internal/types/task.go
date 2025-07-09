@@ -24,7 +24,7 @@ import (
 	"io"
 	"net/http"
 
-	"intel.com/aog/internal/logger"
+	"oadin/internal/logger"
 )
 
 type ServiceResultType int

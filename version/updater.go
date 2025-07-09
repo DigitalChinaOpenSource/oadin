@@ -36,10 +36,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
+	"oadin/internal/constants"
+	"oadin/internal/datastore"
+	"oadin/internal/types"
+	"oadin/internal/utils"
 )
 
 const (
@@ -156,7 +156,7 @@ func UpdaterAuth() (UpdateAuthResponse, error) {
 func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 	var updateResp UpdateResponse
 
-	requestURL, err := url.Parse(UpdateCheckUrlBase + "/api/aog/updates")
+	requestURL, err := url.Parse(UpdateCheckUrlBase + "/api/oadin/updates")
 	if err != nil {
 		return false, updateResp
 	}
@@ -203,7 +203,7 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 		slog.Warn(fmt.Sprintf("malformed response checking for update: %s", err))
 		return false, updateResp
 	}
-	currentVersion := AOGVersion
+	currentVersion := OADINVersion
 	if updateResp.UpdateVersion == currentVersion {
 		return false, updateResp
 	}

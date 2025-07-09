@@ -26,16 +26,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"intel.com/aog/config"
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/provider"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
-	"intel.com/aog/version"
+	"oadin/config"
+	"oadin/internal/constants"
+	"oadin/internal/datastore"
+	"oadin/internal/provider"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/version"
 )
 
-func InjectRouter(e *AOGCoreServer) {
+func InjectRouter(e *OADINCoreServer) {
 	e.Router.Handle(http.MethodGet, "/", rootHandler)
 	e.Router.Handle(http.MethodGet, "/health", healthHeader)
 	e.Router.Handle(http.MethodGet, "/engine/health", engineHealthHandler)
@@ -44,7 +44,7 @@ func InjectRouter(e *AOGCoreServer) {
 	e.Router.Handle(http.MethodGet, "/update/status", updateAvailableHandler)
 	e.Router.Handle(http.MethodPost, "/update", updateHandler)
 
-	r := e.Router.Group("/" + constants.AppName + "/" + version.AOGVersion)
+	r := e.Router.Group("/" + constants.AppName + "/" + version.OADINVersion)
 
 	// service import / export
 	r.Handle(http.MethodPost, "/service/export", e.ExportService)
@@ -74,7 +74,7 @@ func InjectRouter(e *AOGCoreServer) {
 	r.Handle(http.MethodGet, "/control_panel/about", e.GetProductInfoHandler)
 	r.Handle(http.MethodPost, "/control_panel/modelkey", e.GetModelkeyHandler)
 
-	slog.Info("Gateway started", "host", config.GlobalAOGEnvironment.ApiHost)
+	slog.Info("Gateway started", "host", config.GlobalOADINEnvironment.ApiHost)
 }
 
 func rootHandler(c *gin.Context) {
@@ -100,7 +100,7 @@ func engineHealthHandler(c *gin.Context) {
 }
 
 func getVersion(c *gin.Context) {
-	c.JSON(http.StatusOK, map[string]string{"version": version.AOGVersion})
+	c.JSON(http.StatusOK, map[string]string{"version": version.OADINVersion})
 }
 
 func getEngineVersion(c *gin.Context) {
@@ -135,36 +135,36 @@ func updateHandler(c *gin.Context) {
 	status := utils.IsServerRunning()
 	if status {
 		// stop server
-		pidFilePath := filepath.Join(config.GlobalAOGEnvironment.RootDir, "aog.pid")
-		err := utils.StopAOGServer(pidFilePath)
+		pidFilePath := filepath.Join(config.GlobalOADINEnvironment.RootDir, "oadin.pid")
+		err := utils.StopOADINServer(pidFilePath)
 		if err != nil {
 			c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 		}
 	}
 	// rm old version file
-	aogFileName := "aog.exe"
+	oadinFileName := "oadin.exe"
 	if runtime.GOOS != "windows" {
-		aogFileName = "aog"
+		oadinFileName = "oadin"
 	}
-	aogFilePath := filepath.Join(config.GlobalAOGEnvironment.RootDir, aogFileName)
-	err := os.Remove(aogFilePath)
+	oadinFilePath := filepath.Join(config.GlobalOADINEnvironment.RootDir, oadinFileName)
+	err := os.Remove(oadinFilePath)
 	if err != nil {
-		slog.Error("[Update] Failed to remove aog file %s: %v\n", aogFilePath, err)
+		slog.Error("[Update] Failed to remove oadin file %s: %v\n", oadinFilePath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 	}
 	// install new version
-	downloadPath := filepath.Join(config.GlobalAOGEnvironment.RootDir, "download", aogFileName)
-	err = os.Rename(downloadPath, aogFilePath)
+	downloadPath := filepath.Join(config.GlobalOADINEnvironment.RootDir, "download", oadinFileName)
+	err = os.Rename(downloadPath, oadinFilePath)
 	if err != nil {
-		slog.Error("[Update] Failed to rename aog file %s: %v\n", downloadPath, err)
+		slog.Error("[Update] Failed to rename oadin file %s: %v\n", downloadPath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 	}
 	// start server
-	logPath := config.GlobalAOGEnvironment.ConsoleLog
-	rootDir := config.GlobalAOGEnvironment.RootDir
-	err = utils.StartAOGServer(logPath, rootDir)
+	logPath := config.GlobalOADINEnvironment.ConsoleLog
+	rootDir := config.GlobalOADINEnvironment.RootDir
+	err = utils.StartOADINServer(logPath, rootDir)
 	if err != nil {
-		slog.Error("[Update] Failed to start aog log %s: %v\n", logPath, err)
+		slog.Error("[Update] Failed to start oadin log %s: %v\n", logPath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 	}
 	ds := datastore.GetDefaultDatastore()

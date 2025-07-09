@@ -28,11 +28,11 @@ import (
 	"runtime"
 	"strconv"
 
-	"intel.com/aog/internal/client"
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
+	"oadin/internal/client"
+	"oadin/internal/constants"
+	"oadin/internal/logger"
+	"oadin/internal/types"
+	"oadin/internal/utils"
 )
 
 const (
@@ -77,14 +77,14 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 		}
 	}
 
-	AOGDir, err := utils.GetAOGDataDir()
+	OADINDir, err := utils.GetOADINDataDir()
 	if err != nil {
-		slog.Error("Get AOG data dir failed: ", err.Error())
-		logger.EngineLogger.Error("[Ollama] Get AOG data dir failed: " + err.Error())
+		slog.Error("Get OADIN data dir failed: ", err.Error())
+		logger.EngineLogger.Error("[Ollama] Get OADIN data dir failed: " + err.Error())
 		return nil
 	}
 
-	downloadPath := fmt.Sprintf("%s/%s/%s", AOGDir, "engine", "ollama")
+	downloadPath := fmt.Sprintf("%s/%s/%s", OADINDir, "engine", "ollama")
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		err := os.MkdirAll(downloadPath, 0o750)
 		if err != nil {
@@ -143,10 +143,10 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 			return fmt.Errorf("failed to start ollama: %v", err)
 		}
 
-		rootPath, err := utils.GetAOGDataDir()
+		rootPath, err := utils.GetOADINDataDir()
 		if err != nil {
-			logger.EngineLogger.Error("[Ollama] failed get aog dir: " + err.Error())
-			return fmt.Errorf("failed get aog dir: %v", err)
+			logger.EngineLogger.Error("[Ollama] failed get oadin dir: " + err.Error())
+			return fmt.Errorf("failed get oadin dir: %v", err)
 		}
 		pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
 		err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
@@ -180,10 +180,10 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 }
 
 func (o *OllamaProvider) StopEngine() error {
-	rootPath, err := utils.GetAOGDataDir()
+	rootPath, err := utils.GetOADINDataDir()
 	if err != nil {
-		logger.EngineLogger.Error("[Ollama] failed get aog dir: " + err.Error())
-		return fmt.Errorf("failed get aog dir: %v", err)
+		logger.EngineLogger.Error("[Ollama] failed get oadin dir: " + err.Error())
+		return fmt.Errorf("failed get oadin dir: %v", err)
 	}
 	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
 
@@ -237,7 +237,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			return nil
 		}
 	}
-	dataDir, err := utils.GetAOGDataDir()
+	dataDir, err := utils.GetOADINDataDir()
 	if err != nil {
 		slog.Error("Get Byze data dir failed", "error", err)
 		return nil

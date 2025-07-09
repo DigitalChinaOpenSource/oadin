@@ -23,12 +23,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/logger"
+	"oadin/internal/utils/bcode"
 )
 
-func (t *AOGCoreServer) CreateAIGCService(c *gin.Context) {
+func (t *OADINCoreServer) CreateAIGCService(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] CreateAIGCService request params:", c.Request.Body)
 	request := new(dto.CreateAIGCServiceRequest)
 	if err := c.Bind(request); err != nil {
@@ -52,7 +52,7 @@ func (t *AOGCoreServer) CreateAIGCService(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) UpdateAIGCService(c *gin.Context) {
+func (t *OADINCoreServer) UpdateAIGCService(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] UpdateAIGCService request params:", c.Request.Body)
 	request := new(dto.UpdateAIGCServiceRequest)
 	if err := c.Bind(request); err != nil {
@@ -76,10 +76,10 @@ func (t *AOGCoreServer) UpdateAIGCService(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) GetAIGCService(c *gin.Context) {
+func (t *OADINCoreServer) GetAIGCService(c *gin.Context) {
 }
 
-func (t *AOGCoreServer) GetAIGCServices(c *gin.Context) {
+func (t *OADINCoreServer) GetAIGCServices(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] GetAIGCServices request params:", c.Request.Body)
 	request := new(dto.GetAIGCServicesRequest)
 	if err := c.ShouldBindJSON(request); err != nil {
@@ -105,7 +105,7 @@ func (t *AOGCoreServer) GetAIGCServices(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) ExportService(c *gin.Context) {
+func (t *OADINCoreServer) ExportService(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] ExportService request params:", c.Request.Body)
 	request := new(dto.ExportServiceRequest)
 	if err := c.Bind(request); err != nil {
@@ -129,7 +129,7 @@ func (t *AOGCoreServer) ExportService(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) ImportService(c *gin.Context) {
+func (t *OADINCoreServer) ImportService(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] ImportService request params:", c.Request.Body)
 	request := new(dto.ImportServiceRequest)
 	if err := c.Bind(request); err != nil {

@@ -101,7 +101,7 @@ const InstallService: React.FC<InstallServiceProps> = (props: InstallServiceProp
         style={{ width: '100%' }}
         size="large"
         value={selectedService}
-        placeholder="AOG Services"
+        placeholder="OADIN Services"
         onChange={handleChange}
         options={options}
       />

@@ -27,15 +27,15 @@ const { promises: fsPromises } = require("fs");
 
 const schemas = require('./schema.js');
 const tools = require('./tools.js');
-const { logAndConsole, downloadFile, getAOGExecutablePath, runInstallerByPlatform, isHealthy } = require('./tools.js');
+const { logAndConsole, downloadFile, getOADINExecutablePath, runInstallerByPlatform, isHealthy } = require('./tools.js');
 const { instance, createAxiosInstance, requestWithSchema } = require('./axiosInstance.js')
-const { PLATFORM_CONFIG, AOG_HEALTH, AOG_ENGINE_PATH, } = require('./constants.js');
+const { PLATFORM_CONFIG, OADIN_HEALTH, OADIN_ENGINE_PATH, } = require('./constants.js');
 
-class AOG {
+class OADIN {
   constructor(version) {
-    this.version = version || "aog/v0.4";
+    this.version = version || "oadin/v0.4";
     this.client = instance
-    logAndConsole('info', `AOG类初始化，版本: ${this.version}`);
+    logAndConsole('info', `OADIN类初始化，版本: ${this.version}`);
   }
 
   async _requestWithSchema({ method, url, data, schema }) {
@@ -43,15 +43,15 @@ class AOG {
     return await requestWithSchema({ method, url, data, schema });
   }
 
-  // 检查 AOG 服务是否启动
-  async isAOGAvailable(retries = 5, interval = 1000) {
-    logAndConsole('info', '检测AOG服务可用性...');
+  // 检查 OADIN 服务是否启动
+  async isOADINAvailable(retries = 5, interval = 1000) {
+    logAndConsole('info', '检测OADIN服务可用性...');
     const fibArr = tools.fibonacci(retries, interval);
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
         const [healthRes, engineHealthRes] = await Promise.all([
-          axios.get(AOG_HEALTH),
-          axios.get(AOG_ENGINE_PATH)
+          axios.get(OADIN_HEALTH),
+          axios.get(OADIN_ENGINE_PATH)
         ]);
         const healthOk = isHealthy(healthRes.status);
         const engineOk = isHealthy(engineHealthRes.status);
@@ -64,15 +64,15 @@ class AOG {
         await new Promise(r => setTimeout(r, fibArr[attempt]));
       }
     }
-    logAndConsole('warn', 'AOG服务不可用');
+    logAndConsole('warn', 'OADIN服务不可用');
     return false;
   }
 
-  // 检查用户目录是否存在 aog.exe
-  isAOGExisted() {
-    const dest = getAOGExecutablePath();
+  // 检查用户目录是否存在 oadin.exe
+  isOADINExisted() {
+    const dest = getOADINExecutablePath();
     const existed = fs.existsSync(dest);
-    logAndConsole('info', `检测AOG可执行文件是否存在: ${dest}，结果: ${existed}`);
+    logAndConsole('info', `检测OADIN可执行文件是否存在: ${dest}，结果: ${existed}`);
     return existed;
   }
 
@@ -83,7 +83,7 @@ class AOG {
   }
 
   // 运行安装包
-  async _runAOGInstaller(installerPath) {
+  async _runOADINInstaller(installerPath) {
     const platform = tools.getPlatform();
     logAndConsole('info', `运行安装包: ${installerPath}，平台: ${platform}`);
     try {
@@ -96,7 +96,7 @@ class AOG {
     }
   }
 
-  async downloadAOG(retries = 3) {
+  async downloadOADIN(retries = 3) {
     try {
       const platform = tools.getPlatform();
       if (platform === 'unsupported' || !PLATFORM_CONFIG[platform]) {
@@ -105,7 +105,7 @@ class AOG {
       }
       const { downloadUrl, installerFileName, userAgent } = PLATFORM_CONFIG[platform];
       const userDir = os.homedir();
-      const destDir = path.join(userDir, 'AOGInstaller');
+      const destDir = path.join(userDir, 'OADINInstaller');
       const dest = path.join(destDir, installerFileName);
       const options = {
         headers: {
@@ -114,48 +114,48 @@ class AOG {
       };
       const downloadOk = await this._downloadFile(downloadUrl, dest, options, retries);
       if (downloadOk) {
-        const installResult = await this._runAOGInstaller(dest);
+        const installResult = await this._runOADINInstaller(dest);
         return installResult;
       } else {
         logAndConsole('error', '三次下载均失败，放弃安装。');
         return false;
       }
     } catch (err) {
-      logAndConsole('error', '下载或安装 AOG 失败: ' + err.message);
+      logAndConsole('error', '下载或安装 OADIN 失败: ' + err.message);
       return false;
     }
   }
 
-  // 启动 AOG 服务
-  async startAOG() {
-    const alreadyRunning = await this.isAOGAvailable(2, 1000);
+  // 启动 OADIN 服务
+  async startOADIN() {
+    const alreadyRunning = await this.isOADINAvailable(2, 1000);
     if (alreadyRunning) {
-      logAndConsole('info', '[startAOG] AOG 在运行中');
+      logAndConsole('info', '[startOADIN] OADIN 在运行中');
       return true;
     }
     return new Promise((resolve, reject) => {
       const platform = tools.getPlatform();
       const userDir = os.homedir();
-      const aogDir = path.join(userDir, 'AOG');
-      logAndConsole('info', `aogDir: ${aogDir}`);
+      const oadinDir = path.join(userDir, 'OADIN');
+      logAndConsole('info', `oadinDir: ${oadinDir}`);
       if (platform === "unsurported") return reject(new Error(`不支持的平台`));
       if (platform === 'win32') {
-        if (!process.env.PATH.includes(aogDir)) {
-          process.env.PATH = `${process.env.PATH}${path.delimiter}${aogDir}`;
+        if (!process.env.PATH.includes(oadinDir)) {
+          process.env.PATH = `${process.env.PATH}${path.delimiter}${oadinDir}`;
           logAndConsole('info', '添加到临时环境变量');
         }
         const command = 'cmd.exe';
-        const args = ['/c', 'start-aog.bat'];
+        const args = ['/c', 'start-oadin.bat'];
         logAndConsole('info', `正在运行命令: ${command} ${args.join(' ')}`);
         execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
-          if (error) logAndConsole('error', 'aog server start:error ' + error);
-          if (stdout) logAndConsole('info', 'aog server start:stdout: ' + stdout.toString());
-          if (stderr) logAndConsole('error', 'aog server start:stderr: ' + stderr.toString());
+          if (error) logAndConsole('error', 'oadin server start:error ' + error);
+          if (stdout) logAndConsole('info', 'oadin server start:stdout: ' + stdout.toString());
+          if (stderr) logAndConsole('error', 'oadin server start:stderr: ' + stderr.toString());
           const output = (stdout + stderr).toString().toLowerCase();
           if (error || output.includes('error')) {
             return resolve(false);
           }
-          const available = await this.isAOGAvailable(5, 1500);
+          const available = await this.isOADINAvailable(5, 1500);
           return resolve(available);
         });
       } else if (platform === 'darwin') {
@@ -166,14 +166,14 @@ class AOG {
           }
           let child;
           let stderrContent = '';
-          child = spawn('/usr/local/bin/aog', ['server', 'start', '-d'], {
+          child = spawn('/usr/local/bin/oadin', ['server', 'start', '-d'], {
             stdio: ['ignore', 'pipe', 'pipe'],
             windowsHide: true,
           });
           child.stdout.on('data', (data) => {
             if (data.toString().includes('server start successfully')) {
               //TODO：获取退出状态码
-              logAndConsole('info', 'AOG 服务启动成功');
+              logAndConsole('info', 'OADIN 服务启动成功');
               resolve(true);
             }
             logAndConsole('info', `stdout: ${data}`);
@@ -186,7 +186,7 @@ class AOG {
           child.on('error', (err) => {
             logAndConsole('error', `❌ 启动失败: ${err.message}`);
             if (err.code === 'ENOENT') {
-              logAndConsole('error', '未找到aog可执行文件，请检查下载是否成功或环境变量未生效');
+              logAndConsole('error', '未找到oadin可执行文件，请检查下载是否成功或环境变量未生效');
             }
             resolve(false);
           });
@@ -203,7 +203,7 @@ class AOG {
           });
           child.unref();
         } catch (error) {
-          logAndConsole('error', '启动 AOG 服务异常: ' + error.message);
+          logAndConsole('error', '启动 OADIN 服务异常: ' + error.message);
           resolve(false);
         }
       }
@@ -342,8 +342,8 @@ class AOG {
     if (result.code === 200) {
       try {
         const userDir = os.homedir();
-        const destDir = path.join(userDir, 'AOG');
-        const dest = path.join(destDir, '.aog');
+        const destDir = path.join(userDir, 'OADIN');
+        const dest = path.join(destDir, '.oadin');
         tools.ensureDirWritable(destDir);
         const fileContent = JSON.stringify(result.data, null, 2);
         fs.writeFileSync(dest, fileContent);
@@ -487,32 +487,32 @@ class AOG {
     })
   }
 
-  // 用于一键安装 AOG 和 导入配置
+  // 用于一键安装 OADIN 和 导入配置
   // TODO：记录日志
-  async AOGInit(path){
-    const isAOGAvailable = await this.isAOGAvailable();
-    if (isAOGAvailable) {
-      logAndConsole('info','✅ AOG 服务已启动，跳过安装。');
+  async OADINInit(path){
+    const isOADINAvailable = await this.isOADINAvailable();
+    if (isOADINAvailable) {
+      logAndConsole('info','✅ OADIN 服务已启动，跳过安装。');
       return true;
     }
     
-    const isAOGExisted = this.isAOGExisted();
-    if (!isAOGExisted) {
-      const downloadSuccess = await this.downloadAOG();
+    const isOADINExisted = this.isOADINExisted();
+    if (!isOADINExisted) {
+      const downloadSuccess = await this.downloadOADIN();
       if (!downloadSuccess) {
-        logAndConsole('error','❌ 下载 AOG 失败，请检查网络连接或手动下载。');
+        logAndConsole('error','❌ 下载 OADIN 失败，请检查网络连接或手动下载。');
         return false;
       }
     } else {
-      logAndConsole('info','✅ AOG 已存在，跳过下载。');
+      logAndConsole('info','✅ OADIN 已存在，跳过下载。');
     }
 
-    const installSuccess = await this.startAOG();
+    const installSuccess = await this.startOADIN();
     if (!installSuccess) {
-      logAndConsole('error','❌ 启动 AOG 服务失败，请检查配置或手动启动。');
+      logAndConsole('error','❌ 启动 OADIN 服务失败，请检查配置或手动启动。');
       return false;
     } else {
-      logAndConsole('info','✅ AOG 服务已启动。');
+      logAndConsole('info','✅ OADIN 服务已启动。');
     }
 
     const importSuccess = await this.importConfig(path);
@@ -526,4 +526,4 @@ class AOG {
   }
 }
 
-module.exports = AOG;
+module.exports = OADIN;

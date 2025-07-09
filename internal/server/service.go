@@ -27,16 +27,16 @@ import (
 	"strings"
 	"time"
 
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/provider"
-	"intel.com/aog/internal/schedule"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
-	"intel.com/aog/internal/utils/bcode"
-	"intel.com/aog/version"
+	"oadin/internal/api/dto"
+	"oadin/internal/constants"
+	"oadin/internal/datastore"
+	"oadin/internal/logger"
+	"oadin/internal/provider"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
+	"oadin/version"
 )
 
 const (
@@ -435,14 +435,14 @@ func (s *AIGCServiceImpl) ExportService(ctx context.Context, request *dto.Export
 	}
 
 	return &dto.ExportServiceResponse{
-		Version:          version.AOGVersion,
+		Version:          version.OADINVersion,
 		Services:         dbServices.Services,
 		ServiceProviders: dbServices.ServiceProviders,
 	}, nil
 }
 
 func (s *AIGCServiceImpl) ImportService(ctx context.Context, request *dto.ImportServiceRequest) (*dto.ImportServiceResponse, error) {
-	if request.Version != version.AOGVersion {
+	if request.Version != version.OADINVersion {
 		return nil, bcode.ErrAIGCServiceVersionNotMatch
 	}
 

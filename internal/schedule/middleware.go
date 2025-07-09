@@ -24,10 +24,10 @@ import (
 	"os"
 	"time"
 
-	"intel.com/aog/internal/client"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
+	"oadin/internal/client"
+	"oadin/internal/logger"
+	"oadin/internal/types"
+	"oadin/internal/utils"
 )
 
 type BaseMiddleware struct {

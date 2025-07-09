@@ -46,7 +46,7 @@ bk.*
 .vscode/
 .cursor/
 *.db
-aog
+oadin
 
 # Demo APP files
 /example/FreeChat/obj

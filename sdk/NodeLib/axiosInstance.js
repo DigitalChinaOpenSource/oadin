@@ -15,19 +15,19 @@
 //*****************************************************************************
 
 const axios = require('axios');
-const { AOG_VERSION } = require('./constants.js');
+const { OADIN_VERSION } = require('./constants.js');
 const { error } = require('console');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 
 const instance = axios.create({
-  baseURL: `http://localhost:16688/${AOG_VERSION}`,
+  baseURL: `http://localhost:16688/${OADIN_VERSION}`,
   headers: { "Content-Type": "application/json" },
 });
 
 function createAxiosInstance(version) {
   return axios.create({
-    baseURL: `http://localhost:16688/${version || AOG_VERSION}`,
+    baseURL: `http://localhost:16688/${version || OADIN_VERSION}`,
     headers: { "Content-Type": "application/json" },
   });
 }

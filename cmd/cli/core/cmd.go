@@ -36,23 +36,23 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"intel.com/aog/config"
-	"intel.com/aog/console"
-	"intel.com/aog/internal/api"
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/datastore"
-	"intel.com/aog/internal/datastore/jsonds"
-	jsondsTemplate "intel.com/aog/internal/datastore/jsonds/data"
-	"intel.com/aog/internal/datastore/sqlite"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/provider"
-	"intel.com/aog/internal/schedule"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
-	"intel.com/aog/internal/utils/bcode"
-	"intel.com/aog/internal/utils/progress"
-	"intel.com/aog/version"
+	"oadin/config"
+	"oadin/console"
+	"oadin/internal/api"
+	"oadin/internal/api/dto"
+	"oadin/internal/constants"
+	"oadin/internal/datastore"
+	"oadin/internal/datastore/jsonds"
+	jsondsTemplate "oadin/internal/datastore/jsonds/data"
+	"oadin/internal/datastore/sqlite"
+	"oadin/internal/logger"
+	"oadin/internal/provider"
+	"oadin/internal/schedule"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
+	"oadin/internal/utils/progress"
+	"oadin/version"
 )
 
 // NewCommand will contain all commands
@@ -101,7 +101,7 @@ func NewEditProviderCommand() *cobra.Command {
 		Short:  "Edit service data",
 		Long:   "Edit service status and scheduler policy",
 		Args:   cobra.ExactArgs(1),
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			filePath, err := cmd.Flags().GetString("file")
 			if err != nil {
@@ -135,7 +135,7 @@ func NewEditServiceCommand() *cobra.Command {
 		Short:  "Edit service data",
 		Long:   "Edit service status and scheduler policy",
 		Args:   cobra.ExactArgs(1),
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			serviceName := args[0]
 			hybridPolicy, err := cmd.Flags().GetString("hybrid_policy")
@@ -164,8 +164,8 @@ func NewEditServiceCommand() *cobra.Command {
 				req.LocalProvider = localProvider
 			}
 
-			c := config.NewAOGClient()
-			routerPath := fmt.Sprintf("/%s/%s/service", constants.AppName, version.AOGVersion)
+			c := config.NewOADINClient()
+			routerPath := fmt.Sprintf("/%s/%s/service", constants.AppName, version.OADINVersion)
 
 			err = c.Client.Do(context.Background(), http.MethodPut, routerPath, req, &resp)
 			if err != nil {
@@ -187,7 +187,7 @@ func NewEditServiceCommand() *cobra.Command {
 
 func Run(ctx context.Context) error {
 	// Initialize the datastore
-	ds, err := sqlite.New(config.GlobalAOGEnvironment.Datastore)
+	ds, err := sqlite.New(config.GlobalOADINEnvironment.Datastore)
 	if err != nil {
 		slog.Error("[Init] Failed to load datastore", "error", err)
 		return err
@@ -212,12 +212,12 @@ func Run(ctx context.Context) error {
 
 	logger.InitLogger(
 		logger.LogConfig{
-			LogLevel: config.GlobalAOGEnvironment.LogLevel,
-			LogPath:  config.GlobalAOGEnvironment.LogDir,
+			LogLevel: config.GlobalOADINEnvironment.LogLevel,
+			LogPath:  config.GlobalOADINEnvironment.LogDir,
 		})
 	// Initialize core core app server
-	aogServer := api.NewAOGCoreServer()
-	aogServer.Register()
+	oadinServer := api.NewOADINCoreServer()
+	oadinServer.Register()
 
 	logger.LogicLogger.Info("start_app")
 
@@ -234,34 +234,34 @@ func Run(ctx context.Context) error {
 	schedule.StartScheduler("basic")
 
 	// Inject the router
-	api.InjectRouter(aogServer)
+	api.InjectRouter(oadinServer)
 
 	// Inject all flavors to the router
 	// Setup flavors
 	for _, flavor := range schedule.AllAPIFlavors() {
-		flavor.InstallRoutes(aogServer.Router)
+		flavor.InstallRoutes(oadinServer.Router)
 		schedule.InitProviderDefaultModelTemplate(flavor)
 	}
 
-	pidFile := filepath.Join(config.GlobalAOGEnvironment.RootDir, constants.AppName+".pid")
+	pidFile := filepath.Join(config.GlobalOADINEnvironment.RootDir, constants.AppName+".pid")
 	err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0o644)
 	if err != nil {
 		slog.Error("[Run] Failed to write pid file", "error", err)
 		return err
 	}
 
-	_ = console.RegisterConsoleRoutes(aogServer.Router)
+	_ = console.RegisterConsoleRoutes(oadinServer.Router)
 
 	go ListenModelEngineHealth()
 
 	// Run the server
-	err = aogServer.Run(ctx, config.GlobalAOGEnvironment.ApiHost)
+	err = oadinServer.Run(ctx, config.GlobalOADINEnvironment.ApiHost)
 	if err != nil {
 		slog.Error("[Run] Failed to run server", "error", err)
 		return err
 	}
 
-	_, _ = color.New(color.FgHiGreen).Println("AOG Gateway starting on port", config.GlobalAOGEnvironment.ApiHost)
+	_, _ = color.New(color.FgHiGreen).Println("OADIN Gateway starting on port", config.GlobalOADINEnvironment.ApiHost)
 
 	return nil
 }
@@ -296,8 +296,8 @@ func updateServiceProviderHandler(providerName, configFile string) error {
 
 	resp := dto.UpdateServiceProviderResponse{}
 
-	c := config.NewAOGClient()
-	routerPath := fmt.Sprintf("/%s/%s/service_provider", constants.AppName, version.AOGVersion)
+	c := config.NewOADINClient()
+	routerPath := fmt.Sprintf("/%s/%s/service_provider", constants.AppName, version.OADINVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPut, routerPath, spConf, &resp)
 	if err != nil {
@@ -359,12 +359,12 @@ func NewStopApiServerCommand() *cobra.Command {
 		Short: "Stop daemon server.",
 		Long:  "Stop daemon server.",
 		Args:  cobra.ExactArgs(0), // 不需要参数
-		RunE:  stopAogServer,
+		RunE:  stopOadinServer,
 	}
 }
 
-func stopAogServer(cmd *cobra.Command, args []string) error {
-	files, err := filepath.Glob(filepath.Join(config.GlobalAOGEnvironment.RootDir, "*.pid"))
+func stopOadinServer(cmd *cobra.Command, args []string) error {
+	files, err := filepath.Glob(filepath.Join(config.GlobalOADINEnvironment.RootDir, "*.pid"))
 	if err != nil {
 		return fmt.Errorf("failed to list pid files: %v", err)
 	}
@@ -452,7 +452,7 @@ func NewInstallServiceCommand() *cobra.Command {
 		Short:  "Install a service or service provider",
 		Long:   `Install a service by name or a service provider from a file.`,
 		Args:   cobra.ExactArgs(1),
-		PreRun: StartAOGServer,
+		PreRun: StartOADINServer,
 		Run:    InstallServiceHandler,
 	}
 
@@ -477,8 +477,8 @@ func NewVersionCommand() *cobra.Command {
 		Short: "Prints build version information.",
 		Long:  "Prints build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf(`AOG Version: %s`,
-				version.AOGVersion)
+			fmt.Printf(`OADIN Version: %s`,
+				version.OADINVersion)
 		},
 	}
 
@@ -487,8 +487,8 @@ func NewVersionCommand() *cobra.Command {
 
 // NewStartApiServerCommand  Create a new cobra.Command Object with default values.
 func NewStartApiServerCommand() *cobra.Command {
-	config.GlobalAOGEnvironment = config.NewAOGEnvironment()
-	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalAOGEnvironment.LogLevel, LogPath: config.GlobalAOGEnvironment.LogDir})
+	config.GlobalOADINEnvironment = config.NewOADINEnvironment()
+	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalOADINEnvironment.LogLevel, LogPath: config.GlobalOADINEnvironment.LogDir})
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "apiserver is a aipc open gateway",
@@ -499,7 +499,7 @@ func NewStartApiServerCommand() *cobra.Command {
 				return err
 			}
 			if isDaemon {
-				StartAOGServer(cmd, args)
+				StartOADINServer(cmd, args)
 				return nil
 			}
 
@@ -544,7 +544,7 @@ func NewInstallModelCommand() *cobra.Command {
 		Short:  "Pull a model for a specific service",
 		Long:   `Pull a model for a specific service with optional remote flag.`,
 		Args:   cobra.ExactArgs(1),
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run:    PullHandler,
 	}
 
@@ -571,7 +571,7 @@ func NewDeleteModelCommand() *cobra.Command {
 		Short:  "Remove a model for a specific service",
 		Long:   `Remove a model for a specific service with optional remote flag.`,
 		Args:   cobra.ExactArgs(1),
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run:    DeleteModelHandler,
 	}
 
@@ -592,7 +592,7 @@ func NewDeleteProviderCommand() *cobra.Command {
 		Short:  "Remove a provider for a specific service",
 		Long:   `Remove a provider for a specific service with optional remote flag.`,
 		Args:   cobra.ExactArgs(1),
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run:    DeleteProviderHandler,
 	}
 
@@ -605,7 +605,7 @@ func NewListServicesCommand() *cobra.Command {
 		Short:  "Display all available service information.",
 		Long:   `Display all available service information.`,
 		Args:   cobra.MaximumNArgs(1),
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := dto.GetAIGCServicesRequest{}
 			resp := dto.GetAIGCServicesResponse{}
@@ -614,8 +614,8 @@ func NewListServicesCommand() *cobra.Command {
 				req.ServiceName = args[0]
 			}
 
-			c := config.NewAOGClient()
-			routerPath := fmt.Sprintf("/aog/%s/service", version.AOGVersion)
+			c := config.NewOADINClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service", version.OADINVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -654,7 +654,7 @@ func NewListModelsCommand() *cobra.Command {
 		Use:    "models",
 		Short:  "List models for a specific service",
 		Long:   `List models for a specific service.`,
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := dto.GetModelsRequest{}
 			resp := dto.GetModelsResponse{}
@@ -663,8 +663,8 @@ func NewListModelsCommand() *cobra.Command {
 				req.ProviderName = providerName
 			}
 
-			c := config.NewAOGClient()
-			routerPath := fmt.Sprintf("/aog/%s/model", version.AOGVersion)
+			c := config.NewOADINClient()
+			routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -699,7 +699,7 @@ func NewListProvidersCommand() *cobra.Command {
 		Use:    "service_providers",
 		Short:  "List models for a specific service",
 		Long:   `List models for a specific service.`,
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := dto.GetServiceProvidersRequest{}
 			resp := dto.GetServiceProvidersResponse{}
@@ -714,8 +714,8 @@ func NewListProvidersCommand() *cobra.Command {
 				req.ServiceSource = remote
 			}
 
-			c := config.NewAOGClient()
-			routerPath := fmt.Sprintf("/aog/%s/service_provider", version.AOGVersion)
+			c := config.NewOADINClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -783,8 +783,8 @@ func installServiceProviderHandler(configFile string) error {
 	msg := "Service provider installing"
 	go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
-	c := config.NewAOGClient()
-	routerPath := fmt.Sprintf("/aog/%s/service_provider", version.AOGVersion)
+	c := config.NewOADINClient()
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPost, routerPath, spConf, &resp)
 	if err != nil {
@@ -906,8 +906,8 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 		msg := "Service installing"
 		go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
-		c := config.NewAOGClient()
-		routerPath := fmt.Sprintf("/aog/%s/service/install", version.AOGVersion)
+		c := config.NewOADINClient()
+		routerPath := fmt.Sprintf("/oadin/%s/service/install", version.OADINVersion)
 
 		err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 		if err != nil {
@@ -955,35 +955,35 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 					return
 				}
 			} else {
-				fmt.Println("下次您可以通过 aog install chat -r --flavor deepseek --auth_type apikey 来启用远程DeepSeek服务")
+				fmt.Println("下次您可以通过 oadin install chat -r --flavor deepseek --auth_type apikey 来启用远程DeepSeek服务")
 			}
 		}
 	}
 }
 
-func CheckAOGServer(cmd *cobra.Command, args []string) {
+func CheckOADINServer(cmd *cobra.Command, args []string) {
 	if !utils.IsServerRunning() {
-		fmt.Println("AOG server is not running, Please run 'aog server start' first")
+		fmt.Println("OADIN server is not running, Please run 'oadin server start' first")
 		os.Exit(1)
 		return
 	}
 }
 
-func StartAOGServer(cmd *cobra.Command, args []string) {
+func StartOADINServer(cmd *cobra.Command, args []string) {
 	if utils.IsServerRunning() {
 		return
 	}
 
-	fmt.Println("AOG server is not running. Starting the server...")
-	if err := startAogServer(); err != nil {
-		log.Fatalf("Failed to start AOG server: %s \n", err.Error())
+	fmt.Println("OADIN server is not running. Starting the server...")
+	if err := startOadinServer(); err != nil {
+		log.Fatalf("Failed to start OADIN server: %s \n", err.Error())
 		return
 	}
 
 	time.Sleep(6 * time.Second)
 
 	if !utils.IsServerRunning() {
-		log.Fatal("Failed to start AOG server.")
+		log.Fatal("Failed to start OADIN server.")
 		return
 	}
 
@@ -997,7 +997,7 @@ func StartAOGServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println("AOG server start successfully.")
+	fmt.Println("OADIN server start successfully.")
 }
 
 func StartModelEngine(engineName, mode string) error {
@@ -1060,12 +1060,12 @@ func StartModelEngine(engineName, mode string) error {
 	return nil
 }
 
-func startAogServer() error {
-	logPath := config.GlobalAOGEnvironment.ConsoleLog
-	rootDir := config.GlobalAOGEnvironment.RootDir
-	err := utils.StartAOGServer(logPath, rootDir)
+func startOadinServer() error {
+	logPath := config.GlobalOADINEnvironment.ConsoleLog
+	rootDir := config.GlobalOADINEnvironment.RootDir
+	err := utils.StartOADINServer(logPath, rootDir)
 	if err != nil {
-		fmt.Printf("AOG server start failed: %s", err.Error())
+		fmt.Printf("OADIN server start failed: %s", err.Error())
 		return err
 	}
 	return nil
@@ -1133,8 +1133,8 @@ func PullHandler(cmd *cobra.Command, args []string) {
 	req.ServiceName = serviceName
 	req.ProviderName = providerName
 
-	c := config.NewAOGClient()
-	routerPath := fmt.Sprintf("/aog/%s/model", version.AOGVersion)
+	c := config.NewOADINClient()
+	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 	if err != nil {
@@ -1147,7 +1147,7 @@ func PullHandler(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println("You can use the command `aog get models` to check if the model is downloaded successfully.")
+	fmt.Println("You can use the command `oadin get models` to check if the model is downloaded successfully.")
 	fmt.Println("Model is downloading in the background, please wait...")
 }
 
@@ -1180,8 +1180,8 @@ func DeleteModelHandler(cmd *cobra.Command, args []string) {
 	req.ServiceName = serviceName
 	req.ProviderName = providerName
 
-	c := config.NewAOGClient()
-	routerPath := fmt.Sprintf("/aog/%s/model", version.AOGVersion)
+	c := config.NewOADINClient()
+	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodDelete, routerPath, req, &resp)
 	if err != nil {
@@ -1205,8 +1205,8 @@ func DeleteProviderHandler(cmd *cobra.Command, args []string) {
 
 	req.ProviderName = providerName
 
-	c := config.NewAOGClient()
-	routerPath := fmt.Sprintf("/aog/%s/service_provider", version.AOGVersion)
+	c := config.NewOADINClient()
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
 
 	err := c.Client.Do(context.Background(), http.MethodDelete, routerPath, req, &resp)
 	if err != nil {
@@ -1227,10 +1227,10 @@ func NewImportServiceCommand() *cobra.Command {
 		Use:    "import <file_path>",
 		Short:  "Import service configuration from a file",
 		Long:   "Import service configuration from a file and send it to the API.",
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
-				return fmt.Errorf("please provide a .aog file path")
+				return fmt.Errorf("please provide a .oadin file path")
 			}
 			filePath := args[0]
 			// Read the file content
@@ -1253,8 +1253,8 @@ func NewImportServiceCommand() *cobra.Command {
 			msg := "Importing service configuration"
 			go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
-			c := config.NewAOGClient()
-			routerPath := fmt.Sprintf("/aog/%s/service/import", version.AOGVersion)
+			c := config.NewOADINClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service/import", version.OADINVersion)
 
 			err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
@@ -1297,7 +1297,7 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		Use:    "to-file",
 		Short:  "Export service to file",
 		Long:   "Export service to file",
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
@@ -1306,8 +1306,8 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 			}
 			resp := &dto.ExportServiceResponse{}
 
-			c := config.NewAOGClient()
-			routerPath := fmt.Sprintf("/aog/%s/service/export", version.AOGVersion)
+			c := config.NewOADINClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
@@ -1330,7 +1330,7 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		},
 	}
 
-	cmd.Flags().StringVarP(&filePath, "file", "f", "./.aog", "Output file path")
+	cmd.Flags().StringVarP(&filePath, "file", "f", "./.oadin", "Output file path")
 
 	return cmd
 }
@@ -1340,7 +1340,7 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 		Use:    "to-stdout",
 		Short:  "Export service to stdout",
 		Long:   "Export service to stdout",
-		PreRun: CheckAOGServer,
+		PreRun: CheckOADINServer,
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
@@ -1349,8 +1349,8 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 			}
 			resp := &dto.ExportServiceResponse{}
 
-			c := config.NewAOGClient()
-			routerPath := fmt.Sprintf("/aog/%s/service/export", version.AOGVersion)
+			c := config.NewOADINClient()
+			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {

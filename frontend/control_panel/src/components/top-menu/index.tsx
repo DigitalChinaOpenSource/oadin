@@ -25,8 +25,8 @@ const items = [
     label: <NavLink to="/dashboard">Dashboard</NavLink>,
   },
   {
-    key: 'about-aog',
-    label: <NavLink to="/about-aog/choose-service">About AOG</NavLink>,
+    key: 'about-oadin',
+    label: <NavLink to="/about-oadin/choose-service">About OADIN</NavLink>,
   },
 ];
 

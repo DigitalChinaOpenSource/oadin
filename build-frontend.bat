@@ -17,7 +17,7 @@ REM ****************************************************************************
 
 setlocal enabledelayedexpansion
 
-echo [INFO] AOG Control Panel Frontend Build Script (Windows)
+echo [INFO] OADIN Control Panel Frontend Build Script (Windows)
 
 set "PROJECT_ROOT=%~dp0"
 set "PROJECT_ROOT=%PROJECT_ROOT:~0,-1%"
@@ -169,6 +169,6 @@ if exist "%CONSOLE_DIST_DIR%\index.html" (
 )
 
 echo [SUCCESS] Control Panel frontend build and deployment completed!
-echo [INFO] You can now start AOG service and visit http://127.0.0.1:16688/dashboard
+echo [INFO] You can now start OADIN service and visit http://127.0.0.1:16688/dashboard
 
 pause

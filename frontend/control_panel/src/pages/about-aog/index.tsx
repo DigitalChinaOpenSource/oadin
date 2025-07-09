@@ -29,7 +29,7 @@ import { Outlet } from 'react-router-dom';
 import useServiceStore from '@/store/useServiceStore';
 import Installing from '@/components/installing';
 
-export default function AboutAOG() {
+export default function AboutOADIN() {
   const { installing } = useServiceStore();
 
   const [checkCompleted, setCheckCompleted] = useState(true);
@@ -48,7 +48,7 @@ export default function AboutAOG() {
             src={bg}
             alt=""
           />
-          <span>AOG Service List</span>
+          <span>OADIN Service List</span>
         </div>
         <Outlet />
       </div>

@@ -33,15 +33,15 @@ import (
 	"github.com/gorilla/websocket"
 	"gopkg.in/yaml.v3"
 
-	"intel.com/aog/internal/client"
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/convert"
-	"intel.com/aog/internal/logger"
-	"intel.com/aog/internal/provider/template"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
-	"intel.com/aog/internal/utils/bcode"
-	"intel.com/aog/version"
+	"oadin/internal/client"
+	"oadin/internal/constants"
+	"oadin/internal/convert"
+	"oadin/internal/logger"
+	"oadin/internal/provider/template"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/internal/utils/bcode"
+	"oadin/version"
 )
 
 // APIFlavor mode is usually set to "default". And set to "stream" if it is using stream mode
@@ -58,12 +58,12 @@ type APIFlavor interface {
 	// Convert This should cover the 6 conversion methods below
 	Convert(service string, conversion string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
 
-	ConvertRequestToAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertRequestFromAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertResponseToAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertResponseFromAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertStreamResponseToAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
-	ConvertStreamResponseFromAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertRequestToOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertRequestFromOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertResponseToOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertResponseFromOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertStreamResponseToOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
+	ConvertStreamResponseFromOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error)
 }
 
 var allFlavors = make(map[string]APIFlavor)
@@ -97,26 +97,26 @@ type ModelSelector struct {
 	ModelInResponse string `yaml:"response"`
 }
 type FlavorServiceDef struct {
-	Protocol              string              `yaml:"protocol"`
-	ExposeProtocol        string              `yaml:"expose_protocol"`
-	TaskType              string              `yaml:"task_type"`
-	Endpoints             []string            `yaml:"endpoints"`
-	InstallRawRoutes      bool                `yaml:"install_raw_routes"`
-	DefaultModel          string              `yaml:"default_model"`
-	RequestUrl            string              `yaml:"url"`
-	RequestExtraUrl       string              `yaml:"extra_url"`
-	AuthType              string              `yaml:"auth_type"`
-	AuthApplyUrl          string              `yaml:"auth_apply_url"`
-	RequestSegments       int                 `yaml:"request_segments"`
-	ExtraHeaders          string              `yaml:"extra_headers"`
-	SupportModels         []string            `yaml:"support_models"`
-	ModelSelector         ModelSelector       `yaml:"model_selector"`
-	RequestToAOG          FlavorConversionDef `yaml:"request_to_aog"`
-	RequestFromAOG        FlavorConversionDef `yaml:"request_from_aog"`
-	ResponseToAOG         FlavorConversionDef `yaml:"response_to_aog"`
-	ResponseFromAOG       FlavorConversionDef `yaml:"response_from_aog"`
-	StreamResponseToAOG   FlavorConversionDef `yaml:"stream_response_to_aog"`
-	StreamResponseFromAOG FlavorConversionDef `yaml:"stream_response_from_aog"`
+	Protocol                string              `yaml:"protocol"`
+	ExposeProtocol          string              `yaml:"expose_protocol"`
+	TaskType                string              `yaml:"task_type"`
+	Endpoints               []string            `yaml:"endpoints"`
+	InstallRawRoutes        bool                `yaml:"install_raw_routes"`
+	DefaultModel            string              `yaml:"default_model"`
+	RequestUrl              string              `yaml:"url"`
+	RequestExtraUrl         string              `yaml:"extra_url"`
+	AuthType                string              `yaml:"auth_type"`
+	AuthApplyUrl            string              `yaml:"auth_apply_url"`
+	RequestSegments         int                 `yaml:"request_segments"`
+	ExtraHeaders            string              `yaml:"extra_headers"`
+	SupportModels           []string            `yaml:"support_models"`
+	ModelSelector           ModelSelector       `yaml:"model_selector"`
+	RequestToOADIN          FlavorConversionDef `yaml:"request_to_oadin"`
+	RequestFromOADIN        FlavorConversionDef `yaml:"request_from_oadin"`
+	ResponseToOADIN         FlavorConversionDef `yaml:"response_to_oadin"`
+	ResponseFromOADIN       FlavorConversionDef `yaml:"response_from_oadin"`
+	StreamResponseToOADIN   FlavorConversionDef `yaml:"stream_response_to_oadin"`
+	StreamResponseFromOADIN FlavorConversionDef `yaml:"stream_response_from_oadin"`
 }
 
 type FlavorDef struct {
@@ -126,8 +126,8 @@ type FlavorDef struct {
 }
 
 var allConversions = []string{
-	"request_to_aog", "request_from_aog", "response_to_aog", "response_from_aog",
-	"stream_response_to_aog", "stream_response_from_aog",
+	"request_to_oadin", "request_from_oadin", "response_to_oadin", "response_from_oadin",
+	"stream_response_to_oadin", "stream_response_from_oadin",
 }
 
 func EnsureConversionNameValid(conversion string) {
@@ -140,24 +140,24 @@ func EnsureConversionNameValid(conversion string) {
 }
 
 // Not all elements are defined in the YAML file. So need to handle and return nil
-// Example: getConversionDef("chat", "request_to_aog")
+// Example: getConversionDef("chat", "request_to_oadin")
 func (f *FlavorDef) getConversionDef(service, conversion string) *FlavorConversionDef {
 	EnsureConversionNameValid(conversion)
 	if serviceDef, exists := f.Services[service]; exists {
 		var def FlavorConversionDef
 		switch conversion {
-		case "request_to_aog":
-			def = serviceDef.RequestToAOG
-		case "request_from_aog":
-			def = serviceDef.RequestFromAOG
-		case "response_to_aog":
-			def = serviceDef.ResponseToAOG
-		case "response_from_aog":
-			def = serviceDef.ResponseFromAOG
-		case "stream_response_to_aog":
-			def = serviceDef.StreamResponseToAOG
-		case "stream_response_from_aog":
-			def = serviceDef.StreamResponseFromAOG
+		case "request_to_oadin":
+			def = serviceDef.RequestToOADIN
+		case "request_from_oadin":
+			def = serviceDef.RequestFromOADIN
+		case "response_to_oadin":
+			def = serviceDef.ResponseToOADIN
+		case "response_from_oadin":
+			def = serviceDef.ResponseFromOADIN
+		case "stream_response_to_oadin":
+			def = serviceDef.StreamResponseToOADIN
+		case "stream_response_from_oadin":
+			def = serviceDef.StreamResponseFromOADIN
 		default:
 			panic("[Flavor] Invalid Conversion Name: " + conversion)
 		}
@@ -281,7 +281,7 @@ func (f *ConfigBasedAPIFlavor) Name() string {
 }
 
 func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine) {
-	vSpec := version.AOGVersion
+	vSpec := version.OADINVersion
 	for service, serviceDef := range f.Config.Services {
 		if serviceDef.Protocol == types.ProtocolGRPC || serviceDef.Protocol == types.ProtocolGRPC_STREAM {
 			continue
@@ -303,7 +303,7 @@ func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine) {
 			}
 			handler := makeServiceRequestHandler(f, service)
 
-			// raw routes which doesn't have any aog prefix
+			// raw routes which doesn't have any oadin prefix
 			if serviceDef.InstallRawRoutes {
 				gateway.Handle(method, path, handler)
 				logger.LogicLogger.Debug("[Flavor] Installed raw route", "flavor", f.Name(), "service", service, "route", method+" "+path)
@@ -320,7 +320,7 @@ func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine) {
 			} else {
 				routerPath := fmt.Sprintf("/%s/%s/services/%s", constants.AppName, vSpec, path)
 				gateway.Handle(method, routerPath, makeServiceRequestHandler(f, service))
-				logger.LogicLogger.Debug("[Flavor] Installed aog route", "flavor", f.Name(), "service", service, "route", method+" "+routerPath)
+				logger.LogicLogger.Debug("[Flavor] Installed oadin route", "flavor", f.Name(), "service", service, "route", method+" "+routerPath)
 			}
 		}
 		logger.LogicLogger.Info("[Flavor] Installed routes", "flavor", f.Name(), "service", service)
@@ -328,11 +328,11 @@ func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine) {
 }
 
 func (f *ConfigBasedAPIFlavor) GetStreamResponseProlog(service string) []string {
-	return f.Config.getConversionDef(service, "stream_response_from_aog").Prologue
+	return f.Config.getConversionDef(service, "stream_response_from_oadin").Prologue
 }
 
 func (f *ConfigBasedAPIFlavor) GetStreamResponseEpilog(service string) []string {
-	return f.Config.getConversionDef(service, "stream_response_from_aog").Epilogue
+	return f.Config.getConversionDef(service, "stream_response_from_oadin").Epilogue
 }
 
 func (f *ConfigBasedAPIFlavor) Convert(service, conversion string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
@@ -341,28 +341,28 @@ func (f *ConfigBasedAPIFlavor) Convert(service, conversion string, content types
 	return pipeline.Convert(content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertRequestToAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "request_to_aog", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertRequestToOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "request_to_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertRequestFromAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "request_from_aog", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertRequestFromOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "request_from_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertResponseToAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "response_to_aog", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertResponseToOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "response_to_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertResponseFromAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "response_from_aog", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertResponseFromOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "response_from_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertStreamResponseToAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "stream_response_to_aog", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertStreamResponseToOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "stream_response_to_oadin", content, ctx)
 }
 
-func (f *ConfigBasedAPIFlavor) ConvertStreamResponseFromAOG(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
-	return f.Convert(service, "stream_response_from_aog", content, ctx)
+func (f *ConfigBasedAPIFlavor) ConvertStreamResponseFromOADIN(service string, content types.HTTPContent, ctx convert.ConvertContext) (types.HTTPContent, error) {
+	return f.Convert(service, "stream_response_from_oadin", content, ctx)
 }
 
 func makeServiceRequestHandler(flavor APIFlavor, service string) func(c *gin.Context) {
@@ -902,25 +902,25 @@ func ConvertBetweenFlavors(from, to APIFlavor, service string, conv string, cont
 	// need conversion, content-length may change
 	content.Header.Del("Content-Length")
 
-	firstConv := conv + "_to_aog"
-	secondConv := conv + "_from_aog"
+	firstConv := conv + "_to_oadin"
+	secondConv := conv + "_from_oadin"
 	EnsureConversionNameValid(firstConv)
 	EnsureConversionNameValid(secondConv)
-	if from.Name() != types.FlavorAOG {
+	if from.Name() != types.FlavorOADIN {
 		var err error
 		content, err = from.Convert(service, firstConv, content, ctx)
 		if err != nil {
 			return types.HTTPContent{}, bcode.WrapError(bcode.ErrFlavorConvertRequest, err)
 		}
 	}
-	if from.Name() != types.FlavorAOG && to.Name() != types.FlavorAOG {
+	if from.Name() != types.FlavorOADIN && to.Name() != types.FlavorOADIN {
 		if strings.HasPrefix(conv, "request") {
-			logger.LogicLogger.Error("request_converted_to_aog", "<n/a>", "<n/a>", content.Header, content.Body)
+			logger.LogicLogger.Error("request_converted_to_oadin", "<n/a>", "<n/a>", content.Header, content.Body)
 		} else {
-			logger.LogicLogger.Error("response_converted_to_aog", -1, content.Header, content.Body)
+			logger.LogicLogger.Error("response_converted_to_oadin", -1, content.Header, content.Body)
 		}
 	}
-	if to.Name() != types.FlavorAOG {
+	if to.Name() != types.FlavorOADIN {
 		var err error
 		content, err = to.Convert(service, secondConv, content, ctx)
 		if err != nil {

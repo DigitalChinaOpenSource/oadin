@@ -31,11 +31,11 @@ import (
 	"github.com/MatusOllah/slogcolor"
 	"github.com/fatih/color"
 	"github.com/spf13/pflag"
-	"intel.com/aog/internal/client"
-	"intel.com/aog/internal/constants"
-	"intel.com/aog/internal/types"
-	"intel.com/aog/internal/utils"
-	"intel.com/aog/version"
+	"oadin/internal/client"
+	"oadin/internal/constants"
+	"oadin/internal/types"
+	"oadin/internal/utils"
+	"oadin/version"
 )
 
 const (
@@ -53,7 +53,7 @@ const (
 	DatastoreSQLite = "sqlite"
 
 	// Database file
-	DefaultDatabaseFile = "aog.db"
+	DefaultDatabaseFile = "oadin.db"
 
 	// Directory names
 	LogsDirectory = "logs"
@@ -69,12 +69,12 @@ const (
 	DefaultLogExpireDays = 7
 
 	// Environment variable keys
-	EnvAOGHost = "AOG_HOST"
+	EnvOADINHost = "OADIN_HOST"
 )
 
-var GlobalAOGEnvironment *AOGEnvironment
+var GlobalOADINEnvironment *OADINEnvironment
 
-type AOGEnvironment struct {
+type OADINEnvironment struct {
 	ApiHost           string // host
 	Datastore         string // path to the datastore
 	DatastoreType     string // type of the datastore
@@ -86,30 +86,30 @@ type AOGEnvironment struct {
 	LogHTTP           string // path to the http log
 	LogLevel          string // log level
 	LogFileExpireDays int    // log file expiration time
-	ConsoleLog        string // aog server console log path
+	ConsoleLog        string // oadin server console log path
 }
 
 var (
 	once         sync.Once
-	envSingleton *AOGEnvironment
+	envSingleton *OADINEnvironment
 )
 
-type AOGClient struct {
+type OADINClient struct {
 	client.Client
 }
 
-func NewAOGClient() *AOGClient {
-	return &AOGClient{
+func NewOADINClient() *OADINClient {
+	return &OADINClient{
 		Client: *client.NewClient(Host(), http.DefaultClient),
 	}
 }
 
-// Host returns the scheme and host. Host can be configured via the AOG_HOST environment variable.
+// Host returns the scheme and host. Host can be configured via the OADIN_HOST environment variable.
 // Default is scheme host and host "127.0.0.1:16688"
 func Host() *url.URL {
 	defaultPort := constants.DefaultHTTPPort
 
-	s := strings.TrimSpace(Var(EnvAOGHost))
+	s := strings.TrimSpace(Var(EnvOADINHost))
 	scheme, hostport, ok := strings.Cut(s, "://")
 	switch {
 	case !ok:
@@ -149,9 +149,9 @@ func Var(key string) string {
 	return strings.Trim(strings.TrimSpace(os.Getenv(key)), "\"'")
 }
 
-func NewAOGEnvironment() *AOGEnvironment {
+func NewOADINEnvironment() *OADINEnvironment {
 	once.Do(func() {
-		env := AOGEnvironment{
+		env := OADINEnvironment{
 			ApiHost:           constants.DefaultHost + ":" + constants.DefaultHTTPPort,
 			Datastore:         DefaultDatabaseFile,
 			DatastoreType:     DatastoreSQLite,
@@ -161,13 +161,13 @@ func NewAOGEnvironment() *AOGEnvironment {
 			LogFileExpireDays: DefaultLogExpireDays,
 			Verbose:           DefaultVerbose,
 			RootDir:           DefaultRootDir,
-			APIVersion:        version.AOGVersion,
-			SpecVersion:       version.AOGVersion,
+			APIVersion:        version.OADINVersion,
+			SpecVersion:       version.OADINVersion,
 			ConsoleLog:        ConsoleLogFile,
 		}
 
 		var err error
-		env.RootDir, err = utils.GetAOGDataDir()
+		env.RootDir, err = utils.GetOADINDataDir()
 		if err != nil {
 			panic("[Init Env] get user dir failed: " + err.Error())
 		}
@@ -215,8 +215,8 @@ func (fs *FlagSets) GetFlagSet(name string) *pflag.FlagSet {
 	return fs.FlagSets[name]
 }
 
-// Flags returns the flag sets for the AOGEnvironment.
-func (s *AOGEnvironment) Flags() *FlagSets {
+// Flags returns the flag sets for the OADINEnvironment.
+func (s *OADINEnvironment) Flags() *FlagSets {
 	fss := NewFlagSets()
 	fs := fss.GetFlagSet("generic")
 	fs.StringVar(&s.ApiHost, "app-host", s.ApiHost, "API host")
@@ -224,7 +224,7 @@ func (s *AOGEnvironment) Flags() *FlagSets {
 	return fss
 }
 
-func (s *AOGEnvironment) SetSlogColor() {
+func (s *OADINEnvironment) SetSlogColor() {
 	opts := slogcolor.DefaultOptions
 	if s.Verbose == LogLevelDebug {
 		opts.Level = slog.LevelDebug
@@ -237,8 +237,8 @@ func (s *AOGEnvironment) SetSlogColor() {
 	opts.MsgColor = color.New(color.FgHiYellow)
 
 	slog.SetDefault(slog.New(slogcolor.NewHandler(os.Stderr, opts)))
-	_, _ = color.New(color.FgHiCyan).Println(">>>>>> AOG Open Gateway Starting : " + time.Now().Format(DefaultTimeFormat) + "\n\n")
+	_, _ = color.New(color.FgHiCyan).Println(">>>>>> OADIN Open Gateway Starting : " + time.Now().Format(DefaultTimeFormat) + "\n\n")
 	defer func() {
-		_, _ = color.New(color.FgHiGreen).Println("\n\n<<<<<< AOG Open Gateway Stopped : " + time.Now().Format(DefaultTimeFormat))
+		_, _ = color.New(color.FgHiGreen).Println("\n\n<<<<<< OADIN Open Gateway Stopped : " + time.Now().Format(DefaultTimeFormat))
 	}()
 }

@@ -73,9 +73,9 @@ function checkPort(port, timeout = 3000) {
   });
 }
 
-// 日志工具，所有日志写入 AOG.log，带[info]/[warn]/[error]前缀
+// 日志工具，所有日志写入 OADIN.log，带[info]/[warn]/[error]前缀
 // TODO:写在用户目录下
-const logFilePath = path.join(__dirname, 'aog.log');
+const logFilePath = path.join(__dirname, 'oadin.log');
 const logFormat = winston.format.printf(({ level, message, timestamp }) => {
   let prefix = '[info]';
   if (level === 'warn') prefix = '[warn]';
@@ -138,14 +138,14 @@ async function downloadFile(url, dest, options, retries = 3) {
   return false;
 }
 
-// 平台相关：获取aog可执行文件路径
-function getAOGExecutablePath() {
+// 平台相关：获取oadin可执行文件路径
+function getOADINExecutablePath() {
   const userDir = require('os').homedir();
   const platform = getPlatform();
   if (platform === 'win32') {
-    return path.join(userDir, 'AOG', 'aog.exe');
+    return path.join(userDir, 'OADIN', 'oadin.exe');
   } else if (platform === 'darwin') {
-    return '/usr/local/bin/aog';
+    return '/usr/local/bin/oadin';
   }
   return null;
 }
@@ -179,7 +179,7 @@ module.exports = {
   checkPort,
   logAndConsole,
   downloadFile,
-  getAOGExecutablePath,
+  getOADINExecutablePath,
   runInstallerByPlatform,
   isHealthy
 };

@@ -28,6 +28,6 @@ export default {
 
     unknown: 'Unknown error',
     network: 'Network error, please check your network connection',
-    unavailable: 'AOG service unavailable, please confirm the status of the AOG service',
+    unavailable: 'OADIN service unavailable, please confirm the status of the OADIN service',
   },
 };

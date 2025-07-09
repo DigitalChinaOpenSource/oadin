@@ -21,14 +21,14 @@ import (
 	// "io"
 	"net/http"
 
-	"intel.com/aog/internal/api/dto"
-	"intel.com/aog/internal/server"
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/api/dto"
+	"oadin/internal/server"
+	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (t *AOGCoreServer) GetDashBoardHandler(c *gin.Context) {
+func (t *OADINCoreServer) GetDashBoardHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 	data, err := server.GetDashboard(ctx)
 	if err != nil {
@@ -38,7 +38,7 @@ func (t *AOGCoreServer) GetDashBoardHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (t *AOGCoreServer) GetSupportModelListCombine(c *gin.Context) {
+func (t *OADINCoreServer) GetSupportModelListCombine(c *gin.Context) {
 	request := new(dto.GetSupportModelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -59,7 +59,7 @@ func (t *AOGCoreServer) GetSupportModelListCombine(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (t *AOGCoreServer) SetDefaultModelHandler(c *gin.Context) {
+func (t *OADINCoreServer) SetDefaultModelHandler(c *gin.Context) {
 	request := new(dto.SetDefaultModelRequest)
 	if err := c.ShouldBindJSON(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
@@ -78,7 +78,7 @@ func (t *AOGCoreServer) SetDefaultModelHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-func (t *AOGCoreServer) GetProductInfoHandler(c *gin.Context) {
+func (t *OADINCoreServer) GetProductInfoHandler(c *gin.Context) {
 	resp, err := server.GetProductInfo(c.Request.Context())
 	if err != nil {
 		bcode.ReturnError(c, err)
@@ -87,7 +87,7 @@ func (t *AOGCoreServer) GetProductInfoHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (t *AOGCoreServer) GetModelkeyHandler(c *gin.Context) {
+func (t *OADINCoreServer) GetModelkeyHandler(c *gin.Context) {
 	request := new(dto.GetModelkeyRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)

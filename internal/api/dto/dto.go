@@ -19,7 +19,7 @@ package dto
 import (
 	"time"
 
-	"intel.com/aog/internal/utils/bcode"
+	"oadin/internal/utils/bcode"
 )
 
 type GetProductInfoResponse struct {

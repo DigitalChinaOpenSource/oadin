@@ -11,9 +11,9 @@ services:
         auth_type: "none"
         default_model: ""
         request_segments: 1 # request
-        install_raw_routes: true # also install routes without aog prefix in url path
+        install_raw_routes: true # also install routes without oadin prefix in url path
         extra_headers: ""
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -30,7 +30,7 @@ services:
                           }]
                       }
 
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -50,7 +50,7 @@ services:
                           }]
                       }
 
-    chat: # service name defined by aog
+    chat: # service name defined by oadin
         task_type: "text-generation"
         protocol: "HTTP"
         expose_protocol: "HTTP"
@@ -60,13 +60,13 @@ services:
         auth_type: "none"
         default_model: "deepseek-r1:7b"
         request_segments: 1 # request
-        install_raw_routes: true # also install routes without aog prefix in url path
+        install_raw_routes: true # also install routes without oadin prefix in url path
         extra_headers: '{}'
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 # NOTE it doesn't directly use input model and stream
-                # it uses $model and $stream which will be input by aog
-                # so aog may change it to most suitable model and
+                # it uses $model and $stream which will be input by oadin
+                # so oadin may change it to most suitable model and
                 - converter: jsonata
                   config: |
                       {
@@ -88,7 +88,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -114,7 +114,7 @@ services:
                           Content-Type: application/json
 
         # response need additional converter for responses from stream
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -127,7 +127,7 @@ services:
                           "finish_reason": done_reason
                       }
 
-        stream_response_to_aog:
+        stream_response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -146,7 +146,7 @@ services:
                       add:
                           Content-Type: text/event-stream
 
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -158,7 +158,7 @@ services:
                           "done_reason": finish_reason
                       }
 
-        stream_response_from_aog:
+        stream_response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -186,9 +186,9 @@ services:
         auth_type: "none"
         default_model: ""
         request_segments: 1 # request
-        install_raw_routes: true # also install routes without aog prefix in url path
+        install_raw_routes: true # also install routes without oadin prefix in url path
         extra_headers: '{}'
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -211,7 +211,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -237,7 +237,7 @@ services:
                           Content-Type: application/json
 
         # response need additional converter for responses from stream
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -250,7 +250,7 @@ services:
                           "finish_reason": done_reason
                       }
 
-        stream_response_to_aog:
+        stream_response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -269,7 +269,7 @@ services:
                       add:
                           Content-Type: text/event-stream
 
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -281,7 +281,7 @@ services:
                           "done_reason": finish_reason
                       }
 
-        stream_response_from_aog:
+        stream_response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -307,9 +307,9 @@ services:
         auth_type: "none"
         default_model: ""
         request_segments: 1 # request
-        install_raw_routes: true # also install routes without aog prefix in url path
+        install_raw_routes: true # also install routes without oadin prefix in url path
         extra_headers: '{}'
-        request_to_aog:
+        request_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -324,7 +324,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        request_from_aog:
+        request_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -340,7 +340,7 @@ services:
                       set:
                           Content-Type: application/json
 
-        response_to_aog:
+        response_to_oadin:
             conversion:
                 - converter: jsonata
                   config: |
@@ -349,7 +349,7 @@ services:
                           "model": model,
                           "data": [$map(embeddings, function($v, $i){{"index": $i, "embedding": $v}})]
                       }
-        response_from_aog:
+        response_from_oadin:
             conversion:
                 - converter: jsonata
                   config: |

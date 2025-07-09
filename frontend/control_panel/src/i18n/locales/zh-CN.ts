@@ -27,6 +27,6 @@ export default {
     '40004': '模型文件迁移失败',
     unknown: '未知错误',
     network: '网络异常，请检查网络连接',
-    unavailable: 'AOG服务不可用，请确认AOG服务启动状态',
+    unavailable: 'OADIN服务不可用，请确认OADIN服务启动状态',
   },
 };

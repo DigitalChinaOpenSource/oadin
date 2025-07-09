@@ -1,16 +1,16 @@
-# AOGLib使用说明
+# OADINLib使用说明
 
 ## 1. 介绍
 
-AOGLib 将协助开发者使用 AOG（白泽模型框架）。
+OADINLib 将协助开发者使用 OADIN（白泽模型框架）。
 
-现在 AOGLib 提供了以下功能：
+现在 OADINLib 提供了以下功能：
 
-检查 aog 服务是否存在
+检查 oadin 服务是否存在
 
-检查 aog.exe 是否下载
+检查 oadin.exe 是否下载
 
-下载 aog.exe
+下载 oadin.exe
 
 ## 2. 使用
 
@@ -18,37 +18,37 @@ AOGLib 将协助开发者使用 AOG（白泽模型框架）。
 
 
 ``` sh
-npm install aog-lib-1.0.0.tgz
+npm install oadin-lib-1.0.0.tgz
 ```
 
 然后在项目中引入该 Node Module：
 
 ``` JavaScript
-const AOGLib = require('aog-lib');
+const OADINLib = require('oadin-lib');
 
-const aog = new AOGLib();
+const oadin = new OADINLib();
 
-// 检查 aog 服务是否存在
-aog.isAOGAvailable().then((result) => {
+// 检查 oadin 服务是否存在
+oadin.isOADINAvailable().then((result) => {
     console.log(result);
 });
 
-// 检查 aog.exe 是否下载
-const existed = aog.isAOGExisted();
+// 检查 oadin.exe 是否下载
+const existed = oadin.isOADINExisted();
 console.log(existed);
 
-// 下载 aog.exe
-aog.downloadAOG().then((result) => {
+// 下载 oadin.exe
+oadin.downloadOADIN().then((result) => {
     console.log(result);
 });
 
-// 启动 aog 服务
-aog.startAOG().then((result) => {
+// 启动 oadin 服务
+oadin.startOADIN().then((result) => {
     console.log(result);
 });
 
 // 查看当前服务
-aog.getServices().then((result) => {
+oadin.getServices().then((result) => {
     console.log(result);
 });
 
@@ -63,7 +63,7 @@ const data = {
     auth_key: "your_api_key",
 }; // 必填service_name, service_source, hybrid_policy, flavor_name, provider_name
 
-aog.installService(data).then((result) => {
+oadin.installService(data).then((result) => {
     console.log(result);
 });
 
@@ -75,12 +75,12 @@ const data = {
     local_provider: ""
 }; // 必填service_name
 
-aog.updateService(data).then((result) => {
+oadin.updateService(data).then((result) => {
     console.log(result);
 });
 
 // 查看模型
-aog.getModels().then((result) => {
+oadin.getModels().then((result) => {
     console.log(result);
 });
 
@@ -92,7 +92,7 @@ const data = {
     provider_name: "local_ollama_chat/remote_openai_chat/...",
 }; // 必填model_name, service_name, service_source
 
-aog.installModel(data).then((result) => {
+oadin.installModel(data).then((result) => {
     console.log(result);
 });
 
@@ -104,12 +104,12 @@ const data = {
     provider_name: "local_ollama_chat/remote_openai_chat/...",
 }; // 必填model_name, service_name, service_source
 
-aog.deleteModel(data).then((result) => {
+oadin.deleteModel(data).then((result) => {
     console.log(result);
 });
 
 // 查看服务提供商
-aog.getServiceProviders().then((result) => {
+oadin.getServiceProviders().then((result) => {
     console.log(result);
 });
 
@@ -128,7 +128,7 @@ const data = {
     extra_json_body: {},
     properties: {}
 }; // 必填service_name, service_source, flavor_name, provider_name
-aog.installServiceProvider(data).then((result) => {
+oadin.installServiceProvider(data).then((result) => {
     console.log(result);
 });
 
@@ -148,7 +148,7 @@ const data = {
     properties: {}
 }; // 必填service_name, service_source, flavor_name, provider_name
 
-aog.updateServiceProvider(data).then((result) => {
+oadin.updateServiceProvider(data).then((result) => {
     console.log(result);
 });
 
@@ -157,12 +157,12 @@ const data = {
     provider_name: ""
 };
 
-aog.deleteServiceProvider(data).then((result) => {
+oadin.deleteServiceProvider(data).then((result) => {
     console.log(result);
 });
 
 // 导入配置文件
-aog.importConfig("path/to/.aog").then((result) => {
+oadin.importConfig("path/to/.oadin").then((result) => {
     console.log(result);
 });
 
@@ -171,18 +171,18 @@ const data = {
     service_name: "chat/embed/generate/text-to-image"
 };
 
-aog.exportConfig(data).then((result) => { // 不填data则导出全部
+oadin.exportConfig(data).then((result) => { // 不填data则导出全部
     console.log(result);
 });
 
 // 获取模型列表（查看ollama的模型）
-// aog.getModelsAvailiable() 方法已移除或重命名，请使用 getModels()
-aog.getModels().then((result) => {
+// oadin.getModelsAvailiable() 方法已移除或重命名，请使用 getModels()
+oadin.getModels().then((result) => {
     console.log(result);
 });
 
 // 获取推荐模型列表
-aog.getModelsRecommended().then((result) => {
+oadin.getModelsRecommended().then((result) => {
     console.log(result);
 });
 
@@ -191,7 +191,7 @@ const data = {
     service_source: "remote/local",
     flavor: "ollama/openai/..." // local 则默认为ollama
 }; // 必填service_source, flavor
-aog.getModelsSupported(data).then((result) => {
+oadin.getModelsSupported(data).then((result) => {
     console.log(result);
 });
 
@@ -209,7 +209,7 @@ const data = {
     max_tokens: 100,
 }
 
-aog.chat(data).then((chatStream) => {
+oadin.chat(data).then((chatStream) => {
     chatStream.on('data', (data) => {
         console.log(data);
     });
@@ -235,7 +235,7 @@ const data = {
     max_tokens: 100,
 }
 
-aog.chat(data).then((result) => {
+oadin.chat(data).then((result) => {
     console.log(result);
 });
 
@@ -245,7 +245,7 @@ const data = {
     stream: true,
     prompt: "你好",
 }
-aog.generate(data).then((generateStream) => {
+oadin.generate(data).then((generateStream) => {
     generateStream.on('data', (data) => {
         console.log(data);
     });
@@ -263,7 +263,7 @@ const data = {
     stream: false,
     prompt: "你好",
 }
-aog.generate(data).then((result) => {
+oadin.generate(data).then((result) => {
     console.log(result);
 });
 
@@ -273,7 +273,7 @@ const data = {
     prompt: "一间有着精致窗户的花店，漂亮的木质门，摆放着花朵",
 }
 
-aog.textToImage(data).then((result) => {
+oadin.textToImage(data).then((result) => {
     console.log(result);
 });
 
@@ -284,7 +284,7 @@ const data = {
     language: "zh"
 }
 
-aog.speechToText(data).then(response => {
+oadin.speechToText(data).then(response => {
     console.log( response);
 });
 ```
