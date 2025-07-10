@@ -618,7 +618,10 @@ export function useChatStream() {
         },
         {
           onDataReceived: async (response) => {
-            console.log('response626', response);
+            if (response.data.type === 'error') {
+              message.error('对话异常，请检查模型文件');
+              return;
+            }
             // 清除总超时定时器
             if (requestState.current.timers.totalTimer) {
               clearTimeout(requestState.current.timers.totalTimer);
