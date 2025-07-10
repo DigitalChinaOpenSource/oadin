@@ -286,6 +286,7 @@ export function useChatStream() {
       },
 
       onmessage: (event) => {
+        console.log('onmessage===》', event);
         try {
           // 解析JSON响应
           let response;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { httpRequest } from '@/utils/httpRequest';
 import { useRequest } from 'ahooks';
 import thinkSvg from '@/components/icons/think.svg';
@@ -14,6 +14,10 @@ export default function ChatModelManage(props: { thinkingActive: boolean }) {
   const currentSessionId = getSessionIdFromUrl();
 
   const [isThinking, setIsThinking] = useState<boolean>(thinkingActive);
+
+  useEffect(() => {
+    setIsThinking(thinkingActive);
+  }, [thinkingActive]);
 
   const { run: fetchThinkingEnable } = useRequest(
     async (params: { sessionId: string; enabled: boolean }) => {
@@ -31,6 +35,7 @@ export default function ChatModelManage(props: { thinkingActive: boolean }) {
     },
   );
 
+  console.log('ChatModelManage isThinking===》', isThinking);
   return (
     <>
       <div className={styles.chatModelManage}>
