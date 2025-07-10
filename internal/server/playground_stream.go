@@ -426,8 +426,19 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	})
 
 	modelEngine := engine.NewEngine() // 构建聊天请求
+	currentModelName := sessionCheck.ModelName
+
+	if currentModelName == "" {
+
+		if len(messages) > 0 {
+			if latestMsg := messages[len(messages)-1].(*types.ChatMessage); latestMsg.ModelName != "" {
+				currentModelName = latestMsg.ModelName
+			}
+		}
+	}
+
 	chatRequest := &types.ChatRequest{
-		Model:    sessionCheck.ModelName,
+		Model:    currentModelName,
 		Messages: history,
 		Stream:   false,
 		Think:    false,
