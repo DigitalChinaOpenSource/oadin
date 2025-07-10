@@ -391,7 +391,7 @@ func (st *ServiceTask) Run() error {
 			} else {
 				slog.Debug("[Service] Stream: Got Chunk Response", "taskid", st.Schedule.Id, "chunk", string(chunk))
 			}
-			fmt.Println("[Service] Response Content", "taskid", st.Schedule.Id, "chunk", string(chunk))
+			// fmt.Println("[Service] Response Content", "taskid", st.Schedule.Id, "chunk", string(chunk))
 
 			chunkStr := strings.TrimPrefix(string(chunk), "data:")
 			chunk = []byte(chunkStr)
