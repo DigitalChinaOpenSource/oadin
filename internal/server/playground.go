@@ -381,6 +381,23 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error) {
 	slog.Info("GetMessages called", "session_id", request.SessionId)
 
+	sessionQuery := &types.ChatSession{ID: request.SessionId}
+	sessionResults, err := p.Ds.List(ctx, sessionQuery, &datastore.ListOptions{PageSize: 1})
+	if err != nil {
+		slog.Error("Failed to get session", "error", err, "session_id", request.SessionId)
+		return nil, err
+	}
+
+	var thinkingActive bool
+	if len(sessionResults) > 0 {
+		if session, ok := sessionResults[0].(*types.ChatSession); ok {
+			thinkingActive = session.ThinkingActive
+			slog.Info("Found session", "session_id", request.SessionId, "thinking_active", thinkingActive)
+		}
+	} else {
+		slog.Warn("Session not found", "session_id", request.SessionId)
+	}
+
 	messageQuery := &types.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
 		SortBy: []datastore.SortOption{
@@ -442,7 +459,10 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 
 	return &dto.GetMessagesResponse{
 		Bcode: bcode.SuccessCode,
-		Data:  messageDTOs,
+		Data: dto.GetMessagesData{
+			Messages:       messageDTOs,
+			ThinkingActive: thinkingActive,
+		},
 	}, nil
 }
 
