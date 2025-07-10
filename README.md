@@ -7,6 +7,32 @@
 当前版本支持 chat 和 embed 服务，下层支持 ollama。更多服务如文生图，音频相关，以及其他 AI 引擎，敬请
 期待正在开发的后续版本。
 
+### 🆕 新增功能 (v0.2.0)
+
+**服务类型扩展：**
+- 💬 **聊天对话** (Chat) - 支持多轮对话和流式输出
+- 🔍 **文本嵌入** (Embed) - 向量化文本用于语义搜索
+- ✍️ **文本生成** (Generate) - 单轮文本生成和补全
+- 🎨 **文生图** (Text-to-Image) - 文本描述生成图像
+
+**提供商支持：**
+- 🏠 **本地引擎**: Ollama
+- ☁️ **云端服务**: OpenAI、DeepSeek、腾讯混元、百度千帆、阿里通义、问学智视等
+
+**核心新特性：**
+- 🔧 **MCP 工具集成** - 完整的 Model Context Protocol 支持
+- 🌐 **Web 控制台** - 可视化管理界面 (http://localhost:16699)
+- 🎮 **Playground** - 交互式测试和调试环境
+- 📄 **RAG 文档处理** - 智能文档上传、处理和检索
+- 🖥️ **系统托盘** - 跨平台后台运行和管理
+- 🔄 **自动更新** - 组件和模型的自动更新机制
+
+**增强功能：**
+- ⚖️ **混合调度策略** - 本地/云端智能负载均衡
+- 🔗 **API 兼容层** - OpenAI/Ollama API 自动转换
+- 📊 **服务监控** - 实时状态监控和性能指标
+- 🔐 **安全认证** - 多种认证方式支持
+
 ## Oadin 的功能
 
 Oadin 的目标是解耦 AI PC 上的 AI 应用与它所依赖的 AI 服务。它旨在为开发者提供一个
@@ -206,13 +232,75 @@ Oadin API 是一个 Restful API。您可以通过与调用云 AI 服务（如 Op
 
 值得注意的是，当前 Oadin 预览提供了基本的 chat 等服务，下一版本将会提供文生图以及语音相关的更多服务。
 
-例如，您可以使用 `curl` 在 Windows 上测试聊天服务。
+### 📚 API 端点总览
 
+| 服务类型 | 端点 | 描述 |
+|---------|------|------|
+| 💬 聊天对话 | `POST /oadin/v0.2/services/chat` | 多轮对话，支持流式输出<br/>支持 `think` 字段控制深度思考功能 |
+| 🔍 文本嵌入 | `POST /oadin/v0.2/services/embed` | 文本向量化 |
+| ✍️ 文本生成 | `POST /oadin/v0.2/services/generate` | 单轮文本生成 |
+| 🎨 文生图   | `POST /oadin/v0.2/services/text-to-image` | 文本生成图像 |
+
+### 🌐 Web 控制台
+
+访问 http://localhost:16699 体验完整的 Web 管理界面：
+- 📊 **仪表板** - 服务状态和性能监控
+- 🎮 **Playground** - 交互式测试环境
+- 📁 **文档管理** - RAG 文档上传和处理
+- 🔧 **MCP 管理** - 工具服务配置
+
+### 💻 API 调用示例
+
+**聊天服务：**
+
+基础对话示例：
 ```sh
 curl -X POST http://localhost:16688/oadin/v0.2/services/chat  -X POST -H
 "Content-Type: application/json" -d
 "{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is
 the sky blue?\"}],\"stream\":false}"
+
+```
+
+**深度思考功能：**
+对于支持深度思考的模型（如 DeepSeek-R1 系列），可以通过 `think` 字段控制思考过程：
+
+```sh
+# 开启深度思考（显示思考过程）
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat  -X POST -H
+"Content-Type: application/json" -d
+"{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is
+the sky blue?\"}],\"stream\":false,\"stream\":true}"
+
+
+# 关闭深度思考（直接回答）
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat  -X POST -H
+"Content-Type: application/json" -d
+"{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is
+the sky blue?\"}],\"stream\":false,\"stream\":false}"
+```
+
+> **注意**: `think` 字段仅对支持深度思考的模型有效，如 DeepSeek-R1 系列。其他模型会忽略此参数。
+
+**文本嵌入服务：**
+```sh
+curl -X POST http://localhost:16688/oadin/v0.2/services/embed \
+  -H "Content-Type: application/json" \
+  -d '{"model":"nomic-embed-text","input":["文本1","文本2"]}'
+```
+
+**文生图服务：**
+```sh
+curl -X POST http://localhost:16688/oadin/v0.2/services/text-to-image \
+  -H "Content-Type: application/json" \
+  -d '{"model":"wanx2.1-t2i-turbo","prompt":"一只可爱的小猫"}'
+```
+
+**文本生成服务：**
+```sh
+curl -X POST http://localhost:16688/oadin/v0.2/services/generate \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-r1:7b","prompt":"编写一个Python程序","stream":false}'
 ```
 
 此外，如果您已经使用 OpenAI API 或 ollama API 等的应用程序，您无需重写调用 Oadin 的方式以符合其规范。
@@ -246,6 +334,9 @@ Windows 上是 `OadinChecker.dll` 。您不需要发布 AI 堆栈或模型。
   "service": {
     "chat": {
       "models": ["qwen2.5:0.5b", "qwen2.5:7b"]
+    },
+    "embed": {
+      "models": ["nomic-embed-text"]
     },
     "text-to-image": {
       "models": ["stable-diffusion-1.5-int4"]
