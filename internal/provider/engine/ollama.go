@@ -560,9 +560,12 @@ func privateRegistryHandle(req *types.PullModelRequest) {
 	// 如果用户设置了Ollama仓库地址，则将其添加到请求中
 	if settings.OllamaRegistry != "" {
 		req.Insecure = true // 设置为true以允许不安全的连接
-		req.Model = settings.OllamaRegistry + "/library/" + req.Model
+		if strings.Contains(req.Model, "/") {
+			req.Model = settings.OllamaRegistry + "/" + req.Model
+		} else {
+			req.Model = settings.OllamaRegistry + "/library/" + req.Model
+		}
 		fmt.Println("[PullModel] Using private registry:", req.Model)
-
 	}
 }
 
