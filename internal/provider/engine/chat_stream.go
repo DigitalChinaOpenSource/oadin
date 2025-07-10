@@ -31,8 +31,8 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 	modelName := req.Model
 
 	// 打印即将发往服务的请求体内容，重点关注think参数
-	fmt.Printf("[ChatStream] Final request body: %s\n", string(body))
-	slog.Info("[ChatStream] Final request body: ", string(body))
+	// fmt.Printf("[ChatStream] Final request body: %s\n", string(body))
+	// slog.Info("[ChatStream] Final request body: ", string(body))
 
 	hybridPolicy := "default"
 	ds := datastore.GetDefaultDatastore()
@@ -127,7 +127,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			}
 			// 转回[]byte
 			cleanBody := []byte(bodyStr)
-			fmt.Println("[ChatStream] 收到块内容:", bodyStr)
+			// fmt.Println("[ChatStream] 收到块内容:", bodyStr)
 
 			// 每个块都是一个完整的JSON对象
 			var content string
