@@ -1,9 +1,9 @@
-import styles from '@/components/model-checking/index.module.scss';
 import { IMyModelListViewModel } from '../view-model.ts';
 import { useEffect, useMemo } from 'react';
 import { ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
 import { ISelectedDialogProps } from '@/components/choose-model-dialog';
 import { selectedModelType } from '@/store/useSelectedModel.ts';
+import styles from '../index.module.scss';
 
 export interface ModelCheckingHasdata extends ISelectedDialogProps {
   vm: IMyModelListViewModel;
@@ -40,7 +40,7 @@ export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
   };
 
   return (
-    <>
+    <div className={styles.modelCheckDataList}>
       <div className={styles.recommendText}>为你推荐以下模型</div>
       <ModelList
         {...props}
@@ -51,6 +51,6 @@ export const ModelCheckingHasdata = (props: ModelCheckingHasdata) => {
         dataSource={filterModelList}
         pagination={false}
       />
-    </>
+    </div>
   );
 };

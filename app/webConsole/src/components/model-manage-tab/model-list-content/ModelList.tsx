@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import styles from '@/components/model-manage-tab/model-list-content/index.module.scss';
 import { List, Radio } from 'antd';
 import type { PaginationConfig } from 'antd/es/pagination';
 import type { ListGridType } from 'antd/es/list';
@@ -8,6 +7,7 @@ import noDataSvg from '@/components/icons/no-data.svg';
 import { IUseViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 import { IModelDataItem } from '@/types';
 import { ISelectedDialogProps } from '@/components/choose-model-dialog';
+import styles from './index.module.scss';
 
 export interface IModelList extends ISelectedDialogProps {
   pagination?: PaginationConfig | false;
@@ -20,7 +20,7 @@ export interface IModelList extends ISelectedDialogProps {
 
 export const ModelList = React.memo((props: IModelList) => {
   const { vmContent, selectVms, dataSource, selectedStateModel } = props;
-  
+
   // 使用useMemo优化列表渲染
   const content = useMemo(() => {
     let result = (

@@ -78,3 +78,30 @@
     line-height: 36px;
   }
 }
+
+.modelCheckNoDataList {
+  .recommendText {
+    text-align: center;
+  }
+  :global(.ant-list) {
+    width: 904px;
+    text-align: center;
+  }
+
+  :global(.ant-list-item) {
+    width: 440px;
+  }
+}
+.modelCheckDataList {
+  .recommendText {
+    text-align: center;
+  }
+  :global(.modelCardList) {
+    width: 904px;
+    text-align: center;
+  }
+
+  :global(.ant-list-item) {
+    width: 440px;
+  }
+}

@@ -1,7 +1,7 @@
-import styles from '@/components/model-checking/index.module.scss';
 import { IModelListContent, IUseViewModel, useViewModel } from '@/components/model-manage-tab/model-list-content/view-model.ts';
 import { useMemo } from 'react';
 import { ModelList } from '@/components/model-manage-tab/model-list-content/ModelList.tsx';
+import styles from '../index.module.scss';
 
 export const ModelCheckingNodata = () => {
   const vmProps: IModelListContent = {
@@ -16,7 +16,7 @@ export const ModelCheckingNodata = () => {
     return vmContent.pagenationData?.length > 0 ? vmContent.pagenationData.splice(0, 2) : [];
   }, [vmContent.pagenationData]);
   return (
-    <>
+    <div className={styles.modelCheckNoDataList}>
       <div className={styles.recommendText}>当前暂无可体验的模型，请先下载后，再进行体验</div>
       <ModelList
         vmContent={vmContent}
@@ -25,6 +25,6 @@ export const ModelCheckingNodata = () => {
         dataSource={filterModelList}
         pagination={false}
       />
-    </>
+    </div>
   );
 };
