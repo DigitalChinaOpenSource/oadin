@@ -250,9 +250,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
 				} else if len(originalContent) > 0 {
-					fmt.Printf("[PlaygroundStream] 累积内容块: '%s', 当前fullContent长度: %d\n", originalContent, len(fullContent))
+					// fmt.Printf("[PlaygroundStream] 累积内容块: '%s', 当前fullContent长度: %d\n", originalContent, len(fullContent))
 					fullContent += resp.Content
-					fmt.Printf("[PlaygroundStream] 累积后fullContent长度: %d\n", len(fullContent))
+					// fmt.Printf("[PlaygroundStream] 累积后fullContent长度: %d\n", len(fullContent))
 					respChan <- resp
 				} else if resp.Thoughts != "" {
 					// 收集思考内容，但不再单独存储
