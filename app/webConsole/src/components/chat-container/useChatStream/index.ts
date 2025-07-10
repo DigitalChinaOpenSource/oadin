@@ -618,6 +618,7 @@ export function useChatStream() {
         },
         {
           onDataReceived: async (response) => {
+            console.log('onDataReceived===》', response);
             if (response.data.type === 'error') {
               message.error('对话异常，请检查模型文件');
               return;
