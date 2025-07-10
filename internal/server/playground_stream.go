@@ -271,9 +271,14 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					return
 				}
 				slog.Error("[PlaygroundStream] 收到streamErrChan错误", "error", err.Error())
+				errResp := map[string]interface{}{
+					"status": "error",
+					"data":   err.Error(),
+				}
+				jsonBytes, _ := json.Marshal(errResp)
 				respChan <- &types.ChatResponse{
 					Type:       "error",
-					Content:    err.Error(),
+					Content:    string(jsonBytes),
 					IsComplete: true,
 					ID:         assistantMsgID,
 				}
@@ -283,9 +288,14 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					return
 				}
 				slog.Error("[PlaygroundStream] 收到errChan错误", "error", err.Error())
+				errResp := map[string]interface{}{
+					"status": "error",
+					"data":   err.Error(),
+				}
+				jsonBytes, _ := json.Marshal(errResp)
 				respChan <- &types.ChatResponse{
 					Type:       "error",
-					Content:    err.Error(),
+					Content:    string(jsonBytes),
 					IsComplete: true,
 					ID:         assistantMsgID,
 				}
@@ -364,6 +374,17 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					IsComplete: true,
 					ID:         assistantMsgID,
 				}
+				errResp := map[string]interface{}{
+					"status": "error",
+					"data":   ctx.Err().Error(),
+				}
+				jsonBytes, _ := json.Marshal(errResp)
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    string(jsonBytes),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
 				return
 			}
 		}
@@ -426,8 +447,19 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	})
 
 	modelEngine := engine.NewEngine() // 构建聊天请求
+	currentModelName := sessionCheck.ModelName
+
+	if currentModelName == "" {
+
+		if len(messages) > 0 {
+			if latestMsg := messages[len(messages)-1].(*types.ChatMessage); latestMsg.ModelName != "" {
+				currentModelName = latestMsg.ModelName
+			}
+		}
+	}
+
 	chatRequest := &types.ChatRequest{
-		Model:    sessionCheck.ModelName,
+		Model:    currentModelName,
 		Messages: history,
 		Stream:   false,
 		Think:    false,
