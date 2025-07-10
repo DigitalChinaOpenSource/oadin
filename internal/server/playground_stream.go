@@ -294,9 +294,6 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				slog.Info("上下文取消，继续处理剩余流式数据", "session_id", request.SessionID)
 
 				go func() {
-					timeout := time.NewTimer(60 * time.Second)
-					defer timeout.Stop()
-
 					for {
 						select {
 						case resp, ok := <-responseStream:
@@ -356,42 +353,6 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 								// 继续累积内容
 								fullContent += resp.Content
 							}
-
-						case <-timeout.C:
-							fmt.Printf("[PlaygroundStream] 等待剩余流式数据超时，保存已累积的内容\n")
-
-							// 即使超时，也要保存已经累积的内容
-							if len(fullContent) > 0 {
-								finalContent := fullContent
-								if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
-									finalContent = fmt.Sprintf("<think>%s\n</think>\n%s", thoughts, fullContent)
-								}
-
-								assistantMsg := &types.ChatMessage{
-									ID:            assistantMsgID,
-									SessionID:     request.SessionID,
-									Role:          "assistant",
-									Content:       finalContent,
-									Order:         len(messages) + 1,
-									CreatedAt:     time.Now(),
-									ModelID:       session.ModelID,
-									ModelName:     session.ModelName,
-									TotalDuration: totalDuration,
-								}
-								saveCtx := context.Background()
-								saveCtxWithTimeout, cancel := context.WithTimeout(saveCtx, 10*time.Second)
-								defer cancel()
-
-								err = p.Ds.Add(saveCtxWithTimeout, assistantMsg)
-								if err != nil {
-									fmt.Printf("[PlaygroundStream] [超时] 保存失败: %v\n", err)
-								} else {
-									fmt.Printf("[PlaygroundStream] [超时] 成功保存部分内容到数据库，长度: %d\n", len(finalContent))
-								}
-							} else {
-								fmt.Printf("[PlaygroundStream] [超时] 没有累积内容可保存\n")
-							}
-							return
 						}
 					}
 				}()
@@ -465,8 +426,19 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	})
 
 	modelEngine := engine.NewEngine() // 构建聊天请求
+	currentModelName := sessionCheck.ModelName
+
+	if currentModelName == "" {
+
+		if len(messages) > 0 {
+			if latestMsg := messages[len(messages)-1].(*types.ChatMessage); latestMsg.ModelName != "" {
+				currentModelName = latestMsg.ModelName
+			}
+		}
+	}
+
 	chatRequest := &types.ChatRequest{
-		Model:    sessionCheck.ModelName,
+		Model:    currentModelName,
 		Messages: history,
 		Stream:   false,
 		Think:    false,

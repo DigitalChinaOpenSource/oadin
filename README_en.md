@@ -9,6 +9,32 @@ The current version supports chat and embed services, with ollama supported at t
 services such as text-to-image, audio-related, and other AI engines are under development in
 subsequent versions, so stay tuned.
 
+### 🆕 New Features (v0.2.0)
+
+**Expanded Service Types:**
+- 💬 **Chat** - Multi-turn conversations with streaming support
+- 🔍 **Embed** - Text vectorization for semantic search
+- ✍️ **Generate** - Single-turn text generation and completion
+- 🎨 **Text-to-Image** - Generate images from text descriptions
+
+**Provider Support:**
+- 🏠 **Local Engines**: Ollama
+- ☁️ **Cloud Services**: OpenAI, DeepSeek, Tencent Hunyuan, Baidu Qianfan, Alibaba Tongyi, SmartVision, etc.
+
+**Core New Features:**
+- 🔧 **MCP Tool Integration** - Complete Model Context Protocol support
+- 🌐 **Web Console** - Visual management interface (http://localhost:16699)
+- 🎮 **Playground** - Interactive testing and debugging environment
+- 📄 **RAG Document Processing** - Intelligent document upload, processing, and retrieval
+- 🖥️ **System Tray** - Cross-platform background operation and management
+- 🔄 **Auto Update** - Automatic update mechanism for components and models
+
+**Enhanced Features:**
+- ⚖️ **Hybrid Scheduling** - Intelligent load balancing between local/cloud
+- 🔗 **API Compatibility** - OpenAI/Ollama API automatic conversion
+- 📊 **Service Monitoring** - Real-time status monitoring and performance metrics
+- 🔐 **Security Authentication** - Multiple authentication methods support
+
 ## Features of Oadin
 
 Oadin (AIPC Open Gateway) aims to decouple AI applications on AI PCs from the AI services they rely
@@ -216,12 +242,81 @@ The Oadin API is a Restful API. You can call this API in a way similar to callin
 It is worth noting that the current Oadin preview provides basic chat and other services, and the next
 version will provide more services related to text-to-image and voice.
 
-For example, you can use `curl` to test the chat service on Windows.
+### 📚 API Endpoints Overview
+
+| Service Type | Endpoint | Description |
+|-------------|----------|-------------|
+| 💬 Chat | `POST /oadin/v0.2/services/chat` | Multi-turn conversations with streaming support<br/>Supports `think` field for deep thinking control |
+| 🔍 Embed | `POST /oadin/v0.2/services/embed` | Text vectorization |
+| ✍️ Generate | `POST /oadin/v0.2/services/generate` | Single-turn text generation |
+| 🎨 Text-to-Image | `POST /oadin/v0.2/services/text-to-image` | Generate images from text |
+
+### 🌐 Web Console
+
+Access http://localhost:16699 for the complete Web management interface:
+- 📊 **Dashboard** - Service status and performance monitoring
+- 🎮 **Playground** - Interactive testing environment
+- 📁 **Document Management** - RAG document upload and processing
+- 🔧 **MCP Management** - Tool service configuration
+
+### 💻 API Usage Examples
+
+**Chat Service:**
+
+Basic conversation example:
+```sh
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-r1:7b",
+    "messages": [{"role": "user", "content": "Why is the sky blue?"}],
+    "stream": false
+  }'
+```
+
+**Deep Thinking Feature:**
+For models that support deep thinking (e.g., DeepSeek-R1 series), you can control the thinking process using the `think` field:
 
 ```sh
-curl -X POST http://localhost:16688/oadin/v0.2/services/chat -X POST 
-  -H "Content-Type: application/json" 
-  -d "{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is the sky blue?\"}],\"stream\":false}"
+# Enable deep thinking (show thinking process)
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-r1:7b",
+    "messages": [{"role": "user", "content": "Explain the basic principles of quantum mechanics"}],
+    "think": true,
+    "stream": false
+  }'
+
+# Disable deep thinking (direct answer)
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-r1:7b",
+    "messages": [{"role": "user", "content": "How is the weather today?"}],
+    "think": false,
+    "stream": false
+  }'
+```
+
+> **Note**: The `think` field is only effective for models that support deep thinking, such as the DeepSeek-R1 series. Other models will ignore this parameter.
+
+**Other API Examples:**
+```sh
+# Embed Service
+curl -X POST http://localhost:16688/oadin/v0.2/services/embed \
+  -H "Content-Type: application/json" \
+  -d '{"model":"nomic-embed-text","input":["text1","text2"]}'
+
+# Text-to-Image Service  
+curl -X POST http://localhost:16688/oadin/v0.2/services/text-to-image \
+  -H "Content-Type: application/json" \
+  -d '{"model":"wanx2.1-t2i-turbo","prompt":"a cute cat"}'
+
+# Generate Service
+curl -X POST http://localhost:16688/oadin/v0.2/services/generate \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-r1:7b","prompt":"Write a Python program","stream":false}'
 ```
 
 Furthermore, if you are already using applications with OpenAI API or ollama API, etc., you do not
@@ -258,14 +353,31 @@ application.
 ```json
 {
   "version": "0.2",
-  "service": {
+  "services": {
     "chat": {
       "models": ["qwen2.5:0.5b", "qwen2.5:7b"]
+    },
+    "embed": {
+      "models": ["nomic-embed-text"]
     },
     "text-to-image": {
       "models": ["stable-diffusion-1.5-int4"]
     }
-  }
+  },
+  "mcp_servers": [
+    {
+      "id": "bing-search",
+      "name": "Bing Search",
+      "command": "bun",
+      "args": ["x", "-y", "bing-cn-mcp"]
+    },
+    {
+      "id": "file-manager",
+      "name": "File Manager",
+      "command": "python",
+      "args": ["-m", "mcp_file_manager"]
+    }
+  ]
 }
 ```
 
