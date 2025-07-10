@@ -10,7 +10,7 @@ import { createNewChat } from './utils';
 import { IPlaygroundSession } from './types';
 import { message } from 'antd';
 import { getSessionIdFromUrl, setSessionIdToUrl, saveSessionIdToStorage } from '@/utils/sessionParamUtils';
-import { IChatDetailItem } from './chat-history-drawer/types';
+import { IChatDetailItem, IMessageResponse } from './types';
 import { IModelSquareParams, ModelData } from '@/types';
 import { convertMessageFormat } from './utils/historyMessageFormat';
 import embedDownloadEventBus from '@/utils/embedDownloadEventBus';
@@ -20,7 +20,6 @@ import { EMBEDMODELID } from '@/constants';
 function useInitialization() {
   const [initialized, setInitialized] = useState(false);
   const [isDownloadEmbed, setIsDownloadEmbed] = useState<boolean>(false);
-
   return { initialized, setInitialized, isDownloadEmbed, setIsDownloadEmbed };
 }
 
@@ -34,8 +33,8 @@ function useSessionManagement() {
 function useModelManagement() {
   const { selectedModel, setSelectedModel } = useSelectedModelStore();
   const [prevModelId, setPrevModelId] = useState<string | undefined>(selectedModel?.id);
-
-  return { selectedModel, setSelectedModel, prevModelId, setPrevModelId };
+  const [thinkingActive, setThinkingActive] = useState<boolean>(false);
+  return { selectedModel, setSelectedModel, prevModelId, setPrevModelId, thinkingActive, setThinkingActive };
 }
 
 export default function useViewModel() {
@@ -46,7 +45,7 @@ export default function useViewModel() {
 
   const { initialized, setInitialized, isDownloadEmbed, setIsDownloadEmbed } = useInitialization();
   const { prevSessionId, setPrevSessionId, currentSessionId } = useSessionManagement();
-  const { selectedModel, setSelectedModel, prevModelId, setPrevModelId } = useModelManagement();
+  const { selectedModel, setSelectedModel, prevModelId, setPrevModelId, thinkingActive, setThinkingActive } = useModelManagement();
   const { cancelRequest } = useChatStream();
 
   const isLoadingHistory = useRef(false);
@@ -65,21 +64,23 @@ export default function useViewModel() {
 
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
-      const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
-      return data || [];
+      const data = await httpRequest.get<IMessageResponse['data']>(`/playground/messages?sessionId=${sessionId}`);
+      return data;
     },
     {
       manual: true,
-      onSuccess: (data: IChatDetailItem[]) => {
+      onSuccess: (data: IMessageResponse['data']) => {
         isLoadingHistory.current = false;
-        if (!data || data.length === 0) return;
+        const { messages, thinkingActive } = data;
 
-        const inputMessages = data.map((item) => ({
+        setThinkingActive(thinkingActive);
+        if (!messages || !messages.length) return;
+        const inputMessages = messages.map((item) => ({
           ...item,
           id: typeof item.id === 'number' ? String(item.id) : item.id,
         }));
         const tempData = convertMessageFormat(inputMessages) as any;
-        fetchModelDetail(data[data.length - 1].modelId || '', tempData, data[data.length - 1].sessionId);
+        fetchModelDetail(messages[messages.length - 1].modelId || '', tempData, messages[messages.length - 1].sessionId);
       },
       onError: () => {
         isLoadingHistory.current = false;
@@ -270,5 +271,6 @@ export default function useViewModel() {
     isUploadVisible,
     setIsUploadVisible,
     handleCreateNewChat,
+    thinkingActive,
   };
 }

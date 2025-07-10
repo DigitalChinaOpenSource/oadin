@@ -11,17 +11,6 @@ export interface IChatHistoryItem {
   updatedAt?: string;
 }
 
-export interface IChatDetailItem {
-  id: string | number;
-  sessionId: string;
-  role: 'user' | 'assistant';
-  content: string;
-  createdAt: string;
-  updatedAt?: string;
-  modelId?: string;
-  modelName?: string;
-}
-
 export interface GroupedChatHistory {
   today: IChatHistoryItem[];
   yesterday: IChatHistoryItem[];

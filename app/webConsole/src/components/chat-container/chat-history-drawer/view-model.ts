@@ -3,13 +3,13 @@ import { useRequest } from 'ahooks';
 import { httpRequest } from '@/utils/httpRequest.ts';
 import { type ChatMessageItem } from '@res-utiles/ui-components';
 import { message } from 'antd';
-import { ModelData } from '@/types';
+import { ModelData, IModelSquareParams } from '@/types';
 import useChatStore from '@/components/chat-container/store/useChatStore.ts';
 import useSelectedModelStore from '@/store/useSelectedModel.ts';
 import useSelectMcpStore from '@/store/useSelectMcpStore.ts';
 import useUploadFileStore from '../store/useUploadFileListStore';
-import { IChatHistoryItem, GroupedChatHistory, IChatDetailItem, IChatHistoryDrawerProps } from './types';
-import { IModelSquareParams } from '@/types';
+import { IChatHistoryItem, GroupedChatHistory, IChatHistoryDrawerProps } from './types';
+import { IMessageResponse } from '../types';
 import { convertMessageFormat } from '../utils/historyMessageFormat';
 
 import dayjs from 'dayjs';
@@ -80,15 +80,21 @@ export function useChatHistoryDrawer(props: IChatHistoryDrawerProps) {
   // 获取历史对话详情
   const { run: fetchChatHistoryDetail } = useRequest(
     async (sessionId: string) => {
-      const data = await httpRequest.get<IChatDetailItem[]>(`/playground/messages?sessionId=${sessionId}`);
-      return data || [];
+      const data = await httpRequest.get<IMessageResponse['data']>(`/playground/messages?sessionId=${sessionId}`);
+      return data;
     },
     {
       manual: true,
-      onSuccess: (data: any) => {
-        if (!data || !data.length) return message.error('获取历史对话记录失败');
-        const tempData = convertMessageFormat(data) as any;
-        fetchModelDetail(data[data.length - 1].modelId, tempData, data[data.length - 1].sessionId);
+      onSuccess: (data: IMessageResponse['data']) => {
+        const { messages, thinkingActive } = data;
+        if (!messages || !messages.length) return;
+
+        const inputMessages = messages.map((item) => ({
+          ...item,
+          id: typeof item.id === 'number' ? String(item.id) : item.id,
+        }));
+        const tempData = convertMessageFormat(inputMessages) as any;
+        fetchModelDetail(messages[messages.length - 1].modelId || '', tempData, messages[messages.length - 1].sessionId);
       },
       onError: () => {
         message.error('获取历史对话记录失败');

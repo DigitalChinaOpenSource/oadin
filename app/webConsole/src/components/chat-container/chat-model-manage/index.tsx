@@ -8,11 +8,12 @@ import useSelectedModelStore from '@/store/useSelectedModel';
 import { getSessionIdFromUrl } from '@/utils/sessionParamUtils';
 import styles from './index.module.scss';
 
-export default function ChatModelManage() {
+export default function ChatModelManage(props: { thinkingActive: boolean }) {
+  const { thinkingActive } = props;
   const { selectedModel } = useSelectedModelStore();
   const currentSessionId = getSessionIdFromUrl();
 
-  const [isThinking, setIsThinking] = useState<boolean>(true);
+  const [isThinking, setIsThinking] = useState<boolean>(thinkingActive);
 
   const { run: fetchThinkingEnable } = useRequest(
     async (params: { sessionId: string; enabled: boolean }) => {

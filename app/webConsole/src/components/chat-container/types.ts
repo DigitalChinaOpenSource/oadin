@@ -24,3 +24,22 @@ export interface IChangeModelParams {
   modelName: string;
   embedModelId?: string;
 }
+
+export interface IChatDetailItem {
+  id: string | number;
+  sessionId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+  modelId?: string;
+  modelName?: string;
+}
+
+export interface IMessageResponse {
+  bcode: {
+    business_code: number;
+    message: string;
+  };
+  data: { messages: IChatDetailItem[]; thinkingActive: boolean };
+}

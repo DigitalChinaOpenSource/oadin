@@ -76,7 +76,7 @@ export default function ChatContainer() {
           md={14}
         >
           <div className={styles.chatContent}>
-            <ChatModelManage />
+            <ChatModelManage thinkingActive={vm.thinkingActive} />
             <ChatView isDownloadEmbed={vm.isDownloadEmbed} />
           </div>
         </Col>
