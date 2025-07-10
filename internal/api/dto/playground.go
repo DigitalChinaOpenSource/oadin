@@ -68,10 +68,16 @@ type GetMessagesRequest struct {
 	SessionId string `json:"sessionId"`
 }
 
+// 获取会话消息数据
+type GetMessagesData struct {
+	Messages       []Message `json:"messages"`
+	ThinkingActive bool      `json:"thinkingActive"`
+}
+
 // 获取会话消息响应
 type GetMessagesResponse struct {
-	Bcode *bcode.Bcode `json:"bcode"`
-	Data  []Message    `json:"data"`
+	Bcode *bcode.Bcode    `json:"bcode"`
+	Data  GetMessagesData `json:"data"`
 }
 
 // 切换会话模型请求
