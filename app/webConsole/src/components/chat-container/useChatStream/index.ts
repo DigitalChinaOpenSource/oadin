@@ -91,7 +91,6 @@ export function useChatStream() {
       toolGroupId?: string;
     } = {},
   ) => {
-    console.log('handleError', message, originalError, errorType, options);
     const { shouldCancel = true, appendToContent = false, updateMcpStatus = true, toolGroupId } = options;
 
     // 设置错误状态
@@ -159,7 +158,6 @@ export function useChatStream() {
             role: 'assistant',
             contentList: updatedContentList,
           };
-          console.log('errorMessage', errorMessage);
           addMessage(errorMessage, true);
         }
       }
@@ -307,7 +305,6 @@ export function useChatStream() {
         }
       },
       onerror: (err) => {
-        console.log('onerror314', err);
         const errorMessage = err.message ? formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, err.message) : '请求发送错误';
 
         handleError(errorMessage, err, ErrorType.REQUEST, {
@@ -494,7 +491,6 @@ export function useChatStream() {
           setError('工具调用处理失败: 内部错误');
         }
       } catch (error: any) {
-        console.log('error496', error);
         const errorMessage = error.message || '未知错误';
         handleError(formatErrorMessage(ERROR_MESSAGES.TOOL.EXECUTION_FAILED, errorMessage), error, ErrorType.TOOL, {
           shouldCancel: false,
@@ -600,7 +596,6 @@ export function useChatStream() {
           openWhenHidden: true,
           signal,
           onerror: (error) => {
-            console.log('error599', error);
             setError(`请求失败: ${error.message}`);
             clearTimers();
             setIsLoading(false);
@@ -623,6 +618,7 @@ export function useChatStream() {
         },
         {
           onDataReceived: async (response) => {
+            console.log('response626', response);
             // 清除总超时定时器
             if (requestState.current.timers.totalTimer) {
               clearTimeout(requestState.current.timers.totalTimer);
@@ -780,7 +776,6 @@ export function useChatStream() {
         },
       );
     } catch (error: any) {
-      console.log('error770', error);
       handleError(formatErrorMessage(ERROR_MESSAGES.REQUEST.FAILED, error.message || '未知错误'), error, ErrorType.REQUEST);
     }
   };

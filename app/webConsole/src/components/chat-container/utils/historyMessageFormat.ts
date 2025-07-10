@@ -10,6 +10,7 @@ export interface InputMessage {
   modelName?: string;
   type?: string;
   toolCalls?: ToolCall[];
+  totalDuration?: number;
 }
 
 export interface ToolCall {
@@ -150,6 +151,7 @@ export function convertMessageFormat(inputArray: InputMessage[]): OutputMessage[
           content: {
             data: thinkContent,
             status: 'success',
+            totalDuration: item.totalDuration,
           },
         } as ThinkContent);
 
@@ -201,6 +203,7 @@ export function convertMessageFormat(inputArray: InputMessage[]): OutputMessage[
           content: {
             data: thinkContent,
             status: 'success',
+            totalDuration: item.totalDuration,
           },
         } as ThinkContent);
 
