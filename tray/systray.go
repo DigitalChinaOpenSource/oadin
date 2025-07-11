@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"oadin/config"
 	"oadin/internal/utils"
@@ -255,9 +256,31 @@ func (m *Manager) viewLogs() error {
 // getIcon returns the icon data
 func getIcon() ([]byte, error) {
 	// 尝试从多个位置获取图标
-	data, err := trayTemplate.TrayIconFS.ReadFile("oadin.ico")
+	// 根据系统类型获取不同的图片，Windows用彩色的，mac用黑白的
+	// oadin.ico oadin-mac.ico  aiwenxue.ico aiwenxue-mac.ico
+	file := "aiwenxue.ico"
+	if runtime.GOOS == "darwin" {
+		file = "aiwenxue-mac-dark.ico"
+		isMacDark := isMacDarkMode()
+		if isMacDark {
+			file = "aiwenxue-mac-white.ico"
+		}
+	}
+	data, err := trayTemplate.TrayIconFS.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
+}
+
+// isMacDarkMode 判断 macOS 是否为暗色模式 白色主题用黑的，黑色主题用白的
+func isMacDarkMode() bool {
+	if runtime.GOOS != "darwin" {
+		return false
+	}
+	out, err := exec.Command("defaults", "read", "-g", "AppleInterfaceStyle").Output()
+	if err != nil {
+		return false // 未设置暗色模式时会报错
+	}
+	return strings.Contains(string(out), "Dark")
 }

@@ -207,7 +207,7 @@ func (t *OadinCoreServer) GetRecommendModels(c *gin.Context) {
 }
 
 func (t *OadinCoreServer) GetModelList(c *gin.Context) {
-	request := new(dto.GetModelListRequest)
+	request := new(dto.GetSupportModelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
 		return
@@ -217,8 +217,9 @@ func (t *OadinCoreServer) GetModelList(c *gin.Context) {
 		bcode.ReturnError(c, err)
 		return
 	}
+
 	ctx := c.Request.Context()
-	data, err := server.GetSupportModelList(ctx, *request)
+	data, err := server.GetSupportModelListCombine(ctx, request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return

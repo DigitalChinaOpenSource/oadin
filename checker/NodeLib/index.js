@@ -5,641 +5,290 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const axios = require('axios');
-const Ajv = require('ajv');
-const addFormats = require('ajv-formats');
 const EventEmitter = require('events');
-const FormData = require('form-data');
 const { execFile, spawn } = require('child_process');
 const { promises: fsPromises } = require("fs");
 
 const schemas = require('./schema.js');
-
-function runInstaller(installerPath, isMacOS) {
-  return new Promise((resolve, reject) => {
-    console.log(`[download]installer 正在安装 Oadin...`);
-    if (isMacOS) {
-      // 打开 GUI 安装器
-      const child = spawn('open', [installerPath], { stdio: 'ignore', detached: true });
-
-      child.on('error', reject);
-
-      // 等待安装目录生成（轮询）
-      const expectedPath = '/usr/local/bin/oadin';
-      const maxRetries = 100;
-      let retries = 0;
-
-      const interval = setInterval(async () => {
-        if (fs.existsSync(expectedPath)) {
-          console.log("oadin 已添加到 /usr/local/bin ");
-          // 检查服务是否可用
-          const Oadin = require('./index.js'); // 防止循环依赖可单独提取IsOadinAvailiable
-          const oadin = new Oadin();
-          const available = await oadin.IsOadinAvailiable(2, 1000);
-          if (available) {
-            clearInterval(interval);
-            resolve();
-          }
-        } else if (++retries >= maxRetries) {
-          clearInterval(interval);
-          reject(new Error('安装器未在超时前完成安装'));
-        }
-      }, 1000);
-    } else {
-      // Windows 安装器
-      const child = spawn(installerPath, ['/S'], { stdio: 'inherit' });
-
-      child.on('error', reject);
-      child.on('close', (code) => {
-        code === 0 ? resolve() : reject(new Error(`Installer exited with code ${code}`));
-      });
-    }
-  });
-}
+const tools = require('./tools.js');
+const { logAndConsole, downloadFile, getOadinExecutablePath, runInstallerByPlatform, isHealthy } = require('./tools.js');
+const { instance, requestWithSchema } = require('./axiosInstance.js')
+const { PLATFORM_CONFIG, OADIN_HEALTH, OADIN_ENGINE_PATH, } = require('./constants.js');
 
 class Oadin {
-  version = "oadin/v0.2";
-
   constructor(version) {
-    this.client = axios.create({
-      baseURL: `http://localhost:16688/${this.version}`,
-      headers: {"Content-Type": "application/json" },
-    })
-    this.ajv = new Ajv();
-    addFormats(this.ajv);
+    this.version = version || "oadin/v0.2";
+    this.client = instance;
+    logAndConsole('info', `Oadin类初始化，版本: ${this.version}`);
   }
 
-  async validateSchema(schema, data) {
-    if (!data || Object.keys(data).length === 0) {
-      return data;
-    }
-  
-    const validate = this.ajv.compile(schema);
-    if (!validate(data)) {
-      throw new Error(`Schema validation failed: ${JSON.stringify(validate.errors)}`);
-    }
-    return data;
+  async _requestWithSchema({ method, url, data, schema }) {
+    logAndConsole('info', `请求API: ${method.toUpperCase()} ${url}`);
+    return await requestWithSchema({ method, url, data, schema });
   }
 
   // 检查 Oadin 服务是否启动
-  IsOadinAvailiable(retries = 5, interval = 1000) {
-    return new Promise((resolve) => {
-      const checkPort = (port) => {
-        return new Promise((resolvePort) => {
-          const options = {
-            hostname: 'localhost',
-            port: port,
-            path: '/',
-            method: 'GET',
-            timeout: 3000,
-          };
-          const req = http.request(options, (res) => {
-            resolvePort(res.statusCode === 200);
-          });
-          req.on('error', () => resolvePort(false));
-          req.on('timeout', () => {
-            req.destroy();
-            resolvePort(false);
-          });
-          req.end();
-        });
-      };
-
-      let attempt = 0;
-      const tryCheck = () => {
-        Promise.all([checkPort(16688), checkPort(16677)]).then((results) => {
-          console.log(`16688 端口: ${results[0] ? '可用' : '不可用'}, 16677 端口: ${results[1] ? '可用' : '不可用'}`);
-          if (results.every((status) => status)) {
-            resolve(true);
-          } else if (++attempt < retries) {
-            setTimeout(tryCheck, interval);
-          } else {
-            resolve(false);
-          }
-        });
-      };
-      tryCheck();
-    });
-  }
-
-  // 检查用户目录是否存在 Oadin.exe
-  IsOadinExisted() {
-    return new Promise((resolve) => {
-        const userDir = os.homedir();
-        const platform = process.platform; // 获取当前平台
-
-        let destDir;
-        let dest;
-
-        if (platform === 'win32') {
-            // Windows 平台路径
-            destDir = path.join(userDir, 'Oadin');
-            dest = path.join(destDir, 'oadin.exe');
-        } else if (platform === 'darwin') {
-            // macOS 平台路径
-            dest = '/usr/local/bin/oadin';
-        } else {
-            console.error('❌ 不支持的操作系统');
-            return resolve(false);
-        }
-
-        resolve(fs.existsSync(dest));
-    });
-  }
-
-  // 仅下载
-  async downloadFile(url, dest, options, retries = 3) {
-    for (let attempt = 1; attempt <= retries; attempt++) {
+  async isOadinAvailable(retries = 5, interval = 1000) {
+    logAndConsole('info', '检测Oadin服务可用性...');
+    const fibArr = tools.fibonacci(retries, interval);
+    for (let attempt = 0; attempt < retries; attempt++) {
       try {
-        console.log(`axios downloading... attempt ${attempt}`);
-        const response = await axios.get(url, {
-          ...options,
-          responseType: 'stream',
-          timeout: 15000,
-          validateStatus: status => status === 200,
-        });
-
-        // 确保目录存在
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-
-        const writer = fs.createWriteStream(dest);
-
-        // 用 Promise 包装写入流
-        await new Promise((resolve, reject) => {
-          response.data.pipe(writer);
-          writer.on('finish', resolve);
-          writer.on('error', reject);
-        });
-
-        console.log('axios download success');
-        return true;
+        const [healthRes, engineHealthRes] = await Promise.all([
+          axios.get(OADIN_HEALTH),
+          axios.get(OADIN_ENGINE_PATH)
+        ]);
+        const healthOk = isHealthy(healthRes.status);
+        const engineOk = isHealthy(engineHealthRes.status);
+        logAndConsole('info', `/health: ${healthOk ? '正常' : '异常'}, /engine/health: ${engineOk ? '正常' : '异常'}`);
+        if (healthOk && engineOk) return true;
       } catch (err) {
-        // 删除未完成的文件
-        try { fs.unlinkSync(dest); } catch {}
-        console.warn(`下载失败（第${attempt}次）：${err.message}`);
-        if (attempt === retries) {
-          return false;
-        }
+        logAndConsole('warn', `健康检查失败: ${err.message}`);
+      }
+      if (attempt < retries - 1) {
+        await new Promise(r => setTimeout(r, fibArr[attempt]));
       }
     }
+    logAndConsole('warn', 'Oadin服务不可用');
     return false;
   }
 
+  // 检查用户目录是否存在 Oadin.exe
+  isOadinExisted() {
+    const dest = getOadinExecutablePath();
+    const existed = fs.existsSync(dest);
+    logAndConsole('info', `检测Oadin可执行文件是否存在: ${dest}，结果: ${existed}`);
+    return existed;
+  }
+
+  // 私有方法：仅下载
+  async _downloadFile(url, dest, options, retries = 3) {
+    logAndConsole('info', `准备下载文件: ${url} 到 ${dest}`);
+    return await downloadFile(url, dest, options, retries);
+  }
+
   // 运行安装包
-  async runOadinInstaller(installerPath, isMacOS) {
+  async _runOadinInstaller(installerPath) {
+    const platform = tools.getPlatform();
+    logAndConsole('info', `运行安装包: ${installerPath}，平台: ${platform}`);
     try {
-      await runInstaller(installerPath, isMacOS);
+      await runInstallerByPlatform(installerPath);
+      logAndConsole('info', '安装包运行成功');
       return true;
     } catch (err) {
-      console.error('Installer execution failed:', err);
+      logAndConsole('error', '安装包运行失败：' + err.message);
       return false;
     }
   }
 
-  async DownloadOadin(retries = 3) {
-   try {
-      const isMacOS = process.platform === 'darwin';
-      const url = isMacOS
-        ? 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/oadin-installer-latest.pkg'
-        : 'http://10.3.70.145:32018/repository/raw-hosted/intel-ai-pc/oadin/releases/win/oadin-installer-latest.exe';
-
-      const userDir = os.homedir();
-      const destDir = path.join(userDir, 'OadinInstaller');
-      const destFileName = isMacOS ? 'oadin-installer-latest.pkg' : 'oadin-installer-latest.exe';
-      const dest = path.join(destDir, destFileName);
-
-      fs.mkdirSync(destDir, { recursive: true });
-
-      const options = {
-        headers: {
-          'User-Agent': isMacOS
-            ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'
-            : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        },
-      };
-
-      
-        let downloadSuccess = false;
-        try {
-          downloadSuccess = await this.downloadFile(url, dest, options, retries);
-        } catch (e) {
-          console.error('downloadFile 异常:', e);
-          downloadSuccess = false;
-        }
-
-        if (downloadSuccess) {
-          let installResult = false;
-          try {
-            console.log(`oadin-installer 运行 ${dest}`);
-            installResult = await this.runOadinInstaller(dest, isMacOS);
-          } catch (e) {
-            console.error('runOadinInstaller 异常:', e);
-            installResult = false;
-          }
-          return installResult;
-        } else {
-          console.error('三次下载均失败，放弃安装。');
-          return false;
-        }
-      } catch (err) {
-        console.error('下载或安装 Oadin 失败:', err);
+  async downloadOadin(retries = 3) {
+    try {
+      const platform = tools.getPlatform();
+      if (platform === 'unsupported' || !PLATFORM_CONFIG[platform]) {
+        logAndConsole('error', '不支持的平台');
         return false;
       }
+      const { downloadUrl, installerFileName, userAgent } = PLATFORM_CONFIG[platform];
+      const userDir = os.homedir();
+      const destDir = path.join(userDir, 'OadinInstaller');
+      const dest = path.join(destDir, installerFileName);
+      const options = {
+        headers: {
+          'User-Agent': userAgent,
+        },
+      };
+      const downloadOk = await this._downloadFile(downloadUrl, dest, options, retries);
+      if (downloadOk) {
+        const installResult = await this._runOadinInstaller(dest);
+        return installResult;
+      } else {
+        logAndConsole('error', '三次下载均失败，放弃安装。');
+        return false;
+      }
+    } catch (err) {
+      logAndConsole('error', '下载或安装 Oadin 失败: ' + err.message);
+      return false;
+    }
   }
 
   // 启动 Oadin 服务
-  async InstallOadin() {
-    const alreadyRunning = await this.IsOadinAvailiable(2, 1000);
+  async startOadin() {
+    const alreadyRunning = await this.isOadinAvailable(2, 1000);
     if (alreadyRunning) {
-      console.log('[Install] Oadin 在运行中');
+      logAndConsole('info', '[startOadin] Oadin 在运行中');
       return true;
     }
-
     return new Promise((resolve, reject) => {
-      const currentPlatform = process.platform;
+      const platform = tools.getPlatform();
       const userDir = os.homedir();
       const oadinDir = path.join(userDir, 'Oadin');
-
-      console.log(`oadinDir: ${oadinDir}`);
-
-      if (currentPlatform === 'win32') {
+      logAndConsole('info', `oadinDir: ${oadinDir}`);
+      if (platform === "unsurported") return reject(new Error(`不支持的平台`));
+      if (platform === 'win32') {
         if (!process.env.PATH.includes(oadinDir)) {
           process.env.PATH = `${process.env.PATH}${path.delimiter}${oadinDir}`;
-          console.log("添加到临时环境变量");
+          logAndConsole('info', '添加到临时环境变量');
         }
         const command = 'cmd.exe';
         const args = ['/c', 'start-oadin.bat'];
-
-        console.log(`[Install] 正在运行命令: ${command} ${args.join(' ')}`);
-
+        logAndConsole('info', `正在运行命令: ${command} ${args.join(' ')}`);
         execFile(command, args, { windowsHide: true }, async (error, stdout, stderr) => {
-          if (error) console.error(`oadin server start:error`, error);
-          if (stdout) console.log(`oadin server start:stdout:`, stdout.toString());
-          if (stderr) console.error(`oadin server start:stderr:`, stderr.toString());
+          if (error) logAndConsole('error', 'oadin server start:error ' + error);
+          if (stdout) logAndConsole('info', 'oadin server start:stdout: ' + stdout.toString());
+          if (stderr) logAndConsole('error', 'oadin server start:stderr: ' + stderr.toString());
           const output = (stdout + stderr).toString().toLowerCase();
           if (error || output.includes('error')) {
             return resolve(false);
-          };
-          // if (output.includes('oadin server start successfully')) {
-          //   return resolve(true);
-          // };
-
-          const available = await this.IsOadinAvailiable(5, 1500);
+          }
+          const available = await this.isOadinAvailable(5, 1500);
           return resolve(available);
         });
-      } else if (currentPlatform === 'darwin') {
-        try{
-
+      } else if (platform === 'darwin') {
+        try {
           if (!process.env.PATH.split(':').includes('/usr/local/bin')) {
             process.env.PATH = `/usr/local/bin:${process.env.PATH}`;
-            console.log('已将 /usr/local/bin 添加到 PATH');
-          };
-
+            logAndConsole('info', '已将 /usr/local/bin 添加到 PATH');
+          }
           let child;
           let stderrContent = '';
-
-          // 日志文件路径
-          // const logDir = path.join(os.homedir(), 'Oadin');
-          // const logFile = path.join(logDir, 'oadin-server.log');
-          // fs.mkdirSync(logDir, { recursive: true });
-          // const logStream = fs.createWriteStream(logFile, { flags: 'a' });
-
           child = spawn('/usr/local/bin/oadin', ['server', 'start', '-d'], {
             stdio: ['ignore', 'pipe', 'pipe'],
             windowsHide: true,
           });
-
           child.stdout.on('data', (data) => {
-            // logStream.write(`[STDOUT] ${data}`);
             if (data.toString().includes('server start successfully')) {
+              //TODO：获取退出状态码
+              logAndConsole('info', 'Oadin 服务启动成功');
               resolve(true);
             }
-            console.log(`stdout: ${data}`);
+            logAndConsole('info', `stdout: ${data}`);
           });
-
           child.stderr.on('data', (data) => {
             const errorMessage = data.toString().trim();
             stderrContent += errorMessage + '\n';
-            // logStream.write(`[STDERR] ${errorMessage}\n`);
-            console.error(`stderr: ${errorMessage}`);
+            logAndConsole('error', `stderr: ${errorMessage}`);
           });
-
           child.on('error', (err) => {
-            // logStream.write(`[ERROR] ${err.message}\n`);
-            console.error(`❌ 启动失败: ${err.message}`);
+            logAndConsole('error', `❌ 启动失败: ${err.message}`);
             if (err.code === 'ENOENT') {
-              console.log([
-                '💡 可能原因:',
-                `1. 未找到oadin可执行文件，请检查下载是否成功`,
-                `2. 环境变量未生效，请尝试重启终端`
-              ].filter(Boolean).join('\n'));
+              logAndConsole('error', '未找到oadin可执行文件，请检查下载是否成功或环境变量未生效');
             }
-            // logStream.end();
             resolve(false);
           });
-
           child.on('close', (code) => {
-            // logStream.write(`[CLOSE] code: ${code}\n`);
-            // logStream.end();
             if (stderrContent.includes('Install model engine failed')){
-              console.error('❌ 启动失败: 模型引擎安装失败。');
+              logAndConsole('error', '❌ 启动失败: 模型引擎安装失败。');
               resolve(false);
             } else if (code === 0) {
-              console.log('进程退出，正在检查服务状态...');
-              this.checkServerStatus(resolve);
+              logAndConsole('info', '进程退出，正在检查服务状态...');
             } else {
-              console.error(`❌ 启动失败，退出码: ${code}`);
+              logAndConsole('error', `❌ 启动失败，退出码: ${code}`);
               resolve(false);
             }
           });
           child.unref();
         } catch (error) {
+          logAndConsole('error', '启动 Oadin 服务异常: ' + error.message);
           resolve(false);
         }
-
-      } else {
-        return reject(new Error(`Unsupported platform: ${currentPlatform}`));
       }
     });
   }
-
-  // 执行 oadin install chat
-  InstallChat(remote = null) {
-    return new Promise((resolve) => {
-      const userDir = os.homedir();
-      const oadinPath = path.join(userDir, 'Oadin', 'oadin.exe');
-      process.env.PATH = `${process.env.PATH};${oadinPath}`;
-
-      const child = spawn(oadinPath, ['install', 'chat'], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
-
-      child.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-
-        if (data.toString().includes('(y/n)')) {
-          if (remote) {
-            child.stdin.write('${autoAnswer}\n');
-          } else {
-            child.stdin.write('n\n');
-          }
-        }
-      });
-
-      child.on('close', (code) => {
-        if (code === 0) {
-          console.log('安装 Oadin 聊天插件成功');
-          resolve(true);
-        } else {
-          console.error(`安装 Oadin 聊天插件失败，退出码: ${code}`);
-          resolve(false);
-        }
-      });
-
-      child.on('error', (err) => {
-        console.error(`启动 Oadin 安装命令失败: ${err.message}`);
-        resolve(false);
-      });
-
-      child.unref();
-    });
-  }
-
-  checkServerStatus(resolve) {
-    const options = {
-      hostname: 'localhost',
-      port: 16688,
-      path: '/',
-      method: 'GET',
-      timeout: 3000,
-    };
-
-    const req = http.request(options, (res) => {
-      if (res.statusCode === 200) {
-        console.log('✅ Oadin 服务已启动');
-        resolve(true);
-      } else {
-        console.error(`❌ Oadin 服务未启动，HTTP 状态码: ${res.statusCode}`);
-        resolve(false);
-      }
-    });
-    req.on('error', (err) => {
-      console.error(`❌ Oadin 服务未启动: ${err.message}`);
-      resolve(false);
-    });
-    req.end();
-  }
-
+  
   // 查看当前服务
-  async GetServices() {
-    try {
-      const res = await this.client.get('/service');
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.getServicesSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data.data,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
-    }
+  async getServices() {
+    return this._requestWithSchema({
+      method: 'get',
+      url: '/service',
+      schema: { response: schemas.getServicesSchema }
+    });
   }
 
   // 创建新服务
-  async InstallService(data) {
-    try {
-      this.validateSchema(schemas.installServiceRequestSchema, data);
-      const res = await this.client.post('/service', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null
-        };
-      }
-      await this.validateSchema(schemas.ResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
+  async installService(data) {
+    return this._requestWithSchema({
+      method: 'post',
+      url: '/service',
+      data,
+      schema: { request: schemas.installServiceRequestSchema, response: schemas.ResponseSchema }
+    });
   }
 
   // 更新服务
-  async UpdateService(data) {
-    try {
-      this.validateSchema(schemas.updateServiceRequestSchema, data);
-      const res = await this.client.put('/service', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.ResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
+  async updateService(data) {
+    return this._requestWithSchema({
+      method: 'put',
+      url: '/service',
+      data,
+      schema: { request: schemas.updateServiceRequestSchema, response: schemas.ResponseSchema }
+    });
   }
 
-  // 查看模型
-  async GetModels() {
-    try {
-      const res = await this.client.get('/model');
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.getModelsSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data.data,
-      };
-    } catch (error){    
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
-    }
+  // 查看当前模型
+  async getModels() {
+    return this._requestWithSchema({
+      method: 'get',
+      url: '/model',
+      schema: { response: schemas.getModelsSchema }
+    });
   }
 
-  // 安装模型
-  async InstallModel(data) {
-    try {
-      this.validateSchema(schemas.installModelRequestSchema, data);
-      const res = await this.client.post('/model', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.ResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
+  // 安装新模型
+  async installModel(data) {
+    return this._requestWithSchema({
+      method: 'post',
+      url: '/model',
+      data,
+      schema: { request: schemas.installModelRequestSchema, response: schemas.ResponseSchema }
+    });
   }
 
-  // 安装模型（流式）
-  async InstallModelStream(data) {
-    try {
-      this.validateSchema(schemas.installModelRequestSchema, data);
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
+  async deleteModel(data) {
+    return this._requestWithSchema({
+      method: 'post',
+      url: '/model',
+      data,
+      schema: { request: schemas.deleteModelRequestSchema, response: schemas.ResponseSchema }
+    });
+  }
 
+  async installModelStream(data) {
     const config = { responseType: 'stream' };
     try {
-        const res = await this.client.post('/model/stream', data, config);
-        const eventEmitter = new EventEmitter();
+      const res = await this.client.post('/model/stream', data, config);
+      const eventEmitter = new EventEmitter();
 
-        res.data.on('data', (chunk) => {
-            try {
-              // 解析流数据
-              const rawData = chunk.toString().trim();
-              const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
-              const response = JSON.parse(jsonString);
+      res.data.on('data', (chunk) => {
+        try {
+          let rawData = _.isString(chunk) ? _.trim(chunk) : _.trim(chunk.toString());
+          let jsonString = _.startsWith(rawData, 'data:') ? rawData.slice(5) : rawData;
+          jsonString = _.trim(jsonString);
+          if (_.isEmpty(jsonString)) {
+            // 跳过空数据
+            return;
+          }
+          const response = JSON.parse(jsonString);
 
-              // 触发事件，传递解析后的数据
-              eventEmitter.emit('data', response);
+          eventEmitter.emit('data', response);
 
-              // 如果状态为 "success"，触发完成事件
-              if (response.status === 'success') {
-                eventEmitter.emit('end', response);
-              }
+          if (response.status === 'success') {
+            eventEmitter.emit('end', response);
+          }
+          if (response.status === 'canceled') {
+            eventEmitter.emit('canceled', response);
+          }
+          if (response.status === 'error') {
+            eventEmitter.emit('end', response);
+          }
+        } catch (err) {
+          eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+        }
+      });
 
-              if (response.status === 'canceled') {
-                eventEmitter.emit('canceled', response);
-              }
+      res.data.on('error', (err) => {
+        eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+      });
 
-              if (response.status === 'error') {
-                eventEmitter.emit('end', response);
-              }
-
-            } catch (err) {
-              eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
-            }
-        });
-
-        res.data.on('error', (err) => {
-          eventEmitter.emit('error', `流式响应错误: ${err.message}`);
-        });
-
-        // res.data.on('end', () => {
-        //     eventEmitter.emit('end'); // 触发结束事件
-        // });
-
-        return eventEmitter; // 返回 EventEmitter 实例
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      }
-    }
-}
-
-  // 取消安装模型（流式）
-  async CancelInstallModel(data) {
-    try {
-      this.validateSchema(schemas.cancelModelStreamRequestSchema, data);
-      const res = await this.client.post('/model/stream/cancel', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null
-      };
+      return eventEmitter;
     } catch (error) {
       return {
         code: 400,
@@ -649,861 +298,243 @@ class Oadin {
     }
   }
 
-  // 卸载模型
-  async DeleteModel(data) {
-    try {
-      this.validateSchema(schemas.deleteModelRequestSchema, data);
-      const res = await this.client.delete('/model', { data });
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.ResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
+  async cancelInstallModel(data) {
+    return this._requestWithSchema({
+      method: 'post',
+      url: '/model/stream/cancel',
+      data,
+      schema: { request: schemas.cancelModelStreamRequestSchema, response: schemas.ResponseSchema }
+    });
   }
 
   // 查看服务提供商
-  async GetServiceProviders() {
-    try {
-      const res = await this.client.get('/service_provider');
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.getServiceProvidersSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data.data,
-      };
-    } catch (error){    
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
-    }
+  async getServiceProviders() {
+    return this._requestWithSchema({
+      method: 'get',
+      url: '/service_provider',
+      schema: { response: schemas.getServiceProvidersSchema }
+    });
   }
 
   // 新增服务提供商
-  async InstallServiceProvider(data) {
-    try {
-      this.validateSchema(schemas.installServiceProviderRequestSchema, data);
-      const res = await this.client.post('/service_provider', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.ResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
+  async installServiceProvider(data) {
+    return this._requestWithSchema({
+      method: 'post',
+      url: '/service_provider',
+      data,
+      schema: { request: schemas.installServiceProviderRequestSchema, response: schemas.ResponseSchema }
+    });
   }
 
   // 更新服务提供商
-  async UpdateServiceProvider(data) {
-    try {
-      this.validateSchema(schemas.updateServiceProviderRequestSchema, data);
-      const res = await this.client.put('/service_provider', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.ResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
+  async updateServiceProvider(data) {
+    return this._requestWithSchema({
+      method: 'put',
+      url: '/service_provider',
+      data,
+      schema: { request: schemas.updateServiceProviderRequestSchema, response: schemas.ResponseSchema }
+    });
   }
 
   // 删除服务提供商
-  async DeleteServiceProvider(data) {
-    try {
-      this.validateSchema(schemas.deleteServiceProviderRequestSchema, data);
-      const res = await this.client.delete('/service-provider', { data });
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.ResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
+  async deleteServiceProvider(data) {
+    return this._requestWithSchema({
+      method: 'post',
+      url: '/service_provider',
+      data,
+      schema: { request: schemas.deleteServiceProviderRequestSchema, response: schemas.ResponseSchema }
+    });
   }
 
   // 导入配置文件
-  async ImportConfig(path) {
+  async importConfig(filePath) {
     try {
-      const data = await fsPromises.readFile(path, 'utf8');
-      const res = await this.client.post('/service/import', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.ResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: null,
-      };
+      const data = await fsPromises.readFile(filePath, 'utf8');
+      return this._requestWithSchema({
+        method: 'post',
+        url: '/service/import',
+        data,
+        schema: { response: schemas.ResponseSchema }
+      });
     } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
+      return { code: 400, msg: error.message, data: null };
     }
   }
 
   // 导出配置文件
-  async ExportConfig(data = {}) {
-    try{
-      this.validateSchema(schemas.exportRequestSchema, data);
-      const res = await this.client.post('/service/export', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
+  async exportConfig(data = {}) {
+    // 只做文件写入，http部分用统一schema校验
+    const result = await this._requestWithSchema({
+      method: 'post',
+      url: '/service/export',
+      data,
+      schema: { request: schemas.exportRequestSchema, response: schemas.ResponseSchema }
+    });
+    if (result.code === 200) {
+      try {
+        const userDir = os.homedir();
+        const destDir = path.join(userDir, 'Oadin');
+        const dest = path.join(destDir, '.oadin');
+        tools.ensureDirWritable(destDir);
+        const fileContent = JSON.stringify(result.data, null, 2);
+        fs.writeFileSync(dest, fileContent);
+        console.log(`已将生成文件写入到 ${dest}`);
+      } catch (error) {
+        return { code: 400, msg: error.message, data: null };
       }
-      // 将响应数据存入 .oadin 文件
-      const userDir = os.homedir();
-      const destDir = path.join(userDir, 'Oadin');
-      const dest = path.join(destDir, '.oadin');
-
-      // 确保目录存在并写入文件
-      fs.mkdir(destDir, { recursive: true }, (err) => {
-          if (err) {
-              console.error(`创建目录失败: ${err.message}`);
-              return;
-          }
-
-          // 将响应数据序列化为 JSON 字符串
-          const fileContent = JSON.stringify(res.data, null, 2); // 格式化为易读的 JSON
-
-          fs.writeFile(dest, fileContent, (err) => {
-              if (err) {
-                  console.error(`写入文件失败: ${err.message}`);
-                  return;
-              }
-              console.log(`已将生成文件写入到 ${dest}`);
-          });
-      });
-
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data.data,
-      };
-    } catch (error){    
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
     }
-  }
-
-  // 获取模型列表 （已弃用）
-  async GetModelsAvailiable() {
-    try {
-      const res = await this.client.get('/services/models');
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || null,
-        }
-      }
-      this.validateSchema(schemas.modelsResponse, res.data);
-    } catch (error) {
-      return { status: 0, err_msg: `获取模型列表失败: ${error.message}`, data: null };
-    }
+    return result;
   }
 
   // 获取推荐模型列表
-  async GetModelsRecommended() {
-    try {
-      const res = await this.client.get('/model/recommend');
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.recommendModelsResponse, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data.data,
-      };
-    } catch (error){    
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
-    }
+  async getModelsRecommended() {
+    return this._requestWithSchema({
+      method: 'get',
+      url: '/model/recommend',
+      schema: { response: schemas.recommendModelsResponse }
+    });
   }
 
-  // 获取支持模型列表
-  async GetModelsSupported(data) {
-    try {
-      this.validateSchema(schemas.getModelsSupported, data);
-      const res = await this.client.get('/model/support', { params: data });
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.recommendModelsResponse, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data.data,
-      };
-    } catch (error){    
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
-    }
+  // getModelsSupported
+  async getModelsSupported(data) {
+    return this._requestWithSchema({
+      method: 'get',
+      url: '/model/support',
+      data,
+      schema: { request: schemas.getModelsSupported, response: schemas.getSupportModelResponseSchema }
+    });
   }
 
-  // 获取问学平台支持模型列表
-  async GetSmartvisionModelsSupported(data) {
-    try {
-      this.validateSchema(schemas.SmartvisionModelSupportRequest, data);
-      const res = await this.client.get('/model/support/smartvision', { params: data });
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.SmartvisionModelSupport, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data.data,
-      };
-    } catch (error){    
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
+  // chat服务（支持流式和非流式）
+  async chat(data) {
+    const stream = data.stream;
+    if (!stream) {
+      // 非流式
+      return this._requestWithSchema({ method: 'post', url: 'services/chat', data });
     }
-  }
-
-  // chat服务
-  async Chat(data) {
+    // 流式
     try {
-      this.validateSchema(schemas.chatRequest, data);
-
-      // 判断是否是流式
-      const config = { responseType: data.stream ? 'stream' : 'json' };
-      const res = await this.client.post('/services/chat', data, config);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      };
-
-      if (data.stream) {
-        const eventEmitter = new EventEmitter();
-
-        res.data.on('data', (chunk) => {
-          try {
-            const rawData = chunk.toString().trim();
-            const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
-            const response = JSON.parse(jsonString);
-            eventEmitter.emit('data', response); // 触发事件，实时传输数据
-          } catch (err) {
-            eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+      const config = { responseType: 'stream' };
+      const res = await this.client.post('services/chat', data, config);
+      const eventEmitter = new EventEmitter();
+      res.data.on('data', (chunk) => {
+        try {
+          let rawData = _.isString(chunk) ? _.trim(chunk) : _.trim(chunk.toString());
+          let jsonString = _.startsWith(rawData, 'data:') ? rawData.slice(5) : rawData;
+          jsonString = _.trim(jsonString);
+          if (_.isEmpty(jsonString)) {
+            throw new Error('收到空的流数据');
           }
-        });
-
-        res.data.on('error', (err) => {
-          eventEmitter.emit('error', `流式响应错误: ${err.message}`);
-        });
-
-        res.data.on('end', () => {
-          eventEmitter.emit('end'); // 触发结束事件
-        });
-
-        return eventEmitter; // 返回 EventEmitter 实例
-      } else {
-        // 非流式响应处理
-        await this.validateSchema(schemas.chatResponse, res.data);
-        return {
-          code: 200,
-          msg: res.data.message || null,
-          data: res.data,
-        };
-      };
+          const response = JSON.parse(jsonString);
+          eventEmitter.emit('data', response);
+          if (response.status === 'success' || response.status === 'canceled' || response.status === 'error') {
+            eventEmitter.emit('end', response);
+          }
+        } catch (err) {
+          eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+        }
+      });
+      res.data.on('error', (err) => {
+        eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+      });
+      return eventEmitter;
     } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
+      return { code: 400, msg: error.response?.data?.message || error.message, data: null };
     }
   }
 
-
-  // 生文服务
-  async Generate(data) {
+  // 生文服务（支持流式和非流式）
+  async generate(data) {
+    const stream = data.stream;
+    if (!stream) {
+      return this._requestWithSchema({ method: 'post', url: 'services/generate', data });
+    }
     try {
-      this.validateSchema(schemas.generateRequest, data);
-  
-      const config = { responseType: data.stream ? 'stream' : 'json' };
-      const res = await this.client.post('/services/generate', data, config);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-  
-      if (data.stream) {
-        const eventEmitter = new EventEmitter();
-  
-        res.data.on('data', (chunk) => {
-          try {
-            const response = JSON.parse(chunk.toString());
-            if (response) {
-              this.validateSchema(schemas.generateResponse, response);
-              eventEmitter.emit('data', response.response); // 逐步传输响应内容
-            }
-          } catch (err) {
-            eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+      const config = { responseType: 'stream' };
+      const res = await this.client.post('services/generate', data, config);
+      const eventEmitter = new EventEmitter();
+      res.data.on('data', (chunk) => {
+        try {
+          let rawData = _.isString(chunk) ? _.trim(chunk) : _.trim(chunk.toString());
+          let jsonString = _.startsWith(rawData, 'data:') ? rawData.slice(5) : rawData;
+          jsonString = _.trim(jsonString);
+          if (_.isEmpty(jsonString)) {
+            throw new Error('收到空的流数据');
           }
-        });
-  
-        res.data.on('error', (err) => {
-          eventEmitter.emit('error', `流式响应错误: ${err.message}`);
-        });
-  
-        res.data.on('end', () => {
-          eventEmitter.emit('end'); // 触发结束事件
-        });
-  
-        return eventEmitter; // 返回 EventEmitter 实例
-      } else {
-        // 非流式响应处理
-        await this.validateSchema(schemas.generateResponse, res.data);
-        return {
-          code: 200,
-          msg: res.data.message || null,
-          data: res.data,
-        };
-      }
+          const response = JSON.parse(jsonString);
+          eventEmitter.emit('data', response);
+          if (response.status === 'success' || response.status === 'canceled' || response.status === 'error') {
+            eventEmitter.emit('end', response);
+          }
+        } catch (err) {
+          eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
+        }
+      });
+      res.data.on('error', (err) => {
+        eventEmitter.emit('error', `流式响应错误: ${err.message}`);
+      });
+      return eventEmitter;
     } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
+      return { code: 400, msg: error.response?.data?.message || error.message, data: null };
     }
   }
   
   // 生图服务
-  async TextToImage(data) {
-    try {
-      this.validateSchema(schemas.textToImageRequest, data);
-      const res = await this.client.post('/services/text-to-image', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      };
-      await this.validateSchema(schemas.textToImageResponse, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
-    }
+  async textToImage(data) {
+    return this._requestWithSchema({
+      method: 'post',
+      url: '/services/text-to-image',
+      data,
+      schema: { request: schemas.textToImageRequest, response: schemas.textToImageResponse }
+    });
   }
 
   // embed服务
-  async Embed(data) {
-    try {
-      this.validateSchema(schemas.embeddingRequest, data);
-      const res = await this.client.post('/services/embed', data);
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      };
-      await this.validateSchema(schemas.embeddingResponse, res.data);
-      return {
-        code: 200,
-        msg: res.data.message || null,
-        data: res.data,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message,
-        data: null,
-      };
-    }  }
-
-
-
-  // 创建会话
-  async CreatePlaygroundSession(data) {
-    // 直接使用小驼峰字段，不做字段名转换
-    this.validateSchema(schemas.createSessionRequestSchema, data);
-    return new Promise((resolve) => {
-      const userDir = os.homedir();
-      const oadinPath = path.join(userDir, 'Oadin', 'oadin.exe');
-      process.env.PATH = `${process.env.PATH};${oadinPath}`;
-
-      const child = spawn(oadinPath, ['playground', 'create', JSON.stringify(data)], { detached: true, stdio: [ 'pipe', 'pipe', 'pipe'] });
-
-      child.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-      });
-
-      child.on('close', (code) => {
-        if (code === 0) {
-          console.log('创建会话成功');
-          resolve(true);
-        } else {
-          console.error(`创建会话失败，退出码: ${code}`);
-          resolve(false);
-        }
-      });
-
-      child.on('error', (err) => {
-        console.error(`启动 Oadin 创建会话命令失败: ${err.message}`);
-        resolve(false);
-      });
-
-      child.unref();
+  async embed(data) {
+    return this._requestWithSchema({
+      method: 'post',
+      url: '/services/embed',
+      data,
+      schema: { request: schemas.embeddingRequest, response: schemas.embeddingResponse }
     });
-  }
-  // 获取会话列表
-  async GetPlaygroundSessions() {
-    try {
-      const res = await this.client.get('/playground/sessions');
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.getSessionsResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.bcode?.message || null,
-        data: res.data.data,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
-  }
-  
-  // 删除会话
-  async DeletePlaygroundSession(sessionId) {
-    try {
-      const data = { sessionId };
-      const res = await this.client.delete('/playground/session', { data });
-      
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      
-      await this.validateSchema(schemas.baseResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.bcode?.message || null,
-        data: null,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
-  }
-
-  // 发送消息
-  async SendPlaygroundMessage(data) {
-    this.validateSchema(schemas.sendMessageRequestSchema, data);
-    const res = await this.client.post('/playground/message', data);
-    try {
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.sendMessageResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.bcode?.message || null,
-        data: res.data.data,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
-  }
-
-  // 发送流式消息
-  async SendPlaygroundMessageStream(data) {
-    this.validateSchema(schemas.sendStreamMessageRequestSchema, data);
-    const res = await this.client.post('/playground/message/stream', data, {
-      responseType: 'stream',
-      headers: { 'Accept': 'text/event-stream' }
-    });
-    
-    if (res.status !== 200) {
-      return {
-        code: 400,
-        msg: res.data?.message || 'Bad Request',
-        data: null,
-      };
-    }
-
-    const eventEmitter = new EventEmitter();
-
-    res.data.on('data', (chunk) => {
-      try {
-        const rawData = chunk.toString().trim();
-        // 处理服务器发送的事件流数据
-        let response;
-        try {
-          response = JSON.parse(rawData);
-        } catch (e) {
-          // 尝试去除 data: 前缀
-          const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
-          response = JSON.parse(jsonString);
-        }
-
-        eventEmitter.emit('data', response.data); // 触发数据事件
-        
-        // 如果是最后一个消息块，触发完成事件
-        if (response.data && response.data.is_complete) {
-          eventEmitter.emit('complete', response.data);
-        }
-      } catch (err) {
-        eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
-      }
-    });
-
-    res.data.on('error', (err) => {
-      eventEmitter.emit('error', `流式响应错误: ${err.message}`);
-    });
-
-    res.data.on('end', () => {
-      eventEmitter.emit('end'); // 触发结束事件
-    });
-
-    return eventEmitter; // 返回 EventEmitter 实例
-  }
-
-  // 上传文件
-  async UploadPlaygroundFile(sessionId, filePath) {
-    try {
-      const stats = fs.statSync(filePath);
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (stats.size > maxSize) {
-        return {
-          code: 400,
-          msg: 'File size exceeds the maximum limit of 50MB',
-          data: null
-        };
-      }
-      
-      const fileExt = path.extname(filePath).toLowerCase();
-      const allowedFormats = ['.txt', '.md', '.html', '.pdf', '.xlsx', '.docx'];
-      if (!allowedFormats.includes(fileExt)) {
-        return {
-          code: 400,
-          msg: 'File format not allowed. Allowed formats: txt, md, html, pdf, xlsx, docx',
-          data: null
-        };
-      }
-      
-      try {
-        const filesRes = await this.GetPlaygroundFiles(sessionId);
-        if (filesRes.code === 200 && filesRes.data && filesRes.data.length >= 10) {
-          return {
-            code: 400,
-            msg: 'Maximum file count reached (10 files per session)',
-            data: null
-          };
-        }
-      } catch (e) {
-        return {
-          code: 400,
-          msg: 'Failed to retrieve existing files for session',
-          data: null
-        };
-      }
-      
-      // 创建表单数据
-      const formData = new FormData();
-      formData.append('sessionId', sessionId);
-      
-      // 读取文件并添加到表单中
-      const fileStream = fs.createReadStream(filePath);
-      const fileName = path.basename(filePath);
-      formData.append('file', fileStream, fileName);
-
-      // 设置请求配置
-      const config = { 
-        headers: { 
-          ...formData.getHeaders() // 让 form-data 处理内容类型和边界
-        }
-      };
-      
-      const res = await this.client.post('/playground/file', formData, config);
-      
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      
-      await this.validateSchema(schemas.uploadFileResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.bcode?.message || null,
-        data: res.data.data,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
-  }
-
-  // 处理文件（生成嵌入）
-  async ProcessPlaygroundFile(fileId, model) {
-    const data = {
-      fileId,
-      model
-    };
-    this.validateSchema(schemas.processFileRequestSchema, data);
-    const res = await this.client.post('/playground/file/process', data);
-    
-    if (res.status !== 200) {
-      return {
-        code: 400,
-        msg: res.data?.message || 'Bad Request',
-        data: null,
-      };
-    }
-    
-    await this.validateSchema(schemas.processFileResponseSchema, res.data);
-    return {
-      code: 200,
-      msg: res.data.bcode?.message || null,
-      data: res.data.data,
-    };
-  }
-
-  // 获取文件列表
-  async GetPlaygroundFiles(sessionId) {
-    const res = await this.client.get('/playground/files', {
-      params: { sessionId } 
-    });
-    
-    if (res.status !== 200) {
-      return {
-        code: 400,
-        msg: res.data?.message || 'Bad Request',
-        data: null,
-      };
-    }
-    
-    await this.validateSchema(schemas.getFilesResponseSchema, res.data);
-    return {
-      code: 200,
-      msg: res.data.bcode?.message || null,
-      data: res.data.data,
-    };
-  }
-
-  // 删除文件
-  async DeletePlaygroundFile(fileId) {
-    const res = await this.client.delete('/playground/file', {
-      params: { fileId } 
-    });
-    
-    if (res.status !== 200) {
-      return {
-        code: 400,
-        msg: res.data?.message || 'Bad Request',
-        data: null,
-      };
-    }
-    
-    await this.validateSchema(schemas.baseResponseSchema, res.data);
-    return {
-      code: 200,
-      msg: res.data.bcode?.message || null,
-      data: null,
-    };
-  }
-
-    async ChangePlaygroundSessionModel(data) {
-    this.validateSchema(schemas.changeSessionModelRequestSchema, data);
-    const res = await this.client.post('/playground/session/model', data);
-    try {
-      if (res.status !== 200) {
-        return {
-          code: 400,
-          msg: res.data?.message || 'Bad Request',
-          data: null,
-        };
-      }
-      await this.validateSchema(schemas.changeSessionModelResponseSchema, res.data);
-      return {
-        code: 200,
-        msg: res.data.bcode?.message || null,
-        data: res.data.data,
-      };
-    } catch (error) {
-      return {
-        code: 400,
-        msg: error.response?.data?.message || error.message || '请求失败',
-        data: null,
-      };
-    }
   }
 
   // 用于一键安装 Oadin 和 导入配置
+  // TODO：记录日志
   async OadinInit(path){
-    const isOadinAvailable = await this.IsOadinAvailiable();
+    const isOadinAvailable = await this.isOadinAvailable();
     if (isOadinAvailable) {
-      console.log('✅ Oadin 服务已启动，跳过安装。');
+      logAndConsole('info','✅ Oadin 服务已启动，跳过安装。');
       return true;
     }
     
-    const isOadinExisted = await this.IsOadinExisted();
+    const isOadinExisted = this.isOadinExisted();
     if (!isOadinExisted) {
-      const downloadSuccess = await this.DownloadOadin();
+      const downloadSuccess = await this.downloadOadin();
       if (!downloadSuccess) {
-        console.error('❌ 下载 Oadin 失败，请检查网络连接或手动下载。');
+        logAndConsole('error','❌ 下载 Oadin 失败，请检查网络连接或手动下载。');
         return false;
       }
     } else {
-      console.log('✅ Oadin 已存在，跳过下载。');
+      logAndConsole('info','✅ Oadin 已存在，跳过下载。');
     }
 
-    const installSuccess = await this.InstallOadin();
+    const installSuccess = await this.startOadin();
     if (!installSuccess) {
-      console.error('❌ 启动 Oadin 服务失败，请检查配置或手动启动。');
+      logAndConsole('error','❌ 启动 Oadin 服务失败，请检查配置或手动启动。');
       return false;
     } else {
-      console.log('✅ Oadin 服务已启动。');
+      logAndConsole('info','✅ Oadin 服务已启动。');
     }
 
-    const importSuccess = await this.ImportConfig(path);
+    const importSuccess = await this.importConfig(path);
     if (!importSuccess) {
-      console.error('❌ 导入配置文件失败。');
+      logAndConsole('error','❌ 导入配置文件失败。');
       return false;
     } else {
-      console.log('✅ 配置文件导入成功。');
+      logAndConsole('info','✅ 配置文件导入成功。');
     }
+    return true;
   }
 }
 
