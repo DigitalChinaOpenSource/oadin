@@ -394,7 +394,7 @@ const getSupportModelResponseSchema = {
               url: { type: "string" },
               auth_type: { type: "string" },
               auth_apply_url: { type: "string" },
-              auth_fields: { type: "array", items: { type: "string" } },
+              auth_fields: { type: ["array", "null"], items: { type: "string" } },
               name: { type: "string" },
               service_provider_name: { type: "string" },
               size: { type: "string" },
