@@ -255,7 +255,13 @@ func (m *Manager) viewLogs() error {
 // getIcon returns the icon data
 func getIcon() ([]byte, error) {
 	// 尝试从多个位置获取图标
-	data, err := trayTemplate.TrayIconFS.ReadFile("oadin.ico")
+	// 根据系统类型获取不同的图片，Windows用彩色的，mac用黑白的
+	// oadin.ico oadin-mac.ico  aiwenxue.ico aiwenxue-mac.ico
+	file := "aiwenxue.ico"
+	if runtime.GOOS == "darwin" {
+		file = "aiwenxue-mac.ico"
+	}
+	data, err := trayTemplate.TrayIconFS.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
