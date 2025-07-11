@@ -36,7 +36,6 @@ func (t *OadinCoreServer) SendMessageStream(c *gin.Context) {
 		}
 	}
 
-
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
@@ -63,9 +62,21 @@ func (t *OadinCoreServer) SendMessageStream(c *gin.Context) {
 			}
 
 			if chunk.Type == "error" {
-				n, err := fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%s\"}\n\n", chunk.Content)
-				fmt.Printf("[API] 错误消息写入结果: 字节数=%d, 错误=%v\n", n, err)
-				flusher.Flush()
+				response := dto.StreamMessageResponse{
+					Bcode: bcode.ErrServer,
+					Data: dto.MessageChunk{
+						ID:        chunk.ID,
+						SessionID: req.SessionID,
+						Content:   chunk.Content,
+						Type:      "error",
+					},
+				}
+				data, err := json.Marshal(response)
+				if err == nil {
+					n, err := fmt.Fprintf(w, "data: %s\n\n", data)
+					fmt.Printf("[API] 错误消息写入结果: 字节数=%d, 错误=%v\n", n, err)
+					flusher.Flush()
+				}
 				return
 			}
 
