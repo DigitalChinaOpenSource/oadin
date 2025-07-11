@@ -303,14 +303,15 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 
 	// 保存模型回复
 	assistantMsg := &types.ChatMessage{
-		ID:        uuid.New().String(),
-		SessionID: request.SessionId,
-		Role:      "assistant",
-		Content:   response,
-		Order:     len(messages) + 1,
-		CreatedAt: time.Now(),
-		ModelID:   session.ModelID,
-		ModelName: session.ModelName,
+		ID:            uuid.New().String(),
+		SessionID:     request.SessionId,
+		Role:          "assistant",
+		Content:       response,
+		Order:         len(messages) + 1,
+		CreatedAt:     time.Now(),
+		ModelID:       session.ModelID,
+		ModelName:     session.ModelName,
+		TotalDuration: chatResp.TotalDuration,
 	}
 	err = p.Ds.Add(ctx, assistantMsg)
 	if err != nil {
@@ -347,15 +348,16 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 	// 返回响应
 	resultMessages := []dto.Message{{
-		Id:        assistantMsg.ID,
-		SessionId: assistantMsg.SessionID,
-		Role:      assistantMsg.Role,
-		Content:   assistantMsg.Content,
-		CreatedAt: assistantMsg.CreatedAt.Format(time.RFC3339),
-		Thoughts:  chatResp.Thoughts,
-		Type:      "answer",
-		ModelId:   session.ModelID,
-		ModelName: session.ModelName,
+		Id:            assistantMsg.ID,
+		SessionId:     assistantMsg.SessionID,
+		Role:          assistantMsg.Role,
+		Content:       assistantMsg.Content,
+		CreatedAt:     assistantMsg.CreatedAt.Format(time.RFC3339),
+		Thoughts:      chatResp.Thoughts,
+		Type:          "answer",
+		ModelId:       session.ModelID,
+		ModelName:     session.ModelName,
+		TotalDuration: chatResp.TotalDuration,
 	}}
 	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		resultMessages = append(resultMessages, dto.Message{
@@ -378,6 +380,23 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 // 获取会话中的消息
 func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error) {
 	slog.Info("GetMessages called", "session_id", request.SessionId)
+
+	sessionQuery := &types.ChatSession{ID: request.SessionId}
+	sessionResults, err := p.Ds.List(ctx, sessionQuery, &datastore.ListOptions{PageSize: 1})
+	if err != nil {
+		slog.Error("Failed to get session", "error", err, "session_id", request.SessionId)
+		return nil, err
+	}
+
+	var thinkingActive bool
+	if len(sessionResults) > 0 {
+		if session, ok := sessionResults[0].(*types.ChatSession); ok {
+			thinkingActive = session.ThinkingActive
+			slog.Info("Found session", "session_id", request.SessionId, "thinking_active", thinkingActive)
+		}
+	} else {
+		slog.Warn("Session not found", "session_id", request.SessionId)
+	}
 
 	messageQuery := &types.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
@@ -425,21 +444,25 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 			}
 		}
 		messageDTOs = append(messageDTOs, dto.Message{
-			Id:        msg.ID,
-			SessionId: msg.SessionID,
-			Role:      msg.Role,
-			Content:   msg.Content,
-			CreatedAt: msg.CreatedAt.Format(time.RFC3339),
-			Type:      typeStr,
-			ModelId:   msg.ModelID,
-			ModelName: msg.ModelName,
-			ToolCalls: toolMessages,
+			Id:            msg.ID,
+			SessionId:     msg.SessionID,
+			Role:          msg.Role,
+			Content:       msg.Content,
+			CreatedAt:     msg.CreatedAt.Format(time.RFC3339),
+			Type:          typeStr,
+			ModelId:       msg.ModelID,
+			ModelName:     msg.ModelName,
+			TotalDuration: msg.TotalDuration,
+			ToolCalls:     toolMessages,
 		})
 	}
 
 	return &dto.GetMessagesResponse{
 		Bcode: bcode.SuccessCode,
-		Data:  messageDTOs,
+		Data: dto.GetMessagesData{
+			Messages:       messageDTOs,
+			ThinkingActive: thinkingActive,
+		},
 	}, nil
 }
 

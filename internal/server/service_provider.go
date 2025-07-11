@@ -614,6 +614,7 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 				InputLength:  modelInfo.InputLength,
 				OutputLength: modelInfo.OutputLength,
 				ParamsSize:   modelInfo.ParamSize,
+				Context:      modelInfo.Context,
 				IsDownloaded: isDownloaded,
 			}
 			supportModelList = append(supportModelList, resModel)

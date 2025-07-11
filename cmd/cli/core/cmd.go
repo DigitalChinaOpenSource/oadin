@@ -68,9 +68,6 @@ func (sm *ServerManager) StopServer(serverType string) error {
 		return fmt.Errorf("server %s is not running", serverType)
 	}
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	<-quit
 	log.Println("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -1043,16 +1040,20 @@ func CheckOadinServer(cmd *cobra.Command, args []string) {
 		}
 		err = cmd.Run()
 		if err != nil {
-			slog.Info("Model engine not exist...")
-			slog.Info("model engine not exist, start download...")
-			err := engineProvider.InstallEngine()
+			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
+			err = cmd.Run()
 			if err != nil {
-				fmt.Println("Install model engine failed :", err.Error())
-				slog.Error("Install model engine failed :", err.Error())
-				log.Fatalf("Install model engine failed err %s", err.Error())
-				return
+				slog.Info("Model engine not exist...")
+				slog.Info("model engine not exist, start download...")
+				err := engineProvider.InstallEngine()
+				if err != nil {
+					fmt.Println("Install model engine failed :", err.Error())
+					slog.Error("Install model engine failed :", err.Error())
+					log.Fatalf("Install model engine failed err %s", err.Error())
+					return
+				}
+				slog.Info("Model engine download completed...")
 			}
-			slog.Info("Model engine download completed...")
 		}
 
 		slog.Info("Setting env...")
@@ -1445,8 +1446,8 @@ func ListenModelEngineHealth() {
 		}
 		for _, engineName := range engineList {
 			if engineName == types.FlavorOllama {
-				engineConfig := OllamaEngine.GetConfig()
-				if engineConfig.StartStatus != 1 {
+				operateStatus := OllamaEngine.GetOperateStatus()
+				if operateStatus == 0 {
 					continue
 				}
 				err := OllamaEngine.HealthCheck()

@@ -192,6 +192,8 @@ func (st *ServiceTask) Run() error {
 	slog.Debug("[Service] Request Sending to Service Provider ...", "taskid", st.Schedule.Id, "method",
 		req.Method, "url", req.URL.String(), "header", fmt.Sprintf("%+v", req.Header), "body", nil)
 	event.SysEvents.NotifyHTTPRequest("invoke_service_provider", req.Method, req.URL.String(), content.Header, nil)
+	fmt.Println("[Service] Request Sending to Service Provider ...", "taskid", st.Schedule.Id, "method",
+		req.Method, "url", req.URL.String(), "header", fmt.Sprintf("%+v", req.Header), "body", string(content.Body))
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -389,6 +391,7 @@ func (st *ServiceTask) Run() error {
 			} else {
 				slog.Debug("[Service] Stream: Got Chunk Response", "taskid", st.Schedule.Id, "chunk", string(chunk))
 			}
+			// fmt.Println("[Service] Response Content", "taskid", st.Schedule.Id, "chunk", string(chunk))
 
 			chunkStr := strings.TrimPrefix(string(chunk), "data:")
 			chunk = []byte(chunkStr)

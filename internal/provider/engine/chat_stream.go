@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"oadin/internal/datastore"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"strings"
@@ -30,13 +31,28 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 	modelName := req.Model
 
 	// 打印即将发往服务的请求体内容，重点关注think参数
-	fmt.Printf("[ChatStream] Final request body: %s\n", string(body))
-	slog.Info("[ChatStream] Final request body: ", string(body))
+	// fmt.Printf("[ChatStream] Final request body: %s\n", string(body))
+	// slog.Info("[ChatStream] Final request body: ", string(body))
+
+	hybridPolicy := "default"
+	ds := datastore.GetDefaultDatastore()
+	sp := &types.Service{
+		Name:   "chat",
+		Status: 1,
+	}
+	err = ds.Get(context.Background(), sp)
+	if err != nil {
+		slog.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
+	} else {
+		hybridPolicy = sp.HybridPolicy
+	}
+	hybridPolicy = sp.HybridPolicy
 
 	serviceReq := &types.ServiceRequest{
 		Service:       "chat",
 		Model:         modelName,
 		FromFlavor:    "oadin",
+		HybridPolicy:  hybridPolicy,
 		AskStreamMode: true,
 		Think:         req.Think,
 		HTTP: types.HTTPContent{
@@ -59,7 +75,41 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 
 		// 处理流式响应
 		for result := range ch {
+
+			if result.Type == types.ServiceResultFailed {
+				if result.Error != nil {
+					if httpErr, ok := result.Error.(*types.HTTPErrorResponse); ok {
+						var errorData map[string]interface{}
+						if err := json.Unmarshal(httpErr.Body, &errorData); err == nil {
+							if errMsg, exists := errorData["error"]; exists {
+								if errStr, ok := errMsg.(string); ok {
+									fmt.Printf("[ChatStream] 发送HTTPError解析后的错误: %s\n", errStr)
+									errChan <- fmt.Errorf("%s", errStr)
+									return
+								}
+							}
+							if msg, exists := errorData["message"]; exists {
+								if msgStr, ok := msg.(string); ok {
+									fmt.Printf("[ChatStream] 发送HTTPError message错误: %s\n", msgStr)
+									errChan <- fmt.Errorf("%s", msgStr)
+									return
+								}
+							}
+							errChan <- fmt.Errorf("HTTP %d: %s", httpErr.StatusCode, string(httpErr.Body))
+							return
+						}
+						errChan <- fmt.Errorf("HTTP %d: %s", httpErr.StatusCode, string(httpErr.Body))
+						return
+					}
+					errChan <- result.Error
+					return
+				}
+				errChan <- fmt.Errorf("task failed with unknown error")
+				return
+			}
+
 			if result.Error != nil {
+				fmt.Printf("[ChatStream] 发送旧版错误: %s\n", result.Error.Error())
 				errChan <- result.Error
 				return
 			}
@@ -92,9 +142,10 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				Finished     bool   `json:"finished"`
 				Id           string `json:"id"`
 				Message      struct {
-					Content  string `json:"content"`
-					Role     string `json:"role"`
-					Thinking string `json:"thinking"`
+					Content   string           `json:"content"`
+					Role      string           `json:"role"`
+					Thinking  string           `json:"thinking"`
+					ToolCalls []types.ToolCall `json:"tool_calls,omitempty"`
 				} `json:"message"`
 				Model string `json:"model"`
 			}
@@ -103,7 +154,7 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 			if err := json.Unmarshal(cleanBody, &streamChunk); err == nil {
 				// 成功解析为直接流式格式
 				parseSucceeded = true
-				fmt.Printf("[ChatStream] 解析为直接流式格式成功\n")
+				// fmt.Printf("[ChatStream] 解析为直接流式格式成功\n")
 
 				// 提取模型名称
 				model = streamChunk.Model
@@ -111,7 +162,16 @@ func (e *Engine) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan
 				// 提取内容
 				if streamChunk.Message.Content != "" {
 					content = streamChunk.Message.Content
-					fmt.Printf("[ChatStream] 从直接流式格式提取内容，长度: %d\n", len(content))
+					// fmt.Printf("[ChatStream] 从直接流式格式提取内容，长度: %d\n", len(content))
+				}
+
+				if streamChunk.Message.Thinking != "" {
+					thoughts = streamChunk.Message.Thinking
+					// fmt.Printf("[ChatStream] 从直接流式格式提取内容，长度: %d\n", len(content))
+				}
+
+				if len(streamChunk.Message.ToolCalls) > 0 {
+					toolCalls = append(toolCalls, streamChunk.Message.ToolCalls...)
 				}
 
 				// 检查是否完成

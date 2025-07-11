@@ -78,6 +78,10 @@ type ListResponse struct {
 	Models []ListModelResponse `json:"models"`
 }
 
+type UnloadModelRequest struct {
+	Models []string `json:"models"`
+}
+
 // ListModelResponse is a single model description in [ListResponse].
 type ListModelResponse struct {
 	Name       string       `json:"name"`
@@ -121,7 +125,9 @@ type CopyModelRequest struct {
 
 // DeleteRequest is the request passed to [Client.Delete].
 type DeleteRequest struct {
-	Model string `json:"model"`
+	Model          string `json:"model"`
+	Insecure       bool   `json:"insecure,omitempty"`
+	OllamaRegistry string `json:"ollama_registry,omitempty"` // 私有仓库地址
 }
 
 // [PullProgressFunc] and [PushProgressFunc].

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -27,12 +26,16 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		defer close(respChan)
 		defer close(errChan)
 
+		sendError := func(err error) {
+			errChan <- err
+		}
+
 		// 获取会话
 		session := &types.ChatSession{ID: request.SessionID}
 		err := p.Ds.Get(ctx, session)
 		if err != nil {
 			slog.Error("Failed to get chat session", "error", err)
-			errChan <- err
+			sendError(err)
 			return
 		}
 
@@ -50,7 +53,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		})
 		if err != nil {
 			slog.Error("Failed to list chat messages", "error", err)
-			errChan <- err
+			sendError(err)
 			return
 		}
 
@@ -114,7 +117,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 			err = p.Ds.Add(ctx, userMsg)
 			if err != nil {
 				slog.Error("Failed to save user message", "error", err)
-				errChan <- err
+				sendError(err)
 				return
 			}
 		}
@@ -156,40 +159,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		for {
 			select {
 			case resp, ok := <-responseStream:
-				if !ok { // 流结束
-					// // 因为有可能最后一个块是完成标记但内容为空
-					// slog.Info("流式输出结束，准备保存助手回复", "content_length", len(fullContent))
-
-					// // 显示预览（如果有内容）
-					// if len(fullContent) > 0 {
-					// 	previewLen := min(100, len(fullContent))
-					// 	slog.Info("回复内容预览", "content_preview", fullContent[:previewLen])
-					// } else {
-					// 	slog.Warn("助手回复内容为空！")
-					// }
-
-					// // 将思考内容包装在<think></think>标签中并添加到assistant响应
-					// finalContent := fullContent
-					// if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
-					// 	// 在正文前添加思考内容，使用<think>标签包装
-					// 	finalContent = fmt.Sprintf("<think>\n%s\n</think>\n\n%s", thoughts, fullContent)
-					// }
-
-					// assistantMsg := &types.ChatMessage{
-					// 	ID:            assistantMsgID,
-					// 	SessionID:     request.SessionID,
-					// 	Role:          "assistant",
-					// 	Content:       finalContent, // 包含思考内容的完整内容
-					// 	Order:         len(messages) + 1,
-					// 	CreatedAt:     time.Now(),
-					// 	ModelID:       session.ModelID,
-					// 	ModelName:     session.ModelName,
-					// 	TotalDuration: totalDuration, // 这个会在resp.IsComplete赋值
-					// }
-					// err = p.Ds.Add(ctx, assistantMsg)
-					// if err != nil {
-					// 	slog.Error("Failed to save assistant message", "error", err, assistantMsgID)
-					// }
+				if !ok {
 					return
 				}
 
@@ -200,7 +170,8 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				resp.ModelName = session.ModelName
 
 				if resp.IsComplete {
-					fmt.Println("收到流式输出完成标记，内容长度:", len(originalContent))
+					fmt.Printf("[PlaygroundStream] 收到流式输出完成标记，原始内容长度: %d，累积内容长度: %d\n", len(originalContent), len(fullContent))
+					fmt.Printf("[PlaygroundStream] 原始内容: '%s'，累积内容: '%s'\n", originalContent, fullContent)
 					slog.Info("收到流式输出完成标记",
 						"is_complete", resp.IsComplete,
 						"content_length", len(originalContent),
@@ -211,8 +182,10 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						thoughts = thoughts + resp.Thoughts
 					}
 
+					// 确保使用累积的完整内容
 					if len(fullContent) == 0 && len(originalContent) > 0 {
 						fullContent = originalContent
+						fmt.Printf("[PlaygroundStream] 使用原始内容作为完整内容: '%s'\n", fullContent)
 					}
 
 					resp.TotalDuration = resp.TotalDuration / int64(time.Second)
@@ -226,6 +199,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 
 					// 确保完整内容被保存和返回给客户端
+					fmt.Printf("[PlaygroundStream] 准备保存数据库，finalContent长度: %d, 内容: '%s'\n", len(finalContent), finalContent)
 					if finalContent != "" {
 						assistantMsg := &types.ChatMessage{
 							ID:            assistantMsgID,
@@ -241,11 +215,15 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 						err = p.Ds.Add(ctx, assistantMsg)
 						if err != nil {
 							slog.Error("Failed to save assistant message on complete", "error", err)
+						} else {
+							fmt.Printf("[PlaygroundStream] 成功保存assistant消息到数据库，ID: %s, 内容长度: %d\n", assistantMsgID, len(finalContent))
 						}
+					} else {
+						fmt.Printf("[PlaygroundStream] 警告：finalContent为空，不保存到数据库！fullContent='%s', thoughts='%s'\n", fullContent, thoughts)
 					}
 
 					// 处理多轮工具调用
-					if fullContent == "" && len(resp.ToolCalls) > 0 {
+					if len(resp.ToolCalls) > 0 {
 						if request.ToolGroupID == "" {
 							if userMsg != nil {
 								p.AddToolCall(ctx, request.SessionID, userMsg.ID, assistantMsgID, resp.TotalDuration)
@@ -272,14 +250,16 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					slog.Info("流式输出完成，保存助手回复", resp)
 					respChan <- resp
 				} else if len(originalContent) > 0 {
-					// slog.Info("收到非空流式输出块",
-					// 	"content_length", len(originalContent),
-					// 	"is_complete", resp.IsComplete)
+					// fmt.Printf("[PlaygroundStream] 累积内容块: '%s', 当前fullContent长度: %d\n", originalContent, len(fullContent))
 					fullContent += resp.Content
+					// fmt.Printf("[PlaygroundStream] 累积后fullContent长度: %d\n", len(fullContent))
 					respChan <- resp
 				} else if resp.Thoughts != "" {
 					// 收集思考内容，但不再单独存储
 					thoughts += resp.Thoughts
+					if resp.TotalDuration > 0 {
+						resp.TotalDuration = resp.TotalDuration / int64(time.Second)
+					}
 					respChan <- resp
 				} else {
 					slog.Debug("跳过空内容块")
@@ -290,12 +270,99 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				if !ok {
 					return
 				}
-				// 转发错误
-				errChan <- err
+				slog.Error("[PlaygroundStream] 收到streamErrChan错误", "error", err.Error())
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    err.Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
+				return
+			case err, ok := <-errChan:
+				if !ok {
+					return
+				}
+				slog.Error("[PlaygroundStream] 收到errChan错误", "error", err.Error())
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    err.Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
 				return
 			case <-ctx.Done():
-				// 上下文取消
-				errChan <- ctx.Err()
+				slog.Info("上下文取消，继续处理剩余流式数据", "session_id", request.SessionID)
+
+				go func() {
+					for {
+						select {
+						case resp, ok := <-responseStream:
+							if !ok {
+								fmt.Printf("[PlaygroundStream] 流式数据处理完成，context已取消\n")
+								return
+							}
+
+							// 处理完成块以保存数据
+							if resp.IsComplete {
+								fmt.Printf("[PlaygroundStream] [Context取消] 收到完成块，保存数据\n")
+
+								// 收集思考内容
+								if resp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+									thoughts = thoughts + resp.Thoughts
+								}
+
+								// 使用累积内容
+								if len(fullContent) == 0 && len(resp.Content) > 0 {
+									fullContent = resp.Content
+								}
+
+								resp.TotalDuration = resp.TotalDuration / int64(time.Second)
+								totalDuration = resp.TotalDuration
+
+								// 保存到数据库
+								finalContent := fullContent
+								if thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
+									finalContent = fmt.Sprintf("<think>%s\n</think>\n%s", thoughts, fullContent)
+								}
+
+								if finalContent != "" {
+									assistantMsg := &types.ChatMessage{
+										ID:            assistantMsgID,
+										SessionID:     request.SessionID,
+										Role:          "assistant",
+										Content:       finalContent,
+										Order:         len(messages) + 1,
+										CreatedAt:     time.Now(),
+										ModelID:       session.ModelID,
+										ModelName:     session.ModelName,
+										TotalDuration: totalDuration,
+									}
+									saveCtx := context.Background()
+									saveCtxWithTimeout, cancel := context.WithTimeout(saveCtx, 10*time.Second)
+									defer cancel()
+
+									err = p.Ds.Add(saveCtxWithTimeout, assistantMsg)
+									if err != nil {
+										fmt.Printf("[PlaygroundStream] [Context取消] 保存失败: %v\n", err)
+									} else {
+										fmt.Printf("[PlaygroundStream] [Context取消] 成功保存到数据库\n")
+									}
+								}
+								return
+							} else if len(resp.Content) > 0 {
+								// 继续累积内容
+								fullContent += resp.Content
+							}
+						}
+					}
+				}()
+
+				respChan <- &types.ChatResponse{
+					Type:       "error",
+					Content:    ctx.Err().Error(),
+					IsComplete: true,
+					ID:         assistantMsgID,
+				}
 				return
 			}
 		}
@@ -309,9 +376,15 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	sessionCheck := &types.ChatSession{ID: sessionID}
 	err := p.Ds.Get(ctx, sessionCheck)
 	if err != nil || sessionCheck == nil || sessionCheck.ID == "" {
-		slog.Error("Failed to get chat session", "error", err)
+		fmt.Println("Failed to get chat session", "error", err)
 		return err
 	}
+
+	// 检查会话标题开头是否是指定的格式
+	if !strings.HasPrefix(sessionCheck.Title, "新对话 ") {
+		return nil
+	}
+
 	// 获取会话中的所有消息，构建历史上下文
 	messageQuery := &types.ChatMessage{SessionID: sessionID}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
@@ -320,7 +393,7 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 		},
 	})
 	if err != nil {
-		slog.Error("Failed to list chat messages", "error", err)
+		fmt.Println("Failed to list chat messages", "error", err)
 		return err
 	}
 
@@ -328,92 +401,78 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	history := make([]map[string]string, 0, len(messages)+1)
 	for _, m := range messages {
 		msg := m.(*types.ChatMessage)
-		if msg.Role == "user" {
-			history = append(history, map[string]string{
-				"role":    "user",
-				"content": msg.Content,
-			})
+		if msg.Role == "assistant" {
+			// 把thinking内容清理掉
+			if strings.Contains(msg.Content, "<think>") && strings.Contains(msg.Content, "</think>") {
+				re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+				msg.Content = re.ReplaceAllString(msg.Content, "")
+				msg.Content = strings.TrimSpace(msg.Content)
+			}
+
+			if msg.Content == "" {
+				continue
+			}
 		}
+		history = append(history, map[string]string{
+			"role":    msg.Role,
+			"content": msg.Content,
+		})
 	}
 	genTitlePrompt := "请用一句话为本次对话生成一个不超过10字的简洁标题，仅输出标题本身"
 	history = append(history, map[string]string{
 		"role":    "user",
 		"content": genTitlePrompt,
 	})
-	payload := map[string]interface{}{
-		"model":    sessionCheck.ModelName,
-		"messages": history,
-		"stream":   false,
-		"think":    false,
-	}
 
-	slog.Info("[DEBUG] TitleGen HTTP payload", "payload", payload)
-	fmt.Println("[DEBUG] TitleGen HTTP payload", "payload", payload)
-	client := &http.Client{}
-	payloadBytes, marshalErr := json.Marshal(payload)
-	if marshalErr != nil {
-		slog.Error("Failed to marshal payload to JSON", "error", marshalErr)
-		return marshalErr
-	}
-	req, err := http.NewRequest("POST", "http://localhost:16688/oadin/v0.2/services/chat", strings.NewReader(string(payloadBytes)))
-	if err == nil {
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := client.Do(req)
-		var title string
-		if err == nil && resp != nil {
-			defer resp.Body.Close()
-			var oadinResp struct {
-				BusinessCode int             `json:"business_code"`
-				Message      string          `json:"message"`
-				Data         json.RawMessage `json:"data"`
-			}
-			decodeErr := json.NewDecoder(resp.Body).Decode(&oadinResp)
+	modelEngine := engine.NewEngine() // 构建聊天请求
+	currentModelName := sessionCheck.ModelName
 
-			if decodeErr == nil && oadinResp.BusinessCode == 10000 {
-				var chatResp struct {
-					Choices []struct {
-						Message struct {
-							Content string `json:"content"`
-						} `json:"message"`
-					} `json:"choices"`
-				}
+	if currentModelName == "" {
 
-				if err := json.Unmarshal(oadinResp.Data, &chatResp); err == nil && len(chatResp.Choices) > 0 {
-					title = chatResp.Choices[0].Message.Content
-					fmt.Println("[DEBUG] TitleGen parsed from Oadin response:", title)
-				} else {
-					var legacyResult struct {
-						Content string `json:"content"`
-						Message struct {
-							Content string `json:"content"`
-						} `json:"message"`
-					}
-					if err := json.Unmarshal(oadinResp.Data, &legacyResult); err == nil {
-						if len(legacyResult.Content) > 0 {
-							title = legacyResult.Content
-						} else if len(legacyResult.Message.Content) > 0 {
-							title = legacyResult.Message.Content
-						}
-					}
-				}
-				if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
-					re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
-					title = re.ReplaceAllString(title, "")
-					title = strings.TrimSpace(title)
-				}
-				slog.Info("[DEBUG] TitleGen final title", "title", title)
-				if title != "" {
-					runes := []rune(title)
-					title = string(runes)
-					sessionCheck.Title = title
-					err = p.Ds.Put(ctx, sessionCheck)
-				}
+		if len(messages) > 0 {
+			if latestMsg := messages[len(messages)-1].(*types.ChatMessage); latestMsg.ModelName != "" {
+				currentModelName = latestMsg.ModelName
 			}
 		}
 	}
 
-	fmt.Println("UpdateSessionTitle err", err)
-	return err
+	chatRequest := &types.ChatRequest{
+		Model:    currentModelName,
+		Messages: history,
+		Stream:   false,
+		Think:    false,
+	}
+
+	// fmt.Println("generate title request:", chatRequest)
+
+	res, err := modelEngine.Chat(ctx, chatRequest)
+	if err != nil {
+		fmt.Println("Failed to generate title", "error", err)
+		slog.Error("Failed to generate title", "error", err)
+		return err
+	}
+
+	// fmt.Printf("generate title res: %v\n", res)
+
+	title := res.Content
+	if strings.Contains(title, "<think>") && strings.Contains(title, "</think>") {
+		re := regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
+		title = re.ReplaceAllString(title, "")
+		title = strings.TrimSpace(title)
+	}
+	if title != "" {
+		runes := []rune(title)
+		title = string(runes)
+		sessionCheck.Title = title
+		err = p.Ds.Put(ctx, sessionCheck)
+		if err != nil {
+			fmt.Println("Failed to generate title put", "error", err)
+			slog.Error("Failed to generate title put", "error", err)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // 增加会话的标题
@@ -429,9 +488,11 @@ func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendS
 		title := "新对话 " + content
 		sessionCheck.Title = title
 		err = p.Ds.Put(ctx, sessionCheck)
+	} else {
+		slog.Info("AddSessionTitle err", err)
+		fmt.Println("AddSessionTitle err", err)
 	}
-	slog.Info("AddSessionTitle err", err)
-	fmt.Println("AddSessionTitle err", err)
+
 	return err
 }
 
