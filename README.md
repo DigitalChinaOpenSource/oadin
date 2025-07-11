@@ -1,37 +1,75 @@
-# Oadin (AIPC Open Gateway) Preview
+# Oadin (Open AIPC Development INfrastructure)
 
 中文 | [English](README_en.md)
 
-当前为 Oadin 预览版 v0.2.0，更多功能和稳定性正在不断完善过程中。欢迎就发现的缺陷提交 Issues。
+当前为 Oadin v0.2.0，提供生产级 AI 服务基础设施。欢迎就发现的问题提交 Issues 和功能建议。
 
-当前版本支持 chat 和 embed 服务，下层支持 ollama。更多服务如文生图，音频相关，以及其他 AI 引擎，敬请
-期待正在开发的后续版本。
+Oadin 现已支持完整的 AI 服务生态，包括对话、嵌入、生成、文生图、MCP 工具集成等核心功能，为 AI PC 应用开发提供统一、高效的服务平台。
 
-### 🆕 新增功能 (v0.2.0)
+### 🎯 v0.2.0 当前功能
 
-**服务类型扩展：**
-- 💬 **聊天对话** (Chat) - 支持多轮对话和流式输出
-- 🔍 **文本嵌入** (Embed) - 向量化文本用于语义搜索
-- ✍️ **文本生成** (Generate) - 单轮文本生成和补全
-- 🎨 **文生图** (Text-to-Image) - 文本描述生成图像
+**🚀 核心架构特性：**
+- 🏗️ **统一服务层** - 统一的AI服务接口，支持多种服务提供商
+- 🔧 **智能调度引擎** - 自动选择最适合的服务提供商
+- 📊 **Web管理控制台** - 完整的可视化管理界面
+- 🛡️ **服务商管理** - 灵活的本地和远程服务商配置
 
-**提供商支持：**
-- 🏠 **本地引擎**: Ollama
-- ☁️ **云端服务**: OpenAI、DeepSeek、腾讯混元、百度千帆、阿里通义、问学智视等
+**🆕 核心功能：**
+- 💬 **聊天对话服务** - 支持多轮对话、流式输出、深度思考模式
+- 🔍 **文本嵌入服务** - 支持多种嵌入模型，用于向量化和检索
+- ✍️ **文本生成服务** - 单轮文本生成，支持多种生成模型
+- 🎨 **文生图服务** - 根据文本描述生成图像
 
-**核心新特性：**
-- 🔧 **MCP 工具集成** - 完整的 Model Context Protocol 支持
-- 🌐 **Web 控制台** - 可视化管理界面 (http://localhost:16699)
-- 🎮 **Playground** - 交互式测试和调试环境
-- 📄 **RAG 文档处理** - 智能文档上传、处理和检索
-- 🖥️ **系统托盘** - 跨平台后台运行和管理
-- 🔄 **自动更新** - 组件和模型的自动更新机制
+**🔌 生态系统：**
+- 🤖 **本地引擎** - 主要支持Ollama，实验性支持IPEX-LLM、OpenVINO  
+- 🌐 **云服务集成** - 百度文心、阿里通义、腾讯混元、DeepSeek、SmartVision
+- 🛠️ **MCP 工具生态** - Model Context Protocol工具集成和管理
+- 📚 **Playground** - 交互式测试环境，支持RAG文档处理
 
-**增强功能：**
-- ⚖️ **混合调度策略** - 本地/云端智能负载均衡
-- 🔗 **API 兼容层** - OpenAI/Ollama API 自动转换
-- 📊 **服务监控** - 实时状态监控和性能指标
-- 🔐 **安全认证** - 多种认证方式支持
+**💼 实用特性：**
+- 🔒 **安全认证** - 基础的API密钥认证
+- 📈 **服务监控** - 基本的服务状态监控和健康检查
+- 🔄 **混合调度** - 本地和云端服务的智能切换
+- 🚀 **简便部署** - 简单的安装和配置流程
+
+**🎯 开发者支持：**
+- 📖 **API文档** - 完整的REST API文档和示例
+- 🧪 **测试工具** - Playground交互式测试环境
+- 🔧 **示例代码** - C#、JavaScript、Python等多语言示例
+- 🌟 **应用模板** - FreeChat等完整应用示例
+
+### 📋 支持的服务类型
+
+**核心 AI 服务：**
+
+| 服务名称 | 端点 | 描述 |
+|---------|------|------|
+| 💬 聊天对话 | `/oadin/v0.2/services/chat` | 多轮对话，支持流式输出、深度思考、工具调用 |
+| 🔍 文本嵌入 | `/oadin/v0.2/services/embed` | 文本向量化，支持多种嵌入模型，用于语义检索 |
+| ✍️ 文本生成 | `/oadin/v0.2/services/generate` | 单轮文本生成，支持多种生成模型和参数调节 |
+| 🎨 文生图 | `/oadin/v0.2/services/text-to-image` | 根据文本描述生成图像，支持多种文生图模型 |
+
+**高级服务：**
+
+| 服务名称 | 端点 | 描述 |
+|---------|------|------|
+| 🛠️ MCP 工具 | `/oadin/v0.2/mcp` | Model Context Protocol 工具集成与管理 |
+| 📚 RAG 文档 | `/oadin/v0.2/playground` | 智能文档处理、知识库构建、检索优化 |
+
+### 🏗️ 支持的AI引擎
+
+**本地引擎：**
+- 🦙 **Ollama** - 轻量级本地大模型运行引擎，项目主要集成引擎
+- ⚡ **IPEX-LLM** - Intel 优化的高性能推理引擎（实验性支持）
+- 🔧 **OpenVINO** - Intel 边缘 AI 优化工具包（实验性支持）
+
+**云端服务：**
+- 🌟 **OpenAI** - GPT系列模型（通过API兼容）
+- 🧠 **DeepSeek** - DeepSeek-V3、DeepSeek-R1 系列
+- 🌐 **百度文心** - 文心一言、ERNIE 系列
+- 🦄 **阿里通义** - 通义千问、通义万相文生图
+- 💫 **腾讯混元** - 混元对话、混元文生图
+- 📊 **SmartVision** - 神州数码问学平台
 
 ## Oadin 的功能
 
@@ -141,7 +179,6 @@ oadin server start -d
 
 # 停止Oadin
 oadin server stop
-Oadin 有两个关键概念：服务 和 服务提供商：
 ```
 
 Oadin 有两个关键概念：**服务(Service)** 和 **服务提供商(Service Provider)**：
@@ -225,29 +262,28 @@ oadin delete service_provider <provider_name>
 oadin delete model <model_name>  --provider <provider_name>
 ```
 
-## 调用 Oadin API
+## 📚 API 文档与调用
 
-Oadin API 是一个 Restful API。您可以通过与调用云 AI 服务（如 OpenAI）类似的方式调用该 API。详细的 API
-规范请参见 Oadin API 规范.
+### 📚 API 端点说明
 
-值得注意的是，当前 Oadin 预览提供了基本的 chat 等服务，下一版本将会提供文生图以及语音相关的更多服务。
+当前版本为 v0.2，所有API端点均以 `/oadin/v0.2/` 作为前缀。
 
-### 📚 API 端点总览
+| 服务类型 | API 端点 | 描述 |
+|---------|----------|------|
+| 💬 聊天对话 | `POST /oadin/v0.2/services/chat` | 多轮对话，支持流式输出、深度思考 |
+| 🔍 文本嵌入 | `POST /oadin/v0.2/services/embed` | 文本向量化，支持多种嵌入模型 |
+| ✍️ 文本生成 | `POST /oadin/v0.2/services/generate` | 单轮文本生成，支持多种生成模型 |
+| 🎨 文生图 | `POST /oadin/v0.2/services/text-to-image` | 根据文本描述生成图像 |
 
-| 服务类型 | 端点 | 描述 |
-|---------|------|------|
-| 💬 聊天对话 | `POST /oadin/v0.2/services/chat` | 多轮对话，支持流式输出<br/>支持 `think` 字段控制深度思考功能 |
-| 🔍 文本嵌入 | `POST /oadin/v0.2/services/embed` | 文本向量化 |
-| ✍️ 文本生成 | `POST /oadin/v0.2/services/generate` | 单轮文本生成 |
-| 🎨 文生图   | `POST /oadin/v0.2/services/text-to-image` | 文本生成图像 |
+### 🌐 管理控制台
 
-### 🌐 Web 控制台
+**Web 控制台** (http://localhost:16688) - 基础的管理界面：
 
-访问 http://localhost:16699 体验完整的 Web 管理界面：
-- 📊 **仪表板** - 服务状态和性能监控
-- 🎮 **Playground** - 交互式测试环境
-- 📁 **文档管理** - RAG 文档上传和处理
-- 🔧 **MCP 管理** - 工具服务配置
+**📊 核心功能模块：**
+- 🎛️ **仪表板** - 服务状态、基本监控信息
+- 🎮 **Playground** - 交互式测试环境，支持所有AI服务
+- 📁 **文档管理** - RAG 文档上传、处理和管理
+- ⚙️ **系统设置** - 服务配置、服务提供商管理
 
 ### 💻 API 调用示例
 
@@ -257,30 +293,41 @@ Oadin API 是一个 Restful API。您可以通过与调用云 AI 服务（如 Op
 ```sh
 curl -X POST http://localhost:16688/oadin/v0.2/services/chat  -X POST -H
 "Content-Type: application/json" -d
-"{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is
+"{\"model\":\"deepseek-r1:8b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is
 the sky blue?\"}],\"stream\":false}"
 
 ```
+
+**流式输出功能：**
+对于支持流式输出的模型（如 DeepSeek-R1 系列），可以通过 `stream` 字段控制是否为流式输出：
+
+```sh
+# 开启流式输出
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-r1:8b","messages":[{"role":"user","content":"why is the sky blue?"}],"stream":true}'
+
+# 关闭流式输出
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-r1:8b","messages":[{"role":"user","content":"why is the sky blue?"}],"stream":false}'
 
 **深度思考功能：**
 对于支持深度思考的模型（如 DeepSeek-R1 系列），可以通过 `think` 字段控制思考过程：
 
 ```sh
-# 开启深度思考（显示思考过程）
-curl -X POST http://localhost:16688/oadin/v0.2/services/chat  -X POST -H
-"Content-Type: application/json" -d
-"{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is
-the sky blue?\"}],\"stream\":false,\"stream\":true}"
+# 开启深度思考
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-r1:8b","messages":[{"role":"user","content":"why is the sky blue?"}],"stream":true,"think":true}'
 
-
-# 关闭深度思考（直接回答）
-curl -X POST http://localhost:16688/oadin/v0.2/services/chat  -X POST -H
-"Content-Type: application/json" -d
-"{\"model\":\"deepseek-r1:7b\",\"messages\":[{\"role\":\"user\",\"content\":\"why is
-the sky blue?\"}],\"stream\":false,\"stream\":false}"
+# 关闭深度思考
+curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
+  -H "Content-Type: application/json" \
+  -d '{"model":"deepseek-r1:8b","messages":[{"role":"user","content":"why is the sky blue?"}],"stream":true,"think":false}'
 ```
 
-> **注意**: `think` 字段仅对支持深度思考的模型有效，如 DeepSeek-R1 系列。其他模型会忽略此参数。
+> **注意**: `think` 字段仅对支持切换深度思考的模型有效，如 DeepSeek-R1 系列。
 
 **文本嵌入服务：**
 ```sh
@@ -300,7 +347,7 @@ curl -X POST http://localhost:16688/oadin/v0.2/services/text-to-image \
 ```sh
 curl -X POST http://localhost:16688/oadin/v0.2/services/generate \
   -H "Content-Type: application/json" \
-  -d '{"model":"deepseek-r1:7b","prompt":"编写一个Python程序","stream":false}'
+  -d '{"model":"deepseek-r1:8b","prompt":"编写一个Python程序","stream":false}'
 ```
 
 此外，如果您已经使用 OpenAI API 或 ollama API 等的应用程序，您无需重写调用 Oadin 的方式以符合其规范。
@@ -318,39 +365,236 @@ NOTE 请注意，调用 Oadin 的新 URL 位于 `api_flavors/openai` ，其余 U
 `http://localhost:16688/oadin/v0.2/api_flavors/ollama/api/chat` 。同样，它位于 `api_flavors/ollama` ，
 其余 URL 与原始 ollama API 相同，即 `/api/chat`。
 
-## 发布您的基于 Oadin 的 AI 应用
+## 🎯 应用集成与发布
 
-要将您的 AI 应用程序发布，您只需将应用程序与一个微小的 Oadin 组件打包，即所谓的 `Oadin Checker` ，在
-Windows 上是 `OadinChecker.dll` 。您不需要发布 AI 堆栈或模型。
+### 📦 Oadin Checker v0.2.0
 
-以 C/C++/C#应用程序为例，以下是部署基于 Oadin 的 AI 应用的步骤。
+Oadin 提供轻量级的应用集成方案，让你的 AI 应用无需打包 AI 模型和服务栈。
 
-1. 准备与您的应用程序一起的 `.oadin` 文件。 `.oadin` 文件是一个文本清单文件，用于指定应用程序所需的 AI
-   服务和模型。例如， `.oadin` 文件可能看起来像这样：
+**支持的开发语言:**
+- 🟨 **JavaScript/Node.js** - `npm install oadin-lib-1.2.66.tgz`
+- 🔷 **C#/.NET** - `OadinClient` NuGet 包
+- 🔧 **C/C++** - `OadinChecker.dll` 和头文件
 
+### 🛠️ 集成步骤
+
+**1. 创建 `.oadin` 配置文件（v0.2.0 格式）:**
 ```json
 {
-  "version": "0.2",
-  "service": {
+  "version": "v0.2",
+  "services": {
     "chat": {
-      "models": ["qwen2.5:0.5b", "qwen2.5:7b"]
+      "service_providers": {
+        "local": "local_ollama_chat",
+        "remote": "deepseek_chat"
+      },
+      "hybrid_policy": "default"
     },
     "embed": {
-      "models": ["nomic-embed-text"]
+      "service_providers": {
+        "local": "local_ollama_embed",
+        "remote": ""
+      },
+      "hybrid_policy": "always_local"
+    }
+  },
+  "service_providers": {
+    "local_ollama_chat": {
+      "service_name": "chat",
+      "service_source": "local",
+      "desc": "本地 Ollama 聊天服务",
+      "api_flavor": "ollama",
+      "method": "POST",
+      "url": "http://localhost:11434/api/chat",
+      "auth_type": "none",
+      "auth_key": "",
+      "models": ["qwen3:8b", "deepseek-r1:8b"]
     },
-    "text-to-image": {
-      "models": ["stable-diffusion-1.5-int4"]
+    "deepseek_chat": {
+      "service_name": "chat",
+      "service_source": "remote",
+      "desc": "DeepSeek 远程聊天服务",
+      "api_flavor": "openai",
+      "method": "POST",
+      "url": "https://api.deepseek.com/v1/chat/completions",
+      "auth_type": "apikey",
+      "auth_key": "your_deepseek_api_key",
+      "models": ["deepseek-chat", "deepseek-coder"]
+    },
+    "local_ollama_embed": {
+      "service_name": "embed",
+      "service_source": "local",
+      "desc": "本地 Ollama 嵌入服务",
+      "api_flavor": "ollama",
+      "method": "POST",
+      "url": "http://localhost:11434/api/embeddings",
+      "auth_type": "none",
+      "auth_key": "",
+      "models": ["nomic-embed-text"]
     }
   }
 }
 ```
 
-2. 在您的 `main()` 函数中包含 `OadinChecker.h` 并调用 `OadinInit()` 。 `OadinInit()` 将：
+**2. 代码集成示例:**
 
-   - 检查目标 PC 上是否已安装 Oadin。如果没有，将自动下载并安装 Oadin。
-   - 检查所需的 AI 服务和模型（如在 `.oadin` 文件中体现）是否已安装。如果没有，将自动下载并安装它们。
+**Node.js 集成:**
+```javascript
+const OadinLib = require('oadin-lib');
 
-3. 将应用程序与 `oadin.dll` 链接。
+async function main() {
+    const oadin = new OadinLib();
+    
+    // 初始化 Oadin（包含下载、启动、配置导入）
+    const success = await oadin.OadinInit('./.oadin');
+    if (!success) {
+        console.error('Oadin 初始化失败');
+        return;
+    }
+    
+    // 使用聊天服务
+    const chatData = {
+        model: 'deepseek-r1:8b',
+        messages: [{ role: 'user', content: '你好' }],
+        stream: false
+    };
+    
+    const response = await oadin.Chat(chatData);
+    console.log('AI回复:', response);
+}
 
-4. 将应用程序与 `.oadin` 文件以及与您的应用程序 `.exe` 文件在同一目录下的 `OadinChecker.dll` 文件一起发
-   布。
+main().catch(console.error);
+```
+
+**C# 集成:**
+```csharp
+using Oadin;
+
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        var checker = new OadinChecker();
+        
+        // 初始化 Oadin（自动检查、下载、启动、导入配置）
+        await OadinChecker.OadinInit(this);
+        
+        // 使用 HTTP 客户端调用 Oadin API
+        using var client = new HttpClient();
+        var chatData = new
+        {
+            model = "deepseek-r1:8b",
+            messages = new[] { 
+                new { role = "user", content = "你好" }
+            },
+            stream = false
+        };
+        
+        var json = JsonSerializer.Serialize(chatData);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("http://localhost:16688/oadin/v0.2/services/chat", content);
+        var result = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"AI回复: {result}");
+    }
+}
+```
+
+**C/C++ 集成:**
+```c
+#include "OadinChecker.h"
+#include <stdio.h>
+
+int main() {
+    // 初始化 Oadin（自动检查、下载、配置）
+    int result = OadinInit();
+    if (result != 0) {
+        printf("Oadin 初始化失败: %d\n", result);
+        return 1;
+    }
+    
+    printf("Oadin 已就绪，可以调用 AI 服务\n");
+    
+    // 使用 HTTP 客户端调用 Oadin API
+    // POST http://localhost:16688/oadin/v0.2/services/chat
+    // 配置文件中定义的服务提供商将自动被导入和配置
+    
+    return 0;
+}
+```
+
+> **注意**: 根据实际代码实现，`.oadin` 配置文件格式为服务提供商配置格式，包含完整的服务定义和提供商信息。文件应放置在项目根目录，SDK会自动读取并通过 `oadin import` 命令导入配置。
+
+## 快速开始
+
+### 🔧 安装 Oadin
+
+**构建方式（推荐）：**
+```bash
+# 克隆项目
+git clone https://github.com/DigitalChinaOpenSource/oadin.git
+cd oadin
+
+# 构建
+make build-all
+```
+
+### ⚡ 快速启动
+
+```bash
+# 启动 Oadin 服务
+oadin server start
+
+# 后台启动
+oadin server start -d
+
+# 查看服务状态通过访问 http://localhost:16688
+
+# 安装基础 AI 服务
+oadin install chat
+oadin install embed
+
+# 拉取推荐模型
+oadin pull deepseek-r1:8b -for chat
+oadin pull nomic-embed-text -for embed
+```
+
+### 🎯 首次体验
+
+1. **访问 Web 控制台**: http://localhost:16688
+2. **打开 Playground**: 开始与 AI 对话
+3. **上传文档**: 体验 RAG 文档问答
+
+## 📚 SDK 与示例
+
+**官方 SDK:**
+- 🟨 **JavaScript/Node.js** - `oadin-lib` 包
+- 🔷 **C# SDK** - `OadinClient` 类
+- 🔧 **C/C++** - `OadinChecker.dll` 和头文件
+
+**示例应用:**
+- 💬 **FreeChat** - 完整的AI聊天应用（C# .NET MAUI）
+- 位于 `example/FreeChat/` 目录
+
+## 🤝 社区与支持
+
+### 📞 获取帮助
+
+- 📖 **项目文档**: README.md 和 oadin.dcclouds.com/docs 
+- 🐛 **问题反馈**: GitHub Issues
+
+
+---
+
+
+## 🙏 致谢
+
+感谢所有为 Oadin 项目做出贡献的开发者和社区成员！
+
+---
+
+
+**让AI触手可及，让创新无处不在**
+
+⭐ 如果这个项目对您有帮助，请给我们一个 Star！
+
+
