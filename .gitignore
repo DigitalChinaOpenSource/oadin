@@ -49,3 +49,5 @@ build.sh
 /example/FreeChat/bin
 
 *-local.yaml
+
+node_modules/
