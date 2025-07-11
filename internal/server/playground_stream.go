@@ -271,14 +271,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					return
 				}
 				slog.Error("[PlaygroundStream] 收到streamErrChan错误", "error", err.Error())
-				errResp := map[string]interface{}{
-					"status": "error",
-					"data":   err.Error(),
-				}
-				jsonBytes, _ := json.Marshal(errResp)
 				respChan <- &types.ChatResponse{
 					Type:       "error",
-					Content:    string(jsonBytes),
+					Content:    err.Error(),
 					IsComplete: true,
 					ID:         assistantMsgID,
 				}
@@ -288,14 +283,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					return
 				}
 				slog.Error("[PlaygroundStream] 收到errChan错误", "error", err.Error())
-				errResp := map[string]interface{}{
-					"status": "error",
-					"data":   err.Error(),
-				}
-				jsonBytes, _ := json.Marshal(errResp)
 				respChan <- &types.ChatResponse{
 					Type:       "error",
-					Content:    string(jsonBytes),
+					Content:    err.Error(),
 					IsComplete: true,
 					ID:         assistantMsgID,
 				}
@@ -367,21 +357,9 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					}
 				}()
 
-				// 立即向前端发送取消消息
 				respChan <- &types.ChatResponse{
 					Type:       "error",
 					Content:    ctx.Err().Error(),
-					IsComplete: true,
-					ID:         assistantMsgID,
-				}
-				errResp := map[string]interface{}{
-					"status": "error",
-					"data":   ctx.Err().Error(),
-				}
-				jsonBytes, _ := json.Marshal(errResp)
-				respChan <- &types.ChatResponse{
-					Type:       "error",
-					Content:    string(jsonBytes),
 					IsComplete: true,
 					ID:         assistantMsgID,
 				}
