@@ -1,6 +1,6 @@
 import { Modal } from 'antd';
 import styles from './index.module.scss';
-import favicon from '@/assets/favicon.png';
+import WxFeedBackPng from '@/assets/wxFeedback.png';
 import { ScanIcon } from '@phosphor-icons/react';
 
 interface IModelProps {
@@ -19,7 +19,7 @@ export default function Feedback({ open, onClose }: IModelProps) {
     >
       <div className={styles.feedback}>
         <img
-          src={favicon}
+          src={WxFeedBackPng}
           alt=""
           className={styles.codeIcon}
         />
