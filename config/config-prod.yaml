@@ -1,5 +1,5 @@
 vega:
-  url: http://8.136.116.36:31251/
+  url: vega.dcclouds.com/api
 
 oss:
   endpoint: https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com
