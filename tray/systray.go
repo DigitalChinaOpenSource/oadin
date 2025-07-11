@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/getlantern/systray/example/icon"
-	"github.com/pkg/browser"
 	"oadin/config"
 	"oadin/internal/utils"
 	trayTemplate "oadin/tray/icon"
 	tray "oadin/tray/utils"
+
+	"github.com/getlantern/systray/example/icon"
+	"github.com/pkg/browser"
 
 	"github.com/getlantern/systray"
 	"github.com/sqweek/dialog"
@@ -56,7 +57,7 @@ func (m *Manager) onReady() {
 		data = icon.Data
 	}
 	systray.SetIcon(data)
-	systray.SetTitle("Oadin")
+	// systray.SetTitle("Oadin")
 	systray.SetTooltip("Oadin AI Service Manager")
 
 	// Add menu items
