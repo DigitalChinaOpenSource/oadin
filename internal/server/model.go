@@ -19,7 +19,6 @@ import (
 	"oadin/internal/provider"
 	"oadin/internal/provider/template"
 	"oadin/internal/schedule"
-	"oadin/internal/server/vega"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
@@ -597,139 +596,163 @@ func GetRecommendModel() (dto.RecommendModelResponse, error) {
 	return dto.RecommendModelResponse{Bcode: *bcode.ModelCode, Data: recommendModel}, nil
 }
 
-func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (*dto.RecommendModelResponse, error) {
+func GetSupportModelList(ctx context.Context, request *dto.GetSupportModelRequest) (*dto.GetSupportModelResponse, error) {
+	jds := datastore.GetDefaultJsonDatastore()
 	ds := datastore.GetDefaultDatastore()
-	flavor := request.Flavor
-	source := request.ServiceSource
-	serviceModelList := make(map[string][]dto.RecommendModelData)
+	page := request.Page
+	if page == 0 {
+		page = 1
+	}
+	pageSize := request.PageSize
+	if pageSize == 0 {
+		pageSize = 10
+	}
+	var resData dto.GetSupportModelResponseData
+	resData.PageSize = pageSize
+	resData.Page = page
+	resultList := []dto.RecommendModelData{}
+	queryOpList := []datastore.FuzzyQueryOption{}
+	if request.Flavor != "" {
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "flavor",
+			Query: request.Flavor,
+		})
+	}
+	if request.ServiceSource != "" {
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "service_source",
+			Query: request.ServiceSource,
+		})
+	}
+	sm := &types.SupportModel{}
+	sortOption := []datastore.SortOption{
+		{Key: "name", Order: 1},
+	}
+	options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}, SortBy: sortOption}
 	if request.ServiceSource == types.ServiceSourceLocal {
-		localOllamaModelMap := make(map[string]dto.LocalSupportModelData)
-		localOllamaServiceMap, err := vega.GetModels(ctx, request.ServiceSource)
+		if request.Flavor != "" && request.Flavor != types.FlavorOllama {
+			return nil, errors.New(fmt.Sprintf("%s flavor is not local flavor", request.Flavor))
+		}
+		totalCount, err := jds.Count(ctx, sm, &datastore.FilterOptions{Queries: queryOpList})
 		if err != nil {
-			fmt.Printf("GetModels failed: %v\n", err)
 			return nil, err
 		}
-		for _, serviceInfo := range localOllamaServiceMap {
-			for _, model := range serviceInfo {
-				localOllamaModelMap[model.Name] = model
-			}
+		resData.Total = int(totalCount)
+		if int(totalCount)%pageSize == 0 {
+			resData.TotalPage = int(totalCount) / pageSize
+		} else {
+			resData.TotalPage = int(totalCount)/pageSize + 1
 		}
-		//
-		//var recommendModelParamsSize float32
-		recommendModel, err := RecommendModels()
+		if resData.TotalPage == 0 {
+			resData.TotalPage = 1
+		}
+		options.Page = page
+		options.PageSize = pageSize
+		supportModelList, err := jds.List(ctx, sm, options)
 		if err != nil {
-			return &dto.RecommendModelResponse{Data: nil}, err
+			return nil, err
 		}
-		flavor = "ollama"
-		// service := "chat"
-		var resModelNameList []string
 
-		for modelService, modelInfo := range recommendModel {
-			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, modelService)
-			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
-			for _, model := range modelInfo {
-				localModelInfo := localOllamaModelMap[model.Name]
-				modelQuery := new(types.Model)
-				modelQuery.ModelName = strings.ToLower(model.Name)
-				modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
-				canSelect := true
-				err := ds.Get(context.Background(), modelQuery)
-				if err != nil {
-					canSelect = false
+		recommendModel, _ := RecommendModels()
+		for _, supportModel := range supportModelList {
+			IsRecommend := false
+			smInfo := supportModel.(*types.SupportModel)
+			if smInfo.ApiFlavor == types.FlavorOllama {
+				if recommendModel == nil {
+					IsRecommend = false
 				}
-				if modelQuery.Status != "downloaded" {
-					canSelect = false
-				}
-				model.Service = modelService
-				model.Flavor = flavor
-				model.Method = parts[0]
-				model.Desc = localModelInfo.Description
-				model.Url = providerServiceDefaultInfo.RequestUrl
-				model.AuthType = providerServiceDefaultInfo.AuthType
-				model.IsRecommended = true
-				model.CanSelect = canSelect
-				model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
-				model.Avatar = localModelInfo.Avatar
-				model.Class = localModelInfo.Class
-				model.OllamaId = localModelInfo.OllamaId
-				model.Id = localModelInfo.Id
-				serviceModelList[modelService] = append(serviceModelList[modelService], model)
-				resModelNameList = append(resModelNameList, model.Name)
-			}
+				rmServiceModelInfo := recommendModel[smInfo.ServiceName]
+				if rmServiceModelInfo != nil {
+					for _, rm := range rmServiceModelInfo {
+						if rm.Name == smInfo.Name {
+							IsRecommend = true
+							break
+						}
 
-		}
-		for modelService, modelInfo := range localOllamaServiceMap {
-			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, modelService)
-			if providerServiceDefaultInfo.Endpoints == nil {
-				continue
-			}
-			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
-			for _, localModel := range modelInfo {
-				if !utils.Contains(resModelNameList, localModel.Name) {
-					modelQuery := new(types.Model)
-					modelQuery.ModelName = strings.ToLower(localModel.Name)
-					modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
-					canSelect := true
-					err := ds.Get(context.Background(), modelQuery)
-					if err != nil {
-						canSelect = false
 					}
-					if modelQuery.Status != "downloaded" {
-						canSelect = false
-					}
-					model := new(dto.RecommendModelData)
-					model.Name = localModel.Name
-					model.Service = modelService
-					model.Flavor = flavor
-					model.Method = parts[0]
-					model.Desc = localModel.Description
-					model.Url = providerServiceDefaultInfo.RequestUrl
-					model.AuthType = providerServiceDefaultInfo.AuthType
-					model.IsRecommended = false
-					model.CanSelect = canSelect
-					model.ServiceProvider = fmt.Sprintf("%s_%s_%s", source, flavor, modelService)
-					model.Avatar = localModel.Avatar
-					model.Class = localModel.Class
-					model.Size = localModel.Size
-					model.OllamaId = localModel.OllamaId
-					serviceModelList[modelService] = append(serviceModelList[modelService], *model)
-					resModelNameList = append(resModelNameList, model.Name)
 				}
 			}
 
-		}
-
-	} else {
-		RemoteServiceMap := make(map[string][]dto.LocalSupportModelData)
-		fileContent, err := template.FlavorTemplateFs.ReadFile("remote_model.json")
-		if err != nil {
-			fmt.Printf("Read file failed: %v\n", err)
-			return nil, err
-		}
-		// parse struct
-		err = json.Unmarshal(fileContent, &RemoteServiceMap)
-		if err != nil {
-			fmt.Printf("Parse JSON failed: %v\n", err)
-			return nil, err
-		}
-		for _, service := range types.SupportService {
-			if service == types.ServiceModels || service == types.ServiceGenerate {
-				continue
+			providerName := fmt.Sprintf("%s_%s_%s", smInfo.ServiceSource, types.FlavorOllama, smInfo.ServiceName)
+			modelQuery := new(types.Model)
+			modelQuery.ModelName = smInfo.Name
+			modelQuery.ProviderName = providerName
+			canSelect := true
+			err := ds.Get(context.Background(), modelQuery)
+			if err != nil {
+				canSelect = false
 			}
-			remoteModelInfoList := RemoteServiceMap[service]
-			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(flavor, service)
-			parts := strings.SplitN(providerServiceDefaultInfo.Endpoints[0], " ", 2)
-			authFields := []string{"api_key"}
+			if modelQuery.Status != "downloaded" {
+				canSelect = false
+			}
+
+			if canSelect {
+				smInfo.CreatedAt = modelQuery.CreatedAt
+			}
+
+			providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(smInfo.Flavor, smInfo.ServiceName)
+			authFields := []string{""}
 			if providerServiceDefaultInfo.AuthType == types.AuthTypeToken {
 				authFields = []string{"secret_id", "secret_key"}
+			} else if providerServiceDefaultInfo.AuthType == types.AuthTypeApiKey {
+				authFields = []string{"api_key"}
 			}
-			for _, model := range remoteModelInfoList {
-				if model.Flavor != flavor {
-					continue
-				}
+			modelData := dto.RecommendModelData{
+				Id:              smInfo.Id,
+				Name:            smInfo.Name,
+				Avatar:          smInfo.Avatar,
+				Desc:            smInfo.Description,
+				Service:         smInfo.ServiceName,
+				ApiFlavor:       types.FlavorOllama,
+				Flavor:          smInfo.Flavor,
+				AuthType:        providerServiceDefaultInfo.AuthType,
+				AuthFields:      authFields,
+				AuthApplyUrl:    providerServiceDefaultInfo.AuthApplyUrl,
+				ServiceProvider: fmt.Sprintf("%s_%s_%s", smInfo.ServiceSource, types.FlavorOllama, smInfo.ServiceName),
+				CanSelect:       canSelect,
+				IsRecommended:   IsRecommend,
+				Source:          smInfo.ServiceSource,
+				InputLength:     smInfo.InputLength,
+				OutputLength:    smInfo.OutputLength,
+				Class:           smInfo.Class,
+				Size:            smInfo.Size,
+				OllamaId:        smInfo.OllamaId,
+				Think:           smInfo.Think,
+				ThinkSwitch:     smInfo.ThinkSwitch,
+				Tools:           smInfo.Tools,
+				Context:         smInfo.Context,
+				CreatedAt:       smInfo.CreatedAt,
+			}
+			resultList = append(resultList, modelData)
+
+		}
+		// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+		if request.Mine {
+			myModelFilter(&resultList)
+			resData.Total = len(resultList)
+			resData.TotalPage = len(resultList) / pageSize
+			if resData.TotalPage == 0 {
+				resData.TotalPage = 1
+			}
+		}
+	} else {
+		if request.Flavor == types.FlavorSmartVision {
+			smartvisionModelData, err := GetSmartVisionModelData(ctx, request.EnvType)
+			if err != nil {
+				return nil, err
+			}
+			dataStart := (page - 1) * pageSize
+			dataEnd := page * pageSize
+			if dataEnd > len(smartvisionModelData) {
+				dataEnd = len(smartvisionModelData) - 1
+			}
+			pageData := smartvisionModelData[dataStart:dataEnd]
+			// dataList := []dto.RecommendModelData{}
+			for _, d := range pageData {
+				providerName := fmt.Sprintf("%s_%s_%s", request.ServiceSource, request.Flavor, "chat")
 				modelQuery := new(types.Model)
-				modelQuery.ModelName = model.Name
-				modelQuery.ProviderName = fmt.Sprintf("%s_%s_%s", source, flavor, service)
+				modelQuery.ModelName = d.Name
+				modelQuery.ProviderName = providerName
 				canSelect := true
 				err := ds.Get(context.Background(), modelQuery)
 				if err != nil {
@@ -738,27 +761,190 @@ func GetSupportModelList(ctx context.Context, request dto.GetModelListRequest) (
 				if modelQuery.Status != "downloaded" {
 					canSelect = false
 				}
+				var authFields []string
+				for _, cInfo := range d.CredentialParams {
+					authFields = append(authFields, cInfo.Name)
+				}
 				modelData := dto.RecommendModelData{
-					Name:            model.Name,
-					Avatar:          model.Avatar,
-					Desc:            model.Description,
-					Service:         service,
-					Flavor:          flavor,
-					Method:          parts[0],
-					Url:             providerServiceDefaultInfo.RequestUrl,
+					Id:                  strconv.Itoa(d.ID),
+					Name:                d.Name,
+					Avatar:              d.Avatar,
+					Desc:                d.Introduce,
+					Service:             types.ServiceChat,
+					ApiFlavor:           types.FlavorSmartVision,
+					Flavor:              d.Provider,
+					AuthType:            types.AuthTypeCredentials,
+					AuthFields:          authFields,
+					AuthApplyUrl:        "",
+					ServiceProvider:     fmt.Sprintf("%s_%s_%s", request.ServiceSource, request.Flavor, types.ServiceChat),
+					CanSelect:           canSelect,
+					IsRecommended:       false,
+					Source:              types.ServiceSourceRemote,
+					Class:               d.Tags,
+					SmartVisionProvider: d.Provider,
+					SmartVisionModelKey: d.ModelKey,
+					CreatedAt:           d.CreatedAt,
+				}
+				resultList = append(resultList, modelData)
+			}
+			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			if request.Mine {
+				myModelFilter(&resultList)
+			}
+			resData.Total = len(smartvisionModelData)
+			resData.TotalPage = len(smartvisionModelData) / pageSize
+			if resData.TotalPage == 0 {
+				resData.TotalPage = 1
+			}
+		} else if request.Flavor == "" {
+			smartvisionModelData, smartvisionErr := GetSmartVisionModelData(ctx, request.EnvType)
+			jdsDataList, jdsErr := jds.List(ctx, sm, options)
+			if smartvisionErr != nil || jdsErr != nil {
+				return nil, errors.New("Get data Failed, please retry")
+			}
+			for _, d := range smartvisionModelData {
+				providerName := fmt.Sprintf("%s_%s_%s", request.ServiceSource, types.FlavorSmartVision, "chat")
+				modelQuery := new(types.Model)
+				modelQuery.ModelName = d.Name
+				modelQuery.ProviderName = providerName
+				canSelect := true
+				err := ds.Get(context.Background(), modelQuery)
+				if err != nil {
+					canSelect = false
+				}
+				if modelQuery.Status != "downloaded" {
+					canSelect = false
+				}
+				var authFields []string
+				for _, cInfo := range d.CredentialParams {
+					authFields = append(authFields, cInfo.Name)
+				}
+				modelData := dto.RecommendModelData{
+					Id:                  strconv.Itoa(d.ID),
+					Name:                d.Name,
+					Avatar:              d.Avatar,
+					Desc:                d.Introduce,
+					Service:             types.ServiceChat,
+					ApiFlavor:           types.FlavorSmartVision,
+					Flavor:              types.FlavorSmartVision,
+					AuthType:            types.AuthTypeCredentials,
+					AuthFields:          authFields,
+					AuthApplyUrl:        "",
+					ServiceProvider:     fmt.Sprintf("%s_%s_%s", request.ServiceSource, types.FlavorSmartVision, types.ServiceChat),
+					CanSelect:           canSelect,
+					IsRecommended:       false,
+					Source:              types.ServiceSourceRemote,
+					Class:               d.Tags,
+					SmartVisionProvider: d.Provider,
+					SmartVisionModelKey: d.ModelKey,
+					CreatedAt:           d.CreatedAt,
+				}
+				resultList = append(resultList, modelData)
+			}
+			for _, jdModel := range jdsDataList {
+				jdModelInfo := jdModel.(*types.SupportModel)
+				providerName := fmt.Sprintf("%s_%s_%s", request.ServiceSource, jdModelInfo.Flavor, jdModelInfo.ServiceName)
+				modelQuery := new(types.Model)
+				modelQuery.ModelName = jdModelInfo.Name
+				modelQuery.ProviderName = providerName
+				canSelect := true
+				err := ds.Get(context.Background(), modelQuery)
+				if err != nil {
+					canSelect = false
+				}
+				if modelQuery.Status != "downloaded" {
+					canSelect = false
+				}
+				providerServiceDefaultInfo := schedule.GetProviderServiceDefaultInfo(jdModelInfo.Flavor, jdModelInfo.ServiceName)
+				authFields := []string{""}
+				if providerServiceDefaultInfo.AuthType == types.AuthTypeToken {
+					authFields = []string{"secret_id", "secret_key"}
+				} else if providerServiceDefaultInfo.AuthType == types.AuthTypeApiKey {
+					authFields = []string{"api_key"}
+				}
+				modelData := dto.RecommendModelData{
+					Id:              jdModelInfo.Id,
+					Name:            jdModelInfo.Name,
+					Avatar:          jdModelInfo.Avatar,
+					Desc:            jdModelInfo.Description,
+					Service:         jdModelInfo.ServiceName,
+					ApiFlavor:       jdModelInfo.ApiFlavor,
+					Flavor:          jdModelInfo.Flavor,
 					AuthType:        providerServiceDefaultInfo.AuthType,
 					AuthFields:      authFields,
 					AuthApplyUrl:    providerServiceDefaultInfo.AuthApplyUrl,
-					ServiceProvider: fmt.Sprintf("%s_%s_%s", source, flavor, service),
+					ServiceProvider: fmt.Sprintf("%s_%s_%s", jdModelInfo.ServiceSource, jdModelInfo.Flavor, jdModelInfo.ServiceName),
 					CanSelect:       canSelect,
+					IsRecommended:   false,
+					Source:          jdModelInfo.ServiceSource,
+					InputLength:     jdModelInfo.InputLength,
+					OutputLength:    jdModelInfo.OutputLength,
+					Class:           jdModelInfo.Class,
+					OllamaId:        jdModelInfo.OllamaId,
+					Size:            jdModelInfo.Size,
+					ParamsSize:      jdModelInfo.ParamSize,
+					Think:           jdModelInfo.Think,
+					ThinkSwitch:     jdModelInfo.ThinkSwitch,
+					Tools:           jdModelInfo.Tools,
+					CreatedAt:       jdModelInfo.CreatedAt,
 				}
-				serviceModelList[service] = append(serviceModelList[service], modelData)
+				resultList = append(resultList, modelData)
+			}
+
+			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			if request.Mine {
+				myModelFilter(&resultList)
+			}
+
+			dataStart := (page - 1) * pageSize
+			dataEnd := page * pageSize
+			if dataEnd > len(resultList) {
+				dataEnd = len(resultList)
+			}
+
+			totalCount := len(resultList)
+			// 当前页数据切片
+			resultList = resultList[dataStart:dataEnd]
+			resData.Total = totalCount
+			if totalCount%pageSize == 0 {
+				resData.TotalPage = totalCount / pageSize
+			} else {
+				resData.TotalPage = totalCount/pageSize + 1
+			}
+
+			if resData.TotalPage == 0 {
+				resData.TotalPage = 1
 			}
 		}
 	}
-	return &dto.RecommendModelResponse{
-		Bcode: *bcode.ModelCode,
-		Data:  serviceModelList,
+	resData.Data = resultList
+
+	// If in model marketplace, prioritize the recommended models in the sorting.
+	if !request.Mine {
+		sort.Slice(resultList, func(i, j int) bool {
+			a := resultList[i]
+			b := resultList[j]
+
+			if a.IsRecommended && !b.IsRecommended {
+				return true
+			}
+			if !a.IsRecommended && b.IsRecommended {
+				return false
+			}
+			return false
+		})
+	}
+
+	// If the models are download, sort them only by the download time in chronological order.
+	if request.Mine {
+		sort.Slice(resultList, func(i, j int) bool {
+			return resultList[i].CreatedAt.After(resultList[j].CreatedAt)
+		})
+	}
+
+	return &dto.GetSupportModelResponse{
+		*bcode.ModelCode,
+		resData,
 	}, nil
 }
 
