@@ -94,7 +94,12 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 	// Convert model ID to model name for ServiceRequest
 	originalModel := req.Model
-	modelName := e.GetModelById(ctx, req.Model).Name
+	modelInfo := e.GetModelById(ctx, req.Model)
+	modelName := modelInfo.Name
+
+	if modelName == "" {
+		modelName = originalModel
+	}
 
 	// Debug log to trace model conversion
 	fmt.Printf("[Chat] Model conversion: %s -> %s\n", originalModel, modelName)
@@ -115,7 +120,7 @@ func (e *Engine) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatR
 
 	serviceReq := &types.ServiceRequest{
 		Service:      "chat",
-		Model:        modelName,
+		Model:        originalModel,
 		FromFlavor:   "oadin",
 		HybridPolicy: hybridPolicy,
 		Think:        req.Think,
