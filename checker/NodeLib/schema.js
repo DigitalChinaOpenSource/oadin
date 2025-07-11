@@ -1,5 +1,4 @@
 const { str } = require("ajv");
-const playgroundSchemas = require('./playground_schema.js');
 
 // ========== 服务管理 ==========
 const getServicesSchema = {
@@ -365,10 +364,70 @@ const getModelsSupported = {
     type: "object",
     properties: {
         service_source: { type: "string", enum: ["local", "remote"]},
-        flavor: { type:"string" }
+        flavor: { type:"string" },
+        env_type: { type: "string" },
+        page_size: { type: "integer" },
+        page: { type: "integer" }
     },
     required: [ "service_source", "flavor"]
 }
+
+const getSupportModelResponseSchema = {
+  type: "object",
+  properties: {
+    business_code: { type: "integer" },
+    message: { type: "string" },
+    data: {
+      type: "object",
+      properties: {
+        data: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              service_name: { type: "string" },
+              api_flavor: { type: "string" },
+              flavor: { type: "string" },
+              method: { type: "string" },
+              desc: { type: "string" },
+              url: { type: "string" },
+              auth_type: { type: "string" },
+              auth_apply_url: { type: "string" },
+              auth_fields: { type: "array", items: { type: "string" } },
+              name: { type: "string" },
+              service_provider_name: { type: "string" },
+              size: { type: "string" },
+              is_recommended: { type: "boolean" },
+              status: { type: "string" },
+              avatar: { type: "string" },
+              can_select: { type: "boolean" },
+              class: { type: "array", items: { type: "string" } },
+              ollama_id: { type: "string" },
+              params_size: { type: "number" },
+              input_length: { type: "integer" },
+              output_length: { type: "integer" },
+              source: { type: "string" },
+              smartvision_provider: { type: "string" },
+              smartvision_model_key: { type: "string" },
+              is_downloaded: { type: "boolean" },
+              think: { type: "boolean" },
+              think_switch: { type: "boolean" },
+              tools: { type: "boolean" },
+              context: { type: "integer" },
+              created_at: { type: "string", format: "date-time" }
+            }, 
+          }
+        },
+        page: { type: "integer" },
+        page_size: { type: "integer" },
+        total: { type: "integer" },
+        total_page: { type: "integer" }
+      },
+    }
+  },
+  required: ["business_code"]
+};
 
 const recommendModelsResponse = {
     type: "object",
@@ -403,7 +462,7 @@ const recommendModelsResponse = {
             required: ["chat"]
         }
     },
-    required: ["business_code", "message", "data"]
+    required: ["business_code", "data"]
 };
 
 const SmartvisionModelSupportRequest = {
@@ -633,6 +692,7 @@ module.exports = {
     jsonConfigSchema,
     modelsResponse,
     getModelsSupported,
+    getSupportModelResponseSchema,
     recommendModelsResponse,
     SmartvisionModelSupportRequest,
     SmartvisionModelSupport,
@@ -643,9 +703,6 @@ module.exports = {
     textToImageRequest,
     textToImageResponse,
     embeddingRequest,
-    embeddingResponse,
-
-
-    ...playgroundSchemas
+    embeddingResponse
 };
     
