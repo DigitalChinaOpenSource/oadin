@@ -414,8 +414,8 @@ const getSupportModelResponseSchema = {
               think: { type: "boolean" },
               think_switch: { type: "boolean" },
               tools: { type: "boolean" },
-              context: { type: "integer" },
-              created_at: { type: "string", format: "date-time" }
+              context: { type: ["integer", "number"] },
+              created_at: { type: "string" }
             }, 
           }
         },
