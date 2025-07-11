@@ -400,7 +400,7 @@ class Oadin {
     return this._requestWithSchema({
       method: 'get',
       url: '/model/support',
-      data: { params: data },
+      data,
       schema: { request: schemas.getModelsSupported, response: schemas.getSupportModelResponseSchema }
     });
   }

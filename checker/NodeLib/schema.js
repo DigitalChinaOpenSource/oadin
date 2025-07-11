@@ -369,7 +369,7 @@ const getModelsSupported = {
         page_size: { type: "integer" },
         page: { type: "integer" }
     },
-    required: [ "service_source", "flavor"]
+    required: [ "service_source"]
 }
 
 const getSupportModelResponseSchema = {
