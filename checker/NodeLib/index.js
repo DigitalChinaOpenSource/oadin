@@ -6,6 +6,7 @@ const path = require('path');
 const os = require('os');
 const axios = require('axios');
 const EventEmitter = require('events');
+const _ = require('lodash');
 const { execFile, spawn } = require('child_process');
 const { promises: fsPromises } = require("fs");
 
@@ -415,8 +416,12 @@ class Oadin {
     }
     // 流式
     try {
+      const client = axios.create({
+        baseURL: `http://localhost:16688/oadin/v0.2`,
+        headers: {"Content-Type": "application/json" },
+      });
       const config = { responseType: 'stream' };
-      const res = await this.client.post('services/chat', data, config);
+      const res = await client.post('services/chat', data, config);
       const eventEmitter = new EventEmitter();
       res.data.on('data', (chunk) => {
         try {
@@ -451,8 +456,12 @@ class Oadin {
       return this._requestWithSchema({ method: 'post', url: 'services/generate', data });
     }
     try {
+      const client = axios.create({
+        baseURL: `http://localhost:16688/oadin/v0.2`,
+        headers: {"Content-Type": "application/json" },
+      });
       const config = { responseType: 'stream' };
-      const res = await this.client.post('services/generate', data, config);
+      const res = await client.post('services/generate', data, config);
       const eventEmitter = new EventEmitter();
       res.data.on('data', (chunk) => {
         try {
