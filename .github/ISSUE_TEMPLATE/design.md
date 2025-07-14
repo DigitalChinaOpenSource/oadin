@@ -2,7 +2,7 @@
 name: Design
 about: 提出一个新的设计需求或改进
 title: 'Design: 如 "用户界面设计：用户登录页面"'
-labels: Design
+labels: ''
 assignees: ''
 
 ---
