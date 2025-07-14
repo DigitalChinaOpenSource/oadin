@@ -252,33 +252,33 @@ class Oadin {
   }
 
   async installModelStream(data) {
+    const client = axios.create({
+      baseURL: `http://localhost:16688/oadin/v0.2`,
+      headers: {"Content-Type": "application/json" },
+    })
     const config = { responseType: 'stream' };
     try {
-      const res = await this.client.post('/model/stream', data, config);
+      const res = await client.post('/model/stream', data, config);
       const eventEmitter = new EventEmitter();
 
       res.data.on('data', (chunk) => {
         try {
-          let rawData = _.isString(chunk) ? _.trim(chunk) : _.trim(chunk.toString());
-          let jsonString = _.startsWith(rawData, 'data:') ? rawData.slice(5) : rawData;
-          jsonString = _.trim(jsonString);
-          if (_.isEmpty(jsonString)) {
-            // 跳过空数据
-            return;
-          }
+          // 解析流数据
+          const rawData = chunk.toString().trim();
+          const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
           const response = JSON.parse(jsonString);
 
-          eventEmitter.emit('data', response);
-
+          eventEmitter.emit('data', rawData);
           if (response.status === 'success') {
-            eventEmitter.emit('end', response);
+            eventEmitter.emit('end', rawData);
           }
           if (response.status === 'canceled') {
-            eventEmitter.emit('canceled', response);
+            eventEmitter.emit('canceled', rawData);
           }
           if (response.status === 'error') {
-            eventEmitter.emit('end', response);
+            eventEmitter.emit('end', rawData);
           }
+
         } catch (err) {
           eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
         }
@@ -288,15 +288,16 @@ class Oadin {
         eventEmitter.emit('error', `流式响应错误: ${err.message}`);
       });
 
-      return eventEmitter;
+      return eventEmitter; // 返回 EventEmitter 实例
     } catch (error) {
       return {
         code: 400,
         msg: error.response?.data?.message || error.message || '请求失败',
         data: null,
-      };
+      }
     }
   }
+
 
   async cancelInstallModel(data) {
     return this._requestWithSchema({
