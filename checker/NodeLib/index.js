@@ -61,6 +61,13 @@ class Oadin {
     return existed;
   }
 
+  getOadinInstallerPath() {
+    const platform = tools.getPlatform();
+    if (platform == "unsupported") { return null }
+    else if (platform === 'win32') { return PLATFORM_CONFIG.win32.downloadUrl }
+    else if (platform === 'darwin') { return PLATFORM_CONFIG.darwin.downloadUrl };
+  }
+
   // 私有方法：仅下载
   async _downloadFile(url, dest, options, retries = 3) {
     logAndConsole('info', `准备下载文件: ${url} 到 ${dest}`);
