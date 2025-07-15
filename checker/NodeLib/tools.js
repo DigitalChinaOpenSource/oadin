@@ -1,6 +1,32 @@
 const fs = require('fs');
 const path = require('path');
 const winston = require('winston');
+const { MAC_OADIN_PATH, OADIN_HEALTH, OADIN_ENGINE_PATH, } = require('./constants.js');
+
+
+async function isOadinAvailable(retries = 5, interval = 1000) {
+  logAndConsole('info', '检测Oadin服务可用性...');
+  const fibArr = fibonacci(retries, interval);
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const [healthRes, engineHealthRes] = await Promise.all([
+        axios.get(OADIN_HEALTH),
+        axios.get(OADIN_ENGINE_PATH)
+      ]);
+      const healthOk = isHealthy(healthRes.status);
+      const engineOk = isHealthy(engineHealthRes.status);
+      logAndConsole('info', `/health: ${healthOk ? '正常' : '异常'}, /engine/health: ${engineOk ? '正常' : '异常'}`);
+      if (healthOk && engineOk) return true;
+    } catch (err) {
+      logAndConsole('warn', `健康检查失败: ${err.message}`);
+    }
+    if (attempt < retries - 1) {
+      await new Promise(r => setTimeout(r, fibArr[attempt]));
+    }
+  }
+  logAndConsole('warn', 'Oadin服务不可用');
+  return false;
+}
 
 // 判断平台
 function getPlatform() {
@@ -129,7 +155,7 @@ function getOadinExecutablePath() {
   if (platform === 'win32') {
     return path.join(userDir, 'Oadin', 'oadin.exe');
   } else if (platform === 'darwin') {
-    return '/usr/local/bin/oadin';
+    return MAC_OADIN_PATH;
   }
   return null;
 }
@@ -149,8 +175,26 @@ function runInstallerByPlatform(installerPath) {
     return new Promise((resolve, reject) => {
       const child = require('child_process').spawn('open', [installerPath], { stdio: 'ignore', detached: true });
       child.on('error', reject);
-      // 可扩展轮询检测逻辑
-      resolve();
+      // 轮询检测安装目录生成
+      const expectedPath = MAC_OADIN_PATH;
+      const maxRetries = 100;
+      let retries = 0;
+
+      const interval = setInterval(async () => {
+        if (fs.existsSync(expectedPath)) {
+          console.log("oadin 已添加到 /usr/local/bin ");
+          // 检查服务是否可用
+          const available = await isOadinAvailable(2, 1000);
+          if (available) {
+            clearInterval(interval);
+            resolve();
+          }
+        } else if (++retries >= maxRetries) {
+          clearInterval(interval);
+          reject(new Error('安装器未在超时前完成安装'));
+        }
+      }, 1000);
+
     });
   }
   return Promise.reject(new Error('不支持的平台'));
