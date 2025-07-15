@@ -364,6 +364,7 @@ const getModelsSupported = {
     type: "object",
     properties: {
         service_source: { type: "string", enum: ["local", "remote"]},
+        service_name: { type: "string" },
         flavor: { type:"string" },
         env_type: { type: "string" },
         page_size: { type: "integer" },
