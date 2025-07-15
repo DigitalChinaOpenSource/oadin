@@ -1047,6 +1047,12 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 			Query: request.ServiceSource,
 		})
 	}
+	if request.ServiceName != "" {
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "service_name",
+			Query: request.ServiceName,
+		})
+	}
 	sm := &types.SupportModel{}
 	sortOption := []datastore.SortOption{
 		{Key: "name", Order: 1},
