@@ -296,6 +296,10 @@ class Oadin {
         eventEmitter.emit('error', `流式响应错误: ${err.message}`);
       });
 
+      res.data.on('end', () => {
+        eventEmitter.emit('end');
+      });
+
       return eventEmitter; // 返回 EventEmitter 实例
     } catch (error) {
       return {
@@ -440,9 +444,6 @@ class Oadin {
           }
           const response = JSON.parse(jsonString);
           eventEmitter.emit('data', response);
-          if (response.status === 'success' || response.status === 'canceled' || response.status === 'error') {
-            eventEmitter.emit('end', response);
-          }
         } catch (err) {
           eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
         }
@@ -450,6 +451,10 @@ class Oadin {
       res.data.on('error', (err) => {
         eventEmitter.emit('error', `流式响应错误: ${err.message}`);
       });
+      res.data.on('end', () => {
+        eventEmitter.emit('end'); // 触发结束事件
+      });
+
       return eventEmitter;
     } catch (error) {
       return { code: 400, msg: error.response?.data?.message || error.message, data: null };
@@ -480,9 +485,6 @@ class Oadin {
           }
           const response = JSON.parse(jsonString);
           eventEmitter.emit('data', response);
-          if (response.status === 'success' || response.status === 'canceled' || response.status === 'error') {
-            eventEmitter.emit('end', response);
-          }
         } catch (err) {
           eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
         }
@@ -490,6 +492,10 @@ class Oadin {
       res.data.on('error', (err) => {
         eventEmitter.emit('error', `流式响应错误: ${err.message}`);
       });
+      res.data.on('end', () => {
+        eventEmitter.emit('end'); // 触发结束事件
+      });
+
       return eventEmitter;
     } catch (error) {
       return { code: 400, msg: error.response?.data?.message || error.message, data: null };
