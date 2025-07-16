@@ -1,5 +1,9 @@
 # Oadin (Open AIPC Development Infrastructure)
 
+## Star History
+---
+![Star History](https://api.star-history.com/svg?repos=DigitalChinaOpenSource/oadin&type=Date)
+
 English | [中文](README_zhCN.md)
 
 Current version is Oadin v0.2.0, providing production-grade AI service infrastructure. Welcome to submit Issues and feature suggestions for any problems discovered.
