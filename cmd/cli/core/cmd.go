@@ -12,7 +12,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -371,7 +370,8 @@ func Run(ctx context.Context) error {
 			return nil
 		},
 		func() error {
-			return utils.StopOadinServer(pidFile)
+			pidFilePath := filepath.Join(config.GlobalOadinEnvironment.RootDir, "*.pid")
+			return utils.StopOadinServer(pidFilePath)
 		},
 		true,
 	)
@@ -1008,23 +1008,6 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 }
 
 func CheckOadinServer(cmd *cobra.Command, args []string) {
-	if utils.IsServerRunning() {
-		fmt.Println("Oadin server start successfully.")
-		return
-	}
-
-	fmt.Println("Oadin server is not running. Starting the server...")
-	if err := startOadinServer(); err != nil {
-		log.Fatalf("Failed to start Oadin server: %s \n", err.Error())
-		return
-	}
-
-	time.Sleep(6 * time.Second)
-
-	if !utils.IsServerRunning() {
-		log.Fatal("Failed to start Oadin server.")
-		return
-	}
 
 	// Check if the model engine service is started
 	engineProvider := provider.GetModelEngine("ollama")
@@ -1032,34 +1015,26 @@ func CheckOadinServer(cmd *cobra.Command, args []string) {
 
 	err := engineProvider.HealthCheck()
 	if err != nil {
-		var cmd *exec.Cmd
-		if runtime.GOOS == "windows" {
-			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
-		} else {
-			cmd = exec.Command(engineConfig.ExecFile, "-h")
-		}
-		err = cmd.Run()
+		checkCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
+		err = checkCmd.Run()
 		if err != nil {
-			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
-			err = cmd.Run()
+			slog.Info("Model engine not exist...")
+			slog.Info("model engine not exist, start download...")
+			err = engineProvider.InstallEngine()
 			if err != nil {
-				slog.Info("Model engine not exist...")
-				slog.Info("model engine not exist, start download...")
-				err := engineProvider.InstallEngine()
-				if err != nil {
-					fmt.Println("Install model engine failed :", err.Error())
-					slog.Error("Install model engine failed :", err.Error())
-					log.Fatalf("Install model engine failed err %s", err.Error())
-					return
-				}
-				slog.Info("Model engine download completed...")
+				fmt.Println("Install model engine failed :", err.Error())
+				slog.Error("Install model engine failed :", err.Error())
+				log.Fatalf("Install model engine failed err %s", err.Error())
+				return
 			}
+			slog.Info("Model engine download completed...")
 		}
 
 		slog.Info("Setting env...")
 		err := engineProvider.InitEnv()
 		if err != nil {
 			slog.Error("Setting env error: ", err.Error())
+			log.Fatalf("Setting env error %s", err.Error())
 			return
 		}
 
@@ -1094,6 +1069,26 @@ func CheckOadinServer(cmd *cobra.Command, args []string) {
 	err = engineProvider.HealthCheck()
 	if err != nil {
 		slog.Error("Ollama engine failed start, Please try again later...")
+		log.Fatalf("Ollama engine failed err %s", err.Error())
+		return
+	}
+
+	if utils.IsServerRunning() {
+		fmt.Println("Oadin server start successfully.")
+		return
+	}
+	//userDir, _ := os.UserHomeDir()
+	//logger.NewSysLogger(logger.NewLogConfig{LogLevel: "debug", LogPath: filepath.Join(userDir, "server.log")})
+	fmt.Println("Oadin server is not running. Starting the server...")
+	if err := startOadinServer(); err != nil {
+		log.Fatalf("Failed to start Oadin server: %s \n", err.Error())
+		return
+	}
+
+	time.Sleep(6 * time.Second)
+
+	if !utils.IsServerRunning() {
+		log.Fatal("Failed to start Oadin server.")
 		return
 	}
 
