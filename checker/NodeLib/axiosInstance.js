@@ -62,7 +62,7 @@ async function requestWithSchema({ method, url, data, schema }) {
     } else if (method === 'put') {
       res = await instance.put(url, data);
     } else if (method === 'delete') {
-      res = await instance.delete(url, { params: data });
+      res = await instance.delete(url, {data});
     } else {
       throw new Error('不支持的请求方法');
     }
