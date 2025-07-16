@@ -1,9 +1,0 @@
-#!/bin/bash
-USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
-mkdir -p "$USER_HOME/OADIN"
-exec > "$USER_HOME/OADIN/oadin-install.log" 2>&1
-set -x
-cp -f /Users/Shared/OADIN/oadin "$USER_HOME/OADIN/oadin"
-ln -sf "$USER_HOME/OADIN/oadin" /usr/local/bin/oadin
-sleep 2
-su - "$USER" -c "oadin server start -d"
