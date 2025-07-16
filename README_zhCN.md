@@ -1,5 +1,9 @@
 # Oadin (Open AIPC Development INfrastructure)
 
+## ⭐️ 趋势
+---
+![Star History](https://api.star-history.com/svg?repos=DigitalChinaOpenSource/oadin&type=Date)
+
 [English](README.md) | 中文
 
 当前为 Oadin v0.2.0，提供生产级 AI 服务基础设施。欢迎就发现的问题提交 Issues 和功能建议。
