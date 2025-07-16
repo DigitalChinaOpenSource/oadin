@@ -1015,27 +1015,17 @@ func CheckOadinServer(cmd *cobra.Command, args []string) {
 
 	err := engineProvider.HealthCheck()
 	if err != nil {
-		var cmd *exec.Cmd
-		if utils.IpexOllamaSupportGPUStatus() {
-			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
-		} else {
-			cmd = exec.Command(engineConfig.ExecFile, "-h")
-		}
-		err = cmd.Run()
+		checkCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
+		err = checkCmd.Run()
 		if err != nil {
-			cmd = exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
-			err = cmd.Run()
+			slog.Info("Model engine not exist...")
+			slog.Info("model engine not exist, start download...")
+			err = engineProvider.InstallEngine()
 			if err != nil {
-				slog.Error("\rService install failed222222: %s", err.Error())
-				slog.Info("Model engine not exist...")
-				slog.Info("model engine not exist, start download...")
-				err = engineProvider.InstallEngine()
-				if err != nil {
-					fmt.Println("Install model engine failed :", err.Error())
-					slog.Error("Install model engine failed :", err.Error())
-					log.Fatalf("Install model engine failed err %s", err.Error())
-					return
-				}
+				fmt.Println("Install model engine failed :", err.Error())
+				slog.Error("Install model engine failed :", err.Error())
+				log.Fatalf("Install model engine failed err %s", err.Error())
+				return
 			}
 			slog.Info("Model engine download completed...")
 		}
