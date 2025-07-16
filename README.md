@@ -353,7 +353,7 @@ curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
   }'
 ```
 
-> **Note**: The `think` field is only effective for models that support deep thinking, such as the DeepSeek-R1 series. Other models will ignore this parameter.
+> **Note**: The `think` field is only effective for models that support deep thinking, such as the Qwen3 series. Other models will ignore this parameter.
 
 **Other API Examples:**
 ```sh
