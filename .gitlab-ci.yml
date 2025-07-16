@@ -48,8 +48,8 @@ build_mac:
     - echo "--------- 📦 安装包构建与签名 ----------"
     - mkdir -p pkgroot/oadin
     - mv oadin pkgroot/oadin/oadin
-    - chmod +x ./installer/mac/preinstall
-    - chmod +x ./installer/mac/postinstall
+    - chmod +x installer/mac/preinstall
+    - chmod +x installer/mac/postinstall
     - |
       pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
     - echo "--------- 📬 安装包公证 ----------"
