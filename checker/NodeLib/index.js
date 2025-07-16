@@ -252,7 +252,7 @@ class Oadin {
 
   async deleteModel(data) {
     return this._requestWithSchema({
-      method: 'post',
+      method: 'delete',
       url: '/model',
       data,
       schema: { request: schemas.deleteModelRequestSchema, response: schemas.ResponseSchema }
