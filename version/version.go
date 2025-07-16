@@ -23,3 +23,5 @@ const OADINIcon = ""
 const OADINName = "OADIN"
 
 const OADINDescription = "OADIN (AIPC Open Gateway) aims to decouple AI applications on AI PCs from the AI services they rely on. It is designed to provide developers with an extremely simple and easy-to-use infrastructure to install local AI services in their development environments and publish their AI applications without packaging their own AI stacks and models."
+
+var OadinSubVersion = "20250704-14"
