@@ -1228,7 +1228,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 		} else if request.Flavor == "" {
 			smartvisionModelData, smartvisionErr := GetSmartVisionModelData(ctx, request.EnvType)
 			jdsDataList, jdsErr := jds.List(ctx, sm, options)
-			if smartvisionErr != nil || jdsErr != nil {
+			if smartvisionErr != nil && jdsErr != nil {
 				return nil, errors.New("Get data Failed, please retry")
 			}
 			for _, d := range smartvisionModelData {
