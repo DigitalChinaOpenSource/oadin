@@ -311,7 +311,7 @@ curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
 curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
   -H "Content-Type: application/json" \
   -d '{"model":"deepseek-r1:8b","messages":[{"role":"user","content":"why is the sky blue?"}],"stream":false}'
-
+```
 **深度思考功能：**
 对于支持深度思考的模型（如 DeepSeek-R1 系列），可以通过 `think` 字段控制思考过程：
 
@@ -327,7 +327,7 @@ curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
   -d '{"model":"deepseek-r1:8b","messages":[{"role":"user","content":"why is the sky blue?"}],"stream":true,"think":false}'
 ```
 
-> **注意**: `think` 字段仅对支持切换深度思考的模型有效，如 DeepSeek-R1 系列。
+  > **注意**: `think` 字段仅对支持切换深度思考的模型有效，如 Qwen3 系列。
 
 **文本嵌入服务：**
 ```sh
