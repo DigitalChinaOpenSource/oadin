@@ -87,6 +87,9 @@ type OADINEnvironment struct {
 	LogLevel          string // log level
 	LogFileExpireDays int    // log file expiration time
 	ConsoleLog        string // oadin server console log path
+
+	UpdateDir string // Installation package storage path
+
 }
 
 var (
@@ -175,6 +178,9 @@ func NewOADINEnvironment() *OADINEnvironment {
 		env.LogDir = filepath.Join(env.RootDir, env.LogDir)
 		env.LogHTTP = filepath.Join(env.LogDir, env.LogHTTP)
 		env.ConsoleLog = filepath.Join(env.LogDir, env.ConsoleLog)
+
+		env.UpdateDir = filepath.Join(env.RootDir, env.UpdateDir)
+
 		if err := os.MkdirAll(env.LogDir, 0o750); err != nil {
 			panic("[Init Env] create logs path : " + err.Error())
 		}

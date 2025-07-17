@@ -24,13 +24,16 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"oadin/tray"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/fatih/color"
@@ -38,6 +41,7 @@ import (
 
 	"oadin/config"
 	"oadin/console"
+	extensionApi "oadin/extension/api"
 	"oadin/internal/api"
 	"oadin/internal/api/dto"
 	"oadin/internal/constants"
@@ -216,7 +220,7 @@ func Run(ctx context.Context) error {
 			LogPath:  config.GlobalOADINEnvironment.LogDir,
 		})
 	// Initialize core core app server
-	oadinServer := api.NewOADINCoreServer()
+	oadinServer := extensionApi.NewOadinExtensionServer()
 	oadinServer.Register()
 
 	logger.LogicLogger.Info("start_app")
@@ -234,7 +238,7 @@ func Run(ctx context.Context) error {
 	schedule.StartScheduler("basic")
 
 	// Inject the router
-	api.InjectRouter(oadinServer)
+	api.InjectRouter(oadinServer.CoreServer)
 
 	// Inject all flavors to the router
 	// Setup flavors
@@ -262,7 +266,108 @@ func Run(ctx context.Context) error {
 	}
 
 	_, _ = color.New(color.FgHiGreen).Println("OADIN Gateway starting on port", config.GlobalOADINEnvironment.ApiHost)
+	// create a cancel context
+	ctx, cancel := context.WithCancel(ctx)
 
+	// create error chan
+	errChan := make(chan error, 2)
+
+	// create server manager
+	globalServerManager = &ServerManager{
+		cancel: cancel,
+	}
+
+	// start oadin server
+	oadinSrv := &http.Server{
+		Addr:    config.GlobalOADINEnvironment.ApiHost,
+		Handler: oadinServer.Router,
+	}
+	globalServerManager.oadinServer = oadinSrv
+
+	go func() {
+		if err := oadinSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errChan <- fmt.Errorf("oadin server error: %v", err)
+		}
+	}()
+
+	// start console server
+	consoleSrv, err := console.StartConsoleServer(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start console server: %v", err)
+	}
+	globalServerManager.consoleServer = consoleSrv
+
+	_, _ = color.New(color.FgHiGreen).Println("Oadin Gateway starting on port", config.GlobalOADINEnvironment.ApiHost)
+	_, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
+
+	// create tray manager
+	trayManager := tray.NewManager(
+		func() error {
+			if globalServerManager.oadinServer != nil {
+				return fmt.Errorf("server is already running")
+			}
+			oadinSrv = &http.Server{
+				Addr:    config.GlobalOADINEnvironment.ApiHost,
+				Handler: oadinServer.Router,
+			}
+			go func() {
+				if err := oadinSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					errChan <- fmt.Errorf("oadin server error: %v", err)
+				}
+			}()
+			globalServerManager.oadinServer = oadinSrv
+			return nil
+		},
+		func() error {
+			if globalServerManager.oadinServer == nil {
+				return fmt.Errorf("server is not running")
+			}
+			return globalServerManager.StopServer("oadin")
+		},
+		func() error {
+			var errs []error
+			if globalServerManager.oadinServer != nil {
+				if err := globalServerManager.StopServer("oadin"); err != nil {
+					errs = append(errs, fmt.Errorf("failed to stop oadin server: %v", err))
+				}
+			}
+			if globalServerManager.consoleServer != nil {
+				if err := globalServerManager.StopServer("console"); err != nil {
+					errs = append(errs, fmt.Errorf("failed to stop console server: %v", err))
+				}
+			}
+			if len(errs) > 0 {
+				return fmt.Errorf("errors stopping servers: %v", errs)
+			}
+			return nil
+		},
+		func() error {
+			return utils.StopOadinServer(pidFile)
+		},
+		true,
+	)
+	globalServerManager.trayManager = trayManager
+
+	tray.StartCheckUpdate(ctx, trayManager)
+	// start tray
+	trayManager.Start()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case err := <-errChan:
+		return err
+	case <-sigChan:
+		cancel()
+		// 等待最多5秒钟让服务器优雅关闭
+		select {
+		case err := <-errChan:
+			return err
+		case <-time.After(5 * time.Second):
+			return nil
+		}
+	}
 	return nil
 }
 
@@ -1431,4 +1536,60 @@ func ListenModelEngineHealth() {
 
 		time.Sleep(60 * time.Second)
 	}
+}
+
+// ServerManager 用于管理服务器实例
+type ServerManager struct {
+	oadinServer   *http.Server
+	consoleServer *http.Server
+	cancel        context.CancelFunc
+	trayManager   *tray.Manager
+}
+
+var globalServerManager *ServerManager
+
+// StopServer 停止指定的服务器
+func (sm *ServerManager) StopServer(serverType string) error {
+	var srv *http.Server
+	switch serverType {
+	case "oadin":
+		srv = sm.oadinServer
+	case "console":
+		srv = sm.consoleServer
+	default:
+		return fmt.Errorf("unknown server type: %s", serverType)
+	}
+
+	if srv == nil {
+		return fmt.Errorf("server %s is not running", serverType)
+	}
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	log.Println("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	srv.SetKeepAlivesEnabled(false)
+	if err := srv.Shutdown(ctx); err != nil {
+		if err := srv.Close(); err != nil {
+			return fmt.Errorf("failed to stop %s server: %v", serverType, err)
+		}
+	}
+
+	switch serverType {
+	case "oadin":
+		sm.oadinServer = nil
+	case "console":
+		sm.consoleServer = nil
+	}
+
+	// 如果两个服务器都已停止，则取消主context
+	if sm.oadinServer == nil && sm.consoleServer == nil && sm.cancel != nil {
+		sm.cancel()
+	}
+
+	return nil
 }

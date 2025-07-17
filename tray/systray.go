@@ -204,20 +204,20 @@ func (m *Manager) performUpdate() error {
 
 // installUpdate
 func (m *Manager) installUpdate() error {
-	emptyStatus := utils.IsDirEmpty(config.GlobalOadinEnvironment.UpdateDir)
+	emptyStatus := utils.IsDirEmpty(config.GlobalOADINEnvironment.UpdateDir)
 	if emptyStatus {
 		return fmt.Errorf("installation directory is empty")
 	}
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		installFilaPath := filepath.Join(config.GlobalOadinEnvironment.UpdateDir, "oadin-installer-latest.pkg")
+		installFilaPath := filepath.Join(config.GlobalOADINEnvironment.UpdateDir, "oadin-installer-latest.pkg")
 		cmd = exec.Command("open", installFilaPath)
 	case "linux":
 		installFilaPath := ""
 		fmt.Sprintf(installFilaPath)
 	case "windows":
-		installFilaPath := filepath.Join(config.GlobalOadinEnvironment.UpdateDir, "oadin-installer-latest.exe")
+		installFilaPath := filepath.Join(config.GlobalOADINEnvironment.UpdateDir, "oadin-installer-latest.exe")
 		cmd = exec.Command(installFilaPath, "/S")
 	}
 	err := cmd.Run()

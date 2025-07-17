@@ -189,7 +189,7 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 		slog.Warn(fmt.Sprintf("malformed response checking for update: %s", err))
 		return false, updateResp
 	}
-	currentVersion := version.OadinVersion
+	currentVersion := version.OADINVersion
 	if updateResp.UpdateVersion == currentVersion {
 		return false, updateResp
 	}
@@ -201,7 +201,7 @@ func DownloadNewVersion(ctx context.Context, updateResponse UpdateResponse) erro
 	if err != nil {
 		return err
 	}
-	_, err = utils.DownloadFile(updateResponse.UpdateURL, config.GlobalOadinEnvironment.UpdateDir)
+	_, err = utils.DownloadFile(updateResponse.UpdateURL, config.GlobalOADINEnvironment.UpdateDir)
 	if err != nil {
 		return err
 	}
