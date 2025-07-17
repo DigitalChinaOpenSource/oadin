@@ -1,0 +1,27 @@
+name: Build App on Self-Hosted Runners
+
+on:
+  push:
+    branches:
+      - oadin-ci
+
+jobs:
+  build-mac:
+    name: Build macOS App
+    runs-on: [self-hosted, macOS, ARM64] # 匹配 aiwenxuedeMac-mini
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run build script on Mac
+        run: |
+          echo "Building on macOS ARM64"
+          pwd
+
+  build-win:
+    name: Build Windows App
+    runs-on: [self-hosted, Windows, X64] # 匹配 WIN-P1B0AOCK993
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run build script on Windows
+        run: |
+          echo "Building on Windows"
+          dir
