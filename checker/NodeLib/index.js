@@ -58,10 +58,12 @@ class Oadin {
     const dest = getOadinExecutablePath();
     const existed = fs.existsSync(dest);
     logAndConsole('info', `检测Oadin可执行文件是否存在: ${dest}，结果: ${existed}`);
-    
-    const latest = await this.isOadinLatest();
-    logAndConsole('info', `Oadin是否最新版: ${latest}`);
-    return existed && latest;
+    if (existed){
+      const latest = await this.isOadinLatest();
+      logAndConsole('info', `Oadin是否最新版: ${latest}`);
+      return latest;
+    }
+    return existed;
   }
 
   async isOadinLatest() {
