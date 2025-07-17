@@ -13,10 +13,10 @@ import (
 // OadinExtensionServer 使用代理模式来扩展 OadinCoreServer 的功能
 type OadinExtensionServer struct {
 	// 持有父类实例来实现代理扩展
-	CoreServer *api.OadinCoreServer
+	CoreServer *api.OADINCoreServer
 
 	// 继承父类属性和方法
-	api.OadinCoreServer
+	api.OADINCoreServer
 	Router    *gin.Engine
 	DataStore datastore.Datastore
 
@@ -26,15 +26,15 @@ type OadinExtensionServer struct {
 
 // NewOadinExtensionServer 扩展类实例化构造, 初始化父类 OadinCoreServer 的实例
 func NewOadinExtensionServer() *OadinExtensionServer {
-	// 初始化父类 OadinCoreServer
-	coreServer := api.NewOadinCoreServer()
+	// 初始化父类 OADINCoreServer
+	coreServer := api.NewOADINCoreServer()
 
 	// 扩展类共享 父类的公共gin实例对象
 	return &OadinExtensionServer{
 		Router:     coreServer.Router,
 		DataStore:  datastore.GetDefaultDatastore(),
 		CoreServer: coreServer,
-		RootRouter: coreServer.Router.Group("/oadin/" + version.OadinVersion),
+		RootRouter: coreServer.Router.Group("/oadin/" + version.OADINVersion),
 	}
 }
 

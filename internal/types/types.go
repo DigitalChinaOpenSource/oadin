@@ -36,12 +36,14 @@ const (
 	FlavorOllama   = "ollama"
 	FlavorBaidu    = "baidu"
 	FlavorAliYun   = "aliyun"
+	FlavorSmartVision = "smartvision"
 	FlavorOpenvino = "openvino"
 
 	AuthTypeNone   = "none"
 	AuthTypeApiKey = "apikey"
 	AuthTypeToken  = "token"
 	AuthTypeSign   = "sign"
+	AuthTypeCredentials = "credentials"
 
 	ServiceChat           = "chat"
 	ServiceModels         = "models"
@@ -242,4 +244,18 @@ type PathDiskSizeInfo struct {
 	FreeSize  int `json:"free_size"`
 	TotalSize int `json:"total_size"`
 	UsageSize int `json:"usage_size"`
+}
+
+type CopyModelRequest struct {
+	Source      string `json:"source"`
+	Destination string `json:"destination"`
+}
+
+type UnloadModelRequest struct {
+	Models []string `json:"models"`
+}
+
+type OllamaUnloadModelRequest struct {
+	Model     string `json:"model"`
+	KeepAlive int64  `json:"keep_alive"`
 }

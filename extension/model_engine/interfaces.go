@@ -3,18 +3,19 @@ package model_engine
 import (
 	"context"
 	"oadin/internal/types"
+	"oadin/extension/dto"
 )
 
 // EngineServiceInterface 定义了引擎服务的核心接口
 type EngineServiceInterface interface {
 	// Chat 处理非流式聊天请求
-	Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error)
+	Chat(ctx context.Context, req *dto.ChatRequest) (*dto.ChatResponse, error)
 
 	// ChatStream 处理流式聊天请求
-	ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan *types.ChatResponse, <-chan error)
+	ChatStream(ctx context.Context, req *dto.ChatRequest) (<-chan *dto.ChatResponse, <-chan error)
 
 	// GenerateEmbedding 生成向量嵌入
-	GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequest) (*types.EmbeddingResponse, error)
+	GenerateEmbedding(ctx context.Context, req *dto.EmbeddingRequest) (*dto.EmbeddingResponse, error)
 }
 
 // ModelManager 定义了模型管理的接口

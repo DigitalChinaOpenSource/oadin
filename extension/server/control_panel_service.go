@@ -7,11 +7,10 @@ import (
 	"time"
 
 	"oadin/extension/dto"
-	"oadin/internal/utils/bcode"
+	"oadin/extension/utils/bcode"
 	"oadin/internal/provider"
 	"oadin/internal/types"
 	"oadin/internal/utils"
-	internalExtension "oadin/internal/utils/bcode"
 )
 
 func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error) {
@@ -36,15 +35,15 @@ func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error
 func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathRequest) (*dto.ModifyModelFilePathResponse, error) {
 	engine := provider.GetModelEngine("ollama")
 	if err := engine.HealthCheck(); err != nil {
-		return nil, internalExtension.ErrModelEngineNotRun
+		return nil, bcode.ErrModelEngineNotRun
 	}
 	runningModels, _ := engine.GetRunModels(ctx)
 	if len(runningModels.Models) > 0 {
-		return &dto.ModifyModelFilePathResponse{}, internalExtension.ErrModelIsRunning
+		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelIsRunning
 	}
 	OperateStatus := engine.GetOperateStatus()
 	if OperateStatus == 0 {
-		return &dto.ModifyModelFilePathResponse{}, internalExtension.ErrModelEngineIsBeingOperatedOn
+		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelEngineIsBeingOperatedOn
 	}
 	engine.SetOperateStatus(0)
 	defer engine.SetOperateStatus(1)
@@ -116,7 +115,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 		return nil, err
 	}
 
-	err = engine.StartEngine()
+	err = engine.StartEngine("daemon")
 	if err != nil {
 		return nil, err
 	}

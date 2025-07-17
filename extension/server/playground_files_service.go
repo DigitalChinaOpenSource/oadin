@@ -155,7 +155,7 @@ func (p *PlaygroundImpl) GetFiles(ctx context.Context, request *dto.GetFilesRequ
 
 	// 直接使用SQL查询进行验证
 	// 获取SQLite数据库路径
-	dbPath := config.GlobalOadinEnvironment.Datastore
+	dbPath := config.GlobalOADINEnvironment.Datastore
 	slog.Info("GetFiles: 尝试直接SQL查询验证", "dbPath", dbPath, "sessionID", request.SessionID)
 
 	// 直接使用SQL查询
@@ -316,7 +316,7 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 	}
 
 	// 获取SQLite数据库路径
-	dbPath := config.GlobalOadinEnvironment.Datastore
+	dbPath := config.GlobalOADINEnvironment.Datastore
 	slog.Info("尝试打开数据库直接查询", "dbPath", dbPath, "fileID", request.FileID)
 
 	// 直接使用SQL查询文件
@@ -458,7 +458,7 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 		batch := chunks[i:end]
 
 		slog.Info("Server: 处理embedding批次", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "batchSize", len(batch))
-		embeddingReq := &types.EmbeddingRequest{
+		embeddingReq := &dto.EmbeddingRequest{
 			Model: embedModelID,
 			Input: batch,
 		}

@@ -25,13 +25,6 @@ type MessageChunk struct {
 	ToolGroupID   string     `json:"tool_group_id,omitempty"`  // 新增工具组ID
 }
 
-type ToolCall struct {
-	Function struct {
-		Name      string                 `json:"name"`
-		Arguments map[string]interface{} `json:"arguments"`
-	} `json:"function"`
-}
-
 // 发送流式消息请求
 type SendStreamMessageRequest struct {
 	SessionID   string   `json:"SessionID" binding:"required"`

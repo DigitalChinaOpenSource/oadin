@@ -4,9 +4,8 @@ import (
 	"net/http"
 
 	"oadin/extension/server"
-	"oadin/internal/api/dto"
+	"oadin/extension/dto"
 	"oadin/internal/utils/bcode"
-
 	"github.com/gin-gonic/gin"
 )
 

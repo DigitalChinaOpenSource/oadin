@@ -10,17 +10,16 @@ import (
 	"time"
 
 	"oadin/extension/model_engine"
-	"oadin/extension/dto"
 	"oadin/extension/entity"
 	"oadin/internal/datastore"
-	"oadin/internal/types"
+	"oadin/extension/dto"
 
 	"github.com/google/uuid"
 )
 
 // 发送消息并流式返回响应
-func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error) {
-	respChan := make(chan *types.ChatResponse)
+func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *dto.ChatResponse, chan error) {
+	respChan := make(chan *dto.ChatResponse)
 	errChan := make(chan error, 1)
 
 	go func() {
@@ -132,7 +131,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 		// 调用模型获取流式回复
 		// 获取统一的聊天引擎
 		modelEngine := model_engine.NewEngineService() // 构建聊天请求
-		chatRequest := &types.ChatRequest{
+		chatRequest := &dto.ChatRequest{
 			Model:    session.ModelName,
 			Messages: history,
 			Stream:   true,  // 启用流式输出
@@ -145,12 +144,11 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 
 		// Chat request (with tools)
 		if len(request.Tools) > 0 {
-			// 转换 dto.Tool 为 types.Tool
-			tools := make([]types.Tool, len(request.Tools))
+			tools := make([]dto.Tool, len(request.Tools))
 			for i, tool := range request.Tools {
-				tools[i] = types.Tool{
+				tools[i] = dto.Tool{
 					Type: tool.Type,
-					Function: types.TypeFunction{
+					Function: dto.TypeFunction{
 						Name:        tool.Function.Name,
 						Description: tool.Function.Description,
 						Parameters:  tool.Function.Parameters,
@@ -310,7 +308,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					return
 				}
 				// 直接将模型/调度错误包装成流式消息推送给前端
-				respChan <- &types.ChatResponse{
+				respChan <- &dto.ChatResponse{
 					Type:       "error",
 					Content:    err.Error(),
 					IsComplete: true,
@@ -322,7 +320,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 					return
 				}
 				// 这里将错误包装成流式消息推送给前端
-				respChan <- &types.ChatResponse{
+				respChan <- &dto.ChatResponse{
 					Type:       "error",
 					Content:    err.Error(),
 					IsComplete: true,
@@ -331,7 +329,7 @@ func (p *PlaygroundImpl) SendMessageStream(ctx context.Context, request *dto.Sen
 				return
 			case <-ctx.Done():
 				// 上下文取消，直接包装成流式消息推送给前端
-				respChan <- &types.ChatResponse{
+				respChan <- &dto.ChatResponse{
 					Type:       "error",
 					Content:    ctx.Err().Error(),
 					IsComplete: true,
@@ -399,7 +397,7 @@ func (p *PlaygroundImpl) UpdateSessionTitle(ctx context.Context, sessionID strin
 	})
 
 	modelEngine := model_engine.NewEngineService() // 构建聊天请求
-	chatRequest := &types.ChatRequest{
+	chatRequest := &dto.ChatRequest{
 		Model:    sessionCheck.ModelName,
 		Messages: history,
 		Stream:   false,

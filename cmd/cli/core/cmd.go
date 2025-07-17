@@ -57,6 +57,7 @@ import (
 	"oadin/internal/utils/bcode"
 	"oadin/internal/utils/progress"
 	"oadin/version"
+	server2 "oadin/extension/server"
 )
 
 // NewCommand will contain all commands
@@ -214,6 +215,17 @@ func Run(ctx context.Context) error {
 	}
 	datastore.SetDefaultJsonDatastore(jds)
 
+	if server2.UseVSSForPlayground() {
+		go func() {
+			dbPath := config.GlobalOADINEnvironment.Datastore
+			if err := server2.InitPlaygroundVec(ctx, dbPath); err != nil {
+				slog.Error("Failed to initialize VSS database", "error", err)
+			} else {
+				slog.Info("VSS database initialized successfully")
+			}
+		}()
+	}
+
 	logger.InitLogger(
 		logger.LogConfig{
 			LogLevel: config.GlobalOADINEnvironment.LogLevel,
@@ -253,8 +265,6 @@ func Run(ctx context.Context) error {
 		slog.Error("[Run] Failed to write pid file", "error", err)
 		return err
 	}
-
-	_ = console.RegisterConsoleRoutes(oadinServer.Router)
 
 	go ListenModelEngineHealth()
 

@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"oadin/internal/api/dto"
+	"oadin/extension/dto"
 	"oadin/internal/datastore"
 	"oadin/internal/provider/template"
 	"oadin/internal/schedule"
