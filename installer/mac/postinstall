@@ -1,26 +1,52 @@
 #!/bin/bash
-exec > /tmp/oadin_preinstall.log 2>&1
+exec > /tmp/oadin_postinstall.log 2>&1 # 将日志重定向到 /tmp 以便调试
 set -x
-
-USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
-mkdir -p "$USER_HOME/Oadin"
-set -x
-cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
-ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
-SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')
+USER_NAME="${SUDO_USER}" # 获取原始用户名称
+if [ -z "$USER_NAME" ]; then
+    echo "Error: SUDO_USER is not set. Cannot determine user."
+    exit 1
+fi
+USER_HOME=$(eval echo ~${USER_NAME}) # 获取原始用户 Home 目录
+if [ -z "$USER_HOME" ]; then
+    echo "Error: User home for $USER_NAME not found."
+    exit 1
+fi
+DEST_DIR="$USER_HOME/Oadin"
+OADIN_PATH="$DEST_DIR/oadin"
+# 1. 创建目标目录并确保权限正确
+mkdir -p "$DEST_DIR"
+chown "$USER_NAME":staff "$DEST_DIR" # 将目录的所有权更改为用户，并设置为 staff 组
+chmod 755 "$DEST_DIR" # 确保目录有正确的读写执行权限
+# 2. 复制文件并更改所有权
+# 再次提醒：/Users/Shared/Oadin/oadin 必须在 postinstall 脚本运行时存在且可读。
+# 如果它是 pkg 的一部分，请确保打包时其目标路径是可访问的。
+# 假设 oadin 文件的原始位置是 /Library/Application Support/Oadin/oadin （这是 pkg 通常会将文件安装到的位置）
+CP_SOURCE="/Users/Shared/Oadin/oadin" # 替换为 oadin 在 pkg 安装后的实际系统路径
+if [ ! -f "$CP_SOURCE" ]; then
+    echo "Error: Source file $CP_SOURCE does not exist. Installation failed."
+    exit 1
+fi
+cp -f "$CP_SOURCE" "$OADIN_PATH"
+chown "$USER_NAME":staff "$OADIN_PATH" # 将文件所有权更改为用户，并设置为 staff 组
+chmod 755 "$OADIN_PATH" # 确保文件有执行权限
+# 3. 创建软连接到 /usr/local/bin
+# 这里软连接的源指向用户目录下的文件
+ln -sf "$OADIN_PATH" /usr/local/bin/oadin
+# 软连接 /usr/local/bin/oadin 的所有权会自动设置为 root，但权限不受影响
+# 4. 获取 Shell 信息并执行命令 (与你原脚本一致)
+SHELL_PATH=$(dscl . -read /Users/${USER_NAME} UserShell | awk '{print $2}')
 SHELL_NAME=$(basename "$SHELL_PATH")
-
+RC_FILE=""
 if [ "$SHELL_NAME" = "zsh" ]; then
   RC_FILE="$USER_HOME/.zshrc"
 elif [ "$SHELL_NAME" = "bash" ]; then
   RC_FILE="$USER_HOME/.bash_profile"
 else
-  RC_FILE=""
+  echo "Unsupported shell: $SHELL_NAME"
 fi
-
-
 if [ -n "$RC_FILE" ] && [ -f "$RC_FILE" ]; then
-  su - "$USER" -c "source $RC_FILE && oadin server start -d"
+  su - "$USER_NAME" -c "source \"$RC_FILE\" && oadin server start -d"
 else
-  su - "$USER" -c "oadin server start -d"
+  su - "$USER_NAME" -c "oadin server start -d"
 fi
+echo "Postinstall script finished."
