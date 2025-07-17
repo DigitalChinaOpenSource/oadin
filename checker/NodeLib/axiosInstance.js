@@ -73,7 +73,7 @@ async function requestWithSchema({ method, url, data, schema }) {
         throw new Error(`Response schema validation failed: ${JSON.stringify(validateRes.errors)}`);
       }
     }
-    return { code: 200, msg: res.message || null, data: res.data };
+    return { code: 200, msg: res.message || null, data: res.data || res };
   } catch (error) {
     return { code: 400, msg: error.response?.data?.message || error.message, data: null };
   }
