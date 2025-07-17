@@ -8,7 +8,33 @@ import '@res-utiles/ui-components/dist/index.css';
 import { Button, message, type UploadFile } from 'antd';
 import { SelectMcp } from '@/components/select-mcp';
 import { CopyIcon, ArrowClockwiseIcon, StopIcon } from '@phosphor-icons/react';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
+
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    // 降级处理浏览器兼容性
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return successful;
+    } catch (err) {
+      document.body.removeChild(textArea);
+      return false;
+    }
+  }
+};
 import DeepThinkChat from '../chat-components/deep-think-chat';
 import McpToolChat from '../chat-components/mcp-tool-chat';
 import StreamingMessage from '../streaming-message';
@@ -158,20 +184,22 @@ export default function ChatView(props: IChatViewProps) {
           )}
           {!error && !isLoading && messages.length > 0 && (
             <>
-              <CopyToClipboard
-                text={copiedFormMessage(messages)}
-                onCopy={() => {
-                  message.success('已复制到剪贴板');
+              <Button
+                type="link"
+                icon={<CopyIcon width={16} />}
+                onClick={async () => {
+                  const success = await copyToClipboard(copiedFormMessage(messages));
+                  if (success) {
+                    message.success('已复制到剪贴板');
+                  } else {
+                    message.error('复制失败');
+                  }
                 }}
               >
-                <Button
-                  type="link"
-                  icon={<CopyIcon width={16} />}
-                >
-                  复制
-                </Button>
-              </CopyToClipboard>
+                复制
+              </Button>
               <Button
+                style={{ padding: 0 }}
                 type="link"
                 icon={<ArrowClockwiseIcon width={16} />}
                 onClick={resendLastMessage}

@@ -11,14 +11,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@res-utiles/ui-components": "^0.0.13",
+    "@res-utiles/ui-components": "file:ui-components-0.0.13.tgz",
     "@types/lodash-es": "^4.17.12",
-    "@types/react-copy-to-clipboard": "^5.0.7",
     "i18next": "^25.2.1",
     "immer": "^10.1.1",
     "mitt": "^3.0.1",
-    "react-copy-to-clipboard": "^5.1.0",
     "react-i18next": "^15.5.2",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.1",
