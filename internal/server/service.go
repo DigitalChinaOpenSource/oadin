@@ -573,35 +573,35 @@ func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetA
 		dsService := v.(*types.Service)
 		tmp.ServiceName = dsService.Name
 		tmp.LocalProvider = dsService.LocalProvider
-		serviceStatus := 0
-		if dsService.LocalProvider != "" {
-			localSp := &types.ServiceProvider{
-				ProviderName: dsService.LocalProvider,
-			}
-			err = s.Ds.Get(ctx, localSp)
-			providerEngine := provider.GetModelEngine(localSp.Flavor)
-			err = providerEngine.HealthCheck()
-			if err == nil {
-				serviceStatus = 1
-			}
-		}
-		tmp.RemoteProvider = dsService.RemoteProvider
-		if dsService.RemoteProvider != "" {
-			remoteSp := &types.ServiceProvider{
-				ProviderName: dsService.RemoteProvider,
-			}
-			err = s.Ds.Get(ctx, remoteSp)
-			remoteModel := &types.Model{
-				ProviderName: dsService.RemoteProvider,
-			}
-			err = s.Ds.Get(ctx, remoteModel)
-
-			checkServerObj := ChooseCheckServer(*remoteSp, remoteModel.ModelName)
-			status := checkServerObj.CheckServer()
-			if status {
-				serviceStatus = 1
-			}
-		}
+		serviceStatus := 1
+		//if dsService.LocalProvider != "" {
+		//	localSp := &types.ServiceProvider{
+		//		ProviderName: dsService.LocalProvider,
+		//	}
+		//	err = s.Ds.Get(ctx, localSp)
+		//	providerEngine := provider.GetModelEngine(localSp.Flavor)
+		//	err = providerEngine.HealthCheck()
+		//	if err == nil {
+		//		serviceStatus = 1
+		//	}
+		//}
+		//tmp.RemoteProvider = dsService.RemoteProvider
+		//if dsService.RemoteProvider != "" {
+		//	remoteSp := &types.ServiceProvider{
+		//		ProviderName: dsService.RemoteProvider,
+		//	}
+		//	err = s.Ds.Get(ctx, remoteSp)
+		//	remoteModel := &types.Model{
+		//		ProviderName: dsService.RemoteProvider,
+		//	}
+		//	err = s.Ds.Get(ctx, remoteModel)
+		//
+		//	checkServerObj := ChooseCheckServer(*remoteSp, remoteModel.ModelName)
+		//	status := checkServerObj.CheckServer()
+		//	if status {
+		//		serviceStatus = 1
+		//	}
+		//}
 		tmp.HybridPolicy = dsService.HybridPolicy
 		// tmp.Status = dsService.Status
 		tmp.Status = serviceStatus

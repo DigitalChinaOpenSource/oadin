@@ -1,12 +1,32 @@
 #!/bin/bash
-USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
-mkdir -p "$USER_HOME/Oadin"
-set -x
-cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
-ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
-SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')
-SHELL_NAME=$(basename "$SHELL_PATH")
 
+echo "=== Oadin 安装后脚本开始 ==="
+
+# 获取当前登录用户
+REAL_USER=$(logname)
+if [ -z "$REAL_USER" ]; then
+  echo "无法确定登录用户，无法启动 oadin。"
+  exit 1
+fi
+
+# 获取用户主目录
+USER_HOME=$(dscl . -read /Users/"$REAL_USER" NFSHomeDirectory | awk '{print $2}')
+if [ ! -d "$USER_HOME" ]; then
+  echo "用户主目录 $USER_HOME 不存在"
+  exit 1
+fi
+
+# 安装 oadin
+mkdir -p "$USER_HOME/Oadin"
+cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
+chmod +x "$USER_HOME/Oadin/oadin"
+ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
+
+# 获取默认 shell
+USER_SHELL=$(dscl . -read /Users/"$REAL_USER" UserShell | awk '{print $2}')
+SHELL_NAME=$(basename "$USER_SHELL")
+
+# 构造 shell 启动命令
 if [ "$SHELL_NAME" = "zsh" ]; then
   RC_FILE="$USER_HOME/.zshrc"
 elif [ "$SHELL_NAME" = "bash" ]; then
@@ -15,9 +35,19 @@ else
   RC_FILE=""
 fi
 
-
 if [ -n "$RC_FILE" ] && [ -f "$RC_FILE" ]; then
-  su - "$USER" -c "source $RC_FILE && oadin server start -d"
+  launch_cmd="source '$RC_FILE' && \"$USER_HOME/Oadin/oadin\" server start -d"
 else
-  su - "$USER" -c "oadin server start -d"
+  launch_cmd="\"$USER_HOME/Oadin/oadin\" server start -d"
 fi
+
+echo "尝试以 $REAL_USER 身份执行: $launch_cmd"
+su - "$REAL_USER" -c "$launch_cmd"
+
+if [ $? -ne 0 ]; then
+  echo "❌ oadin 启动失败，请用户手动执行：oadin server start -d"
+  exit 1
+fi
+
+echo "✅ oadin 已成功安装并启动"
+exit 0
