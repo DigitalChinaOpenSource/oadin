@@ -18,8 +18,6 @@ else
 	@echo "Unsupported platform: $(GOOS)"
 endif
 
-$(info SQLITE_VEC_DIR=$(SQLITE_VEC_DIR))
-
 build-cli-win:
 	CGO_ENABLED=1 CGO_CFLAGS=-I$(SQLITE_VEC_DIR) GOOS=windows GOARCH=amd64 go build -o oadin.exe -ldflags="-s -w" cmd/cli/main.go
 
