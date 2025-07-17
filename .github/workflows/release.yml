@@ -20,6 +20,7 @@ jobs:
     steps:
       - name: Run build script on Mac
         run: |
+          echo "$ENV"
           echo "========== 🔧 Mac Build Begin =========="
           echo "--------- 🧹 清除旧文件 准备纯净环境 ----------"
           cd /Users/dcone/WebstormProjects/byze/
