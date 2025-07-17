@@ -1,0 +1,23 @@
+#!/bin/bash
+USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
+mkdir -p "$USER_HOME/Oadin"
+set -x
+cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
+ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
+SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')
+SHELL_NAME=$(basename "$SHELL_PATH")
+
+if [ "$SHELL_NAME" = "zsh" ]; then
+  RC_FILE="$USER_HOME/.zshrc"
+elif [ "$SHELL_NAME" = "bash" ]; then
+  RC_FILE="$USER_HOME/.bash_profile"
+else
+  RC_FILE=""
+fi
+
+
+if [ -n "$RC_FILE" ] && [ -f "$RC_FILE" ]; then
+  su - "$USER" -c "source $RC_FILE && oadin server start -d"
+else
+  su - "$USER" -c "oadin server start -d"
+fi
