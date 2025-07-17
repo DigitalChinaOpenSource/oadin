@@ -2,7 +2,8 @@
 exec > /tmp/oadin_postinstall.log 2>&1 # 将日志重定向到 /tmp 以便调试
 set -x
 
-USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
+INSTALL_USER=${SUDO_USER:-$(logname)}
+USER_HOME=$(eval echo "~$INSTALL_USER")
 SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')
 SHELL_NAME=$(basename "$SHELL_PATH")
 
