@@ -150,8 +150,8 @@ build_win:
     - go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
     - signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
     - echo "--------- 📦 安装包构建与签名 ----------"
-    - cd installer\win ; makensis.exe -DVERSION=$env:CI_COMMIT_TAG oadin.nsi
-    - cd ..\.. ; signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
+    - cd installer ; makensis.exe -DVERSION=$env:CI_COMMIT_TAG win\oadin.nsi
+    - cd .. ; signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
     - echo "--------- 📁 移动到待上传文件夹 ----------"
     - New-Item -ItemType Directory -Path "upload" -Force
     - Move-Item -Path "oadin-installer.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
