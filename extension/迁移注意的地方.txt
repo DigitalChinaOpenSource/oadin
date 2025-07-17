@@ -1,0 +1,14 @@
+以下方法都有嵌套在底层服务，所以需要再合并代码时比对
+stopServer
+Run
+
+GetSmartVisionModelData
+extractRegistryModelName
+ExtractModelName
+
+GetSmartVisionUrl
+
+FlavorSmartVision
+AuthTypeCredentials
+SupportFlavor
+SupportAuthType
