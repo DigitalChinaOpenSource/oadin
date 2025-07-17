@@ -14,7 +14,7 @@ const schemas = require('./schema.js');
 const tools = require('./tools.js');
 const { logAndConsole, downloadFile, getOadinExecutablePath, runInstallerByPlatform, isHealthy } = require('./tools.js');
 const { instance, requestWithSchema } = require('./axiosInstance.js')
-const { PLATFORM_CONFIG, OADIN_HEALTH, OADIN_ENGINE_PATH, } = require('./constants.js');
+const { VERSION, MAC_OADIN_PATH, PLATFORM_CONFIG, OADIN_HEALTH, OADIN_ENGINE_PATH, } = require('./constants.js');
 
 class Oadin {
   constructor(version) {
@@ -54,11 +54,96 @@ class Oadin {
   }
 
   // 检查用户目录是否存在 Oadin.exe
-  isOadinExisted() {
+  async isOadinExisted() {
     const dest = getOadinExecutablePath();
     const existed = fs.existsSync(dest);
     logAndConsole('info', `检测Oadin可执行文件是否存在: ${dest}，结果: ${existed}`);
-    return existed;
+    
+    const latest = await this.isOadinLatest();
+    logAndConsole('info', `Oadin是否最新版: ${latest}`);
+    return existed && latest;
+  }
+
+  async isOadinLatest() {
+    const platform = tools.getPlatform();
+    let currentOadinVersion = null;
+
+    if (platform === 'win32') {
+      try {
+        // 在 Windows 上执行 oadin.exe version
+        // 注意：这里需要确保 oadinDir 已经正确地在 PATH 中，或者使用绝对路径
+        const userDir = os.homedir();
+        const oadinDir = path.join(userDir, 'Oadin');
+        const oadinExecutable = path.join(oadinDir, 'oadin.exe');
+
+        // 临时修改 PATH 环境变量，确保子进程能找到 oadin.exe
+        const originalPath = process.env.PATH;
+        if (!process.env.PATH.includes(oadinDir)) {
+          process.env.PATH = `${process.env.PATH}${path.delimiter}${oadinDir}`;
+        }
+
+        const { stdout } = await new Promise((resolve, reject) => {
+          execFile(oadinExecutable, ['version'], { timeout: 5000 }, (error, stdout, stderr) => {
+            // 恢复 PATH 环境变量
+            process.env.PATH = originalPath;
+
+            if (error) {
+              logAndConsole('error', `执行 'oadin version' 命令失败: ${error.message}, stderr: ${stderr.toString()}`);
+              return reject(error);
+            }
+            resolve({ stdout: stdout.toString() });
+          });
+        });
+
+        // 从输出中提取版本号
+        const match = stdout.match(/Oadin Version:\s*(v\d+\.\d+)/);
+        if (match && match[1]) {
+          currentOadinVersion = match[1];
+        }
+      } catch (err) {
+        logAndConsole('error', `获取 Windows Oadin 版本失败: ${err.message}`);
+        return false; // 获取版本失败，认为不是最新或不可用
+      }
+    } else if (platform === 'darwin') {
+      try {
+        // 在 macOS 上执行 /usr/local/bin/oadin version
+        const oadinExecutable = MAC_OADIN_PATH;
+        const { stdout } = await new Promise((resolve, reject) => {
+          execFile(oadinExecutable, ['version'], { timeout: 5000 }, (error, stdout, stderr) => {
+            if (error) {
+              logAndConsole('error', `执行 'oadin version' 命令失败: ${error.message}, stderr: ${stderr.toString()}`);
+              return reject(error);
+            }
+            resolve({ stdout: stdout.toString() });
+          });
+        });
+
+        const match = stdout.match(/Oadin Version:\s*(v\d+\.\d+)/);
+        if (match && match[1]) {
+          currentOadinVersion = match[1];
+        }
+      } catch (err) {
+        logAndConsole('error', `获取 macOS Oadin 版本失败: ${err.message}`);
+        return false; // 获取版本失败，认为不是最新或不可用
+      }
+    } else {
+      logAndConsole('warn', `不支持的平台，无法获取 Oadin 版本。`);
+      return false;
+    }
+
+    if (currentOadinVersion) {
+      logAndConsole('info', `当前 Oadin 版本: ${currentOadinVersion}, 期望版本: ${VERSION}`);
+      if (currentOadinVersion === VERSION) {
+        logAndConsole('info', '✅ Oadin 版本是最新。');
+        return true;
+      } else {
+        logAndConsole('info', `🔄 Oadin 版本不是最新 (当前: ${currentOadinVersion}, 期望: ${VERSION})，需要更新。`);
+        return false; // 版本不匹配，需要更新
+      }
+    } else {
+      logAndConsole('warn', '未能解析 Oadin 版本信息，视为不是最新。');
+      return false; // 未能解析版本，也视为需要更新或安装
+    }
   }
 
   getOadinInstallerPath() {
