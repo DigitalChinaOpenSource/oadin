@@ -1,9 +1,5 @@
 # Oadin (Open AIPC Development Infrastructure)
 
-## Star History
----
-![Star History](https://api.star-history.com/svg?repos=DigitalChinaOpenSource/oadin&type=Date)
-
 English | [中文](README_zhCN.md)
 
 Current version is Oadin v0.2.0, providing production-grade AI service infrastructure. Welcome to submit Issues and feature suggestions for any problems discovered.
@@ -13,30 +9,35 @@ Oadin now supports a complete AI service ecosystem, including core functions suc
 ### 🎯 v0.2.0 Current Features
 
 **🚀 Core Architecture Features:**
+
 - 🏗️ **Unified Service Layer** - Unified AI service interface supporting multiple service providers
 - 🔧 **Intelligent Scheduling Engine** - Automatically selects the most suitable service provider
 - 📊 **Web Management Console** - Complete visual management interface
 - 🛡️ **Service Provider Management** - Flexible local and remote service provider configuration
 
 **🆕 Core Functions:**
+
 - 💬 **Chat Service** - Supports multi-turn conversations, streaming output, deep thinking mode
 - 🔍 **Text Embedding Service** - Supports multiple embedding models for vectorization and retrieval
 - ✍️ **Text Generation Service** - Single-turn text generation, supports multiple generation models
 - 🎨 **Text-to-Image Service** - Generate images from text descriptions
 
 **🔌 Ecosystem:**
+
 - 🤖 **Local Engines** - Mainly supports Ollama, experimental support for IPEX-LLM, OpenVINO
 - 🌐 **Cloud Service Integration** - Baidu Wenxin, Alibaba Tongyi, Tencent Hunyuan, DeepSeek, SmartVision
 - 🛠️ **MCP Tool Ecosystem** - Model Context Protocol tool integration and management
 - 📚 **Playground** - Interactive testing environment, supports RAG document processing
 
 **💼 Practical Features:**
+
 - 🔐 **Security Authentication** - Basic API key authentication
 - 📈 **Service Monitoring** - Basic service status monitoring and health checks
 - 🔄 **Hybrid Scheduling** - Intelligent switching between local and cloud services
 - 🚀 **Easy Deployment** - Simple installation and configuration process
 
 **🎯 Developer Support:**
+
 - 📖 **API Documentation** - Complete REST API documentation and examples
 - 🧪 **Testing Tools** - Playground interactive testing environment
 - 🔧 **Sample Code** - Multi-language examples for C#, JavaScript, etc.
@@ -48,18 +49,18 @@ Oadin now supports a complete AI service ecosystem, including core functions suc
 
 **Core AI Services:**
 
-| Service Name | Endpoint | Description |
-|-------------|----------|-------------|
-| 💬 Chat | `/oadin/v0.2/services/chat` | Multi-turn conversations, supports streaming output, deep thinking, tool calling |
-| 🔍 Text Embedding | `/oadin/v0.2/services/embed` | Text vectorization, supports multiple embedding models for semantic retrieval |
-| ✍️ Text Generation | `/oadin/v0.2/services/generate` | Single-turn text generation, supports multiple generation models and parameter adjustment |
-| 🎨 Text-to-Image | `/oadin/v0.2/services/text-to-image` | Generate images from text descriptions, supports multiple text-to-image models |
+| Service Name       | Endpoint                             | Description                                                                               |
+| ------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| 💬 Chat            | `/oadin/v0.2/services/chat`          | Multi-turn conversations, supports streaming output, deep thinking, tool calling          |
+| 🔍 Text Embedding  | `/oadin/v0.2/services/embed`         | Text vectorization, supports multiple embedding models for semantic retrieval             |
+| ✍️ Text Generation | `/oadin/v0.2/services/generate`      | Single-turn text generation, supports multiple generation models and parameter adjustment |
+| 🎨 Text-to-Image   | `/oadin/v0.2/services/text-to-image` | Generate images from text descriptions, supports multiple text-to-image models            |
 
 **Advanced Services:**
 
-| Service Name | Endpoint | Description |
-|-------------|----------|-------------|
-| 🛠️ MCP Tools | `/oadin/v0.2/mcp` | Model Context Protocol tool integration and management |
+| Service Name     | Endpoint                 | Description                                                                          |
+| ---------------- | ------------------------ | ------------------------------------------------------------------------------------ |
+| 🛠️ MCP Tools     | `/oadin/v0.2/mcp`        | Model Context Protocol tool integration and management                               |
 | 📚 RAG Documents | `/oadin/v0.2/playground` | Intelligent document processing, knowledge base construction, retrieval optimization |
 
 ---
@@ -67,11 +68,13 @@ Oadin now supports a complete AI service ecosystem, including core functions suc
 ### 🏗️ Supported AI Engines
 
 **Local Engines:**
+
 - 🦙 **Ollama** - Lightweight local large model runtime engine, main integration engine for the project
 - ⚡ **IPEX-LLM** - Intel optimized high-performance inference engine (experimental support)
 - 🔧 **OpenVINO** - Intel edge AI optimization toolkit (experimental support)
 
 **Cloud Services:**
+
 - 🌟 **OpenAI** - GPT series models (via API compatibility)
 - 🧠 **DeepSeek** - DeepSeek-V3, DeepSeek-R1 series
 - 🌐 **Baidu Wenxin** - Wenxin Yiyan, ERNIE series
@@ -230,7 +233,7 @@ oadin pull <model_name> -for <service_name> --provider <provider_name>
 oadin get services <service_name>
 
 # Modify service configuration
-# hybrid_policy   specifies the scheduling policy of the specific service, 
+# hybrid_policy   specifies the scheduling policy of the specific service,
 # 			      the optional values are always_local, always_remote, default
 # remote_provider specifies the remote service provider
 # local_provider  specifies the local service provider
@@ -261,7 +264,7 @@ oadin install service_provider -f xx/xxx.json
   ]
 }
 
-# Modify service provider configuration, here you can only modify the service provider configuration information, 
+# Modify service provider configuration, here you can only modify the service provider configuration information,
 # model changes need to be done by pulling models and deleting models
 oadin edit service_provider <provider_name> -f xxx/xxx.json
 # Example:
@@ -298,18 +301,19 @@ version will provide more services related to text-to-image and voice.
 
 ### 📚 API Endpoints Overview
 
-| Service Type | Endpoint | Description |
-|-------------|----------|-------------|
-| 💬 Chat | `POST /oadin/v0.2/services/chat` | Multi-turn conversations with streaming support<br/>Supports `think` field for deep thinking control |
-| 🔍 Embed | `POST /oadin/v0.2/services/embed` | Text vectorization |
-| ✍️ Generate | `POST /oadin/v0.2/services/generate` | Single-turn text generation |
-| 🎨 Text-to-Image | `POST /oadin/v0.2/services/text-to-image` | Generate images from text |
+| Service Type     | Endpoint                                  | Description                                                                                          |
+| ---------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 💬 Chat          | `POST /oadin/v0.2/services/chat`          | Multi-turn conversations with streaming support<br/>Supports `think` field for deep thinking control |
+| 🔍 Embed         | `POST /oadin/v0.2/services/embed`         | Text vectorization                                                                                   |
+| ✍️ Generate      | `POST /oadin/v0.2/services/generate`      | Single-turn text generation                                                                          |
+| 🎨 Text-to-Image | `POST /oadin/v0.2/services/text-to-image` | Generate images from text                                                                            |
 
 ---
 
 ### 🌐 Web Console
 
 Access http://localhost:16688 for the complete Web management interface:
+
 - 📊 **Dashboard** - Service status and performance monitoring
 - 🎮 **Playground** - Interactive testing environment
 - 📁 **Document Management** - RAG document upload and processing
@@ -322,6 +326,7 @@ Access http://localhost:16688 for the complete Web management interface:
 **Chat Service:**
 
 Basic conversation example:
+
 ```sh
 curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
   -H "Content-Type: application/json" \
@@ -360,13 +365,14 @@ curl -X POST http://localhost:16688/oadin/v0.2/services/chat \
 > **Note**: The `think` field is only effective for models that support deep thinking, such as the Qwen3 series. Other models will ignore this parameter.
 
 **Other API Examples:**
+
 ```sh
 # Embed Service
 curl -X POST http://localhost:16688/oadin/v0.2/services/embed \
   -H "Content-Type: application/json" \
   -d '{"model":"nomic-embed-text","input":["text1","text2"]}'
 
-# Text-to-Image Service  
+# Text-to-Image Service
 curl -X POST http://localhost:16688/oadin/v0.2/services/text-to-image \
   -H "Content-Type: application/json" \
   -d '{"model":"wanx2.1-t2i-turbo","prompt":"a cute cat"}'
@@ -404,6 +410,7 @@ original ollama API, i.e., `/api/chat`.
 Oadin provides a lightweight application integration solution that allows your AI applications to work without packaging AI models and service stacks.
 
 **Supported Development Languages:**
+
 - 🟨 **JavaScript/Node.js** - `npm install oadin-lib-1.2.66.tgz`
 - 🔷 **C#/.NET** - `OadinClient` NuGet package
 - 🔧 **C/C++** - `OadinChecker.dll` and header files
@@ -413,6 +420,7 @@ Oadin provides a lightweight application integration solution that allows your A
 ### 🛠️ Integration Steps
 
 **1. Create `.oadin` configuration file (v0.2.0 format):**
+
 ```json
 {
   "version": "v0.2",
@@ -473,34 +481,36 @@ Oadin provides a lightweight application integration solution that allows your A
 **2. Code Integration Examples:**
 
 **Node.js Integration:**
+
 ```javascript
-const OadinLib = require('oadin-lib');
+const OadinLib = require("oadin-lib");
 
 async function main() {
-    const oadin = new OadinLib();
-    
-    // Initialize Oadin (includes download, startup, config import)
-    const success = await oadin.OadinInit('./.oadin');
-    if (!success) {
-        console.error('Oadin initialization failed');
-        return;
-    }
-    
-    // Use chat service
-    const chatData = {
-        model: 'deepseek-r1:8b',
-        messages: [{ role: 'user', content: 'Hello' }],
-        stream: false
-    };
-    
-    const response = await oadin.Chat(chatData);
-    console.log('AI Reply:', response);
+  const oadin = new OadinLib();
+
+  // Initialize Oadin (includes download, startup, config import)
+  const success = await oadin.OadinInit("./.oadin");
+  if (!success) {
+    console.error("Oadin initialization failed");
+    return;
+  }
+
+  // Use chat service
+  const chatData = {
+    model: "deepseek-r1:8b",
+    messages: [{ role: "user", content: "Hello" }],
+    stream: false,
+  };
+
+  const response = await oadin.Chat(chatData);
+  console.log("AI Reply:", response);
 }
 
 main().catch(console.error);
 ```
 
 **C# Integration:**
+
 ```csharp
 using Oadin;
 
@@ -509,21 +519,21 @@ class Program
     static async Task Main(string[] args)
     {
         var checker = new OadinChecker();
-        
+
         // Initialize Oadin (auto check, download, start, import config)
         await OadinChecker.OadinInit(this);
-        
+
         // Use HTTP client to call Oadin API
         using var client = new HttpClient();
         var chatData = new
         {
             model = "deepseek-r1:8b",
-            messages = new[] { 
+            messages = new[] {
                 new { role = "user", content = "Hello" }
             },
             stream = false
         };
-        
+
         var json = JsonSerializer.Serialize(chatData);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         var response = await client.PostAsync("http://localhost:16688/oadin/v0.2/services/chat", content);
@@ -534,6 +544,7 @@ class Program
 ```
 
 **C/C++ Integration:**
+
 ```c
 #include "OadinChecker.h"
 #include <stdio.h>
@@ -546,13 +557,13 @@ int main() {
         printf("Oadin initialization failed: %d\n", result);
         return 1;
     }
-    
+
     printf("Oadin is ready, can call AI services\n");
-    
+
     // Use HTTP client to call Oadin API
     // POST http://localhost:16688/oadin/v0.2/services/chat
     // Service providers defined in config file will be automatically imported and configured
-    
+
     return 0;
 }
 ```
@@ -649,6 +660,7 @@ application.
 ### 🔧 Install Oadin
 
 **Build Method (Recommended):**
+
 ```bash
 # Clone the project
 git clone https://github.com/DigitalChinaOpenSource/oadin.git
@@ -691,11 +703,13 @@ oadin pull quentinz/bge-base-zh-v1.5:f16 -for embed
 ## 📚 SDKs and Examples
 
 **Official SDKs:**
+
 - 🟨 **JavaScript/Node.js** - `oadin-lib` package
 - 🔷 **C# SDK** - `OadinClient` class
 - 🔧 **C/C++** - `OadinChecker.dll` and header files
 
 **Sample Applications:**
+
 - 💬 **FreeChat** - Complete AI chat application (C# .NET MAUI)
 - Located in `example/FreeChat/` directory
 
@@ -713,6 +727,7 @@ oadin pull quentinz/bge-base-zh-v1.5:f16 -for embed
 ### 🤝 Contribution Guidelines
 
 We welcome community contributions! Please check the contribution guidelines in the project to learn about:
+
 - 🔀 Code contribution process
 - 📋 Issue reporting templates
 - 🧪 Testing requirements
@@ -737,3 +752,11 @@ Thanks to all the developers and community members who have contributed to the O
 ⭐ If this project helps you, please give us a Star!
 
 </div>
+
+---
+
+## Star History
+
+---
+
+![Star History](https://api.star-history.com/svg?repos=DigitalChinaOpenSource/oadin&type=Date)
