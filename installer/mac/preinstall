@@ -1,4 +1,6 @@
 #!/bin/bash
+exec > /tmp/oadin_preinstall.log 2>&1
+set -x
 # 定义当前版本，根据 CI_COMMIT_TAG 设置
 THIS_VERSION="${CI_COMMIT_TAG}"
 
