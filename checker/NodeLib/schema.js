@@ -364,6 +364,7 @@ const getModelsSupported = {
     type: "object",
     properties: {
         service_source: { type: "string", enum: ["local", "remote"]},
+        service_name: { type: "string" },
         flavor: { type:"string" },
         env_type: { type: "string" },
         page_size: { type: "integer" },
@@ -394,7 +395,7 @@ const getSupportModelResponseSchema = {
               url: { type: "string" },
               auth_type: { type: "string" },
               auth_apply_url: { type: "string" },
-              auth_fields: { type: "array", items: { type: "string" } },
+              auth_fields: { type: ["array", "null"], items: { type: "string" } },
               name: { type: "string" },
               service_provider_name: { type: "string" },
               size: { type: "string" },
@@ -414,8 +415,8 @@ const getSupportModelResponseSchema = {
               think: { type: "boolean" },
               think_switch: { type: "boolean" },
               tools: { type: "boolean" },
-              context: { type: "integer" },
-              created_at: { type: "string", format: "date-time" }
+              context: { type: ["integer", "number"] },
+              created_at: { type: "string" }
             }, 
           }
         },

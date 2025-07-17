@@ -6,6 +6,7 @@ const path = require('path');
 const os = require('os');
 const axios = require('axios');
 const EventEmitter = require('events');
+const _ = require('lodash');
 const { execFile, spawn } = require('child_process');
 const { promises: fsPromises } = require("fs");
 
@@ -58,6 +59,13 @@ class Oadin {
     const existed = fs.existsSync(dest);
     logAndConsole('info', `检测Oadin可执行文件是否存在: ${dest}，结果: ${existed}`);
     return existed;
+  }
+
+  getOadinInstallerPath() {
+    const platform = tools.getPlatform();
+    if (platform == "unsupported") { return null }
+    else if (platform === 'win32') { return PLATFORM_CONFIG.win32.downloadUrl }
+    else if (platform === 'darwin') { return PLATFORM_CONFIG.darwin.downloadUrl };
   }
 
   // 私有方法：仅下载
@@ -244,7 +252,7 @@ class Oadin {
 
   async deleteModel(data) {
     return this._requestWithSchema({
-      method: 'post',
+      method: 'delete',
       url: '/model',
       data,
       schema: { request: schemas.deleteModelRequestSchema, response: schemas.ResponseSchema }
@@ -252,33 +260,33 @@ class Oadin {
   }
 
   async installModelStream(data) {
+    const client = axios.create({
+      baseURL: `http://localhost:16688/oadin/v0.2`,
+      headers: {"Content-Type": "application/json" },
+    })
     const config = { responseType: 'stream' };
     try {
-      const res = await this.client.post('/model/stream', data, config);
+      const res = await client.post('/model/stream', data, config);
       const eventEmitter = new EventEmitter();
 
       res.data.on('data', (chunk) => {
         try {
-          let rawData = _.isString(chunk) ? _.trim(chunk) : _.trim(chunk.toString());
-          let jsonString = _.startsWith(rawData, 'data:') ? rawData.slice(5) : rawData;
-          jsonString = _.trim(jsonString);
-          if (_.isEmpty(jsonString)) {
-            // 跳过空数据
-            return;
-          }
+          // 解析流数据
+          const rawData = chunk.toString().trim();
+          const jsonString = rawData.startsWith('data:') ? rawData.slice(5) : rawData;
           const response = JSON.parse(jsonString);
 
-          eventEmitter.emit('data', response);
-
+          eventEmitter.emit('data', rawData);
           if (response.status === 'success') {
-            eventEmitter.emit('end', response);
+            eventEmitter.emit('end', rawData);
           }
           if (response.status === 'canceled') {
-            eventEmitter.emit('canceled', response);
+            eventEmitter.emit('canceled', rawData);
           }
           if (response.status === 'error') {
-            eventEmitter.emit('end', response);
+            eventEmitter.emit('end', rawData);
           }
+
         } catch (err) {
           eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
         }
@@ -288,15 +296,20 @@ class Oadin {
         eventEmitter.emit('error', `流式响应错误: ${err.message}`);
       });
 
-      return eventEmitter;
+      res.data.on('end', () => {
+        eventEmitter.emit('end');
+      });
+
+      return eventEmitter; // 返回 EventEmitter 实例
     } catch (error) {
       return {
         code: 400,
         msg: error.response?.data?.message || error.message || '请求失败',
         data: null,
-      };
+      }
     }
   }
+
 
   async cancelInstallModel(data) {
     return this._requestWithSchema({
@@ -414,8 +427,12 @@ class Oadin {
     }
     // 流式
     try {
+      const client = axios.create({
+        baseURL: `http://localhost:16688/oadin/v0.2`,
+        headers: {"Content-Type": "application/json" },
+      });
       const config = { responseType: 'stream' };
-      const res = await this.client.post('services/chat', data, config);
+      const res = await client.post('services/chat', data, config);
       const eventEmitter = new EventEmitter();
       res.data.on('data', (chunk) => {
         try {
@@ -427,9 +444,6 @@ class Oadin {
           }
           const response = JSON.parse(jsonString);
           eventEmitter.emit('data', response);
-          if (response.status === 'success' || response.status === 'canceled' || response.status === 'error') {
-            eventEmitter.emit('end', response);
-          }
         } catch (err) {
           eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
         }
@@ -437,6 +451,10 @@ class Oadin {
       res.data.on('error', (err) => {
         eventEmitter.emit('error', `流式响应错误: ${err.message}`);
       });
+      res.data.on('end', () => {
+        eventEmitter.emit('end'); // 触发结束事件
+      });
+
       return eventEmitter;
     } catch (error) {
       return { code: 400, msg: error.response?.data?.message || error.message, data: null };
@@ -450,8 +468,12 @@ class Oadin {
       return this._requestWithSchema({ method: 'post', url: 'services/generate', data });
     }
     try {
+      const client = axios.create({
+        baseURL: `http://localhost:16688/oadin/v0.2`,
+        headers: {"Content-Type": "application/json" },
+      });
       const config = { responseType: 'stream' };
-      const res = await this.client.post('services/generate', data, config);
+      const res = await client.post('services/generate', data, config);
       const eventEmitter = new EventEmitter();
       res.data.on('data', (chunk) => {
         try {
@@ -463,9 +485,6 @@ class Oadin {
           }
           const response = JSON.parse(jsonString);
           eventEmitter.emit('data', response);
-          if (response.status === 'success' || response.status === 'canceled' || response.status === 'error') {
-            eventEmitter.emit('end', response);
-          }
         } catch (err) {
           eventEmitter.emit('error', `解析流数据失败: ${err.message}`);
         }
@@ -473,6 +492,10 @@ class Oadin {
       res.data.on('error', (err) => {
         eventEmitter.emit('error', `流式响应错误: ${err.message}`);
       });
+      res.data.on('end', () => {
+        eventEmitter.emit('end'); // 触发结束事件
+      });
+
       return eventEmitter;
     } catch (error) {
       return { code: 400, msg: error.response?.data?.message || error.message, data: null };

@@ -192,7 +192,7 @@ services:
                       {
                           "model": $model,
                           "stream": $stream,
-                          "messages": messages,
+                          "prompt": prompt,
                           "think": think,
                           "seed": options.seed,
                           "temperature": options.temperature,
