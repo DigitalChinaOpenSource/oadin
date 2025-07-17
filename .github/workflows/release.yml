@@ -3,10 +3,9 @@ name: Build App on Self-Hosted Runners
 on:
   push:
     branches:
-      - oadin-ci
-    # 仅在主分支推送时触发
-#    tags:
-#      - '*' # 仅在版本标签推送时触发
+      - oadin-ci# 仅在主分支推送时触发
+    tags:
+      - '*' # 仅在版本标签推送时触发
 
 jobs:
   build-mac:
