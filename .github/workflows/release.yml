@@ -52,7 +52,7 @@ jobs:
           echo "========== 🔧 Mac Build End =========="
           echo "========== 🔧 Mac Upload Begin =========="
           echo "-------- 📤 上传到 Nexus 私服 --------"
-          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://$NEXUS_HOST_PORT/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
+          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
           echo "--------- 🧹 环境清理 ----------"
           cd /Users/dcone/WebstormProjects/oadin
           git reset --hard
