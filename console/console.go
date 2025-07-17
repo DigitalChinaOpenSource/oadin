@@ -1,94 +1,197 @@
-//*****************************************************************************
-// Copyright 2025 Intel Corporation
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//*****************************************************************************
-
 package console
 
 import (
 	"bytes"
+	"context"
 	"embed"
+	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
-	"path/filepath"
+	"path"
 	"strings"
 	"time"
-
-	"github.com/gin-gonic/gin"
-
-	"oadin/version"
 )
 
 //go:embed dist/*
 var distFS embed.FS
 
-// 注册前端静态资源和SPA路由
-func RegisterConsoleRoutes(engine *gin.Engine) error {
-	// 提取dist子文件系统
-	distContents, err := fs.Sub(distFS, "dist")
-	if err != nil {
-		return err
-	}
-
-	// 静态资源（如 /assets/xxx.js、/assets/xxx.css）
-	assetsFS, err := fs.Sub(distContents, "assets")
-	if err != nil {
-		return err
-	}
-	engine.StaticFS("/assets", http.FS(assetsFS))
-	engine.StaticFile("/favicon.ico", filepath.Join("dist", "favicon.ico"))
-
-	// SPA路由兜底：所有未命中的GET路由都返回index.html
-	engine.NoRoute(func(c *gin.Context) {
-		// 包含 /oadin/ 并且不包含 /oadin/{version} 的路由
-		if strings.HasPrefix(c.Request.URL.Path, "/oadin/") && !strings.Contains(c.Request.URL.Path, "/oadin/"+version.OADINVersion) {
-			c.Status(http.StatusNotFound)
-			return
-		}
-		// 其它路由兜底返回index.html
-		file, err := distContents.Open("index.html")
-		if err != nil {
-			c.Status(http.StatusNotFound)
-			return
-		}
-		defer file.Close()
-		c.Header("Content-Type", "text/html; charset=utf-8")
-
-		// 尝试断言为 io.ReadSeeker
-		if seeker, ok := file.(io.ReadSeeker); ok {
-			http.ServeContent(c.Writer, c.Request, "index.html", fsStatModTime(file), seeker)
-			return
-		}
-		// 否则读到内存再用 bytes.Reader 包装
-		data, err := io.ReadAll(file)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			return
-		}
-		reader := bytes.NewReader(data)
-		http.ServeContent(c.Writer, c.Request, "index.html", fsStatModTime(file), reader)
-	})
-
-	return nil
+type ServerResponse struct {
+	Status  string      `json:"status"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
-// 获取文件的modtime
-func fsStatModTime(file fs.File) time.Time {
-	info, err := file.Stat()
-	if err == nil {
-		return info.ModTime()
+type Router struct {
+	Path     string   `json:"path"`
+	Children []Router `json:"children"`
+}
+
+const RouteJson = `{
+  "path": "/",
+  "children": [
+    {
+      "path": "/model-experience"
+    },
+    {
+      "path": "/model-manage",
+      "children": [
+        { "path": "/model-list" },
+        { "path": "/my-model-list"}
+      ]
+    },
+    {
+      "path": "/settings",
+      "children": [
+        { "path": "/model-setting" },
+        { "path": "/agent-setting" },
+        { "path": "/service-provider-manage" },
+        { "path": "/about-us" }
+      ]
+    },
+    {
+      "path": "/mcp-service",
+      "children": [
+        { "path": "/mcp-list" },
+        { "path": "/my-mcp-list" }
+      ]
+    },
+    {
+      "path": "/mcp-detail"
+    }
+  ]
+}`
+
+func initRoute() (*Router, error) {
+	var root Router
+
+	err := json.Unmarshal([]byte(RouteJson), &root)
+	if err != nil {
+		fmt.Println("Error parsing JSON:", err)
+		return nil, err
 	}
-	return time.Now()
+	return &root, nil
+}
+
+func handleRoute(router *Router, basePath string, mux *http.ServeMux, fileServer http.Handler) {
+	// 拼接路径，确保没有重复斜杠
+	fullPath := path.Join(basePath, router.Path)
+
+	// 注册当前路径
+	if fullPath == "/" {
+		mux.Handle(fullPath+"/", fileServer)
+	} else {
+		mux.Handle(fullPath+"/", http.StripPrefix(fullPath, fileServer))
+	}
+
+	// 处理带参数的路由
+	if hasPathParams(fullPath) {
+		// 为带参数的路由注册一个特殊的处理器
+		mux.HandleFunc(fullPath, func(w http.ResponseWriter, r *http.Request) {
+			// 提取路径参数
+			params := extractPathParams(fullPath, r.URL.Path)
+			// 将参数添加到请求上下文中
+			ctx := context.WithValue(r.Context(), "pathParams", params)
+			// 使用修改后的上下文处理请求
+			fileServer.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+
+	// 递归注册子路径
+	for i := range router.Children {
+		handleRoute(&router.Children[i], fullPath, mux, fileServer)
+	}
+}
+
+// hasPathParams 检查路径是否包含参数
+func hasPathParams(path string) bool {
+	return strings.Contains(path, ":")
+}
+
+// extractPathParams 从URL中提取路径参数
+func extractPathParams(pattern, path string) map[string]string {
+	params := make(map[string]string)
+
+	// 分割路径模式
+	patternParts := strings.Split(strings.Trim(pattern, "/"), "/")
+	pathParts := strings.Split(strings.Trim(path, "/"), "/")
+
+	// 确保路径部分数量匹配
+	if len(patternParts) != len(pathParts) {
+		return params
+	}
+
+	// 提取参数
+	for i, part := range patternParts {
+		if strings.HasPrefix(part, ":") {
+			paramName := strings.TrimPrefix(part, ":")
+			params[paramName] = pathParts[i]
+		}
+	}
+
+	return params
+}
+
+// StartConsoleServer starts the console server
+func StartConsoleServer(ctx context.Context) (*http.Server, error) {
+	// 从嵌入的文件系统创建子文件系统
+	distContents, err := fs.Sub(distFS, "dist")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create sub filesystem: %v", err)
+	}
+
+	// 创建文件服务器
+	fileServer := http.FileServer(http.FS(distContents))
+
+	// 创建路由处理
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		f, err := distContents.Open("index.html")
+		if err != nil {
+			http.Error(w, "index.html not found", http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+		data, err := io.ReadAll(f)
+		if err != nil {
+			http.Error(w, "failed to read index.html", http.StatusInternalServerError)
+			return
+		}
+
+		// 用 bytes.Reader 构造 io.ReadSeeker
+		reader := bytes.NewReader(data)
+		http.ServeContent(w, r, "index.html", time.Now(), reader)
+	})
+	routeData, err := initRoute()
+	if err != nil {
+		return nil, err
+	}
+
+	handleRoute(routeData, "", mux, fileServer)
+
+	// 创建服务器
+	srv := &http.Server{
+		Addr:    ":16699",
+		Handler: mux,
+	}
+
+	// 在新的 goroutine 中启动服务器
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Printf("Console server error: %v\n", err)
+		}
+	}()
+
+	// 监听上下文取消
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			fmt.Printf("Console server shutdown error: %v\n", err)
+		}
+	}()
+
+	return srv, nil
 }

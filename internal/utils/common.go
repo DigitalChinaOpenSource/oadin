@@ -27,6 +27,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"gorm.io/gorm/utils"
 	"io"
 	"math/rand"
 	"net/http"
@@ -64,11 +65,6 @@ const (
 )
 
 var textContentTypes = []string{ContentTypeText, ContentTypeJSON, ContentTypeXML, ContentTypeJS, ContentTypeNDJSON}
-
-type MemoryInfo struct {
-	Size       int
-	MemoryType string
-}
 
 func IsHTTPText(header http.Header) bool {
 	if contentType := header.Get("Content-Type"); contentType != "" {
@@ -758,4 +754,154 @@ func FormatSecondsToSRT(secondsStr string) string {
 	milliseconds := int((seconds - float64(int(seconds))) * MillisecondsPerSecond)
 
 	return fmt.Sprintf("%02d:%02d:%02d,%03d", hours, minutes, secs, milliseconds)
+}
+func IsDirEmpty(path string) bool {
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	// Read just one entry from the directory
+	fName, err := f.Readdirnames(3)
+	if runtime.GOOS == "darwin" {
+		fileHideCount := 0
+		for _, name := range fName {
+			if utils.Contains([]string{".", "..", ".DS_Store"}, name) {
+				fileHideCount += 1
+			}
+		}
+		if err == nil && fileHideCount == len(fName) {
+			return true
+		}
+	}
+
+	// If we got an EOF error, the directory is empty
+	return err == io.EOF
+}
+
+// CopyFile Copy the source file to the target location
+// src: source file
+// dest: target file
+func copyFile(src, dest string) error {
+	srcInfo, err := os.Lstat(src)
+	if err != nil {
+		return fmt.Errorf("get source file info failed: %v", err)
+	}
+
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, srcInfo.Mode())
+	if err != nil {
+		return fmt.Errorf("create target file failed: %v", err)
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, srcFile); err != nil {
+		return err
+	}
+
+	if err := os.Chtimes(dest, srcInfo.ModTime(), srcInfo.ModTime()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetFilePathTotalSize(path string) (int64, error) {
+	var totalSize int64 = 0
+
+	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			totalSize += info.Size()
+		}
+		return nil
+	})
+
+	return totalSize / 1024 / 1024 / 1024, err
+}
+
+func ClearDir(path string) error {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		entryPath := filepath.Join(path, entry.Name())
+		err = os.RemoveAll(entryPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+func StopOadinServer(pidFilePath string) error {
+	files, err := filepath.Glob(pidFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to list pid files: %v", err)
+	}
+
+	if len(files) == 0 {
+		fmt.Println("No running processes found")
+		return nil
+	}
+
+	// Traverse all pid files.
+	for _, pidFile := range files {
+		pidData, err := os.ReadFile(pidFile)
+		if err != nil {
+			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
+			continue
+		}
+
+		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
+		if err != nil {
+			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
+			continue
+		}
+
+		process, err := os.FindProcess(pid)
+		if err != nil {
+			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
+			continue
+		}
+
+		if err := process.Kill(); err != nil {
+			if strings.Contains(err.Error(), "process already finished") {
+				fmt.Printf("Process with PID %d is already stopped\n", pid)
+			} else {
+				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
+				continue
+			}
+		} else {
+			fmt.Printf("Successfully stopped process with PID %d\n", pid)
+		}
+
+		// remove pid file
+		if err := os.Remove(pidFile); err != nil {
+			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
+		}
+	}
+	if runtime.GOOS == "windows" && IpexOllamaSupportGPUStatus() {
+		extraProcessName := "ollama-lib.exe"
+		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+		_, err := extraCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", extraProcessName)
+			return nil
+		}
+
+		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+	}
+	return nil
 }
