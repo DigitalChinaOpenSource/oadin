@@ -7,8 +7,7 @@ import (
 
 	"oadin/extension/dto"
 	"oadin/extension/server"
-	aogDto "oadin/internal/api/dto"
-	"oadin/internal/utils/bcode"
+	"oadin/extension/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )
@@ -87,22 +86,22 @@ func (e *ControlPanelApi) GetPathDiskSizeHandler(c *gin.Context) {
 }
 
 func (e *ControlPanelApi) GetSupportModelListCombine(c *gin.Context) {
-	request := new(aogDto.GetSupportModelRequest)
-	if err := c.Bind(request); err != nil {
-		bcode.ReturnError(c, bcode.ErrModelBadRequest)
-		return
-	}
+	   request := new(dto.GetSupportModelRequest)
+	   if err := c.Bind(request); err != nil {
+			   bcode.ReturnError(c, bcode.ErrModelBadRequest)
+			   return
+	   }
 
-	if err := validate.Struct(request); err != nil {
-		bcode.ReturnError(c, err)
-		return
-	}
+	   if err := validate.Struct(request); err != nil {
+			   bcode.ReturnError(c, err)
+			   return
+	   }
 
-	ctx := c.Request.Context()
-	data, err := server.GetSupportModelListCombine(ctx, request)
-	if err != nil {
-		bcode.ReturnError(c, err)
-		return
-	}
-	c.JSON(http.StatusOK, data)
+	   ctx := c.Request.Context()
+	   data, err := server.GetSupportModelListCombine(ctx, request)
+	   if err != nil {
+			   bcode.ReturnError(c, err)
+			   return
+	   }
+	   c.JSON(http.StatusOK, data)
 }

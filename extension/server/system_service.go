@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"oadin/extension/cache"
-	"oadin/internal/api/dto"
+	"oadin/extension/dto"
 	"oadin/internal/provider"
-	"oadin/internal/utils/bcode"
+	"oadin/extension/utils/bcode"
 )
 
 type System interface {
@@ -167,7 +167,7 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 		if err != nil {
 			return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务无法重启")
 		}
-		err = engine.StartEngine()
+		err = engine.StartEngine("daemon")
 		if err != nil {
 			slog.Error("启动引擎失败", "error", err)
 			return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务无法重启")

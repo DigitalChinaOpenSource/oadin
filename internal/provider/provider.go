@@ -41,6 +41,12 @@ type ModelServiceProvider interface {
 	// config and version
 	GetConfig() *types.EngineRecommendConfig
 	GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error)
+
+	CopyModel(ctx context.Context, req *types.CopyModelRequest) error
+	GetRunModels(ctx context.Context) (*types.ListResponse, error)
+	UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error
+	GetOperateStatus() int
+	SetOperateStatus(status int)
 }
 
 // GetModelEngine get model service provider by engine name

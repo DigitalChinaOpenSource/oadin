@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"time"
 
 	"oadin/internal/client"
 	"oadin/internal/constants"
@@ -456,4 +457,59 @@ func (o *OllamaProvider) ListModels(ctx context.Context) (*types.ListResponse, e
 	}
 
 	return &lr, nil
+}
+
+// CopyModel 复制模型
+func (o *OllamaProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
+	go func() {
+		fmt.Println("Will copy model after 3 seconds: " + req.Source + " to " + req.Destination)
+		time.Sleep(1 * time.Second) // 延迟3秒执行
+		ctx := context.Background()
+		c := o.GetDefaultClient() // 假设你已声明o
+		if err := c.Do(ctx, http.MethodPost, "/api/copy", req, nil); err != nil {
+			fmt.Println("[Service] copy model failed : " + err.Error())
+			slog.Error("copy model failed : " + err.Error())
+			// todo: 后续处理
+			return
+		}
+		fmt.Println("Model copy complete: " + req.Destination)
+	}()
+	return nil
+}
+
+func (o *OllamaProvider) GetRunModels(ctx context.Context) (*types.ListResponse, error) {
+	c := o.GetDefaultClient()
+	var lr types.ListResponse
+	if err := c.Do(ctx, http.MethodGet, "/api/ps", nil, &lr); err != nil {
+		slog.Error("[Service] Get run model list failed :" + err.Error())
+		return nil, err
+	}
+	return &lr, nil
+}
+
+func (o *OllamaProvider) UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error {
+	c := o.GetDefaultClient()
+	for _, model := range req.Models {
+		reqBody := &types.OllamaUnloadModelRequest{
+			Model:     model,
+			KeepAlive: 0, // 默认为0，表示不保留模型
+		}
+		if err := c.Do(ctx, http.MethodPost, "/api/generate", reqBody, nil); err != nil {
+			slog.Error("Unload model failed : " + err.Error())
+			return err
+		}
+		slog.Info("Ollama: Model %s unloaded successfully\n", model)
+	}
+	return nil
+}
+
+var OllamaOperateStatus = 1
+
+func (o *OllamaProvider) GetOperateStatus() int {
+	return OllamaOperateStatus
+}
+
+func (o *OllamaProvider) SetOperateStatus(status int) {
+	OllamaOperateStatus = status
+	slog.Info("Ollama operate status set to", "status", OllamaOperateStatus)
 }

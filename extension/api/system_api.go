@@ -6,8 +6,8 @@ import (
 
 	"oadin/extension/rpc"
 	"oadin/extension/server"
-	"oadin/internal/api/dto"
-	"oadin/internal/utils/bcode"
+	"oadin/extension/dto"
+	"oadin/extension/utils/bcode"
 
 	"github.com/gin-gonic/gin"
 )

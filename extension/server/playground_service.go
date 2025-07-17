@@ -10,10 +10,10 @@ import (
 
 	"oadin/config"
 	"oadin/extension/model_engine"
-	"oadin/extension/dto"
 	"oadin/extension/entity"
 	"oadin/internal/datastore"
 	"oadin/internal/types"
+	"oadin/extension/dto"
 	"oadin/internal/utils/bcode"
 
 	"github.com/google/uuid"
@@ -28,7 +28,7 @@ type Playground interface {
 	ChangeSessionModel(ctx context.Context, req *dto.ChangeSessionModelRequest) (*dto.ChangeSessionModelResponse, error)
 	ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error)
 
-	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *types.ChatResponse, chan error)
+	SendMessageStream(ctx context.Context, request *dto.SendStreamMessageRequest) (chan *dto.ChatResponse, chan error)
 	UpdateToolCall(ctx context.Context, toolMessage *entity.ToolMessage) error
 	HandleToolCalls(ctx context.Context, sessionId string, messageId string) []map[string]string
 	UpdateSessionTitle(ctx context.Context, sessionID string) error
@@ -56,7 +56,7 @@ func NewPlayground() Playground {
 	}
 	go func() {
 		ctx := context.Background()
-		dbPath := config.GlobalOadinEnvironment.Datastore
+		dbPath := config.GlobalOADINEnvironment.Datastore
 		if err := InitPlaygroundVec(ctx, dbPath); err != nil {
 			slog.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
 		} else {
@@ -260,7 +260,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 
 	// 直接调用统一 Engine 层
-	chatRequest := &types.ChatRequest{
+	chatRequest := &dto.ChatRequest{
 		Model:    session.ModelName,
 		Messages: history,
 		Think:    false,
@@ -270,12 +270,11 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 
 	if len(request.Tools) > 0 {
-		// 转换 dto.Tool 为 types.Tool
-		tools := make([]types.Tool, len(request.Tools))
+		tools := make([]dto.Tool, len(request.Tools))
 		for i, tool := range request.Tools {
-			tools[i] = types.Tool{
+			tools[i] = dto.Tool{
 				Type: tool.Type,
-				Function: types.TypeFunction{
+				Function: dto.TypeFunction{
 					Name:        tool.Function.Name,
 					Description: tool.Function.Description,
 					Parameters:  tool.Function.Parameters,

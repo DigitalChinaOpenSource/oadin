@@ -905,3 +905,179 @@ func StopOadinServer(pidFilePath string) error {
 	}
 	return nil
 }
+
+
+// CopyDir Copy the source directory to the target location while preserving file attributes and structure.
+// src: source path
+// dest: target path
+func CopyDir(src, dest string) error {
+	// get source file info
+	srcInfo, err := os.Lstat(src)
+	if err != nil {
+		return fmt.Errorf("get source file info failed: %v", err)
+	}
+
+	// handle symbolic link
+	if srcInfo.Mode()&os.ModeSymlink != 0 {
+		linkTarget, err := os.Readlink(src)
+		if err != nil {
+			return fmt.Errorf("Read a symbolic link %s failed: %v", src, err)
+		}
+		return os.Symlink(linkTarget, dest)
+	}
+
+	if !srcInfo.IsDir() {
+		return copyFile(src, dest)
+	}
+
+	err = os.MkdirAll(dest, srcInfo.Mode())
+	if err != nil {
+		return fmt.Errorf("create target dictionary failed %s 失败: %v", dest, err)
+	}
+
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		targetPath := filepath.Join(dest, relPath)
+
+		if path == src {
+			return nil
+		}
+
+		if info.Mode()&os.ModeSymlink != 0 {
+			linkTarget, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+			return os.Symlink(linkTarget, targetPath)
+		}
+
+		if info.IsDir() {
+			err = os.MkdirAll(targetPath, info.Mode())
+			if err != nil {
+				return err
+			}
+			// 保持目录时间戳
+			return os.Chtimes(targetPath, info.ModTime(), info.ModTime())
+		}
+
+		// 处理普通文件
+		return copyFile(path, targetPath)
+	})
+}
+
+// CheckPathPermission Recursively check the read and write permissions of all files and directories under the given path.
+// As soon as any file or directory does not meet the required permissions, immediately return false.
+func CheckPathPermission(path string) bool {
+	// 获取路径信息
+	info, err := os.Lstat(path)
+	if err != nil {
+		return false
+	}
+
+	// 根据路径类型检查权限
+	if info.IsDir() {
+		return checkDirPermission(path)
+	} else {
+		return checkFilePermission(path)
+	}
+}
+
+// checkDirPermission 检查目录的权限
+func checkDirPermission(path string) bool {
+	// check dictionary read permission
+	_, err := os.ReadDir(path)
+	if err != nil {
+		return false
+	}
+
+	// check dictionary write permission
+	testFile := filepath.Join(path, ".permission_test_file")
+	err = os.WriteFile(testFile, []byte("test"), 0644)
+	if err != nil {
+		return false
+	}
+	_ = os.Remove(testFile)
+
+	// Traverse all files and subdirectories under the directory.
+	err = filepath.Walk(path, func(currentPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip the root directory since it has already been checked.
+		if currentPath == path {
+			return nil
+		}
+
+		// Check permissions based on the type of the path.
+		if info.IsDir() {
+			if !checkDirPermission(currentPath) {
+				return filepath.SkipAll
+			}
+		} else {
+			if !checkFilePermission(currentPath) {
+				return filepath.SkipAll
+			}
+		}
+		return nil
+	})
+
+	return err == nil
+}
+
+// checkFilePermission check file permission
+func checkFilePermission(path string) bool {
+	// read and write permission
+	file, err := os.OpenFile(path, os.O_RDWR, 0)
+	if err != nil {
+		return false
+	}
+	file.Close()
+
+	return true
+}
+
+// oadin
+type SmartVisionUrlInfo struct {
+	Url             string `json:"url"`
+	AccessToken     string `json:"access_token"`
+	ChatEnterPoint  string `json:"chat_enter_point"`
+	EmbedEnterPoint string `json:"embed_enter_point"`
+}
+
+func GetSmartVisionUrl() map[string]SmartVisionUrlInfo {
+	SmartVisionUrlMap := make(map[string]SmartVisionUrlInfo)
+	SmartVisionUrlMap["product"] = SmartVisionUrlInfo{
+		Url:             "https://smartvision.dcclouds.com",
+		AccessToken:     "private-CA004JS8Xkzblqv1gp8M6iBS",
+		ChatEnterPoint:  "/api/v1/aipc/chat/completions",
+		EmbedEnterPoint: "/api/v1/aipc/chat/embedding",
+	}
+	SmartVisionUrlMap["dev"] = SmartVisionUrlInfo{
+		Url:             "https://smartvision-dev.digitalchina.com",
+		AccessToken:     "private-doBMjUAikf2ErGqVUGzs4yGe",
+		ChatEnterPoint:  "/api/v1/aipc/chat/completions",
+		EmbedEnterPoint: "/api/v1/aipc/chat/embedding",
+	}
+	return SmartVisionUrlMap
+}
+
+func GetOadinDataDir() (string, error) {
+	var dir string
+	userDir, err := GetUserDataDir()
+	if err != nil {
+		return "", err
+	}
+	dir = filepath.Join(userDir, "Oadin")
+	if err = os.MkdirAll(dir, 0o750); err != nil {
+		return "", fmt.Errorf("failed to create directory %s: %v", dir, err)
+	}
+	return dir, nil
+}

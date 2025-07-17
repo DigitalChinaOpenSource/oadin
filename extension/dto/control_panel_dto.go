@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"oadin/internal/utils"
-	"oadin/internal/utils/bcode"
+	"oadin/internal/types"
+	"oadin/extension/utils/bcode"
 )
 
 type ModifyModelFilePathRequest struct {
@@ -21,7 +21,7 @@ type GetPathDiskSizeInfoRequest struct {
 
 type GetPathDiskSizeInfoResponse struct {
 	bcode.Bcode
-	Data *utils.PathDiskSizeInfo `json:"data"`
+	Data *types.PathDiskSizeInfo `json:"data"`
 }
 
 type GetModelFilePathResponse struct {

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"oadin/internal/datastore"
 	"oadin/internal/schedule"
+	"oadin/extension/dto"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
 	"strings"
@@ -23,7 +24,7 @@ type oadinStreamChunk struct {
 		Content   string           `json:"content"`
 		Role      string           `json:"role"`
 		Thinking  string           `json:"thinking"`
-		ToolCalls []types.ToolCall `json:"tool_calls,omitempty"`
+		ToolCalls []dto.ToolCall `json:"tool_calls,omitempty"`
 	} `json:"message"`
 	Model string `json:"model"`
 }
@@ -105,8 +106,8 @@ func (e *EngineService) RestoreCurrentModel(ctx context.Context, modelId string)
 	return nil
 }
 
-func (e *EngineService) ChatStream(ctx context.Context, req *types.ChatRequest) (<-chan *types.ChatResponse, <-chan error) {
-	respChan := make(chan *types.ChatResponse)
+func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<-chan *dto.ChatResponse, <-chan error) {
+	respChan := make(chan *dto.ChatResponse)
 	errChan := make(chan error, 1)
 
 	req.Stream = true
@@ -158,7 +159,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *types.ChatRequest) 
 		defer close(errChan)
 
 		accumulatedContent := ""
-		var toolCalls []types.ToolCall
+		var toolCalls []dto.ToolCall
 		var totalDuration int64 // 跟踪总处理时间
 
 		// 处理流式响应
@@ -220,11 +221,11 @@ func (e *EngineService) ChatStream(ctx context.Context, req *types.ChatRequest) 
 			}
 
 			if !parseSucceeded {
-				var oadinResp types.OadinAPIResponse
+				var oadinResp dto.OadinAPIResponse
 				if err := json.Unmarshal(cleanBody, &oadinResp); err == nil && oadinResp.BusinessCode == 10000 {
 					dataBytes, err := json.Marshal(oadinResp.Data)
 					if err == nil {
-						var streamResp types.OadinChatStreamResponse
+						var streamResp dto.OadinChatStreamResponse
 						if err := json.Unmarshal(dataBytes, &streamResp); err == nil {
 							parseSucceeded = true
 							fmt.Printf("[ChatStream] 解析为标准Oadin响应格式成功\n")
@@ -312,7 +313,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *types.ChatRequest) 
 
 					// 提取工具调用
 					if msg, ok := data["message"].(map[string]interface{}); ok {
-						if tc, ok := msg["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
+						if tc, ok := msg["tool_calls"].([]dto.ToolCall); ok && len(tc) > 0 {
 							toolCalls = tc
 							fmt.Printf("[ChatStream] 提取到工具调用，数量: %d\n", len(toolCalls))
 							slog.Info("[ChatStream] 从message中提取到工具调用", "数量", len(toolCalls))
@@ -321,7 +322,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *types.ChatRequest) 
 
 					// 如果没有在message中找到，尝试从顶层查找
 					if len(toolCalls) == 0 {
-						if tc, ok := data["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
+						if tc, ok := data["tool_calls"].([]dto.ToolCall); ok && len(tc) > 0 {
 							toolCalls = tc
 							fmt.Printf("[ChatStream] 从顶层提取到工具调用，数量: %d\n", len(toolCalls))
 						}
@@ -338,7 +339,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *types.ChatRequest) 
 			}
 
 			// 创建响应对象
-			resp := &types.ChatResponse{
+			resp := &dto.ChatResponse{
 				Content:       content,
 				Model:         model,
 				IsComplete:    isComplete,
@@ -384,7 +385,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *types.ChatRequest) 
 }
 
 // GenerateEmbedding 实现向量嵌入生成功能
-func (e *EngineService) GenerateEmbedding(ctx context.Context, req *types.EmbeddingRequest) (*types.EmbeddingResponse, error) {
+func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.EmbeddingRequest) (*dto.EmbeddingResponse, error) {
 	originalModel := req.Model
 	modelInfo := e.GetModelById(ctx, req.Model)
 	modelName := modelInfo.Name
@@ -486,10 +487,10 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *types.Embedd
 			slog.Info("[Embedding] 成功解析为直接数据数组",
 				"array_length", len(directData))
 
-			resp := &types.EmbeddingResponse{
+			resp := &dto.EmbeddingResponse{
 				Object: "list", // 默认对象类型
 				Model:  req.Model,
-				Usage: types.EmbeddingUsage{
+				Usage: dto.EmbeddingUsage{
 					PromptTokens: 0,
 					TotalTokens:  0,
 				},
@@ -517,7 +518,7 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *types.Embedd
 			}
 		}
 
-		var oadinResp types.OadinAPIResponse
+		var oadinResp dto.OadinAPIResponse
 		if err := json.Unmarshal(result.HTTP.Body, &oadinResp); err != nil {
 
 			slog.Warn("[Embedding] 无法解析为 Oadin 响应格式",
@@ -549,10 +550,10 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *types.Embedd
 
 		var dataArray []map[string]interface{}
 		parseArrayOk := false
-		resp := &types.EmbeddingResponse{
+		resp := &dto.EmbeddingResponse{
 			Object: "list",
 			Model:  req.Model,
-			Usage: types.EmbeddingUsage{
+			Usage: dto.EmbeddingUsage{
 				PromptTokens: 0,
 				TotalTokens:  0,
 			},
@@ -580,7 +581,7 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *types.Embedd
 		}
 
 		if !parseArrayOk {
-			var embedResp types.OadinEmbeddingResponse
+			var embedResp dto.OadinEmbeddingResponse
 			if err := json.Unmarshal(dataBytes, &embedResp); err == nil {
 				resp.Object = embedResp.Object
 				resp.Model = embedResp.Model
@@ -634,7 +635,7 @@ func cleanModelId(modelId string) string {
 }
 
 // Chat 实现非流式聊天功能
-func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*types.ChatResponse, error) {
+func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.ChatResponse, error) {
 	req.Stream = false
 
 	body, err := json.Marshal(req)
@@ -686,7 +687,7 @@ func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*type
 		fmt.Printf("[Chat] Raw response received, length: %d\n", len(result.HTTP.Body))
 		fmt.Printf("[Chat] Raw response content: %s\n", string(result.HTTP.Body))
 
-		var oadinResp types.OadinAPIResponse
+		var oadinResp dto.OadinAPIResponse
 		if err := json.Unmarshal(result.HTTP.Body, &oadinResp); err == nil && oadinResp.BusinessCode == 10000 {
 
 			dataBytes, err := json.Marshal(oadinResp.Data)
@@ -694,7 +695,7 @@ func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*type
 				return nil, fmt.Errorf("解析Oadin响应data字段失败: %v", err)
 			}
 
-			var chatResp types.OadinChatResponse
+			var chatResp dto.OadinChatResponse
 			if err := json.Unmarshal(dataBytes, &chatResp); err != nil {
 				return nil, fmt.Errorf("解析Oadin聊天响应结构失败: %v", err)
 			}
@@ -703,7 +704,7 @@ func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*type
 				return nil, fmt.Errorf("Oadin响应中没有choices选项")
 			}
 
-			response := &types.ChatResponse{
+			response := &dto.ChatResponse{
 				ID:         chatResp.ID,
 				Object:     chatResp.Object,
 				Model:      chatResp.Model,
@@ -724,7 +725,7 @@ func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*type
 		}
 
 		// 尝试直接解析成完整的ChatResponse
-		var response types.ChatResponse
+		var response dto.ChatResponse
 		if err := json.Unmarshal(result.HTTP.Body, &response); err == nil && response.Content != "" {
 			fmt.Printf("[Chat] 直接解析成功，内容长度：%d\n", len(response.Content))
 			return &response, nil
@@ -740,7 +741,7 @@ func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*type
 		content := ""
 		isComplete := false
 		model := ""
-		var toolCalls []types.ToolCall
+		var toolCalls []dto.ToolCall
 		var thoughts string
 		var totalDuration int64
 
@@ -759,7 +760,7 @@ func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*type
 			}
 
 			// 提取tool_calls
-			if tc, ok := msg["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
+			if tc, ok := msg["tool_calls"].([]dto.ToolCall); ok && len(tc) > 0 {
 				toolCalls = tc
 				fmt.Printf("[Chat] 提取到tool_calls，数量: %d\n", len(toolCalls))
 			}
@@ -798,7 +799,7 @@ func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*type
 
 		// 若还没有提取到工具调用，尝试从顶层提取
 		if len(toolCalls) == 0 {
-			if tc, ok := data["tool_calls"].([]types.ToolCall); ok && len(tc) > 0 {
+			if tc, ok := data["tool_calls"].([]dto.ToolCall); ok && len(tc) > 0 {
 				toolCalls = tc
 				fmt.Printf("[Chat] 从顶层提取到tool_calls，数量: %d\n", len(toolCalls))
 			}
@@ -812,7 +813,7 @@ func (e *EngineService) Chat(ctx context.Context, req *types.ChatRequest) (*type
 		}
 
 		// 创建响应对象
-		resp := &types.ChatResponse{
+		resp := &dto.ChatResponse{
 			Content:       content,
 			Model:         model,
 			IsComplete:    isComplete,

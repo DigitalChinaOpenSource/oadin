@@ -14,7 +14,7 @@ import (
 	"oadin/extension/model_engine"
 	"oadin/internal/datastore"
 	"oadin/extension/datastore/sqlite"
-	"oadin/internal/types"
+	"oadin/extension/dto"
 )
 
 // 包含检索增强生成的配置选项
@@ -129,7 +129,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	// 检查VEC数据库初始化状态
 	if !vecInitialized || vecDB == nil {
 		slog.Warn("[RAG] VEC未初始化，尝试初始化", "sessionID", session.ID) // 尝试初始化VEC数据库
-		dbPath := config.GlobalOadinEnvironment.Datastore
+		dbPath := config.GlobalOADINEnvironment.Datastore
 		if err := initVecDB(dbPath); err != nil {
 			slog.Error("[RAG] VEC初始化失败", "error", err)
 			return "", fmt.Errorf("VEC初始化失败: %w", err)
@@ -152,7 +152,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 		// 日志：准备生成嵌入
 		slog.Info("[RAG] Generating embedding for query", "sessionID", session.ID, "query", q, "embedModelID", session.EmbedModelID)
 		// 直接生成嵌入，不使用缓存
-		embeddingReq := &types.EmbeddingRequest{
+		embeddingReq := &dto.EmbeddingRequest{
 			Model: session.EmbedModelID,
 			Input: []string{q},
 		}
@@ -266,7 +266,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	if !vecInitialized || vecDB == nil {
 		slog.Error("[RAG] VEC数据库无法使用，尝试重新初始化", "sessionID", session.ID)
 		// 尝试初始化VEC数据库
-		dbPath := config.GlobalOadinEnvironment.Datastore
+		dbPath := config.GlobalOADINEnvironment.Datastore
 		if err := initVecDB(dbPath); err != nil || !vecInitialized || vecDB == nil {
 			slog.Error("[RAG] VEC初始化失败，无法执行检索", "error", err)
 			return "", fmt.Errorf("VEC数据库不可用: %w", err)
