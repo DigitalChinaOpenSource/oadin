@@ -2,26 +2,67 @@ name: Build App on Self-Hosted Runners
 
 on:
   push:
-    branches:
-      - oadin-ci
+    tags:
+      - '*' # 仅在版本标签推送时触发
 
 jobs:
   build-mac:
     name: Build macOS App
     runs-on: [self-hosted, macOS, ARM64] # 匹配 aiwenxuedeMac-mini
+    env:
+      ENV: "development"
+      CI_COMMIT_TAG: "${{ github.ref_name }}"
+      MAC_FILE_NAME: "oadin-installer-${{ github.ref_name }}.pkg"
+      WIN_FILE_NAME: "oadin-installer-${{ github.ref_name }}.exe"
     steps:
-      - uses: actions/checkout@v4
       - name: Run build script on Mac
         run: |
-          echo "Building on macOS ARM64"
-          pwd
+          echo "========== 🔧 Mac Build Begin =========="
+          echo "--------- 🧹 清除旧文件 准备纯净环境 ----------"
+          cd /Users/dcone/WebstormProjects/byze/
+          git reset --hard
+          git clean -fd
+          echo "--------- 🔖 拉取代码准备构建 ----------"
+          git fetch
+          echo $CI_COMMIT_TAG ; git checkout $CI_COMMIT_TAG
+          echo "--------- 🛠️ 制品构建与签名 ----------"
+          go mod tidy
+          echo "$ENV active"
+          CGO_ENABLED=1 CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec" GOOS=darwin GOARCH=arm64  go build -o oadin -tags "$ENV" -ldflags="-s -w"  cmd/cli/main.go
+          codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
+          echo "--------- 📦 安装包构建与签名 ----------"
+          mkdir -p pkgroot/oadin
+          mv oadin pkgroot/oadin/oadin
+          chmod +x installer/mac/preinstall
+          chmod +x installer/mac/postinstall
+          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
+          echo "--------- 📬 安装包公证 ----------"
+          xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
+          xcrun notarytool submit oadin.pkg --keychain-profile "ci-profile" --wait
+          echo "--------- 📎 附加公证票据 ----------"
+          xcrun stapler staple oadin.pkg
+          echo "--------- 🔎️ 验签 ----------"
+          spctl --assess --type install --verbose=4 oadin.pkg
+          echo "--------- 📁 移动到待上传文件夹 ----------"
+          mkdir -p upload
+          mv oadin.pkg upload/${MAC_FILE_NAME}
+          echo "========== 🔧 Mac Build End =========="
+          echo "========== 🔧 Mac Upload Begin =========="
+          echo "-------- 📤 上传到 Nexus 私服 --------"
+          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/byze/upload/${MAC_FILE_NAME}" "http://$NEXUS_HOST_PORT/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
+          echo "--------- 🧹 环境清理 ----------"
+          cd /Users/dcone/WebstormProjects/byze
+          git reset --hard
+          git clean -fd
+          echo "--------- 🗑️ 删除本地tag ----------"
+          git checkout main
+          git tag -d $CI_COMMIT_TAG
+          echo "========== 🔧 Mac Upload End =========="
 
   build-win:
     name: Build Windows App
     runs-on: [self-hosted, Windows, X64] # 匹配 WIN-P1B0AOCK993
     steps:
-      - uses: actions/checkout@v4
       - name: Run build script on Windows
         run: |
-          echo "Building on Windows"
-          dir
+          echo "hello"
