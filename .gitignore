@@ -59,7 +59,7 @@ oadin
 
 build.sh
 
-/console/dist/*
+#/console/dist/*
 
 # fronted node_modules
 /fronted/**/node_modules/
