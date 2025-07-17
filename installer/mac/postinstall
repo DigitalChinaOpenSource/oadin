@@ -2,9 +2,9 @@
 exec > /tmp/oadin_postinstall.log 2>&1 # 将日志重定向到 /tmp 以便调试
 set -x
 
-INSTALL_USER=${SUDO_USER:-$(logname)}
+INSTALL_USER=$(stat -f%Su /dev/console)
 USER_HOME=$(eval echo "~$INSTALL_USER")
-SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')
+SHELL_PATH=$(dscl . -read /Users/INSTALL_USER UserShell | awk '{print $2}')
 SHELL_NAME=$(basename "$SHELL_PATH")
 
 if [ "$SHELL_NAME" = "zsh" ]; then
@@ -17,7 +17,7 @@ fi
 
 
 if [ -n "$RC_FILE" ] && [ -f "$RC_FILE" ]; then
-  su - "$USER" -c "source $RC_FILE && oadin server start -d"
+  su - "$INSTALL_USER" -c "source $RC_FILE && oadin server start -d"
 else
-  su - "$USER" -c "oadin server start -d"
+  su - "$INSTALL_USER" -c "oadin server start -d"
 fi
