@@ -551,8 +551,9 @@ func NewVersionCommand() *cobra.Command {
 		Short: "Prints oadin build version information.",
 		Long:  "Prints oadin build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf(`Oadin Version: %s`,
-				version.OadinVersion)
+			fmt.Printf(`Oadin Version: %s
+	                           Oadin SubVersion: %s`,
+				version.OadinVersion, version.OadinSubVersion)
 		},
 	}
 
