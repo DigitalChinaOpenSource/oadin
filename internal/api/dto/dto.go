@@ -154,6 +154,7 @@ type SmartVisionSupportModelRequest struct {
 type GetSupportModelRequest struct {
 	Flavor        string `form:"flavor"`
 	EnvType       string `form:"env_type"`
+	ServiceName   string `form:"service_name"`
 	ServiceSource string `form:"service_source" validate:"required"`
 	Mine          bool   `form:"mine" default:"false"`
 	PageSize      int    `form:"page_size"`

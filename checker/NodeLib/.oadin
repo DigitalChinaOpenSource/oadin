@@ -1,0 +1,85 @@
+{
+    "chat": {
+        "hybrid_policy": "default",
+        "status": "health",
+        "services": {
+            "local": {
+                "service_id": 1,
+                "service_type": "local",
+                "provider": {
+                    "name": "local_ollama_chat",
+                    "desc": "Local ollamma chat/completion",
+                    "method": "POST",
+                    "url": "http://127.0.0.1:11434/api/chat",
+                    "api_flavor": "ollama",
+                    "properties": {
+                        "supported_response_mode": [
+                            "sync",
+                            "stream"
+                        ],
+                        "models": [
+                            "qwen2.5:0.5b"
+                        ]
+                    },
+                    "status": "health"
+                },
+                "created_at": "2023-10-01T12:00:00Z",
+                "updated_at": "2023-10-01T12:00:00Z"
+            },
+            "remote": {
+                "service_id": 2,
+                "service_type": "remote",
+                "provider": {
+                    "name": "remote_openai_chat",
+                    "desc": "Remote openai chat/completion",
+                    "method": "POST",
+                    "url": "http://10.239.44.34:1234/v1/chat/completions",
+                    "api_flavor": "openai",
+                    "properties": {
+                        "supported_response_mode": [
+                            "sync",
+                            "stream"
+                        ],
+                        "models": [
+                            "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF"
+                        ]
+                    },
+                    "status": "health"
+                },
+                "created_at": "2023-10-01T12:00:00Z",
+                "updated_at": "2023-10-01T12:00:00Z"
+            }
+        }
+    },
+    "generate": {
+        "hybrid_policy": "default",
+        "status": "health",
+        "services": {
+            "local": {
+                "service_id": 3,
+                "service_type": "local",
+                "provider": {
+                    "name": "local_ollama_generate",
+                    "desc": "Local ollamma chat/completion",
+                    "method": "POST",
+                    "url": "http://127.0.0.1:11434/api/generate",
+                    "api_flavor": "ollama",
+                    "properties": {
+                        "supported_response_mode": [
+                            "sync",
+                            "stream"
+                        ],
+                        "models": [
+                            "qwen2.5:0.5b"
+                        ]
+                    },
+                    "status": "health"
+                },
+                "created_at": "2023-10-01T12:00:00Z",
+                "updated_at": "2023-10-01T12:00:00Z"
+
+            }
+        }
+    }
+
+}

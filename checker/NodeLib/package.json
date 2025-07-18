@@ -1,0 +1,33 @@
+{
+  "name": "oadin-lib",
+  "version": "1.3.13-test.13",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "axios": "^1.8.4",
+    "lodash": "^4.17.21",
+    "winston": "^3.17.0"
+  },
+  "files": [
+    "index.js",
+    "schema.js",
+    "axiosInstance.js",
+    "constants.js",
+    "tools.js",
+    "package.json",
+    "README.md",
+    ".oadin"
+  ],
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
