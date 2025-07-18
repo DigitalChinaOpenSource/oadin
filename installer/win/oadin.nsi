@@ -5,7 +5,7 @@
 !define COMPANY_NAME "Digital China"
 !define INSTALL_DIR "$PROFILE\Oadin"
 
-Outfile "..\oadin-installer.exe"
+Outfile "..\..\oadin-installer.exe"
 InstallDir "${INSTALL_DIR}"
 RequestExecutionLevel user ; Install to user's profile, so no admin rights needed by default
 SetCompress auto
