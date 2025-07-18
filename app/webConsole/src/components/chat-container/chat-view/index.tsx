@@ -99,7 +99,7 @@ export default function ChatView(props: IChatViewProps) {
       }
     }
 
-    const isModelDownloaded = await checkIsModelDownloaded(selectedModel?.name || '');
+    const isModelDownloaded = await checkIsModelDownloaded(selectedModel?.name || '', selectedModel?.source || 'local');
     if (!isModelDownloaded) {
       const text = selectedModel?.source === 'local' ? '模型未下载，请先下载模型' : '模型未授权，请先授权';
       message.error(text);

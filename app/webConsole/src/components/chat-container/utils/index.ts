@@ -32,8 +32,10 @@ export const fetchAllModels = async (): Promise<ModelInfo[]> => {
   return data || [];
 };
 
-export const checkIsModelDownloaded = async (modelName: string): Promise<boolean> => {
+export const checkIsModelDownloaded = async (modelName: string, source: 'local' | 'remote'): Promise<boolean> => {
   const data = await fetchAllModels();
-  const model = data.find((item) => item.model_name === modelName && item.provider_name === 'local_ollama_chat');
+  const model = data.find(
+    (item) => item.model_name === modelName && ((item.provider_name === 'local_ollama_chat' && source === 'local') || (item.provider_name === 'remote_smartvision_chat' && source === 'remote')),
+  );
   return model?.status === 'downloaded';
 };
