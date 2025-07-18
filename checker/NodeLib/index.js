@@ -77,6 +77,7 @@ class Oadin {
         return false;
       } else {
         logAndConsole('info', 'Oadin 未停止。');
+        return false
       }
     }
     return latest; // 返回 Oadin 是否为最新版的结果
