@@ -102,7 +102,7 @@ class Oadin {
       }
     } else if (platform === 'darwin') {
       try {
-        const oadinExecutable = tools.MAC_OADIN_PATH; // 确保 MAC_OADIN_PATH 是正确的
+        const oadinExecutable = MAC_OADIN_PATH; // 确保 MAC_OADIN_PATH 是正确的
         const { stdout } = await new Promise((resolve, reject) => {
           execFile(oadinExecutable, ['version'], { timeout: 5000 }, (error, stdout, stderr) => {
             if (error) {
