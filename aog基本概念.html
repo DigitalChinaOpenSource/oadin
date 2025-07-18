@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oadin 关键概念 &mdash; Oadin (AIPC Open Gateway) v0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=4b4c264b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=683873e3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Oadin (AIPC Open Gateway)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Oadin 目标:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="%E4%BB%8B%E7%BB%8D.html">Oadin针对的问题陈述</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Oadin API 规范:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="service_specs/chat.html">Oadin Chat 服务相关</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Oadin (AIPC Open Gateway)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Oadin 关键概念</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aog基本概念.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="oadin">
+<h1>Oadin 关键概念<a class="headerlink" href="#oadin" title="Link to this heading"></a></h1>
+<p>在这一节中，我们将介绍 <code class="docutils literal notranslate"><span class="pre">Oadin</span></code> 的关键概念和术语.</p>
+<section id="oadin-oadin">
+<h2>Oadin 服务和 Oadin 服务提供商<a class="headerlink" href="#oadin-oadin" title="Link to this heading"></a></h2>
+<p>在 <code class="docutils literal notranslate"><span class="pre">Oadin</span></code> 中, 典型的通用 AI 服务例如 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 和 <code class="docutils literal notranslate"><span class="pre">text-to-image</span></code>
+等被定义为 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code>，每个服务都有其标准化的API.</p>
+<p>目前， <code class="docutils literal notranslate"><span class="pre">Oadin</span></code> 支持基于HTTP协议的RESTFUL API。 所以这里的API指的是接口（HTTP verb 和 URL），以及通过该接口进行对应服务的请求和响应的格式。</p>
+<p>另一方面 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span> <span class="pre">Provider</span></code> 是实际提供服务的实体，它实现了 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 的API。</p>
+<p>这与面向对象编程（OOP, Object Oriented Programming）中的抽象接口和具体类概念相似，即 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 是一种抽象接口，而 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span> <span class="pre">Provider</span></code> 是实现该接口的具体类。</p>
+<p>实际操作上，一个 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 可以拥有多个 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span> <span class="pre">Providers</span></code> 。一个 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span> <span class="pre">Provider</span></code> 也可以提供多个 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Services</span></code> 。</p>
+digraph G {
+ rankdir=BT
+ compound=true
+ label = &quot;Oadin Services and Service Providers&quot;
+ graph [fontname = &quot;Verdana&quot;, fontsize = 10, style=&quot;filled&quot;, penwidth=0.5]
+ node [fontname = &quot;Verdana&quot;, fontsize = 10, shape=box, color=&quot;#333333&quot;, style=&quot;filled&quot;, penwidth=0.5]
+
+
+ subgraph cluster_oadin_service {
+     label = &quot;Oadin Services&quot;
+     color=&quot;#dddddd&quot;
+     fillcolor=&quot;#eeeeee&quot;
+
+     node[fillcolor=&quot;#ffffcc&quot;]
+
+     chat[label=&quot;chat&quot;]
+     rag_summarize[label=&quot;rag/summarize&quot;]
+     text_to_image[label=&quot;text-to-image&quot;]
+ }
+
+ subgraph cluster_oadin_service_provider {
+     label = &quot;Oadin Service Providers&quot;
+     color=&quot;#dddddd&quot;
+     fillcolor=&quot;#eeeeee&quot;
+
+     node[fillcolor=&quot;#eeffcc&quot;]
+
+     provider_a[label=&quot;Remote OpenAI Chat&quot;]
+     provider_b[label=&quot;Local Ollama Chat&quot;]
+     provider_c[label=&quot;Local Stable Diffusion&quot;]
+ }
+
+
+ edge[arrowhead=onormal]
+ {provider_a, provider_b} -&gt; chat
+ {provider_a, provider_b} -&gt; rag_summarize
+ provider_c -&gt; text_to_image
+
+}<p>如上图所示，远程 <em>OpenAI Chat</em> 和本地 <em>Ollama Chat</em> 均为 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span> <span class="pre">Providers</span></code> 服务的 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 。同时，<em>rag/summarize</em> 服务实际上依赖于与 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 相同的提供商。</p>
+</section>
+<section id="id1">
+<h2>Oadin 服务详情<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>一个 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 包含以下定义属性：</p>
+<dl class="simple">
+<dt>Name</dt><dd><p>服务的名称。 这是 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 的字符串类型的ID。因此，每个服务的名称都是唯一的。例如
+<code class="docutils literal notranslate"><span class="pre">chat</span></code>, <code class="docutils literal notranslate"><span class="pre">embed</span></code>, <code class="docutils literal notranslate"><span class="pre">rag/query</span></code>, <code class="docutils literal notranslate"><span class="pre">text-to-image</span></code>,
+<code class="docutils literal notranslate"><span class="pre">audio/text-to-speech</span></code> 等。</p>
+</dd>
+<dt>HybridPolicy</dt><dd><p>服务的调度策略。在服务层面可以有多种调度策略，我们期望在单个服务拥有多个不同服务提供商时，
+可以通过一定的策略来自动选择和切换不同的服务商来提供 AI 服务，这部分目前暂仅支持以下三种策略，
+在未来我们期望在调度策略这里加入更多的可能性。
+例如 <code class="docutils literal notranslate"><span class="pre">default</span></code>, <code class="docutils literal notranslate"><span class="pre">always_remote</span></code>, <code class="docutils literal notranslate"><span class="pre">always_local</span></code> 等。</p>
+</dd>
+<dt>RemoteProvider</dt><dd><p>默认的远端服务提供商的名称，由于我们单个服务可能会有多个不同的远端服务提供商，所以我们需要用户指定
+一个默认的远端服务提供商。当然，在我们初次安装远端服务时，我们会自动将当前服务提供商设置为默认远端服务提供商。</p>
+</dd>
+<dt>LocalProvider</dt><dd><p>默认的本地服务提供商的名称，由于我们在未来会支持多种本地模型引擎（ <code class="docutils literal notranslate"><span class="pre">openvino</span></code>、 <code class="docutils literal notranslate"><span class="pre">ollama</span></code> ）等，
+和 <code class="docutils literal notranslate"><span class="pre">RemoteProvider</span></code> 相同，我们同样需要指定一个默认的本地服务提供商。当然，在我们初次安装本地服务时，
+我们会自动将当前服务提供商设置为默认本地服务提供商。</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h2>Oadin 服务提供商详情<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>ProviderName</dt><dd><p>服务提供商的名称。</p>
+</dd>
+<dt>ServiceName</dt><dd><p>服务名称。表明当前服务提供商提供了哪种服务。</p>
+</dd>
+<dt>ServiceSource</dt><dd><p>服务来源。表明服务来源于何处，这里指的是： <code class="docutils literal notranslate"><span class="pre">local</span></code> 或 <code class="docutils literal notranslate"><span class="pre">remote</span></code></p>
+</dd>
+<dt>Flavor</dt><dd><p>服务提供商的风格类别。用于区分服务提供商的类别，例如 <code class="docutils literal notranslate"><span class="pre">openai</span></code>、 <code class="docutils literal notranslate"><span class="pre">ollama</span></code>、
+<code class="docutils literal notranslate"><span class="pre">deepseek</span></code>、 <code class="docutils literal notranslate"><span class="pre">tencent</span></code> 等。</p>
+</dd>
+<dt>Method</dt><dd><p>服务的调用方式，即 HTTP verb （GET/POST）</p>
+</dd>
+<dt>URL</dt><dd><p>服务的实际调用地址，例： <code class="docutils literal notranslate"><span class="pre">http://localhost:11434/api/chat</span></code></p>
+</dd>
+<dt>AuthType</dt><dd><p>服务的鉴权方式。由于远端 AI 服务基本都需要鉴权才能访问，所以这里我们提供了鉴权支持，例如：
+<code class="docutils literal notranslate"><span class="pre">none</span></code>, <code class="docutils literal notranslate"><span class="pre">apikey</span></code>, <code class="docutils literal notranslate"><span class="pre">token</span></code>。</p>
+</dd>
+<dt>AuthKey</dt><dd><p>服务的鉴权信息。根据 <code class="docutils literal notranslate"><span class="pre">AuthType</span></code> 提供不同的鉴权信息。</p>
+</dd>
+</dl>
+<dl id="oadin-service-provider-properties">
+<dt>Properties</dt><dd><p>每个 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 也有一组属性。这些属性用于描述实现服务的实际服务提供商，因此其值因服务提供商而异。</p>
+<p>例如， <code class="docutils literal notranslate"><span class="pre">chat</span></code> 服务有 <code class="docutils literal notranslate"><span class="pre">max_input_tokens</span></code> 属性，该属性告知上层应用程序可以向底层服务提供商发送的最大token数。对不同的服务提供商，该属性的值也不同。</p>
+</dd>
+</dl>
+</section>
+<section id="oadin-api">
+<h2>Oadin 应用的 API 风格<a class="headerlink" href="#oadin-api" title="Link to this heading"></a></h2>
+<p>在 <span class="xref std std-doc">oadin规范</span> 中， <code class="docutils literal notranslate"><span class="pre">Oadin</span></code> 定义了 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Services</span></code> 的规范，包括其名称、端口、请求模式、响应模式等。</p>
+<p>然而实际上应用开发者和服务提供商很可能并未完全遵守 <code class="docutils literal notranslate"><span class="pre">Oadin</span></code> 的规范，正如文档 <a class="reference internal" href="%E4%BB%8B%E7%BB%8D.html#compatibility-issue"><span class="std std-ref">解决兼容性问题</span></a> 所说的。</p>
+<p>例如，当调用 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 服务时，应用程序可能遵循 <code class="docutils literal notranslate"><span class="pre">ollama</span></code> 的风格，即它会访问类似 <code class="docutils literal notranslate"><span class="pre">/api/chat</span></code> 的 <code class="docutils literal notranslate"><span class="pre">URL</span></code>，并在 JSON 体的 <code class="docutils literal notranslate"><span class="pre">options.temperature</span></code> 中指定 <code class="docutils literal notranslate"><span class="pre">temperature</span></code> 参数。</p>
+<p>然而，响应此请求的底层服务提供商可能是一个类似于 OpenAI 的实现。它期望 URL 为 <code class="docutils literal notranslate"><span class="pre">/v1/chat/completions</span></code> ，并且 <code class="docutils literal notranslate"><span class="pre">temperature</span></code> 参数位于 JSON 主体的根部。</p>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">ollama 风格的 API 和 openai 风格的 API</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">chat</span></code> 服务</p></th>
+<th class="head"><p><strong>ollama 风格</strong></p></th>
+<th class="head"><p><strong>openai 风格</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Endpoint</strong></p></td>
+<td><p>POST /api/chat</p></td>
+<td><p>POST /v1/chat/completions</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Request Schema</strong></p></td>
+<td><p>见ollama的文档</p></td>
+<td><p>见openai的文档</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Response Schema</strong></p></td>
+<td><p>见ollama的文档</p></td>
+<td><p>见openai的文档</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Temperature Parameter</strong></p></td>
+<td><p>options.temperature</p></td>
+<td><p>temperature</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>其他</strong></p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">Oadin</span></code> 将这种风格简称为 <code class="docutils literal notranslate"><span class="pre">API</span> <span class="pre">Flavor</span></code> 或 <code class="docutils literal notranslate"><span class="pre">Flavor</span></code> 。在上例中，应用程序调用 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 使用 <code class="docutils literal notranslate"><span class="pre">ollama</span> <span class="pre">Flavor</span></code> ，
+但服务提供商在 <code class="docutils literal notranslate"><span class="pre">openai</span> <span class="pre">Flavor</span></code> 提供服务，他们都没有直接使用 <code class="docutils literal notranslate"><span class="pre">oadin</span> <span class="pre">Flavor</span></code> 。</p>
+<p>Oadin 会在不同 Flavor 之间进行转换，因此应用程序无需担心服务提供商 API 的细节。详细信息请参阅：
+<a class="reference internal" href="aog%E7%9A%84%E6%9C%BA%E5%88%B6.html#flavor-conversion"><span class="std std-ref">转换 API 风格以实现兼容性</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
