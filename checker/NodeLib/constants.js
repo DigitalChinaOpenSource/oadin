@@ -1,5 +1,5 @@
 // 常量定义
-const VERSION = 'v0.2.1';
+const VERSION = 'v0.2';
 const OADIN_VERSION = 'oadin/v0.2';
 const WIN_OADIN_PATH = 'Oadin';
 const WIN_OADIN_EXE = 'oadin.exe';
