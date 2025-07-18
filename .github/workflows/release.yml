@@ -8,7 +8,7 @@ on:
       - '*' # 仅在版本标签推送时触发
 
 env:
-  ENV: "development"
+  ENV: "production"
   CI_COMMIT_TAG: "${{ github.ref_name }}"
   MAC_FILE_NAME: "oadin-installer-${{ github.ref_name }}.pkg"
   WIN_FILE_NAME: "oadin-installer-${{ github.ref_name }}.exe"
