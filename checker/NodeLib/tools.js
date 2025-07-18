@@ -217,108 +217,102 @@ function runInstallerByPlatform(installerPath) {
       console.log(`正在启动 macOS 安装程序：${installerPath}`);
       logAndConsole('info', `正在启动 macOS 安装程序：${installerPath}`);
 
-      // AppleScript 来请求密码
+      // 构建 AppleScript 来执行 installer 命令并请求管理员权限
+      // 这会触发 macOS 的图形界面密码认证弹窗
       const appleScript = `
-        tell application "System Events"
-          display dialog "Oadin 安装程序需要您的管理员权限来完成安装。\\n\\n请输入您的密码：" default answer "" with icon caution with text buttons {"取消", "安装"} default button "安装" with hidden answer
-          set button_pressed to button returned of result
-          if button_pressed is equal to "取消" then
-            return "CANCELLED"
-          else
-            set admin_password to text returned of result
-            return admin_password
-          end if
-        end tell
+        set pkgPath to "${installerPath}"
+        set installCommand to "installer -pkg " & quoted form of pkgPath & " -target /"
+        try
+            -- 执行 shell 命令并请求管理员权限
+            -- 这将触发 macOS 的图形界面密码认证弹窗
+            do shell script installCommand with administrator privileges
+            return "INSTALL_SUCCESS" -- 安装成功
+        on error errMsg number errNum
+            return "INSTALL_FAILED: " & errMsg & " (错误码: " & errNum & ")" -- 安装失败及错误信息
+        end try
       `;
 
-      // 执行 AppleScript
-      const osascriptProcess = child_process.spawn('osascript', ['-e', appleScript], { stdio: ['pipe', 'pipe', 'pipe'] }); // stdio设置为pipe以捕获输出
+      // 使用 osascript 执行 AppleScript
+      // stdio 设置为 pipe 以捕获 AppleScript 的返回结果
+      const osascriptProcess = child_process.spawn('osascript', ['-e', appleScript], {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
 
-      let password = '';
+      let scriptOutput = '';
       let scriptError = '';
 
+      // 捕获 AppleScript 的标准输出（成功或失败消息）
       osascriptProcess.stdout.on('data', (data) => {
-        password += data.toString().trim();
+        scriptOutput += data.toString().trim();
       });
 
+      // 捕获 osascript 自身的错误输出（例如 AppleScript 语法错误）
       osascriptProcess.stderr.on('data', (data) => {
         scriptError += data.toString();
-        logAndConsole('error', `AppleScript 错误输出: ${data.toString()}`);
+        logAndConsole('error', `osascript stderr: ${data.toString()}`);
       });
 
+      // 监听 osascript 进程的错误（例如 osascript 命令找不到）
       osascriptProcess.on('error', (err) => {
         logAndConsole('error', `执行 osascript 失败: ${err.message}`);
-        reject(new Error(`无法执行 AppleScript 来获取密码: ${err.message}`));
+        reject(new Error(`无法执行 AppleScript 来运行安装程序: ${err.message}`));
       });
 
-      osascriptProcess.on('close', (osascriptCode) => {
+      // 监听 osascript 进程关闭
+      osascriptProcess.on('close', async (osascriptCode) => {
         if (osascriptCode !== 0) {
-          logAndConsole('error', `AppleScript 退出码非零: ${osascriptCode}. 错误: ${scriptError || '未知'}`);
-          return reject(new Error(`用户取消或 AppleScript 错误，无法获取密码。`));
+          // osascript 自身执行失败 (非AppleScript内部错误)
+          logAndConsole('error', `osascript 退出码非零: ${osascriptCode}. 错误: ${scriptError || '未知'}`);
+          return reject(new Error(`AppleScript 执行失败，退出码: ${osascriptCode}. 错误: ${scriptError || '未知'}`));
         }
 
-        if (password === 'CANCELLED') {
-          logAndConsole('warn', '用户取消了密码输入。');
-          return reject(new Error('用户取消了安装。'));
-        }
+        if (scriptOutput === 'INSTALL_SUCCESS') {
+          console.log('macOS 安装程序已成功完成。');
+          logAndConsole('info', 'macOS 安装程序已成功完成。');
+          
+          // 轮询检测安装目录生成和 Oadin 服务可用性
+          const expectedPath = MAC_OADIN_PATH;
+          const maxRetries = 100;
+          let retries = 0;
 
-        if (!password) {
-          logAndConsole('error', '未获取到密码。');
-          return reject(new Error('未获取到密码，安装无法继续。'));
-        }
-
-        logAndConsole('info', '密码已获取，正在尝试安装...');
-
-        // 使用获取到的密码执行 sudo installer
-        // 注意：将密码通过 stdin 传递给 sudo
-        const installerProcess = child_process.spawn('sudo', ['-S', 'installer', '-pkg', installerPath, '-target', '/'], {
-            // stdio: ['pipe', 'inherit', 'inherit'] 表示：
-            // stdin: pipe (用于写入密码)
-            // stdout: inherit (安装器的输出直接显示)
-            // stderr: inherit (安装器的错误直接显示)
-            // shell: true // 如果 sudo 不在 PATH 中，或者需要复杂管道，可能需要
-        });
-
-        // 将密码写入 sudo 进程的 stdin
-        installerProcess.stdin.write(password + '\n');
-        installerProcess.stdin.end(); // 关闭 stdin，表示密码已发送
-
-        installerProcess.on('error', (err) => {
-          logAndConsole('error', `安装程序启动失败: ${err.message}`);
-          reject(err);
-        });
-
-        installerProcess.on('close', async (code) => {
-          if (code === 0) {
-            logAndConsole('info', 'macOS 安装程序已成功完成。');
-            // 轮询检测安装目录生成和 Oadin 服务可用性
-            const expectedPath = MAC_OADIN_PATH;
-            const maxRetries = 100;
-            let retries = 0;
-
-            const interval = setInterval(async () => {
-              if (fs.existsSync(expectedPath)) {
-                console.log("oadin 已添加到 /usr/local/bin ");
-                logAndConsole('info', "oadin 已添加到 /usr/local/bin ");
-                const available = await isOadinAvailable(2, 1000); // 检查服务是否可用
-                if (available) { // 如果服务可用
-                  clearInterval(interval);
-                  resolve();
-                }
-              } else if (++retries >= maxRetries) {
+          const interval = setInterval(async () => {
+            if (fs.existsSync(expectedPath)) {
+              console.log("oadin 已添加到 /usr/local/bin ");
+              logAndConsole('info', "oadin 已添加到 /usr/local/bin ");
+              const available = await isOadinAvailable(2, 1000); // 检查服务是否可用
+              if (available) {
                 clearInterval(interval);
-                reject(new Error('安装器未在超时前完成安装或 Oadin 未成功安装。'));
+                // 成功后显示一个确认弹窗（可选，因为安装包本身可能会显示）
+                // child_process.exec('osascript -e \'display dialog "oadin 安装成功！" buttons {"确定"} default button "确定" with icon note\'');
+                resolve();
               }
-            }, 1000);
+            } else if (++retries >= maxRetries) {
+              clearInterval(interval);
+              const errorMessage = '安装器未在超时前完成安装或 Oadin 未成功安装。';
+              logAndConsole('error', errorMessage);
+              reject(new Error(errorMessage));
+            }
+          }, 1000);
 
-          } else {
-            reject(new Error(`macOS 安装器退出，退出码: ${code}。安装可能失败，请检查密码或日志。`));
-          }
-        });
+        } else if (scriptOutput.startsWith('INSTALL_FAILED:')) {
+          // AppleScript 内部捕获到安装失败
+          const errorDetail = scriptOutput.substring('INSTALL_FAILED:'.length).trim();
+          console.error(`安装失败: ${errorDetail}`);
+          logAndConsole('error', `安装失败: ${errorDetail}`);
+          // 失败后显示一个错误弹窗（可选，因为安装包本身可能会显示）
+          // child_process.exec(`osascript -e 'display dialog "安装失败：${errorDetail}" buttons {"确定"} default button "确定" with icon stop'`);
+          reject(new Error(`macOS 安装失败: ${errorDetail}`));
+        } else {
+          // 未知输出，可能是 AppleScript 逻辑问题
+          const unknownError = `AppleScript 返回未知结果: ${scriptOutput}. 原始错误: ${scriptError}`;
+          console.error(unknownError);
+          logAndConsole('error', unknownError);
+          reject(new Error(unknownError));
+        }
       });
     });
   }
-  return Promise.reject(new Error('不支持的平台'));
+  return Promise.reject(new Error('不支持的平台')); // 不支持的平台则拒绝 Promise
 }
 
 module.exports = {
