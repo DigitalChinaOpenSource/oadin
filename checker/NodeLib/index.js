@@ -74,7 +74,7 @@ class Oadin {
       const isOadinAvailable = await this.isOadinAvailable(2, 1000);
       if (!isOadinAvailable) {
         logAndConsole('info', '旧 Oadin 服务被停止。');
-        return true;
+        return false;
       } else {
         logAndConsole('info', 'Oadin 未停止。');
       }
