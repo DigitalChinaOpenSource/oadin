@@ -74,43 +74,43 @@ class Oadin {
 
     if (platform === 'win32') {
       try {
-          const userDir = os.homedir();
-          const oadinDir = path.join(userDir, 'Oadin');
-          const oadinExecutable = path.join(oadinDir, 'oadin.exe');
+        const userDir = os.homedir();
+        const oadinDir = path.join(userDir, 'Oadin');
+        const oadinExecutable = path.join(oadinDir, 'oadin.exe');
 
-          const originalPath = process.env.PATH;
-          if (!process.env.PATH.includes(oadinDir)) {
-              process.env.PATH = `${process.env.PATH}${path.delimiter}${oadinDir}`;
-          }
+        const originalPath = process.env.PATH;
+        if (!process.env.PATH.includes(oadinDir)) {
+          process.env.PATH = `${process.env.PATH}${path.delimiter}${oadinDir}`;
+        }
 
-          const { stdout } = await new Promise((resolve, reject) => {
-              execFile(oadinExecutable, ['version'], { timeout: 5000 }, (error, stdout, stderr) => {
-                  process.env.PATH = originalPath; // 恢复 PATH
+        const { stdout } = await new Promise((resolve, reject) => {
+          execFile(oadinExecutable, ['version'], { timeout: 5000 }, (error, stdout, stderr) => {
+            process.env.PATH = originalPath; // 恢复 PATH
 
-                  if (error) {
-                      logAndConsole('error', `执行 'oadin version' 命令失败: ${error.message}, stderr: ${stderr.toString()}`);
-                      return reject(error);
-                  }
-                  resolve({ stdout: stdout.toString() });
-              });
+            if (error) {
+              logAndConsole('error', `执行 'oadin version' 命令失败: ${error.message}, stderr: ${stderr.toString()}`);
+              return reject(error);
+            }
+            resolve({ stdout: stdout.toString() });
           });
-          fullStdout = stdout.toString();
+        });
+        fullStdout = stdout.toString();
 
       } catch (err) {
-          logAndConsole('error', `获取 Windows Oadin 版本失败: ${err.message}`);
-          return false;
+        logAndConsole('error', `获取 Windows Oadin 版本失败: ${err.message}`);
+        return false;
       }
     } else if (platform === 'darwin') {
       try {
         const oadinExecutable = tools.MAC_OADIN_PATH; // 确保 MAC_OADIN_PATH 是正确的
         const { stdout } = await new Promise((resolve, reject) => {
-            execFile(oadinExecutable, ['version'], { timeout: 5000 }, (error, stdout, stderr) => {
-                if (error) {
-                    logAndConsole('error', `执行 'oadin version' 命令失败: ${error.message}, stderr: ${stderr.toString()}`);
-                    return reject(error);
-                }
-                resolve({ stdout: stdout.toString() });
-            });
+          execFile(oadinExecutable, ['version'], { timeout: 5000 }, (error, stdout, stderr) => {
+            if (error) {
+              logAndConsole('error', `执行 'oadin version' 命令失败: ${error.message}, stderr: ${stderr.toString()}`);
+              return reject(error);
+            }
+            resolve({ stdout: stdout.toString() });
+          });
         });
         fullStdout = stdout.toString();
 
@@ -174,10 +174,12 @@ class Oadin {
       return true; // 子版本更高，通常认为是最新的
     }
 
+    logAndConsole('info', `Oadin 主版本 ${currentMainVersion} 子版本 ${currentSubVersion}。`);
     // 如果主版本和子版本都匹配或更高，则认为是最新
     logAndConsole('info', '✅ Oadin 版本是最新。');
     return true;
   }
+
   getOadinInstallerPath() {
     const platform = tools.getPlatform();
     if (platform == "unsupported") { return null }
