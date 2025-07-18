@@ -6,7 +6,7 @@ set "LOG_FILE=%~dp0preinstall_log.txt"
 :: 定义 Oadin 可执行文件路径
 set "OADIN_EXE="%~dp0oadin.exe""
 :: 定义停止命令
-set "STOP_COMMAND=%OADIN_EXE% server stop"
+set "STOP_COMMAND=oadin server stop"
 
 echo ====================================================== >> "%LOG_FILE%"
 echo %DATE% %TIME% - Starting pre-installation script...    >> "%LOG_FILE%"
