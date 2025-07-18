@@ -14,7 +14,7 @@ const schemas = require('./schema.js');
 const tools = require('./tools.js');
 const { logAndConsole, downloadFile, getOadinExecutablePath, runInstallerByPlatform, isHealthy } = require('./tools.js');
 const { instance, requestWithSchema } = require('./axiosInstance.js')
-const { VERSION, MAC_OADIN_PATH, PLATFORM_CONFIG, OADIN_HEALTH, OADIN_ENGINE_PATH, } = require('./constants.js');
+const { MAIN_VERSION, SUB_VERSION, MAC_OADIN_PATH, PLATFORM_CONFIG, OADIN_HEALTH, OADIN_ENGINE_PATH, } = require('./constants.js');
 
 class Oadin {
   constructor(version) {
@@ -144,8 +144,8 @@ class Oadin {
     // 2. 比较主版本号
     // 假设 `this.latestMainVersion` 和 `this.latestSubVersion` 可以从 Oadin 类中访问
     // 如果这个函数是独立的，你需要将它们作为参数传入或通过导入获取
-    const latestMainVersion = this.latestMainVersion || "v0.2"; // 从 Oadin 类实例获取，或设置为常量
-    const latestSubVersion = this.latestSubVersion || "20250701814"; // 从 Oadin 类实例获取，或设置为常量
+    const latestMainVersion = MAIN_VERSION
+    const latestSubVersion = SUB_VERSION
 
     // 将版本字符串转换为可比较的数字（例如 v0.2 -> 0.2）
     const parseVersion = (versionStr) => parseFloat(versionStr.replace('v', ''));

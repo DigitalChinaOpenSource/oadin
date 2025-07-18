@@ -1,6 +1,6 @@
 {
   "name": "oadin-lib",
-  "version": "1.3.13-test.13",
+  "version": "1.3.13-test.14",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
