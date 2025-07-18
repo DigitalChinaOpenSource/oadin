@@ -135,6 +135,18 @@ competition for memory consumption during execution.
 
 Oadin provides the following basic features:
 
+- Web Console
+
+  - Oadin provides a companion Web Console for users to interact with Oadin services through a graphical interface.
+  - The Web Console is built with React and offers features like service status monitoring, a Playground for testing, and RAG document management.
+  - Developers can start and develop the Web Console independently with the following commands:
+
+    ```sh
+    cd frontend
+    pnpm install
+    pnpm run dev
+    ```
+
 - One-stop AI service installation
 
   - During development, developers can install local AI services in their development environments
@@ -402,6 +414,35 @@ Similarly, it is located at `api_flavors/ollama`, and the rest of the URL is the
 original ollama API, i.e., `/api/chat`.
 
 ---
+
+### 💻 Frontend Web Console
+
+Oadin v0.2.0 introduces a brand-new Web Console, providing a more intuitive and user-friendly interface for management and testing. The console is a separate frontend project, decoupled from the Oadin backend service, which facilitates independent development and deployment.
+
+**Feature Highlights:**
+
+- **Dashboard**: Real-time monitoring of Oadin service status and system information.
+- **Playground**: Interactive testing for all AI services, including chat, text-to-image, text generation, etc.
+- **RAG Document Management**: Easily upload, manage, and test documents for RAG.
+- **Service Management**: Centralized view and management of all configured services and service providers.
+
+**How to Start the Web Console:**
+
+1.  **Install Dependencies:**
+
+    ```bash
+    cd frontend
+    pnpm install
+    ```
+
+2.  **Start the Development Server:**
+
+    ```bash
+    # Start in development mode
+    pnpm run dev
+    ```
+
+    After starting, you can access the Web Console in your browser at `http://localhost:5173` (or another port specified by Vite).
 
 ## 🎯 Application Integration and Deployment
 

@@ -1,0 +1,27 @@
+{
+  "tabWidth": 2,
+  "printWidth": 200,
+  "useTabs": false,
+  "singleQuote": true,
+  "quoteProps": "as-needed",
+  "jsxSingleQuote": false,
+  "trailingComma": "all",
+  "jsxBracketSameLine": false,
+  "arrowParens": "always",
+  "rangeStart": 0,
+  "requirePragma": false,
+  "insertPragma": false,
+  "proseWrap": "preserve",
+  "htmlWhitespaceSensitivity": "css",
+  "endOfLine": "auto",
+  "embeddedLanguageFormatting": "auto",
+  "singleLine": false,
+  "wrap": "auto",
+  "html": {
+    "wrapAttributes": "auto",
+    "indent": 2,
+    "singleLine": false,
+    "wrap": "auto"
+  },
+  "singleAttributePerLine": true
+}
