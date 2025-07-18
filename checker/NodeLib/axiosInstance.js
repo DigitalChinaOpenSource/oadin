@@ -50,7 +50,7 @@ async function requestWithSchema({ method, url, data, schema }) {
     // 2. 响应schema校验（如果有）
     if (schema && schema.response) {
       const validateRes = ajv.compile(schema.response);
-      if (!validateRes(res)) {
+      if (!validateRes(res.data)) {
         throw new Error(`Response schema validation failed: ${JSON.stringify(validateRes.errors)}`);
       }
     }
