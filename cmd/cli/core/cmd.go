@@ -370,8 +370,8 @@ func Run(ctx context.Context) error {
 			return nil
 		},
 		func() error {
-			pidFilePath := filepath.Join(config.GlobalOadinEnvironment.RootDir, "*.pid")
-			return utils.StopOadinServer(pidFilePath)
+			stopCmd := exec.Command("oadin", "server", "stop")
+			return stopCmd.Run()
 		},
 		true,
 	)
@@ -499,6 +499,7 @@ func NewStopApiServerCommand() *cobra.Command {
 
 func stopOadinServer(cmd *cobra.Command, args []string) error {
 	pidFile := filepath.Join(config.GlobalOadinEnvironment.RootDir, "*.pid")
+	fmt.Printf("stop oadin server daemon, pidFile: %s\n", pidFile)
 	err := utils.StopOadinServer(pidFile)
 	if err != nil {
 		fmt.Printf("[Stop] Failed to stop oadin server err: %s", err)
