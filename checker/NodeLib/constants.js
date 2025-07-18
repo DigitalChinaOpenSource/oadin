@@ -1,5 +1,6 @@
 // 常量定义
-const VERSION = 'v0.2';
+const MAIN_VERSION = 'v0.2';
+const SUB_VERSION = "20250701814"
 const OADIN_VERSION = 'oadin/v0.2';
 const WIN_OADIN_PATH = 'Oadin';
 const WIN_OADIN_EXE = 'oadin.exe';
@@ -32,7 +33,8 @@ const PLATFORM_CONFIG = {
 };
 
 module.exports = {
-  VERSION,
+  MAIN_VERSION,
+  SUB_VERSION,
   OADIN_VERSION,
   WIN_OADIN_PATH,
   WIN_OADIN_EXE,
