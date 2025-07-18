@@ -9,19 +9,6 @@ const instance = axios.create({
   headers: { "Content-Type": "application/json" }
 });
 
-function createAxiosInstance() {
-  if (instance) {
-    return instance; // 如果实例已存在，则直接返回
-  }
-
-  instance = axios.create({
-    baseURL: `http://localhost:16688/${OADIN_VERSION}`,
-    headers: { "Content-Type": "application/json" },
-  });
-
-  return instance;
-}
-
 const get = (url, params, config) => instance.get(url, { ...config, params });
 const post = (url, data, config) => instance.post(url, data, config);
 const put = (url, data, config) => instance.put(url, data, config);
