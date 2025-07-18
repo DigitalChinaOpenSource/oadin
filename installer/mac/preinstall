@@ -1,0 +1,63 @@
+#!/bin/bash
+exec > /tmp/oadin_preinstall.log 2>&1
+set -x
+# 定义当前版本，根据 CI_COMMIT_TAG 设置
+THIS_VERSION="${CI_COMMIT_TAG}"
+
+# 定义 Oadin 文件夹路径
+OADIN_FOLDER="$HOME/Oadin"
+
+echo "--- Oadin 安装前置检查 ---"
+
+# 尝试执行 oadin --version 并捕获输出
+OADIN_COMMAND_EXISTS=$(command -v oadin)
+
+if [ -z "$OADIN_COMMAND_EXISTS" ]; then
+    echo ""
+    echo "oadin 命令未找到，或未添加到 PATH 环境变量中。"
+    echo "将忽略此错误并继续安装。"
+    echo ""
+    ERROR_OCCURRED=true
+else
+    OADIN_OUTPUT=$(oadin --version 2>&1)
+    if [ $? -ne 0 ]; then
+        ERROR_OCCURRED=true
+        echo ""
+        echo "执行 oadin --version 时发生错误："
+        echo "$OADIN_OUTPUT"
+        echo "将忽略此错误并继续安装。"
+        echo ""
+        OADIN_OUTPUT=""
+    else
+        ERROR_OCCURRED=false
+        OADIN_OUTPUT=$(echo "$OADIN_OUTPUT" | tr -d '\n\r ')
+        echo "当前 Oadin 版本 '$OADIN_OUTPUT'"
+    fi
+fi
+
+if [ "$ERROR_OCCURRED" = true ]; then
+    :
+else
+    if [ "$OADIN_OUTPUT" != "$THIS_VERSION" ]; then
+        echo "Oadin 版本 '$OADIN_OUTPUT' 与预期版本 '$THIS_VERSION' 不匹配。"
+        echo "正在删除用户目录下的 Oadin 文件夹"
+        if [ -d "$OADIN_FOLDER" ]; then
+            rm -rf "$OADIN_FOLDER"
+            if [ $? -ne 0 ]; then
+                echo ""
+                echo "删除 Oadin 文件夹时发生错误。"
+                echo "请手动删除 '$OADIN_FOLDER' 文件夹并重试安装。"
+                exit 1
+            else
+                echo "Oadin 文件夹已成功删除。"
+            fi
+        else
+            echo "Oadin 文件夹 '$OADIN_FOLDER' 不存在，无需删除。"
+        fi
+    else
+        echo "Oadin 版本 '$OADIN_OUTPUT' 与预期版本 '$THIS_VERSION' 匹配，继续安装。"
+    fi
+fi
+
+echo "--- 前置检查完成 ---"
+exit 0
