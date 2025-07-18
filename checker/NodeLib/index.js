@@ -58,13 +58,31 @@ class Oadin {
     const dest = getOadinExecutablePath();
     const existed = fs.existsSync(dest);
     logAndConsole('info', `检测Oadin可执行文件是否存在: ${dest}，结果: ${existed}`);
-    if (existed){
-      const latest = await this.isOadinLatest();
-      logAndConsole('info', `Oadin是否最新版: ${latest}`);
-      return latest;
+
+    if (!existed) {
+      return false; // 如果文件都不存在，直接返回 false
     }
-    return existed;
+
+    // 文件存在，现在检查版本
+    const latest = await this.isOadinLatest();
+    logAndConsole('info', `Oadin是否最新版: ${latest}`);
+
+    if (!latest) {
+      // 如果不是最新版本，尝试停止 Oadin 服务
+      logAndConsole('info', 'Oadin 版本不是最新，尝试停止服务以便更新...');
+      const stopSuccess = await this.stopOadin();
+      const isOadinAvailable = await this.isOadinAvailable(2, 1000);
+      if (!isOadinAvailable) {
+        logAndConsole('info', '旧 Oadin 服务被停止。');
+        return false;
+      } else {
+        logAndConsole('info', 'Oadin 未停止。');
+        return false
+      }
+    }
+    return latest; // 返回 Oadin 是否为最新版的结果
   }
+
 
   async isOadinLatest() { // 如果这个函数属于 Oadin 类，需要是 async isOadinLatest() {}
     const platform = tools.getPlatform();
@@ -102,7 +120,7 @@ class Oadin {
       }
     } else if (platform === 'darwin') {
       try {
-        const oadinExecutable = tools.MAC_OADIN_PATH; // 确保 MAC_OADIN_PATH 是正确的
+        const oadinExecutable = MAC_OADIN_PATH; // 确保 MAC_OADIN_PATH 是正确的
         const { stdout } = await new Promise((resolve, reject) => {
           execFile(oadinExecutable, ['version'], { timeout: 5000 }, (error, stdout, stderr) => {
             if (error) {
@@ -178,6 +196,51 @@ class Oadin {
     // 如果主版本和子版本都匹配或更高，则认为是最新
     logAndConsole('info', '✅ Oadin 版本是最新。');
     return true;
+  }
+
+  async stopOadin() {
+    return new Promise((resolve) => {
+      const platform = tools.getPlatform();
+      const userDir = os.homedir();
+      const oadinDir = path.join(userDir, 'Oadin');
+      logAndConsole('info', `尝试停止 Oadin 服务，平台: ${platform}`);
+
+      let command;
+      let args;
+
+      if (platform === 'win32') {
+        command = 'cmd.exe';
+        args = ['/c', 'oadin.exe', 'server', 'stop']; // 在 Windows 上直接调用 oadin.exe
+        // 确保 oadinDir 在 PATH 中，或者使用绝对路径
+        const originalPath = process.env.PATH;
+        if (!process.env.PATH.includes(oadinDir)) {
+          process.env.PATH = `${process.env.PATH}${path.delimiter}${oadinDir}`;
+        }
+        execFile(command, args, { windowsHide: true }, (error, stdout, stderr) => {
+          process.env.PATH = originalPath; // 恢复 PATH
+          if (error) {
+            logAndConsole('error', `停止 Oadin 服务失败: ${error.message}, stderr: ${stderr.toString()}`);
+            return resolve(false);
+          }
+          logAndConsole('info', `Oadin 服务停止命令输出: ${stdout.toString()}`);
+          resolve(true); 
+        });
+      } else if (platform === 'darwin') {
+        command = MAC_OADIN_PATH; // /usr/local/bin/oadin
+        args = ['server', 'stop'];
+        execFile(command, args, { timeout: 5000 }, (error, stdout, stderr) => {
+          if (error) {
+            logAndConsole('error', `停止 Oadin 服务失败: ${error.message}, stderr: ${stderr.toString()}`);
+            return resolve(false);
+          }
+          logAndConsole('info', `Oadin 服务停止命令输出: ${stdout.toString()}`);
+          resolve(true); 
+        });
+      } else {
+        logAndConsole('warn', `不支持的平台，无法停止 Oadin 服务。`);
+        return resolve(false);
+      }
+    });
   }
 
   getOadinInstallerPath() {

@@ -9,6 +9,25 @@ const instance = axios.create({
   headers: { "Content-Type": "application/json" }
 });
 
+instance.interceptors.response.use(
+  config => {
+    // 处理响应数据
+    return config.data;
+  },
+  error => Promise.reject(error)
+);
+
+instance.interceptors.request.use(
+  config => {
+    // 在发送请求之前做些什么
+    return config;
+  },
+  error => {
+    // 处理请求错误
+    return Promise.reject(error);
+  }
+);
+
 const get = (url, params, config) => instance.get(url, { ...config, params });
 const post = (url, data, config) => instance.post(url, data, config);
 const put = (url, data, config) => instance.put(url, data, config);

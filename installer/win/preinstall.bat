@@ -31,10 +31,11 @@ if %errorlevel% equ 0 (
     :: 再次检查 Oadin 进程是否已停止
     tasklist /nh /fi "IMAGENAME eq oadin.exe" | find /i "oadin.exe" >nul
     if %errorlevel% equ 0 (
-        echo ERROR: Oadin process is still running after stop attempt! >> "%LOG_FILE%"
-        echo Please manually close Oadin CLI before proceeding.        >> "%LOG_FILE%"
-        :: 可以选择在此处退出，让 NSIS 报错，或者继续但提醒用户
-        :: exit /b 1
+        echo Forcibly terminating Oadin process... >> "%LOG_FILE%"
+        taskkill /f /im oadin.exe >> "%LOG_FILE%" 2>&1
+        echo Taskkill command executed. >> "%LOG_FILE%"
+        timeout /t 5 /nobreak >nul 2>&1
+        echo Waited for 5 seconds after kill. >> "%LOG_FILE%"
     ) else (
         echo Oadin process successfully stopped.             >> "%LOG_FILE%"
     )

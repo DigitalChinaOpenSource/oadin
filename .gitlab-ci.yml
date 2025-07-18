@@ -52,7 +52,7 @@ build_mac:
     - chmod +x installer/mac/preinstall
     - chmod +x installer/mac/postinstall
     - |
-      pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /usr/local/bin/ --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
+      pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
     - echo "--------- 📬 安装包公证 ----------"
     - xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
     - xcrun notarytool submit oadin.pkg --keychain-profile "ci-profile" --wait

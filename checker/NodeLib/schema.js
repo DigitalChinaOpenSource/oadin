@@ -426,8 +426,7 @@ const getSupportModelResponseSchema = {
         total_page: { type: "integer" }
       },
     }
-  },
-  required: ["business_code"]
+  }
 };
 
 const recommendModelsResponse = {
