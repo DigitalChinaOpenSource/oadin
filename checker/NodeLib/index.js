@@ -71,13 +71,12 @@ class Oadin {
       // 如果不是最新版本，尝试停止 Oadin 服务
       logAndConsole('info', 'Oadin 版本不是最新，尝试停止服务以便更新...');
       const stopSuccess = await this.stopOadin();
-      if (!stopSuccess) {
-        logAndConsole('warn', '未能成功停止 Oadin 服务，更新可能会受到影响。');
-        // 考虑这里是否直接返回 false，强制用户手动处理，或者继续尝试下载/安装
-        // 为了避免覆盖更新的问题，这里我们返回false，让外部流程决定是否继续
-        return false;
+      const isOadinAvailable = await this.isOadinAvailable(2, 1000);
+      if (!isOadinAvailable) {
+        logAndConsole('info', '旧 Oadin 服务被停止。');
+        return true;
       } else {
-        logAndConsole('info', 'Oadin 服务已停止。');
+        logAndConsole('info', 'Oadin 未停止。');
       }
     }
     return latest; // 返回 Oadin 是否为最新版的结果
