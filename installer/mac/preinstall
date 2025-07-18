@@ -1,63 +1,59 @@
 #!/bin/bash
-exec > /tmp/oadin_preinstall.log 2>&1
-set -x
-# 定义当前版本，根据 CI_COMMIT_TAG 设置
-THIS_VERSION="${CI_COMMIT_TAG}"
 
-# 定义 Oadin 文件夹路径
-OADIN_FOLDER="$HOME/Oadin"
+# 定义日志文件路径（通常放在 /var/log 或安装包的临时目录）
+# 对于前置脚本，日志写到 /var/log 比较合适，因为安装目录可能还没创建或被覆盖
+LOG_FILE="/var/log/oadin_preinstall.log"
+# 定义 Oadin 可执行文件路径
+# 假设 oadin 可执行文件在 /usr/local/bin 或 /Applications/Oadin.app/Contents/MacOS/oadin
+# 请根据你的实际安装路径调整
+OADIN_PATH="/usr/local/bin/oadin" # 示例路径，你需要根据实际情况修改
 
-echo "--- Oadin 安装前置检查 ---"
+# 获取当前日期和时间
+CURRENT_DATE_TIME=$(date "+%Y-%m-%d %H:%M:%S")
 
-# 尝试执行 oadin --version 并捕获输出
-OADIN_COMMAND_EXISTS=$(command -v oadin)
+echo "======================================================" >> "${LOG_FILE}"
+echo "${CURRENT_DATE_TIME} - Starting pre-installation script..." >> "${LOG_FILE}"
+echo "Oadin executable path for stop command: ${OADIN_PATH}" >> "${LOG_FILE}"
 
-if [ -z "$OADIN_COMMAND_EXISTS" ]; then
-    echo ""
-    echo "oadin 命令未找到，或未添加到 PATH 环境变量中。"
-    echo "将忽略此错误并继续安装。"
-    echo ""
-    ERROR_OCCURRED=true
-else
-    OADIN_OUTPUT=$(oadin --version 2>&1)
-    if [ $? -ne 0 ]; then
-        ERROR_OCCURRED=true
-        echo ""
-        echo "执行 oadin --version 时发生错误："
-        echo "$OADIN_OUTPUT"
-        echo "将忽略此错误并继续安装。"
-        echo ""
-        OADIN_OUTPUT=""
-    else
-        ERROR_OCCURRED=false
-        OADIN_OUTPUT=$(echo "$OADIN_OUTPUT" | tr -d '\n\r ')
-        echo "当前 Oadin 版本 '$OADIN_OUTPUT'"
-    fi
-fi
+# 检查 oadin 进程是否正在运行
+echo "${CURRENT_DATE_TIME} - Checking for running Oadin process..." >> "${LOG_FILE}"
 
-if [ "$ERROR_OCCURRED" = true ]; then
-    :
-else
-    if [ "$OADIN_OUTPUT" != "$THIS_VERSION" ]; then
-        echo "Oadin 版本 '$OADIN_OUTPUT' 与预期版本 '$THIS_VERSION' 不匹配。"
-        echo "正在删除用户目录下的 Oadin 文件夹"
-        if [ -d "$OADIN_FOLDER" ]; then
-            rm -rf "$OADIN_FOLDER"
-            if [ $? -ne 0 ]; then
-                echo ""
-                echo "删除 Oadin 文件夹时发生错误。"
-                echo "请手动删除 '$OADIN_FOLDER' 文件夹并重试安装。"
-                exit 1
-            else
-                echo "Oadin 文件夹已成功删除。"
-            fi
+# 使用 pgrep 查找 oadin 进程
+# -x 精确匹配进程名
+# -q 静默模式，只返回退出状态码
+pgrep -x oadin > /dev/null
+if [ $? -eq 0 ]; then
+    echo "${CURRENT_DATE_TIME} - Oadin process found running. Attempting to stop..." >> "${LOG_FILE}"
+
+    # 尝试停止 Oadin 服务器
+    # 注意：如果 Oadin 是一个服务，其停止命令可能不同，例如通过 launchctl
+    # 这里假设 'oadin server stop' 是正确的停止命令
+    if [ -x "${OADIN_PATH}" ]; then # 检查 oadin 可执行文件是否存在且可执行
+        "${OADIN_PATH}" server stop >> "${LOG_FILE}" 2>&1
+        echo "${CURRENT_DATE_TIME} - Stop command executed." >> "${LOG_FILE}"
+
+        # 等待一段时间，给 Oadin 服务器时间来停止
+        sleep 10
+        echo "${CURRENT_DATE_TIME} - Waited for 10 seconds." >> "${LOG_FILE}"
+
+        # 再次检查 Oadin 进程是否已停止
+        pgrep -x oadin > /dev/null
+        if [ $? -eq 0 ]; then
+            echo "${CURRENT_DATE_TIME} - ERROR: Oadin process is still running after stop attempt!" >> "${LOG_FILE}"
+            echo "${CURRENT_DATE_TIME} - Please manually close Oadin CLI before proceeding." >> "${LOG_FILE}"
+            # 在这里可以选择退出安装过程
+            # exit 1
         else
-            echo "Oadin 文件夹 '$OADIN_FOLDER' 不存在，无需删除。"
+            echo "${CURRENT_DATE_TIME} - Oadin process successfully stopped." >> "${LOG_FILE}"
         fi
     else
-        echo "Oadin 版本 '$OADIN_OUTPUT' 与预期版本 '$THIS_VERSION' 匹配，继续安装。"
+        echo "${CURRENT_DATE_TIME} - WARNING: Oadin executable not found or not executable at ${OADIN_PATH}. Cannot attempt to stop." >> "${LOG_FILE}"
     fi
+else
+    echo "${CURRENT_DATE_TIME} - Oadin process not found running." >> "${LOG_FILE}"
 fi
 
-echo "--- 前置检查完成 ---"
+echo "${CURRENT_DATE_TIME} - Pre-installation script finished." >> "${LOG_FILE}"
+echo "======================================================" >> "${LOG_FILE}"
+
 exit 0
