@@ -56,6 +56,7 @@ jobs:
           echo "========== 🔧 Mac Upload Begin =========="
           echo "-------- 📤 上传到 Nexus 私服 --------"
           curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
+          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/oadin-installer-latest.pkg"
           echo "--------- 🧹 环境清理 ----------"
           cd /Users/dcone/WebstormProjects/oadin
           git reset --hard
@@ -71,4 +72,38 @@ jobs:
     steps:
       - name: Run build script on Windows
         run: |
-          echo "hello"
+          echo "========== 🔧 Win Build Begin =========="
+          echo "--------- 🧹 清除旧文件 准备纯净环境 ----------"
+          cd C:\Users\Administrator\WebstormProjects\oadin
+          git reset --hard
+          git clean -fd
+          echo "--------- 🔖 拉取代码准备构建 ----------"
+          git fetch
+          echo $env:CI_COMMIT_TAG ; git checkout $env:CI_COMMIT_TAG
+          echo "--------- 🛠️ 制品构建与签名 ----------"
+          go mod tidy
+          $env:CGO_ENABLED= 1
+          $env:GOOS= "windows"
+          $env:GOARCH= "amd64"
+          $env:CGO_CFLAGS= "-I$PWD\internal\datastore\sqlite\sqlite-vec"
+          go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
+          signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
+          echo "--------- 📦 安装包构建与签名 ----------"
+          cd installer\win ; makensis.exe -DVERSION=$env:CI_COMMIT_TAG oadin.nsi
+          cd ..\.. ; signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
+          echo "--------- 📁 移动到待上传文件夹 ----------"
+          New-Item -ItemType Directory -Path "upload" -Force
+          Move-Item -Path "oadin-installer.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
+          echo "========== 🔧 Win Build End =========="
+          echo "========== 🔧 Win Upload Begin =========="
+          echo "-------- 📤 上传到 Nexus 私服 --------"
+          cd C:\Users\Administrator\WebstormProjects\oadin
+          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$($env:WIN_FILE_NAME)"
+          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/oadin-installer-latest.exe"
+          echo "--------- 🧹 环境清理 ----------"
+          git reset --hard
+          git clean -fd
+          echo "--------- 🗑️ 删除本地tag ----------"
+          git checkout main
+          git tag -d $env:CI_COMMIT_TAG
+          echo "========== 🔧 Win Upload End =========="
