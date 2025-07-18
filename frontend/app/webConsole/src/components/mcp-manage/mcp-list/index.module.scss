@@ -1,0 +1,15 @@
+.mcpCardList {
+  width: 100%;
+  height: calc(100% - 52px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  .loading {
+    position: relative;
+    top: 300px;
+    width: 100%;
+    text-align: center;
+    img {
+      width: 60px;
+    }
+  }
+}
