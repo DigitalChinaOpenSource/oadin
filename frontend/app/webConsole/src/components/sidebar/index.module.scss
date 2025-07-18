@@ -1,0 +1,79 @@
+.sidebar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .logo {
+    padding: 16px 0;
+    img {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  .menuContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    :global(.ant-menu-inline-collapsed) {
+      width: 100% !important;
+    }
+  }
+  .mcpDownloadBox {
+    width: 100%;
+    padding: 0 24px;
+    margin-bottom: 10px;
+
+    .mpcDownloadBoxContent {
+      height: 38px;
+      display: flex;
+      gap: 8px;
+      box-sizing: border-box;
+      align-items: center;
+      background-color: #ffffff;
+      cursor: pointer;
+    }
+  }
+  .downloadBtnBox {
+    width: 22px;
+    height: 22px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    cursor: pointer;
+    :global(.ant-badge-count) {
+      background: #e85951;
+      height: 12px;
+      min-width: 12px;
+      line-height: 12px;
+    }
+    .badge {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .downloadBtn {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #5b3ad3;
+    }
+  }
+}
+
+.downloadListWrapper {
+  width: 340px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  z-index: 9999;
+}
