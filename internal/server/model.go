@@ -1047,6 +1047,12 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 			Query: request.ServiceSource,
 		})
 	}
+	if request.ServiceName != "" {
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "service_name",
+			Query: request.ServiceName,
+		})
+	}
 	sm := &types.SupportModel{}
 	sortOption := []datastore.SortOption{
 		{Key: "name", Order: 1},
@@ -1222,7 +1228,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 		} else if request.Flavor == "" {
 			smartvisionModelData, smartvisionErr := GetSmartVisionModelData(ctx, request.EnvType)
 			jdsDataList, jdsErr := jds.List(ctx, sm, options)
-			if smartvisionErr != nil || jdsErr != nil {
+			if smartvisionErr != nil && jdsErr != nil {
 				return nil, errors.New("Get data Failed, please retry")
 			}
 			for _, d := range smartvisionModelData {
