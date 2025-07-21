@@ -96,6 +96,7 @@ jobs:
     runs-on: [ self-hosted, Windows, X64 ] # 匹配 WIN-P1B0AOCK993
     steps:
       - name: Set ENV based on tag
+        shell: bash
         run: |
           if [[ "${{ github.ref_name }}" == test* ]]; then
             echo "ENV=development" >> $GITHUB_ENV
