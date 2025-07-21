@@ -1,7 +1,6 @@
 import styles from './index.module.scss';
 import { Modal, Pagination } from 'antd';
 import { useViewModel } from './view-model';
-import modelPng from '@/assets/modelLogo.png';
 import realLoadingSvg from '@/components/icons/real-loading.svg';
 import { IServiceProviderDataItem } from '../types';
 
@@ -83,7 +82,7 @@ export default function ServiceProviderDetail(props: IServiceProviderDetailProps
                   >
                     <div className={styles.modelLeft}>
                       <img
-                        src={model.avatar || modelPng}
+                        src={model.avatar}
                         alt="modelLogo"
                       />
                       <span className={styles.modelBaseInfo}>{model.name}</span>

@@ -8,6 +8,7 @@ interface ITagsCheck {
 
 export default function McpTagsCheck(props: ITagsCheck) {
   const { tagsData = [], checkedValues = {}, handleTagsChange } = props;
+  if (!Array.isArray(tagsData)) return null;
   return (
     <>
       {tagsData.map((item: Record<string, any>) => {
