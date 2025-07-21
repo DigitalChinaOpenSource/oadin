@@ -96,13 +96,13 @@ jobs:
     runs-on: [ self-hosted, Windows, X64 ] # 匹配 WIN-P1B0AOCK993
     steps:
       - name: Set ENV based on tag
-        shell: bash
+        shell: pwsh
         run: |
-          if [[ "${{ github.ref_name }}" == test* ]]; then
-            echo "ENV=development" >> $GITHUB_ENV
-          else
-            echo "ENV=production" >> $GITHUB_ENV
-          fi
+          if ("${{ github.ref_name }}" -like "test*") {
+            "ENV=development" >> $env:GITHUB_ENV
+          } else {
+            "ENV=production" >> $env:GITHUB_ENV
+          }
       - name: Run build script on Windows
         run: |
           echo "========== 🔧 Win Build Begin =========="
