@@ -23,7 +23,7 @@ func (e *ControlPanelApi) InjectRoutes(api *gin.RouterGroup) {
 	api.GET("/model/filepath", e.GetModelFilePathHandler)
 	api.POST("/model/filepath", e.ModifyModelFilePathHandler)
 	api.GET("/path/space", e.GetPathDiskSizeHandler)
-	api.GET("/square", e.GetSupportModelListCombine)
+	api.GET("/model/square", e.GetSupportModelListCombine)
 }
 
 func (e *ControlPanelApi) GetModelFilePathHandler(c *gin.Context) {
@@ -86,22 +86,22 @@ func (e *ControlPanelApi) GetPathDiskSizeHandler(c *gin.Context) {
 }
 
 func (e *ControlPanelApi) GetSupportModelListCombine(c *gin.Context) {
-	   request := new(dto.GetSupportModelRequest)
-	   if err := c.Bind(request); err != nil {
-			   bcode.ReturnError(c, bcode.ErrModelBadRequest)
-			   return
-	   }
+	request := new(dto.GetSupportModelRequest)
+	if err := c.Bind(request); err != nil {
+		bcode.ReturnError(c, bcode.ErrModelBadRequest)
+		return
+	}
 
-	   if err := validate.Struct(request); err != nil {
-			   bcode.ReturnError(c, err)
-			   return
-	   }
+	if err := validate.Struct(request); err != nil {
+		bcode.ReturnError(c, err)
+		return
+	}
 
-	   ctx := c.Request.Context()
-	   data, err := server.GetSupportModelListCombine(ctx, request)
-	   if err != nil {
-			   bcode.ReturnError(c, err)
-			   return
-	   }
-	   c.JSON(http.StatusOK, data)
+	ctx := c.Request.Context()
+	data, err := server.GetSupportModelListCombine(ctx, request)
+	if err != nil {
+		bcode.ReturnError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, data)
 }
