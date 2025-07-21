@@ -1,0 +1,39 @@
+{
+  "name": "@vanta/web-console",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode dev",
+    "dev:prod": "vite --mode product",
+    "build": "tsc -b && vite build --mode product",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "@res-utiles/ui-components": "file:ui-components-0.0.13.tgz",
+    "@types/lodash-es": "^4.17.12",
+    "i18next": "^25.2.1",
+    "immer": "^10.1.1",
+    "mitt": "^3.0.1",
+    "react-i18next": "^15.5.2",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "sass": "^1.87.0",
+    "use-immer": "^0.11.0"
+  },
+  "devDependencies": {
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0"
+  },
+  "alias": {
+    "src": "./src"
+  }
+}

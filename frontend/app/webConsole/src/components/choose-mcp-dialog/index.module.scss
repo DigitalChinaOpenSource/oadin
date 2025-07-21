@@ -1,0 +1,19 @@
+.choose_model {
+  :global(.ant-modal-content) {
+    background: linear-gradient(180deg, #dee7ff 0%, #fff 25%, #fff 100%);
+  }
+  :global(.ant-modal-header) {
+    background: none;
+  }
+}
+.chooseModelList {
+  height: 60vh;
+}
+.choose_model_footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.choose_model_tab_warp {
+  height: 75vh;
+}

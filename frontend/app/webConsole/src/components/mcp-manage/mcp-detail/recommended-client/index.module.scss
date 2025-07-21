@@ -1,0 +1,54 @@
+.recommendedClient {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  .recommendedHeader {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+  }
+  .clientItem {
+    display: flex;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    gap: 16px;
+    cursor: pointer;
+    &:hover {
+      background-color: #F9FAFF;
+      box-shadow: 0 4px 8px 0 rgba(52, 64, 84, 0.20);
+    }
+    .clientIcon {
+      width: 32px;
+      height: 32px;
+      img {
+        width: 32px;
+        height: 32px;
+      }
+    }
+    .clientContent {
+      display: flex;
+      flex-direction: column;
+      color: #344054;
+      gap: 8px;
+      .clientName {
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 600;
+      }
+      .clientDesc {
+        font-size: 12px;
+        line-height: 20px;
+        //color: #565966;
+        //min-height: 42px;
+        //display: -webkit-box;
+        //line-clamp: 2;
+        //-webkit-line-clamp: 2;
+        //-webkit-box-orient: vertical;
+        //overflow: hidden;
+        //text-overflow: ellipsis;
+        //word-break: break-all;
+      }
+    }
+  }
+}
