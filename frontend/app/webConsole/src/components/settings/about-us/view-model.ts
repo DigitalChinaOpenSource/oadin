@@ -24,11 +24,11 @@ const testData = {
   copyright:
     '© 2025 奥丁团队 版权所有。保留所有权利。  \n' +
     '\n' +
-    '本产品由 **XXX科技有限公司** 开发与维护。使用本产品即表示您同意我们的 [《用户协议》](https://www.baize.ai/user-agreement)和 [《隐私政策》](https://www.baize.ai/privacy-policy)。  \n' +
+    '使用本产品即表示您同意我们的 [《用户协议》](https://oadin.dcclouds.com/legal/agreement)和 [《隐私政策》](https://oadin.dcclouds.com/legal/privacy)。  \n' +
     '\n' +
-    '部分功能可能使用第三方开源组件，其版权归原作者所有，详见 [《开源组件声明》](https://www.baize.ai/open-source-notice)。  \n' +
+    '部分功能可能使用第三方开源组件，其版权归原作者所有，详见 [《开源组件声明》](https://oadin.dcclouds.com/legal/opensource)。  \n' +
     '\n' +
-    '联系邮箱：support@baize.ai ｜ 官网：[https://www.baize.ai](https://www.baize.ai)',
+    '联系邮箱：oadin@digitalchina.com ｜ 官网：[https://oadin.dcclouds.com](https://oadin.dcclouds.com)',
 };
 
 export function useAboutUsView() {

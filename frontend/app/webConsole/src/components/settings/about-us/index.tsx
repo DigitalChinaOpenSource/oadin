@@ -108,7 +108,7 @@ export default function AboutUs() {
             <div>官方网站</div>
             <ExportOutlined
               className={styles.comIcon}
-              onClick={() => aboutDetails?.officialWebsite && window.open(aboutDetails?.officialWebsite)}
+              onClick={() => window.open("https://oadin.dcclouds.com","_blank")}
             />
           </div>
           <div className={styles.comItem}>
