@@ -1,0 +1,31 @@
+.downloadListBox {
+  padding: 8px;
+  cursor: default;
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    .title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #000000;
+      display: flex;
+    }
+    .downloadIcon {
+      width: 22px;
+      height: 22px;
+      margin-top: 1px;
+      margin-right: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #5b3ad3;
+      border-radius: 4px;
+      padding: 1px;
+    }
+  }
+  .closeBtn {
+    cursor: pointer;
+  }
+}

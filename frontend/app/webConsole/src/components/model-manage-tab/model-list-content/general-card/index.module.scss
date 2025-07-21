@@ -1,0 +1,193 @@
+.generalCard {
+  width: 100%;
+  height: 214px;
+  position: relative;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid var(--border-color-border-weak, #e4e6eb);
+  :global(.ant-card-body) {
+    padding: 16px;
+  }
+  .recommend {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 64px;
+    height: 24px;
+    color: #fff;
+    text-align: center;
+    border-radius: 0 8px;
+    background: linear-gradient(90deg, #ff6d17 0%, #ffa92b 100%);
+  }
+  .cardHeader {
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #c1c6d6;
+      border-radius: 8px;
+      padding: 8px;
+      position: relative;
+      span {
+        img {
+          width: 14px;
+        }
+        position: absolute;
+        right: -10px;
+        top: -10px;
+      }
+    }
+    .cardTitle {
+      display: flex;
+      width: 100%;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-left: 8px;
+      line-height: 40px;
+      max-width: 50%;
+    }
+    .localOrCloud {
+      height: 18px;
+      font-size: 12px;
+      background-color: #f0f0f0;
+      color: #898ea3;
+      border-radius: 999px;
+      padding: 1px 8px;
+      display: flex;
+      margin: 11px 0 0 8px;
+      .localOrCloudText {
+        margin-left: 2px;
+      }
+    }
+    .authorized {
+      background-color: #d2f2fd;
+      color: #448a96;
+      font-size: 12px;
+      padding: 4px 6px;
+      line-height: 18px;
+      border-radius: 4px;
+    }
+  }
+  .cardDownload {
+    .downloaded {
+      color: #4f4dff;
+      padding: unset;
+      &:hover {
+        color: #4f4dff;
+        background-color: unset !important;
+      }
+    }
+  }
+
+  .contentWrapper {
+    margin-top: 8px;
+    min-height: 42px;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
+    color: #565966;
+  }
+
+  .infoWrapper {
+    display: flex;
+    align-items: center;
+    margin-top: 28px;
+    color: #565966;
+    transition: all 0.4s ease;
+    .dot {
+      margin: 0 16px;
+    }
+    .modelStatus {
+      margin-left: auto;
+    }
+  }
+
+  .updateSetting {
+    color: #4f4dff;
+    background-color: #f3f1f1;
+  }
+  .title,
+  .localOrCloud,
+  .recommend,
+  .providerName {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .handlebar {
+    position: absolute;
+    bottom: -64px;
+    left: 0;
+    width: 100%;
+    padding: 16px 20px;
+    opacity: 0;
+    transition: all 0.5s ease-in-out;
+    button {
+      width: 100%;
+    }
+    .downloadedBtn,
+    .updateSetting {
+      background-color: #e4e6eb;
+      color: #344054;
+      border: unset;
+      &:hover {
+        background-color: #e4e6eb;
+        color: #344054;
+        border: unset;
+      }
+    }
+  }
+}
+
+.generalCardHover {
+  &:hover {
+    background: #f9faff;
+    box-shadow: 0 4px 4px 0 rgba(217, 217, 217, 0.4);
+    .infoWrapper {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .handlebar {
+      bottom: 0;
+      opacity: 1;
+    }
+  }
+}
+
+.generalCardDetail {
+  border: unset;
+  padding: unset;
+  overflow: auto;
+  .recommend {
+    display: none;
+  }
+  .contentWrapperDetail {
+    margin-top: 8px;
+    min-height: 42px;
+    color: #565966;
+  }
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+}
+.actionsWarp {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
