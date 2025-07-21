@@ -98,9 +98,9 @@ jobs:
       - name: Set ENV based on tag
         run: |
           if [[ "${{ github.ref_name }}" == test* ]]; then
-          echo "ENV=development" >> $GITHUB_ENV
+            echo "ENV=development" >> $GITHUB_ENV
           else
-          echo "ENV=production" >> $GITHUB_ENV
+            echo "ENV=production" >> $GITHUB_ENV
           fi
       - name: Run build script on Windows
         run: |
