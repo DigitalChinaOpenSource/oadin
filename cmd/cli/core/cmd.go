@@ -42,6 +42,7 @@ import (
 	"oadin/config"
 	"oadin/console"
 	extensionApi "oadin/extension/api"
+	server2 "oadin/extension/server"
 	"oadin/internal/api"
 	"oadin/internal/api/dto"
 	"oadin/internal/constants"
@@ -57,7 +58,6 @@ import (
 	"oadin/internal/utils/bcode"
 	"oadin/internal/utils/progress"
 	"oadin/version"
-	server2 "oadin/extension/server"
 )
 
 // NewCommand will contain all commands
@@ -269,13 +269,11 @@ func Run(ctx context.Context) error {
 	go ListenModelEngineHealth()
 
 	// Run the server
-	err = oadinServer.Run(ctx, config.GlobalOADINEnvironment.ApiHost)
 	if err != nil {
 		slog.Error("[Run] Failed to run server", "error", err)
 		return err
 	}
 
-	_, _ = color.New(color.FgHiGreen).Println("OADIN Gateway starting on port", config.GlobalOADINEnvironment.ApiHost)
 	// create a cancel context
 	ctx, cancel := context.WithCancel(ctx)
 
