@@ -61,7 +61,6 @@ export function useViewModel(): IUseViewModelReturn {
     {
       manual: true,
       onSuccess: (data) => {
-        console.log('tagsData===>', data);
         setTagsData(data || []);
         // 初始化标签数据
         const initData = data.reduce((acc: Record<string, any>, item: any) => {

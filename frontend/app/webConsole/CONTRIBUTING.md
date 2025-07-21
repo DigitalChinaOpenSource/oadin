@@ -1,10 +1,3 @@
-## 克隆仓库：
-
-```bash
-git clone https://devops.digitalchina.com/dcg/wuhan/intel-ai-pc/framework/vanta.git
-cd vanta
-```
-
 ## 开发规范
 
 ### 代码风格
