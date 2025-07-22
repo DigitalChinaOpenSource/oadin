@@ -29,7 +29,7 @@
 **Cloud Services:**
 - 🌟 **OpenAI** - GPT series models (via API compatibility)
 - 🧠 **DeepSeek** - DeepSeek-V3, DeepSeek-R1 series
-- 🌐 **Baidu Wenxin** - Wenxin Yiyan, ERNIE series
+- 🌐 **Baidu Qianfan** - ERNIE series
 - 🦄 **Alibaba Tongyi** - Tongyi Qianwen, Tongyi Wanxiang text-to-image
 - 💫 **Tencent Hunyuan** - Hunyuan chat, Hunyuan text-to-image
 - 📊 **SmartVision** - Digital China Wenxue platform
