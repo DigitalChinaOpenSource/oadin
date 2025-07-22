@@ -1,0 +1,308 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oadin针对的问题陈述 &mdash; Oadin (AIPC Open Gateway) v0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=4b4c264b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=683873e3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Oadin Chat 服务相关" href="service_specs/chat.html" />
+    <link rel="prev" title="Oadin (AIPC Open Gateway)" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Oadin (AIPC Open Gateway)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Oadin 目标:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Oadin针对的问题陈述</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">把什么都打包发布出去的方式很糟糕</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ai-ai">解耦 AI 应用与通用 AI 服务</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#oadin-ai-api">Oadin AI 应用统一架构和 API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compatibility-issue">解决兼容性问题</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#availability-issue">解决可用性问题</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Oadin API 规范:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="service_specs/chat.html">Oadin Chat 服务相关</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Oadin (AIPC Open Gateway)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Oadin针对的问题陈述</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/介绍.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="oadin">
+<h1>Oadin针对的问题陈述<a class="headerlink" href="#oadin" title="Link to this heading"></a></h1>
+<section id="id1">
+<h2>把什么都打包发布出去的方式很糟糕<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>如今，大多数应用在集成如“帮我写作”等 AI 相关功能时，需要从头开始进行整合。这通常导致将应用中的所有内容作为一个单体分发包进行发布。
+例如，应用包可能需要包括LLM模型、Ollama 推理和部署框架，以及应用的其他部分。</p>
+digraph G {
+  rankdir=TB
+  label = &quot;Applications of Shipping Everything&quot;
+  graph [fontname = &quot;Verdana&quot;, fontsize = 10, style=&quot;filled&quot;, penwidth=0.5]
+  node [fontname = &quot;Verdana&quot;, fontsize = 10, shape=box, color=&quot;#333333&quot;, style=&quot;filled&quot;, penwidth=0.5]
+
+  subgraph cluster_aipc {
+    label = &quot;AIPC&quot;
+    color=&quot;#dddddd&quot;
+    fillcolor=&quot;#eeeeee&quot;
+
+    subgraph cluster_application_a {
+         label = &quot;Application A&quot;
+         color=&quot;#333333&quot;
+         fillcolor=&quot;#eeeeff&quot;
+
+         subgraph cluster_service_a {
+             label = &quot;AI Services with X APIs&quot;
+             fillcolor=&quot;#ffcccc&quot;
+
+             models_a[label=&quot;AI Models&quot;, fillcolor=&quot;#eeffcc&quot;]
+         }
+    }
+
+    subgraph cluster_application_b {
+         label = &quot;Application B&quot;
+         color=&quot;#333333&quot;
+         fillcolor=&quot;#eeeeff&quot;
+
+         subgraph cluster_service_b {
+             label = &quot;AI Services with Y APIs&quot;
+             fillcolor=&quot;#ffcccc&quot;
+
+             models_b[label=&quot;AI Models&quot;, fillcolor=&quot;#eeffcc&quot;]
+         }
+    }
+
+    subgraph cluster_application_c {
+         label = &quot;Application C&quot;
+         color=&quot;#333333&quot;
+         fillcolor=&quot;#eeeeff&quot;
+
+         subgraph cluster_service_c {
+             label = &quot;AI Services with Z APIs&quot;
+             fillcolor=&quot;#ffcccc&quot;
+
+             models_c[label=&quot;AI Models&quot;, fillcolor=&quot;#eeffcc&quot;]
+         }
+    }
+
+  }
+}<p>这在上面的图中展示了在 AIPC 上形成的情况。在 PC 上，每个与 AI 相关的应用程序都包含自己的模型和相关 AI 框架，遵循我们所说的“应用包揽一切”模式。这种方法面临几个挑战：</p>
+<ul class="simple">
+<li><p>应用程序捆绑的模型和 AI 框架通常仅针对特定平台（例如，特定供应商的 AIPC）进行调整或优化，而不会惠及其他平台。</p></li>
+<li><p>每个 AI 应用都变得显著更大，导致下载和更新时间更长。多个应用还可以共同消耗 PC 上大量的磁盘空间。</p></li>
+<li><p>由于 AIPC 计算资源（CPU、GPU、NPU）和内存有限，同时运行多个 AI 应用具有挑战性。每个应用都必须托管自己的模型，导致它们之间产生资源竞争。</p></li>
+</ul>
+</section>
+<section id="ai-ai">
+<h2>解耦 AI 应用与通用 AI 服务<a class="headerlink" href="#ai-ai" title="Link to this heading"></a></h2>
+<p>在实践中，大多数应用，除了一些高度专业化的 AI 驱动应用外，主要依赖于少数通用 AI 服务。例如，单个 AIPC 内的多个应用可能都存在对文本编辑功能的共同需求。
+通过提供集中优化的“帮我写作” AI 服务，平台可以显著提高效率并减少冗余。这种共享服务使应用能够专注于其核心功能，避免开发和维护自身文本编辑能力的开销。</p>
+digraph G {
+  rankdir=TB
+  compound=true
+  label = &quot;Application Decoupled from AI Services&quot;
+  graph [fontname = &quot;Verdana&quot;, fontsize = 10, style=&quot;filled&quot;, penwidth=0.5]
+  node [fontname = &quot;Verdana&quot;, fontsize = 10, shape=box, color=&quot;#333333&quot;, style=&quot;filled&quot;, penwidth=0.5]
+
+  subgraph cluster_aipc {
+     label = &quot;AIPC&quot;
+     color=&quot;#dddddd&quot;
+     fillcolor=&quot;#eeeeee&quot;
+
+     app_a[label=&quot;Application A&quot;, fillcolor=&quot;#eeeeff&quot;]
+     app_b[label=&quot;Application B&quot;, fillcolor=&quot;#eeeeff&quot;]
+     app_c[label=&quot;Application C&quot;, fillcolor=&quot;#eeeeff&quot;]
+
+
+     subgraph cluster_service {
+         label = &quot;AI Services &#64; Platform&quot;
+         color = &quot;#333333&quot;
+         fillcolor=&quot;#ffcccc&quot;
+
+
+         models[label=&quot;AI Models&quot;, fillcolor=&quot;#eeffcc&quot;]
+     }
+
+     {rank=same; app_a app_b app_c}
+
+     app_a -&gt; models[lhead=cluster_service]
+     app_b -&gt; models[lhead=cluster_service, minlen=2]
+     app_c -&gt; models[lhead=cluster_service]
+
+  }
+}<p>这种新模式将AI 应用与通用 AI 服务区分开来。应用可以专注于其核心功能，在需要时调用平台提供的 AI 服务。这种方法解决了“什么都提供”模式中的局限性。</p>
+</section>
+<section id="oadin-ai-api">
+<h2>Oadin AI 应用统一架构和 API<a class="headerlink" href="#oadin-ai-api" title="Link to this heading"></a></h2>
+<p>尽管将 AI 应用从通用 AI 服务中解耦的兴起趋势为单体人工智能部署的局限性提供了解决方案，但它也带来了一组新的工程挑战：</p>
+<ul class="simple">
+<li><p><strong>兼容性</strong> - AI 应用需要调用自身未提供的 AI 服务，这些服务可能具有不同的 API，需要兼容性调整以确保在不同平台上的无缝部署。</p></li>
+<li><p><strong>可用性</strong> - 应用程序需要设计成可在任何 PC 上部署，即使在缺乏本地安装 AI 服务的环境中。在本地服务不可用或需求量高的实例中，应用程序应无缝过渡到利用远程 AI 服务，例如由云或边缘计算平台提供的服务。</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">Oadin</span></code> (<strong>AIPC Open Gateway</strong>) 提出了一种统一的架构和 API 层来解决这两个问题。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Oadin</span></code> 定义了适用于大多数通用 AI 服务的统一 Oadin API 规范。</p></li>
+<li><p>架构层面，应用程序现在将它们的 AI 请求发送到 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">API</span> <span class="pre">Layer</span></code> 。 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">API</span> <span class="pre">Layer</span></code> 将请求调度到合适的 AI 服务。</p></li>
+</ul>
+digraph G {
+  rankdir=TB
+  compound=true
+  label = &quot;Application Utilizing Oadin API Layer&quot;
+  graph [fontname = &quot;Verdana&quot;, fontsize = 10, style=&quot;filled&quot;, penwidth=0.5]
+  node [fontname = &quot;Verdana&quot;, fontsize = 10, shape=box, color=&quot;#333333&quot;, style=&quot;filled&quot;, penwidth=0.5]
+
+
+  subgraph cluster_aipc_1 {
+     label = &quot;an AIPC&quot;
+     color=&quot;#dddddd&quot;
+     fillcolor=&quot;#eeeeee&quot;
+
+     app_a1[label=&quot;Application A&quot;, fillcolor=&quot;#eeeeff&quot;]
+     app_b1[label=&quot;Application B&quot;, fillcolor=&quot;#eeeeff&quot;]
+
+     oadin_1[label=&quot;Oadin API Layer&quot;, fillcolor=&quot;#ffffcc&quot;]
+
+
+     subgraph cluster_service_1 {
+         label = &quot;AI Services from X&quot;
+         color = &quot;#333333&quot;
+         fillcolor=&quot;#ffcccc&quot;
+
+         models_1[label=&quot;AI Models&quot;, fillcolor=&quot;#eeffcc&quot;]
+     }
+
+     {app_a1, app_b1} -&gt; oadin_1
+     oadin_1 -&gt; models_1[lhead=cluster_service_1, minlen=2]
+  }
+  cloud_m[label=&quot;Cloud AI Service from M&quot;, fillcolor=&quot;#ffcccc&quot;]
+  oadin_1 -&gt; cloud_m[minlen=2 style=&quot;dashed&quot;]
+
+  subgraph cluster_aipc_2 {
+     label = &quot;another AIPC&quot;
+     color=&quot;#dddddd&quot;
+     fillcolor=&quot;#eeeeee&quot;
+
+     app_a2[label=&quot;Application A&quot;, fillcolor=&quot;#eeeeff&quot;]
+     app_b2[label=&quot;Application B&quot;, fillcolor=&quot;#eeeeff&quot;]
+
+     oadin_2[label=&quot;Oadin API Layer&quot;, fillcolor=&quot;#ffffcc&quot;]
+
+
+     subgraph cluster_service_2 {
+         label = &quot;AI Services from Y&quot;
+         color = &quot;#333333&quot;
+         fillcolor=&quot;#ffcccc&quot;
+
+         models_2[label=&quot;AI Models&quot;, fillcolor=&quot;#eeffcc&quot;]
+     }
+
+     {app_a2, app_b2} -&gt; oadin_2
+     oadin_2 -&gt; models_2[lhead=cluster_service_2, minlen=2]
+  }
+  cloud_n[label=&quot;Cloud AI Service from N&quot;, fillcolor=&quot;#ffcccc&quot;]
+  oadin_2 -&gt; cloud_n[minlen=2 style=&quot;dashed&quot;]
+
+}<section id="compatibility-issue">
+<span id="id2"></span><h3>解决兼容性问题<a class="headerlink" href="#compatibility-issue" title="Link to this heading"></a></h3>
+<p>理想情况下，应用程序应仅通过 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">API</span></code> 与 AI 服务交互。这将确保兼容性，并使应用程序能够在任何平台上运行，无论其底层 AI 服务提供商是谁。然而，在现实中，某些应用程序或服务提供商可能不完全遵守 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">API</span></code> 。</p>
+<p>为了减轻这一问题， <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">API</span> <span class="pre">Layer</span></code> 将尝试通过执行必要的转换来弥合这些兼容性差距。这是可行的，因为许多 API，即使不完全相同，通常也与 OpenAI 的 API 具有相似之处。
+通过利用这些相似性， <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">API</span> <span class="pre">Layer</span></code> 可以促进应用程序与各种 AI 服务之间的交互，即使它们的 API 并不完全兼容。</p>
+</section>
+<section id="availability-issue">
+<span id="id3"></span><h3>解决可用性问题<a class="headerlink" href="#availability-issue" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">API</span> <span class="pre">Layer</span></code> 充当动态中介，智能地将应用程序的请求路由到最合适的 AI 服务提供商。通过监控系统资源如 CPU、GPU 和 NPU 的利用率，它可以确定何时本地服务过载。
+在这种情况下，该层可以无缝地将请求重定向到基于云的 AI 服务提供商，优化性能并确保服务不间断。
+这种灵活性得益于 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">API</span> <span class="pre">Layer</span></code> 通过转换和匹配处理潜在 API 不兼容性的能力，即使基于云的 AI 服务的 API 与应用程序使用的略有不同。</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Oadin (AIPC Open Gateway)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="service_specs/chat.html" class="btn btn-neutral float-right" title="Oadin Chat 服务相关" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

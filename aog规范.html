@@ -1,0 +1,723 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oadin 通用规范 &mdash; Oadin (AIPC Open Gateway) v0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=4b4c264b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=683873e3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Oadin (AIPC Open Gateway)
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Oadin 目标:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="%E4%BB%8B%E7%BB%8D.html">Oadin针对的问题陈述</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Oadin API 规范:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="service_specs/chat.html">Oadin Chat 服务相关</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Oadin (AIPC Open Gateway)</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Oadin 通用规范</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/aog规范.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="oadin">
+<h1>Oadin 通用规范<a class="headerlink" href="#oadin" title="Link to this heading"></a></h1>
+<section id="id1">
+<h2>版本控制<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>当前版本 v0.2.0</p>
+<p>版本遵循语义版本控制，基本上是：</p>
+<ul class="simple">
+<li><p>主版本号，当进行不兼容的 API 更改时</p></li>
+<li><p>次要版本号，添加向后兼容功能时</p></li>
+<li><p>补丁版本，修复向后兼容错误时</p></li>
+</ul>
+<p>因此，主版本号是访问 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">APIs</span></code> URL 的一部分</p>
+</section>
+<section id="id2">
+<h2>Oadin 服务<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 是一个提供人工智能功能的服务。它可以是一个聊天机器人、文本转语音服务、翻译服务等。每个 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 都有它独特的 <code class="docutils literal notranslate"><span class="pre">properties</span></code> 和 <code class="docutils literal notranslate"><span class="pre">API</span></code> 。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">properties</span></code> 描述了服务的特征，例如它所使用的模型、采用的混合策略等。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">API</span></code> 描述了服务的接口，例如输入/输出格式、所使用的 HTTP 方法等。</p></li>
+</ul>
+<section id="id3">
+<h3>Oadin 服务名称和端口<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<p>每个 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 都有一个独特的名称。该名称用于识别服务，并用于形成访问服务的端点 URL。</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 的典型名称包括 <code class="docutils literal notranslate"><span class="pre">chat</span></code>, <code class="docutils literal notranslate"><span class="pre">audio/text-to-speech</span></code>, <code class="docutils literal notranslate"><span class="pre">embed</span></code> 等。</p>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">Oadin</span></code> 截至目前支持 Restful 风格的 API。API 的 <code class="docutils literal notranslate"><span class="pre">Endpoint</span></code> 包括 HTTP 方法和访问服务的 URL。
+URL 由主机名和端口（默认为 localhost 和 16688） Oadin 前缀、规范版本号以及服务名称组成，即 <code class="docutils literal notranslate"><span class="pre">http://localhost:{port_number}/oadin/v{spec_version_number}/services/{service_name}</span></code>.</p>
+<p>例如 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 服务的 <code class="docutils literal notranslate"><span class="pre">Endpoint</span></code> 是 <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">http://localhost:16688/oadin/v0.2/services/chat</span></code> 。</p>
+</section>
+<section id="metadata-of-oadin-service">
+<span id="id4"></span><h3>Oadin 服务元数据<a class="headerlink" href="#metadata-of-oadin-service" title="Link to this heading"></a></h3>
+<p>Oadin 服务的元数据是一个描述服务的 JSON 对象。它可能因服务而异。然而，在服务的元数据中通常包含一些常见的字段。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 40.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>字段</p></th>
+<th class="head"><p>值</p></th>
+<th class="head"><p>描述</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>hybrid_policy</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">always_remote</span></code>, <code class="docutils literal notranslate"><span class="pre">always_local</span></code>, <code class="docutils literal notranslate"><span class="pre">default</span></code></p></td>
+<td><p>混合策略的使用</p></td>
+</tr>
+<tr class="row-odd"><td><p>local_service_providers</p></td>
+<td><p>用于引用： <a class="reference internal" href="#metadata-of-oadin-service-provider"><span class="std std-ref">Oadin 服务提供商元数据</span></a></p></td>
+<td><p>默认的本地服务提供商名称</p></td>
+</tr>
+<tr class="row-even"><td><p>remote_service_providers</p></td>
+<td><p>用于引用： <a class="reference internal" href="#metadata-of-oadin-service-provider"><span class="std std-ref">Oadin 服务提供商元数据</span></a></p></td>
+<td><p>默认的远端服务提供商名称</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id5">
+<h2>Oadin 服务提供商<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
+<p>Oadin 服务提供商实际上实施了相应的 Oadin 服务。</p>
+<p>通常，对于一个给定的 Oadin 服务，它可能有多个服务提供商。例如，一个 <code class="docutils literal notranslate"><span class="pre">/chat</span> <span class="pre">Oadin</span></code> 服务可能由 ollama 在同一台机器上运行的本地 Oadin 服务提供商提供，同时还有一个由 OpenAI 提供的远程 Oadin 服务提供商。</p>
+<p>每个 Oadin 服务提供商都有一个唯一的 ID。该 ID 用于识别服务提供商，并用于引用服务提供商，例如在 Oadin 服务的元数据中。参见： <a class="reference internal" href="#metadata-of-oadin-service"><span class="std std-ref">Oadin 服务元数据</span></a>.</p>
+<section id="metadata-of-oadin-service-provider">
+<span id="id6"></span><h3>Oadin 服务提供商元数据<a class="headerlink" href="#metadata-of-oadin-service-provider" title="Link to this heading"></a></h3>
+<p>Oadin 服务提供商的元数据是一个描述服务提供商的 JSON 对象。以下是大多数服务提供商都有的常见字段。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 40.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>字段</p></th>
+<th class="head"><p>值</p></th>
+<th class="head"><p>描述</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>provider_name</p></td>
+<td><p>string</p></td>
+<td><p>服务提供商的名称/ID</p></td>
+</tr>
+<tr class="row-odd"><td><p>service_name</p></td>
+<td><p>string</p></td>
+<td><p>当前提供商所提供的服务的名称/ID</p></td>
+</tr>
+<tr class="row-even"><td><p>service_source</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">remote</span></code> or <code class="docutils literal notranslate"><span class="pre">local</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">local</span></code></p></td>
+<td><p>服务来源</p></td>
+</tr>
+<tr class="row-odd"><td><p>desc</p></td>
+<td><p>string</p></td>
+<td><p>服务提供商的描述</p></td>
+</tr>
+<tr class="row-even"><td><p>method</p></td>
+<td><p>string, 例如, <code class="docutils literal notranslate"><span class="pre">POST</span></code></p></td>
+<td><p>调用服务提供商时使用的 HTTP 方法</p></td>
+</tr>
+<tr class="row-odd"><td><p>url</p></td>
+<td><p>string</p></td>
+<td><p>访问服务提供商的 URL。这与方法共同构成服务提供商的端口</p></td>
+</tr>
+<tr class="row-even"><td><p>flavor</p></td>
+<td><p>string, 例如, <code class="docutils literal notranslate"><span class="pre">oadin</span></code>, <code class="docutils literal notranslate"><span class="pre">openai</span></code>, <code class="docutils literal notranslate"><span class="pre">ollama</span></code>, etc.</p></td>
+<td><p>服务提供商的 API 版本。如果需要，用于转换 API。参见： <a class="reference internal" href="aog%E7%9A%84%E6%9C%BA%E5%88%B6.html#flavor-conversion"><span class="std std-ref">转换 API 风格以实现兼容性</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>properties</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{&quot;max_input_tokens&quot;:</span> <span class="pre">2048,&quot;supported_response_mode&quot;:[&quot;stream&quot;,&quot;sync&quot;]}</span></code></p></td>
+<td><p>当前服务特有的属性，包含 最大上下文、是否支持流式输出等</p></td>
+</tr>
+<tr class="row-even"><td><p>auth_type</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">none</span></code> or <code class="docutils literal notranslate"><span class="pre">apikey</span></code> or <code class="docutils literal notranslate"><span class="pre">token</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">none</span></code></p></td>
+<td><p>鉴权方式</p></td>
+</tr>
+<tr class="row-odd"><td><p>auth_key</p></td>
+<td><p>string</p></td>
+<td><p>鉴权信息， 根据auth_type的不同存储不同的鉴权信息，例如 none: {} or apikey: “{‘apikey’:’xxx’}” or token: “{‘ak’:’xxx’,’sk’:’xxx’}”</p></td>
+</tr>
+<tr class="row-even"><td><p>extra_headers</p></td>
+<td><p>JSON object</p></td>
+<td><p>发送请求时需要在头部添加的其他内容吗。例如，与授权相关的头部</p></td>
+</tr>
+<tr class="row-odd"><td><p>extra_json_body</p></td>
+<td><p>JSON object</p></td>
+<td><p>其他需要添加到该云服务请求体中的内容</p></td>
+</tr>
+<tr class="row-even"><td><p>status</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">1</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>当前服务提供商提供的服务状态：0-不可用 1-可用</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id7">
+<h2>通用数据类型<a class="headerlink" href="#id7" title="Link to this heading"></a></h2>
+<p>在 <code class="docutils literal notranslate"><span class="pre">Oadin</span> <span class="pre">Service</span></code> 的 Restful API 中，有一些常用的数据类型。例如，如何表示文本图像等。我们在这里描述这些通用类型。</p>
+<section id="content-type">
+<span id="id8"></span><h3>内容<a class="headerlink" href="#content-type" title="Link to this heading"></a></h3>
+<p>内容可以出现在许多请求或响应的 JSON 体中。内容可以是各种类型。</p>
+<section id="id9">
+<h4>文本内容<a class="headerlink" href="#id9" title="Link to this heading"></a></h4>
+<p>文本内容可以是字符串</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a plan string content&quot;</span>
+</pre></div>
+</div>
+<p>或指定类型的对象</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;the text content here&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>它可以通过添加更多信息变得更加复杂</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;the text content&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;annotations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tag1&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id10">
+<h4>图像内容<a class="headerlink" href="#id10" title="Link to this heading"></a></h4>
+<p>图像内容可以是 base64 编码的字符串，例如，下表中的两个 base64 编码的图像。</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;images&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;iVBORw0KGgoAAAAN...&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;YAAADBPx+VAA...&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>或者它可能是一个带有 URL 的对象</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;image_url&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;image_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://a.com/b.jpg&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>或 base64 编码字符串</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="nt">&quot;image&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">&quot;image&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iVBORw0KGgoAAAAN...&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>OpenAI 还提供了 <code class="docutils literal notranslate"><span class="pre">`image_file`</span></code> ，它也在 Oadin 的未来路线图中。</p>
+</section>
+<section id="array-content">
+<h4>Array Content<a class="headerlink" href="#array-content" title="Link to this heading"></a></h4>
+<p>数组内容只是一个列表，其中包含上面定义的内容。</p>
+</section>
+</section>
+<section id="message-type">
+<span id="id11"></span><h3>消息<a class="headerlink" href="#message-type" title="Link to this heading"></a></h3>
+<p>存在几种消息类型，每种类型都有自己的字段。迄今为止，我们仅支持系统、用户、助手、工具消息类型。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>字段</p></th>
+<th class="head"><p>值</p></th>
+<th class="head"><p>是否必需</p></th>
+<th class="head"><p>描述</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>role</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">system</span></code>, <code class="docutils literal notranslate"><span class="pre">user</span></code>, <code class="docutils literal notranslate"><span class="pre">assistant</span></code>, or <code class="docutils literal notranslate"><span class="pre">tool</span></code></p></td>
+<td><p>必需</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>content</p></td>
+<td><p>见 <a class="reference internal" href="#content-type"><span class="std std-ref">内容</span></a></p></td>
+<td><p>必需</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>tool_call_id</p></td>
+<td><p>a string id</p></td>
+<td><p>可选，如果 role 是 <code class="docutils literal notranslate"><span class="pre">tool</span></code> 则必需</p></td>
+<td><p>工具调用，该消息正在响应。这与 OpenAI 在聊天/完成功能中的函数调用能力相似 <code class="docutils literal notranslate"><span class="pre">chat/completions</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<section id="message-example">
+<span id="id12"></span><h4>消息实例<a class="headerlink" href="#message-example" title="Link to this heading"></a></h4>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;system&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;You are a helpful assistant can do function call and your team is Tom&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hello. What&#39;s your name?&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hello. My name is Tom.&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;I am looking for some shirts&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;tool_calls&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;call_BEGxtsoiM96M78Y97RFxPRYk&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;function&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;function&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;search&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;arguments&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{&#39;query&#39;:&#39;shirts&#39;}&quot;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">}]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;tool_call_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;call_BEGxtsoiM96M78Y97RFxPRYk&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tool&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;search&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;[&#39;shirt1&#39;, &#39;shirt2&#39;, &#39;shirt3&#39;]&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;I found some options for shirts:\n\n1. Shirt 1\n2. Shirt 2\n3. Shirt 3\n\nWould you like more details on any of these?&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id13">
+<h3>工具<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
+<p>工具消息是一种通常包含函数调用执行结果的消息，作为对话或历史记录的一部分发送回大模型。</p>
+<p id="tool-message"><code class="docutils literal notranslate"><span class="pre">tool_call_id</span></code> 用来指示这条消息响应的是哪个调用。 <code class="docutils literal notranslate"><span class="pre">content</span></code> 通常是所需工具调用LLM的执行结果。 详见上文 <a class="reference internal" href="#message-type"><span class="std std-ref">消息</span></a> 和 <a class="reference internal" href="#message-example"><span class="std std-ref">消息实例</span></a>.</p>
+<section id="tool-description">
+<span id="id14"></span><h4>工具描述<a class="headerlink" href="#tool-description" title="Link to this heading"></a></h4>
+<p>这描述了一个可用的函数，并将其提供给LLM。据此，LLM可以决定是否建议调用此函数，以及使用哪种类型的参数。因此，它不仅应该有关于函数的名称和描述，还应该有关于其参数的架构。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>字段</p></th>
+<th class="head"><p>下级字段</p></th>
+<th class="head"><p>值</p></th>
+<th class="head"><p>是否必需</p></th>
+<th class="head"><p>描述</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>type</p></td>
+<td></td>
+<td><p>“function”</p></td>
+<td><p>必需</p></td>
+<td><p>指定这是一个函数类型</p></td>
+</tr>
+<tr class="row-odd"><td><p>function</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>name</p></td>
+<td><p>string</p></td>
+<td><p>必需</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>description</p></td>
+<td><p>string</p></td>
+<td><p>可选</p></td>
+<td><p>函数功能的描述，用于模型选择何时以及如何调用该函数。</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>parameters</p></td>
+<td><p>JSON object</p></td>
+<td><p>可选</p></td>
+<td><p>函数接受的参数，描述为一个 JSON 模式对象 <a class="reference external" href="https://json-schema.org/understanding-json-schema">JSON
+Schema</a></p></td>
+</tr>
+</tbody>
+</table>
+<p>这里是一个例子，同时你可以在 <a class="reference internal" href="#message-example"><span class="std std-ref">消息实例</span></a> 中找到另一个例子</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;function&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;function&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;get_current_weather&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Get the current weather in a given location&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;parameters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;location&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The city and state, e.g. San Francisco, CA&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="p">},</span>
+<span class="w">                </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;enum&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;celsius&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;fahrenheit&quot;</span><span class="p">]},</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="tool-call-description">
+<span id="id15"></span><h4>工具调用描述<a class="headerlink" href="#tool-call-description" title="Link to this heading"></a></h4>
+<p>这描述了调用函数的请求。它通常作为消息的一部分由 <code class="docutils literal notranslate"><span class="pre">tool_calls</span></code> 中的 LLM 返回，前提是提供了可用的： <a class="reference internal" href="#tool-description"><span class="std std-ref">工具描述</span></a>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>字段</p></th>
+<th class="head"><p>下级字段</p></th>
+<th class="head"><p>值</p></th>
+<th class="head"><p>是否必需</p></th>
+<th class="head"><p>描述</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>id</p></td>
+<td></td>
+<td><p>string</p></td>
+<td><p>必需</p></td>
+<td><p>工具ID</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td></td>
+<td><p>function</p></td>
+<td><p>必需</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>function</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>name</p></td>
+<td><p>string</p></td>
+<td><p>必需</p></td>
+<td><p>要调用的函数名称</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>arguments</p></td>
+<td><p>string</p></td>
+<td><p>可选</p></td>
+<td><p>函数调用参数，由模型以 JSON 格式生成。请注意，模型并不总是生成有效的 JSON，可能会生成由您的函数模式未定义的参数。在调用函数之前，请在您的代码中验证这些参数。</p></td>
+</tr>
+</tbody>
+</table>
+<p>这是从上述： <a class="reference internal" href="#message-example"><span class="std std-ref">消息实例</span></a> 中提取的示例。</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;call_BEGxtsoiM96M78Y97RFxPRYk&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;function&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;function&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;search&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;arguments&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{&#39;query&#39;:&#39;shirts&#39;}&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="json">
+<h2>字段：服务头部字段和 JSON 正文字段<a class="headerlink" href="#json" title="Link to this heading"></a></h2>
+<p>服务通过 HTTP 调用，Oadin 服务要求请求和响应都使用 <code class="docutils literal notranslate"><span class="pre">JSON</span></code> 格式。</p>
+<section id="id16">
+<h3>必填字段和可选字段<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
+<p>请求/响应头字段以及请求/响应的 JSON 体字段，要么是必需的，要么是可选的。</p>
+<section id="id17">
+<h4>必填和可选字段<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
+<p>必填字段应在调用时提供，即发送请求。它们通常是所有潜在服务提供商实际运营服务所需的最基本信息集。</p>
+<p>可选字段可由应用程序提供，但无法保证底层实际服务提供商支持它们。</p>
+<p><strong>NOTE</strong> 请注意，如果基础实际服务提供商不支持可选字段，则在 Oadin 转换过程中将从请求中删除该字段。
+这可能会导致某些信息丢失，但可避免意外将参数发送给服务提供商。此行为在未来规范中可能有所更改。更多详情请参阅： <a class="reference internal" href="aog%E7%9A%84%E6%9C%BA%E5%88%B6.html#flavor-conversion"><span class="std std-ref">转换 API 风格以实现兼容性</span></a>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 30.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>请求字段类型</p></th>
+<th class="head"><p>调用是否需要提供</p></th>
+<th class="head"><p>底层服务提供商是否接受</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>必需</p></td>
+<td><div class="line-block">
+<div class="line">是。</div>
+<div class="line">必须提供，除非该字段有默认值</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">是。</div>
+<div class="line">实际服务提供商将接收这些字段并使用它们</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p>可选</p></td>
+<td><div class="line-block">
+<div class="line">否。</div>
+<div class="line">调用者可自行决定是否提供这些字段</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">视情况而定。</div>
+<div class="line">只有实际服务提供商支持的字段会被传递给它。其他字段将被过滤并忽略。</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id18">
+<h4>必填和可选字段<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
+<p>响应中定义的必填字段始终由 Oadin 提供。</p>
+<p>然而，返回响应中是否会出现可选字段，取决于处理相应请求的实际服务提供商。</p>
+<p>与请求不同，Oadin 中未定义但由服务提供商返回的附加字段将仍然保留在那里，并直接发送到应用程序而不会被过滤掉。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 40.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>响应字段类型</p></th>
+<th class="head"><p>是否出现在底层服务提供商返回的响应中</p></th>
+<th class="head"><p>是否出现在 Oadin 返回的最终响应中</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>必需</p></td>
+<td><div class="line-block">
+<div class="line">未定。</div>
+<div class="line">底层服务提供商的响应可能包含相关信息，但未放入此字段。</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">会。</div>
+<div class="line">Oadin 将转换并确保该字段被展示，并且该字段可安全访问</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p>可选</p></td>
+<td><p>未定</p></td>
+<td><div class="line-block">
+<div class="line">未定。</div>
+<div class="line">Oadin 最终返回的响应仅包含由实际服务提供商提供的部分</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="common-fields-of-oadin-services">
+<span id="id19"></span><h2>Oadin 服务通用字段<a class="headerlink" href="#common-fields-of-oadin-services" title="Link to this heading"></a></h2>
+<p>尽管每个服务在其请求/响应的头部和 JSON 主体中可能有自己的特定字段。一些字段相当常见，出现在大多数服务请求/响应中。</p>
+<section id="common-fields-in-header-of-request">
+<span id="id20"></span><h3>请求头中的常见字段<a class="headerlink" href="#common-fields-in-header-of-request" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 14.3%" />
+<col style="width: 14.3%" />
+<col style="width: 9.5%" />
+<col style="width: 61.9%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>字段</p></th>
+<th class="head"><p>值</p></th>
+<th class="head"><p>是否必需</p></th>
+<th class="head"><p>描述</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Content-Type</p></td>
+<td><p>application/json</p></td>
+<td><p>必需</p></td>
+<td><p>除非特别说明，大多数 API 端点仅接受 JSON 格式</p></td>
+</tr>
+</tbody>
+</table>
+<p>大多数 API 以 JSON 作为输入数据，因此头部包含 <code class="docutils literal notranslate"><span class="pre">Content-Type</span></code> 。 然而，对于二进制输入，如图像或音频文件等，API 可能会使用表单数据 (例如， <code class="docutils literal notranslate"><span class="pre">multipart/form-data</span></code> 在 <code class="docutils literal notranslate"><span class="pre">Content-Type</span></code> 中)</p>
+<p><strong>NOTE</strong> 请注意，与调用云服务不同， <code class="docutils literal notranslate"><span class="pre">Authorization</span></code> 头不是始终必需的，因为它可能本地调用 Oadin 服务。然而，Oadin 可以根据配置或应用程序调用的信息稍后添加此类头。</p>
+</section>
+<section id="common-fields-in-request-body">
+<span id="id21"></span><h3>请求体中的常见字段<a class="headerlink" href="#common-fields-in-request-body" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 10.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>JSON 字段</p></th>
+<th class="head"><p>值</p></th>
+<th class="head"><p>是否必需</p></th>
+<th class="head"><p>描述</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>model</p></td>
+<td><p>string or JSON object</p></td>
+<td><p>optional</p></td>
+<td><p>要用于此服务的模型。如未提供，将使用默认模型。如果服务不支持选择模型，则此字段将被忽略。参见
+<a class="reference internal" href="#metadata-of-oadin-service-provider"><span class="std std-ref">Oadin 服务提供商元数据</span></a> 中的 <code class="docutils literal notranslate"><span class="pre">allow_to_select_model</span></code> 。
+某些服务可能有多个模型，因此应用程序可能传递一个 JSON 对象来指定服务内部使用的每个模型的模型名称。</p></td>
+</tr>
+<tr class="row-odd"><td><p>stream</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">true</span></code> 或 <code class="docutils literal notranslate"><span class="pre">false</span></code>. 默认为 <code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
+<td><p>必需</p></td>
+<td><p>是否使用流模式。如未提供，将使用默认模式。参见： <a class="reference internal" href="#metadata-of-oadin-service-provider"><span class="std std-ref">Oadin 服务提供商元数据</span></a> <code class="docutils literal notranslate"><span class="pre">supported_response_mode</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>hybrid_policy</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">always_remote</span></code>, <code class="docutils literal notranslate"><span class="pre">always_local</span></code>, <code class="docutils literal notranslate"><span class="pre">default</span></code></p></td>
+<td><p>可选</p></td>
+<td><p>混合策略使用。如未提供，将使用 <code class="docutils literal notranslate"><span class="pre">default</span></code> 策略。参见 <a class="reference internal" href="#metadata-of-oadin-service"><span class="std std-ref">Oadin 服务元数据</span></a> 中的 <code class="docutils literal notranslate"><span class="pre">hybrid_policy</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>remote_service_provider</p></td>
+<td><p>string, 或 JSON ，如 <a class="reference internal" href="#metadata-of-oadin-service-provider"><span class="std std-ref">Oadin 服务提供商元数据</span></a></p></td>
+<td><p>可选</p></td>
+<td><p>默认情况下，如果 Oadin 决定使用远程服务提供商来处理此调用（基于 hybrid_policy 等），它将使用平台定义的默认远程服务提供商为此服务提供服务。
+然而，应用程序可以通过使用此字段在请求中覆盖此特定设置，以确保当 Oadin 决定使用远程服务提供商时，使用该远程服务提供商。
+该字段需要是字符串，表示预定义服务提供商的 ID。或者，它也可以是一个 JSON 对象，表示 Oadin 服务提供商的： <a class="reference internal" href="#metadata-of-oadin-service-provider"><span class="std std-ref">Oadin 服务提供商元数据</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p>keep_alive</p></td>
+<td><p>timespan, e.g. <code class="docutils literal notranslate"><span class="pre">5m</span></code> as the default</p></td>
+<td><p>可选</p></td>
+<td><p>底层服务（例如 <code class="docutils literal notranslate"><span class="pre">ollama</span></code> ）控制本地模型在内存中停留时间的提示</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="common-fields-in-response-body">
+<span id="id22"></span><h3>响应体中的常见字段<a class="headerlink" href="#common-fields-in-response-body" title="Link to this heading"></a></h3>
+<p>在许多情况下，返回的响应是一个 JSON 对象。除了必要时进行转换 (见 <a class="reference internal" href="aog%E7%9A%84%E6%9C%BA%E5%88%B6.html#flavor-conversion"><span class="std std-ref">转换 API 风格以实现兼容性</span></a>)。</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 50.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>JSON 字段</p></th>
+<th class="head"><p>描述</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>model</p></td>
+<td><p>实际调用的模型。这是可选的，并不总是提供。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
