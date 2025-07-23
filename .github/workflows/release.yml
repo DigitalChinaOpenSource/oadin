@@ -162,11 +162,10 @@ jobs:
           echo "========== 🔧 Win Upload End =========="
 
       - name: Notify Feishu
-        shell: powershell
+        shell: pwsh
         run: |
           $uri = "${{ secrets.NOTIFY_SECRET }}"
-          # 构造消息内容
-          $body = @{
+          $bodyObj = @{
             msg_type = 'post'
             content = @{
               post = @{
@@ -196,5 +195,8 @@ jobs:
                 }
               }
             }
-          } | ConvertTo-Json -Depth 10
-          Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json" -Body $body
+          }
+          $json = $bodyObj | ConvertTo-Json -Depth 10
+          $utf8NoBomEncoding = New-Object System.Text.UTF8Encoding($false)
+          $body = $utf8NoBomEncoding.GetBytes($json)
+          Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json; charset=utf-8" -Body $body
