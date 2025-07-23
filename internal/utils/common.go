@@ -27,7 +27,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"gorm.io/gorm/utils"
 	"io"
 	"math/rand"
 	"net/http"
@@ -42,9 +41,12 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm/utils"
+
+	"oadin/internal/types"
+
 	"github.com/jaypipes/ghw"
 	"github.com/shirou/gopsutil/disk"
-	"oadin/internal/types"
 )
 
 const (
@@ -116,7 +118,7 @@ func GetOADINDataDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dir = filepath.Join(userDir, "OADIN")
+	dir = filepath.Join(userDir, "Oadin")
 	if err = os.MkdirAll(dir, 0o750); err != nil {
 		return "", fmt.Errorf("failed to create directory %s: %v", dir, err)
 	}
@@ -905,7 +907,6 @@ func StopOadinServer(pidFilePath string) error {
 	}
 	return nil
 }
-
 
 // CopyDir Copy the source directory to the target location while preserving file attributes and structure.
 // src: source path

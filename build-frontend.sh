@@ -16,7 +16,7 @@
 #*****************************************************************************
 
 
-# OADIN Control Panel Frontend Build Script
+# Oadin Control Panel Frontend Build Script
 # This script automates frontend build and deployment to console directory
 
 set -e  # Exit on error
@@ -57,15 +57,15 @@ check_command() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 
-print_info "OADIN Control Panel Frontend Build Script"
+print_info "Oadin Control Panel Frontend Build Script"
 print_info "Project root: $PROJECT_ROOT"
 
 # Check required commands
 print_info "Checking required dependencies..."
-check_command "yarn"
+check_command "pnpm"
 
 # Check directory structure
-FRONTEND_DIR="$PROJECT_ROOT/frontend/control_panel"
+FRONTEND_DIR="$PROJECT_ROOT/frontend/app/webConsole"
 CONSOLE_DIR="$PROJECT_ROOT/console"
 
 if [ ! -d "$FRONTEND_DIR" ]; then
@@ -84,38 +84,9 @@ print_success "Directory structure check passed"
 print_info "Entering frontend directory: $FRONTEND_DIR"
 cd "$FRONTEND_DIR"
 
-# ----------------------------------------------------------------------
-# Proxy injection for Yarn
-# ----------------------------------------------------------------------
-read -p "[INFO] Do you want to set proxy values for Yarn using system environment variables? [Y/N]: " USER_INPUT
-if [[ "$USER_INPUT" == "Y" || "$USER_INPUT" == "y" ]]; then
-    print_info "Checking for system proxy environment variables..."
-    HAS_PROXY_CONFIG=false
-
-    if [ ! -z "$http_proxy" ]; then
-        print_info "Detected http_proxy: $http_proxy"
-        yarn config set httpProxy "$http_proxy"
-        HAS_PROXY_CONFIG=true
-    fi
-
-    if [ ! -z "$https_proxy" ]; then
-        print_info "Detected https_proxy: $https_proxy"
-        yarn config set httpsProxy "$https_proxy"
-        HAS_PROXY_CONFIG=true
-    fi
-
-    if [ "$HAS_PROXY_CONFIG" = false ]; then
-        print_info "No proxy environment variables found, skipping Yarn proxy config."
-    fi
-elif [[ "$USER_INPUT" == "N" || "$USER_INPUT" == "n" ]]; then
-    print_info "Skipping Yarn proxy config."
-else
-    print_warning "Invalid input. Please enter Y or N next time."
-fi
-
 # Install dependencies
 print_info "Installing frontend dependencies..."
-yarn install
+pnpm install
 
 if [ $? -ne 0 ]; then
     print_error "Failed to install dependencies"
@@ -126,7 +97,7 @@ print_success "Dependencies installed successfully"
 
 # Build frontend
 print_info "Building frontend..."
-yarn build
+pnpm build
 
 if [ $? -ne 0 ]; then
     print_error "Frontend build failed"
@@ -169,5 +140,5 @@ else
 fi
 
 print_success "🎉 Control Panel frontend build and deployment completed!"
-print_info "You can now start OADIN service and visit http://127.0.0.1:16688/dashboard"
+print_info "You can now start Oadin service and visit http://127.0.0.1:16699/"
 

@@ -17,7 +17,7 @@ REM ****************************************************************************
 
 setlocal enabledelayedexpansion
 
-echo [INFO] OADIN Control Panel Frontend Build Script (Windows)
+echo [INFO] Oadin Control Panel Frontend Build Script (Windows)
 
 set "PROJECT_ROOT=%~dp0"
 set "PROJECT_ROOT=%PROJECT_ROOT:~0,-1%"
@@ -42,18 +42,18 @@ if errorlevel 1 (
 
 echo [SUCCESS] Node.js and npm are available
 
-echo [INFO] Checking if yarn is installed...
-call yarn --version >nul 2>&1
+echo [INFO] Checking if pnpm is installed...
+call pnpm --version >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] yarn command not found, please install yarn first
-    echo [INFO] You can install it with: npm install -g yarn
+    echo [ERROR] pnpm command not found, please install pnpm first
+    echo [INFO] You can install it with: npm install -g pnpm
     pause
     exit /b 1
 )
 
-echo [SUCCESS] yarn check passed
+echo [SUCCESS] pnpm check passed
 
-set "FRONTEND_DIR=%PROJECT_ROOT%\frontend\control_panel"
+set "FRONTEND_DIR=%PROJECT_ROOT%\frontend\app\webConsole"
 set "CONSOLE_DIR=%PROJECT_ROOT%\console"
 
 if not exist "%FRONTEND_DIR%" (
@@ -73,49 +73,8 @@ echo [SUCCESS] Directory structure check passed
 echo [INFO] Entering frontend directory: %FRONTEND_DIR%
 cd /d "%FRONTEND_DIR%"
 
-:: ----------------------------------------------------------------------
-:: Proxy injection for Yarn
-:: ----------------------------------------------------------------------
-set /p "USER_INPUT=[INFO] Do you want to set proxy values for Yarn using system environment variables? [Y/N]: "
-
-if /i "%USER_INPUT%"=="Y" (
-    echo [INFO] Checking for system proxy environment variables...
-    set "HAS_PROXY_CONFIG=false"
-
-    if defined http_proxy (
-        echo [INFO] Detected http_proxy: %http_proxy%
-        set "HAS_PROXY_CONFIG=true"
-    )
-    if defined https_proxy (
-        echo [INFO] Detected https_proxy: %https_proxy%
-        set "HAS_PROXY_CONFIG=true"
-    )
-
-    if "!HAS_PROXY_CONFIG!"=="true" (
-        if defined http_proxy (
-            call yarn config set httpProxy "%http_proxy%"
-        )
-        if defined https_proxy (
-            call yarn config set httpsProxy "%https_proxy%"
-        )
-    ) else (
-        echo [INFO] No proxy environment variables found, skipping Yarn proxy config.
-    )
-    goto AfterProxy
-)
-
-if /i "%USER_INPUT%"=="N" (
-    echo [INFO] Skipping Yarn proxy config.
-    goto AfterProxy
-)
-
-echo [WARN] Invalid input. Please enter Y or N next time.
-
-:AfterProxy
-
-
 echo [INFO] Installing frontend dependencies...
-call yarn install
+call pnpm i
 
 if errorlevel 1 (
     echo [ERROR] Failed to install dependencies
@@ -126,7 +85,7 @@ if errorlevel 1 (
 echo [SUCCESS] Dependencies installed successfully
 
 echo [INFO] Building frontend...
-call yarn build
+call pnpm run build
 
 if errorlevel 1 (
     echo [ERROR] Frontend build failed
@@ -169,6 +128,6 @@ if exist "%CONSOLE_DIST_DIR%\index.html" (
 )
 
 echo [SUCCESS] Control Panel frontend build and deployment completed!
-echo [INFO] You can now start OADIN service and visit http://127.0.0.1:16688/dashboard
+echo [INFO] You can now start Oadin service and visit http://127.0.0.1:16699/
 
 pause
