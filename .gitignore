@@ -63,6 +63,6 @@ build.sh
 
 # fronted node_modules
 /fronted/**/node_modules/
-
+/fronted/node_modules/
 # 
 
