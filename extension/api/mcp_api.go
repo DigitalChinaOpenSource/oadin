@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"oadin/extension/dto"
+	"oadin/extension/api/dto"
 	"oadin/extension/entity"
 	"oadin/extension/rpc"
 	"oadin/extension/server"

@@ -3,10 +3,10 @@ package api
 import (
 	"net/http"
 
-	"oadin/extension/server"
-	"oadin/extension/dto"
-	"oadin/internal/utils/bcode"
 	"github.com/gin-gonic/gin"
+	"oadin/extension/api/dto"
+	"oadin/extension/server"
+	"oadin/internal/utils/bcode"
 )
 
 type ModelApi struct {

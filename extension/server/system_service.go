@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 	"log/slog"
-	"oadin/extension/cache"
-	"oadin/extension/dto"
-	"oadin/internal/provider"
+	"oadin/extension/api/dto"
 	"oadin/extension/utils/bcode"
+	"oadin/extension/utils/cache"
+	"oadin/internal/provider"
 )
 
 type System interface {
