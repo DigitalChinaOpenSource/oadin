@@ -162,7 +162,7 @@ jobs:
           echo "========== 🔧 Win Upload End =========="
 
       - name: Notify Feishu
-        shell: pwsh
+        shell: powershell
         run: |
           $uri = "${{ secrets.NOTIFY_SECRET }}"
           $bodyObj = @{
