@@ -182,11 +182,11 @@ jobs:
                     ),
                     @(
                       @{ tag = "text"; text = "Mac下载: " },
-                      @{ tag = "a"; href = "https://oss-aipc.dcclouds.com/oadin/releases/macos/${env:MAC_FILE_NAME}"; text = "点击下载" }
+                      @{ tag = "a"; href = "http://${http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"; text = "点击下载" }
                     ),
                     @(
                       @{ tag = "text"; text = "Win下载: " },
-                      @{ tag = "a"; href = "https://oss-aipc.dcclouds.com/oadin/releases/windows/${env:WIN_FILE_NAME}"; text = "点击下载" }
+                      @{ tag = "a"; href = "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$($env:WIN_FILE_NAME)"; text = "点击下载" }
                     ),
                     @(
                       @{ tag = "text"; text = "⏰ 时间: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" }
