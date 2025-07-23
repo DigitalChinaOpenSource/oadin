@@ -16,7 +16,7 @@ export const LOCAL_STORAGE_KEYS = {
   MODEL_DOWNLOAD_LIST: 'modelDownloadList',
 };
 
-export const API_VERSION = 'v0.2';
+export const API_VERSION = 'v0.4';
 export const API_PREFIX = `/oadin/${API_VERSION}`;
 export const API_HEALTH_ENDPOINT = '/health';
 export const API_ENGINE_HEALTH_ENDPOINT = '/engine/health';
