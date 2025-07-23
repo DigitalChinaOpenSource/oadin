@@ -162,43 +162,39 @@ jobs:
           echo "========== 🔧 Win Upload End =========="
 
       - name: Notify Feishu
+        shell: powershell
         run: |
-          curl -X POST "${{ secrets.NOTIFY_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"msg_type\": \"post\",
-              \"content\": {
-                \"post\": {
-                  \"zh_cn\": {
-                    \"title\": \"🎉 安装包上传成功\",
-                    \"content\": [
-                      [
-                        {
-                          \"tag\": \"at\",
-                          \"user_id\": \"a37571869425831e1d434f333a9ca2ba34eaae8b\"
-                        },
-                        {
-                          \"tag\": \"text\",
-                          \"text\": \"OADIN 构建已完成！\"
-                        }
-                      ],
-                      [
-                        { \"tag\": \"text\", \"text\": \"Tag: \" },
-                        { \"tag\": \"text\", \"text\": \"${{ github.ref_name }}\", \"bold\": true }
-                      ],
-                      [
-                        { \"tag\": \"text\", \"text\": \"Mac下载: \" },
-                        { \"tag\": \"a\", \"href\": \"https://oss-aipc.dcclouds.com/oadin/releases/macos/${MAC_FILE_NAME}\", \"text\": \"点击下载\" }
-                      ],
-                      [
-                        { \"tag\": \"text\", \"text\": \"Win下载: \" },
-                        { \"tag\": \"a\", \"href\": \"https://oss-aipc.dcclouds.com/oadin/releases/windows/${WIN_FILE_NAME}\", \"text\": \"点击下载\" }
-                      ],
-                      [
-                        { \"tag\": \"text\", \"text\": \"⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')\" }
-                      ]
-                    ]
-                  }
+          $uri = "${{ secrets.NOTIFY_SECRET }}"
+          # 构造消息内容
+          $body = @{
+            msg_type = 'post'
+            content = @{
+              post = @{
+                zh_cn = @{
+                  title = "🎉 安装包上传成功"
+                  content = @(
+                    @(
+                      @{ tag = "at"; user_id = "a37571869425831e1d434f333a9ca2ba34eaae8b" },
+                      @{ tag = "text"; text = "OADIN 构建已完成！" }
+                    ),
+                    @(
+                      @{ tag = "text"; text = "Tag: " },
+                      @{ tag = "text"; text = "${{ github.ref_name }}"; bold = $true }
+                    ),
+                    @(
+                      @{ tag = "text"; text = "Mac下载: " },
+                      @{ tag = "a"; href = "https://oss-aipc.dcclouds.com/oadin/releases/macos/${env:MAC_FILE_NAME}"; text = "点击下载" }
+                    ),
+                    @(
+                      @{ tag = "text"; text = "Win下载: " },
+                      @{ tag = "a"; href = "https://oss-aipc.dcclouds.com/oadin/releases/windows/${env:WIN_FILE_NAME}"; text = "点击下载" }
+                    ),
+                    @(
+                      @{ tag = "text"; text = "⏰ 时间: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" }
+                    )
+                  )
                 }
               }
-            }"
+            }
+          } | ConvertTo-Json -Depth 10
+          Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json" -Body $body

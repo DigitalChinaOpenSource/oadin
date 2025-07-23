@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"oadin/internal/types"
 	"oadin/extension/utils/bcode"
+	"oadin/internal/types"
 )
 
 type ModifyModelFilePathRequest struct {
