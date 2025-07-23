@@ -84,35 +84,6 @@ print_success "Directory structure check passed"
 print_info "Entering frontend directory: $FRONTEND_DIR"
 cd "$FRONTEND_DIR"
 
-# ----------------------------------------------------------------------
-# Proxy injection for pnpm
-# ----------------------------------------------------------------------
-read -p "[INFO] Do you want to set proxy values for pnpm using system environment variables? [Y/N]: " USER_INPUT
-if [[ "$USER_INPUT" == "Y" || "$USER_INPUT" == "y" ]]; then
-    print_info "Checking for system proxy environment variables..."
-    HAS_PROXY_CONFIG=false
-
-    if [ ! -z "$http_proxy" ]; then
-        print_info "Detected http_proxy: $http_proxy"
-        pnpm config set httpProxy "$http_proxy"
-        HAS_PROXY_CONFIG=true
-    fi
-
-    if [ ! -z "$https_proxy" ]; then
-        print_info "Detected https_proxy: $https_proxy"
-        pnpm config set httpsProxy "$https_proxy"
-        HAS_PROXY_CONFIG=true
-    fi
-
-    if [ "$HAS_PROXY_CONFIG" = false ]; then
-        print_info "No proxy environment variables found, skipping pnpm proxy config."
-    fi
-elif [[ "$USER_INPUT" == "N" || "$USER_INPUT" == "n" ]]; then
-    print_info "Skipping pnpm proxy config."
-else
-    print_warning "Invalid input. Please enter Y or N next time."
-fi
-
 # Install dependencies
 print_info "Installing frontend dependencies..."
 pnpm install

@@ -73,47 +73,6 @@ echo [SUCCESS] Directory structure check passed
 echo [INFO] Entering frontend directory: %FRONTEND_DIR%
 cd /d "%FRONTEND_DIR%"
 
-:: ----------------------------------------------------------------------
-:: Proxy injection for pnpm
-:: ----------------------------------------------------------------------
-set /p "USER_INPUT=[INFO] Do you want to set proxy values for pnpm using system environment variables? [Y/N]: "
-
-if /i "%USER_INPUT%"=="Y" (
-    echo [INFO] Checking for system proxy environment variables...
-    set "HAS_PROXY_CONFIG=false"
-
-    if defined http_proxy (
-        echo [INFO] Detected http_proxy: %http_proxy%
-        set "HAS_PROXY_CONFIG=true"
-    )
-    if defined https_proxy (
-        echo [INFO] Detected https_proxy: %https_proxy%
-        set "HAS_PROXY_CONFIG=true"
-    )
-
-    if "!HAS_PROXY_CONFIG!"=="true" (
-        if defined http_proxy (
-            call pnpm config set httpProxy "%http_proxy%"
-        )
-        if defined https_proxy (
-            call pnpm config set httpsProxy "%https_proxy%"
-        )
-    ) else (
-        echo [INFO] No proxy environment variables found, skipping pnpm proxy config.
-    )
-    goto AfterProxy
-)
-
-if /i "%USER_INPUT%"=="N" (
-    echo [INFO] Skipping pnpm proxy config.
-    goto AfterProxy
-)
-
-echo [WARN] Invalid input. Please enter Y or N next time.
-
-:AfterProxy
-
-
 echo [INFO] Installing frontend dependencies...
 call pnpm i
 
