@@ -182,7 +182,7 @@ jobs:
                     ),
                     @(
                       @{ tag = "text"; text = "Mac下载: " },
-                      @{ tag = "a"; href = "http://${http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"; text = "点击下载" }
+                      @{ tag = "a"; href = "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"; text = "点击下载" }
                     ),
                     @(
                       @{ tag = "text"; text = "Win下载: " },
