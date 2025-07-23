@@ -1,0 +1,8 @@
+.choose_model {
+  :global(.ant-modal-content) {
+    background: linear-gradient(180deg, #dee7ff 0%, #fff 25%, #fff 100%);
+  }
+  :global(.ant-modal-header) {
+    background: none;
+  }
+}

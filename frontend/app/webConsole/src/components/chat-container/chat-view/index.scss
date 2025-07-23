@@ -1,0 +1,157 @@
+.chat-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: calc(100vh - 230px);
+}
+
+.chat-body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-width {
+  /* max-width: 800px; */
+  width: 100%;
+  margin: 0 auto;
+}
+
+.chat-message-area {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+.chat-message-list.ru-list {
+  line-height: 24px;
+  gap: 16px;
+}
+
+.chat-message-content-list.ru-list {
+  gap: 16px;
+  ol {
+    padding-left: 16px;
+  }
+}
+
+.chat-divider {
+  height: 1px;
+  width: 100%;
+  background-color: #ececec;
+}
+
+.chat-input-area {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  background-color: #e7effb;
+  padding-top: 8px;
+  padding-bottom: 24px;
+  z-index: 100;
+}
+.chat-input.ru-chat-input {
+  border-radius: 8px;
+  border: unset;
+}
+
+.user-bubble.ru-chat-bubble-body-content {
+  background-color: #e7e1ff;
+  color: #4f4dff;
+  border-radius: 8px;
+}
+
+.ai-bubble.ru-chat-bubble-body-content {
+  background-color: #fff;
+  color: #000000;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.upload-file-item {
+  position: relative;
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #344054;
+  display: inline-flex;
+  align-items: center;
+}
+
+.upload-file-remove {
+  position: absolute;
+  right: -8px;
+  top: 2px;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.file-icon {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  margin-right: 8px;
+  border-radius: 4px;
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+.uploading-icon,
+.done-icon {
+  background-color: #7b86ff;
+}
+
+.error-icon {
+  background-color: #ffccc7;
+}
+
+.bottom-panel-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.message-control-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-right: 8px;
+}
+
+.error-message {
+  background-color: rgba(232, 89, 81, 0.1);
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.chat-message-bubble {
+  width: 100%;
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+  ol,
+  ul {
+    padding-left: 16px;
+  }
+}
+
+.user-question {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  .user-question-files {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+}
