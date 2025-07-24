@@ -704,23 +704,20 @@ func getRecommendConfig(service string) types.RecommendConfig {
 	switch service {
 	case types.ServiceChat:
 		return types.RecommendConfig{
-			ModelEngine:       "ollama",
-			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
+			ModelEngine: "ollama",
+			ModelName:   "deepseek-r1:7b",
 		}
 	case types.ServiceEmbed:
 		return types.RecommendConfig{
-			ModelEngine:       "ollama",
-			ModelName:         "bge-m3",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
+			ModelEngine: "ollama",
+			ModelName:   "bge-m3",
 		}
 	case types.ServiceModels:
 		return types.RecommendConfig{}
 	case types.ServiceGenerate:
 		return types.RecommendConfig{
-			ModelEngine:       "ollama",
-			ModelName:         "deepseek-r1:7b",
-			EngineDownloadUrl: "http://120.232.136.73:31619/byzedev/ipex-llm-ollama-Installer-20250226.exe",
+			ModelEngine: "ollama",
+			ModelName:   "deepseek-r1:7b",
 		}
 	default:
 		return types.RecommendConfig{}
