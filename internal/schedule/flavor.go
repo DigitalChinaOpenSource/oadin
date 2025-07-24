@@ -266,7 +266,7 @@ func (f *ConfigBasedAPIFlavor) Name() string {
 }
 
 func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine, options *config.OadinEnvironment) {
-	vSpec := version.OadinVersion
+	vSpec := version.OadinSpecVersion
 	for service, serviceDef := range f.Config.Services {
 		for _, endpoint := range serviceDef.Endpoints {
 			parts := strings.SplitN(endpoint, " ", 2)
