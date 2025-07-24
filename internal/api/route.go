@@ -32,7 +32,7 @@ func InjectRouter(e *OadinCoreServer) {
 	e.Router.Handle(http.MethodGet, "/update/status", updateAvailableHandler)
 	e.Router.Handle(http.MethodPost, "/update", updateHandler)
 
-	r := e.Router.Group("/oadin/" + version.OadinVersion)
+	r := e.Router.Group("/oadin/" + version.OadinSpecVersion)
 
 	// service import / export
 	r.Handle(http.MethodPost, "/service/export", e.ExportService)
