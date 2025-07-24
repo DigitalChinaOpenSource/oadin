@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"oadin/extension/hardware/installer"
+	"oadin/extension/utils/hardware/installer"
 	"os"
 	"os/exec"
 	"runtime"

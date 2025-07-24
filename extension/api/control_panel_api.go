@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"oadin/extension/dto"
+	"oadin/extension/api/dto"
 	"oadin/extension/server"
 	"oadin/extension/utils/bcode"
 

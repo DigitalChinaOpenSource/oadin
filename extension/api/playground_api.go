@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"oadin/extension/dto"
+	"oadin/extension/api/dto"
 	"oadin/extension/server"
 	"oadin/internal/datastore"
 	"oadin/internal/utils/bcode"

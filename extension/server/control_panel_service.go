@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"oadin/extension/dto"
+	"oadin/extension/api/dto"
 	"oadin/extension/utils/bcode"
 	"oadin/internal/provider"
 	"oadin/internal/types"

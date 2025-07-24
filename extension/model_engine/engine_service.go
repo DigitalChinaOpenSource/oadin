@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"oadin/extension/api/dto"
 	"oadin/internal/datastore"
 	"oadin/internal/schedule"
-	"oadin/extension/dto"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
 	"strings"
@@ -21,9 +21,9 @@ type oadinStreamChunk struct {
 	Finished     bool   `json:"finished"`
 	Id           string `json:"id"`
 	Message      struct {
-		Content   string           `json:"content"`
-		Role      string           `json:"role"`
-		Thinking  string           `json:"thinking"`
+		Content   string         `json:"content"`
+		Role      string         `json:"role"`
+		Thinking  string         `json:"thinking"`
 		ToolCalls []dto.ToolCall `json:"tool_calls,omitempty"`
 	} `json:"message"`
 	Model string `json:"model"`
