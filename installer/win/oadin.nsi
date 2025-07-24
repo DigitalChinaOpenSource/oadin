@@ -14,6 +14,7 @@ SetCompressor lzma
 Section "Install"
   SetOutPath "$INSTDIR"
   File "..\..\oadin.exe"
+  File "..\..\oadin-tray.exe"
   File "preinstall.bat"
   File "postinstall.bat"
   File "start-oadin.bat"

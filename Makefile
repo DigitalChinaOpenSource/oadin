@@ -38,3 +38,6 @@ build-dll-darwin:
 
 build-dll-linux:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o OadinChecker.so -buildmode=c-shared checker/OadinChecker.go
+
+trayapp:
+	go build -o trayapp.exe trayapp/main.go

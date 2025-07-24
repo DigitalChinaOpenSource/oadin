@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/getlantern/systray/example/icon"
-	"github.com/pkg/browser"
 	"oadin/config"
 	"oadin/internal/utils"
 	trayTemplate "oadin/tray/icon"
 	tray "oadin/tray/utils"
+
+	"github.com/getlantern/systray/example/icon"
+	"github.com/pkg/browser"
 
 	"github.com/getlantern/systray"
 	"github.com/sqweek/dialog"
@@ -21,32 +22,61 @@ import (
 // Manager handles the system tray functionality
 type Manager struct {
 	serverRunning   bool
-	onServerStart   func() error
-	onServerStop    func() error
-	onAllSeverStop  func() error
-	onKillProcess   func() error
 	updateAvailable bool
 	mRestartUpdate  *systray.MenuItem
 	execPath        string
+	logPath         string
+	pidPath         string
 }
 
 // NewManager creates a new system tray manager
-func NewManager(onStart, onStop, onAllStop, onKillProcess func() error, serverRunningStatus bool) *Manager {
+func NewManager(serverRunningStatus bool, logPath, pidPath string) *Manager {
 	execPath, _ := os.Executable()
 	return &Manager{
 		serverRunning:   serverRunningStatus,
-		onServerStart:   onStart,
-		onServerStop:    onStop,
-		onAllSeverStop:  onAllStop,
-		onKillProcess:   onKillProcess,
 		updateAvailable: false,
 		execPath:        execPath,
+		logPath:         logPath,
+		pidPath:         pidPath,
 	}
 }
 
 // Start initializes the system tray
 func (m *Manager) Start() {
+	// 启动时自动启动服务
+	if !utils.IsServerRunning() {
+		_ = utils.StartOADINServer(m.logPath, m.pidPath)
+		m.serverRunning = true
+	}
+	// 启动 Web Console 前端服务（如有需要）
+	startWebConsoleFrontend()
 	systray.Run(m.onReady, m.onExit)
+}
+
+// 启动 Web Console 前端服务（如有需要）
+func startWebConsoleFrontend() {
+	// 检查 16699 端口是否已被占用，避免重复启动
+	if isPortInUse("16699") {
+		return
+	}
+	// 假设前端服务在 frontend/app/webConsole 目录下，使用 pnpm 启动
+	frontendPath := "frontend/app/webConsole"
+	cmd := exec.Command("pnpm", "dev")
+	cmd.Dir = frontendPath
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	_ = cmd.Start()
+}
+
+// 检查端口是否已被占用
+func isPortInUse(port string) bool {
+	conn, err := exec.Command("powershell", "-Command", "Test-NetConnection -ComputerName 127.0.0.1 -Port "+port+" | Select-Object -ExpandProperty TcpTestSucceeded").Output()
+	if err == nil && string(conn) == "True\r\n" {
+		return true
+	}
+	// Linux/Mac
+	err2 := exec.Command("sh", "-c", "nc -z 127.0.0.1 "+port).Run()
+	return err2 == nil
 }
 
 func (m *Manager) onReady() {
@@ -60,7 +90,7 @@ func (m *Manager) onReady() {
 	systray.SetTooltip("Oadin AI Service Manager")
 
 	// Add menu items
-	mStartStop := systray.AddMenuItem("Start Server", "Start/Stop Oadin server")
+	mStartStop := systray.AddMenuItem("Start/Stop Server", "Start/Stop Oadin server")
 	systray.AddSeparator()
 	mConsole := systray.AddMenuItem("Web Console", "Open Control Panel")
 	m.mRestartUpdate = systray.AddMenuItem("Restart and Update", "Restart and install update")
@@ -79,28 +109,23 @@ func (m *Manager) onReady() {
 		for {
 			select {
 			case <-mStartStop.ClickedCh:
-				oadinServerStatus := utils.IsServerRunning()
-				if oadinServerStatus != m.serverRunning {
-					m.serverRunning = oadinServerStatus
-					m.updateStartStopMenuItem(mStartStop)
-				} else {
-					if m.serverRunning {
-						// Show confirmation dialog before stopping
-						if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
-							if err := m.onServerStop(); err == nil {
-								m.serverRunning = false
-								m.updateStartStopMenuItem(mStartStop)
-							} else {
-								dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
-							}
-						}
-					} else {
-						if err := m.onServerStart(); err == nil {
-							m.serverRunning = true
+				if m.serverRunning {
+					if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
+						err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
+						if err == nil {
+							m.serverRunning = false
 							m.updateStartStopMenuItem(mStartStop)
 						} else {
-							dialog.Message("Failed to start server: %v", err).Title("Error").Error()
+							dialog.Message("Stop server failed.").Title("Error").Error()
 						}
+					}
+				} else {
+					err := utils.StartOADINServer(m.logPath, m.pidPath)
+					if err == nil {
+						m.serverRunning = true
+						m.updateStartStopMenuItem(mStartStop)
+					} else {
+						dialog.Message("Start server failed.").Title("Error").Error()
 					}
 				}
 
@@ -111,6 +136,10 @@ func (m *Manager) onReady() {
 				}
 			case <-m.mRestartUpdate.ClickedCh:
 				if confirmed := dialog.Message("This will stop all servers and install the update. Continue?").Title("Confirm Update").YesNo(); confirmed {
+					err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
+					if err != nil {
+						dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
+					}
 					if err := m.performUpdate(); err != nil {
 						dialog.Message("Failed to perform update: %v", err).Title("Error").Error()
 					} else {
@@ -125,9 +154,9 @@ func (m *Manager) onReady() {
 				}
 			case <-mQuit.ClickedCh:
 				if m.serverRunning {
-					// Show confirmation dialog before quitting
 					if confirmed := dialog.Message("Server is still running. Do you want to stop it and quit?").Title("Confirm Quit").YesNo(); confirmed {
-						if err := m.onKillProcess(); err != nil {
+						err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
+						if err != nil {
 							dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
 						}
 						systray.Quit()
@@ -135,9 +164,6 @@ func (m *Manager) onReady() {
 					}
 				} else {
 					if confirmed := dialog.Message("Are you sure you want to quit Oadin?").Title("Confirm Quit").YesNo(); confirmed {
-						if err := m.onKillProcess(); err != nil {
-							dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
-						}
 						systray.Quit()
 						return
 					}
@@ -162,14 +188,16 @@ func (m *Manager) updateStartStopMenuItem(item *systray.MenuItem) {
 }
 
 func (m *Manager) showStatus() {
-	status := "Stopped"
 	if m.serverRunning {
-		status = "Running"
+		fmt.Println("Oadin Server: Running")
+	} else {
+		fmt.Println("Oadin Server: Stopped")
 	}
-	fmt.Printf("Oadin Server Status: %s\nOS: %s\n", status, runtime.GOOS)
 }
 
 func (m *Manager) openControlPanel() error {
+	// 确保前端服务已启动
+	startWebConsoleFrontend()
 	url := "http://127.0.0.1:16699/"
 	err := browser.OpenURL(url)
 	if err != nil {
@@ -190,11 +218,7 @@ func (m *Manager) SetUpdateAvailable(available bool) {
 
 // performUpdate
 func (m *Manager) performUpdate() error {
-	// 1. 停止所有服务器
-	if err := m.onAllSeverStop(); err != nil {
-		return fmt.Errorf("failed to stop servers: %v", err)
-	}
-
+	// 1. 停止服务（已在菜单逻辑中处理）
 	// 2. 执行更新
 	if err := m.installUpdate(); err != nil {
 		return fmt.Errorf("failed to install update: %v", err)
@@ -253,10 +277,29 @@ func (m *Manager) viewLogs() error {
 
 // getIcon returns the icon data
 func getIcon() ([]byte, error) {
-	// 尝试从多个位置获取图标
-	data, err := trayTemplate.TrayIconFS.ReadFile("oadin.ico")
+	// 根据系统类型和主题获取不同的图片
+	file := "oadin.ico" // 默认彩色
+	if runtime.GOOS == "darwin" {
+		file = "oadin-mac-dark.ico"
+		if isMacDarkMode() {
+			file = "oadin-mac-white.ico"
+		}
+	}
+	data, err := trayTemplate.TrayIconFS.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
+}
+
+// 判断 macOS 是否为暗色模式
+func isMacDarkMode() bool {
+	if runtime.GOOS != "darwin" {
+		return false
+	}
+	out, err := exec.Command("defaults", "read", "-g", "AppleInterfaceStyle").Output()
+	if err != nil {
+		return false // 未设置暗色模式时会报错
+	}
+	return string(out) == "Dark\n"
 }

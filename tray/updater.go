@@ -125,16 +125,19 @@ func UpdaterAuth() (UpdateAuthResponseData, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return UpdateAuthResponseData{}, fmt.Errorf(resp.Status)
+		return UpdateAuthResponseData{}, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return UpdateAuthResponseData{}, err
+	}
 
 	err = json.Unmarshal(respBody, &res)
 	if err != nil {
 		return UpdateAuthResponseData{}, err
 	}
 	if res.Code != "200" {
-		return UpdateAuthResponseData{}, fmt.Errorf(res.Message)
+		return UpdateAuthResponseData{}, errors.New(res.Message)
 	}
 	return res.Data, nil
 }
@@ -157,6 +160,10 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponse) {
 		Arch:     runtime.GOARCH,
 	}
 	reqData, err := json.Marshal(reqBody)
+	if err != nil {
+		slog.Warn(fmt.Sprintf("failed to marshal update request: %s", err))
+		return false, updateResp
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL.String(), bytes.NewBuffer(reqData))
 	if err != nil {
 		slog.Warn(fmt.Sprintf("failed to check for update: %s", err))
