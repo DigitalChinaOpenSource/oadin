@@ -14,6 +14,7 @@ type VegaConfig struct {
 
 type OssConfig struct {
 	Endpoint string `yaml:"endpoint"`
+	Icon     string `yaml:"icon"` // 用于获取头像等静态资源的前缀
 }
 
 type RegistryConfig struct {
