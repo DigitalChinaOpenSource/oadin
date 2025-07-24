@@ -130,7 +130,7 @@ func engineHealthHandler(c *gin.Context) {
 }
 
 func getVersion(c *gin.Context) {
-	c.JSON(http.StatusOK, map[string]string{"version": version.OadinVersion, "sub_version": version.OadinSubVersion})
+	c.JSON(http.StatusOK, map[string]string{"version": version.OadinVersion, "spec_version": version.OadinSpecVersion, "sub_version": version.OadinSubVersion})
 }
 
 func getEngineVersion(c *gin.Context) {

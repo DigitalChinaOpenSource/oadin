@@ -1,5 +1,7 @@
 package version
 
-const OadinVersion = "v0.2"
+const OadinVersion = "1.1.0"
 
-var OadinSubVersion = "2025071814"
+const OadinSpecVersion = "v0.2"
+
+const OadinSubVersion = "2025072218"
