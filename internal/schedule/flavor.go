@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -1093,6 +1094,20 @@ type TencentSignAuthenticator struct {
 	ReqBody      string                `json:"req_body"`
 }
 
+type CredentialsAuthInfo struct {
+	EvnType    string                 `json:"env_type"`
+	Credential map[string]interface{} `json:"credential"`
+	Provider   string                 `json:"provider"`
+	ModelKey   string                 `json:"model_key"`
+}
+
+type CredentialsAuthenticator struct {
+	AuthInfo     string                `json:"auth_info"`
+	Req          *http.Request         `json:"request"`
+	ProviderInfo types.ServiceProvider `json:"provider_info"`
+	ReqBody      string                `json:"req_body"`
+}
+
 func (a *APIKEYAuthenticator) Authenticate() error {
 	var authInfoData ApiKeyAuthInfo
 	err := json.Unmarshal([]byte(a.AuthInfo), &authInfoData)
@@ -1134,6 +1149,92 @@ func (s *TencentSignAuthenticator) Authenticate() error {
 	return nil
 }
 
+// oadin
+func (c *CredentialsAuthenticator) Authenticate() error {
+	var reqData map[string]interface{}
+
+	if err := json.Unmarshal([]byte(c.ReqBody), &reqData); err != nil {
+		return err
+	}
+
+	var CredentialsAuthInfoMap map[string]interface{}
+	if err := json.Unmarshal([]byte(c.AuthInfo), &CredentialsAuthInfoMap); err != nil {
+		return err
+	}
+	model, ok := reqData["model"].(string)
+	if !ok {
+		return errors.New("credentials auth info missing model")
+	}
+
+	authInfo := CredentialsAuthInfoMap[model]
+	if authInfo == nil {
+		return errors.New("credentials auth info missing model")
+	}
+	authInfoMap := authInfo.(map[string]interface{})
+	envType, ok := authInfoMap["env_type"].(string)
+	if !ok {
+		return errors.New("credentials auth info missing env_type")
+	}
+	provider, ok := authInfoMap["provider"].(string)
+	if !ok {
+		return errors.New("credentials auth info missing provider")
+	}
+	modelKey, ok := authInfoMap["model_key"].(string)
+	if !ok {
+		return errors.New("credentials auth info missing model_key")
+	}
+
+	smartVisionEnvInfo := utils.GetSmartVisionUrl()
+	smartVisionInfo := smartVisionEnvInfo[envType]
+	c.Req.Header.Set("Authorization", "Bearer "+smartVisionInfo.AccessToken)
+
+	credentials := authInfoMap["credentials"].(map[string]interface{})
+	//var credentials map[string]interface{}
+	//err := json.Unmarshal([]byte(authInfo.Credential), &credentials)
+	//if err != nil {
+	//	return err
+	//}
+	var reqUrl string
+	if c.ProviderInfo.ServiceName == types.ServiceChat {
+		reqUrl = smartVisionInfo.Url + smartVisionInfo.ChatEnterPoint
+		type modelConfig struct {
+			Provider    string      `json:"provider"`
+			Name        string      `json:"name"`
+			ModelKey    string      `json:"model_key"`
+			Credentials interface{} `json:"credentials"`
+		}
+		reqData["model_config"] = modelConfig{
+			Provider:    provider,
+			Name:        model,
+			ModelKey:    modelKey,
+			Credentials: credentials,
+		}
+		_, pOk := reqData["prompt_messages"].([]interface{})
+		Messages, mOk := reqData["messages"].([]interface{})
+		if !pOk && mOk {
+			reqData["prompt_messages"] = Messages
+		}
+
+	} else if c.ProviderInfo.ServiceName == types.ServiceEmbed {
+		reqUrl = smartVisionInfo.Url + smartVisionInfo.EmbedEnterPoint
+		reqData["credentials"] = credentials
+	}
+
+	reqBody, err := json.Marshal(reqData)
+	if err != nil {
+		return err
+	}
+	u, err := url.Parse(reqUrl)
+	if err != nil {
+		return err
+	}
+	c.Req.URL = u
+	body := bytes.NewReader(reqBody)
+	c.Req.Body = io.NopCloser(body)
+	c.Req.ContentLength = int64(len(reqBody))
+	return nil
+}
+
 type AuthenticatorParams struct {
 	Request      *http.Request
 	ProviderInfo *types.ServiceProvider
@@ -1156,6 +1257,13 @@ func ChooseProviderAuthenticator(p *AuthenticatorParams) Authenticator {
 		authenticator = &APIKEYAuthenticator{
 			AuthInfo: p.ProviderInfo.AuthKey,
 			Req:      *p.Request,
+		}
+	} else if p.ProviderInfo.AuthType == types.AuthTypeCredentials {
+		authenticator = &CredentialsAuthenticator{
+			AuthInfo:     p.ProviderInfo.AuthKey,
+			Req:          p.Request,
+			ReqBody:      p.RequestBody,
+			ProviderInfo: *p.ProviderInfo,
 		}
 	}
 	return authenticator

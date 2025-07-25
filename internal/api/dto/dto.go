@@ -19,6 +19,7 @@ package dto
 import (
 	"time"
 
+	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
 )
 
@@ -226,32 +227,37 @@ type LocalSupportModelData struct {
 }
 
 type RecommendModelData struct {
-	Id              string   `json:"id"`
-	Service         string   `json:"service_name"`
-	ApiFlavor       string   `json:"api_flavor"`
-	Flavor          string   `json:"flavor"`
-	Method          string   `json:"method" default:"POST"`
-	Desc            string   `json:"desc"`
-	Url             string   `json:"url"`
-	AuthType        string   `json:"auth_type"`
-	AuthApplyUrl    string   `json:"auth_apply_url"`
-	AuthFields      []string `json:"auth_fields"`
-	Name            string   `json:"name"`
-	ServiceProvider string   `json:"service_provider_name"`
-	Size            string   `json:"size"`
-	IsRecommended   bool     `json:"is_recommended" default:"false"`
-	Status          string   `json:"status"`
-	Avatar          string   `json:"avatar"`
-	CanSelect       bool     `json:"can_select" default:"false"`
-	Class           []string `json:"class"`
-	OllamaId        string   `json:"ollama_id"`
-	ParamsSize      float32  `json:"params_size"`
-	InputLength     int      `json:"input_length"`
-	OutputLength    int      `json:"output_length"`
-	Source          string   `json:"source"`
-	// SmartVisionProvider string   `json:"smartvision_provider"`
-	// SmartVisionModelKey string   `json:"smartvision_model_key"`
-	IsDefault string `json:"is_default" default:"false"`
+	Id                  string    `json:"id"`
+	Service             string    `json:"service_name"`
+	ApiFlavor           string    `json:"api_flavor"`
+	Flavor              string    `json:"flavor"`
+	Method              string    `json:"method" default:"POST"`
+	Desc                string    `json:"desc"`
+	Url                 string    `json:"url"`
+	AuthType            string    `json:"auth_type"`
+	AuthApplyUrl        string    `json:"auth_apply_url"`
+	AuthFields          []string  `json:"auth_fields"`
+	Name                string    `json:"name"`
+	ServiceProvider     string    `json:"service_provider_name"`
+	Size                string    `json:"size"`
+	IsRecommended       bool      `json:"is_recommended" default:"false"`
+	Status              string    `json:"status"`
+	Avatar              string    `json:"avatar"`
+	CanSelect           bool      `json:"can_select" default:"false"`
+	Class               []string  `json:"class"`
+	OllamaId            string    `json:"ollama_id"`
+	ParamsSize          float32   `json:"params_size"`
+	InputLength         int       `json:"input_length"`
+	OutputLength        int       `json:"output_length"`
+	Source              string    `json:"source"`
+	SmartVisionProvider string    `json:"smartvision_provider"`
+	SmartVisionModelKey string    `json:"smartvision_model_key"`
+	IsDownloaded        bool      `json:"is_downloaded" default:"false"`
+	Think               bool      `json:"think" default:"false"`
+	ThinkSwitch         bool      `json:"think_switch" default:"false"`
+	Tools               bool      `json:"tools" default:"false"`
+	Context             float32   `json:"context" default:"0"`
+	CreatedAt           time.Time `json:"created_at"`
 }
 
 type CreateServiceProviderRequest struct {
@@ -290,7 +296,12 @@ type DeleteServiceProviderRequest struct {
 	ProviderName string `json:"provider_name" validate:"required"`
 }
 
-type GetServiceProviderRequest struct{}
+type GetServiceProviderRequest struct {
+	ProviderName string `form:"provider_name" validate:"required"`
+	Page         int    `form:"page"`
+	PageSize     int    `form:"page_size"`
+	EnvType      string `form:"env_type"`
+}
 
 type GetServiceProvidersRequest struct {
 	ServiceName   string `json:"service_name,omitempty"`
@@ -311,7 +322,19 @@ type DeleteServiceProviderResponse struct {
 	bcode.Bcode
 }
 
-type GetServiceProviderResponse struct{}
+type GetServiceProviderResponseData struct {
+	*types.ServiceProvider
+	SupportModelList []RecommendModelData `json:"support_model_list"`
+	Page             int                  `json:"page"`
+	PageSize         int                  `json:"page_size"`
+	TotalCount       int                  `json:"total_count"`
+	TotalPage        int                  `json:"total_page"`
+}
+
+type GetServiceProviderResponse struct {
+	bcode.Bcode
+	Data GetServiceProviderResponseData `json:"data"`
+}
 
 type GetServiceProvidersResponse struct {
 	bcode.Bcode

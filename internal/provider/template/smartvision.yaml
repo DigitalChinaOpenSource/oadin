@@ -1,0 +1,189 @@
+version: "0.1"
+name: smartvision # the name should be aligned with file name
+services:
+    chat: # service name defined by Oadin
+        url: "https://smartvision-dev.digitalchina.com/api/apps/chat"
+        endpoints: [ "POST /v1/chat/completions" ] # request to this will use this flavor
+        extra_url: ""
+        auth_type: "credentials"
+        auth_apply_url: ""
+        default_model: ""
+        request_segments: 1 # request
+        install_raw_routes: false  # also install routes without oadin prefix in url path
+        extra_headers: '{}'
+        support_models: ["ernie-3.5-8k", ]
+        request_to_oadin:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "stream": $stream,
+                          "prompt_messages": messages,
+                          "tools": tools,
+                          "seed": seed,
+                          "temperature": temperature,
+                          "top_k": top_k,
+                          "stop": stop,
+                          "completion_params": {
+                              "presence_penalty": 0.1,
+                              "max_tokens": $exists(max_tokens) ? max_tokens : max_completion_tokens,
+                              "top_p": top_p,
+                              "frequency_penalty": 0.1,
+                              "temperature": 0.8
+                                },
+                          "keep_alive": keep_alive
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        request_from_oadin:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": $model,
+                          "stream": $stream,
+                          "prompt_messages": messages,
+                          "tools": tools,
+                          "seed": seed,
+                          "temperature": temperature,
+                          "top_k": top_k,
+                          "stop": stop,
+                          "completion_params": {
+                              "presence_penalty": 0.1,
+                              "max_tokens": $exists(max_tokens) ? max_tokens : max_completion_tokens,
+                              "top_p": top_p,
+                              "frequency_penalty": 0.1,
+                              "temperature": 0.8
+                                },
+                          "keep_alive": keep_alive
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        response_to_oadin:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": data.model,
+                          "created_at": created,
+                          "message": data.message,
+                          "finished": true,
+                          "finish_reason": data.finish_reason
+                      }
+
+        stream_response_to_oadin:
+            conversion:
+                - converter: action_if
+                  config:
+                      trim: true
+                      pattern: "[DONE]" # ignore if the content is [DONE]
+                      action: drop
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": model,
+                          "created_at": created,
+                          "message": delta.message,
+                          "finished": delta.finish_reason = "stop" ? true : false,
+                          "finish_reason": delta.finish_reason
+                      }
+
+        response_from_oadin:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                         "id": id,
+                          "model": data.model,
+                          "created_at": created,
+                          "message": data.message,
+                          "finished": true,
+                          "finish_reason": data.finish_reason
+                      }
+                      
+
+        stream_response_from_oadin:
+            epilogue: ["[DONE]"] # openai adds a data: [DONE] at the end
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                       "id": id,
+                          "model": model,
+                          "created_at": created,
+                          "message": delta.message,
+                          "finished": delta.finish_reason = "stop" ? true : false,
+                          "finish_reason": delta.finish_reason
+                      }
+    embed:
+        url: "https://smartvision-dev.digitalchina.com/api/v1/aipc/chat/embedding"
+        endpoints: [ "POST /v1/embeddings" ] # request to this will use this flavor
+        extra_url: ""
+        auth_type: "credentials"
+        auth_apply_url: ""
+        default_model: ""
+        request_segments: 1 # request
+        install_raw_routes: false # also install routes without oadin prefix in url path# request to this will use this flavor
+        extra_headers: '{}'
+        support_models: ["embedding-v1", ""]
+        request_to_oadin:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "model": model,
+                          "input": input,
+                          "dimensions": dimensions,
+                          "encoding_format": encoding_format
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        request_from_oadin:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                         "model": model,
+                         "inputs": input,
+                         "dimensions": dimensions,
+                         "encoding_format": encoding_format
+                      }
+
+                - converter: header
+                  config:
+                      set:
+                          Content-Type: application/json
+
+        response_to_oadin:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                           "id": id,
+                           "model": model,
+                           "data": [$map(data, function($v, $i){{"index": $i, "embedding": $v}})]
+                       }
+        response_from_oadin:
+            conversion:
+                - converter: jsonata
+                  config: |
+                      {
+                          "id": id,
+                          "model": model,
+                          "data": [$map(data, function($v, $i){{"index": $i, "embedding": $v}})]
+                      }

@@ -47,6 +47,30 @@
     "flavor": "ollama",
     "url": "http://127.0.0.1:16677/api/embed"
   },
+    {
+    "provider_name": "remote_smartvision_chat",
+    "desc": "Remote smartVision chat",
+    "service_name": "chat",
+    "service_source": "remote",
+    "api_flavor": "smartvision",
+    "method": "POST",
+    "auth_type": "none",
+    "auth_key": "",
+    "flavor": "smartvision",
+    "url": "https://smartvision-dev.digitalchina.com/api/apps/chat"
+  },
+  {
+    "provider_name": "remote_smartvision_embed",
+    "desc": "Remote smartVision embed",
+    "service_name": "embed",
+    "service_source": "remote",
+    "api_flavor": "smartvision",
+    "method": "POST",
+    "auth_type": "none",
+    "auth_key": "",
+    "flavor": "smartvision",
+    "url": "https://smartvision-dev.digitalchina.com/api/v1/aipc/chat/embedding"
+  },
   {
     "provider_name": "remote_aliyun_text-to-image",
     "desc": "Remote aliyun tti",

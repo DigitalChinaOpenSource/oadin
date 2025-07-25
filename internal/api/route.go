@@ -56,6 +56,7 @@ func InjectRouter(e *OADINCoreServer) {
 	r.Handle(http.MethodGet, "/service", e.GetAIGCServices)
 
 	r.Handle(http.MethodGet, "/service_provider", e.GetServiceProviders)
+	r.Handle(http.MethodGet, "/service_provider/detail", e.GetServiceProvider)
 	r.Handle(http.MethodPost, "/service_provider", e.CreateServiceProvider)
 	r.Handle(http.MethodPut, "/service_provider", e.UpdateServiceProvider)
 	r.Handle(http.MethodDelete, "/service_provider", e.DeleteServiceProvider)

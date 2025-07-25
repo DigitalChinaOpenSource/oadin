@@ -91,6 +91,15 @@ func NewConverterPipeline(config []types.ConversionStepDef) (*ConverterPipeline,
 
 func (p *ConverterPipeline) Convert(content types.HTTPContent, ctx ConvertContext) (types.HTTPContent, error) {
 	logger.LogicLogger.Debug("[Flavor] Convert Start: ", content)
+	body := content.Body
+	// 预处理：去掉 data: 前缀
+	if bytes.HasPrefix(body, []byte("data:")) {
+		idx := bytes.IndexByte(body, '{')
+		if idx > 0 {
+			body = body[idx:]
+		}
+	}
+	content.Body = body
 	if !p.IsReusable() { // need to replace the step which is not reusable
 		steps := make([]Converter, len(p.steps))
 		for i, step := range p.steps {

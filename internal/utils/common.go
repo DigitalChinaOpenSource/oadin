@@ -858,6 +858,18 @@ func StopOadinServer(pidFilePath string) error {
 		return nil
 	}
 
+	if runtime.GOOS == "windows" && IpexOllamaSupportGPUStatus() {
+		extraProcessName := "ollama-lib.exe"
+		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+		_, err := extraCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", extraProcessName)
+			return nil
+		}
+
+		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+	}
+
 	// Traverse all pid files.
 	for _, pidFile := range files {
 		pidData, err := os.ReadFile(pidFile)
@@ -893,17 +905,6 @@ func StopOadinServer(pidFilePath string) error {
 		if err := os.Remove(pidFile); err != nil {
 			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
 		}
-	}
-	if runtime.GOOS == "windows" && IpexOllamaSupportGPUStatus() {
-		extraProcessName := "ollama-lib.exe"
-		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-		_, err := extraCmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("failed to kill process: %s", extraProcessName)
-			return nil
-		}
-
-		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
 	}
 	return nil
 }
