@@ -101,6 +101,27 @@ func (t *OADINCoreServer) UpdateServiceProvider(c *gin.Context) {
 }
 
 func (t *OADINCoreServer) GetServiceProvider(c *gin.Context) {
+	request := &dto.GetServiceProviderRequest{}
+	if err := c.Bind(request); err != nil {
+		if !errors.Is(err, io.EOF) {
+			bcode.ReturnError(c, bcode.ErrServiceProviderBadRequest)
+			return
+		}
+	}
+
+	if err := validate.Struct(request); err != nil {
+		bcode.ReturnError(c, err)
+		return
+	}
+
+	ctx := c.Request.Context()
+	resp, err := t.ServiceProvider.GetServiceProvider(ctx, request)
+	if err != nil {
+		bcode.ReturnError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func (t *OADINCoreServer) GetServiceProviders(c *gin.Context) {

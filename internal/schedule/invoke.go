@@ -32,12 +32,13 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/grpc"
 	"oadin/internal/client"
 	"oadin/internal/client/grpc/grpc_client"
 	"oadin/internal/logger"
 	"oadin/internal/types"
 	"oadin/internal/utils"
+
+	"google.golang.org/grpc"
 )
 
 // Invoker defines the interface for service invocation
@@ -586,6 +587,13 @@ func (h *HTTPInvoker) logRequest(req *http.Request, content types.HTTPContent) {
 		"url", req.URL.String())
 
 	logger.LogicLogger.Debug("[Service] Request Sending to Service Provider ...",
+		"taskid", h.task.Schedule.Id,
+		"method", req.Method,
+		"url", req.URL.String(),
+		"header", fmt.Sprintf("%+v", req.Header),
+		"body", string(content.Body))
+
+	fmt.Println("[Service] Request Sending to Service Provider ...",
 		"taskid", h.task.Schedule.Id,
 		"method", req.Method,
 		"url", req.URL.String(),

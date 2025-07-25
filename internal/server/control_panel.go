@@ -185,7 +185,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				Class:           smInfo.Class,
 				Size:            smInfo.Size,
 				OllamaId:        smInfo.OllamaId,
-				IsDefault:       fmt.Sprintf("%v", isDefault),
+				// IsDefault:       fmt.Sprintf("%v", isDefault),
 			}
 			if isDefault {
 				defaultIdx = len(allModels)
@@ -240,10 +240,10 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				Source:          smInfo.ServiceSource,
 				// InputLength:     smInfo.MaxInput,
 				// OutputLength:    smInfo.MaxOutput,
-				Class:           smInfo.Class,
-				Size:            smInfo.Size,
-				OllamaId:        smInfo.OllamaId,
-				IsDefault:       fmt.Sprintf("%v", isDefault),
+				Class:    smInfo.Class,
+				Size:     smInfo.Size,
+				OllamaId: smInfo.OllamaId,
+				// IsDefault:       fmt.Sprintf("%v", isDefault),
 			}
 			if isDefault {
 				defaultIdx = len(allModels)
