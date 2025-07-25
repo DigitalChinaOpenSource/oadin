@@ -387,15 +387,42 @@ func (o *OllamaProvider) InstallEngine() error {
 func (o *OllamaProvider) InitEnv() error {
 	err := os.Setenv("OLLAMA_HOST", o.EngineConfig.Host)
 	if err != nil {
-		logger.EngineLogger.Error("[Ollama] failed to set OLLAMA_HOST: " + err.Error())
 		return fmt.Errorf("failed to set OLLAMA_HOST: %w", err)
 	}
 
 	err = os.Setenv("OLLAMA_ORIGIN", o.EngineConfig.Origin)
 	if err != nil {
-		logger.EngineLogger.Error("[Ollama] failed to set OLLAMA_ORIGIN: " + err.Error())
 		return fmt.Errorf("failed to set OLLAMA_ORIGIN: %w", err)
 	}
+
+	modelPath := fmt.Sprintf("%s/%s", o.EngineConfig.EnginePath, "models")
+	currModelPath := os.Getenv("OADIN_OLLAMA_MODELS")
+	if currModelPath != "" {
+		modelPath = currModelPath
+	}
+	slog.Info("[Init Env] start model..." + modelPath)
+	err = os.Setenv("OLLAMA_MODELS", modelPath)
+	if err != nil {
+		return fmt.Errorf("failed to set OLLAMA_MODELS: %w", err)
+	}
+	ollamaModels := os.Getenv("OLLAMA_MODELS")
+	slog.Info("[Init Env] end model...ollama" + ollamaModels)
+
+	if utils.IpexOllamaSupportGPUStatus() {
+		err = os.Setenv("OLLAMA_NUM_GPU", "999")
+		if err != nil {
+			return fmt.Errorf("failed to set OLLAMA_NUM_GPU: %w", err)
+		}
+		err = os.Setenv("ZES_ENABLE_SYSMAN", "1")
+		if err != nil {
+			return fmt.Errorf("failed to set ZES_ENABLE_SYSMAN: %w", err)
+		}
+		err = os.Setenv("SYCL_CACHE_PERSISTENT", "1")
+		if err != nil {
+			return fmt.Errorf("failed to set SYCL_CACHE_PERSISTENT: %w", err)
+		}
+	}
+
 	return nil
 }
 
