@@ -1,4 +1,3 @@
-# Get GOOS and GOARCH
 GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
 
@@ -20,6 +19,7 @@ endif
 
 build-cli-win:
 	set CGO_ENABLED=1 && go build -o oadin.exe -ldflags="-s -w"  cmd/cli/main.go
+	$(MAKE) trayapp
 
 build-cli-darwin:
 	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o oadin -ldflags="-s -w"  cmd/cli/main.go
@@ -40,4 +40,7 @@ build-dll-linux:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o OadinChecker.so -buildmode=c-shared checker/OadinChecker.go
 
 trayapp:
-	go build -o trayapp.exe trayapp/main.go
+	go build -o oadin-tray.exe trayapp/main.go
+	@echo "[OK] oadin-tray.exe build complete."
+
+.PHONY: build-all build-cli-win trayapp
