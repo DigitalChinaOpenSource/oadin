@@ -312,7 +312,7 @@ func Run(ctx context.Context) error {
 	trayManager := tray.NewManager(
 		true,
 		config.GlobalOADINEnvironment.LogDir,
-		pidFile,
+		config.GlobalOADINEnvironment.LogDir,
 	)
 	globalServerManager.trayManager = trayManager
 

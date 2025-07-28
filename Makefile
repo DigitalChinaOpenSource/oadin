@@ -45,4 +45,10 @@ build-dll-linux:
 trayapp:
 	go build -o oadin-tray.exe trayapp/main.go
 
-.PHONY: build-all build-cli-win trayapp
+copy-win-artifacts:
+	copy /Y oadin.exe installer\win\
+	copy /Y oadin-tray.exe installer\win\
+
+build-win-installer: build-cli-win copy-win-artifacts
+
+.PHONY: build-all build-cli-win trayapp copy-win-artifacts build-win-installer
