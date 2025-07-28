@@ -23,6 +23,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -30,7 +32,9 @@ import (
 	"sync"
 	"time"
 
+	ConfigRoot "oadin/config"
 	"oadin/internal/datastore"
+	"oadin/internal/types"
 )
 
 const ModelQueryKey = "name"
@@ -238,7 +242,12 @@ func (j *JSONDatastore) List(ctx context.Context, query datastore.Entity, option
 				continue
 			}
 		}
-
+		// 区分环境avatar
+		if tableName == "support_model" {
+			smInfo := entity.(*types.SupportModel)
+			smInfo.Avatar = GetEnvSpecificAvatar(smInfo.Avatar)
+			entity = smInfo
+		}
 		result = append(result, entity)
 	}
 
@@ -349,6 +358,18 @@ func (j *JSONDatastore) List(ctx context.Context, query datastore.Entity, option
 	}
 
 	return result, nil
+}
+
+func GetEnvSpecificAvatar(avatar string) string {
+	u, err := url.Parse(avatar)
+	if err != nil {
+		return avatar
+	}
+	// http://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png
+	// u.Path /oadin/icon/qwen.png
+	// name qwen.png
+	name := path.Base(u.Path)
+	return ConfigRoot.ConfigRootInstance.Oss.Icon + name
 }
 
 // Count implements datastore.Datastore interface

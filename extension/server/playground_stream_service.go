@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"oadin/extension/model_engine"
+	"oadin/extension/api/dto"
 	"oadin/extension/entity"
+	"oadin/extension/model_engine"
 	"oadin/internal/datastore"
-	"oadin/extension/dto"
 
 	"github.com/google/uuid"
 )

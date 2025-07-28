@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 
+	"oadin/extension/api/dto"
 	"oadin/extension/rpc"
 	"oadin/extension/server"
-	"oadin/extension/dto"
 	"oadin/extension/utils/bcode"
 
 	"github.com/gin-gonic/gin"

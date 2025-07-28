@@ -10,7 +10,7 @@ import (
 	"time"
 
 	ConfigRoot "oadin/config"
-	types "oadin/extension/dto"
+	types "oadin/extension/api/dto"
 
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/client/transport"

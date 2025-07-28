@@ -1,9 +1,9 @@
 package dto
 
 import (
+	"github.com/mark3labs/mcp-go/mcp"
 	"oadin/extension/entity"
 	"oadin/internal/utils/bcode"
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 // 创建会话请求
@@ -96,7 +96,6 @@ type ChangeSessionModelResponse struct {
 	Data  *Session     `json:"data"`
 }
 
-
 type TypeFunction struct {
 	Name        string              `json:"name"`
 	Description string              `json:"description"`
@@ -178,9 +177,9 @@ type OadinChatResponse struct {
 	Choices []struct {
 		Index   int `json:"index"`
 		Message struct {
-			Role      string           `json:"role"`
-			Content   string           `json:"content"`
-			Thinking  string           `json:"thinking,omitempty"`
+			Role      string     `json:"role"`
+			Content   string     `json:"content"`
+			Thinking  string     `json:"thinking,omitempty"`
 			ToolCalls []ToolCall `json:"tool_calls,omitempty"`
 		} `json:"message"`
 		FinishReason string `json:"finish_reason"`
@@ -201,9 +200,9 @@ type OadinChatStreamResponse struct {
 		Index        int    `json:"index"`
 		FinishReason string `json:"finish_reason"`
 		Delta        struct {
-			Role      string           `json:"role"`
-			Content   string           `json:"content"`
-			Thinking  string           `json:"thinking,omitempty"`
+			Role      string     `json:"role"`
+			Content   string     `json:"content"`
+			Thinking  string     `json:"thinking,omitempty"`
 			ToolCalls []ToolCall `json:"tool_calls,omitempty"`
 		} `json:"delta"`
 	} `json:"choices"`

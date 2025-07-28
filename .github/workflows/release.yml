@@ -160,3 +160,59 @@ jobs:
           echo "--------- ♻️ 刷新CND ----------"
           aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/oadin/releases/windows/oadin-installer-latest.exe" --ObjectType File
           echo "========== 🔧 Win Upload End =========="
+
+      - name: Notify Feishu
+        shell: powershell
+        run: |
+            $uri = "${{ secrets.NOTIFY_SECRET }}"
+            $tag = "${{ github.ref_name }}"
+            
+            # 判断环境和下载路径
+            if ($tag -like "test*") {
+              $envType = "测试环境"
+              $macUrl = "http://${{ env.NEXUS_HOST_PORT }}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${{ env.MAC_FILE_NAME }}"
+              $winUrl = "http://${{ env.NEXUS_HOST_PORT }}/repository/raw-hosted/intel-ai-pc/oadin/releases/win/${{ env.WIN_FILE_NAME }}"
+            } else {
+              $envType = "生产环境"
+              $macUrl = "https://oss-aipc.dcclouds.com/oadin/releases/macos/${{ env.MAC_FILE_NAME }}"
+              $winUrl = "https://oss-aipc.dcclouds.com/oadin/releases/windows/${{ env.WIN_FILE_NAME }}"
+            }
+            $bodyObj = @{
+              msg_type = 'post'
+              content = @{
+                post = @{
+                  zh_cn = @{
+                    title = "🎉 [$envType] 安装包上传成功"
+                    content = @(
+                      @(
+                        @{ tag = "at"; user_id = "a37571869425831e1d434f333a9ca2ba34eaae8b" },
+                        @{ tag = "text"; text = "OADIN 构建已完成！" }
+                      ),
+                      @(
+                        @{ tag = "text"; text = "环境: " },
+                        @{ tag = "text"; text = "$envType"; bold = $true }
+                      ),
+                      @(
+                        @{ tag = "text"; text = "Tag: " },
+                        @{ tag = "text"; text = "$tag"; bold = $true }
+                      ),
+                      @(
+                        @{ tag = "text"; text = "Mac下载: " },
+                        @{ tag = "a"; href = "$macUrl"; text = "点击下载" }
+                      ),
+                      @(
+                        @{ tag = "text"; text = "Win下载: " },
+                        @{ tag = "a"; href = "$winUrl"; text = "点击下载" }
+                      ),
+                      @(
+                        @{ tag = "text"; text = "⏰ 时间: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" }
+                      )
+                    )
+                  }
+                }
+              }
+            }
+            $json = $bodyObj | ConvertTo-Json -Depth 10
+            $utf8NoBomEncoding = New-Object System.Text.UTF8Encoding($false)
+            $body = $utf8NoBomEncoding.GetBytes($json)
+            Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json; charset=utf-8" -Body $body

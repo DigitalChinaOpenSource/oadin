@@ -28,6 +28,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	ex_datastore "oadin/extension/datastore"
 	"oadin/internal/datastore"
 	"oadin/internal/provider/template"
 	"oadin/internal/types"
@@ -69,6 +70,10 @@ func (ds *SQLite) Init() error {
 		&types.VersionUpdateRecord{},
 	); err != nil {
 		return fmt.Errorf("failed to initialize database tables: %v", err)
+	}
+	// Oadin 扩展的表结构迁移
+	if err := ds.db.AutoMigrate(ex_datastore.NewOadinDatastoreExtension().MigrationSchema()...); err != nil {
+		return fmt.Errorf("failed to initialize extension database tables: %v", err)
 	}
 
 	if err := ds.insertInitialData(); err != nil {

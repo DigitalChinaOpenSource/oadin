@@ -29,20 +29,20 @@ const (
 	ServiceSourceLocal  = "local"
 	ServiceSourceRemote = "remote"
 
-	FlavorOADIN    = "oadin"
-	FlavorTencent  = "tencent"
-	FlavorDeepSeek = "deepseek"
-	FlavorOpenAI   = "openai"
-	FlavorOllama   = "ollama"
-	FlavorBaidu    = "baidu"
-	FlavorAliYun   = "aliyun"
+	FlavorOADIN       = "oadin"
+	FlavorTencent     = "tencent"
+	FlavorDeepSeek    = "deepseek"
+	FlavorOpenAI      = "openai"
+	FlavorOllama      = "ollama"
+	FlavorBaidu       = "baidu"
+	FlavorAliYun      = "aliyun"
 	FlavorSmartVision = "smartvision"
-	FlavorOpenvino = "openvino"
+	FlavorOpenvino    = "openvino"
 
-	AuthTypeNone   = "none"
-	AuthTypeApiKey = "apikey"
-	AuthTypeToken  = "token"
-	AuthTypeSign   = "sign"
+	AuthTypeNone        = "none"
+	AuthTypeApiKey      = "apikey"
+	AuthTypeToken       = "token"
+	AuthTypeSign        = "sign"
 	AuthTypeCredentials = "credentials"
 
 	ServiceChat           = "chat"
@@ -109,7 +109,7 @@ var (
 	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate, ServiceTextToImage, ServiceSpeechToText, ServiceSpeechToTextWS}
 	SupportHybridPolicy = []string{HybridPolicyDefault, HybridPolicyLocal, HybridPolicyRemote}
 	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeSign, AuthTypeToken}
-	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorOpenvino}
+	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorOpenvino, FlavorSmartVision}
 	SupportModelEngine  = []string{FlavorOpenvino, FlavorOllama}
 	SupportImageType    = []string{ImageTypeUrl, ImageTypeBase64, ImageTypePath}
 	SupportAudioType    = []string{AudioWav, AudioMp3}

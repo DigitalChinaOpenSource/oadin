@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"oadin/config"
-	"oadin/extension/dto"
+	"oadin/extension/api/dto"
 	"oadin/extension/entity"
 	"oadin/extension/model_engine"
 	"oadin/internal/datastore"

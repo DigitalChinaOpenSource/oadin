@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
+	"oadin/internal/logger"
 	"os"
 	"path/filepath"
 	"time"
 
-	"oadin/extension/dto"
+	"oadin/extension/api/dto"
 	"oadin/extension/utils/bcode"
 	"oadin/internal/provider"
 	"oadin/internal/types"
@@ -23,6 +24,13 @@ func GetModelFilePath(ctx context.Context) (*dto.GetModelFilePathResponse, error
 	if value != "" {
 		res.Path = value
 	} else {
+		if _, err := os.Stat(defaultPath); os.IsNotExist(err) {
+			err := os.MkdirAll(defaultPath, 0o750)
+			if err != nil {
+				logger.LogicLogger.Error("[Console] create file failed err:", err)
+				return nil, err
+			}
+		}
 		res.Path = defaultPath
 	}
 

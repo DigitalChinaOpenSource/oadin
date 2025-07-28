@@ -21,9 +21,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,7 +35,10 @@ import (
 	"oadin/internal/provider"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
+	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
+
+	extensionDto "oadin/extension/api/dto"
 )
 
 type ServiceProvider interface {
@@ -351,7 +356,32 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 		sp.AuthType = request.AuthType
 	}
 	if request.AuthKey != "" {
-		sp.AuthKey = request.AuthKey
+		if request.ApiFlavor == "smartvision" || sp.Flavor == "smartvision" {
+			if sp.AuthKey != "" {
+				var dbAuthInfoMap map[string]interface{}
+				var requestInfoMap map[string]interface{}
+				err = json.Unmarshal([]byte(request.AuthKey), &requestInfoMap)
+				if err != nil {
+					return nil, err
+				}
+				err = json.Unmarshal([]byte(sp.AuthKey), &dbAuthInfoMap)
+				if err != nil {
+					return nil, err
+				}
+				for k, v := range requestInfoMap {
+					dbAuthInfoMap[k] = v
+				}
+				jsonBytes, err := json.Marshal(dbAuthInfoMap)
+				if err != nil {
+					return nil, err
+				}
+				sp.AuthKey = string(jsonBytes)
+			} else {
+				sp.AuthKey = request.AuthKey
+			}
+		} else {
+			sp.AuthKey = request.AuthKey
+		}
 	}
 	if request.Desc != "" {
 		sp.Desc = request.Desc
@@ -452,7 +482,236 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 }
 
 func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *dto.GetServiceProviderRequest) (*dto.GetServiceProviderResponse, error) {
-	return &dto.GetServiceProviderResponse{}, nil
+	providerName := request.ProviderName
+	ds := datastore.GetDefaultDatastore()
+	sp := &types.ServiceProvider{
+		ProviderName: providerName,
+	}
+	err := ds.Get(ctx, sp)
+	if err != nil {
+		return nil, err
+	}
+	if request.Page == 0 {
+		request.Page = 1
+	}
+	if request.PageSize == 0 {
+		request.PageSize = 10
+	}
+	if sp.ServiceSource == types.ServiceSourceLocal {
+		providerEngine := provider.GetModelEngine(sp.Flavor)
+		err = providerEngine.HealthCheck()
+		if err == nil {
+			sp.Status = 1
+		}
+	} else {
+		model := types.Model{
+			ProviderName: sp.ProviderName,
+		}
+		modelList, err := ds.List(ctx, &model, &datastore.ListOptions{
+			Page:     0,
+			PageSize: 100,
+		})
+		if err == nil {
+			for _, m := range modelList {
+				mInfo := m.(*types.Model)
+				checkServerObj := ChooseCheckServer(*sp, mInfo.ModelName)
+				status := checkServerObj.CheckServer()
+				if status {
+					sp.Status = 1
+					break
+				}
+			}
+
+		}
+	}
+
+	var supportModelList []dto.RecommendModelData
+	res := &dto.GetServiceProviderResponseData{}
+	res.ServiceProvider = sp
+	if sp.Flavor == types.FlavorSmartVision {
+		smartvisionModelData, err := GetSmartVisionModelData(ctx, request.EnvType)
+		if sp.ServiceName == types.ServiceEmbed {
+			smartvisionModelDataEmbed := []extensionDto.SmartVisionModelData{}
+			// todo(handle specially)
+			for _, m := range smartvisionModelData {
+				if m.Name == "微软|Azure-GPT-3.5" {
+					smartvisionModelDataEmbed = append(smartvisionModelDataEmbed, m)
+					break
+				}
+			}
+			smartvisionModelData = smartvisionModelDataEmbed
+		}
+		if err != nil {
+			return nil, err
+		}
+		res.TotalCount = len(smartvisionModelData)
+		if len(smartvisionModelData)%request.PageSize == 0 {
+			res.TotalPage = len(smartvisionModelData) / request.PageSize
+		} else {
+			res.TotalPage = len(smartvisionModelData)/request.PageSize + 1
+		}
+
+		if res.TotalPage == 0 {
+			res.TotalPage = 1
+		}
+		res.PageSize = request.PageSize
+		res.Page = request.Page
+		dataStart := (request.Page - 1) * request.PageSize
+		dataEnd := request.Page * request.PageSize
+		if dataEnd > len(smartvisionModelData) {
+			dataEnd = len(smartvisionModelData)
+		}
+		modelData := smartvisionModelData[dataStart:dataEnd]
+		for _, model := range modelData {
+			isDownloaded := true
+			if !model.CanSelect {
+				isDownloaded = false
+			}
+			resModel := dto.RecommendModelData{
+				Name:         model.Name,
+				Avatar:       model.Avatar,
+				Class:        model.Tags,
+				Flavor:       model.Provider,
+				ApiFlavor:    sp.Flavor,
+				Id:           strconv.Itoa(model.ID),
+				IsDownloaded: isDownloaded,
+			}
+			supportModelList = append(supportModelList, resModel)
+		}
+	} else {
+		jds := datastore.GetDefaultJsonDatastore()
+		sm := &types.SupportModel{}
+		queryOpList := []datastore.FuzzyQueryOption{}
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "service_source",
+			Query: sp.ServiceSource,
+		})
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "api_flavor",
+			Query: sp.Flavor,
+		})
+		queryOpList = append(queryOpList, datastore.FuzzyQueryOption{
+			Key:   "service_name",
+			Query: sp.ServiceName,
+		})
+		sortOption := []datastore.SortOption{
+			{Key: "name", Order: 1},
+		}
+		options := &datastore.ListOptions{FilterOptions: datastore.FilterOptions{Queries: queryOpList}, SortBy: sortOption}
+
+		totalCount, err := jds.Count(ctx, sm, &datastore.FilterOptions{Queries: queryOpList})
+		if err != nil {
+			return nil, err
+		}
+		res.TotalCount = int(totalCount)
+		if int(totalCount)%request.PageSize == 0 {
+			res.TotalPage = int(totalCount) / request.PageSize
+		} else {
+			res.TotalPage = int(totalCount)/request.PageSize + 1
+		}
+		if res.TotalPage == 0 {
+			res.TotalPage = 1
+		}
+		res.PageSize = request.PageSize
+		res.Page = request.Page
+		options.Page = request.Page
+		options.PageSize = request.PageSize
+		supportModel, err := jds.List(ctx, sm, options)
+		if err != nil {
+			return nil, err
+		}
+		for _, model := range supportModel {
+			modelInfo := model.(*types.SupportModel)
+			modelQuery := new(types.Model)
+			modelQuery.ModelName = modelInfo.Name
+			modelQuery.ProviderName = providerName
+			isDownloaded := false
+			err := ds.Get(context.Background(), modelQuery)
+			if err != nil {
+				isDownloaded = false
+			}
+			if modelQuery.Status == "downloaded" {
+				isDownloaded = true
+			}
+			resModel := dto.RecommendModelData{
+				Id:           modelInfo.Id,
+				Name:         modelInfo.Name,
+				Class:        modelInfo.Class,
+				Flavor:       modelInfo.Flavor,
+				Avatar:       modelInfo.Avatar,
+				ApiFlavor:    modelInfo.ApiFlavor,
+				InputLength:  modelInfo.InputLength,
+				OutputLength: modelInfo.OutputLength,
+				ParamsSize:   modelInfo.ParamSize,
+				Context:      modelInfo.Context,
+				IsDownloaded: isDownloaded,
+			}
+			supportModelList = append(supportModelList, resModel)
+		}
+	}
+	res.SupportModelList = supportModelList
+	return &dto.GetServiceProviderResponse{
+		*bcode.ModelCode,
+		*res,
+	}, nil
+}
+
+func GetSmartVisionModelData(ctx context.Context, envType string) ([]extensionDto.SmartVisionModelData, error) {
+	transport := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    30 * time.Second,
+		DisableCompression: true,
+	}
+	client := &http.Client{Transport: transport}
+	smartVisionUrlMap := utils.GetSmartVisionUrl()
+	smartVisionUrl := smartVisionUrlMap[envType]
+	modelUrl := smartVisionUrl.Url + "/admin-api/api/model/list"
+	req, err := http.NewRequest("GET", modelUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Bearer "+smartVisionUrl.AccessToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, bcode.ErrServer
+	}
+	var res extensionDto.SmartVisionSupportModelRes
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return nil, err
+	}
+	if res.Code != 0 {
+		return nil, bcode.ErrServer
+	}
+
+	ds := datastore.GetDefaultDatastore()
+	var resData []extensionDto.SmartVisionModelData
+	for _, model := range res.Data {
+		modelQuery := new(types.Model)
+		modelQuery.ModelName = model.Name
+
+		canSelect := true
+		err := ds.Get(ctx, modelQuery)
+		if err != nil {
+			canSelect = false
+		}
+
+		if modelQuery.Status != "downloaded" {
+			canSelect = false
+		}
+		model.CanSelect = canSelect
+
+		if canSelect {
+			model.CreatedAt = modelQuery.CreatedAt
+		}
+
+		resData = append(resData, model)
+	}
+	return resData, nil
 }
 
 func (s *ServiceProviderImpl) GetServiceProviders(ctx context.Context, request *dto.GetServiceProvidersRequest) (*dto.GetServiceProvidersResponse, error) {
@@ -782,6 +1041,25 @@ func CheckServerRequest(req *http.Request, serviceProvider types.ServiceProvider
 	if resp.StatusCode != http.StatusOK {
 		logger.LogicLogger.Error("[Schedule] Failed to request", "error", resp.StatusCode)
 		return false
+	}
+	if serviceProvider.Flavor == types.FlavorSmartVision {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			slog.Error("[Schedule] Failed to read response body", "error", err)
+			return false
+		}
+		var respData map[string]interface{}
+		err = json.Unmarshal(body, &respData)
+		if err != nil {
+			return false
+		}
+		statusCode, ok := respData["status_code"].(float64)
+		if !ok {
+			return false
+		}
+		if statusCode != 200 {
+			return false
+		}
 	}
 	return true
 }
