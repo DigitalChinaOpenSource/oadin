@@ -20,7 +20,7 @@ import "log/slog"
 
 const OADINVersion = "2.0.0"
 
-const OADINSpecVersion = "v0.2"
+const OADINSpecVersion = "v0.4"
 
 const OADINIcon = ""
 
