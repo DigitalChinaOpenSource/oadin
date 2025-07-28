@@ -43,6 +43,7 @@ import (
 	"oadin/console"
 	extensionApi "oadin/extension/api"
 	server2 "oadin/extension/server"
+	ex_utils "oadin/extension/utils"
 	"oadin/internal/api"
 	"oadin/internal/api/dto"
 	"oadin/internal/constants"
@@ -376,6 +377,9 @@ func Run(ctx context.Context) error {
 			return nil
 		}
 	}
+
+	// 扩展加载流程
+	ex_utils.LaunchAPP()
 	return nil
 }
 
