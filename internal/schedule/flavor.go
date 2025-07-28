@@ -282,7 +282,7 @@ func (f *ConfigBasedAPIFlavor) Name() string {
 }
 
 func (f *ConfigBasedAPIFlavor) InstallRoutes(gateway *gin.Engine) {
-	vSpec := version.OADINVersion
+	vSpec := version.OADINSpecVersion
 	for service, serviceDef := range f.Config.Services {
 		if serviceDef.Protocol == types.ProtocolGRPC || serviceDef.Protocol == types.ProtocolGRPC_STREAM {
 			continue
