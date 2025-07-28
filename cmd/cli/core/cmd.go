@@ -310,49 +310,9 @@ func Run(ctx context.Context) error {
 
 	// create tray manager
 	trayManager := tray.NewManager(
-		func() error {
-			if globalServerManager.oadinServer != nil {
-				return fmt.Errorf("server is already running")
-			}
-			oadinSrv = &http.Server{
-				Addr:    config.GlobalOADINEnvironment.ApiHost,
-				Handler: oadinServer.Router,
-			}
-			go func() {
-				if err := oadinSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					errChan <- fmt.Errorf("oadin server error: %v", err)
-				}
-			}()
-			globalServerManager.oadinServer = oadinSrv
-			return nil
-		},
-		func() error {
-			if globalServerManager.oadinServer == nil {
-				return fmt.Errorf("server is not running")
-			}
-			return globalServerManager.StopServer("oadin")
-		},
-		func() error {
-			var errs []error
-			if globalServerManager.oadinServer != nil {
-				if err := globalServerManager.StopServer("oadin"); err != nil {
-					errs = append(errs, fmt.Errorf("failed to stop oadin server: %v", err))
-				}
-			}
-			if globalServerManager.consoleServer != nil {
-				if err := globalServerManager.StopServer("console"); err != nil {
-					errs = append(errs, fmt.Errorf("failed to stop console server: %v", err))
-				}
-			}
-			if len(errs) > 0 {
-				return fmt.Errorf("errors stopping servers: %v", errs)
-			}
-			return nil
-		},
-		func() error {
-			return utils.StopOadinServer(pidFile)
-		},
 		true,
+		config.GlobalOADINEnvironment.LogDir,
+		pidFile,
 	)
 	globalServerManager.trayManager = trayManager
 
@@ -376,7 +336,6 @@ func Run(ctx context.Context) error {
 			return nil
 		}
 	}
-	return nil
 }
 
 func updateServiceProviderHandler(providerName, configFile string) error {
