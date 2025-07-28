@@ -23,12 +23,15 @@ build-cli-win:
 
 build-cli-darwin:
 	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o oadin -ldflags="-s -w"  cmd/cli/main.go
+	$(MAKE) trayapp
 
 build-cli-darwin-arm:
 	CGO_ENABLED=1 GOOS=darwin GOARCH=arm64  go build -o oadin -ldflags="-s -w"  cmd/cli/main.go
+	$(MAKE) trayapp
 
 build-cli-linux:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64  go build -o oadin -ldflags="-s -w"  cmd/cli/main.go
+	$(MAKE) trayapp
 
 build-dll-win:
 	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o OadinChecker.dll -buildmode=c-shared checker/OadinChecker.go
@@ -41,6 +44,5 @@ build-dll-linux:
 
 trayapp:
 	go build -o oadin-tray.exe trayapp/main.go
-	@echo "[OK] oadin-tray.exe build complete."
 
 .PHONY: build-all build-cli-win trayapp
