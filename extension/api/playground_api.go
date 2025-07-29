@@ -206,6 +206,11 @@ func (e *PlaygroundApi) SendMessageStream(c *gin.Context) {
 				})
 			}
 
+			// issues 84 如果是工具调用，Content会偶发出现/n，会导致前端出现空白行
+			if chunk.ToolCalls != nil && chunk.Content != "" {
+				chunk.Content = ""
+			}
+
 			response := dto.StreamMessageResponse{
 				Bcode: bcode.SuccessCode,
 				Data: dto.MessageChunk{
