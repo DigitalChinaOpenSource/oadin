@@ -138,9 +138,18 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	fetchRequest := mcp.CallToolRequest{}
 	fetchRequest.Params.Name = params.Name
 	fetchRequest.Params.Arguments = params.Arguments
+
+	timeout := 1.9 * 60 * time.Second
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	result, err := cli.CallTool(ctx, fetchRequest)
 	if err != nil {
-		return nil, err
+		errContent := mcp.TextContent{
+			Type: "text",
+			Text: err.Error(),
+		}
+		return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{errContent}}, nil
 	}
 	return result, nil
 }
