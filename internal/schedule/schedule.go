@@ -225,8 +225,7 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	}
 
 	m := &types.Model{
-		ModelName:   task.Request.Model,
-		ServiceName: task.Request.Service,
+		ModelName: task.Request.Model,
 	}
 
 	// Provider Selection
