@@ -858,16 +858,35 @@ func StopOadinServer(pidFilePath string) error {
 		return nil
 	}
 
-	if runtime.GOOS == "windows" && IpexOllamaSupportGPUStatus() {
-		extraProcessName := "ollama-lib.exe"
-		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-		_, err := extraCmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("failed to kill process: %s", extraProcessName)
-			return nil
+	if runtime.GOOS == "windows" {
+		if IpexOllamaSupportGPUStatus() {
+			extraProcessName := "ollama-lib.exe"
+			extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+			_, err := extraCmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("failed to kill process: %s", extraProcessName)
+			}
+
+			fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+		} else {
+			extraProcessName := "ollama.exe"
+			extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+			_, err := extraCmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("failed to kill process: %s", extraProcessName)
+			}
+
+			fmt.Printf("Successfully killed process: %s\n", extraProcessName)
 		}
 
-		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+		ovmsProcessName := "ovms.exe"
+		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
+		_, err := ovmsCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", ovmsProcessName)
+		}
+
+		fmt.Printf("Successfully killed process: %s\n", ovmsProcessName)
 	}
 
 	// Traverse all pid files.
