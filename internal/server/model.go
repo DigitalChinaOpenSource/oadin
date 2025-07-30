@@ -367,6 +367,9 @@ func CreateModelStream(ctx context.Context, request dto.CreateModelRequest) (cha
 							generateM.ModelName = m.ModelName
 							generateM.ProviderName = strings.Replace(m.ProviderName, "chat", "generate", -1)
 							generateM.Status = m.Status
+							generateM.ServiceName = "generate"
+							generateM.ServiceSource = m.ServiceSource
+							generateM.IsDefault = m.IsDefault
 							err = ds.Get(ctx, generateM)
 							if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 								newErrorCh <- err

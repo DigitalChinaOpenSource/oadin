@@ -200,6 +200,7 @@ services:
                           "messages": messages,
                           "seed": options.seed,
                           "think": think,
+                          "images": images,
                           "temperature": options.temperature,
                           "template": options.template,
                           "top_p": options.top_p,
@@ -224,6 +225,7 @@ services:
                           "prompt": prompt,
                           "tools": tools,
                           "think": think,
+                          "images": images,
                           "keep_alive": keep_alive,
                           "options": {
                               "seed": seed,

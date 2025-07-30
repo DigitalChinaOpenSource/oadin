@@ -451,7 +451,6 @@ func (p *PlaygroundImpl) AddSessionTitle(ctx context.Context, request *dto.SendS
 		err = p.Ds.Put(ctx, sessionCheck)
 	}
 	slog.Info("AddSessionTitle err", err)
-	fmt.Println("AddSessionTitle err", err)
 	return err
 }
 
