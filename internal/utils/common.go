@@ -891,6 +891,16 @@ func StopOadinServer(pidFilePath string) error {
 		fmt.Printf("Successfully killed process: %s\n", ovmsProcessName)
 	}
 
+	if runtime.GOOS == "darwin" {
+		extraProcessName := "ollama"
+		extraCmd := exec.Command("pkill", "-f", extraProcessName)
+		_, err := extraCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", extraProcessName)
+		}
+		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+	}
+
 	// Traverse all pid files.
 	for _, pidFile := range files {
 		pidData, err := os.ReadFile(pidFile)
