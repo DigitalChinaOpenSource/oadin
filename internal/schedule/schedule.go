@@ -29,6 +29,8 @@ import (
 
 	"oadin/internal/datastore"
 	"oadin/internal/logger"
+	"oadin/internal/manager"
+	"oadin/internal/provider"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
@@ -352,6 +354,33 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	protocol := ""
 	if serviceDef, exists := flavorDef.Services[task.Request.Service]; exists {
 		protocol = serviceDef.Protocol
+	}
+
+	// 模型内存管理：确保本地模型已加载
+	if location == types.ServiceSourceLocal && model != "" {
+		// 获取模型引擎实例
+		modelEngine := provider.GetModelEngine(sp.Flavor)
+		if modelEngine != nil {
+			mmm := manager.GetModelManager()
+			ctx := context.Background()
+
+			// 请求分流：判断是否需要进入排队机制
+			if manager.NeedsQueuing(location, task.Request.Service) {
+				// 本地非embed请求：进入排队机制
+				logger.LogicLogger.Debug("[Schedule] Enqueueing local non-embed model request",
+					"model", model, "service", task.Request.Service, "provider", sp.ProviderName)
+
+				if err := mmm.EnqueueLocalModelRequest(ctx, model, modelEngine, sp.ProviderName, sp.Flavor, task.Schedule.Id); err != nil {
+					logger.LogicLogger.Error("[Schedule] Failed to enqueue local model request",
+						"model", model, "provider", sp.ProviderName, "error", err)
+					return nil, fmt.Errorf("failed to enqueue model request %s: %w", model, err)
+				}
+
+				logger.LogicLogger.Info("[Schedule] Local model request enqueued",
+					"model", model, "provider", sp.ProviderName, "taskID", task.Schedule.Id)
+			}
+			// 远程请求或本地embed请求：直接走原有流程，不需要特殊处理
+		}
 	}
 
 	return &types.ServiceTarget{

@@ -504,7 +504,7 @@ func (o *OllamaProvider) CopyModel(ctx context.Context, req *types.CopyModelRequ
 	return nil
 }
 
-func (o *OllamaProvider) GetRunModels(ctx context.Context) (*types.ListResponse, error) {
+func (o *OllamaProvider) GetRunningModels(ctx context.Context) (*types.ListResponse, error) {
 	c := o.GetDefaultClient()
 	var lr types.ListResponse
 	if err := c.Do(ctx, http.MethodGet, "/api/ps", nil, &lr); err != nil {
@@ -527,6 +527,18 @@ func (o *OllamaProvider) UnloadModel(ctx context.Context, req *types.UnloadModel
 		}
 		slog.Info("Ollama: Model %s unloaded successfully\n", model)
 	}
+	return nil
+}
+
+func (o *OllamaProvider) LoadModel(ctx context.Context, req *types.LoadRequest) error {
+	// c := o.GetDefaultClient()
+	// lr := &types.OllamaLoadModelRequest{
+	// 	Model: req.Model,
+	// }
+	// if err := c.Do(ctx, http.MethodPost, "/api/generate", lr, nil); err != nil {
+	// 	logger.EngineLogger.Error("[Ollama] Load model failed: " + req.Model + " , error: " + err.Error())
+	// 	return err
+	// }
 	return nil
 }
 

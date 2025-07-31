@@ -111,8 +111,8 @@ type ServiceRequest struct {
 	RequestExtraUrl       string        `json:"extra_url"`
 	HTTP                  HTTPContent   `json:"-"`
 	OriginalRequest       *http.Request `json:"-"`
-	WebSocketConnID       string        `json:"-"` // WebSocket连接ID，用于关联同一连接上的多个消息
-	Think              bool          `json:"thinking,omitempty"` // 是否需要思考模式
+	WebSocketConnID       string        `json:"-"`                  // WebSocket连接ID，用于关联同一连接上的多个消息
+	Think                 bool          `json:"thinking,omitempty"` // 是否需要思考模式
 }
 
 func (sr *ServiceRequest) String() string {

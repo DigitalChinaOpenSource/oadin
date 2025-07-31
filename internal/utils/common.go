@@ -757,6 +757,7 @@ func FormatSecondsToSRT(secondsStr string) string {
 
 	return fmt.Sprintf("%02d:%02d:%02d,%03d", hours, minutes, secs, milliseconds)
 }
+
 func IsDirEmpty(path string) bool {
 	f, err := os.Open(path)
 	if err != nil {
@@ -847,6 +848,7 @@ func ClearDir(path string) error {
 
 	return nil
 }
+
 func StopOadinServer(pidFilePath string) error {
 	files, err := filepath.Glob(pidFilePath)
 	if err != nil {
@@ -1020,7 +1022,7 @@ func checkDirPermission(path string) bool {
 
 	// check dictionary write permission
 	testFile := filepath.Join(path, ".permission_test_file")
-	err = os.WriteFile(testFile, []byte("test"), 0644)
+	err = os.WriteFile(testFile, []byte("test"), 0o644)
 	if err != nil {
 		return false
 	}

@@ -1,10 +1,11 @@
 package installer
 
 import (
-	"oadin/config"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"oadin/config"
 )
 
 func RuntimePath() string {
@@ -17,6 +18,7 @@ func getBinaryName(name string) string {
 	}
 	return name
 }
+
 func getBinaryPath(name *string) string {
 	if name == nil || *name == "" {
 		return RuntimePath()
@@ -31,6 +33,7 @@ func getBinaryPath(name *string) string {
 		return binaryName
 	}
 }
+
 func isBinaryExists(name string) bool {
 	binaryPath := getBinaryPath(&name)
 	_, err := os.Stat(binaryPath)

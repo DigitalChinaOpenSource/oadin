@@ -1,9 +1,10 @@
 package rpc
 
 import (
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"oadin/config"
-	"time"
 )
 
 var GlobalClient *resty.Client

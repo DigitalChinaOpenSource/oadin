@@ -630,7 +630,6 @@ func (p *PlaygroundImpl) CheckEmbeddingService(ctx context.Context, sessionID st
 }
 
 func InitPlaygroundVec(ctx context.Context, dbPath string) error {
-
 	return initVecDB(dbPath)
 }
 

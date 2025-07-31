@@ -55,7 +55,7 @@ func downloadBunBinary(platform, arch, version string, isMusl, isBaseline bool) 
 	}
 	// 创建输出目录
 	binDir := RuntimePath()
-	if err := os.MkdirAll(binDir, 0755); err != nil {
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create directory: %v", err)
 	}
 	// 下载URL
@@ -89,7 +89,7 @@ func downloadBunBinary(platform, arch, version string, isMusl, isBaseline bool) 
 		destPath := filepath.Join(binDir, filepath.Base(file.Name))
 		destDir := filepath.Dir(destPath)
 		// 创建目标目录
-		if err := os.MkdirAll(destDir, 0755); err != nil {
+		if err := os.MkdirAll(destDir, 0o755); err != nil {
 			return fmt.Errorf("failed to create directory: %v", err)
 		}
 		// 打开ZIP文件流
@@ -113,7 +113,7 @@ func downloadBunBinary(platform, arch, version string, isMusl, isBaseline bool) 
 			return fmt.Errorf("failed to sync file: %v", err)
 		}
 		// 设置文件执行权限
-		if err := os.Chmod(destPath, 0755); err != nil {
+		if err := os.Chmod(destPath, 0o755); err != nil {
 			return fmt.Errorf("无法设置文件 %s 执行权限: %v", destPath, err)
 		}
 		fmt.Printf("Extracted %s\n", destPath)
@@ -125,6 +125,7 @@ func downloadBunBinary(platform, arch, version string, isMusl, isBaseline bool) 
 	fmt.Printf("Successfully installed bun %s for %s\n", version, platformKey)
 	return nil
 }
+
 func detectPlatformAndArch() (string, string, bool, bool) {
 	platform := runtime.GOOS
 	arch := runtime.GOARCH
@@ -139,6 +140,7 @@ func detectPlatformAndArch() (string, string, bool, bool) {
 	isBaseline := platform == "windows"
 	return platform, arch, isMusl, isBaseline
 }
+
 func InstallBun() error {
 	version := defaultBunVersion
 	fmt.Printf("Using bun version: %s\n", version)

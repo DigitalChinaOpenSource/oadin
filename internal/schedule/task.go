@@ -32,6 +32,7 @@ import (
 	"oadin/internal/convert"
 	"oadin/internal/datastore"
 	"oadin/internal/logger"
+	"oadin/internal/manager"
 	"oadin/internal/types"
 )
 
@@ -120,6 +121,19 @@ func NewServiceContext(task *ServiceTask) *ServiceContext {
 func (st *ServiceTask) Run() error {
 	logger.LogicLogger.Debug("[Service] ServiceTask start run......")
 
+	// 模型状态跟踪：标记模型为使用中
+	var modelName string
+	if st.Target != nil && st.Target.Model != "" && st.Target.Location == types.ServiceSourceLocal {
+		modelName = st.Target.Model
+		mmm := manager.GetModelManager()
+		if err := mmm.MarkModelInUse(modelName); err != nil {
+			logger.LogicLogger.Warn("[Service] Failed to mark model as in use",
+				"model", modelName, "error", err)
+		} else {
+			logger.LogicLogger.Debug("[Service] Model marked as in use", "model", modelName)
+		}
+	}
+
 	ctx := NewServiceContext(st)
 
 	// Build the processing chain
@@ -132,7 +146,32 @@ func (st *ServiceTask) Run() error {
 	reqConverter.SetNext(serviceInvoker)
 	serviceInvoker.SetNext(respHandler)
 
-	return middleware.Handle(ctx)
+	// 执行处理链
+	err := middleware.Handle(ctx)
+
+	// 模型状态跟踪：任务完成后标记模型为空闲
+	if modelName != "" {
+		mmm := manager.GetModelManager()
+
+		// 检查是否为本地非embed请求，需要完成排队处理
+		if st.Target != nil && manager.NeedsQueuing(st.Target.Location, st.Request.Service) {
+			// 本地非embed请求：完成排队处理
+			logger.LogicLogger.Debug("[Service] Completing local model request",
+				"model", modelName, "taskID", st.Schedule.Id, "service", st.Request.Service)
+
+			mmm.CompleteLocalModelRequest(st.Schedule.Id)
+		} else {
+			// 其他请求：正常标记为空闲
+			if markErr := mmm.MarkModelIdle(modelName); markErr != nil {
+				logger.LogicLogger.Warn("[Service] Failed to mark model as idle",
+					"model", modelName, "error", markErr)
+			} else {
+				logger.LogicLogger.Debug("[Service] Model marked as idle", "model", modelName)
+			}
+		}
+	}
+
+	return err
 }
 
 func (st *ServiceTask) invokeGRPCServiceProvider(sp *types.ServiceProvider, content types.HTTPContent) (*http.Response, error) {

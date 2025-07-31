@@ -527,7 +527,6 @@ func (p *PlaygroundImpl) UpdateToolCall(ctx context.Context, toolMessage *entity
 	con := new(entity.ToolMessage)
 	con.ID = toolMessage.ID
 	err := p.Ds.Get(ctx, con)
-
 	if err != nil {
 		return err
 	}
@@ -600,7 +599,6 @@ func (p *PlaygroundImpl) MarkToolCallEnd(ctx context.Context, sessionId, message
 	con := new(entity.ChatMessage)
 	con.ID = assistantMsgID
 	err = p.Ds.Get(ctx, con)
-
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"log/slog"
+
 	"oadin/extension/api/dto"
 	"oadin/extension/utils/bcode"
 	"oadin/extension/utils/cache"
@@ -18,8 +19,7 @@ type System interface {
 	RestartOllama(ctx context.Context) error
 }
 
-type SystemImpl struct {
-}
+type SystemImpl struct{}
 
 // NewSystemImpl 创建一个新的 SystemImpl 实例
 func NewSystemImpl() System {
@@ -91,7 +91,6 @@ func (s *SystemImpl) SetProxy(ctx context.Context, req dto.ProxyRequest) error {
 		return bcode.HttpError(bcode.ControlPanelSystemError, "设置代理地址失败")
 	}
 	return nil
-
 }
 
 // SwitchProxy 切换代理启用状态
@@ -145,7 +144,7 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 	}
 
 	// 检查是否有正在运行的模型
-	runModels, err := engine.GetRunModels(ctx)
+	runModels, err := engine.GetRunningModels(ctx)
 	if err != nil {
 		slog.Error("获取正在运行的模型失败", "error", err)
 		return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，有正在运行的模型")
@@ -175,7 +174,6 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 
 	}
 	return nil
-
 }
 
 // GetSystemSettings 获取系统设置

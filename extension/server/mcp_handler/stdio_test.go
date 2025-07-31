@@ -8,9 +8,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"oadin/internal/types"
 	"testing"
 	"time"
+
+	"oadin/internal/types"
 
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/client/transport"

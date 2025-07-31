@@ -28,14 +28,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MatusOllah/slogcolor"
-	"github.com/fatih/color"
-	"github.com/spf13/pflag"
 	"oadin/internal/client"
 	"oadin/internal/constants"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/version"
+
+	"github.com/MatusOllah/slogcolor"
+	"github.com/fatih/color"
+	"github.com/spf13/pflag"
 )
 
 const (
@@ -69,27 +70,34 @@ const (
 	DefaultLogExpireDays = 7
 
 	// Environment variable keys
-	EnvOADINHost = "OADIN_HOST"
+	EnvOADINHost              = "OADIN_HOST"
+	EnvModelIdleTimeout       = "AOG_MODEL_IDLE_TIMEOUT"
+	EnvModelCleanupInterval   = "AOG_MODEL_CLEANUP_INTERVAL"
+	EnvLocalModelQueueSize    = "AOG_LOCAL_MODEL_QUEUE_SIZE"
+	EnvLocalModelQueueTimeout = "AOG_LOCAL_MODEL_QUEUE_TIMEOUT"
 )
 
 var GlobalOADINEnvironment *OADINEnvironment
 
 type OADINEnvironment struct {
-	ApiHost           string // host
-	Datastore         string // path to the datastore
-	DatastoreType     string // type of the datastore
-	Verbose           string // debug, info or warn
-	RootDir           string // root directory for all assets such as config files
-	APIVersion        string // version of this core app layer (gateway etc.)
-	SpecVersion       string // version of the core specification this app layer supports
-	LogDir            string // logs dir
-	LogHTTP           string // path to the http log
-	LogLevel          string // log level
-	LogFileExpireDays int    // log file expiration time
-	ConsoleLog        string // oadin server console log path
+	ApiHost                string        // host
+	Datastore              string        // path to the datastore
+	DatastoreType          string        // type of the datastore
+	Verbose                string        // debug, info or warn
+	RootDir                string        // root directory for all assets such as config files
+	APIVersion             string        // version of this core app layer (gateway etc.)
+	SpecVersion            string        // version of the core specification this app layer supports
+	LogDir                 string        // logs dir
+	LogHTTP                string        // path to the http log
+	LogLevel               string        // log level
+	LogFileExpireDays      int           // log file expiration time
+	ConsoleLog             string        // oadin server console log path
+	ModelIdleTimeout       time.Duration // model idle timeout duration
+	ModelCleanupInterval   time.Duration // model cleanup check interval
+	LocalModelQueueSize    int           // local model queue size
+	LocalModelQueueTimeout time.Duration // local model queue timeout
 
 	UpdateDir string // Installation package storage path
-
 }
 
 var (
@@ -155,18 +163,22 @@ func Var(key string) string {
 func NewOADINEnvironment() *OADINEnvironment {
 	once.Do(func() {
 		env := OADINEnvironment{
-			ApiHost:           constants.DefaultHost + ":" + constants.DefaultHTTPPort,
-			Datastore:         DefaultDatabaseFile,
-			DatastoreType:     DatastoreSQLite,
-			LogDir:            LogsDirectory,
-			LogHTTP:           ServerLogFile,
-			LogLevel:          DefaultLogLevel,
-			LogFileExpireDays: DefaultLogExpireDays,
-			Verbose:           DefaultVerbose,
-			RootDir:           DefaultRootDir,
-			APIVersion:        version.OADINVersion,
-			SpecVersion:       version.OADINVersion,
-			ConsoleLog:        ConsoleLogFile,
+			ApiHost:                constants.DefaultHost + ":" + constants.DefaultHTTPPort,
+			Datastore:              DefaultDatabaseFile,
+			DatastoreType:          DatastoreSQLite,
+			LogDir:                 LogsDirectory,
+			LogHTTP:                ServerLogFile,
+			LogLevel:               DefaultLogLevel,
+			LogFileExpireDays:      DefaultLogExpireDays,
+			Verbose:                DefaultVerbose,
+			RootDir:                DefaultRootDir,
+			APIVersion:             version.OADINVersion,
+			SpecVersion:            version.OADINVersion,
+			ConsoleLog:             ConsoleLogFile,
+			ModelIdleTimeout:       5 * time.Minute,  // 默认5分钟
+			ModelCleanupInterval:   1 * time.Minute,  // 默认1分钟
+			LocalModelQueueSize:    10,               // 默认队列大小10
+			LocalModelQueueTimeout: 30 * time.Second, // 默认排队超时30秒
 		}
 
 		var err error

@@ -24,7 +24,6 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
-	"oadin/tray"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -35,6 +34,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"oadin/tray"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"

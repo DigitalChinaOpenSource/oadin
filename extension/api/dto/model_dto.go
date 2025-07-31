@@ -1,8 +1,9 @@
 package dto
 
 import (
-	"oadin/internal/utils/bcode"
 	"time"
+
+	"oadin/internal/utils/bcode"
 )
 
 type SmartVisionSupportModelRequest struct {

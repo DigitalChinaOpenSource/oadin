@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"oadin/internal/api"
 	"oadin/internal/datastore"
 	"oadin/version"
@@ -40,14 +41,12 @@ func NewOadinExtensionServer() *OadinExtensionServer {
 
 // Run is the function to start the server
 func (e *OadinExtensionServer) Run(ctx context.Context, address string) error {
-
 	// 使用重写覆盖父类run逻辑, 然后扩展类来运行加载所有路由
 	return e.Router.Run(address)
 }
 
 // Register 扩展注册机制, 保证父类的路由先注册, 然后加载我们的扩展路由
 func (e *OadinExtensionServer) Register() {
-
 	// 父类的组件实例化
 	e.CoreServer.Register()
 

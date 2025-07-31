@@ -259,3 +259,7 @@ type OllamaUnloadModelRequest struct {
 	Model     string `json:"model"`
 	KeepAlive int64  `json:"keep_alive"`
 }
+
+type LoadRequest struct {
+	Model string `json:"model"`
+}

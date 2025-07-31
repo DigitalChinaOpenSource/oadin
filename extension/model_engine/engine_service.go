@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
+
 	"oadin/extension/api/dto"
 	"oadin/internal/datastore"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
-	"strings"
 )
 
 // oadinStreamChunk 用于解析 Oadin 流式响应格式
@@ -520,7 +521,6 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 
 		var oadinResp dto.OadinAPIResponse
 		if err := json.Unmarshal(result.HTTP.Body, &oadinResp); err != nil {
-
 			slog.Warn("[Embedding] 无法解析为 Oadin 响应格式",
 				"error", err.Error(),
 				"response_preview", responsePreview)

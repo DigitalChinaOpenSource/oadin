@@ -91,6 +91,7 @@ func (m *ToolMessage) SetUpdateTime(t time.Time) { m.UpdatedAt = t }
 func (m *ToolMessage) PrimaryKey() string {
 	return "id"
 }
+
 func (m *ToolMessage) TableName() string {
 	return "tool_messages"
 }
