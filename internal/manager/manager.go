@@ -49,18 +49,18 @@ func GetModelManager() *Manager {
 		cleanupInterval := 1 * time.Minute
 
 		// 尝试从全局配置获取参数
-		if config.GlobalAOGEnvironment != nil {
-			if config.GlobalAOGEnvironment.LocalModelQueueSize > 0 {
-				queueSize = config.GlobalAOGEnvironment.LocalModelQueueSize
+		if config.GlobalOADINEnvironment != nil {
+			if config.GlobalOADINEnvironment.LocalModelQueueSize > 0 {
+				queueSize = config.GlobalOADINEnvironment.LocalModelQueueSize
 			}
-			if config.GlobalAOGEnvironment.LocalModelQueueTimeout > 0 {
-				queueTimeout = config.GlobalAOGEnvironment.LocalModelQueueTimeout
+			if config.GlobalOADINEnvironment.LocalModelQueueTimeout > 0 {
+				queueTimeout = config.GlobalOADINEnvironment.LocalModelQueueTimeout
 			}
-			if config.GlobalAOGEnvironment.ModelIdleTimeout > 0 {
-				idleTimeout = config.GlobalAOGEnvironment.ModelIdleTimeout
+			if config.GlobalOADINEnvironment.ModelIdleTimeout > 0 {
+				idleTimeout = config.GlobalOADINEnvironment.ModelIdleTimeout
 			}
-			if config.GlobalAOGEnvironment.ModelCleanupInterval > 0 {
-				cleanupInterval = config.GlobalAOGEnvironment.ModelCleanupInterval
+			if config.GlobalOADINEnvironment.ModelCleanupInterval > 0 {
+				cleanupInterval = config.GlobalOADINEnvironment.ModelCleanupInterval
 			}
 		}
 
@@ -98,8 +98,8 @@ func (m *Manager) Start(cleanupInterval time.Duration) {
 
 	// 如果传入的清理间隔为0，使用配置中的默认值
 	if cleanupInterval == 0 {
-		if config.GlobalAOGEnvironment != nil && config.GlobalAOGEnvironment.ModelCleanupInterval > 0 {
-			cleanupInterval = config.GlobalAOGEnvironment.ModelCleanupInterval
+		if config.GlobalOADINEnvironment != nil && config.GlobalOADINEnvironment.ModelCleanupInterval > 0 {
+			cleanupInterval = config.GlobalOADINEnvironment.ModelCleanupInterval
 		} else {
 			cleanupInterval = 1 * time.Minute // 默认1分钟
 		}

@@ -1109,3 +1109,18 @@ func (o *OpenvinoProvider) UnloadModel(ctx context.Context, req *types.UnloadMod
 
 	return nil
 }
+
+var OpenvinoOperateStatus = 1
+
+func (o *OpenvinoProvider) GetOperateStatus() int {
+	return OpenvinoOperateStatus
+}
+
+func (o *OpenvinoProvider) SetOperateStatus(status int) {
+	OpenvinoOperateStatus = status
+	slog.Info("Openvino operate status set to", "status", OpenvinoOperateStatus)
+}
+
+func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
+	return nil
+}
