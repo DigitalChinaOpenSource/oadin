@@ -1,13 +1,13 @@
 package api
 
 import (
-	"log/slog"
 	"net/http"
 
 	"oadin/extension/api/dto"
 	"oadin/extension/rpc"
 	"oadin/extension/server"
 	"oadin/extension/utils/bcode"
+	"oadin/internal/logger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,7 +34,7 @@ func (e *SystemlApi) InjectRoutes(api *gin.RouterGroup) {
 func (e *SystemlApi) About(c *gin.Context) {
 	res, err := rpc.About()
 	if err != nil {
-		slog.Error("Failed to get about information", "error", err)
+		logger.ApiLogger.Error("Failed to get about information", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get about information"})
 	}
 	c.JSON(http.StatusOK, res)
@@ -63,13 +63,13 @@ func (e *SystemlApi) ModifyRepositoryURL(c *gin.Context) {
 func (e *SystemlApi) SetProxy(c *gin.Context) {
 	var req dto.ProxyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		slog.Error("Invalid request body", "error", err)
+		logger.ApiLogger.Error("Invalid request body", "error", err)
 		bcode.ReturnError(c, err)
 		return
 	}
 	err := e.System.SetProxy(c.Request.Context(), req)
 	if err != nil {
-		slog.Error("Failed to set proxy", "error", err)
+		logger.ApiLogger.Error("Failed to set proxy", "error", err)
 		bcode.ReturnError(c, err)
 		return
 	}
@@ -83,13 +83,13 @@ func (e *SystemlApi) ProxySwitch(c *gin.Context) {
 		Enabled bool `json:"enabled"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		slog.Error("Invalid request body", "error", err)
+		logger.ApiLogger.Error("Invalid request body", "error", err)
 		bcode.ReturnError(c, err)
 		return
 	}
 	err := e.System.SwitchProxy(c.Request.Context(), body.Enabled)
 	if err != nil {
-		slog.Error("Failed to switch proxy", "error", err)
+		logger.ApiLogger.Error("Failed to switch proxy", "error", err)
 		bcode.ReturnError(c, err)
 		return
 	}
@@ -103,7 +103,7 @@ func (e *SystemlApi) SystemSettings(c *gin.Context) {
 
 	res, err := e.System.GetSystemSettings(c.Request.Context())
 	if err != nil {
-		slog.Error("Failed to submit feedback", "error", err)
+		logger.ApiLogger.Error("Failed to submit feedback", "error", err)
 		bcode.ReturnError(c, err)
 		return
 	}

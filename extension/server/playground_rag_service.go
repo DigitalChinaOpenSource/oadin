@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"oadin/internal/logger"
 	"sort"
 	"strings"
 	"sync"
@@ -42,7 +42,7 @@ func expandQuery(query string) []string {
 	// 基本查询策略
 	expanded := []string{
 		query,                                  // 原始查询
-		"主题：" + query,                          // 更聚焦于主题
+		"主题:" + query,                          // 更聚焦于主题
 		"如何" + query + "?",                     // 如果是问题，尝试更明确的问句
 		strings.ReplaceAll(query, " ", " OR "), // 宽松匹配
 	}
@@ -60,14 +60,14 @@ func expandQuery(query string) []string {
 
 // 查找与当前查询相关的上下文
 func (p *PlaygroundImpl) findRelevantContext(ctx context.Context, session *entity.ChatSession, query string) (string, error) {
-	slog.Info("RAG: 开始查询相关上下文", "sessionID", session.ID, "query", query)
+	logger.LogicLogger.Info("RAG: 开始查询相关上下文", "sessionID", session.ID, "query", query)
 	result, err := p.findRelevantContextWithVec(ctx, session, query, defaultRAGOptions)
 	if err != nil {
-		slog.Error("RAG: 上下文查询失败", "sessionID", session.ID, "error", err)
+		logger.LogicLogger.Error("RAG: 上下文查询失败", "sessionID", session.ID, "error", err)
 	} else if result == "" {
-		slog.Info("RAG: 未找到相关上下文", "sessionID", session.ID)
+		logger.LogicLogger.Info("RAG: 未找到相关上下文", "sessionID", session.ID)
 	} else {
-		slog.Info("RAG: 成功找到相关上下文", "sessionID", session.ID, "contextLength", len(result))
+		logger.LogicLogger.Info("RAG: 成功找到相关上下文", "sessionID", session.ID, "contextLength", len(result))
 	}
 	return result, err
 }
@@ -100,44 +100,44 @@ func initVecDB(dbPath string) error {
 	}
 
 	vecInitialized = true
-	slog.Info("VEC向量数据库初始化成功")
+	logger.LogicLogger.Info("VEC向量数据库初始化成功")
 	return nil
 }
 
-// VEC实现的查找方法
+// VEC实现的查找方�?
 func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session *entity.ChatSession, query string, options RAGOptions) (string, error) {
-	// 日志：入口参数
-	slog.Info("[RAG] findRelevantContextWithVec called", "sessionID", session.ID, "embedModelID", session.EmbedModelID, "query", query, "options", options)
+	// 日志：入口参�?
+	logger.LogicLogger.Info("[RAG] findRelevantContextWithVec called", "sessionID", session.ID, "embedModelID", session.EmbedModelID, "query", query, "options", options)
 
 	// 验证会话参数
 	if session == nil {
-		slog.Error("[RAG] 会话对象为空")
+		logger.LogicLogger.Error("[RAG] 会话对象为空")
 		return "", fmt.Errorf("会话对象为空")
 	}
 
 	if session.ID == "" {
-		slog.Warn("[RAG] 会话ID为空")
+		logger.LogicLogger.Warn("[RAG] 会话ID为空")
 		return "", fmt.Errorf("会话ID为空")
 	}
 
 	// 如果未设置嵌入模型，无法使用RAG
 	if session.EmbedModelID == "" {
-		slog.Warn("[RAG] EmbedModelID 为空，跳过RAG检索", "sessionID", session.ID)
+		logger.LogicLogger.Warn("[RAG] EmbedModelID 为空，跳过RAG检索", "sessionID", session.ID)
 		return "", fmt.Errorf("这个会话没有设置嵌入模型，无法使用RAG功能")
 	}
 
 	// 检查VEC数据库初始化状态
 	if !vecInitialized || vecDB == nil {
-		slog.Warn("[RAG] VEC未初始化，尝试初始化", "sessionID", session.ID) // 尝试初始化VEC数据库
+		logger.LogicLogger.Warn("[RAG] VEC未初始化，尝试初始化", "sessionID", session.ID) // 尝试初始化VEC数据库
 		dbPath := config.GlobalOADINEnvironment.Datastore
 		if err := initVecDB(dbPath); err != nil {
-			slog.Error("[RAG] VEC初始化失败", "error", err)
+			logger.LogicLogger.Error("[RAG] VEC初始化失败", "error", err)
 			return "", fmt.Errorf("VEC初始化失败: %w", err)
 		}
 
 		// 再次检查初始化状态
 		if !vecInitialized || vecDB == nil {
-			slog.Error("[RAG] VEC初始化后仍无效", "sessionID", session.ID)
+			logger.LogicLogger.Error("[RAG] VEC初始化后仍无效", "sessionID", session.ID)
 			return "", fmt.Errorf("VEC未正确初始化")
 		}
 	}
@@ -146,11 +146,11 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	// 查询扩展
 	var queries []string
 	queries = []string{query}
-	// 为每个查询变体生成嵌入
+	// 为每个查询变体生成嵌�?
 	var queryEmbeddings [][]float32
 	for _, q := range queries {
-		// 日志：准备生成嵌入
-		slog.Info("[RAG] Generating embedding for query", "sessionID", session.ID, "query", q, "embedModelID", session.EmbedModelID)
+		// 日志：准备生成嵌�?
+		logger.LogicLogger.Info("[RAG] Generating embedding for query", "sessionID", session.ID, "query", q, "embedModelID", session.EmbedModelID)
 		// 直接生成嵌入，不使用缓存
 		embeddingReq := &dto.EmbeddingRequest{
 			Model: session.EmbedModelID,
@@ -158,28 +158,28 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 		}
 		embeddingResp, err := modelEngine.GenerateEmbedding(ctx, embeddingReq)
 		if err != nil {
-			slog.Error("[RAG] 查询变体嵌入生成失败", "sessionID", session.ID, "query", q, "error", err)
+			logger.LogicLogger.Error("[RAG] 查询变体嵌入生成失败", "sessionID", session.ID, "query", q, "error", err)
 			return "", fmt.Errorf("RAG: 查询变体嵌入生成失败: %w", err)
 		}
 		if len(embeddingResp.Embeddings) == 0 {
-			slog.Error("[RAG] 嵌入返回数据为空", "sessionID", session.ID, "query", q)
+			logger.LogicLogger.Error("[RAG] 嵌入返回数据为空", "sessionID", session.ID, "query", q)
 			return "", fmt.Errorf("RAG: 嵌入返回数据为空")
 		}
 		embedding := embeddingResp.Embeddings[0]
-		slog.Info("[RAG] Got embedding", "sessionID", session.ID, "query", q, "embeddingDim", len(embedding))
+		logger.LogicLogger.Info("[RAG] Got embedding", "sessionID", session.ID, "query", q, "embeddingDim", len(embedding))
 		queryEmbeddings = append(queryEmbeddings, embedding)
 	}
-	// 日志：所有 embedding 生成完成
-	slog.Info("[RAG] 查询embedding生成完成", "sessionID", session.ID, "successCount", len(queryEmbeddings), "totalQueries", len(queries))
-	// 额外调试日志，排查 queryEmbeddings 为空的原因
-	slog.Info("DEBUG: queryEmbeddings after loop", "len", len(queryEmbeddings), "cap", cap(queryEmbeddings), "isNil", queryEmbeddings == nil)
+	// 日志：所�?embedding 生成完成
+	logger.LogicLogger.Info("[RAG] 查询embedding生成完成", "sessionID", session.ID, "successCount", len(queryEmbeddings), "totalQueries", len(queries))
+	// 额外调试日志，排�?queryEmbeddings 为空的原�?
+	logger.LogicLogger.Info("DEBUG: queryEmbeddings after loop", "len", len(queryEmbeddings), "cap", cap(queryEmbeddings), "isNil", queryEmbeddings == nil)
 	if len(queryEmbeddings) == 0 {
-		slog.Error("[RAG] 所有查询embedding生成失败", "sessionID", session.ID)
+		logger.LogicLogger.Error("[RAG] 所有查询embedding生成失败", "sessionID", session.ID)
 		return "", fmt.Errorf("failed to generate query embeddings")
 	} // 构造文件查询，确保 SessionID 没有空格
 	fileQuery := &entity.File{}
 	fileQuery.SessionID = strings.TrimSpace(session.ID)
-	slog.Info("[RAG] 文件查询参数", "sessionID", fileQuery.SessionID)
+	logger.LogicLogger.Info("[RAG] 文件查询参数", "sessionID", fileQuery.SessionID)
 
 	// 使用 In 查询方式
 	queryOpts := &datastore.ListOptions{
@@ -196,14 +196,14 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	// 尝试查询文件
 	files, err := p.Ds.List(ctx, fileQuery, queryOpts)
 	if err != nil {
-		slog.Error("RAG: 无法获取会话文件列表", "sessionID", session.ID, "error", err)
+		logger.LogicLogger.Error("RAG: 无法获取会话文件列表", "sessionID", session.ID, "error", err)
 		return "", err
 	}
 
 	// 验证查询结果
 	if len(files) == 0 {
-		// 记录警告日志并尝试其他方式
-		slog.Warn("RAG: 未找到关联文件，尝试其他查询方式", "sessionID", session.ID)
+		// 记录警告日志并尝试其他方�?
+		logger.LogicLogger.Warn("RAG: 未找到关联文件，尝试其他查询方式", "sessionID", session.ID)
 
 		// 尝试使用模糊查询
 		fuzzyOpts := &datastore.ListOptions{
@@ -219,19 +219,19 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 
 		files, err = p.Ds.List(ctx, fileQuery, fuzzyOpts)
 		if err != nil {
-			slog.Error("RAG: 模糊查询文件失败", "sessionID", session.ID, "error", err)
+			logger.LogicLogger.Error("RAG: 模糊查询文件失败", "sessionID", session.ID, "error", err)
 		}
 	}
 
-	// 进行额外验证，确保文件确实属于指定会话
+	// 进行额外验证，确保文件确实属于指定会�?
 	var validFiles []datastore.Entity
 	for _, file := range files {
 		if f, ok := file.(*entity.File); ok {
 			if f.SessionID == fileQuery.SessionID {
 				validFiles = append(validFiles, file)
-				slog.Debug("[RAG] 验证通过的文件", "fileID", f.ID, "sessionID", f.SessionID)
+				logger.LogicLogger.Debug("[RAG] 验证通过的文件", "fileID", f.ID, "sessionID", f.SessionID)
 			} else {
-				slog.Warn("[RAG] 文件会话ID不匹配",
+				logger.LogicLogger.Warn("[RAG] 文件会话ID不匹配",
 					"fileID", f.ID,
 					"file.SessionID", f.SessionID,
 					"expected", fileQuery.SessionID)
@@ -243,32 +243,32 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	files = validFiles
 
 	// 增加详细调试日志
-	slog.Info("[RAG] 文件查询结果", "fileCount", len(files))
+	logger.LogicLogger.Info("[RAG] 文件查询结果", "fileCount", len(files))
 	if len(files) > 0 {
 		for i, file := range files {
 			if f, ok := file.(*entity.File); ok {
-				slog.Debug("[RAG] 找到文件", "index", i, "fileID", f.ID, "sessionID", f.SessionID)
+				logger.LogicLogger.Debug("[RAG] 找到文件", "index", i, "fileID", f.ID, "sessionID", f.SessionID)
 			}
 		}
 	}
 
 	if len(files) == 0 {
 		// 没有上传文件，将使用通用对话模式
-		slog.Info("RAG: 没有找到关联文件，将使用通用对话模式", "sessionID", session.ID)
+		logger.LogicLogger.Info("RAG: 没有找到关联文件，将使用通用对话模式", "sessionID", session.ID)
 		// 尝试用其他方式排查问题
-		slog.Info("[RAG] 排查数据库问题")
+		logger.LogicLogger.Info("[RAG] 排查数据库问题")
 
 		return "", nil
 	}
-	slog.Info("RAG: 找到关联文件", "sessionID", session.ID, "fileCount", len(files))
+	logger.LogicLogger.Info("RAG: 找到关联文件", "sessionID", session.ID, "fileCount", len(files))
 
 	// 再次检查vecDB可用性
 	if !vecInitialized || vecDB == nil {
-		slog.Error("[RAG] VEC数据库无法使用，尝试重新初始化", "sessionID", session.ID)
+		logger.LogicLogger.Error("[RAG] VEC数据库无法使用，尝试重新初始化", "sessionID", session.ID)
 		// 尝试初始化VEC数据库
 		dbPath := config.GlobalOADINEnvironment.Datastore
 		if err := initVecDB(dbPath); err != nil || !vecInitialized || vecDB == nil {
-			slog.Error("[RAG] VEC初始化失败，无法执行检索", "error", err)
+			logger.LogicLogger.Error("[RAG] VEC初始化失败，无法执行检索", "error", err)
 			return "", fmt.Errorf("VEC数据库不可用: %w", err)
 		}
 	}
@@ -277,22 +277,22 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	allChunks := make([]ChunkScore, 0)
 	chunkMap := make(map[string]ChunkScore) // UUID为key
 	startTime := time.Now()
-	slog.Info("RAG: 开始VEC检索", "sessionID", session.ID, "embedCount", len(queryEmbeddings), "maxChunks", options.MaxChunks*3)
+	logger.LogicLogger.Info("RAG: 开始VEC检索", "sessionID", session.ID, "embedCount", len(queryEmbeddings), "maxChunks", options.MaxChunks*3)
 	for i, embedding := range queryEmbeddings { // 尝试向量搜索
 		ids, dists, err := vecDB.SearchSimilarChunks(ctx, embedding, options.MaxChunks*3, session.ID)
 		if err != nil {
 			// 向量搜索失败，尝试使用文本搜索作为备选
-			slog.Warn("RAG: VEC搜索失败，尝试使用文本搜索", "sessionID", session.ID, "queryIndex", i, "error", err) // 使用原始查询文本进行文本搜索
+			logger.LogicLogger.Warn("RAG: VEC搜索失败，尝试使用文本搜索", "sessionID", session.ID, "queryIndex", i, "error", err) // 使用原始查询文本进行文本搜索
 			textQuery := queries[i]
 			ids, dists, err = vecDB.SearchSimilarChunksByText(ctx, textQuery, options.MaxChunks*3, session.ID)
 			if err != nil {
 				// 两种搜索方式都失败
-				slog.Error("RAG: 所有搜索方法均失败", "sessionID", session.ID, "queryIndex", i, "error", err)
+				logger.LogicLogger.Error("RAG: 所有搜索方法均失败", "sessionID", session.ID, "queryIndex", i, "error", err)
 				return "", fmt.Errorf("RAG: 检索失败: %w", err)
 			}
-			slog.Info("RAG: 降级使用文本搜索成功", "sessionID", session.ID, "queryIndex", i)
+			logger.LogicLogger.Info("RAG: 降级使用文本搜索成功", "sessionID", session.ID, "queryIndex", i)
 		}
-		slog.Debug("RAG: 检索到相似块", "sessionID", session.ID, "queryIndex", i, "resultCount", len(ids))
+		logger.LogicLogger.Debug("RAG: 检索到相似块", "sessionID", session.ID, "queryIndex", i, "resultCount", len(ids))
 		for i, id := range ids {
 			if _, exists := chunkMap[id]; exists {
 				continue
@@ -300,13 +300,13 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 			chunkContent := ""
 			chunkID := ""
 
-			// 只用主键 id 查询 chunk 内容，避免 file_id 干扰
+			// 只用主键 id 查询 chunk 内容，避免file_id 干扰
 			if vecDB != nil {
 				chunkContent, chunkID, err = vecDB.GetChunkByID(ctx, id)
 				if err == nil && chunkContent != "" {
-					slog.Debug("RAG: 成功检索到chunk", "uuid", id, "chunkID", chunkID)
+					logger.LogicLogger.Debug("RAG: 成功检索到chunk", "uuid", id, "chunkID", chunkID)
 				} else {
-					slog.Warn("RAG: 获取文档块失败", "error", err, "uuid", id)
+					logger.LogicLogger.Warn("RAG: 获取文档块失败", "error", err, "uuid", id)
 					continue
 				}
 			}
@@ -321,7 +321,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 
 	searchDuration := time.Since(startTime)
 
-	slog.Info("RAG: VEC批量搜索完成",
+	logger.LogicLogger.Info("RAG: VEC批量搜索完成",
 		"sessionID", session.ID,
 		"query_count", len(queryEmbeddings),
 		"result_count", len(chunkMap),
@@ -366,7 +366,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	var selectedChunks []ChunkScore
 	for i := 0; i < len(allChunks) && includedChunksCount < maxChunks; i++ {
 		if allChunks[i].Similarity < 0.3 {
-			slog.Debug("块相似度低于阈值，已跳过",
+			logger.LogicLogger.Debug("块相似度低于阈值，已跳过",
 				"chunk_id", allChunks[i].ChunkID,
 				"similarity", allChunks[i].Similarity,
 				"threshold", similarityThreshold)
@@ -376,20 +376,20 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 			continue
 		}
 		if options.DuplicationThreshold > 0 && isDuplicate(allChunks[i], selectedChunks) {
-			slog.Debug("跳过重复内容", "chunk_id", allChunks[i].ChunkID)
+			logger.LogicLogger.Debug("跳过重复内容", "chunk_id", allChunks[i].ChunkID)
 			continue
 		}
 		if relevantContext.Len() > 0 {
 			relevantContext.WriteString("\n\n---\n\n")
 		}
-		relevantContext.WriteString("信息块 #" + fmt.Sprint(includedChunksCount+1) +
+		relevantContext.WriteString("信息块#" + fmt.Sprint(includedChunksCount+1) +
 			" (相似度: " + fmt.Sprintf("%.2f", allChunks[i].Similarity) + "):\n")
 		relevantContext.WriteString(allChunks[i].Content)
 		includedChunks[allChunks[i].ChunkID] = true
 		selectedChunks = append(selectedChunks, allChunks[i])
 		includedChunksCount++
 	}
-	slog.Info("RAG: VEC-RAG检索完成",
+	logger.LogicLogger.Info("RAG: VEC-RAG检索完成",
 		"sessionID", session.ID,
 		"query", query,
 		"query_variants", len(queryEmbeddings),

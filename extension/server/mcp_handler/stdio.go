@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
+	"oadin/internal/logger"
 	"sync"
 	"time"
 
@@ -76,7 +76,7 @@ func (s *StdioTransport) Start(ctx context.Context, config *types.MCPServerConfi
 	fmt.Printf("ClientMcpStart 运行时间: %v\n", elapsed)
 
 	fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
-	slog.Info("[MCP] Initialized client for server", "server_id", config.Id)
+	logger.LogicLogger.Info("[MCP] Initialized client for server", "server_id", config.Id)
 	s.mu.Lock()
 	s.clients[serverKey] = cli
 	s.mu.Unlock()

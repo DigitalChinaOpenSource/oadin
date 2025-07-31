@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
+	"oadin/internal/logger"
 	"runtime"
 	"sort"
 	"strconv"
@@ -222,7 +222,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 			resultList = append(resultList, modelData)
 
 		}
-		// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+		// 数据处理, 如果是我的模型数据，则进行数据过滤-> 使用canSelect过滤
 		if request.Mine {
 			myModelFilter(&resultList)
 			resData.Total = len(resultList)
@@ -283,7 +283,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				}
 				resultList = append(resultList, modelData)
 			}
-			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			// 数据处理, 如果是我的模型数据，则进行数据过滤-> 使用canSelect过滤
 			if request.Mine {
 				myModelFilter(&resultList)
 			}
@@ -387,7 +387,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				resultList = append(resultList, modelData)
 			}
 
-			// 数据处理, 如果是我的模型数据，则进行数据过滤 -> 使用canSelect过滤
+			// 数据处理, 如果是我的模型数据，则进行数据过滤-> 使用canSelect过滤
 			if request.Mine {
 				myModelFilter(&resultList)
 			}
@@ -494,7 +494,7 @@ func RecommendModels() (map[string][]dto.RecommendModelData, error) {
 	if runtime.GOOS == "windows" {
 		windowsVersion := utils.GetSystemVersion()
 		if windowsVersion < 10 {
-			slog.Error("[Model] windows version < 10")
+			logger.LogicLogger.Error("[Model] windows version < 10")
 			return nil, bcode.ErrNoRecommendModel
 		}
 		memoryTypeStatus := false
