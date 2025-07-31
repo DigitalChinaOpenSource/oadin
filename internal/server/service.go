@@ -702,21 +702,23 @@ func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetA
 				serviceStatus = 0
 				continue
 			}
-			remoteModel := &types.Model{
-				ProviderName: dsService.RemoteProvider,
-			}
-			err = s.Ds.Get(ctx, remoteModel)
-			if err != nil {
-				serviceStatus = 0
-				continue
-			}
-			if dsService.Name == types.ServiceTextToImage {
-				continue
-			}
-			checkServerObj := ChooseCheckServer(*remoteSp, remoteModel.ModelName)
-			status := checkServerObj.CheckServer()
-			if status {
-				serviceStatus = 1
+			if dsService.LocalProvider == "" {
+				remoteModel := &types.Model{
+					ProviderName: dsService.RemoteProvider,
+				}
+				err = s.Ds.Get(ctx, remoteModel)
+				if err != nil {
+					serviceStatus = 0
+					continue
+				}
+				if dsService.Name == types.ServiceTextToImage {
+					continue
+				}
+				checkServerObj := ChooseCheckServer(*remoteSp, remoteModel.ModelName)
+				status := checkServerObj.CheckServer()
+				if status {
+					serviceStatus = 1
+				}
 			}
 		}
 		tmp.HybridPolicy = dsService.HybridPolicy
