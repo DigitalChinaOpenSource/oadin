@@ -1,5 +1,23 @@
 [
   {
+    "id": "b7b2e6b3-7d91-41e2-ba98-adf5f4449c82",
+    "api_flavor": "ollama",
+    "avatar": "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
+    "class": [
+      "图生文"
+    ],
+    "description": "Qwen 的旗舰视觉语言模型，也是与之前的 Qwen2-VL 相比的重大飞跃。",
+    "flavor": "aliyun",
+    "name": "qwen2.5vl:3b",
+    "ollama_id": "7df6b6e09425",
+    "params_size": 0.6,
+    "service_name": "chat",
+    "service_source": "local",
+    "vision": true,
+    "size": "3.2GB",
+    "context": 125
+  },
+  {
     "id": "b7b2e6b3-7d91-41e2-ba98-adf5f4449c83",
     "api_flavor": "ollama",
     "avatar": "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
