@@ -19,28 +19,36 @@ type QueuedRequest struct {
 	ProviderType string                        // 提供商类型
 	Context      context.Context               // 上下文
 	StartTime    time.Time                     // 开始时间
-	CompleteChan chan struct{}                 // 完成通知通道
+	ReadyChan    chan struct{}                 // 模型准备完成通知通道
+	CompleteChan chan struct{}                 // 任务执行完成通知通道
+	ErrorChan    chan error                    // 错误通知通道
 }
 
 // Queue 模型请求队列
 type Queue struct {
-	queue        chan *QueuedRequest // 请求队列
-	processing   bool                // 是否正在处理请求
-	currentTask  *QueuedRequest      // 当前正在处理的任务
-	mutex        sync.Mutex          // 互斥锁
-	queueSize    int                 // 队列大小
-	queueTimeout time.Duration       // 排队超时时间
-	stopChan     chan struct{}       // 停止信号
-	started      bool                // 是否已启动
+	queue           chan *QueuedRequest // 请求队列
+	processingQueue chan *QueuedRequest // 容量为1，确保串行
+	currentRequest  *QueuedRequest      // 当前正在处理的请求
+	processing      bool                // 是否正在处理请求
+	queueTimeout    time.Duration       // 排队超时时间
+	started         bool                // 是否已启动
+	stopChan        chan struct{}       // 停止信号
+	mutex           sync.Mutex          // 互斥锁
+
+	// 接口依赖，避免循环依赖
+	stateManager ModelStateManager
+	loader       ModelLoader
 }
 
 // NewQueue 创建新的队列
-func NewQueue(queueSize int, queueTimeout time.Duration) *Queue {
+func NewQueue(stateManager ModelStateManager, loader ModelLoader) *Queue {
 	return &Queue{
-		queue:        make(chan *QueuedRequest, queueSize),
-		queueSize:    queueSize,
-		queueTimeout: queueTimeout,
-		stopChan:     make(chan struct{}),
+		queue:           make(chan *QueuedRequest, 100),
+		processingQueue: make(chan *QueuedRequest, 1), // 容量为1，确保串行
+		queueTimeout:    30 * time.Second,
+		stopChan:        make(chan struct{}),
+		stateManager:    stateManager,
+		loader:          loader,
 	}
 }
 
@@ -58,7 +66,6 @@ func (q *Queue) Start() {
 	go q.processLoop()
 
 	logger.LogicLogger.Info("[Queue] Started",
-		"queue_size", q.queueSize,
 		"queue_timeout", q.queueTimeout)
 }
 
@@ -107,36 +114,33 @@ func (q *Queue) CompleteRequest(taskID uint64) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
-	logger.LogicLogger.Debug("[Queue] Completing request", "task_id", taskID)
-
-	// 检查当前处理的任务是否匹配
-	if q.currentTask != nil && q.currentTask.TaskID == taskID {
-		logger.LogicLogger.Debug("[Queue] Request completed",
+	if q.currentRequest != nil && q.currentRequest.TaskID == taskID {
+		logger.LogicLogger.Debug("[Queue] Completing request",
 			"task_id", taskID,
-			"model", q.currentTask.ModelName,
-			"processing_time", time.Since(q.currentTask.StartTime))
+			"model", q.currentRequest.ModelName,
+			"total_time", time.Since(q.currentRequest.StartTime))
 
-		// 安全地关闭channel（检查是否已经关闭）
-		select {
-		case <-q.currentTask.CompleteChan:
-			// Channel已经关闭，不需要再关闭
-			logger.LogicLogger.Debug("[Queue] CompleteChan already closed", "task_id", taskID)
-		default:
-			// Channel还没关闭，安全关闭它
-			close(q.currentTask.CompleteChan)
+		// 关闭CompleteChan，通知队列任务真正完成
+		close(q.currentRequest.CompleteChan)
+		logger.LogicLogger.Debug("[Queue] CompleteChan closed, task execution completed", "task_id", taskID)
+
+		// 标记模型为空闲（如果没有其他请求在等待）
+		if len(q.processingQueue) == 0 {
+			currentModel := q.stateManager.GetCurrentModel()
+			if currentModel != "" {
+				err := q.stateManager.MarkModelIdle(currentModel)
+				if err != nil {
+					logger.LogicLogger.Warn("[Queue] Failed to mark model idle",
+						"model", currentModel, "error", err)
+				}
+			}
 		}
 
-		q.currentTask = nil
 		q.processing = false
-	} else {
-		logger.LogicLogger.Warn("[Queue] TaskID mismatch in CompleteRequest",
-			"expected", func() uint64 {
-				if q.currentTask != nil {
-					return q.currentTask.TaskID
-				}
-				return 0
-			}(),
-			"actual", taskID)
+		q.currentRequest = nil
+
+		logger.LogicLogger.Debug("[Queue] Request completed and queue ready for next",
+			"task_id", taskID)
 	}
 }
 
@@ -147,7 +151,33 @@ func (q *Queue) processLoop() {
 	for {
 		select {
 		case request := <-q.queue:
-			q.processRequest(request)
+			// 将请求加入串行处理队列（容量为1，天然串行）
+			logger.LogicLogger.Debug("[Queue] Request received, attempting to process",
+				"task_id", request.TaskID, "model", request.ModelName)
+
+			select {
+			case q.processingQueue <- request:
+				logger.LogicLogger.Debug("[Queue] Request moved to processing queue",
+					"task_id", request.TaskID, "model", request.ModelName)
+			case <-q.stopChan:
+				logger.LogicLogger.Debug("[Queue] Process loop stopped while queuing request")
+				return
+			}
+
+		case request := <-q.processingQueue:
+			// 串行处理请求
+			q.processRequestSerial(request)
+
+			// 等待任务真正完成后再处理下一个请求
+			select {
+			case <-request.CompleteChan:
+				logger.LogicLogger.Debug("[Queue] Task execution completed, ready for next request",
+					"task_id", request.TaskID)
+			case <-q.stopChan:
+				logger.LogicLogger.Debug("[Queue] Process loop stopped while waiting for task completion")
+				return
+			}
+
 		case <-q.stopChan:
 			logger.LogicLogger.Debug("[Queue] Process loop stopped")
 			return
@@ -155,41 +185,73 @@ func (q *Queue) processLoop() {
 	}
 }
 
-// processRequest 处理单个请求
-func (q *Queue) processRequest(request *QueuedRequest) {
+// processRequestSerial 串行处理单个请求
+func (q *Queue) processRequestSerial(request *QueuedRequest) {
 	q.mutex.Lock()
 	q.processing = true
-	q.currentTask = request
+	q.currentRequest = request
 	q.mutex.Unlock()
 
-	logger.LogicLogger.Info("[Queue] Processing request",
+	logger.LogicLogger.Debug("[Queue] Processing model request",
 		"task_id", request.TaskID,
 		"model", request.ModelName,
 		"queue_wait_time", time.Since(request.StartTime))
 
-	// 等待请求完成通知
-	select {
-	case <-request.CompleteChan:
-		logger.LogicLogger.Debug("[Queue] Request processing completed",
-			"task_id", request.TaskID,
-			"model", request.ModelName)
-	case <-request.Context.Done():
-		logger.LogicLogger.Warn("[Queue] Request context cancelled",
-			"task_id", request.TaskID,
-			"model", request.ModelName,
-			"error", request.Context.Err())
+	// 检查是否需要切换模型
+	currentModel := q.stateManager.GetCurrentModel()
+	if currentModel != request.ModelName {
+		logger.LogicLogger.Info("[Queue] Model switch required",
+			"from", currentModel, "to", request.ModelName,
+			"task_id", request.TaskID)
 
-		// 清理当前任务状态
-		q.mutex.Lock()
-		q.currentTask = nil
-		q.processing = false
-		q.mutex.Unlock()
-	case <-q.stopChan:
-		logger.LogicLogger.Warn("[Queue] Queue stopped while processing request",
-			"task_id", request.TaskID,
-			"model", request.ModelName)
-		return
+		logger.LogicLogger.Debug("[Queue] Calling SwitchModel",
+			"model", request.ModelName, "task_id", request.TaskID)
+
+		err := q.loader.SwitchModel(request.ModelName, request.Provider)
+		if err != nil {
+			logger.LogicLogger.Error("[Queue] SwitchModel failed",
+				"model", request.ModelName, "error", err, "task_id", request.TaskID)
+
+			// 清理状态
+			q.mutex.Lock()
+			q.processing = false
+			q.currentRequest = nil
+			q.mutex.Unlock()
+
+			// 发送错误到ErrorChan，然后关闭ReadyChan
+			select {
+			case request.ErrorChan <- err:
+				logger.LogicLogger.Debug("[Queue] Error sent to ErrorChan", "task_id", request.TaskID)
+			default:
+				logger.LogicLogger.Warn("[Queue] Failed to send error to ErrorChan", "task_id", request.TaskID)
+			}
+			close(request.ReadyChan)
+			logger.LogicLogger.Debug("[Queue] ReadyChan closed due to error", "task_id", request.TaskID)
+			return
+		}
+
+		logger.LogicLogger.Info("[Queue] Model switch completed successfully",
+			"from", currentModel, "to", request.ModelName, "task_id", request.TaskID)
+	} else {
+		logger.LogicLogger.Debug("[Queue] No model switch needed, model already loaded",
+			"model", request.ModelName, "task_id", request.TaskID)
 	}
+
+	// 标记模型使用中
+	err := q.stateManager.MarkModelInUse(request.ModelName)
+	if err != nil {
+		logger.LogicLogger.Warn("[Queue] Failed to mark model in use",
+			"model", request.ModelName, "error", err, "task_id", request.TaskID)
+	}
+
+	logger.LogicLogger.Info("[Queue] Model request ready for processing",
+		"task_id", request.TaskID,
+		"model", request.ModelName,
+		"provider", request.ProviderName)
+
+	// 通知调度器模型已准备完成，可以开始执行任务
+	close(request.ReadyChan)
+	logger.LogicLogger.Debug("[Queue] ReadyChan closed, model ready for task execution", "task_id", request.TaskID)
 }
 
 // GetStats 获取队列统计信息
@@ -198,18 +260,18 @@ func (q *Queue) GetStats() map[string]interface{} {
 	defer q.mutex.Unlock()
 
 	stats := map[string]interface{}{
-		"queue_size":    q.queueSize,
-		"queue_length":  len(q.queue),
-		"queue_timeout": q.queueTimeout.String(),
-		"processing":    q.processing,
-		"started":       q.started,
+		"queue_length":      len(q.queue),
+		"processing_length": len(q.processingQueue),
+		"queue_timeout":     q.queueTimeout.String(),
+		"processing":        q.processing,
+		"started":           q.started,
 	}
 
-	if q.currentTask != nil {
-		stats["current_task"] = map[string]interface{}{
-			"task_id":    q.currentTask.TaskID,
-			"model_name": q.currentTask.ModelName,
-			"start_time": q.currentTask.StartTime,
+	if q.currentRequest != nil {
+		stats["current_request"] = map[string]interface{}{
+			"task_id":    q.currentRequest.TaskID,
+			"model_name": q.currentRequest.ModelName,
+			"start_time": q.currentRequest.StartTime,
 		}
 	}
 
@@ -221,6 +283,27 @@ func (q *Queue) IsProcessing() bool {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 	return q.processing
+}
+
+// HasPendingRequests 检查是否有待处理的请求
+func (q *Queue) HasPendingRequests() bool {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	return len(q.processingQueue) > 0
+}
+
+// HasActiveRequests 检查是否有活跃的请求
+func (q *Queue) HasActiveRequests() bool {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	return q.processing || len(q.processingQueue) > 0
+}
+
+// GetCurrentRequest 获取当前处理的请求
+func (q *Queue) GetCurrentRequest() *QueuedRequest {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	return q.currentRequest
 }
 
 // GetQueueLength 获取当前队列长度

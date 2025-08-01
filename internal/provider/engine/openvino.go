@@ -544,7 +544,7 @@ func (o *OpenvinoProvider) GetConfig() *types.EngineRecommendConfig {
 	}
 
 	return &types.EngineRecommendConfig{
-		Host:           OpenvinoHTTPHost,
+		Host:           OpenvinoGRPCHost,
 		Origin:         "127.0.0.1",
 		Scheme:         types.ProtocolHTTP,
 		RecommendModel: OpenvinoDefaultModel,
@@ -996,7 +996,6 @@ func (o *OpenvinoProvider) checkModelMetadata(modelName string) (err error) {
 		}
 	}()
 
-	// grpcClient := client.NewGRPCClient("10.3.74.59:9000")
 	grpcClient, err := client.NewGRPCClient(o.EngineConfig.Host)
 	if err != nil {
 		slog.Error("Failed to create GRPC client: %v", err)
@@ -1006,6 +1005,7 @@ func (o *OpenvinoProvider) checkModelMetadata(modelName string) (err error) {
 
 	_, err = grpcClient.ModelMetadata(modelName, "")
 	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] ModelMetadata failed with error: %v", err)
 		return err
 	}
 
@@ -1058,13 +1058,38 @@ func (o *OpenvinoProvider) LoadModel(ctx context.Context, req *types.LoadRequest
 	}
 
 	// Check whether the model has been successfully loaded from the OVMS loading.
+	// 添加超时机制，避免无限等待
+	timeout := 5 * time.Minute
+	startTime := time.Now()
+
 	for {
+		// 检查超时
+		if time.Since(startTime) > timeout {
+			logger.EngineLogger.Error("[OpenVINO] Timeout waiting for model to load: " + req.Model)
+			return fmt.Errorf("timeout waiting for model %s to load after %v", req.Model, timeout)
+		}
+
+		// 检查上下文取消
+		select {
+		case <-ctx.Done():
+			logger.EngineLogger.Warn("[OpenVINO] Context cancelled while waiting for model to load: " + req.Model)
+			return ctx.Err()
+		default:
+		}
+
 		if err := o.checkModelMetadata(req.Model); err == nil {
 			logger.EngineLogger.Debug("[OpenVINO] Model " + req.Model + " has been loaded from OVMS")
 			break
 		}
-		time.Sleep(1 * time.Second)
+
 		logger.EngineLogger.Debug("[OpenVINO] Waiting for model to be loaded from OVMS: " + req.Model)
+
+		// 使用可中断的睡眠
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(1 * time.Second):
+		}
 	}
 
 	logger.EngineLogger.Debug("[OpenVINO] Model loaded: " + req.Model)
@@ -1092,13 +1117,38 @@ func (o *OpenvinoProvider) UnloadModel(ctx context.Context, req *types.UnloadMod
 				}
 
 				// Check whether the model has been successfully unloaded from the OVMS loading.
+				// 添加超时机制，避免无限等待
+				timeout := 2 * time.Minute
+				startTime := time.Now()
+
 				for {
+					// 检查超时
+					if time.Since(startTime) > timeout {
+						logger.EngineLogger.Error("[OpenVINO] Timeout waiting for model to unload: " + reqModel)
+						return fmt.Errorf("timeout waiting for model %s to unload after %v", reqModel, timeout)
+					}
+
+					// 检查上下文取消
+					select {
+					case <-ctx.Done():
+						logger.EngineLogger.Warn("[OpenVINO] Context cancelled while waiting for model to unload: " + reqModel)
+						return ctx.Err()
+					default:
+					}
+
 					if err := o.checkModelMetadata(reqModel); err != nil {
 						logger.EngineLogger.Debug("[OpenVINO] Model " + reqModel + " has been unloaded from OVMS")
 						break
 					}
-					time.Sleep(1 * time.Second)
+
 					logger.EngineLogger.Debug("[OpenVINO] Waiting for model to be unloaded from OVMS: " + reqModel)
+
+					// 使用可中断的睡眠
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case <-time.After(1 * time.Second):
+					}
 				}
 
 				logger.EngineLogger.Debug("[OpenVINO] Model unloaded: " + reqModel)

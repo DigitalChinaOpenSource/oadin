@@ -212,9 +212,23 @@ func TestManager_EnqueueLocalModelRequest(t *testing.T) {
 	ctx := context.Background()
 
 	// 测试入队请求
-	err := manager.EnqueueLocalModelRequest(ctx, "test-model", mockProvider, "test-provider", "test-type", 1)
+	readyChan, errorChan, err := manager.EnqueueLocalModelRequest(ctx, "test-model", mockProvider, "test-provider", "test-type", 1)
 	if err != nil {
 		t.Fatalf("Failed to enqueue request: %v", err)
+	}
+
+	// 等待模型准备完成
+	select {
+	case <-readyChan:
+		// 检查是否有错误
+		select {
+		case queueErr := <-errorChan:
+			t.Fatalf("Queue processing failed: %v", queueErr)
+		default:
+			// 模型准备完成，无错误
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatalf("Timeout waiting for model preparation")
 	}
 
 	// 等待处理

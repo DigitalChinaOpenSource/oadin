@@ -121,16 +121,20 @@ func NewServiceContext(task *ServiceTask) *ServiceContext {
 func (st *ServiceTask) Run() error {
 	logger.LogicLogger.Debug("[Service] ServiceTask start run......")
 
-	// 模型状态跟踪：标记模型为使用中
+	// 获取模型名称用于后续清理
 	var modelName string
 	if st.Target != nil && st.Target.Model != "" && st.Target.Location == types.ServiceSourceLocal {
 		modelName = st.Target.Model
-		mmm := manager.GetModelManager()
-		if err := mmm.MarkModelInUse(modelName); err != nil {
-			logger.LogicLogger.Warn("[Service] Failed to mark model as in use",
-				"model", modelName, "error", err)
-		} else {
-			logger.LogicLogger.Debug("[Service] Model marked as in use", "model", modelName)
+		// 注意：对于需要排队的请求，模型已经在队列处理中被标记为使用中
+		// 对于不需要排队的请求，仍需要在这里标记
+		if !manager.NeedsQueuing(st.Target.Location, st.Request.Service) {
+			mmm := manager.GetModelManager()
+			if err := mmm.MarkModelInUse(modelName); err != nil {
+				logger.LogicLogger.Warn("[Service] Failed to mark model as in use",
+					"model", modelName, "error", err)
+			} else {
+				logger.LogicLogger.Debug("[Service] Model marked as in use", "model", modelName)
+			}
 		}
 	}
 

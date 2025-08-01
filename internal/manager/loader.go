@@ -115,16 +115,17 @@ func (ms *ModelState) IsIdle(idleTimeout time.Duration) bool {
 
 // Loader 模型加载管理器
 type Loader struct {
+	stateManager ModelStateManager      // 使用接口而非具体类型
 	models       map[string]*ModelState // 模型状态映射 key: modelName
-	currentModel string                 // 当前加载的非embed模型
 	mutex        sync.RWMutex           // 读写锁
 	loadCond     *sync.Cond             // 用于等待模型加载完成的条件变量
 }
 
 // NewLoader 创建新的加载器
-func NewLoader() *Loader {
+func NewLoader(stateManager ModelStateManager) *Loader {
 	l := &Loader{
-		models: make(map[string]*ModelState),
+		stateManager: stateManager,
+		models:       make(map[string]*ModelState),
 	}
 	l.loadCond = sync.NewCond(&l.mutex)
 	return l
@@ -228,8 +229,8 @@ func (l *Loader) unloadModel(modelState *ModelState) error {
 	delete(l.models, modelState.ModelName)
 
 	// 如果这是当前模型，清空当前模型
-	if l.currentModel == modelState.ModelName {
-		l.currentModel = ""
+	if l.stateManager.GetCurrentModel() == modelState.ModelName {
+		l.stateManager.SetCurrentModel("")
 	}
 	l.mutex.Unlock()
 
@@ -283,39 +284,102 @@ func (l *Loader) waitForModelUnloaded(ctx context.Context, modelName string) err
 	}
 }
 
-// SwitchModel 切换模型（卸载当前模型并加载新模型）
-func (l *Loader) SwitchModel(ctx context.Context, currentModel, newModel string, providerInstance provider.ModelServiceProvider, providerName, providerType string) error {
+// SwitchModel 切换模型
+func (l *Loader) SwitchModel(newModel string, provider provider.ModelServiceProvider) error {
+	currentModel := l.stateManager.GetCurrentModel()
+
+	logger.LogicLogger.Info("[Loader] Starting model switch operation",
+		"from", currentModel, "to", newModel)
+
 	// 如果是同一个模型，直接返回
 	if currentModel == newModel {
-		return l.EnsureModelLoaded(ctx, newModel, providerInstance, providerName, providerType)
+		logger.LogicLogger.Debug("[Loader] Model already loaded, no switch needed",
+			"model", newModel)
+		return nil
 	}
 
-	// 卸载当前模型（如果存在且已加载）
+	// 步骤1：卸载当前模型（如果存在）
 	if currentModel != "" {
-		l.mutex.RLock()
-		currentState, exists := l.models[currentModel]
-		l.mutex.RUnlock()
+		logger.LogicLogger.Info("[Loader] Step 1: Unloading current model",
+			"model", currentModel)
 
-		if exists && (currentState.GetStatus() == ModelStatusIdle || currentState.GetStatus() == ModelStatusInUse) {
-			logger.LogicLogger.Info("[Loader] Switching from model",
-				"from", currentModel, "to", newModel)
-
-			if err := l.ForceUnloadModel(currentModel); err != nil {
-				logger.LogicLogger.Error("[Loader] Failed to unload current model during switch",
-					"model", currentModel, "error", err)
-				// 继续加载新模型，不因卸载失败而中断
-			}
+		if err := l.UnloadModel(currentModel, provider); err != nil {
+			logger.LogicLogger.Error("[Loader] Failed to unload current model",
+				"model", currentModel, "error", err)
+			// 卸载失败，但继续尝试加载新模型
+			// 这可能导致资源冲突，但至少尝试恢复
+		} else {
+			logger.LogicLogger.Info("[Loader] Current model unloaded successfully",
+				"model", currentModel)
 		}
+
+		// 确保当前模型状态已清空
+		l.stateManager.SetCurrentModel("")
+		logger.LogicLogger.Debug("[Loader] Current model state cleared")
 	}
 
-	// 加载新模型
-	err := l.EnsureModelLoaded(ctx, newModel, providerInstance, providerName, providerType)
-	if err == nil {
-		l.mutex.Lock()
-		l.currentModel = newModel
-		l.mutex.Unlock()
+	// 步骤2：加载新模型
+	logger.LogicLogger.Info("[Loader] Step 2: Loading new model",
+		"model", newModel)
+
+	if err := l.LoadModel(newModel, provider); err != nil {
+		logger.LogicLogger.Error("[Loader] Failed to load new model",
+			"model", newModel, "error", err)
+		return fmt.Errorf("failed to load model %s: %w", newModel, err)
 	}
-	return err
+
+	// 步骤3：更新当前模型状态
+	l.stateManager.SetCurrentModel(newModel)
+	logger.LogicLogger.Info("[Loader] Model switch completed successfully",
+		"from", currentModel, "to", newModel)
+
+	return nil
+}
+
+// LoadModel 加载模型
+func (l *Loader) LoadModel(modelName string, provider provider.ModelServiceProvider) error {
+	ctx := context.Background()
+
+	logger.LogicLogger.Debug("[Loader] LoadModel called",
+		"model", modelName)
+
+	// 获取provider信息
+	providerName := "unknown"
+	providerType := "unknown"
+
+	// 尝试从provider获取名称和类型信息
+	if provider != nil {
+		// 这里可以根据实际的provider接口获取信息
+		// 暂时使用默认值
+	}
+
+	err := l.EnsureModelLoaded(ctx, modelName, provider, providerName, providerType)
+	if err != nil {
+		logger.LogicLogger.Error("[Loader] LoadModel failed",
+			"model", modelName, "error", err)
+		return err
+	}
+
+	logger.LogicLogger.Info("[Loader] LoadModel completed successfully",
+		"model", modelName)
+	return nil
+}
+
+// UnloadModel 卸载模型
+func (l *Loader) UnloadModel(modelName string, provider provider.ModelServiceProvider) error {
+	logger.LogicLogger.Debug("[Loader] UnloadModel called",
+		"model", modelName)
+
+	err := l.ForceUnloadModel(modelName)
+	if err != nil {
+		logger.LogicLogger.Error("[Loader] UnloadModel failed",
+			"model", modelName, "error", err)
+		return err
+	}
+
+	logger.LogicLogger.Info("[Loader] UnloadModel completed successfully",
+		"model", modelName)
+	return nil
 }
 
 // MarkModelInUse 标记模型为使用中
@@ -375,13 +439,22 @@ func (l *Loader) GetAllModelStates() map[string]*ModelState {
 
 // ForceUnloadModel 强制卸载指定模型
 func (l *Loader) ForceUnloadModel(modelName string) error {
+	logger.LogicLogger.Debug("[Loader] ForceUnloadModel called",
+		"model", modelName)
+
 	l.mutex.RLock()
 	modelState, exists := l.models[modelName]
 	l.mutex.RUnlock()
 
 	if !exists {
-		return fmt.Errorf("model %s not found", modelName)
+		logger.LogicLogger.Debug("[Loader] Model not found in loader, assuming already unloaded",
+			"model", modelName)
+		// 模型不存在，可能已经被卸载了，这不是错误
+		return nil
 	}
+
+	logger.LogicLogger.Info("[Loader] Force unloading model",
+		"model", modelName, "current_status", modelState.GetStatus())
 
 	// 强制设置引用计数为0
 	modelState.mutex.Lock()
@@ -389,18 +462,27 @@ func (l *Loader) ForceUnloadModel(modelName string) error {
 	modelState.Status = ModelStatusIdle
 	modelState.mutex.Unlock()
 
-	return l.unloadModel(modelState)
+	err := l.unloadModel(modelState)
+	if err != nil {
+		logger.LogicLogger.Error("[Loader] ForceUnloadModel failed",
+			"model", modelName, "error", err)
+		return err
+	}
+
+	logger.LogicLogger.Info("[Loader] ForceUnloadModel completed successfully",
+		"model", modelName)
+	return nil
 }
 
 // GetCurrentModel 获取当前加载的模型
 func (l *Loader) GetCurrentModel() string {
-	l.mutex.RLock()
-	defer l.mutex.RUnlock()
-	return l.currentModel
+	return l.stateManager.GetCurrentModel()
 }
 
-// InitializeRunningModels 初始化时获取已运行的模型
+// InitializeRunningModels 初始化时获取已运行的模型并清理它们
 func (l *Loader) InitializeRunningModels() {
+	logger.LogicLogger.Info("[Loader] Starting initialization - checking for running models to cleanup")
+
 	// 支持GetRunningModels方法的provider列表
 	supportedProviders := []string{
 		types.FlavorOllama,
@@ -413,15 +495,14 @@ func (l *Loader) InitializeRunningModels() {
 			continue
 		}
 
-		l.initializeProviderModels(flavor, providerInstance)
+		l.cleanupProviderModels(flavor, providerInstance)
 	}
 
-	logger.LogicLogger.Info("[Loader] Initialization complete",
-		"discovered_models", len(l.models))
+	logger.LogicLogger.Info("[Loader] Initialization complete - all running models cleaned up")
 }
 
-// initializeProviderModels 初始化指定provider的运行模型
-func (l *Loader) initializeProviderModels(flavor string, providerInstance provider.ModelServiceProvider) {
+// cleanupProviderModels 清理指定provider的运行模型
+func (l *Loader) cleanupProviderModels(flavor string, providerInstance provider.ModelServiceProvider) {
 	// 检查provider是否支持GetRunningModels方法
 	runningModelsProvider, ok := providerInstance.(interface {
 		GetRunningModels(context.Context) (*types.ListResponse, error)
@@ -441,35 +522,48 @@ func (l *Loader) initializeProviderModels(flavor string, providerInstance provid
 	}
 
 	if listResp == nil || listResp.Models == nil {
-		logger.LogicLogger.Debug("[Loader] No running models found",
+		logger.LogicLogger.Debug("[Loader] No running models found to cleanup",
 			"provider", flavor)
 		return
 	}
 
-	l.mutex.Lock()
-	defer l.mutex.Unlock()
+	logger.LogicLogger.Info("[Loader] Found running models to cleanup",
+		"provider", flavor, "count", len(listResp.Models))
 
-	// 为每个运行中的模型创建状态
+	// 异步清理每个运行中的模型
 	for _, model := range listResp.Models {
 		if model.Name == "" {
 			continue
 		}
 
-		modelState := &ModelState{
-			ModelName:    model.Name,
-			ProviderName: flavor,
-			ProviderType: flavor,
-			Status:       ModelStatusIdle, // 假设初始状态为空闲
-			LastUsedTime: time.Now(),
-			LoadedTime:   time.Now(),
-			RefCount:     0,
-			Provider:     providerInstance,
-		}
-
-		l.models[model.Name] = modelState
-		logger.LogicLogger.Info("[Loader] Discovered running model",
+		logger.LogicLogger.Info("[Loader] Scheduling cleanup for running model",
 			"model", model.Name, "provider", flavor)
+
+		// 异步卸载模型
+		go l.asyncUnloadModel(model.Name, providerInstance, flavor)
 	}
+}
+
+// asyncUnloadModel 异步卸载模型
+func (l *Loader) asyncUnloadModel(modelName string, providerInstance provider.ModelServiceProvider, flavor string) {
+	logger.LogicLogger.Info("[Loader] Starting async unload for model",
+		"model", modelName, "provider", flavor)
+
+	// 创建卸载请求
+	unloadReq := &types.UnloadModelRequest{
+		Models: []string{modelName},
+	}
+
+	ctx := context.Background()
+	err := providerInstance.UnloadModel(ctx, unloadReq)
+	if err != nil {
+		logger.LogicLogger.Error("[Loader] Failed to unload running model during cleanup",
+			"model", modelName, "provider", flavor, "error", err)
+		return
+	}
+
+	logger.LogicLogger.Info("[Loader] Successfully unloaded running model during cleanup",
+		"model", modelName, "provider", flavor)
 }
 
 // GetStats 获取加载器统计信息
@@ -479,7 +573,7 @@ func (l *Loader) GetStats() map[string]interface{} {
 
 	stats := map[string]interface{}{
 		"total_models":  len(l.models),
-		"current_model": l.currentModel,
+		"current_model": l.stateManager.GetCurrentModel(),
 	}
 
 	statusCount := make(map[string]int)

@@ -26,12 +26,15 @@ func NeedsQueuing(location, serviceType string) bool {
 	return isLocalNonEmbedService(location, serviceType)
 }
 
-// Manager 模型管理器
+// Manager 模型管理器，实现 ModelStateManager 接口
 type Manager struct {
 	queue   *Queue   // 请求队列
 	loader  *Loader  // 模型加载器
 	cleaner *Cleaner // 自动清理器
-	mutex   sync.RWMutex
+
+	currentModel string          // 当前加载的模型
+	modelStates  map[string]bool // 模型状态：true=使用中，false=空闲
+	mutex        sync.RWMutex    // 保护状态
 }
 
 var (
@@ -42,48 +45,69 @@ var (
 // GetModelManager 获取全局模型管理器实例
 func GetModelManager() *Manager {
 	once.Do(func() {
-		// 从配置中获取参数，如果配置未初始化则使用默认值
-		queueSize := 10
-		queueTimeout := 30 * time.Second
-		idleTimeout := 10 * time.Minute
-		cleanupInterval := 1 * time.Minute
-
-		// 尝试从全局配置获取参数
-		if config.GlobalOADINEnvironment != nil {
-			if config.GlobalOADINEnvironment.LocalModelQueueSize > 0 {
-				queueSize = config.GlobalOADINEnvironment.LocalModelQueueSize
-			}
-			if config.GlobalOADINEnvironment.LocalModelQueueTimeout > 0 {
-				queueTimeout = config.GlobalOADINEnvironment.LocalModelQueueTimeout
-			}
-			if config.GlobalOADINEnvironment.ModelIdleTimeout > 0 {
-				idleTimeout = config.GlobalOADINEnvironment.ModelIdleTimeout
-			}
-			if config.GlobalOADINEnvironment.ModelCleanupInterval > 0 {
-				cleanupInterval = config.GlobalOADINEnvironment.ModelCleanupInterval
-			}
-		}
-
-		// 创建组件
-		queue := NewQueue(queueSize, queueTimeout)
-		loader := NewLoader()
-		cleaner := NewCleaner(loader, idleTimeout)
-
-		instance = &Manager{
-			queue:   queue,
-			loader:  loader,
-			cleaner: cleaner,
-		}
-
-		logger.LogicLogger.Info("[Manager] Initialized with config",
-			"queue_size", queueSize,
-			"queue_timeout", queueTimeout,
-			"idle_timeout", idleTimeout,
-			"cleanup_interval", cleanupInterval)
-
-		// 简化初始化：不再自动发现运行中的模型
+		instance = NewManager()
 	})
 	return instance
+}
+
+// NewManager 创建新的模型管理器
+func NewManager() *Manager {
+	manager := &Manager{
+		modelStates: make(map[string]bool),
+	}
+
+	// 先创建loader
+	manager.loader = NewLoader(manager)
+
+	// 创建queue时注入接口依赖
+	manager.queue = NewQueue(manager, manager.loader)
+
+	// 创建cleaner时注入接口依赖
+	manager.cleaner = NewCleaner(manager, manager.queue)
+
+	return manager
+}
+
+// GetCurrentModel 获取当前加载的模型
+func (m *Manager) GetCurrentModel() string {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+	return m.currentModel
+}
+
+// SetCurrentModel 设置当前模型
+func (m *Manager) SetCurrentModel(modelName string) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	m.currentModel = modelName
+}
+
+// MarkModelInUse 标记模型为使用中
+func (m *Manager) MarkModelInUse(modelName string) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.modelStates == nil {
+		m.modelStates = make(map[string]bool)
+	}
+
+	m.modelStates[modelName] = true
+	logger.LogicLogger.Debug("[Manager] Model marked as in use", "model", modelName)
+	return nil
+}
+
+// MarkModelIdle 标记模型为空闲
+func (m *Manager) MarkModelIdle(modelName string) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.modelStates == nil {
+		m.modelStates = make(map[string]bool)
+	}
+
+	m.modelStates[modelName] = false
+	logger.LogicLogger.Debug("[Manager] Model marked as idle", "model", modelName)
+	return nil
 }
 
 // GetModelMemoryManager 获取全局模型管理器实例（保持向后兼容）
@@ -104,6 +128,10 @@ func (m *Manager) Start(cleanupInterval time.Duration) {
 			cleanupInterval = 1 * time.Minute // 默认1分钟
 		}
 	}
+
+	// 初始化时清理已运行的模型（异步执行，不阻塞启动）
+	logger.LogicLogger.Info("[Manager] Starting cleanup of running models from providers...")
+	go m.loader.InitializeRunningModels()
 
 	// 启动队列
 	m.queue.Start()
@@ -134,16 +162,6 @@ func (m *Manager) SetIdleTimeout(timeout time.Duration) {
 	m.cleaner.SetIdleTimeout(timeout)
 }
 
-// MarkModelInUse 标记模型为使用中
-func (m *Manager) MarkModelInUse(modelName string) error {
-	return m.loader.MarkModelInUse(modelName)
-}
-
-// MarkModelIdle 标记模型为空闲
-func (m *Manager) MarkModelIdle(modelName string) error {
-	return m.loader.MarkModelIdle(modelName)
-}
-
 // GetModelState 获取模型状态信息
 func (m *Manager) GetModelState(modelName string) (*ModelState, bool) {
 	return m.loader.GetModelState(modelName)
@@ -159,8 +177,8 @@ func (m *Manager) ForceUnloadModel(modelName string) error {
 	return m.loader.ForceUnloadModel(modelName)
 }
 
-// EnqueueLocalModelRequest 将本地模型请求加入队列
-func (m *Manager) EnqueueLocalModelRequest(ctx context.Context, modelName string, providerInstance provider.ModelServiceProvider, providerName, providerType string, taskID uint64) error {
+// EnqueueLocalModelRequest 将本地模型请求加入队列，返回准备完成通道和错误通道
+func (m *Manager) EnqueueLocalModelRequest(ctx context.Context, modelName string, providerInstance provider.ModelServiceProvider, providerName, providerType string, taskID uint64) (chan struct{}, chan error, error) {
 	// 创建排队请求
 	request := &QueuedRequest{
 		TaskID:       taskID,
@@ -170,38 +188,21 @@ func (m *Manager) EnqueueLocalModelRequest(ctx context.Context, modelName string
 		ProviderType: providerType,
 		Context:      ctx,
 		StartTime:    time.Now(),
+		ReadyChan:    make(chan struct{}),
 		CompleteChan: make(chan struct{}),
+		ErrorChan:    make(chan error, 1),
 	}
 
 	// 加入队列（非阻塞）
 	if err := m.queue.EnqueueRequest(request); err != nil {
-		return err
+		return nil, nil, err
 	}
-
-	// 在后台处理模型切换
-	go m.processModelRequest(request)
 
 	logger.LogicLogger.Debug("[Manager] Local model request enqueued",
 		"task_id", taskID,
 		"model", modelName)
 
-	return nil
-}
-
-// processModelRequest 处理模型请求（后台执行）
-func (m *Manager) processModelRequest(request *QueuedRequest) {
-	logger.LogicLogger.Debug("[Manager] Processing model request",
-		"task_id", request.TaskID,
-		"model", request.ModelName)
-
-	// 简化处理：只记录请求信息，实际的模型加载由原有流程处理
-	logger.LogicLogger.Info("[Manager] Model request queued and ready for processing",
-		"task_id", request.TaskID,
-		"model", request.ModelName,
-		"provider", request.ProviderName)
-
-	// 通知处理完成
-	close(request.CompleteChan)
+	return request.ReadyChan, request.ErrorChan, nil
 }
 
 // CompleteLocalModelRequest 完成本地模型请求处理
