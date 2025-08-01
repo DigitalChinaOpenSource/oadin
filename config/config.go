@@ -28,14 +28,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MatusOllah/slogcolor"
-	"github.com/fatih/color"
-	"github.com/spf13/pflag"
 	"oadin/internal/client"
 	"oadin/internal/constants"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/version"
+
+	"github.com/MatusOllah/slogcolor"
+	"github.com/fatih/color"
+	"github.com/spf13/pflag"
 )
 
 const (
@@ -45,7 +46,7 @@ const (
 	LogLevelError = "error"
 
 	// Default configurations
-	DefaultLogLevel = "ERROR"
+	DefaultLogLevel = "debug"
 	DefaultVerbose  = "info"
 	DefaultRootDir  = "./"
 

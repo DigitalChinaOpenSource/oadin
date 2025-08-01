@@ -198,6 +198,10 @@ func AsyncDownloadModelFile(ctx context.Context, a AsyncDownloadModelFileData, e
 	defer close(a.ErrCh)
 
 	for _, fileData := range a.ModelFiles {
+		if downloadSingleFileCheck(ctx, a, fileData) {
+			logger.EngineLogger.Debug("[OpenVINO] Downloaded skip file: " + fileData.Name)
+			continue // 如果文件已存在且完整，跳过下载
+		}
 		if err := downloadSingleFile(ctx, a, fileData); err != nil {
 			a.ErrCh <- err
 			logger.EngineLogger.Error("[OpenVINO] Failed to download file: " + fileData.Name + " " + err.Error())
@@ -233,12 +237,42 @@ func AsyncDownloadModelFile(ctx context.Context, a AsyncDownloadModelFileData, e
 	}
 }
 
+func downloadSingleFileCheck(ctx context.Context, a AsyncDownloadModelFileData, fileData ModelScopeFile) bool {
+	filePath := filepath.Join(a.LocalModelPath, fileData.Path)
+
+	if strings.Contains(fileData.Path, "/") {
+		return false
+	}
+
+	f, err := os.Open(filePath)
+	defer f.Close()
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] downloadSingleFileCheck OpenFile error: " + err.Error())
+		return false
+	}
+
+	partSize, err := f.Seek(0, io.SeekEnd)
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] downloadSingleFileCheck Seek error: " + err.Error())
+		return false
+	}
+
+	// 如果文件已存在并且大小匹配，进行 hash 校验
+	if partSize >= fileData.Size {
+		if CheckFileDigest(fileData.Digest, filePath) {
+			return true // 跳过下载
+		}
+	}
+	return false
+}
+
 func downloadSingleFile(ctx context.Context, a AsyncDownloadModelFileData, fileData ModelScopeFile) error {
 	filePath := filepath.Join(a.LocalModelPath, fileData.Path)
 
 	// 创建目录（如果需要）
 	if strings.Contains(fileData.Path, "/") {
 		if err := os.MkdirAll(filepath.Dir(filePath), 0o750); err != nil {
+			logger.EngineLogger.Error("[OpenVINO] downloadSingleFile MkdirAll error: " + err.Error())
 			return err
 		}
 	}
@@ -246,6 +280,7 @@ func downloadSingleFile(ctx context.Context, a AsyncDownloadModelFileData, fileD
 	// 打开文件（追加模式）
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] downloadSingleFile OpenFile error: " + err.Error())
 		return err
 	}
 	defer f.Close()
@@ -253,6 +288,7 @@ func downloadSingleFile(ctx context.Context, a AsyncDownloadModelFileData, fileD
 	// 获取当前文件长度（用于断点续传）
 	partSize, err := f.Seek(0, io.SeekEnd)
 	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] downloadSingleFile Seek error: " + err.Error())
 		return err
 	}
 
@@ -319,6 +355,7 @@ func downloadSingleFile(ctx context.Context, a AsyncDownloadModelFileData, fileD
 			}
 			n, err := f.Write(data)
 			if err != nil {
+				logger.EngineLogger.Error("[OpenVINO] downloadSingleFile Write error: " + err.Error())
 				return err
 			}
 			digest.Write(data)
