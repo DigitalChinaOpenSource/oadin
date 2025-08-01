@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
+	"oadin/internal/logger"
 	"time"
 
 	"oadin/config"
@@ -58,14 +58,14 @@ func NewPlayground() Playground {
 		ctx := context.Background()
 		dbPath := config.GlobalOADINEnvironment.Datastore
 		if err := InitPlaygroundVec(ctx, dbPath); err != nil {
-			slog.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
+			logger.LogicLogger.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
 		} else {
 			if vecInitialized && vecDB != nil {
-				slog.Info("VEC初始化成功，已启用向量相似度搜索优化")
+				logger.LogicLogger.Info("VEC初始化成功，已启用向量相似度搜索优化")
 			} else if UseVSSForPlayground() {
-				slog.Info("VEC扩展未找到，将使用标准向量搜索")
+				logger.LogicLogger.Info("VEC扩展未找到，将使用标准向量搜索")
 			} else {
-				slog.Info("VEC功能已通过环境变量禁用，将使用标准向量搜索")
+				logger.LogicLogger.Info("VEC功能已通过环境变量禁用，将使用标准向量搜索")
 			}
 		}
 	}()
@@ -101,7 +101,7 @@ func (p *PlaygroundImpl) GetModelById(ctx context.Context, modelId string) *type
 func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateSessionRequest) (*dto.CreateSessionResponse, error) {
 	supportModel := p.GetModelById(ctx, request.ModelId)
 	if supportModel == nil || supportModel.Id == "" {
-		slog.Error("Model not found", "model_id", request.ModelId)
+		logger.LogicLogger.Error("Model not found", "model_id", request.ModelId)
 		// ModelName用请求中的值
 		if request.ModelName == "" {
 			return nil, fmt.Errorf("模型未找到或未指定，请检查模型ID: %s", request.ModelId)
@@ -124,7 +124,7 @@ func (p *PlaygroundImpl) CreateSession(ctx context.Context, request *dto.CreateS
 
 	err := p.Ds.Add(ctx, session)
 	if err != nil {
-		slog.Error("Failed to create chat session", "error", err)
+		logger.LogicLogger.Error("Failed to create chat session", "error", err)
 		return nil, err
 	}
 	return &dto.CreateSessionResponse{
@@ -152,7 +152,7 @@ func (p *PlaygroundImpl) GetSessions(ctx context.Context) (*dto.GetSessionsRespo
 		},
 	})
 	if err != nil {
-		slog.Error("Failed to list chat sessions", "error", err)
+		logger.LogicLogger.Error("Failed to list chat sessions", "error", err)
 		return nil, err
 	}
 
@@ -185,7 +185,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	session := &entity.ChatSession{ID: request.SessionId}
 	err := p.Ds.Get(ctx, session)
 	if err != nil {
-		slog.Error("Failed to get chat session", "error", err)
+		logger.LogicLogger.Error("Failed to get chat session", "error", err)
 		return nil, err
 	}
 
@@ -195,7 +195,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		SortBy: []datastore.SortOption{{Key: "msg_order", Order: datastore.SortOrderAscending}},
 	})
 	if err != nil {
-		slog.Error("Failed to list chat messages", "error", err)
+		logger.LogicLogger.Error("Failed to list chat messages", "error", err)
 		return nil, err
 	}
 
@@ -209,30 +209,30 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		})
 	}
 
-	// 检查当前会话是否有上传文件，只有有文件时才查找RAG上下文
+	// 检查当前会话是否有上传文件，只有有文件时才查找RAG上下�?
 	fileQuery := &entity.File{SessionID: request.SessionId}
 	files, err := p.Ds.List(ctx, fileQuery, nil)
 	if err != nil {
-		slog.Warn("查找会话文件失败，跳过RAG上下文查找", "error", err, "session_id", session.ID)
+		logger.LogicLogger.Warn("查找会话文件失败，跳过RAG上下文查询", "error", err, "session_id", session.ID)
 	}
 
 	enhancedContent := request.Content
 	if err == nil && len(files) > 0 {
-		slog.Info("开始查找相关RAG上下文", "session_id", session.ID, "question", request.Content)
+		logger.LogicLogger.Info("开始查找相关RAG上下文", "session_id", session.ID, "question", request.Content)
 		relevantContext, err := p.findRelevantContext(ctx, session, request.Content)
 		if err != nil {
-			slog.Warn("查找相关上下文失败", "error", err, "session_id", session.ID)
+			logger.LogicLogger.Warn("查找相关上下文失败", "error", err, "session_id", session.ID)
 		}
 
 		if relevantContext != "" {
 			// 添加RAG上下文到用户消息中
-			slog.Info("找到相关上下文，使用RAG增强对话", "session_id", session.ID, "context_length", len(relevantContext))
-			enhancedContent = fmt.Sprintf("我的问题是: %s\n\n参考以下信息回答我的问题:\n\n%s", request.Content, relevantContext)
+			logger.LogicLogger.Info("找到相关上下文，使用RAG增强对话", "session_id", session.ID, "context_length", len(relevantContext))
+			enhancedContent = fmt.Sprintf("我的问题: %s\n\n参考以下信息回答我的问题:\n\n%s", request.Content, relevantContext)
 		} else {
-			slog.Info("未找到相关上下文，使用通用对话模式", "session_id", session.ID)
+			logger.LogicLogger.Info("未找到相关上下文，使用通用对话模式", "session_id", session.ID)
 		}
 	} else {
-		slog.Info("当前会话无上传文件，跳过RAG上下文查找", "session_id", session.ID)
+		logger.LogicLogger.Info("当前会话无上传文件，跳过RAG上下文查询", "session_id", session.ID)
 	}
 
 	// 添加当前用户消息
@@ -255,11 +255,11 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 	err = p.Ds.Add(ctx, userMsg)
 	if err != nil {
-		slog.Error("Failed to save user message", "error", err)
+		logger.LogicLogger.Error("Failed to save user message", "error", err)
 		return nil, err
 	}
 
-	// 直接调用统一 Engine 层
+	// 直接调用统一 Engine �?
 	chatRequest := &dto.ChatRequest{
 		Model:    session.ModelName,
 		Messages: history,
@@ -284,14 +284,14 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		chatRequest.Tools = tools
 	}
 
-	slog.Info("发送非流式请求到引擎", "model", session.ModelName)
+	logger.LogicLogger.Info("发送非流式请求到引擎", "model", session.ModelName)
 	chatResp, err := model_engine.NewEngineService().Chat(ctx, chatRequest)
 	if err != nil {
-		slog.Error("Failed to call model API", "error", err)
+		logger.LogicLogger.Error("Failed to call model API", "error", err)
 		return nil, err
 	}
 
-	slog.Info("收到非流式响应",
+	logger.LogicLogger.Info("收到非流式响应",
 		"content_length", len(chatResp.Content),
 		"model", chatResp.Model,
 		"is_complete", chatResp.IsComplete,
@@ -302,12 +302,12 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 
 	// 如果没有内容但有工具调用，构建提示信息
 	if response == "" && len(chatResp.ToolCalls) > 0 {
-		slog.Info("模型未生成内容，但有工具调用，构建提示信息", "tool_calls_count", len(chatResp.ToolCalls), chatResp.ToolCalls)
+		logger.LogicLogger.Info("模型未生成内容，但有工具调用，构建提示信息", "tool_calls_count", len(chatResp.ToolCalls), chatResp.ToolCalls)
 		for _, toolCall := range chatResp.ToolCalls {
 			// toolCall.Function.Argument 是map[string]interface{}, 转为json字符串
 			arguments, err := json.Marshal(toolCall.Function.Arguments)
 			if err != nil {
-				slog.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
+				logger.LogicLogger.Error("工具调用参数序列化失败", "error", err, "arguments", toolCall.Function.Arguments)
 			}
 			response += fmt.Sprintf("<tool_use>\n  <name>%s</name>\n  <arguments>%s</arguments>\n</tool_use>\n", toolCall.Function.Name, arguments)
 		}
@@ -326,16 +326,16 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 	}
 	err = p.Ds.Add(ctx, assistantMsg)
 	if err != nil {
-		slog.Error("Failed to save assistant message", "error", err)
+		logger.LogicLogger.Error("Failed to save assistant message", "error", err)
 		return nil, err
 	}
-	// 保存思考内容
+	// 保存思考内�?
 	if chatResp.Thoughts != "" && session.ThinkingEnabled && session.ThinkingActive {
 		thoughtsMsg := &entity.ChatMessage{
 			ID:        uuid.New().String(),
 			SessionID: request.SessionId,
 			Role:      "system",
-			Content:   "思考过程: " + chatResp.Thoughts,
+			Content:   "思考过�? " + chatResp.Thoughts,
 			Order:     len(messages) + 2,
 			CreatedAt: time.Now(),
 			ModelID:   session.ModelID,
@@ -343,18 +343,18 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 		}
 		err = p.Ds.Add(ctx, thoughtsMsg)
 		if err != nil {
-			slog.Error("Failed to save thoughts message", "error", err)
+			logger.LogicLogger.Error("Failed to save thoughts message", "error", err)
 			// 非致命错误，继续执行
 		}
 	}
 
 	// 如果是第一条消息，更新会话标题
 	if len(messages) == 0 {
-		title := "新对话 " + time.Now().Format("2006-01-02")
+		title := "新对�?" + time.Now().Format("2006-01-02")
 		session.Title = title
 		err = p.Ds.Put(ctx, session)
 		if err != nil {
-			slog.Error("Failed to update session title", "error", err)
+			logger.LogicLogger.Error("Failed to update session title", "error", err)
 		}
 	}
 	// 返回响应
@@ -389,7 +389,7 @@ func (p *PlaygroundImpl) SendMessage(ctx context.Context, request *dto.SendMessa
 
 // 获取会话中的消息
 func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessagesRequest) (*dto.GetMessagesResponse, error) {
-	slog.Info("GetMessages called", "session_id", request.SessionId)
+	logger.LogicLogger.Info("GetMessages called", "session_id", request.SessionId)
 
 	messageQuery := &entity.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, &datastore.ListOptions{
@@ -398,11 +398,11 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 		},
 	})
 	if err != nil {
-		slog.Error("Failed to list chat messages", "error", err)
+		logger.LogicLogger.Error("Failed to list chat messages", "error", err)
 		return nil, err
 	}
 
-	slog.Info("Found messages in database", "session_id", request.SessionId, "count", len(messages))
+	logger.LogicLogger.Info("Found messages in database", "session_id", request.SessionId, "count", len(messages))
 
 	messageDTOs := make([]dto.Message, 0, len(messages))
 	for _, m := range messages {
@@ -425,7 +425,7 @@ func (p *PlaygroundImpl) GetMessages(ctx context.Context, request *dto.GetMessag
 				},
 			})
 			if err != nil {
-				slog.Error("Failed to list tool messages", "error", err)
+				logger.LogicLogger.Error("Failed to list tool messages", "error", err)
 				return nil, err
 			}
 			for _, tm := range toolMsgResults {
@@ -461,30 +461,30 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 	session := &entity.ChatSession{ID: request.SessionId}
 	err := p.Ds.Get(ctx, session)
 	if err != nil {
-		slog.Error("Failed to get chat session", "error", err, "session_id", request.SessionId)
+		logger.LogicLogger.Error("Failed to get chat session", "error", err, "session_id", request.SessionId)
 		return nil, err
 	}
 
-	// 2. 删除会话相关的消息记录
+	// 2. 删除会话相关的消息记�?
 	messageQuery := &entity.ChatMessage{SessionID: request.SessionId}
 	messages, err := p.Ds.List(ctx, messageQuery, nil)
 	if err != nil {
-		slog.Error("Failed to list chat messages", "error", err)
+		logger.LogicLogger.Error("Failed to list chat messages", "error", err)
 	} else {
 		for _, m := range messages {
 			msg := m.(*entity.ChatMessage)
 			err = p.Ds.Delete(ctx, msg)
 			if err != nil {
-				slog.Error("Failed to delete chat message", "error", err, "message_id", msg.ID)
+				logger.LogicLogger.Error("Failed to delete chat message", "error", err, "message_id", msg.ID)
 			}
 		}
 	}
 
-	// 3. 删除会话相关的文件记录
+	// 3. 删除会话相关的文件记�?
 	fileQuery := &entity.File{SessionID: request.SessionId}
 	files, err := p.Ds.List(ctx, fileQuery, nil)
 	if err != nil {
-		slog.Error("Failed to list files", "error", err)
+		logger.LogicLogger.Error("Failed to list files", "error", err)
 	} else {
 		for _, f := range files {
 			file := f.(*entity.File)
@@ -492,7 +492,7 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 			chunkQuery := &entity.FileChunk{FileID: file.ID}
 			chunks, err := p.Ds.List(ctx, chunkQuery, nil)
 			if err != nil {
-				slog.Error("Failed to list file chunks", "error", err)
+				logger.LogicLogger.Error("Failed to list file chunks", "error", err)
 			} else {
 				if vecInitialized {
 					if vecDB != nil {
@@ -504,7 +504,7 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 						if len(chunkIDs) > 0 {
 							err := vecDB.DeleteChunks(ctx, chunkIDs)
 							if err != nil {
-								slog.Error("从VEC删除文件块失败", "error", err, "file_id", file.ID)
+								logger.LogicLogger.Error("从VEC删除文件块失败", "error", err, "file_id", file.ID)
 							}
 						}
 					}
@@ -515,7 +515,7 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 					// 删除文件块记录
 					err = p.Ds.Delete(ctx, chunk)
 					if err != nil {
-						slog.Error("Failed to delete file chunk", "error", err)
+						logger.LogicLogger.Error("Failed to delete file chunk", "error", err)
 					}
 				}
 			}
@@ -523,7 +523,7 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 			// 删除文件记录
 			err = p.Ds.Delete(ctx, file)
 			if err != nil {
-				slog.Error("Failed to delete file", "error", err)
+				logger.LogicLogger.Error("Failed to delete file", "error", err)
 			}
 		}
 	}
@@ -531,7 +531,7 @@ func (p *PlaygroundImpl) DeleteSession(ctx context.Context, request *dto.DeleteS
 	// 4. 删除会话记录
 	err = p.Ds.Delete(ctx, session)
 	if err != nil {
-		slog.Error("Failed to delete chat session", "error", err)
+		logger.LogicLogger.Error("Failed to delete chat session", "error", err)
 		return nil, err
 	}
 
@@ -551,12 +551,12 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 		session.ModelID = req.ModelId
 		modelInfo := p.GetModelById(ctx, req.ModelId)
 		session.ModelName = modelInfo.Name
-		// 根据 modelId 查询模型属性，自动赋值 thinkingEnabled
+		// 根据 modelId 查询模型属性，自动赋�?thinkingEnabled
 		model := &types.Model{ModelName: modelInfo.Name}
 		err := p.Ds.Get(ctx, model)
 		if err == nil {
 			session.ThinkingEnabled = modelInfo.Think
-			// 切换模型时，如果新模型支持思考，则保持当前思考状态；如果不支持，则关闭思考
+			// 切换模型时，如果新模型支持思考，则保持当前思考状态；如果不支持，则关闭思�?
 			if !modelInfo.Think {
 				session.ThinkingActive = false
 			}
@@ -586,13 +586,13 @@ func (p *PlaygroundImpl) ChangeSessionModel(ctx context.Context, req *dto.Change
 	}, nil
 }
 
-// 切换思考状态
+// 切换思考状�?
 func (p *PlaygroundImpl) ToggleThinking(ctx context.Context, req *dto.ToggleThinkingRequest) (*dto.ToggleThinkingResponse, error) {
 	// 查找会话
 	session := &entity.ChatSession{ID: req.SessionId}
 	err := p.Ds.Get(ctx, session)
 	if err != nil {
-		return nil, fmt.Errorf("会话不存在: %v", err)
+		return nil, fmt.Errorf("会话不存�? %v", err)
 	}
 	// 首先检查模型是否支持深度思考
 	if !session.ThinkingEnabled {
@@ -604,7 +604,7 @@ func (p *PlaygroundImpl) ToggleThinking(ctx context.Context, req *dto.ToggleThin
 		// 如果提供了明确的启用/禁用值，则使用该值
 		session.ThinkingActive = *req.Enabled
 	} else {
-		// 如果没有提供值，则切换当前状态
+		// 如果没有提供值，则切换当前状�?
 		session.ThinkingActive = !session.ThinkingActive
 	}
 
@@ -614,7 +614,7 @@ func (p *PlaygroundImpl) ToggleThinking(ctx context.Context, req *dto.ToggleThin
 	if err != nil {
 		return nil, fmt.Errorf("更新会话失败: %v", err)
 	}
-	// 返回更新后的状态
+	// 返回更新后的状�?
 	return &dto.ToggleThinkingResponse{
 		Bcode:          bcode.SuccessCode,
 		ThinkingActive: session.ThinkingActive,

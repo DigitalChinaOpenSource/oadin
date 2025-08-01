@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log/slog"
+	"oadin/internal/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,7 +33,7 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 	const maxFileSize = 10 * 1024 * 1024 // 10MB
 	if filesize > maxFileSize {
 		err := fmt.Errorf("文件大小超过限制 (最大10MB)")
-		slog.Error("File validation failed", "error", err, "filename", filename)
+		logger.LogicLogger.Error("File validation failed", "error", err, "filename", filename)
 		return nil, err
 	}
 
@@ -50,7 +50,7 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 
 	if !validFormat {
 		err := fmt.Errorf("文件类型不支持")
-		slog.Error("File validation failed", "error", err, "filename", filename)
+		logger.LogicLogger.Error("File validation failed", "error", err, "filename", filename)
 		return nil, err
 	}
 
@@ -58,7 +58,7 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 	session := &entity.ChatSession{ID: request.SessionID}
 	err := p.Ds.Get(ctx, session)
 	if err != nil {
-		slog.Error("Failed to get chat session", "error", err)
+		logger.LogicLogger.Error("Failed to get chat session", "error", err)
 		return nil, err
 	}
 
@@ -66,47 +66,47 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 	fileQuery := &entity.File{SessionID: request.SessionID}
 	files, err := p.Ds.List(ctx, fileQuery, nil)
 	if err != nil {
-		slog.Error("Failed to list files", "error", err)
+		logger.LogicLogger.Error("Failed to list files", "error", err)
 		return nil, err
 	}
 
 	const maxFileCount = 10
 	if len(files) >= maxFileCount {
 		err := fmt.Errorf("maximum file count reached (10 files per session)")
-		slog.Error("File count validation failed", "error", err, "sessionID", request.SessionID)
+		logger.LogicLogger.Error("File count validation failed", "error", err, "sessionID", request.SessionID)
 		return nil, err
 	}
 
 	// 生成文件保存路径，按对话分目录
 	oadinDir, err := utils.GetOadinDataDir()
 	if err != nil {
-		slog.Error("Failed to get Oadin data directory", "error", err)
+		logger.LogicLogger.Error("Failed to get Oadin data directory", "error", err)
 		return nil, err
 	}
 	fileDir := filepath.Join(oadinDir, "files", request.SessionID)
 	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(fileDir, 0755); err != nil {
-			slog.Error("Failed to create session files directory", "error", err)
+			logger.LogicLogger.Error("Failed to create session files directory", "error", err)
 			return nil, err
 		}
 	}
 	fileID := uuid.New().String()
 	filePath := filepath.Join(fileDir, fileID+ext)
 
-	// 保存文件到本地
+	// 保存文件到本�?
 	file, err := os.Create(filePath)
 	if err != nil {
-		slog.Error("Failed to create file", "error", err)
+		logger.LogicLogger.Error("Failed to create file", "error", err)
 		return nil, err
 	}
 	defer file.Close()
 	_, err = io.Copy(file, fileHeader)
 	if err != nil {
-		slog.Error("Failed to save file", "error", err)
+		logger.LogicLogger.Error("Failed to save file", "error", err)
 		return nil, err
 	}
 
-	// 添加文件记录到数据库，记录物理路径
+	// 添加文件记录到数据库，记录物理路�?
 	fileType := getFileType(ext)
 	fileRecord := &entity.File{
 		ID:        fileID,
@@ -115,25 +115,25 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 		Path:      filePath,
 		Size:      filesize,
 		Type:      fileType,
-		ChunkSize: 1000, // 默认块大小
+		ChunkSize: 1000, // 默认块大�?
 	}
 	err = p.Ds.Add(ctx, fileRecord)
 	if err != nil {
-		slog.Error("Failed to save file record", "error", err, "fileID", fileID)
+		logger.LogicLogger.Error("Failed to save file record", "error", err, "fileID", fileID)
 		return nil, err
 	}
 
 	if err = p.Ds.Commit(ctx); err != nil {
-		slog.Error("Failed to commit file record", "error", err, "fileID", fileID)
+		logger.LogicLogger.Error("Failed to commit file record", "error", err, "fileID", fileID)
 	}
 	checkRecord := &entity.File{ID: fileID}
 	if err = p.Ds.Get(ctx, checkRecord); err != nil {
-		slog.Warn("无法验证文件记录是否已保存", "error", err, "fileID", fileID)
+		logger.LogicLogger.Warn("无法验证文件记录是否已保存", "error", err, "fileID", fileID)
 	} else {
-		slog.Info("Server: 文件记录验证成功", "fileID", checkRecord.ID, "sessionID", checkRecord.SessionID)
+		logger.LogicLogger.Info("Server: 文件记录验证成功", "fileID", checkRecord.ID, "sessionID", checkRecord.SessionID)
 	}
 
-	slog.Info("Server: 文件记录保存成功", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID, "filename", fileRecord.Name)
+	logger.LogicLogger.Info("Server: 文件记录保存成功", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID, "filename", fileRecord.Name)
 
 	return &dto.UploadFileResponse{
 		Bcode: bcode.SuccessCode,
@@ -151,28 +151,28 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 // 获取会话的文件列表
 func (p *PlaygroundImpl) GetFiles(ctx context.Context, request *dto.GetFilesRequest) (*dto.GetFilesResponse, error) {
 	// 添加详细日志
-	slog.Info("GetFiles: 开始查询文件列表", "sessionID", request.SessionID)
+	logger.LogicLogger.Info("GetFiles: 开始查询文件列表", "sessionID", request.SessionID)
 
 	// 直接使用SQL查询进行验证
-	// 获取SQLite数据库路径
+	// 获取SQLite数据库路�?
 	dbPath := config.GlobalOADINEnvironment.Datastore
-	slog.Info("GetFiles: 尝试直接SQL查询验证", "dbPath", dbPath, "sessionID", request.SessionID)
+	logger.LogicLogger.Info("GetFiles: 尝试直接SQL查询验证", "dbPath", dbPath, "sessionID", request.SessionID)
 
 	// 直接使用SQL查询
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		slog.Error("GetFiles: 无法打开数据库", "error", err, "dbPath", dbPath)
+		logger.LogicLogger.Error("GetFiles: 无法打开数据库", "error", err, "dbPath", dbPath)
 	} else {
 		defer db.Close()
 		// 查询总数
 		var count int
 		err = db.QueryRow("SELECT COUNT(*) FROM files WHERE session_id = ?", request.SessionID).Scan(&count)
 		if err != nil {
-			slog.Error("GetFiles: SQL查询文件数量失败", "error", err, "sessionID", request.SessionID)
+			logger.LogicLogger.Error("GetFiles: SQL查询文件数量失败", "error", err, "sessionID", request.SessionID)
 		} else {
-			slog.Info("GetFiles: SQL直接查询结果", "sessionID", request.SessionID, "fileCount", count)
+			logger.LogicLogger.Info("GetFiles: SQL直接查询结果", "sessionID", request.SessionID, "fileCount", count)
 
-			// 如果没有找到记录，检查所有session_id值进行调试
+			// 如果没有找到记录，检查所有session_id值进行调�?
 			if count == 0 {
 				rows, _ := db.Query("SELECT id, session_id FROM files")
 				defer rows.Close()
@@ -184,14 +184,14 @@ func (p *PlaygroundImpl) GetFiles(ctx context.Context, request *dto.GetFilesRequ
 						files = append(files, map[string]string{"id": id, "session_id": sid})
 					}
 				}
-				slog.Info("GetFiles: 数据库中的所有文件记录", "files", files, "totalCount", len(files))
+				logger.LogicLogger.Info("GetFiles: 数据库中的所有文件记录", "files", files, "totalCount", len(files))
 			}
 		}
 	}
 	// 创建一个全新的File对象，只设置SessionID字段
 	fileQuery := &entity.File{}
 	fileQuery.SessionID = strings.TrimSpace(request.SessionID) // 删除任何可能的空格
-	slog.Info("GetFiles: 调用 p.Ds.List 前", "querySessionID", fileQuery.SessionID)
+	logger.LogicLogger.Info("GetFiles: 调用 p.Ds.List 前", "querySessionID", fileQuery.SessionID)
 
 	// 创建明确的ListOptions，使用In条件显式指定session_id
 	queryOpts := &datastore.ListOptions{
@@ -210,11 +210,11 @@ func (p *PlaygroundImpl) GetFiles(ctx context.Context, request *dto.GetFilesRequ
 
 	files, err := p.Ds.List(ctx, fileQuery, queryOpts)
 	if err != nil {
-		slog.Error("GetFiles: Failed to list files", "error", err, "sessionID", request.SessionID)
+		logger.LogicLogger.Error("GetFiles: Failed to list files", "error", err, "sessionID", request.SessionID)
 		return nil, err
 	}
 
-	slog.Info("GetFiles: p.Ds.List 查询完成", "sessionID", request.SessionID, "fileCount", len(files))
+	logger.LogicLogger.Info("GetFiles: p.Ds.List 查询完成", "sessionID", request.SessionID, "fileCount", len(files))
 
 	fileDTOs := make([]dto.FileInfo, 0, len(files))
 	for _, f := range files {
@@ -241,7 +241,7 @@ func (p *PlaygroundImpl) DeleteFile(ctx context.Context, request *dto.DeleteFile
 	fileRecord := &entity.File{ID: request.FileID}
 	err := p.Ds.Get(ctx, fileRecord)
 	if err != nil {
-		slog.Error("Failed to get file record", "error", err)
+		logger.LogicLogger.Error("Failed to get file record", "error", err)
 		return nil, err
 	}
 
@@ -249,15 +249,15 @@ func (p *PlaygroundImpl) DeleteFile(ctx context.Context, request *dto.DeleteFile
 	if fileRecord.Path != "" {
 		err = os.Remove(fileRecord.Path)
 		if err != nil && !os.IsNotExist(err) {
-			slog.Error("Failed to delete file", "error", err)
+			logger.LogicLogger.Error("Failed to delete file", "error", err)
 			return nil, err
 		}
 	}
-	// 3. 删除文件块记录
+	// 3. 删除文件块记�?
 	chunkQuery := &entity.FileChunk{FileID: request.FileID}
 	chunks, err := p.Ds.List(ctx, chunkQuery, nil)
 	if err != nil {
-		slog.Error("Failed to list file chunks", "error", err)
+		logger.LogicLogger.Error("Failed to list file chunks", "error", err)
 		return nil, err
 	}
 
@@ -271,24 +271,24 @@ func (p *PlaygroundImpl) DeleteFile(ctx context.Context, request *dto.DeleteFile
 		if len(chunkIDs) > 0 {
 			err := vecDB.DeleteChunks(ctx, chunkIDs)
 			if err != nil {
-				slog.Error("从VEC删除文件块失败", "error", err, "file_id", request.FileID)
+				logger.LogicLogger.Error("从VEC删除文件块失败", "error", err, "file_id", request.FileID)
 			}
 		}
 	}
 
 	for _, c := range chunks {
 		chunk := c.(*entity.FileChunk)
-		// 删除文件块记录
+		// 删除文件块记�?
 		err = p.Ds.Delete(ctx, chunk)
 		if err != nil {
-			slog.Error("Failed to delete file chunk", "error", err)
+			logger.LogicLogger.Error("Failed to delete file chunk", "error", err)
 		}
 	}
 
 	// 4. 删除文件记录
 	err = p.Ds.Delete(ctx, fileRecord)
 	if err != nil {
-		slog.Error("Failed to delete file record", "error", err)
+		logger.LogicLogger.Error("Failed to delete file record", "error", err)
 		return nil, err
 	}
 
@@ -309,7 +309,7 @@ func generateUniqueChunkID(fileID string, chunkIndex int64) int64 {
 	return int64(h.Sum64())
 }
 
-// 处理文件并生成嵌入向量
+// 处理文件并生成嵌入向�?
 func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateEmbeddingRequest) (*dto.GenerateEmbeddingResponse, error) {
 	if request.FileID == "" {
 		return nil, fmt.Errorf("文件ID不能为空")
@@ -317,12 +317,12 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 
 	// 获取SQLite数据库路径
 	dbPath := config.GlobalOADINEnvironment.Datastore
-	slog.Info("尝试打开数据库直接查询", "dbPath", dbPath, "fileID", request.FileID)
+	logger.LogicLogger.Info("尝试打开数据库直接查询", "dbPath", dbPath, "fileID", request.FileID)
 
 	// 直接使用SQL查询文件
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		slog.Error("无法打开数据库", "error", err, "dbPath", dbPath)
+		logger.LogicLogger.Error("无法打开数据库", "error", err, "dbPath", dbPath)
 		return nil, fmt.Errorf("无法打开数据库: %w", err)
 	}
 	defer db.Close()
@@ -334,16 +334,16 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 	var createdAt, updatedAt string
 
 	query := "SELECT id, session_id, name, path, size, type, chunk_size, created_at, updated_at FROM files WHERE id = ?"
-	slog.Info("执行SQL查询", "query", query, "fileID", request.FileID)
+	logger.LogicLogger.Info("执行SQL查询", "query", query, "fileID", request.FileID)
 
 	err = db.QueryRow(query, request.FileID).Scan(
 		&fileID, &sessionID, &name, &path, &size, &fileType, &chunkSize, &createdAt, &updatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			slog.Error("文件记录不存在 (SQL)", "fileID", request.FileID)
+			logger.LogicLogger.Error("文件记录不存�?(SQL)", "fileID", request.FileID)
 
-			// 列出所有文件以便调试
+			// 列出所有文件以便调�?
 			rows, _ := db.Query("SELECT id FROM files")
 			defer rows.Close()
 
@@ -356,14 +356,14 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 			}
 
 			if len(ids) > 0 {
-				slog.Info("数据库中的文件ID列表 (SQL)", "ids", strings.Join(ids, ", "))
+				logger.LogicLogger.Info("数据库中的文件ID列表 (SQL)", "ids", strings.Join(ids, ", "))
 			} else {
-				slog.Info("数据库中没有文件记录 (SQL)")
+				logger.LogicLogger.Info("数据库中没有文件记录 (SQL)")
 			}
 
 			return nil, fmt.Errorf("文件记录不存在，fileID: %s", request.FileID)
 		}
-		slog.Error("查询文件记录失败 (SQL)", "error", err, "fileID", request.FileID)
+		logger.LogicLogger.Error("查询文件记录失败 (SQL)", "error", err, "fileID", request.FileID)
 		return nil, fmt.Errorf("查询文件记录失败: %w", err)
 	}
 
@@ -386,38 +386,38 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 		fileRecord.UpdatedAt = t
 	}
 
-	slog.Info("通过SQL成功查询到文件记录", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID, "name", fileRecord.Name)
+	logger.LogicLogger.Info("通过SQL成功查询到文件记录", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID, "name", fileRecord.Name)
 
 	// 验证文件记录的完整性
 	if fileRecord.SessionID == "" || fileRecord.Path == "" {
-		slog.Error("文件记录不完整", "fileID", request.FileID, "sessionID", fileRecord.SessionID, "path", fileRecord.Path)
+		logger.LogicLogger.Error("文件记录不完整", "fileID", request.FileID, "sessionID", fileRecord.SessionID, "path", fileRecord.Path)
 		return nil, fmt.Errorf("文件记录不完整，缺少必要字段")
 	}
 
-	slog.Info("Server: 开始处理文件embedding", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID)
+	logger.LogicLogger.Info("Server: 开始处理文件embedding", "fileID", fileRecord.ID, "sessionID", fileRecord.SessionID)
 
 	// 检查embed服务是否可用
 	service := &types.Service{Name: "embed"}
 	serviceErr := p.Ds.Get(ctx, service)
 	if serviceErr != nil {
-		slog.Error("Server: Embed服务不存在", "error", serviceErr, "fileID", request.FileID)
+		logger.LogicLogger.Error("Server: Embed服务不存在", "error", serviceErr, "fileID", request.FileID)
 		return nil, fmt.Errorf("embed服务不存在，请先配置embed服务: %w", serviceErr)
 	}
 	if service.Status != 1 {
-		slog.Error("Server: Embed服务已禁用", "fileID", request.FileID)
+		logger.LogicLogger.Error("Server: Embed服务已禁用", "fileID", request.FileID)
 		return nil, fmt.Errorf("embed服务已禁用，请先启用embed服务")
 	}
 
-	// 获取会话记录（为了获取嵌入模型ID）
+	// 获取会话记录（为了获取嵌入模型ID�?
 	session := &entity.ChatSession{ID: fileRecord.SessionID}
 	sessionErr := p.Ds.Get(ctx, session)
 	if sessionErr != nil {
-		slog.Error("Failed to get chat session", "error", sessionErr)
+		logger.LogicLogger.Error("Failed to get chat session", "error", sessionErr)
 		return nil, sessionErr
 	}
 
-	// 使用会话中的嵌入模型ID，如果请求中指定了则使用请求的
-	// 如果都没有设置，则使用默认嵌入模型
+	// 使用会话中的嵌入模型ID，如果请求中指定了则使用请求�?
+	// 如果都没有设置，则使用默认嵌入模�?
 	embedModelID := session.EmbedModelID
 
 	if request.Model != "" {
@@ -425,22 +425,22 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 	}
 	if embedModelID == "" {
 		embedModelID = "5d204ef2-fc6a-4545-9c98-306139646136346637613561"
-		slog.Warn("未设置嵌入模型，使用默认模型", "default_model", embedModelID)
+		logger.LogicLogger.Warn("未设置嵌入模型，使用默认模型", "default_model", embedModelID)
 	} // 读取文件内容并分块
-	slog.Info("Server: 开始分块文件", "fileID", fileRecord.ID, "path", fileRecord.Path, "chunkSize", fileRecord.ChunkSize)
+	logger.LogicLogger.Info("Server: 开始分块文件", "fileID", fileRecord.ID, "path", fileRecord.Path, "chunkSize", fileRecord.ChunkSize)
 	chunks, chunkErr := chunkFile(fileRecord.Path, fileRecord.ChunkSize)
 	if chunkErr != nil {
-		slog.Error("Failed to chunk file", "error", chunkErr)
-		return nil, fmt.Errorf("文件分块失败：%w", chunkErr)
+		logger.LogicLogger.Error("Failed to chunk file", "error", chunkErr)
+		return nil, fmt.Errorf("文件分块失败: %w", chunkErr)
 	}
-	slog.Info("Server: 分块完成", "fileID", fileRecord.ID, "chunkCount", len(chunks))
+	logger.LogicLogger.Info("Server: 分块完成", "fileID", fileRecord.ID, "chunkCount", len(chunks))
 	// 应用重叠处理，默认重叠大小为块大小的10%
 	overlapSize := fileRecord.ChunkSize / 10
 	if overlapSize > 200 {
 		overlapSize = 200
 	}
 	if len(chunks) > 1 && overlapSize > 0 {
-		slog.Debug("应用块重叠处理", "chunk_count", len(chunks), "overlap_size", overlapSize)
+		logger.LogicLogger.Debug("应用块重叠处理", "chunk_count", len(chunks), "overlap_size", overlapSize)
 		chunks = utils.ApplyChunkOverlap(chunks, overlapSize)
 	} // 获取聊天引擎用于生成嵌入向量
 	modelEngine := model_engine.NewEngineService()
@@ -448,7 +448,7 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 	batchSize := 100
 	fileChunks := make([]*entity.FileChunk, 0, len(chunks))
 
-	slog.Info("Server: 开始批量生成embedding", "fileID", fileRecord.ID, "totalChunks", len(chunks), "batchSize", batchSize, "embedModel", embedModelID)
+	logger.LogicLogger.Info("Server: 开始批量生成embedding", "fileID", fileRecord.ID, "totalChunks", len(chunks), "batchSize", batchSize, "embedModel", embedModelID)
 
 	for i := 0; i < len(chunks); i += batchSize {
 		end := i + batchSize
@@ -457,7 +457,7 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 		}
 		batch := chunks[i:end]
 
-		slog.Info("Server: 处理embedding批次", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "batchSize", len(batch))
+		logger.LogicLogger.Info("Server: 处理embedding批次", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "batchSize", len(batch))
 		embeddingReq := &dto.EmbeddingRequest{
 			Model: embedModelID,
 			Input: batch,
@@ -465,13 +465,13 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 
 		embeddingResp, err := modelEngine.GenerateEmbedding(ctx, embeddingReq)
 		if err != nil {
-			slog.Error("Failed to generate batch embeddings", "error", err, "fileID", fileRecord.ID, "batchIndex", i/batchSize)
+			logger.LogicLogger.Error("Failed to generate batch embeddings", "error", err, "fileID", fileRecord.ID, "batchIndex", i/batchSize)
 			return nil, err
 		}
 		if len(embeddingResp.Embeddings) != len(batch) {
-			slog.Warn("嵌入数量与块数量不符", "embeddings", len(embeddingResp.Embeddings), "chunks", len(batch), "fileID", fileRecord.ID)
+			logger.LogicLogger.Warn("嵌入数量与块数量不符", "embeddings", len(embeddingResp.Embeddings), "chunks", len(batch), "fileID", fileRecord.ID)
 		}
-		slog.Info("Server: embedding批次生成完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "embeddingCount", len(embeddingResp.Embeddings))
+		logger.LogicLogger.Info("Server: embedding批次生成完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "embeddingCount", len(embeddingResp.Embeddings))
 		for j, content := range batch {
 			if j >= len(embeddingResp.Embeddings) {
 				break
@@ -488,26 +488,26 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 			fileChunks = append(fileChunks, fileChunk)
 		}
 		if vecInitialized && vecDB != nil {
-			slog.Info("Server: 开始写入VEC", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "chunkCount", len(fileChunks[i:]))
-			slog.Info("Server: VEC写入完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize)
+			logger.LogicLogger.Info("Server: 开始写入VEC", "fileID", fileRecord.ID, "batchIndex", i/batchSize, "chunkCount", len(fileChunks[i:]))
+			logger.LogicLogger.Info("Server: VEC写入完成", "fileID", fileRecord.ID, "batchIndex", i/batchSize)
 		}
 	}
 
 	for _, fileChunk := range fileChunks {
 		err := p.Ds.Put(ctx, fileChunk)
 		if err != nil {
-			slog.Error("Failed to save file chunk", "error", err, "chunkID", fileChunk.ID, "fileID", fileChunk.FileID)
+			logger.LogicLogger.Error("Failed to save file chunk", "error", err, "chunkID", fileChunk.ID, "fileID", fileChunk.FileID)
 			return nil, err
 		}
 	}
 
-	slog.Info("Server: 文件embedding全部处理完成", "fileID", fileRecord.ID, "totalChunks", len(fileChunks), "sessionID", fileRecord.SessionID)
+	logger.LogicLogger.Info("Server: 文件embedding全部处理完成", "fileID", fileRecord.ID, "totalChunks", len(fileChunks), "sessionID", fileRecord.SessionID)
 	return &dto.GenerateEmbeddingResponse{
 		Bcode: bcode.SuccessCode,
 	}, nil
 }
 
-// 将文件内容分块，尝试保持语义完整性
+// 将文件内容分块，尝试保持语义完整�?
 func chunkFile(filePath string, chunkSize int) ([]string, error) {
 	fileExt := strings.ToLower(filepath.Ext(filePath))
 	// 针对二进制文件先提取文本
@@ -539,16 +539,16 @@ func chunkFile(filePath string, chunkSize int) ([]string, error) {
 	}
 	defer file.Close()
 
-	// 如果chunkSize太小，使用合理的默认值
+	// 如果chunkSize太小，使用合理的默认�?
 	const minChunkSize = 100
 	const defaultChunkSize = 1024
 	const maxChunkSize = 8192 // 8KB上限，防止过大块
 
 	if chunkSize < minChunkSize {
-		slog.Warn("块大小过小，调整为默认值", "original_size", chunkSize, "new_size", defaultChunkSize)
+		logger.LogicLogger.Warn("块大小过小，调整为默认值", "original_size", chunkSize, "new_size", defaultChunkSize)
 		chunkSize = defaultChunkSize
 	} else if chunkSize > maxChunkSize {
-		slog.Warn("块大小过大，调整为上限", "original_size", chunkSize, "new_size", maxChunkSize)
+		logger.LogicLogger.Warn("块大小过大，调整为上限", "original_size", chunkSize, "new_size", maxChunkSize)
 		chunkSize = maxChunkSize
 	}
 	// 基于文件类型选择分块策略
@@ -559,13 +559,13 @@ func chunkFile(filePath string, chunkSize int) ([]string, error) {
 		return chunkTextFileByParagraphs(file, chunkSize)
 
 	case ".json", ".xml", ".yaml", ".yml", ".toml":
-		slog.Debug("使用专用分块器处理结构化文件", "ext", fileExt)
+		logger.LogicLogger.Debug("使用专用分块器处理结构化文件", "ext", fileExt)
 		file.Close()
 		return utils.ChunkStructuredFile(filePath, chunkSize)
 
 	case ".csv", ".tsv":
 		// 表格文件处理
-		slog.Debug("处理表格文件", "ext", fileExt)
+		logger.LogicLogger.Debug("处理表格文件", "ext", fileExt)
 		return chunkTextFileByLines(file, chunkSize)
 
 	default:
@@ -574,12 +574,12 @@ func chunkFile(filePath string, chunkSize int) ([]string, error) {
 	}
 }
 
-// 按行分块，保持行的完整性
+// 按行分块，保持行的完整�?
 func chunkTextFileByLines(file *os.File, chunkSize int) ([]string, error) {
 	var chunks []string
 	scanner := bufio.NewScanner(file)
 
-	// 设置更大的缓冲区以处理长行
+	// 设置更大的缓冲区以处理长�?
 	const maxScanTokenSize = 1024 * 1024 // 1MB
 	buf := make([]byte, maxScanTokenSize)
 	scanner.Buffer(buf, maxScanTokenSize)
@@ -589,12 +589,12 @@ func chunkTextFileByLines(file *os.File, chunkSize int) ([]string, error) {
 		line := scanner.Text()
 
 		// 如果当前行加上之前的内容超过了块大小，并且当前块不为空，
-		// 则保存当前块并开始新块
+		// 则保存当前块并开始新�?
 		if len(currentChunk)+len(line)+1 > chunkSize && len(currentChunk) > 0 {
 			chunks = append(chunks, currentChunk)
 			currentChunk = line
 		} else {
-			// 否则，将当前行添加到当前块
+			// 否则，将当前行添加到当前�?
 			if len(currentChunk) > 0 {
 				currentChunk += "\n"
 			}
@@ -602,7 +602,7 @@ func chunkTextFileByLines(file *os.File, chunkSize int) ([]string, error) {
 		}
 	}
 
-	// 添加最后一个块（如果不为空）
+	// 添加最后一个块（如果不为空�?
 	if len(currentChunk) > 0 {
 		chunks = append(chunks, currentChunk)
 	}
@@ -612,16 +612,16 @@ func chunkTextFileByLines(file *os.File, chunkSize int) ([]string, error) {
 		return chunks, fmt.Errorf("扫描文件时出错: %w", err)
 	}
 
-	slog.Debug("文件已分块", "path", file.Name(), "chunks", len(chunks))
+	logger.LogicLogger.Debug("文件已分块", "path", file.Name(), "chunks", len(chunks))
 	return chunks, nil
 }
 
-// 按段落分块，尝试保持段落的完整性
+// 按段落分块，尝试保持段落的完整�?
 func chunkTextFileByParagraphs(file *os.File, chunkSize int) ([]string, error) {
 	var chunks []string
 	scanner := bufio.NewScanner(file)
 
-	// 设置缓冲区
+	// 设置缓冲�?
 	const maxScanTokenSize = 1024 * 1024
 	buf := make([]byte, maxScanTokenSize)
 	scanner.Buffer(buf, maxScanTokenSize)
@@ -630,7 +630,7 @@ func chunkTextFileByParagraphs(file *os.File, chunkSize int) ([]string, error) {
 	currentParagraph := ""
 	emptyLineCount := 0
 
-	// 处理每一行
+	// 处理每一�?
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -641,11 +641,11 @@ func chunkTextFileByParagraphs(file *os.File, chunkSize int) ([]string, error) {
 				currentParagraph += "\n"
 			}
 		} else {
-			// 非空行，添加到当前段落
+			// 非空行，添加到当前段�?
 			if emptyLineCount > 1 && len(currentParagraph) > 0 {
-				// 多个空行可能表示段落之间的分隔
+				// 多个空行可能表示段落之间的分�?
 				if len(currentChunk) > 0 && len(currentChunk)+len(currentParagraph)+2 > chunkSize {
-					// 当前段落加当前块会超过大小，保存当前块
+					// 当前段落加当前块会超过大小，保存当前�?
 					chunks = append(chunks, currentChunk)
 					currentChunk = currentParagraph
 				} else {
@@ -666,14 +666,14 @@ func chunkTextFileByParagraphs(file *os.File, chunkSize int) ([]string, error) {
 			emptyLineCount = 0
 		} // 处理段落
 		if len(currentParagraph) > chunkSize {
-			// 如果段落本身超过chunkSize，则需要强制分割
+			// 如果段落本身超过chunkSize，则需要强制分�?
 			if len(currentChunk) > 0 {
 				// 先保存当前块
 				chunks = append(chunks, currentChunk)
 				currentChunk = ""
 			}
 
-			// 将大段落拆分成更小的块
+			// 将大段落拆分成更小的�?
 			paragraphRunes := []rune(currentParagraph)
 			for i := 0; i < len(paragraphRunes); i += chunkSize {
 				end := i + chunkSize
@@ -694,7 +694,7 @@ func chunkTextFileByParagraphs(file *os.File, chunkSize int) ([]string, error) {
 		} else if len(currentParagraph) > chunkSize/2 {
 			// 如果当前段落已经超过了块大小的一半，直接添加到块
 			if len(currentChunk) > 0 && len(currentChunk)+len(currentParagraph)+2 > chunkSize {
-				// 保存当前块
+				// 保存当前�?
 				chunks = append(chunks, currentChunk)
 				currentChunk = currentParagraph
 			} else {
@@ -707,7 +707,7 @@ func chunkTextFileByParagraphs(file *os.File, chunkSize int) ([]string, error) {
 			currentParagraph = ""
 		}
 
-		// 如果当前块超过了块大小，保存它
+		// 如果当前块超过了块大小，保存�?
 		if len(currentChunk) > chunkSize {
 			chunks = append(chunks, currentChunk)
 			currentChunk = ""
@@ -730,12 +730,12 @@ func chunkTextFileByParagraphs(file *os.File, chunkSize int) ([]string, error) {
 		chunks = append(chunks, currentChunk)
 	}
 
-	// 检查扫描错误
+	// 检查扫描错�?
 	if err := scanner.Err(); err != nil {
-		return chunks, fmt.Errorf("扫描文件时出错: %w", err)
+		return chunks, fmt.Errorf("扫描文件时出�? %w", err)
 	}
 
-	slog.Debug("文件已按段落分块", "path", file.Name(), "chunks", len(chunks))
+	logger.LogicLogger.Debug("文件已按段落分块", "path", file.Name(), "chunks", len(chunks))
 	return chunks, nil
 }
 

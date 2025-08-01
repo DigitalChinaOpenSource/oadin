@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"oadin/extension/api/dto"
 	"oadin/extension/server"
 	"oadin/internal/datastore"
+	"oadin/internal/logger"
 	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
@@ -92,7 +92,7 @@ func (e *PlaygroundApi) DeleteSession(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// 发送消息
+// 发送消�?
 func (e *PlaygroundApi) SendMessage(c *gin.Context) {
 	var req dto.SendMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -163,14 +163,14 @@ func (e *PlaygroundApi) SendMessageStream(c *gin.Context) {
 		return
 	}
 
-	// 开始流式处理
+	// 开始流式处�?
 	respChan, errChan := e.Playground.SendMessageStream(ctx, &req)
 
 	for {
 		select {
 		case chunk, ok := <-respChan:
 			if !ok {
-				return // 流结束
+				return // 流结�?
 			}
 
 			if chunk.Type == "error" {
@@ -186,7 +186,7 @@ func (e *PlaygroundApi) SendMessageStream(c *gin.Context) {
 				data, err := json.Marshal(response)
 				if err == nil {
 					n, err := fmt.Fprintf(w, "data: %s\n\n", data)
-					fmt.Printf("[API] 错误消息写入结果: 字节数=%d, 错误=%v\n", n, err)
+					fmt.Printf("[API] 错误消息写入结果: 字节�?%d, 错误=%v\n", n, err)
 					flusher.Flush()
 				}
 				return
@@ -206,7 +206,7 @@ func (e *PlaygroundApi) SendMessageStream(c *gin.Context) {
 				})
 			}
 
-			// issues 84 如果是工具调用，Content会偶发出现/n，会导致前端出现空白行
+			// issues 84 如果是工具调用，Content会偶发出�?n，会导致前端出现空白�?
 			if chunk.ToolCalls != nil && chunk.Content != "" {
 				chunk.Content = ""
 			}
@@ -296,7 +296,7 @@ func (e *PlaygroundApi) ChangeSessionModel(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// 切换会话深度思考模式
+// 切换会话深度思考模�?
 func (e *PlaygroundApi) ToggleSessionThinking(c *gin.Context) {
 	var req dto.ToggleThinkingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -330,14 +330,14 @@ func (e *PlaygroundApi) UploadFile(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// 检查文件大小限制 (50MB)
+	// 检查文件大小限�?(50MB)
 	const maxFileSize = 50 * 1024 * 1024 // 50MB in bytes
 	if header.Size > maxFileSize {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "file size exceeds the maximum limit of 50MB"})
 		return
 	}
 
-	// 检查文件格式
+	// 检查文件格�?
 	ext := strings.ToLower(filepath.Ext(header.Filename))
 	allowedFormats := []string{".txt", ".md", ".html", ".pdf", ".xlsx", ".docx"}
 	formatAllowed := false
@@ -374,50 +374,50 @@ func (e *PlaygroundApi) UploadFile(c *gin.Context) {
 
 	resp, err := e.Playground.UploadFile(c.Request.Context(), req, file, header.Filename, header.Size)
 	if err != nil {
-		slog.Error("API: 文件上传到存储失败", "sessionID", sessionID, "filename", header.Filename, "error", err)
+		logger.ApiLogger.Error("API: 文件上传到存储失败", "sessionID", sessionID, "filename", header.Filename, "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	slog.Info("API: 文件上传成功", "sessionID", sessionID, "filename", header.Filename, "fileID", resp.Data.ID)
+	logger.ApiLogger.Info("API: 文件上传成功", "sessionID", sessionID, "filename", header.Filename, "fileID", resp.Data.ID)
 
 	// 提交数据库事务
 	if err := e.DataStore.Commit(c.Request.Context()); err != nil {
-		slog.Warn("API: 提交数据库操作失败，但将继续处理", "error", err)
+		logger.ApiLogger.Warn("API: 提交数据库操作失败，但将继续处理", "error", err)
 	}
 
-	// 检查 embedding 服务可用性
+	// 检�?embedding 服务可用�?
 	hasEmbeddingService, embeddingError := e.Playground.CheckEmbeddingService(c.Request.Context(), sessionID)
 	if !hasEmbeddingService {
-		slog.Error("API: embed 服务不可用，无法生成向量", "sessionID", sessionID, "fileID", resp.Data.ID, "error", embeddingError)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "文件已上传，但无法生成向量嵌入，请检查 embedding 服务是否可用"})
+		logger.ApiLogger.Error("API: embed 服务不可用，无法生成向量", "sessionID", sessionID, "fileID", resp.Data.ID, "error", embeddingError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "文件已上传，但无法生成向量嵌入，请检�?embedding 服务是否可用"})
 		return
 	}
 
-	// 自动触发文件向量生成，最多重试 3 次
-	slog.Info("API: 开始生成文件向量", "sessionID", sessionID, "fileID", resp.Data.ID)
+	// 自动触发文件向量生成，最多重试3次
+	logger.ApiLogger.Info("API: 开始生成文件向量", "sessionID", sessionID, "fileID", resp.Data.ID)
 	embReq := &dto.GenerateEmbeddingRequest{FileID: resp.Data.ID}
 	var embErr error
 	const maxRetries = 3
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {
 			time.Sleep(time.Millisecond * 200 * time.Duration(i))
-			slog.Info("API: 重试生成向量", "attempt", i+1, "fileID", resp.Data.ID)
+			logger.ApiLogger.Info("API: 重试生成向量", "attempt", i+1, "fileID", resp.Data.ID)
 		}
 		_, embErr = e.Playground.ProcessFile(c.Request.Context(), embReq)
 		if embErr == nil {
 			break
 		}
-		slog.Error("API: 第次生成向量失败", "attempt", i+1, "fileID", resp.Data.ID, "error", embErr)
+		logger.ApiLogger.Error("API: 第次生成向量失败", "attempt", i+1, "fileID", resp.Data.ID, "error", embErr)
 	}
 
 	if embErr != nil {
-		slog.Error("API: 自动向量生成最终失败", "fileID", resp.Data.ID, "error", embErr)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "文件已上传，但向量生成失败。"})
+		logger.ApiLogger.Error("API: 自动向量生成最终失败", "fileID", resp.Data.ID, "error", embErr)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "文件已上传，但向量生成失败"})
 		return
 	}
 
-	slog.Info("API: 文件向量生成并存储成功", "fileID", resp.Data.ID)
+	logger.ApiLogger.Info("API: 文件向量生成并存储成功", "fileID", resp.Data.ID)
 	c.JSON(http.StatusOK, gin.H{
 		"bcode":             resp.Bcode,
 		"data":              resp.Data,

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	ConfigRoot "oadin/config"
 	"oadin/extension/api/dto"
 	"oadin/extension/entity"
@@ -15,6 +14,7 @@ import (
 	"oadin/extension/utils/hardware"
 	"oadin/extension/utils/hardware/installer"
 	"oadin/internal/datastore"
+	"oadin/internal/logger"
 	"strings"
 	"time"
 
@@ -216,7 +216,7 @@ func (M *McpServiceImpl) DownloadMCP(ctx context.Context, id string) error {
 
 	// 命令校验
 	if len(installCMD) == 0 {
-		slog.Error("无安装命令, 不支持stdio模型")
+		logger.LogicLogger.Error("无安装命�? 不支持stdio模型")
 		return bcode.ControlPanelAddMcpError
 	}
 
@@ -245,23 +245,23 @@ func (M *McpServiceImpl) DownloadMCP(ctx context.Context, id string) error {
 			commandBuilder.WithEnv("NPM_CONFIG_REGISTRY", ConfigRoot.ConfigRootInstance.Registry.Npm)
 			commandBuilder.WithEnv("PIP_INDEX_URL", ConfigRoot.ConfigRootInstance.Registry.Pip)
 			commandBuilder.WithEnv("UV_DEFAULT_INDEX", ConfigRoot.ConfigRootInstance.Registry.Pip)
-			slog.Info("执行mcp 安装命令: ", y.Command, " args: ", y.Args, " env: ", y.Env)
+			logger.LogicLogger.Info("执行mcp 安装命令: ", y.Command, " args: ", y.Args, " env: ", y.Env)
 			// 执行安装命令
 			output, errOut, err := commandBuilder.WithTimeout(time.Minute).Execute()
 			fmt.Printf("output of command execution: %s", output)
 			fmt.Printf("error output of command execution: %s", errOut)
 			//执行结果
-			slog.Info("output of command execution: ", output)
-			slog.Info("errout of command execution: ", errOut)
+			logger.LogicLogger.Info("output of command execution: ", output)
+			logger.LogicLogger.Info("errout of command execution: ", errOut)
 			if err != nil {
-				slog.Error("执行mcp 安装失败: ", err.Error())
+				logger.LogicLogger.Error("执行mcp 安装失败: ", err.Error())
 				return bcode.ControlPanelAddMcpError
 			}
 
 		}
 	}
 
-	// 下载完毕后, 则添加成功
+	// 下载完毕�? 则添加成�?
 	config.Status = 1
 	M.Ds.Put(ctx, config)
 
@@ -275,7 +275,7 @@ func (M *McpServiceImpl) AuthorizeMCP(ctx context.Context, id string, auth strin
 	err := M.Ds.Get(ctx, con)
 
 	if err != nil || con == nil || con.ID == 0 {
-		// 初始化个人配置
+		// 初始化个人配�?
 		con.MCPID = id
 		con.Status = 0
 		con.Auth = auth
@@ -283,7 +283,7 @@ func (M *McpServiceImpl) AuthorizeMCP(ctx context.Context, id string, auth strin
 		M.Ds.Add(ctx, con)
 	}
 
-	// 保存授权配置项
+	// 保存授权配置�?
 	con.Auth = auth
 	err = M.Ds.Put(ctx, con)
 	if err != nil {
@@ -306,7 +306,7 @@ func (M *McpServiceImpl) ReverseStatus(c *gin.Context, id string) error {
 		return err
 	}
 
-	// 保存授权配置项
+	// 保存授权配置�?
 	if con.Status == 1 {
 		con.Status = 0
 	}
@@ -331,7 +331,7 @@ func (M *McpServiceImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolReques
 		return err
 	}
 
-	// 将逗号分隔的字符串转换为map，便于处理
+	// 将逗号分隔的字符串转换为map，便于处�?
 	toolMap := make(map[string]bool)
 	if con.Kits != "" {
 		for _, id := range strings.Split(con.Kits, ",") {
@@ -341,9 +341,9 @@ func (M *McpServiceImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolReques
 		}
 	}
 
-	// 更新工具状态
+	// 更新工具状�?
 	if !req.Enabled {
-		// 要禁用工具：添加到禁用列表
+		// 要禁用工具：添加到禁用列�?
 		toolMap[req.ToolId] = true
 	} else {
 		// 要启用工具：从禁用列表中移除
@@ -425,7 +425,7 @@ func (M *McpServiceImpl) getMCPConfig(ctx context.Context, mcpId string) (*dto.M
 }
 
 func (M *McpServiceImpl) ClientMcpStart(ctx context.Context, id string) error {
-	start := time.Now() // 记录开始时间
+	start := time.Now() // 记录开始时�?
 	mcpServerConfig, err := M.getMCPConfig(ctx, id)
 	if err != nil {
 		return err
@@ -466,7 +466,7 @@ func (M *McpServiceImpl) ClientGetTools(ctx context.Context, mcpId string) ([]mc
 	} else {
 		// 配置数据组合
 		for i, tool := range searchTools.Data.List {
-			// 默认开启
+			// 默认开�?
 			searchTools.Data.List[i].Enabled = true
 			for _, item := range strings.Split(mcpUserConfig.Kits, ",") {
 				if item == tool.Id {

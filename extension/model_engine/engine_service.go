@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"oadin/extension/api/dto"
 	"oadin/internal/datastore"
+	"oadin/internal/logger"
+	
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
@@ -132,7 +133,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<
 	}
 	err = ds.Get(context.Background(), sp)
 	if err != nil {
-		slog.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
+		logger.EngineLogger.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
 	} else {
 		hybridPolicy = sp.HybridPolicy
 	}
@@ -182,7 +183,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<
 			}
 			// 转回[]byte
 			cleanBody := []byte(bodyStr)
-			fmt.Println("[ChatStream] 收到块内容:", bodyStr)
+			fmt.Println("[ChatStream] 收到块内容", bodyStr)
 
 			// 每个块都是一个完整的JSON对象
 			var content string
@@ -248,7 +249,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<
 								if len(streamResp.Choices[0].Delta.ToolCalls) > 0 {
 									toolCalls = streamResp.Choices[0].Delta.ToolCalls
 									fmt.Printf("[ChatStream] 从Oadin delta提取到工具调用，数量: %d\n", len(toolCalls))
-									slog.Info("[ChatStream] 从Oadin delta提取到工具调用", "数量", len(toolCalls))
+									logger.EngineLogger.Info("[ChatStream] 从Oadin delta提取到工具调用", "数量", len(toolCalls))
 								}
 							}
 						}
@@ -286,7 +287,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<
 						fmt.Printf("[ChatStream] 提取到内容，长度: %d\n", len(content))
 					}
 
-					// 检查是否完成
+					// 检查是否完�?
 					if done, ok := data["done"].(bool); ok {
 						isComplete = done
 					}
@@ -296,7 +297,7 @@ func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<
 						model = m
 					}
 
-					// 提取思考内容
+					// 提取思考内�?
 					if msg, ok := data["message"].(map[string]interface{}); ok {
 						if th, ok := msg["thinking"].(string); ok && th != "" {
 							thoughts = th
@@ -316,15 +317,15 @@ func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<
 						if tc, ok := msg["tool_calls"].([]dto.ToolCall); ok && len(tc) > 0 {
 							toolCalls = tc
 							fmt.Printf("[ChatStream] 提取到工具调用，数量: %d\n", len(toolCalls))
-							slog.Info("[ChatStream] 从message中提取到工具调用", "数量", len(toolCalls))
+							logger.EngineLogger.Info("[ChatStream] 从message中提取到工具调用", "数量", len(toolCalls))
 						}
 					}
 
-					// 如果没有在message中找到，尝试从顶层查找
+					// 如果没有在message中找到，尝试从顶层查�?
 					if len(toolCalls) == 0 {
 						if tc, ok := data["tool_calls"].([]dto.ToolCall); ok && len(tc) > 0 {
 							toolCalls = tc
-							fmt.Printf("[ChatStream] 从顶层提取到工具调用，数量: %d\n", len(toolCalls))
+							fmt.Printf("[ChatStream] 从顶层提取到工具调用，数�? %d\n", len(toolCalls))
 						}
 					}
 				} else {
@@ -350,12 +351,12 @@ func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<
 			}
 
 			if isComplete {
-				fmt.Printf("[ChatStream] 收到完成标记，当前块内容长度: %d，累积内容长度: %d\n",
+				fmt.Printf("[ChatStream] 收到完成标记，当前块内容长度: %d，累积内容长�? %d\n",
 					len(content), len(accumulatedContent))
 			}
 
-			// 发送响应
-			// 只发送有内容或是最后一个块的响应
+			// 发送响�?
+			// 只发送有内容或是最后一个块的响�?
 			if (resp.Content != "" || resp.Thoughts != "") || resp.IsComplete {
 				// 如果是最后一个块，发送完整累积的内容
 				if resp.IsComplete {
@@ -364,11 +365,11 @@ func (e *EngineService) ChatStream(ctx context.Context, req *dto.ChatRequest) (<
 						if duration, ok := tempData["total_duration"].(float64); ok {
 							totalDuration = int64(duration)
 							resp.TotalDuration = totalDuration
-							fmt.Printf("[ChatStream] 提取到总时长: %dms\n", totalDuration)
+							fmt.Printf("[ChatStream] 提取到总时�? %dms\n", totalDuration)
 						}
 					}
 
-					// 确保最后一块还包含之前累积的内容
+					// 确保最后一块还包含之前累积的内�?
 					resp.Content = accumulatedContent
 					resp.Object = "chat.completion"
 					fmt.Printf("[ChatStream] 发送最终完整响应，内容长度: %d\n", len(accumulatedContent))
@@ -403,14 +404,14 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 		return nil, fmt.Errorf("embedding input cannot be empty")
 	}
 
-	slog.Info("[Embedding] 正在生成向量",
+	logger.EngineLogger.Info("[Embedding] 正在生成向量",
 		"model", req.Model,
 		"input_count", len(req.Input),
 		"first_input_length", len(req.Input[0]))
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		slog.Error("[Embedding] 请求体序列化失败", "error", err)
+		logger.EngineLogger.Error("[Embedding] 请求体序列化失败", "error", err)
 		return nil, err
 	}
 
@@ -423,7 +424,7 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 		inputSample = req.Input[0][:sampleLength] + "..."
 	}
 
-	slog.Info("[Embedding] Request body for embedding",
+	logger.EngineLogger.Info("[Embedding] Request body for embedding",
 		"model", req.Model,
 		"input_count", len(req.Input),
 		"input_sample", inputSample,
@@ -440,7 +441,7 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 	}
 	err = ds.Get(context.Background(), sp)
 	if err != nil {
-		slog.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
+		logger.EngineLogger.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
 	} else {
 		hybridPolicy = sp.HybridPolicy
 	}
@@ -457,7 +458,7 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 		},
 	}
 
-	slog.Info("[Embedding] 发送向量生成请求到调度器",
+	logger.EngineLogger.Info("[Embedding] 发送向量生成请求到调度器",
 		"model", modelName,
 		"body_length", len(body))
 
@@ -465,7 +466,7 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 	select {
 	case result := <-ch:
 		if result.Error != nil {
-			slog.Error("[Embedding] Error from service provider", "error", result.Error)
+			logger.EngineLogger.Error("[Embedding] Error from service provider", "error", result.Error)
 			return nil, result.Error
 		}
 
@@ -478,13 +479,13 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 			responsePreview = string(result.HTTP.Body[:previewLength]) + "..."
 		}
 
-		slog.Info("[Embedding] Received response from service provider",
+		logger.EngineLogger.Info("[Embedding] Received response from service provider",
 			"response_size", len(result.HTTP.Body),
 			"response_preview", responsePreview)
 
 		var directData []map[string]interface{}
 		if err := json.Unmarshal(result.HTTP.Body, &directData); err == nil && len(directData) > 0 {
-			slog.Info("[Embedding] 成功解析为直接数据数组",
+			logger.EngineLogger.Info("[Embedding] 成功解析为直接数据数组",
 				"array_length", len(directData))
 
 			resp := &dto.EmbeddingResponse{
@@ -509,25 +510,25 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 			}
 
 			if len(resp.Embeddings) > 0 {
-				slog.Info("[Embedding] 成功从直接数据数组提取向量",
+				logger.EngineLogger.Info("[Embedding] 成功从直接数据数组提取向量",
 					"embedding_count", len(resp.Embeddings),
 					"vector_dim", len(resp.Embeddings[0]))
 				return resp, nil
 			} else {
-				slog.Warn("[Embedding] 数据数组中未找到有效的向量数据")
+				logger.EngineLogger.Warn("[Embedding] 数据数组中未找到有效的向量数据")
 			}
 		}
 
 		var oadinResp dto.OadinAPIResponse
 		if err := json.Unmarshal(result.HTTP.Body, &oadinResp); err != nil {
 
-			slog.Warn("[Embedding] 无法解析为 Oadin 响应格式",
+			logger.EngineLogger.Warn("[Embedding] 无法解析�?Oadin 响应格式",
 				"error", err.Error(),
 				"response_preview", responsePreview)
 		}
 
 		if oadinResp.BusinessCode > 0 && oadinResp.BusinessCode != 10000 {
-			slog.Error("[Embedding] Oadin API 返回错误",
+			logger.EngineLogger.Error("[Embedding] Oadin API 返回错误",
 				"business_code", oadinResp.BusinessCode,
 				"message", oadinResp.Message)
 			return nil, fmt.Errorf("Oadin Embedding API 错误: %s (代码: %d)",
@@ -535,17 +536,17 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 		}
 
 		if oadinResp.Data == nil {
-			slog.Error("[Embedding] Oadin 响应中 data 字段为空")
-			return nil, fmt.Errorf("Oadin embedding 响应中 data 字段为空")
+			logger.EngineLogger.Error("[Embedding] Oadin 响应�?data 字段为空")
+			return nil, fmt.Errorf("Oadin embedding 响应�?data 字段为空")
 		}
 
 		dataBytes, err := json.Marshal(oadinResp.Data)
 		if err != nil {
-			slog.Error("[Embedding] Oadin data 字段序列化失败", "error", err)
+			logger.EngineLogger.Error("[Embedding] Oadin data 字段序列化失败", "error", err)
 			return nil, fmt.Errorf("Oadin data 字段序列化失败: %w", err)
 		}
 
-		slog.Debug("[Embedding] Oadin 响应 data 字段内容",
+		logger.EngineLogger.Debug("[Embedding] Oadin 响应 data 字段内容",
 			"data_json", string(dataBytes))
 
 		var dataArray []map[string]interface{}
@@ -559,7 +560,7 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 			},
 		}
 		if err := json.Unmarshal(dataBytes, &dataArray); err == nil && len(dataArray) > 0 {
-			slog.Info("[Embedding] data 字段是数组格式", "length", len(dataArray))
+			logger.EngineLogger.Info("[Embedding] data 字段是数组格式", "length", len(dataArray))
 			for _, item := range dataArray {
 				if embVector, ok := item["embedding"].([]interface{}); ok {
 					embedding := make([]float32, len(embVector))
@@ -572,7 +573,7 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 				}
 			}
 			if len(resp.Embeddings) > 0 {
-				slog.Info("[Embedding] 成功从 data 数组中提取向量",
+				logger.EngineLogger.Info("[Embedding] 成功从data 数组中提取向量",
 					"embedding_count", len(resp.Embeddings),
 					"vector_dim", len(resp.Embeddings[0]))
 				parseArrayOk = true
@@ -593,30 +594,30 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 					resp.Embeddings = append(resp.Embeddings, d.Embedding)
 				}
 				if len(resp.Embeddings) > 0 {
-					slog.Info("[Embedding] 成功解析 Oadin embedding 响应",
+					logger.EngineLogger.Info("[Embedding] 成功解析 Oadin embedding 响应",
 						"embedding_count", len(resp.Embeddings),
 						"vector_dim", len(resp.Embeddings[0]),
 						"model", resp.Model)
 					return resp, nil
 				}
 			} else {
-				slog.Warn("[Embedding] 无法解析为标准 OadinEmbeddingResponse",
+				logger.EngineLogger.Warn("[Embedding] 无法解析为标�?OadinEmbeddingResponse",
 					"error", err.Error())
 
 				var directEmbeddings [][]float32
 				if err := json.Unmarshal(dataBytes, &directEmbeddings); err == nil && len(directEmbeddings) > 0 {
-					slog.Info("[Embedding] 从 Oadin data 字段直接解析出 embeddings 数组",
+					logger.EngineLogger.Info("[Embedding] �?Oadin data 字段直接解析�?embeddings 数组",
 						"embedding_count", len(directEmbeddings))
 					resp.Embeddings = directEmbeddings
 					return resp, nil
 				}
-				slog.Error("[Embedding] 所有解析尝试均失败", "data_json", string(dataBytes))
+				logger.EngineLogger.Error("[Embedding] 所有解析尝试均失败", "data_json", string(dataBytes))
 				return nil, fmt.Errorf("Oadin embedding 响应解析失败: 无法从数据中提取向量")
 			}
 		}
 	case <-ctx.Done():
-		slog.Error("[Embedding] 上下文已取消", "error", ctx.Err())
-		return nil, fmt.Errorf("向量生成请求被取消: %w", ctx.Err())
+		logger.EngineLogger.Error("[Embedding] 上下文已取消", "error", ctx.Err())
+		return nil, fmt.Errorf("向量生成请求被取�? %w", ctx.Err())
 	}
 
 	return nil, fmt.Errorf("embedding 处理过程中未能生成有效响应")
@@ -634,7 +635,7 @@ func cleanModelId(modelId string) string {
 	return result
 }
 
-// Chat 实现非流式聊天功能
+// Chat 实现非流式聊天功�?
 func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.ChatResponse, error) {
 	req.Stream = false
 
@@ -659,7 +660,7 @@ func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.Ch
 	}
 	err = ds.Get(context.Background(), sp)
 	if err != nil {
-		slog.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
+		logger.EngineLogger.Error("[Schedule] Failed to get service", "error", err, "service", "embed")
 	} else {
 		hybridPolicy = sp.HybridPolicy
 	}
@@ -719,7 +720,7 @@ func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.Ch
 				fmt.Printf("[Chat] Oadin API检测到工具调用，数量：%d\n", len(response.ToolCalls))
 			}
 			if response.Thoughts != "" {
-				fmt.Printf("[Chat] Oadin API检测到思考内容，长度：%d\n", len(response.Thoughts))
+				fmt.Printf("[Chat] Oadin API检测到思考内容，长度�?d\n", len(response.Thoughts))
 			}
 			return response, nil
 		}
@@ -750,7 +751,7 @@ func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.Ch
 			// 提取content
 			if c, ok := msg["content"].(string); ok {
 				content = c
-				fmt.Printf("[Chat] 从message.content提取内容，长度: %d\n", len(content))
+				fmt.Printf("[Chat] 从message.content提取内容，长�? %d\n", len(content))
 			}
 
 			// 提取thinking
@@ -762,7 +763,7 @@ func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.Ch
 			// 提取tool_calls
 			if tc, ok := msg["tool_calls"].([]dto.ToolCall); ok && len(tc) > 0 {
 				toolCalls = tc
-				fmt.Printf("[Chat] 提取到tool_calls，数量: %d\n", len(toolCalls))
+				fmt.Printf("[Chat] 提取到tool_calls，数�? %d\n", len(toolCalls))
 			}
 		}
 
@@ -770,7 +771,7 @@ func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.Ch
 		if content == "" {
 			if resp, ok := data["response"].(string); ok {
 				content = resp
-				fmt.Printf("[Chat] 从response提取内容，长度: %d\n", len(content))
+				fmt.Printf("[Chat] 从response提取内容，长�? %d\n", len(content))
 			}
 		}
 
@@ -778,7 +779,7 @@ func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.Ch
 		if content == "" {
 			if c, ok := data["content"].(string); ok {
 				content = c
-				fmt.Printf("[Chat] 从content字段提取内容，长度: %d\n", len(content))
+				fmt.Printf("[Chat] 从content字段提取内容，长�? %d\n", len(content))
 			}
 		}
 
@@ -797,11 +798,11 @@ func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.Ch
 			totalDuration = int64(td)
 		}
 
-		// 若还没有提取到工具调用，尝试从顶层提取
+		// 若还没有提取到工具调用，尝试从顶层提�?
 		if len(toolCalls) == 0 {
 			if tc, ok := data["tool_calls"].([]dto.ToolCall); ok && len(tc) > 0 {
 				toolCalls = tc
-				fmt.Printf("[Chat] 从顶层提取到tool_calls，数量: %d\n", len(toolCalls))
+				fmt.Printf("[Chat] 从顶层提取到tool_calls，数�? %d\n", len(toolCalls))
 			}
 		}
 		// 尝试从顶级字段提取thinking
@@ -822,7 +823,7 @@ func (e *EngineService) Chat(ctx context.Context, req *dto.ChatRequest) (*dto.Ch
 			Thoughts:      thoughts,
 			TotalDuration: totalDuration,
 		}
-		fmt.Printf("[Chat] 通用解析成功，内容长度: %d\n", len(content))
+		fmt.Printf("[Chat] 通用解析成功，内容长�? %d\n", len(content))
 		return resp, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
