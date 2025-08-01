@@ -43,8 +43,9 @@ type ModelServiceProvider interface {
 	GetVersion(ctx context.Context, resp *types.EngineVersionResponse) (*types.EngineVersionResponse, error)
 
 	CopyModel(ctx context.Context, req *types.CopyModelRequest) error
-	GetRunModels(ctx context.Context) (*types.ListResponse, error)
+	LoadModel(ctx context.Context, req *types.LoadRequest) error
 	UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error
+	GetRunningModels(ctx context.Context) (*types.ListResponse, error)
 	GetOperateStatus() int
 	SetOperateStatus(status int)
 }

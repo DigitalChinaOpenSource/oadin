@@ -25,6 +25,7 @@ func (t *McpUserConfig) SetUpdateTime(time time.Time) {
 func (t *McpUserConfig) PrimaryKey() string {
 	return "id"
 }
+
 func (t *McpUserConfig) TableName() string {
 	return "mcp_user_config"
 }
@@ -40,5 +41,4 @@ func (t *McpUserConfig) Index() map[string]interface{} {
 	}
 
 	return index
-
 }

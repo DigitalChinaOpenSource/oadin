@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	ConfigRoot "oadin/config"
 	"oadin/extension/api/dto"
 	"oadin/extension/entity"
@@ -53,10 +54,9 @@ func NewMcpService() MCPService {
 		McpHandler: mcp_handler.NewStdioTransport(),
 	}
 }
+
 func (M *McpServiceImpl) GetMCPList(ctx context.Context, request *rpc.MCPListRequest) (*rpc.MCPListResponse, error) {
-
 	res, err := rpc.GetMCPList(M.Client, *request)
-
 	if err != nil {
 		return nil, err
 	}
@@ -79,14 +79,12 @@ func (M *McpServiceImpl) GetMCPList(ctx context.Context, request *rpc.MCPListReq
 				break
 			}
 		}
-
 	}
 	return res, err
 }
 
 func (M *McpServiceImpl) GetMCP(ctx context.Context, id string) (*rpc.MCPDetailResponse, error) {
 	res, err := rpc.GetMCPDetail(M.Client, id)
-
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +150,6 @@ func (M *McpServiceImpl) GetClients(ctx context.Context, id string) (*rpc.Client
 	}
 
 	return res, err
-
 }
 
 func (M *McpServiceImpl) GetCategories(ctx context.Context) (*rpc.CategoryListResponse, error) {
@@ -180,7 +177,6 @@ func (M *McpServiceImpl) GetMyMCPList(ctx context.Context, request *rpc.MCPListR
 	request.MCPIds = append(request.MCPIds, "unsupported id")
 
 	return M.GetMCPList(ctx, request)
-
 }
 
 func (M *McpServiceImpl) DownloadMCP(ctx context.Context, id string) error {
@@ -266,7 +262,6 @@ func (M *McpServiceImpl) DownloadMCP(ctx context.Context, id string) error {
 	M.Ds.Put(ctx, config)
 
 	return nil
-
 }
 
 func (M *McpServiceImpl) AuthorizeMCP(ctx context.Context, id string, auth string) error {
@@ -294,11 +289,9 @@ func (M *McpServiceImpl) AuthorizeMCP(ctx context.Context, id string, auth strin
 }
 
 func (M *McpServiceImpl) ReverseStatus(c *gin.Context, id string) error {
-
 	con := new(entity.McpUserConfig)
 	con.MCPID = id
 	err := M.Ds.Get(c.Request.Context(), con)
-
 	if err != nil {
 		return err
 	}
@@ -323,7 +316,6 @@ func (M *McpServiceImpl) SetupFunTool(c *gin.Context, req rpc.SetupFunToolReques
 	con := new(entity.McpUserConfig)
 	con.MCPID = req.MCPId
 	err := M.Ds.Get(c.Request.Context(), con)
-
 	if err != nil {
 		return err
 	}

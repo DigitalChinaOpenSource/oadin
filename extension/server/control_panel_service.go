@@ -2,13 +2,13 @@ package server
 
 import (
 	"context"
-	"oadin/internal/logger"
 	"os"
 	"path/filepath"
 	"time"
 
 	"oadin/extension/api/dto"
 	"oadin/extension/utils/bcode"
+	"oadin/internal/logger"
 	"oadin/internal/provider"
 	"oadin/internal/types"
 	"oadin/internal/utils"
@@ -45,7 +45,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if err := engine.HealthCheck(); err != nil {
 		return nil, bcode.ErrModelEngineNotRun
 	}
-	runningModels, _ := engine.GetRunModels(ctx)
+	runningModels, _ := engine.GetRunningModels(ctx)
 	if len(runningModels.Models) > 0 {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelIsRunning
 	}

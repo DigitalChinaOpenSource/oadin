@@ -38,7 +38,6 @@ func (e *SystemlApi) About(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get about information"})
 	}
 	c.JSON(http.StatusOK, res)
-
 }
 
 // ModifyRepositoryURL 修改仓库地址
@@ -95,12 +94,10 @@ func (e *SystemlApi) ProxySwitch(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "代理切换成功"})
-
 }
 
 // SystemSettings 获取系统设置
 func (e *SystemlApi) SystemSettings(c *gin.Context) {
-
 	res, err := e.System.GetSystemSettings(c.Request.Context())
 	if err != nil {
 		logger.ApiLogger.Error("Failed to submit feedback", "error", err)
@@ -109,5 +106,4 @@ func (e *SystemlApi) SystemSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
-
 }

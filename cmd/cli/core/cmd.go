@@ -24,7 +24,6 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
-	"oadin/tray"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -35,9 +34,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 
 	"oadin/config"
 	"oadin/console"
@@ -52,13 +48,18 @@ import (
 	jsondsTemplate "oadin/internal/datastore/jsonds/data"
 	"oadin/internal/datastore/sqlite"
 	"oadin/internal/logger"
+	"oadin/internal/manager"
 	"oadin/internal/provider"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
 	"oadin/internal/utils/progress"
+	"oadin/tray"
 	"oadin/version"
+
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 // NewCommand will contain all commands
@@ -249,6 +250,14 @@ func Run(ctx context.Context) error {
 
 	// start
 	schedule.StartScheduler("basic")
+
+	// Initialize the model memory manager
+	mmm := manager.GetModelManager()
+	mmm.SetIdleTimeout(config.GlobalOADINEnvironment.ModelIdleTimeout)
+	mmm.Start(config.GlobalOADINEnvironment.ModelCleanupInterval)
+	logger.LogicLogger.Info("[Init] Model memory manager started",
+		"idle_timeout", config.GlobalOADINEnvironment.ModelIdleTimeout,
+		"cleanup_interval", config.GlobalOADINEnvironment.ModelCleanupInterval)
 
 	// Inject the router
 	api.InjectRouter(oadinServer.CoreServer)

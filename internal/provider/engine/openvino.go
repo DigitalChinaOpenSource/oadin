@@ -1,5 +1,5 @@
 //*****************************************************************************
-// Copyright 2025 Intel Corporation
+// Copyright 2024-2025 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,13 +37,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"oadin/internal/client"
 	"oadin/internal/constants"
 	"oadin/internal/logger"
 	"oadin/internal/types"
 	"oadin/internal/utils"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -210,8 +210,6 @@ func AsyncDownloadModelFile(ctx context.Context, a AsyncDownloadModelFileData, e
 		logger.EngineLogger.Debug("[OpenVINO] Downloaded file: " + fileData.Name)
 	}
 
-	// 所有文件下载成功
-	// 下载完成后再执行后续逻辑
 	logger.EngineLogger.Debug("[OpenVINO] Generating graph.pbtxt for model: " + a.ModelName)
 	if err := engine.generateGraphPBTxt(a.ModelName, a.ModelType); err != nil {
 		slog.Error("Failed to generate graph.pbtxt", "error", err)
@@ -220,13 +218,13 @@ func AsyncDownloadModelFile(ctx context.Context, a AsyncDownloadModelFileData, e
 		return
 	}
 
-	logger.EngineLogger.Debug("[OpenVINO] Adding model to config: " + a.ModelName)
-	if err := engine.addModelToConfig(a.ModelName, a.ModelType); err != nil {
-		slog.Error("Failed to add model to config", "error", err)
-		logger.EngineLogger.Error("[OpenVINO] Failed to add model to config: " + err.Error())
-		a.ErrCh <- errors.New("Failed to add model to config: " + err.Error())
-		return
-	}
+	// logger.EngineLogger.Debug("[OpenVINO] Adding model to config: " + a.ModelName)
+	// if err := engine.addModelToConfig(a.ModelName, a.ModelType); err != nil {
+	// 	slog.Error("Failed to add model to config", "error", err)
+	// 	logger.EngineLogger.Error("[OpenVINO] Failed to add model to config: " + err.Error())
+	// 	a.ErrCh <- errors.New("Failed to add model to config: " + err.Error())
+	// 	return
+	// }
 
 	logger.EngineLogger.Info("[OpenVINO] Pull model completed: " + a.ModelName)
 	resp := types.ProgressResponse{Status: "success"}
@@ -451,6 +449,15 @@ func (o *OpenvinoProvider) StartEngine(mode string) error {
 	)
 
 	logger.EngineLogger.Debug("[OpenVINO] Batch content: " + batchContent)
+
+	// 确保批处理文件目录存在
+	if _, err := os.Stat(o.EngineConfig.ExecPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(o.EngineConfig.ExecPath, 0o750); err != nil {
+			logger.EngineLogger.Error("[OpenVINO] Failed to create batch file directory: " + err.Error())
+			return fmt.Errorf("failed to create batch file directory: %v", err)
+		}
+	}
+
 	BatchFile := filepath.Join(o.EngineConfig.ExecPath, "start_ovms.bat")
 	if _, err = os.Stat(BatchFile); err != nil {
 		if err = os.WriteFile(BatchFile, []byte(batchContent), 0o644); err != nil {
@@ -574,7 +581,7 @@ func (o *OpenvinoProvider) GetConfig() *types.EngineRecommendConfig {
 	}
 
 	return &types.EngineRecommendConfig{
-		Host:           OpenvinoHTTPHost,
+		Host:           OpenvinoGRPCHost,
 		Origin:         "127.0.0.1",
 		Scheme:         types.ProtocolHTTP,
 		RecommendModel: OpenvinoDefaultModel,
@@ -830,38 +837,21 @@ func (o *OpenvinoProvider) PullModelStream(ctx context.Context, req *types.PullM
 }
 
 func (o *OpenvinoProvider) DeleteModel(ctx context.Context, req *types.DeleteRequest) error {
-	config, err := o.loadConfig()
+	err := o.UnloadModel(ctx, &types.UnloadModelRequest{Models: []string{req.Model}})
 	if err != nil {
-		slog.Error("Failed to load config", "error", err)
-		logger.EngineLogger.Error("[OpenVINO] Failed to load config: " + err.Error())
+		slog.Error("Failed to unload model", "error", err)
+		logger.EngineLogger.Error("[OpenVINO] Failed to unload model: " + err.Error())
 		return err
 	}
 
-	for i, model := range config.MediapipeConfigList {
-		if model.Name == req.Model {
-			config.MediapipeConfigList = append(config.MediapipeConfigList[:i], config.MediapipeConfigList[i+1:]...)
-			err = o.saveConfig(config)
-			if err != nil {
-				slog.Error("Failed to save config after deleting model", "error", err)
-				logger.EngineLogger.Error("[OpenVINO] Failed to save config after deleting model: " + err.Error())
-				return err
-			}
-
-			// To ensure the successful unloading of the model from memory， wait 5 seconds.
-			time.Sleep(5 * time.Second)
-
-			modelDir := fmt.Sprintf("%s/models/%s", o.EngineConfig.EnginePath, req.Model)
-			if err := os.RemoveAll(modelDir); err != nil {
-				slog.Error("Failed to remove model directory", "error", err)
-				logger.EngineLogger.Error("[OpenVINO] Failed to remove model directory: " + err.Error())
-				return err
-			}
-
-			return nil
-		}
+	modelDir := fmt.Sprintf("%s/models/%s", o.EngineConfig.EnginePath, req.Model)
+	if err := os.RemoveAll(modelDir); err != nil {
+		slog.Error("Failed to remove model directory", "error", err)
+		logger.EngineLogger.Error("[OpenVINO] Failed to remove model directory: " + err.Error())
+		return err
 	}
 
-	return fmt.Errorf("model %s not found", req.Model)
+	return nil
 }
 
 func (o *OpenvinoProvider) addModelToConfig(modelName, modelType string) error {
@@ -1034,15 +1024,176 @@ node {
 }`
 )
 
-func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
+func (o *OpenvinoProvider) checkModelMetadata(modelName string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.EngineLogger.Error("[OpenVINO] Panic caught in ModelMetadata: " + fmt.Sprintf("%v", r))
+			err = fmt.Errorf("panic caught in ModelMetadata: %v", r)
+			return
+		}
+	}()
+
+	grpcClient, err := client.NewGRPCClient(o.EngineConfig.Host)
+	if err != nil {
+		slog.Error("Failed to create GRPC client: %v", err)
+		logger.EngineLogger.Error("[OpenVINO] Failed to create GRPC client: " + err.Error())
+		return err
+	}
+
+	_, err = grpcClient.ModelMetadata(modelName, "")
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] ModelMetadata failed with error: %v", err)
+		return err
+	}
+
 	return nil
 }
 
-func (o *OpenvinoProvider) GetRunModels(ctx context.Context) (*types.ListResponse, error) {
-	return nil, nil
+func (o *OpenvinoProvider) GetRunningModels(ctx context.Context) (*types.ListResponse, error) {
+	config, err := o.loadConfig()
+	if err != nil {
+		slog.Error("Failed to load config", "error", err)
+		logger.EngineLogger.Error("[OpenVINO] Failed to load config: " + err.Error())
+		return nil, err
+	}
+
+	modelList := make([]types.ListModelResponse, 0)
+	for _, model := range config.MediapipeConfigList {
+		modelList = append(modelList, types.ListModelResponse{
+			Name: model.Name,
+		})
+	}
+
+	return &types.ListResponse{
+		Models: modelList,
+	}, nil
+}
+
+func (o *OpenvinoProvider) LoadModel(ctx context.Context, req *types.LoadRequest) error {
+	config, err := o.loadConfig()
+	if err != nil {
+		slog.Error("Failed to load config", "error", err)
+		logger.EngineLogger.Error("[OpenVINO] Failed to load config: " + err.Error())
+		return err
+	}
+
+	for _, model := range config.MediapipeConfigList {
+		if model.Name == req.Model {
+			return nil
+		}
+	}
+
+	modelPath := o.EngineConfig.EnginePath + "/models/" + req.Model
+	if _, err := os.Stat(modelPath); err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Model not found: " + err.Error())
+		return err
+	}
+
+	if err := o.addModelToConfig(req.Model, ""); err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to add model to config: " + err.Error())
+		return err
+	}
+
+	// Check whether the model has been successfully loaded from the OVMS loading.
+	// 添加超时机制，避免无限等待
+	timeout := 5 * time.Minute
+	startTime := time.Now()
+
+	for {
+		// 检查超时
+		if time.Since(startTime) > timeout {
+			logger.EngineLogger.Error("[OpenVINO] Timeout waiting for model to load: " + req.Model)
+			return fmt.Errorf("timeout waiting for model %s to load after %v", req.Model, timeout)
+		}
+
+		// 检查上下文取消
+		select {
+		case <-ctx.Done():
+			logger.EngineLogger.Warn("[OpenVINO] Context cancelled while waiting for model to load: " + req.Model)
+			return ctx.Err()
+		default:
+		}
+
+		if err := o.checkModelMetadata(req.Model); err == nil {
+			logger.EngineLogger.Debug("[OpenVINO] Model " + req.Model + " has been loaded from OVMS")
+			break
+		}
+
+		logger.EngineLogger.Debug("[OpenVINO] Waiting for model to be loaded from OVMS: " + req.Model)
+
+		// 使用可中断的睡眠
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(1 * time.Second):
+		}
+	}
+
+	logger.EngineLogger.Debug("[OpenVINO] Model loaded: " + req.Model)
+
+	return nil
 }
 
 func (o *OpenvinoProvider) UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error {
+	config, err := o.loadConfig()
+	if err != nil {
+		slog.Error("Failed to load config", "error", err)
+		logger.EngineLogger.Error("[OpenVINO] Failed to load config: " + err.Error())
+		return err
+	}
+
+	for i, model := range config.MediapipeConfigList {
+		for _, reqModel := range req.Models {
+			if model.Name == reqModel {
+				config.MediapipeConfigList = append(config.MediapipeConfigList[:i], config.MediapipeConfigList[i+1:]...)
+				err = o.saveConfig(config)
+				if err != nil {
+					slog.Error("Failed to save config after deleting model", "error", err)
+					logger.EngineLogger.Error("[OpenVINO] Failed to save config after deleting model: " + err.Error())
+					return err
+				}
+
+				// Check whether the model has been successfully unloaded from the OVMS loading.
+				// 添加超时机制，避免无限等待
+				timeout := 2 * time.Minute
+				startTime := time.Now()
+
+				for {
+					// 检查超时
+					if time.Since(startTime) > timeout {
+						logger.EngineLogger.Error("[OpenVINO] Timeout waiting for model to unload: " + reqModel)
+						return fmt.Errorf("timeout waiting for model %s to unload after %v", reqModel, timeout)
+					}
+
+					// 检查上下文取消
+					select {
+					case <-ctx.Done():
+						logger.EngineLogger.Warn("[OpenVINO] Context cancelled while waiting for model to unload: " + reqModel)
+						return ctx.Err()
+					default:
+					}
+
+					if err := o.checkModelMetadata(reqModel); err != nil {
+						logger.EngineLogger.Debug("[OpenVINO] Model " + reqModel + " has been unloaded from OVMS")
+						break
+					}
+
+					logger.EngineLogger.Debug("[OpenVINO] Waiting for model to be unloaded from OVMS: " + reqModel)
+
+					// 使用可中断的睡眠
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case <-time.After(1 * time.Second):
+					}
+				}
+
+				logger.EngineLogger.Debug("[OpenVINO] Model unloaded: " + reqModel)
+				return nil
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -1056,3 +1207,8 @@ func (o *OpenvinoProvider) SetOperateStatus(status int) {
 	OpenvinoOperateStatus = status
 	slog.Info("Openvino operate status set to", "status", OpenvinoOperateStatus)
 }
+
+func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
+	return nil
+}
+

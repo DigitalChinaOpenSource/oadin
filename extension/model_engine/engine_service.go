@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+
 	"oadin/extension/api/dto"
 	"oadin/internal/datastore"
 	"oadin/internal/logger"
-	
+
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
-	"strings"
 )
 
 // oadinStreamChunk 用于解析 Oadin 流式响应格式

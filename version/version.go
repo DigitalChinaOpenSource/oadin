@@ -36,5 +36,4 @@ func GetOADINVersion() {
 	slog.Info("OADIN Spec Version: " + OADINSpecVersion)
 	slog.Info("OADIN Sub Version: " + OadinSubVersion)
 	slog.Info("OADIN Name: " + OADINName)
-
 }

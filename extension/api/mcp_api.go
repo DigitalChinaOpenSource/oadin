@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
 	"oadin/extension/api/dto"
 	"oadin/extension/entity"
 	"oadin/extension/rpc"
@@ -102,11 +103,9 @@ func (e *McpApi) DownloadMCP(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
-
 }
 
 func (e *McpApi) AuthorizeMCP(c *gin.Context) {
-
 	id := c.Param("id")
 
 	auth := map[string]string{}
@@ -143,7 +142,6 @@ func (e *McpApi) GetMyMCPList(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, resp.Data)
-
 }
 
 func (e *McpApi) ReverseStatus(c *gin.Context) {
@@ -154,7 +152,6 @@ func (e *McpApi) ReverseStatus(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
-
 }
 
 func (e *McpApi) SetupFunTool(c *gin.Context) {
@@ -170,7 +167,6 @@ func (e *McpApi) SetupFunTool(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "200", "data": nil})
-
 }
 
 func (e *McpApi) ClientMcpStart(c *gin.Context) {

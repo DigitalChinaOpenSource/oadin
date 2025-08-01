@@ -5,8 +5,7 @@ type BaseResponse[T any] struct {
 	Data T   `json:"data"` // 数据
 }
 
-type ChangeList struct {
-}
+type ChangeList struct{}
 
 type ChangeListResponse1 = BaseResponse[[]ChangeList]
 

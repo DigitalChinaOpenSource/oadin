@@ -29,9 +29,16 @@ import (
 
 	"oadin/internal/datastore"
 	"oadin/internal/logger"
+	"oadin/internal/manager"
+	"oadin/internal/provider"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
+)
+
+const (
+	// ModelPreparationTimeout 模型准备超时时间
+	ModelPreparationTimeout = 5 * time.Minute
 )
 
 type ServiceTaskEventType int
@@ -352,6 +359,57 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	protocol := ""
 	if serviceDef, exists := flavorDef.Services[task.Request.Service]; exists {
 		protocol = serviceDef.Protocol
+	}
+
+	// 模型内存管理：确保本地模型已加载
+	if location == types.ServiceSourceLocal && model != "" {
+		// 获取模型引擎实例
+		modelEngine := provider.GetModelEngine(sp.Flavor)
+		if modelEngine != nil {
+			mmm := manager.GetModelManager()
+			ctx := context.Background()
+
+			// 请求分流：判断是否需要进入排队机制
+			if manager.NeedsQueuing(location, task.Request.Service) {
+				// 本地非embed请求：进入排队机制
+				logger.LogicLogger.Debug("[Schedule] Enqueueing local non-embed model request",
+					"model", model, "service", task.Request.Service, "provider", sp.ProviderName)
+
+				readyChan, errorChan, err := mmm.EnqueueLocalModelRequest(ctx, model, modelEngine, sp.ProviderName, sp.Flavor, task.Schedule.Id)
+				if err != nil {
+					logger.LogicLogger.Error("[Schedule] Failed to enqueue local model request",
+						"model", model, "provider", sp.ProviderName, "error", err)
+					return nil, fmt.Errorf("failed to enqueue model request %s: %w", model, err)
+				}
+
+				logger.LogicLogger.Info("[Schedule] Local model request enqueued, waiting for model preparation",
+					"model", model, "provider", sp.ProviderName, "taskID", task.Schedule.Id)
+
+				// 等待队列处理完成（模型切换和准备）
+				select {
+				case <-readyChan:
+					// 检查是否有错误
+					select {
+					case queueErr := <-errorChan:
+						logger.LogicLogger.Error("[Schedule] Model preparation failed",
+							"model", model, "taskID", task.Schedule.Id, "error", queueErr)
+						return nil, fmt.Errorf("model preparation failed for %s: %w", model, queueErr)
+					default:
+						logger.LogicLogger.Info("[Schedule] Model preparation completed, ready to execute task",
+							"model", model, "taskID", task.Schedule.Id)
+					}
+				case <-ctx.Done():
+					logger.LogicLogger.Warn("[Schedule] Context cancelled while waiting for model preparation",
+						"model", model, "taskID", task.Schedule.Id, "error", ctx.Err())
+					return nil, ctx.Err()
+				case <-time.After(ModelPreparationTimeout):
+					logger.LogicLogger.Error("[Schedule] Timeout waiting for model preparation",
+						"model", model, "taskID", task.Schedule.Id, "timeout", ModelPreparationTimeout)
+					return nil, fmt.Errorf("timeout waiting for model preparation: %s (timeout: %v)", model, ModelPreparationTimeout)
+				}
+			}
+			// 远程请求或本地embed请求：直接走原有流程，不需要特殊处理
+		}
 	}
 
 	return &types.ServiceTarget{

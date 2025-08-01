@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"oadin/internal/logger"
 	"os"
@@ -20,8 +21,6 @@ import (
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
-
-	"hash/fnv"
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3" // SQLite驱动
@@ -338,7 +337,6 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 
 	err = db.QueryRow(query, request.FileID).Scan(
 		&fileID, &sessionID, &name, &path, &size, &fileType, &chunkSize, &createdAt, &updatedAt)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			logger.LogicLogger.Error("文件记录不存�?(SQL)", "fileID", request.FileID)

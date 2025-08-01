@@ -164,7 +164,6 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 							IsRecommend = true
 							break
 						}
-
 					}
 				}
 			}
@@ -455,7 +454,6 @@ func myModelFilter(modelList *[]dto.RecommendModelData) {
 		if tempList[i].CanSelect {
 			finalDataList = append(finalDataList, tempList[i])
 		}
-
 	}
 	// 数据回填
 	*modelList = finalDataList

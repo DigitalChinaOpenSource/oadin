@@ -521,7 +521,6 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 					break
 				}
 			}
-
 		}
 	}
 

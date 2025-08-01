@@ -20,7 +20,6 @@ func NewAuthHandler(flavor string) AuthHandlerProvider {
 }
 
 func (d *DefaultAuthHandler) MergeAuthKey(ctx context.Context, existingAuth, newAuth string) (string, error) {
-
 	return newAuth, nil
 }
 
