@@ -2,6 +2,7 @@ package tray
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -70,13 +71,12 @@ func startWebConsoleFrontend() {
 
 // 检查端口是否已被占用
 func isPortInUse(port string) bool {
-	conn, err := exec.Command("powershell", "-Command", "Test-NetConnection -ComputerName 127.0.0.1 -Port "+port+" | Select-Object -ExpandProperty TcpTestSucceeded").Output()
-	if err == nil && string(conn) == "True\r\n" {
-		return true
+	conn, err := net.Dial("tcp", "127.0.0.1:"+port)
+	if err != nil {
+		return false
 	}
-	// Linux/Mac
-	err2 := exec.Command("sh", "-c", "nc -z 127.0.0.1 "+port).Run()
-	return err2 == nil
+	_ = conn.Close()
+	return true
 }
 
 func (m *Manager) onReady() {
@@ -238,8 +238,7 @@ func (m *Manager) installUpdate() error {
 		installFilaPath := filepath.Join(config.GlobalOADINEnvironment.UpdateDir, "oadin-installer-latest.pkg")
 		cmd = exec.Command("open", installFilaPath)
 	case "linux":
-		installFilaPath := ""
-		fmt.Sprintf(installFilaPath)
+		return fmt.Errorf("auto update not supported on Linux yet")
 	case "windows":
 		installFilaPath := filepath.Join(config.GlobalOADINEnvironment.UpdateDir, "oadin-installer-latest.exe")
 		cmd = exec.Command(installFilaPath, "/S")

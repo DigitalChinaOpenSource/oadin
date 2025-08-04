@@ -3,7 +3,7 @@
 !endif
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
-!define INSTALL_DIR "$PROFILE\Oadin"
+!define INSTALL_DIR "$LOCALAPPDATA\Programs\Oadin"
 
 Outfile "oadin-installer.exe"
 InstallDir "${INSTALL_DIR}"

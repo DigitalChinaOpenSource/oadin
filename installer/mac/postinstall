@@ -1,23 +1,59 @@
 #!/bin/bash
-USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
-mkdir -p "$USER_HOME/Oadin"
+exec > /tmp/oadin_postinstall.log 2>&1
 set -x
-cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
-ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
-SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')
+
+# 获取真实用户（避免 sudo 环境下的问题）
+REAL_USER="${SUDO_USER:-$USER}"
+USER_HOME=$(eval echo ~$REAL_USER)
+
+# 应用安装路径
+APP_BUNDLE="/Applications/Oadin.app"
+MACOS_DIR="${APP_BUNDLE}/Contents/MacOS"
+
+echo "Starting Oadin postinstall process..."
+
+# 创建用户 Oadin 目录（用于数据存储）
+mkdir -p "$USER_HOME/Oadin"
+chown -R "$REAL_USER:staff" "$USER_HOME/Oadin"
+
+# 确保 /usr/local/bin 目录存在
+mkdir -p /usr/local/bin
+
+# 创建软链接到 /usr/local/bin
+if [ -f "${MACOS_DIR}/oadin" ]; then
+    ln -sf "${MACOS_DIR}/oadin" /usr/local/bin/oadin
+    echo "Created symlink: /usr/local/bin/oadin -> ${MACOS_DIR}/oadin"
+else
+    echo "Warning: oadin executable not found in ${MACOS_DIR}"
+fi
+
+# 确保用户的 shell 配置文件包含 /usr/local/bin 在 PATH 中
+SHELL_PATH=$(dscl . -read /Users/$REAL_USER UserShell | awk '{print $2}')
 SHELL_NAME=$(basename "$SHELL_PATH")
 
 if [ "$SHELL_NAME" = "zsh" ]; then
-  RC_FILE="$USER_HOME/.zshrc"
+    RC_FILE="$USER_HOME/.zshrc"
 elif [ "$SHELL_NAME" = "bash" ]; then
-  RC_FILE="$USER_HOME/.bash_profile"
+    RC_FILE="$USER_HOME/.bash_profile"
 else
-  RC_FILE=""
+    RC_FILE=""
 fi
 
-
-if [ -n "$RC_FILE" ] && [ -f "$RC_FILE" ]; then
-  su - "$USER" -c "source $RC_FILE && oadin server start -d"
-else
-  su - "$USER" -c "oadin server start -d"
+if [ -n "$RC_FILE" ]; then
+    # 检查 PATH 中是否已包含 /usr/local/bin
+    if ! grep -q "/usr/local/bin" "$RC_FILE" 2>/dev/null; then
+        echo 'export PATH="/usr/local/bin:$PATH"' >> "$RC_FILE"
+        chown "$REAL_USER:staff" "$RC_FILE"
+    fi
 fi
+
+# 启动服务（以真实用户身份）
+if [ -f "${MACOS_DIR}/oadin" ]; then
+    sudo -u "$REAL_USER" "${MACOS_DIR}/oadin" server start -d
+    echo "Oadin server started"
+else
+    echo "Warning: Could not start oadin server - executable not found"
+fi
+
+echo "Oadin installation completed successfully"
+exit 0

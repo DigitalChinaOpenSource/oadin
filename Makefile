@@ -43,12 +43,26 @@ build-dll-linux:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o OadinChecker.so -buildmode=c-shared checker/OadinChecker.go
 
 trayapp:
+ifeq ($(GOOS),windows)
 	go build -o oadin-tray.exe trayapp/main.go
+else
+	go build -o oadin-tray trayapp/main.go
+endif
 
 copy-win-artifacts:
 	copy /Y oadin.exe installer\win\
 	copy /Y oadin-tray.exe installer\win\
 
+copy-mac-artifacts:
+	cp oadin installer/mac/
+	cp oadin-tray installer/mac/
+	chmod +x installer/mac/create-app.sh
+
+build-mac-app: copy-mac-artifacts
+	cd installer/mac && ./create-app.sh
+
 build-win-installer: build-cli-win copy-win-artifacts
 
-.PHONY: build-all build-cli-win trayapp copy-win-artifacts build-win-installer
+build-mac-installer: build-cli-darwin build-mac-app
+
+.PHONY: build-all build-cli-win trayapp copy-win-artifacts copy-mac-artifacts build-win-installer build-mac-installer build-mac-app

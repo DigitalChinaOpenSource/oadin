@@ -11,7 +11,7 @@ import (
 )
 
 func ShowLogs() error {
-	cmd = exec.Command("xdg-open", config.GlobalOADINEnvironment.LogDir)
+	cmd := exec.Command("xdg-open", config.GlobalOADINEnvironment.LogDir)
 	err := cmd.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to open log dir: %s", err))
