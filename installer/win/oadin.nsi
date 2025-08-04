@@ -13,11 +13,11 @@ SetCompressor lzma
 
 Section "Install"
   SetOutPath "$INSTDIR"
-  File "oadin.exe"
-  File "oadin-tray.exe"
-  File "preinstall.bat"
-  File "postinstall.bat"
-  File "start-oadin.bat"
+  File /nonfatal "oadin.exe"
+  File /nonfatal "oadin-tray.exe"
+  File /nonfatal "preinstall.bat"
+  File /nonfatal "postinstall.bat"
+  File /nonfatal "start-oadin.bat"
 
   # Pre-install silently
   nsExec::Exec '"$INSTDIR\preinstall.bat"'

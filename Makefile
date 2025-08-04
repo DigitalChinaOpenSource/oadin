@@ -52,6 +52,9 @@ endif
 copy-win-artifacts:
 	copy /Y oadin.exe installer\win\
 	copy /Y oadin-tray.exe installer\win\
+	copy /Y installer\win\preinstall.bat installer\win\
+	copy /Y installer\win\postinstall.bat installer\win\
+	copy /Y installer\win\start-oadin.bat installer\win\
 
 copy-mac-artifacts:
 	cp oadin installer/mac/
@@ -62,6 +65,7 @@ build-mac-app: copy-mac-artifacts
 	cd installer/mac && ./create-app.sh
 
 build-win-installer: build-cli-win copy-win-artifacts
+	cd installer\win && makensis oadin.nsi
 
 build-mac-installer: build-cli-darwin build-mac-app
 
