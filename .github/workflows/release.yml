@@ -258,16 +258,24 @@ jobs:
 
           $nsisPath = "installer\win\oadin.nsi"
           if (Test-Path $nsisPath) {
-              Write-Host "Found NSIS script at: $nsisPath"
-              $content = Get-Content $nsisPath -Raw -Encoding UTF8
-              # 清除 BOM 和不可见字符
-              $content = $content -replace '^\uFEFF','' -replace '\u00A0',' ' -replace '\u200B|\u200C|\u200D','' -replace '\u202A|\u202B|\u202C|\u202D|\u202E',''
-              # 保存为 ANSI 编码
-              [System.IO.File]::WriteAllText((Resolve-Path $nsisPath).Path, $content, [System.Text.Encoding]::GetEncoding(1252))
-              Write-Host "✅ NSIS script encoding fixed"
+            Write-Host "Found NSIS script at: $nsisPath"
+            $content = Get-Content $nsisPath -Raw
+
+            $content = $content -replace '(?m)^\s*!pragma.*\r?\n',''
+
+            $content = $content -replace '(?m)^\s*Icon\s+\".*\"\s*$',          'Icon "oadin-icon.ico"'
+            $content = $content -replace '(?m)^\s*UninstallIcon\s+\".*\"\s*$', 'UninstallIcon "oadin-icon.ico"'
+
+
+            $content = $content -replace '\.\.\\\.\.\\tray\\icon\\OADIN-[^"]+\.ico','oadin-icon.ico'
+
+            [System.IO.File]::WriteAllText((Resolve-Path $nsisPath).Path, $content, [System.Text.Encoding]::GetEncoding(1252))
+            Write-Host "✅ NSIS script sanitized (no pragma, ASCII icon path)"
+            
+            ($i=1; foreach($l in (Get-Content $nsisPath)) { if ($i -le 20) { "{0,3}: {1}" -f $i, $l | Write-Host }; $i++ }) | Out-Null
           } else {
-              Write-Error "❌ NSIS script not found at: $nsisPath"
-              exit 1
+            Write-Error "❌ NSIS script not found at: $nsisPath"
+            exit 1
           }
           
           # 进入 installer\win 目录运行 NSIS
