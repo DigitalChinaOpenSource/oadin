@@ -97,13 +97,11 @@ prepare-win-build:
 	@if exist oadin.exe echo "oadin.exe found" else echo "Warning: oadin.exe not found"
 	@if exist oadin-tray.exe echo "oadin-tray.exe found" else echo "Warning: oadin-tray.exe not found"
 
-# 专门为流水线设计 - 无条件构建 trayapp
 force-build-tray:
 	@echo "Force building trayapp for pipeline..."
 	go build -o oadin-tray.exe trayapp/main.go
 	@echo "✅ oadin-tray.exe built successfully"
 
-# 验证构建结果
 verify-build:
 	@echo "Verifying build artifacts..."
 	@if exist oadin.exe ( echo "✅ oadin.exe found" ) else ( echo "❌ oadin.exe missing" && exit 1 )
