@@ -318,20 +318,20 @@ func getIcon() ([]byte, error) {
 	// 根据系统类型和主题获取不同的图片
 	var file string
 	if runtime.GOOS == "darwin" {
-		file = "oadin-mac-dark.ico"
 		if isMacDarkMode() {
-			file = "oadin-mac-white.ico"
+			file = "OADIN-图标-单白.png"
+		} else {
+			file = "OADIN-图标-单黑.png" 
 		}
 	} else if runtime.GOOS == "windows" {
-		file = "oadin.ico"
+		file = "OADIN-图标-彩色.png"
 	} else {
-		file = "oadin.ico" // Linux 默认
+		file = "OADIN-图标-彩色.png" 
 	}
 
 	data, err := trayTemplate.TrayIconFS.ReadFile(file)
 	if err != nil {
-		// 如果找不到指定图标，尝试默认图标
-		data, err = trayTemplate.TrayIconFS.ReadFile("oadin.ico")
+		data, err = trayTemplate.TrayIconFS.ReadFile("OADIN-图标-彩色.png")
 		if err != nil {
 			return nil, err
 		}
