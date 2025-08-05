@@ -129,13 +129,15 @@ func isPortInUse(port string) bool {
 func (m *Manager) onReady() {
 	fmt.Println("System tray ready, setting up...")
 
-	// Set icon
-	data, err := getIcon()
+	// Set icon - 针对 Windows 优先使用 ICO 格式
+	var data []byte
+	customData, err := getIcon()
 	if err != nil {
 		fmt.Printf("Failed to load custom icon, using default: %v\n", err)
 		data = icon.Data
 	} else {
-		fmt.Printf("Successfully loaded custom icon, size: %d bytes\n", len(data))
+		fmt.Printf("Successfully loaded custom icon, size: %d bytes\n", len(customData))
+		data = customData
 	}
 
 	systray.SetIcon(data)
@@ -368,38 +370,46 @@ func (m *Manager) viewLogs() error {
 
 // getIcon returns the icon data
 func getIcon() ([]byte, error) {
-	// 根据系统类型和主题获取不同的图片
-	var file string
+	var files []string
+
 	if runtime.GOOS == "darwin" {
 		if isMacDarkMode() {
-			file = "OADIN-图标-单白.png"
+			files = []string{"OADIN-图标-单白.ico", "OADIN-图标-单白.png"}
 		} else {
-			file = "OADIN-图标-单黑.png"
+			files = []string{"OADIN-图标-单黑.ico", "OADIN-图标-单黑.png"}
 		}
 	} else if runtime.GOOS == "windows" {
-		file = "OADIN-图标-彩色.png"
+		files = []string{"OADIN-图标-彩色.ico", "OADIN-图标-彩色.png"}
 	} else {
-		file = "OADIN-图标-彩色.png"
+		files = []string{"OADIN-图标-彩色.ico", "OADIN-图标-彩色.png"}
 	}
 
-	fmt.Printf("Trying to load icon: %s\n", file)
-	data, err := trayTemplate.TrayIconFS.ReadFile(file)
-	if err != nil {
-		fmt.Printf("Failed to load %s: %v, trying fallback\n", file, err)
-		// 尝试加载所有可用的图标文件作为后备
-		fallbackFiles := []string{"OADIN-图标-彩色.png", "OADIN-图标-单黑.png", "OADIN-图标-单白.png"}
-		for _, fallback := range fallbackFiles {
-			data, err = trayTemplate.TrayIconFS.ReadFile(fallback)
-			if err == nil {
-				fmt.Printf("Successfully loaded fallback icon: %s, size: %d bytes\n", fallback, len(data))
-				return data, nil
-			}
-			fmt.Printf("Failed to load fallback %s: %v\n", fallback, err)
+	for _, file := range files {
+		fmt.Printf("Trying to load icon: %s\n", file)
+		data, err := trayTemplate.TrayIconFS.ReadFile(file)
+		if err == nil {
+			fmt.Printf("Successfully loaded icon: %s, size: %d bytes\n", file, len(data))
+			return data, nil
 		}
-		return nil, fmt.Errorf("no icon files found")
+		fmt.Printf("Failed to load %s: %v\n", file, err)
 	}
-	fmt.Printf("Successfully loaded icon: %s, size: %d bytes\n", file, len(data))
-	return data, nil
+
+	fmt.Println("Trying fallback icons...")
+	fallbackFiles := []string{
+		"OADIN-图标-彩色.ico", "OADIN-图标-单黑.ico", "OADIN-图标-单白.ico",
+		"OADIN-图标-彩色.png", "OADIN-图标-单黑.png", "OADIN-图标-单白.png",
+	}
+
+	for _, fallback := range fallbackFiles {
+		data, err := trayTemplate.TrayIconFS.ReadFile(fallback)
+		if err == nil {
+			fmt.Printf("Successfully loaded fallback icon: %s, size: %d bytes\n", fallback, len(data))
+			return data, nil
+		}
+		fmt.Printf("Failed to load fallback %s: %v\n", fallback, err)
+	}
+
+	return nil, fmt.Errorf("no icon files found")
 }
 
 // 判断 macOS 是否为暗色模式

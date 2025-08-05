@@ -6,7 +6,7 @@ import (
 	"io/fs"
 )
 
-//go:embed *.png
+//go:embed *.png *.ico
 var TrayIconFS embed.FS
 
 func DebugListFiles() {
