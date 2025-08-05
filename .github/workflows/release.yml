@@ -196,6 +196,13 @@ jobs:
           # 验证文件复制成功
           Write-Host "Files in installer\win directory:"
           Get-ChildItem "installer\win\" -Name "*.exe" | ForEach-Object { Write-Host "  $_" }
+
+          # —— 在调用 NSIS 前，强制把脚本改成纯 ANSI 并清除不可见字符 ——
+          $nsisPath = "installer\win\oadin.nsi"
+          $content  = Get-Content $nsisPath -Raw
+          $content  = $content -replace '^\uFEFF','' -replace '\u00A0',' ' -replace '\u200B|\u200C|\u200D','' -replace '\u202A|\u202B|\u202C|\u202D|\u202E',''
+          [System.IO.File]::WriteAllText($nsisPath, $content, [System.Text.Encoding]::GetEncoding(1252))
+
           
           # 进入 installer\win 目录运行 NSIS
           Push-Location "installer\win"
