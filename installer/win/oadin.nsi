@@ -1,4 +1,3 @@
-!pragma codepage UTF8
 !ifndef VERSION
   !define VERSION "0.0.0"
 !endif
@@ -14,13 +13,15 @@ SetCompressor lzma
 
 Section "Install"
   SetOutPath "$INSTDIR"
-
+  
+  ; ??????????
   File "oadin.exe"
   File /nonfatal "oadin-tray.exe"
   File "preinstall.bat"
   File "postinstall.bat"
   File "start-oadin.bat"
 
+  ; ??????
   nsExec::Exec '"$INSTDIR\preinstall.bat"'
   nsExec::Exec '"$INSTDIR\postinstall.bat" "$INSTDIR"'
   nsExec::Exec '"$INSTDIR\start-oadin.bat"'
