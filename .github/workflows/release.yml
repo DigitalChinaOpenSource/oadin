@@ -242,9 +242,18 @@ jobs:
               Write-Host "⚠️ oadin-tray.exe not found, skipping copy"
           }
           
+          # 复制图标文件到 installer\win 目录（为 NSIS 脚本使用）
+          if (Test-Path "tray\\icon\\OADIN-图标-彩色.ico") {
+              Copy-Item "tray\\icon\\OADIN-图标-彩色.ico" "installer\\win\\" -Force
+              Write-Host "✅ Icon file copied to installer\\win"
+          } else {
+              Write-Host "⚠️ Icon file not found at tray\\icon\\OADIN-图标-彩色.ico"
+          }
+          
           # 验证文件复制成功
           Write-Host "Files in installer\win directory:"
           Get-ChildItem "installer\win\" -Name "*.exe" | ForEach-Object { Write-Host "  $_" }
+          Get-ChildItem "installer\win\" -Name "*.ico" | ForEach-Object { Write-Host "  $_" }
 
           $nsisPath = "installer\win\oadin.nsi"
           if (Test-Path $nsisPath) {
