@@ -151,9 +151,9 @@ jobs:
           Write-Host "Installing rsrc tool..."
           go install github.com/akavel/rsrc@latest
           
-          if (Test-Path "tray\\icon\\OADIN-图标-彩色.ico") {
+          if (Test-Path "tray\\icon\\oadin-icon.ico") {
               Write-Host "Generating Windows resource file with rsrc..."
-              & "$env:GOPATH\\bin\\rsrc.exe" -ico "tray\\icon\\OADIN-图标-彩色.ico" -o "trayapp\\resource.syso"
+              & "$env:GOPATH\\bin\\rsrc.exe" -ico "tray\\icon\\oadin-icon.ico" -o "trayapp\\resource.syso"
               if (Test-Path "trayapp\\resource.syso") {
                   Write-Host "✅ Windows resource file generated successfully"
               } else {
@@ -172,9 +172,9 @@ jobs:
               Push-Location "trayapp"
               
               # 确保图标文件存在
-              if (Test-Path "..\\tray\\icon\\OADIN-图标-彩色.ico") {
+              if (Test-Path "..\\tray\\icon\\oadin-icon.ico") {
                   Write-Host "Found icon file, generating resource..."
-                  & "$env:GOPATH\\bin\\goversioninfo.exe" -icon "..\\tray\\icon\\OADIN-图标-彩色.ico"
+                  & "$env:GOPATH\\bin\\goversioninfo.exe" -icon "..\\tray\\icon\\oadin-icon.ico"
                   
                   if (Test-Path "resource.syso") {
                       Write-Host "✅ Windows resource file with icon generated successfully"
@@ -185,7 +185,7 @@ jobs:
                       Write-Host "⚠️ Failed to generate resource file"
                   }
               } else {
-                  Write-Host "⚠️ Icon file not found at: ..\\tray\\icon\\OADIN-图标-彩色.ico"
+                  Write-Host "⚠️ Icon file not found at: ..\\tray\\icon\\oadin-icon.ico"
                   # 尝试不带图标生成
                   & "$env:GOPATH\\bin\\goversioninfo.exe"
               }
@@ -243,12 +243,12 @@ jobs:
           }
           
           # 复制图标文件到 installer\win 目录（重命名避免中文编码问题）
-          if (Test-Path "tray\\icon\\OADIN-图标-彩色.ico") {
+          if (Test-Path "tray\\icon\\oadin-icon.ico") {
               # 重命名为纯ASCII文件名
-              Copy-Item "tray\\icon\\OADIN-图标-彩色.ico" "installer\\win\\oadin-icon.ico" -Force
+              Copy-Item "tray\\icon\\oadin-icon.ico" "installer\\win\\oadin-icon.ico" -Force
               Write-Host "✅ Icon file copied and renamed to oadin-icon.ico"
           } else {
-              Write-Host "⚠️ Icon file not found at tray\\icon\\OADIN-图标-彩色.ico"
+              Write-Host "⚠️ Icon file not found at tray\\icon\\oadin-icon.ico"
           }
           
           # 验证文件复制成功
