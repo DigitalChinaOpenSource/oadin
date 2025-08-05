@@ -1,4 +1,4 @@
 #include <windows.h>
 
 // 主程序图标 (ID=1)
-1 ICON "..\\tray\\icon\\OADIN-图标-彩色.ico"
+1 ICON "..\\tray\\icon\\oadin-icon.ico"
