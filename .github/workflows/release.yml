@@ -242,10 +242,11 @@ jobs:
               Write-Host "⚠️ oadin-tray.exe not found, skipping copy"
           }
           
-          # 复制图标文件到 installer\win 目录（为 NSIS 脚本使用）
+          # 复制图标文件到 installer\win 目录（重命名避免中文编码问题）
           if (Test-Path "tray\\icon\\OADIN-图标-彩色.ico") {
-              Copy-Item "tray\\icon\\OADIN-图标-彩色.ico" "installer\\win\\" -Force
-              Write-Host "✅ Icon file copied to installer\\win"
+              # 重命名为纯ASCII文件名
+              Copy-Item "tray\\icon\\OADIN-图标-彩色.ico" "installer\\win\\oadin-icon.ico" -Force
+              Write-Host "✅ Icon file copied and renamed to oadin-icon.ico"
           } else {
               Write-Host "⚠️ Icon file not found at tray\\icon\\OADIN-图标-彩色.ico"
           }

@@ -7,9 +7,8 @@
 !define INSTALL_DIR "$LOCALAPPDATA\Programs\Oadin"
 
 
-Icon "..\\..\\tray\\icon\\OADIN-??-??.ico"
-
-UninstallIcon "..\\..\\tray\\icon\\OADIN-??-??.ico"
+Icon "oadin-icon.ico"
+UninstallIcon "oadin-icon.ico"
 
 Outfile "oadin-installer.exe"
 InstallDir "${INSTALL_DIR}"
@@ -27,13 +26,13 @@ Section "Install"
   File "start-oadin.bat"
 
 
-  File /nonfatal "..\\..\\tray\\icon\\OADIN-??-??.ico"
-
+  File /nonfatal "oadin-icon.ico"
 
   nsExec::Exec '"$INSTDIR\preinstall.bat"'
   nsExec::Exec '"$INSTDIR\postinstall.bat" "$INSTDIR"'
   nsExec::Exec '"$INSTDIR\start-oadin.bat"'
   
+
   CreateDirectory "$SMPROGRAMS\Oadin"
   CreateShortCut "$SMPROGRAMS\Oadin\Oadin Tray.lnk" "$INSTDIR\oadin-tray.exe" "" "$INSTDIR\oadin-tray.exe" 0
   CreateShortCut "$SMPROGRAMS\Oadin\Oadin CLI.lnk" "$INSTDIR\oadin.exe" "" "$INSTDIR\oadin.exe" 0
