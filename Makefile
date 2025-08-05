@@ -33,15 +33,6 @@ build-cli-linux:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64  go build -o oadin -ldflags="-s -w"  cmd/cli/main.go
 	$(MAKE) trayapp
 
-build-dll-win:
-	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o OadinChecker.dll -buildmode=c-shared checker/OadinChecker.go
-
-build-dll-darwin:
-	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o OadinChecker.dylib -buildmode=c-shared checker/OadinChecker.go
-
-build-dll-linux:
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o OadinChecker.so -buildmode=c-shared checker/OadinChecker.go
-
 trayapp:
 ifeq ($(GOOS),windows)
 	go build -o oadin-tray.exe trayapp/main.go
@@ -49,12 +40,17 @@ else
 	go build -o oadin-tray trayapp/main.go
 endif
 
+build-for-ci:
+ifeq ($(GOOS),windows)
+	go build -o oadin-tray.exe trayapp/main.go
+else
+	go build -o oadin-tray trayapp/main.go
+endif
+	@echo "CI build completed"
+
 copy-win-artifacts:
 	copy /Y oadin.exe installer\win\
 	copy /Y oadin-tray.exe installer\win\
-	copy /Y installer\win\preinstall.bat installer\win\
-	copy /Y installer\win\postinstall.bat installer\win\
-	copy /Y installer\win\start-oadin.bat installer\win\
 
 copy-mac-artifacts:
 	cp oadin installer/mac/
@@ -69,4 +65,50 @@ build-win-installer: build-cli-win copy-win-artifacts
 
 build-mac-installer: build-cli-darwin build-mac-app
 
-.PHONY: build-all build-cli-win trayapp copy-win-artifacts copy-mac-artifacts build-win-installer build-mac-installer build-mac-app
+.PHONY: build-all build-cli-win build-cli-darwin build-cli-darwin-arm build-cli-linux trayapp build-for-ci copy-win-artifacts copy-mac-artifacts build-mac-app build-win-installer build-mac-installer
+build-mac-installer: build-cli-darwin build-mac-app
+
+build-for-pipeline:
+	go build -o oadin-tray.exe trayapp/main.go
+	@echo "Pipeline build completed with trayapp"
+
+
+ensure-trayapp:
+ifeq ($(GOOS),windows)
+	@if not exist oadin-tray.exe ( \
+		echo Building missing oadin-tray.exe... && \
+		go build -o oadin-tray.exe trayapp/main.go \
+	) else ( \
+		echo oadin-tray.exe already exists \
+	)
+else
+	@if [ ! -f oadin-tray ]; then \
+		echo "Building missing oadin-tray..."; \
+		go build -o oadin-tray trayapp/main.go; \
+	else \
+		echo "oadin-tray already exists"; \
+	fi
+endif
+
+
+prepare-win-build:
+	@echo "Preparing Windows build for CI..."
+	go build -o oadin-tray.exe trayapp/main.go
+	@echo "oadin-tray.exe built successfully"
+	@if exist oadin.exe echo "oadin.exe found" else echo "Warning: oadin.exe not found"
+	@if exist oadin-tray.exe echo "oadin-tray.exe found" else echo "Warning: oadin-tray.exe not found"
+
+# 专门为流水线设计 - 无条件构建 trayapp
+force-build-tray:
+	@echo "Force building trayapp for pipeline..."
+	go build -o oadin-tray.exe trayapp/main.go
+	@echo "✅ oadin-tray.exe built successfully"
+
+# 验证构建结果
+verify-build:
+	@echo "Verifying build artifacts..."
+	@if exist oadin.exe ( echo "✅ oadin.exe found" ) else ( echo "❌ oadin.exe missing" && exit 1 )
+	@if exist oadin-tray.exe ( echo "✅ oadin-tray.exe found" ) else ( echo "❌ oadin-tray.exe missing" && exit 1 )
+	@echo "All artifacts verified successfully"
+
+.PHONY: build-all build-cli-win build-cli-darwin build-cli-darwin-arm build-cli-linux trayapp build-for-ci copy-win-artifacts copy-mac-artifacts build-mac-app build-win-installer build-mac-installer ensure-trayapp prepare-win-build force-build-tray verify-build

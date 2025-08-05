@@ -7,19 +7,26 @@
 
 Outfile "..\..\oadin-installer.exe"
 InstallDir "${INSTALL_DIR}"
-RequestExecutionLevel user ; Install to user's profile, so no admin rights needed by default
+RequestExecutionLevel user
 SetCompress auto
 SetCompressor lzma
 
 Section "Install"
   SetOutPath "$INSTDIR"
-  File /nonfatal "..\..\oadin.exe"
-  File /nonfatal "..\..\oadin-tray.exe"
-  File /nonfatal "preinstall.bat"
-  File /nonfatal "postinstall.bat"
-  File /nonfatal "start-oadin.bat"
+  
+  ; 必需文件
+  File "..\..\oadin.exe"
+  
+  ; 可选文件 - 托盘应用（如果流水线构建了的话）
+  IfFileExists "..\..\oadin-tray.exe" 0 +2
+    File "..\..\oadin-tray.exe"
+  
+  ; 安装脚本
+  File "preinstall.bat"
+  File "postinstall.bat"
+  File "start-oadin.bat"
 
-  # Pre-install silently
+  ; 执行安装步骤
   nsExec::Exec '"$INSTDIR\preinstall.bat"'
 
   # Post-install silently with argument

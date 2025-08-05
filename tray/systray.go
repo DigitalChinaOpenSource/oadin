@@ -31,10 +31,10 @@ type Manager struct {
 }
 
 // NewManager creates a new system tray manager
-func NewManager(serverRunningStatus bool, logPath, pidPath string) *Manager {
+func NewManager(debug bool, logPath, pidPath string) *Manager {
 	execPath, _ := os.Executable()
 	return &Manager{
-		serverRunning:   serverRunningStatus,
+		serverRunning:   false,
 		updateAvailable: false,
 		execPath:        execPath,
 		logPath:         logPath,

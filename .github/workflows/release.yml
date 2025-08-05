@@ -115,14 +115,41 @@ jobs:
           echo $env:CI_COMMIT_TAG ; git checkout $env:CI_COMMIT_TAG
           echo "--------- 🛠️ 制品构建与签名 ----------"
           go mod tidy
-          $env:CGO_ENABLED= 1
-          $env:GOOS= "windows"
-          $env:GOARCH= "amd64"
-          $env:CGO_CFLAGS= "-I$PWD\internal\datastore\sqlite\sqlite-vec"
-          go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
+          $env:CGO_ENABLED=1
+          $env:GOOS="windows"
+          $env:GOARCH="amd64"
+          $env:CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec"
+          
+          # 构建主程序
+          go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w" cmd/cli/main.go
+          
+          # 🔥 关键添加：构建托盘程序
+          go build -o oadin-tray.exe trayapp/main.go
+          
+          # 验证文件存在
+          if (-not (Test-Path "oadin.exe")) { 
+              Write-Error "❌ oadin.exe not found" 
+              exit 1 
+          }
+          if (-not (Test-Path "oadin-tray.exe")) { 
+              Write-Error "❌ oadin-tray.exe not found" 
+              exit 1 
+          }
+          Write-Host "✅ Both oadin.exe and oadin-tray.exe built successfully"
+          
+          # 签名主程序
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
+          
           echo "--------- 📦 安装包构建与签名 ----------"
           makensis.exe -DVERSION=$env:CI_COMMIT_TAG installer\win\oadin.nsi
+          
+          # 验证安装包是否成功生成
+          if (-not (Test-Path "oadin-installer.exe")) { 
+              Write-Error "❌ oadin-installer.exe not found - NSIS build failed" 
+              exit 1 
+          }
+          Write-Host "✅ oadin-installer.exe created successfully"
+          
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
           echo "--------- 📁 移动到待上传文件夹 ----------"
           New-Item -ItemType Directory -Path "upload" -Force
