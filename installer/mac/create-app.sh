@@ -16,6 +16,17 @@ sudo rm -rf "${APP_BUNDLE}"
 sudo mkdir -p "${MACOS_DIR}"
 sudo mkdir -p "${RESOURCES_DIR}"
 
+# 检查文件是否存在
+if [ ! -f "oadin" ]; then
+    echo "Error: oadin executable not found"
+    exit 1
+fi
+
+if [ ! -f "oadin-tray" ]; then
+    echo "Error: oadin-tray executable not found"
+    exit 1
+fi
+
 # 复制可执行文件
 sudo cp oadin "${MACOS_DIR}/"
 sudo cp oadin-tray "${MACOS_DIR}/"
@@ -46,15 +57,9 @@ sudo cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <true/>
     <key>LSUIElement</key>
     <true/>
-    <key>NSPrincipalClass</key>
-    <string>NSApplication</string>
 </dict>
 </plist>
 EOF
-
-if [ -f "oadin.icns" ]; then
-    sudo cp oadin.icns "${RESOURCES_DIR}/"
-fi
 
 # 设置权限
 sudo chmod +x "${MACOS_DIR}/oadin"

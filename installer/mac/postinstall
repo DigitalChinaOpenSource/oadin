@@ -27,32 +27,10 @@ else
     echo "Warning: oadin executable not found in ${MACOS_DIR}"
 fi
 
-# 确保用户的 shell 配置文件包含 /usr/local/bin 在 PATH 中
-SHELL_PATH=$(dscl . -read /Users/$REAL_USER UserShell | awk '{print $2}')
-SHELL_NAME=$(basename "$SHELL_PATH")
-
-if [ "$SHELL_NAME" = "zsh" ]; then
-    RC_FILE="$USER_HOME/.zshrc"
-elif [ "$SHELL_NAME" = "bash" ]; then
-    RC_FILE="$USER_HOME/.bash_profile"
-else
-    RC_FILE=""
-fi
-
-if [ -n "$RC_FILE" ]; then
-    # 检查 PATH 中是否已包含 /usr/local/bin
-    if ! grep -q "/usr/local/bin" "$RC_FILE" 2>/dev/null; then
-        echo 'export PATH="/usr/local/bin:$PATH"' >> "$RC_FILE"
-        chown "$REAL_USER:staff" "$RC_FILE"
-    fi
-fi
-
 # 启动服务（以真实用户身份）
 if [ -f "${MACOS_DIR}/oadin" ]; then
     sudo -u "$REAL_USER" "${MACOS_DIR}/oadin" server start -d
     echo "Oadin server started"
-else
-    echo "Warning: Could not start oadin server - executable not found"
 fi
 
 echo "Oadin installation completed successfully"
