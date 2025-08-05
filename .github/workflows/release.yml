@@ -272,7 +272,11 @@ jobs:
             [System.IO.File]::WriteAllText((Resolve-Path $nsisPath).Path, $content, [System.Text.Encoding]::GetEncoding(1252))
             Write-Host "✅ NSIS script sanitized (no pragma, ASCII icon path)"
             
-            ($i=1; foreach($l in (Get-Content $nsisPath)) { if ($i -le 20) { "{0,3}: {1}" -f $i, $l | Write-Host }; $i++ }) | Out-Null
+            Write-Host "----- NSIS script first 20 lines -----"
+            Get-Content $nsisPath -First 20 | ForEach-Object -Begin { $i = 1 } -Process {
+              "{0,3}: {1}" -f $i, $_ | Write-Host
+              $i++
+            }
           } else {
             Write-Error "❌ NSIS script not found at: $nsisPath"
             exit 1
