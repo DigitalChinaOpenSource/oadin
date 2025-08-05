@@ -40,6 +40,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"syscall"
 
 	"gorm.io/gorm/utils"
 
@@ -413,6 +414,10 @@ func StartOADINServer(logPath string, pidFilePath string) error {
 	cmd := exec.Command(execFile, "server", "start")
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
+
+	if runtime.GOOS == "windows" {
+		cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // 新进程不显示窗口（常用于静默运行）
+	}
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start oadin server: %v", err)
