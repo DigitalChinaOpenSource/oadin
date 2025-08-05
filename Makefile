@@ -65,8 +65,7 @@ build-win-installer: build-cli-win copy-win-artifacts
 
 build-mac-installer: build-cli-darwin build-mac-app
 
-.PHONY: build-all build-cli-win build-cli-darwin build-cli-darwin-arm build-cli-linux trayapp build-for-ci copy-win-artifacts copy-mac-artifacts build-mac-app build-win-installer build-mac-installer
-build-mac-installer: build-cli-darwin build-mac-app
+.PHONY: build-all build-cli-win build-cli-darwin build-cli-darwin-arm build-cli-linux trayapp build-for-ci copy-win-artifacts copy-mac-artifacts build-mac-app build-win-installer build-mac-installer ensure-trayapp prepare-win-build force-build-tray verify-build
 
 build-for-pipeline:
 	go build -o oadin-tray.exe trayapp/main.go
@@ -109,6 +108,7 @@ verify-build:
 	@echo "Verifying build artifacts..."
 	@if exist oadin.exe ( echo "✅ oadin.exe found" ) else ( echo "❌ oadin.exe missing" && exit 1 )
 	@if exist oadin-tray.exe ( echo "✅ oadin-tray.exe found" ) else ( echo "❌ oadin-tray.exe missing" && exit 1 )
+	@echo "All artifacts verified successfully"
 	@echo "All artifacts verified successfully"
 
 .PHONY: build-all build-cli-win build-cli-darwin build-cli-darwin-arm build-cli-linux trayapp build-for-ci copy-win-artifacts copy-mac-artifacts build-mac-app build-win-installer build-mac-installer ensure-trayapp prepare-win-build force-build-tray verify-build

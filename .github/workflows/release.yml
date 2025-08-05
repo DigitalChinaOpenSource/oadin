@@ -141,14 +141,63 @@ jobs:
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
           
           echo "--------- 📦 安装包构建与签名 ----------"
-          makensis.exe -DVERSION=$env:CI_COMMIT_TAG installer\win\oadin.nsi
           
-          # 验证安装包是否成功生成
+          # 显示当前目录和文件信息用于调试
+          Write-Host "Current directory: $(Get-Location)"
+          Write-Host "Files in root directory:"
+          Get-ChildItem -Name "*.exe" | ForEach-Object { Write-Host "  $_" }
+          
+          # 验证 installer\win 目录存在
+          if (-not (Test-Path "installer\win")) {
+              Write-Error "❌ installer\win directory not found"
+              exit 1
+          }
+          
+          # 方案：将文件复制到 installer\win 目录以确保 NSIS 能找到
+          Write-Host "Copying files to installer\win directory..."
+          Copy-Item "oadin.exe" "installer\win\" -Force
+          if (Test-Path "oadin-tray.exe") {
+              Copy-Item "oadin-tray.exe" "installer\win\" -Force
+              Write-Host "✅ oadin-tray.exe copied to installer\win"
+          } else {
+              Write-Host "⚠️ oadin-tray.exe not found, skipping copy"
+          }
+          
+          # 验证文件复制成功
+          Write-Host "Files in installer\win directory:"
+          Get-ChildItem "installer\win\" -Name "*.exe" | ForEach-Object { Write-Host "  $_" }
+          
+          # 进入 installer\win 目录运行 NSIS
+          Push-Location "installer\win"
+          Write-Host "Running NSIS from: $(Get-Location)"
+          
+          makensis.exe -DVERSION=$env:CI_COMMIT_TAG oadin.nsi
+          $nsisExitCode = $LASTEXITCODE
+          
+          if ($nsisExitCode -ne 0) {
+              Write-Error "❌ NSIS build failed with exit code: $nsisExitCode"
+              Pop-Location
+              exit 1
+          }
+          
+          # 验证安装包是否在当前目录生成
+          if (Test-Path "oadin-installer.exe") {
+              Write-Host "✅ oadin-installer.exe found in installer\win"
+              # 移动到根目录
+              Move-Item "oadin-installer.exe" "..\..\oadin-installer.exe" -Force
+              Pop-Location
+          } else {
+              Write-Error "❌ oadin-installer.exe not found in installer\win"
+              Pop-Location
+              exit 1
+          }
+          
+          # 验证安装包是否成功移动到根目录
           if (-not (Test-Path "oadin-installer.exe")) { 
-              Write-Error "❌ oadin-installer.exe not found - NSIS build failed" 
+              Write-Error "❌ oadin-installer.exe not found in root directory" 
               exit 1 
           }
-          Write-Host "✅ oadin-installer.exe created successfully"
+          Write-Host "✅ oadin-installer.exe created successfully in root directory"
           
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
           echo "--------- 📁 移动到待上传文件夹 ----------"
