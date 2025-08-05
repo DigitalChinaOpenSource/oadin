@@ -45,14 +45,63 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 
 // Start initializes the system tray
 func (m *Manager) Start() {
+	fmt.Println("=== Oadin Tray Starting ===")
+
+	// 调试：列出嵌入的图标文件
+	trayTemplate.DebugListFiles()
+
 	// 检查服务器状态
 	m.serverRunning = utils.IsServerRunning()
+	fmt.Printf("Initial server status: %v\n", m.serverRunning)
 
-	// 不自动启动服务，让用户手动点击
+	// 启动时如果服务器没运行，自动启动并打开浏览器
+	if !m.serverRunning {
+		fmt.Println("Server not running, attempting to start...")
+		err := utils.StartOADINServer(m.logPath, m.pidPath)
+		if err == nil {
+			m.serverRunning = true
+			fmt.Println("Server started successfully")
+			// 启动成功后自动打开浏览器
+			go m.waitAndOpenBrowser()
+		} else {
+			fmt.Printf("Failed to start server: %v\n", err)
+		}
+	} else {
+		fmt.Println("Server is already running")
+		// 如果服务器已经运行，直接打开浏览器
+		go m.waitAndOpenBrowser()
+	}
+
+	fmt.Println("Starting system tray...")
 	systray.Run(m.onReady, m.onExit)
 }
 
-// 启动 Web Console 前端服务（如有需要）
+// waitAndOpenBrowser 等待服务器完全启动后打开浏览器
+func (m *Manager) waitAndOpenBrowser() {
+	fmt.Println("Waiting for server to be fully ready...")
+
+	// 最多等待30秒，每秒检查一次端口
+	for i := 0; i < 30; i++ {
+		time.Sleep(1 * time.Second)
+		if isPortInUse("16699") {
+			fmt.Printf("Server is ready on port 16699 after %d seconds\n", i+1)
+			// 再等待1秒确保服务完全就绪
+			time.Sleep(1 * time.Second)
+
+			if err := m.openControlPanel(); err != nil {
+				fmt.Printf("Failed to open web console: %v\n", err)
+			} else {
+				fmt.Println("Successfully opened web console")
+			}
+			return
+		}
+		fmt.Printf("Waiting for server... (%d/30)\n", i+1)
+	}
+
+	fmt.Println("Timeout waiting for server to start")
+}
+
+// 启动 Web Console 前端服务
 func startWebConsoleFrontend() {
 	// 检查 16699 端口是否已被占用，避免重复启动
 	if isPortInUse("16699") {
@@ -78,14 +127,21 @@ func isPortInUse(port string) bool {
 }
 
 func (m *Manager) onReady() {
+	fmt.Println("System tray ready, setting up...")
+
 	// Set icon
 	data, err := getIcon()
 	if err != nil {
+		fmt.Printf("Failed to load custom icon, using default: %v\n", err)
 		data = icon.Data
+	} else {
+		fmt.Printf("Successfully loaded custom icon, size: %d bytes\n", len(data))
 	}
+
 	systray.SetIcon(data)
 	systray.SetTitle("Oadin")
 	systray.SetTooltip("Oadin AI Service Manager")
+	fmt.Println("Tray icon and menu set up successfully")
 
 	// Add menu items
 	mStartStop := systray.AddMenuItem("Start Server", "Start/Stop Oadin server")
@@ -165,7 +221,7 @@ func (m *Manager) handleStartStop() {
 			if err == nil {
 				m.serverRunning = false
 			} else {
-				dialog.Message(fmt.Sprintf("Stop server failed: %v", err)).Title("Error").Error()
+				dialog.Message("Stop server failed: %v", err).Title("Error").Error()
 			}
 		}
 	} else {
@@ -173,16 +229,10 @@ func (m *Manager) handleStartStop() {
 		err := utils.StartOADINServer(m.logPath, m.pidPath)
 		if err == nil {
 			m.serverRunning = true
-
-			// 启动成功后自动打开浏览器
-			go func() {
-				time.Sleep(3 * time.Second) // 等待3秒让服务器完全启动
-				if err := m.openControlPanel(); err != nil {
-					fmt.Printf("Failed to open web console: %v\n", err)
-				}
-			}()
+			// 启动成功后打开浏览器
+			go m.waitAndOpenBrowser()
 		} else {
-			dialog.Message(fmt.Sprintf("Start server failed: %v", err)).Title("Error").Error()
+			dialog.Message("Start server failed: %v", err).Title("Error").Error()
 		}
 	}
 }
@@ -195,27 +245,25 @@ func (m *Manager) handleOpenConsole() {
 		if confirmed := dialog.Message("Oadin server is not running. Start it now?").Title("Start Server").YesNo(); confirmed {
 			err := utils.StartOADINServer(m.logPath, m.pidPath)
 			if err != nil {
-				dialog.Message(fmt.Sprintf("Failed to start server: %v", err)).Title("Error").Error()
+				dialog.Message("Failed to start server: %v", err).Title("Error").Error()
 				return
 			}
 			m.serverRunning = true
-
-			// 等待服务器启动
-			time.Sleep(3 * time.Second)
+			// 启动后等待并打开浏览器
+			go m.waitAndOpenBrowser()
 		} else {
 			return
 		}
-	}
-
-	// 打开控制台
-	err := m.openControlPanel()
-	if err != nil {
-		dialog.Message(fmt.Sprintf("Failed to open control panel: %v", err)).Title("Error").Error()
+	} else {
+		// 服务器已运行，直接打开浏览器
+		go m.waitAndOpenBrowser()
 	}
 }
 
 func (m *Manager) onExit() {
-	// Cleanup
+	fmt.Println("=== Oadin Tray Exiting ===")
+	// 确保完全退出
+	os.Exit(0)
 }
 
 func (m *Manager) updateStartStopMenuItem(item *systray.MenuItem) {
@@ -238,10 +286,15 @@ func (m *Manager) showStatus() {
 
 func (m *Manager) openControlPanel() error {
 	url := "http://127.0.0.1:16699/"
+	fmt.Printf("Attempting to open URL: %s\n", url)
+
 	err := browser.OpenURL(url)
 	if err != nil {
+		fmt.Printf("browser.OpenURL failed: %v\n", err)
 		return fmt.Errorf("failed to open browser: %v", err)
 	}
+
+	fmt.Println("Browser.OpenURL called successfully")
 	return nil
 }
 
@@ -321,21 +374,31 @@ func getIcon() ([]byte, error) {
 		if isMacDarkMode() {
 			file = "OADIN-图标-单白.png"
 		} else {
-			file = "OADIN-图标-单黑.png" 
+			file = "OADIN-图标-单黑.png"
 		}
 	} else if runtime.GOOS == "windows" {
 		file = "OADIN-图标-彩色.png"
 	} else {
-		file = "OADIN-图标-彩色.png" 
+		file = "OADIN-图标-彩色.png"
 	}
 
+	fmt.Printf("Trying to load icon: %s\n", file)
 	data, err := trayTemplate.TrayIconFS.ReadFile(file)
 	if err != nil {
-		data, err = trayTemplate.TrayIconFS.ReadFile("OADIN-图标-彩色.png")
-		if err != nil {
-			return nil, err
+		fmt.Printf("Failed to load %s: %v, trying fallback\n", file, err)
+		// 尝试加载所有可用的图标文件作为后备
+		fallbackFiles := []string{"OADIN-图标-彩色.png", "OADIN-图标-单黑.png", "OADIN-图标-单白.png"}
+		for _, fallback := range fallbackFiles {
+			data, err = trayTemplate.TrayIconFS.ReadFile(fallback)
+			if err == nil {
+				fmt.Printf("Successfully loaded fallback icon: %s, size: %d bytes\n", fallback, len(data))
+				return data, nil
+			}
+			fmt.Printf("Failed to load fallback %s: %v\n", fallback, err)
 		}
+		return nil, fmt.Errorf("no icon files found")
 	}
+	fmt.Printf("Successfully loaded icon: %s, size: %d bytes\n", file, len(data))
 	return data, nil
 }
 
