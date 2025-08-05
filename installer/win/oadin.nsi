@@ -1,3 +1,4 @@
+!pragma codepage UTF8
 !ifndef VERSION
   !define VERSION "0.0.0"
 !endif
@@ -13,7 +14,7 @@ SetCompressor lzma
 
 Section "Install"
   SetOutPath "$INSTDIR"
-  
+
   File "oadin.exe"
   File /nonfatal "oadin-tray.exe"
   File "preinstall.bat"
