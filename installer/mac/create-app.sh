@@ -31,6 +31,16 @@ fi
 sudo cp oadin "${MACOS_DIR}/"
 sudo cp oadin-tray "${MACOS_DIR}/"
 
+# 复制应用图标（如果存在）
+if [ -f "tray/icon/oadin.icns" ]; then
+    sudo cp "tray/icon/oadin.icns" "${RESOURCES_DIR}/AppIcon.icns"
+    echo "✅ Added application icon"
+elif [ -f "tray/icon/oadin.png" ]; then
+    # 如果没有icns文件，可以从png转换
+    sudo cp "tray/icon/oadin.png" "${RESOURCES_DIR}/AppIcon.png"
+    echo "✅ Added PNG application icon"
+fi
+
 # 创建 Info.plist
 sudo cat > "${CONTENTS_DIR}/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -53,6 +63,8 @@ sudo cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <string>6.0</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>LSUIElement</key>

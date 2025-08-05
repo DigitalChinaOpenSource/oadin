@@ -4,5 +4,5 @@ import (
 	"embed"
 )
 
-//go:embed *
+//go:embed  *.png
 var TrayIconFS embed.FS

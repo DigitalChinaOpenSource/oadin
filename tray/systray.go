@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"oadin/config"
 	"oadin/internal/utils"
@@ -44,13 +45,10 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 
 // Start initializes the system tray
 func (m *Manager) Start() {
-	// 启动时自动启动服务
-	if !utils.IsServerRunning() {
-		_ = utils.StartOADINServer(m.logPath, m.pidPath)
-		m.serverRunning = true
-	}
-	// 启动 Web Console 前端服务（如有需要）
-	startWebConsoleFrontend()
+	// 检查服务器状态
+	m.serverRunning = utils.IsServerRunning()
+
+	// 不自动启动服务，让用户手动点击
 	systray.Run(m.onReady, m.onExit)
 }
 
@@ -90,7 +88,7 @@ func (m *Manager) onReady() {
 	systray.SetTooltip("Oadin AI Service Manager")
 
 	// Add menu items
-	mStartStop := systray.AddMenuItem("Start/Stop Server", "Start/Stop Oadin server")
+	mStartStop := systray.AddMenuItem("Start Server", "Start/Stop Oadin server")
 	systray.AddSeparator()
 	mConsole := systray.AddMenuItem("Web Console", "Open Control Panel")
 	m.mRestartUpdate = systray.AddMenuItem("Restart and Update", "Restart and install update")
@@ -109,31 +107,12 @@ func (m *Manager) onReady() {
 		for {
 			select {
 			case <-mStartStop.ClickedCh:
-				if m.serverRunning {
-					if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
-						err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
-						if err == nil {
-							m.serverRunning = false
-							m.updateStartStopMenuItem(mStartStop)
-						} else {
-							dialog.Message("Stop server failed.").Title("Error").Error()
-						}
-					}
-				} else {
-					err := utils.StartOADINServer(m.logPath, m.pidPath)
-					if err == nil {
-						m.serverRunning = true
-						m.updateStartStopMenuItem(mStartStop)
-					} else {
-						dialog.Message("Start server failed.").Title("Error").Error()
-					}
-				}
+				m.handleStartStop()
+				m.updateStartStopMenuItem(mStartStop)
 
 			case <-mConsole.ClickedCh:
-				err := m.openControlPanel()
-				if err != nil {
-					dialog.Message("Failed to open control panel: %v", err).Title("Error").Error()
-				}
+				m.handleOpenConsole()
+
 			case <-m.mRestartUpdate.ClickedCh:
 				if confirmed := dialog.Message("This will stop all servers and install the update. Continue?").Title("Confirm Update").YesNo(); confirmed {
 					err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
@@ -173,6 +152,68 @@ func (m *Manager) onReady() {
 	}()
 }
 
+// 处理启动/停止服务
+func (m *Manager) handleStartStop() {
+	// 检查实际服务器状态
+	actualStatus := utils.IsServerRunning()
+	m.serverRunning = actualStatus
+
+	if m.serverRunning {
+		// 停止服务器
+		if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
+			err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
+			if err == nil {
+				m.serverRunning = false
+			} else {
+				dialog.Message(fmt.Sprintf("Stop server failed: %v", err)).Title("Error").Error()
+			}
+		}
+	} else {
+		// 启动服务器
+		err := utils.StartOADINServer(m.logPath, m.pidPath)
+		if err == nil {
+			m.serverRunning = true
+
+			// 启动成功后自动打开浏览器
+			go func() {
+				time.Sleep(3 * time.Second) // 等待3秒让服务器完全启动
+				if err := m.openControlPanel(); err != nil {
+					fmt.Printf("Failed to open web console: %v\n", err)
+				}
+			}()
+		} else {
+			dialog.Message(fmt.Sprintf("Start server failed: %v", err)).Title("Error").Error()
+		}
+	}
+}
+
+// 处理打开控制台
+func (m *Manager) handleOpenConsole() {
+	// 检查服务器是否运行
+	if !utils.IsServerRunning() {
+		// 如果服务器没运行，询问是否启动
+		if confirmed := dialog.Message("Oadin server is not running. Start it now?").Title("Start Server").YesNo(); confirmed {
+			err := utils.StartOADINServer(m.logPath, m.pidPath)
+			if err != nil {
+				dialog.Message(fmt.Sprintf("Failed to start server: %v", err)).Title("Error").Error()
+				return
+			}
+			m.serverRunning = true
+
+			// 等待服务器启动
+			time.Sleep(3 * time.Second)
+		} else {
+			return
+		}
+	}
+
+	// 打开控制台
+	err := m.openControlPanel()
+	if err != nil {
+		dialog.Message(fmt.Sprintf("Failed to open control panel: %v", err)).Title("Error").Error()
+	}
+}
+
 func (m *Manager) onExit() {
 	// Cleanup
 }
@@ -196,12 +237,10 @@ func (m *Manager) showStatus() {
 }
 
 func (m *Manager) openControlPanel() error {
-	// 确保前端服务已启动
-	startWebConsoleFrontend()
 	url := "http://127.0.0.1:16699/"
 	err := browser.OpenURL(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open browser: %v", err)
 	}
 	return nil
 }
@@ -277,16 +316,25 @@ func (m *Manager) viewLogs() error {
 // getIcon returns the icon data
 func getIcon() ([]byte, error) {
 	// 根据系统类型和主题获取不同的图片
-	file := "oadin.ico" // 默认彩色
+	var file string
 	if runtime.GOOS == "darwin" {
 		file = "oadin-mac-dark.ico"
 		if isMacDarkMode() {
 			file = "oadin-mac-white.ico"
 		}
+	} else if runtime.GOOS == "windows" {
+		file = "oadin.ico"
+	} else {
+		file = "oadin.ico" // Linux 默认
 	}
+
 	data, err := trayTemplate.TrayIconFS.ReadFile(file)
 	if err != nil {
-		return nil, err
+		// 如果找不到指定图标，尝试默认图标
+		data, err = trayTemplate.TrayIconFS.ReadFile("oadin.ico")
+		if err != nil {
+			return nil, err
+		}
 	}
 	return data, nil
 }
