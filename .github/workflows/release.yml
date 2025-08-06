@@ -158,6 +158,7 @@ jobs:
       - name: Notify Feishu
         run: |
           echo "--------- 📬 发布通知 ----------"
+          cd /Users/dcone/WebstormProjects/oadin
           sh scripts/release-notice.sh
           echo "--------- 🧹 环境清理 ----------"
           cd /Users/dcone/WebstormProjects/oadin
