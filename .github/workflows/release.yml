@@ -146,24 +146,21 @@ jobs:
           # 构建主程序
           go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w" cmd/cli/main.go
           
-          # 🔥 关键添加：构建托盘程序
-          # 生成 Windows 资源文件（使用 rsrc 工具）
-          Write-Host "Installing rsrc tool..."
-          go install github.com/akavel/rsrc@latest
-          
-          if (Test-Path "tray\\icon\\oadin-icon.ico") {
-              Write-Host "Generating Windows resource file with rsrc..."
-              & "$env:GOPATH\\bin\\rsrc.exe" -ico "tray\\icon\\oadin-icon.ico" -o "trayapp\\resource.syso"
-              if (Test-Path "trayapp\\resource.syso") {
-                  Write-Host "✅ Windows resource file generated successfully"
+  
+          Write-Host "Preparing icon file for tray app build..."
+          if (!(Test-Path "tray\\icon\\oadin-icon.ico")) {
+              if (Test-Path "tray\\icon\\OADIN-图标-彩色.ico") {
+                  Copy-Item "tray\\icon\\OADIN-图标-彩色.ico" "tray\\icon\\oadin-icon.ico" -Force
+                  Write-Host "➡️ Prepared tray\\icon\\oadin-icon.ico from 中文文件名"
               } else {
-                  Write-Host "⚠️ Failed to generate resource file with rsrc"
+                  Write-Error "❌ No icon file found for embedding"
+                  exit 1
               }
           } else {
-              Write-Host "⚠️ Icon file not found, building without embedded icon"
+              Write-Host "✅ tray\\icon\\oadin-icon.ico already exists"
           }
           
-          # 🔥 关键添加：构建托盘程序
+          # 只使用 goversioninfo 生成资源文件（移除 rsrc 避免冲突）
           Write-Host "Installing goversioninfo tool..."
           go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
           
@@ -171,14 +168,13 @@ jobs:
               Write-Host "Generating Windows version info and icon..."
               Push-Location "trayapp"
               
-              # 确保图标文件存在
+              # 使用准备好的图标文件
               if (Test-Path "..\\tray\\icon\\oadin-icon.ico") {
                   Write-Host "Found icon file, generating resource..."
                   & "$env:GOPATH\\bin\\goversioninfo.exe" -icon "..\\tray\\icon\\oadin-icon.ico"
                   
                   if (Test-Path "resource.syso") {
                       Write-Host "✅ Windows resource file with icon generated successfully"
-                      # 显示 resource.syso 文件大小
                       $fileSize = (Get-Item "resource.syso").Length
                       Write-Host "Resource file size: $fileSize bytes"
                   } else {
@@ -198,6 +194,13 @@ jobs:
           # 构建托盘程序（会自动包含 resource.syso）
           Write-Host "Building tray application..."
           go build -o oadin-tray.exe trayapp/main.go
+          
+          # 验证 EXE 是否包含图标资源
+          Write-Host "Verifying built executables..."
+          if (Test-Path "oadin-tray.exe") {
+              $fileInfo = Get-ItemProperty "oadin-tray.exe"
+              Write-Host "oadin-tray.exe size: $($fileInfo.Length) bytes"
+          }
           
           # 清理资源文件
           if (Test-Path "trayapp\\resource.syso") {

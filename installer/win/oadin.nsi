@@ -25,8 +25,6 @@ Section "Install"
   File "start-oadin.bat"
 
 
-  File /nonfatal "oadin-icon.ico"
-
   nsExec::Exec '"$INSTDIR\preinstall.bat"'
   nsExec::Exec '"$INSTDIR\postinstall.bat" "$INSTDIR"'
   nsExec::Exec '"$INSTDIR\start-oadin.bat"'
