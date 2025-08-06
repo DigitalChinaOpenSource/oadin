@@ -15,6 +15,7 @@ type ModelLoader interface {
 	SwitchModel(newModel string, provider provider.ModelServiceProvider) error
 	LoadModel(modelName string, provider provider.ModelServiceProvider) error
 	UnloadModel(modelName string, provider provider.ModelServiceProvider) error
+	ForceUnloadModel(modelName string) error
 }
 
 // QueueStatusChecker 队列状态检查接口

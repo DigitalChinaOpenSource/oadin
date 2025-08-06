@@ -9,7 +9,7 @@ import (
 )
 
 func RuntimePath() string {
-	return filepath.Join(config.GlobalOADINEnvironment.RootDir, "runtime")
+	return filepath.Join(config.GlobalEnvironment.RootDir, "runtime")
 }
 
 func getBinaryName(name string) string {

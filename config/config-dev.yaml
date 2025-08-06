@@ -3,7 +3,7 @@ vega:
 
 oss:
   endpoint: https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com
-  icon: https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/
+  icon: https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadinDev/icon/
 
 registry:
   npm: https://registry.npmmirror.com

@@ -1211,4 +1211,3 @@ func (o *OpenvinoProvider) SetOperateStatus(status int) {
 func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
 	return nil
 }
-
