@@ -6,9 +6,56 @@ import (
 	"time"
 )
 
+// MockStateManager 模拟状态管理器
+type MockStateManager struct {
+	currentModel string
+}
+
+func (m *MockStateManager) GetCurrentModel() string {
+	return m.currentModel
+}
+
+func (m *MockStateManager) SetCurrentModel(modelName string) {
+	m.currentModel = modelName
+}
+
+func (m *MockStateManager) MarkModelInUse(modelName string) error {
+	return nil
+}
+
+func (m *MockStateManager) MarkModelIdle(modelName string) error {
+	return nil
+}
+
+// MockQueueChecker 模拟队列检查器
+type MockQueueChecker struct {
+	hasActiveRequests bool
+}
+
+func (m *MockQueueChecker) HasPendingRequests() bool {
+	return false
+}
+
+func (m *MockQueueChecker) HasActiveRequests() bool {
+	return m.hasActiveRequests
+}
+
+func (m *MockQueueChecker) GetCurrentRequest() *QueuedRequest {
+	return nil
+}
+
 func TestCleaner_BasicOperations(t *testing.T) {
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 5*time.Minute)
+	// 创建mock状态管理器
+	stateManager := &MockStateManager{}
+
+	// 创建mock队列检查器
+	queueChecker := &MockQueueChecker{}
+
+	// 创建loader
+	loader := NewLoader(stateManager)
+
+	// 创建cleaner
+	cleaner := NewCleaner(queueChecker, loader)
 
 	// 测试初始状态
 	if cleaner.IsStarted() {
@@ -40,8 +87,18 @@ func TestCleaner_BasicOperations(t *testing.T) {
 }
 
 func TestCleaner_ModelCleanup(t *testing.T) {
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 100*time.Millisecond) // 很短的空闲超时
+	// 创建mock状态管理器
+	stateManager := &MockStateManager{}
+
+	// 创建mock队列检查器
+	queueChecker := &MockQueueChecker{}
+
+	// 创建loader
+	loader := NewLoader(stateManager)
+
+	// 创建cleaner，设置很短的空闲超时
+	cleaner := NewCleaner(queueChecker, loader)
+	cleaner.SetIdleTimeout(100 * time.Millisecond)
 
 	mockProvider := NewMockProvider()
 	ctx := context.Background()
@@ -82,8 +139,18 @@ func TestCleaner_ModelCleanup(t *testing.T) {
 }
 
 func TestCleaner_NoCleanupWhenInUse(t *testing.T) {
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 100*time.Millisecond) // 很短的空闲超时
+	// 创建mock状态管理器
+	stateManager := &MockStateManager{}
+
+	// 创建mock队列检查器
+	queueChecker := &MockQueueChecker{}
+
+	// 创建loader
+	loader := NewLoader(stateManager)
+
+	// 创建cleaner，设置很短的空闲超时
+	cleaner := NewCleaner(queueChecker, loader)
+	cleaner.SetIdleTimeout(100 * time.Millisecond)
 
 	mockProvider := NewMockProvider()
 	ctx := context.Background()
@@ -137,8 +204,17 @@ func TestCleaner_NoCleanupWhenInUse(t *testing.T) {
 }
 
 func TestCleaner_SetIdleTimeout(t *testing.T) {
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 5*time.Minute)
+	// 创建mock状态管理器
+	stateManager := &MockStateManager{}
+
+	// 创建mock队列检查器
+	queueChecker := &MockQueueChecker{}
+
+	// 创建loader
+	loader := NewLoader(stateManager)
+
+	// 创建cleaner
+	cleaner := NewCleaner(queueChecker, loader)
 
 	// 测试设置空闲超时时间
 	newTimeout := 10 * time.Minute

@@ -194,7 +194,7 @@ func NewEditServiceCommand() *cobra.Command {
 
 func Run(ctx context.Context) error {
 	// Initialize the datastore
-	ds, err := sqlite.New(config.GlobalOADINEnvironment.Datastore)
+	ds, err := sqlite.New(config.GlobalEnvironment.Datastore)
 	if err != nil {
 		slog.Error("[Init] Failed to load datastore", "error", err)
 		return err
@@ -219,7 +219,7 @@ func Run(ctx context.Context) error {
 
 	if server2.UseVSSForPlayground() {
 		go func() {
-			dbPath := config.GlobalOADINEnvironment.Datastore
+			dbPath := config.GlobalEnvironment.Datastore
 			if err := server2.InitPlaygroundVec(ctx, dbPath); err != nil {
 				slog.Error("Failed to initialize VSS database", "error", err)
 			} else {
@@ -230,8 +230,8 @@ func Run(ctx context.Context) error {
 
 	logger.InitLogger(
 		logger.LogConfig{
-			LogLevel: config.GlobalOADINEnvironment.LogLevel,
-			LogPath:  config.GlobalOADINEnvironment.LogDir,
+			LogLevel: config.GlobalEnvironment.LogLevel,
+			LogPath:  config.GlobalEnvironment.LogDir,
 		})
 	// Initialize core core app server
 	oadinServer := extensionApi.NewOadinExtensionServer()
@@ -253,11 +253,11 @@ func Run(ctx context.Context) error {
 
 	// Initialize the model memory manager
 	mmm := manager.GetModelManager()
-	mmm.SetIdleTimeout(config.GlobalOADINEnvironment.ModelIdleTimeout)
-	mmm.Start(config.GlobalOADINEnvironment.ModelCleanupInterval)
+	mmm.SetIdleTimeout(config.GlobalEnvironment.ModelIdleTimeout)
+	mmm.Start(config.GlobalEnvironment.ModelCleanupInterval)
 	logger.LogicLogger.Info("[Init] Model memory manager started",
-		"idle_timeout", config.GlobalOADINEnvironment.ModelIdleTimeout,
-		"cleanup_interval", config.GlobalOADINEnvironment.ModelCleanupInterval)
+		"idle_timeout", config.GlobalEnvironment.ModelIdleTimeout,
+		"cleanup_interval", config.GlobalEnvironment.ModelCleanupInterval)
 
 	// Inject the router
 	api.InjectRouter(oadinServer.CoreServer)
@@ -269,7 +269,7 @@ func Run(ctx context.Context) error {
 		schedule.InitProviderDefaultModelTemplate(flavor)
 	}
 
-	pidFile := filepath.Join(config.GlobalOADINEnvironment.RootDir, constants.AppName+".pid")
+	pidFile := filepath.Join(config.GlobalEnvironment.RootDir, constants.AppName+".pid")
 	err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0o644)
 	if err != nil {
 		slog.Error("[Run] Failed to write pid file", "error", err)
@@ -297,7 +297,7 @@ func Run(ctx context.Context) error {
 
 	// start oadin server
 	oadinSrv := &http.Server{
-		Addr:    config.GlobalOADINEnvironment.ApiHost,
+		Addr:    config.GlobalEnvironment.ApiHost,
 		Handler: oadinServer.Router,
 	}
 	globalServerManager.oadinServer = oadinSrv
@@ -315,7 +315,7 @@ func Run(ctx context.Context) error {
 	}
 	globalServerManager.consoleServer = consoleSrv
 
-	_, _ = color.New(color.FgHiGreen).Println("Oadin Gateway starting on port", config.GlobalOADINEnvironment.ApiHost)
+	_, _ = color.New(color.FgHiGreen).Println("Oadin Gateway starting on port", config.GlobalEnvironment.ApiHost)
 	_, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
 
 	// create tray manager
@@ -325,7 +325,7 @@ func Run(ctx context.Context) error {
 				return fmt.Errorf("server is already running")
 			}
 			oadinSrv = &http.Server{
-				Addr:    config.GlobalOADINEnvironment.ApiHost,
+				Addr:    config.GlobalEnvironment.ApiHost,
 				Handler: oadinServer.Router,
 			}
 			go func() {
@@ -490,7 +490,7 @@ func NewStopApiServerCommand() *cobra.Command {
 }
 
 func stopOadinServer(cmd *cobra.Command, args []string) error {
-	files, err := filepath.Glob(filepath.Join(config.GlobalOADINEnvironment.RootDir, "*.pid"))
+	files, err := filepath.Glob(filepath.Join(config.GlobalEnvironment.RootDir, "*.pid"))
 	if err != nil {
 		return fmt.Errorf("failed to list pid files: %v", err)
 	}
@@ -613,8 +613,8 @@ func NewVersionCommand() *cobra.Command {
 
 // NewStartApiServerCommand  Create a new cobra.Command Object with default values.
 func NewStartApiServerCommand() *cobra.Command {
-	config.GlobalOADINEnvironment = config.NewOADINEnvironment()
-	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalOADINEnvironment.LogLevel, LogPath: config.GlobalOADINEnvironment.LogDir})
+	config.GlobalEnvironment = config.NewOADINEnvironment()
+	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalEnvironment.LogLevel, LogPath: config.GlobalEnvironment.LogDir})
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "apiserver is a aipc open gateway",
@@ -1187,8 +1187,8 @@ func StartModelEngine(engineName, mode string) error {
 }
 
 func startOadinServer() error {
-	logPath := config.GlobalOADINEnvironment.ConsoleLog
-	rootDir := config.GlobalOADINEnvironment.RootDir
+	logPath := config.GlobalEnvironment.ConsoleLog
+	rootDir := config.GlobalEnvironment.RootDir
 	err := utils.StartOADINServer(logPath, rootDir)
 	if err != nil {
 		fmt.Printf("OADIN server start failed: %s", err.Error())

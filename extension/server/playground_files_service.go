@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
-	"oadin/internal/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,6 +17,7 @@ import (
 	"oadin/extension/entity"
 	"oadin/extension/model_engine"
 	"oadin/internal/datastore"
+	"oadin/internal/logger"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
@@ -84,7 +84,7 @@ func (p *PlaygroundImpl) UploadFile(ctx context.Context, request *dto.UploadFile
 	}
 	fileDir := filepath.Join(oadinDir, "files", request.SessionID)
 	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(fileDir, 0755); err != nil {
+		if err := os.MkdirAll(fileDir, 0o755); err != nil {
 			logger.LogicLogger.Error("Failed to create session files directory", "error", err)
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (p *PlaygroundImpl) GetFiles(ctx context.Context, request *dto.GetFilesRequ
 
 	// 直接使用SQL查询进行验证
 	// 获取SQLite数据库路�?
-	dbPath := config.GlobalOADINEnvironment.Datastore
+	dbPath := config.GlobalEnvironment.Datastore
 	logger.LogicLogger.Info("GetFiles: 尝试直接SQL查询验证", "dbPath", dbPath, "sessionID", request.SessionID)
 
 	// 直接使用SQL查询
@@ -315,7 +315,7 @@ func (p *PlaygroundImpl) ProcessFile(ctx context.Context, request *dto.GenerateE
 	}
 
 	// 获取SQLite数据库路径
-	dbPath := config.GlobalOADINEnvironment.Datastore
+	dbPath := config.GlobalEnvironment.Datastore
 	logger.LogicLogger.Info("尝试打开数据库直接查询", "dbPath", dbPath, "fileID", request.FileID)
 
 	// 直接使用SQL查询文件

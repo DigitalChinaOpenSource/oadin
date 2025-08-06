@@ -4,27 +4,44 @@ import (
 	"sync"
 	"time"
 
+	"oadin/config"
 	"oadin/internal/logger"
 )
 
 // Cleaner 模型自动清理服务
 // 负责定期检查并卸载空闲超时的模型
 type Cleaner struct {
-	stateManager  ModelStateManager
-	queueChecker  QueueStatusChecker
-	interval      time.Duration // 清理检查间隔
-	cleanupTicker *time.Ticker  // 清理定时器
-	stopChan      chan struct{} // 停止信号
-	started       bool          // 是否已启动
-	mutex         sync.Mutex    // 互斥锁
+	queueChecker  QueueStatusChecker // 队列状态检查器
+	modelLoader   ModelLoader        // 模型加载器，用于实际卸载操作
+	interval      time.Duration      // 清理检查间隔
+	idleTimeout   time.Duration      // 空闲超时时间
+	cleanupTicker *time.Ticker       // 清理定时器
+	stopChan      chan struct{}      // 停止信号
+	started       bool               // 是否已启动
+	mutex         sync.Mutex         // 互斥锁
 }
 
 // NewCleaner 创建新的清理器
-func NewCleaner(stateManager ModelStateManager, queueChecker QueueStatusChecker) *Cleaner {
+func NewCleaner(queueChecker QueueStatusChecker, modelLoader ModelLoader) *Cleaner {
+	// 获取默认的清理间隔和空闲超时时间
+	defaultInterval := 1 * time.Minute    // 默认清理间隔
+	defaultIdleTimeout := 5 * time.Minute // 默认空闲超时
+
+	// 如果全局配置已初始化，使用配置中的值
+	if config.GlobalEnvironment != nil {
+		if config.GlobalEnvironment.ModelCleanupInterval > 0 {
+			defaultInterval = config.GlobalEnvironment.ModelCleanupInterval
+		}
+		if config.GlobalEnvironment.ModelIdleTimeout > 0 {
+			defaultIdleTimeout = config.GlobalEnvironment.ModelIdleTimeout
+		}
+	}
+
 	return &Cleaner{
-		stateManager: stateManager,
 		queueChecker: queueChecker,
-		interval:     5 * time.Minute, // 默认5分钟清理一次
+		modelLoader:  modelLoader,
+		interval:     defaultInterval,
+		idleTimeout:  defaultIdleTimeout,
 		stopChan:     make(chan struct{}),
 	}
 }
@@ -70,15 +87,20 @@ func (c *Cleaner) Stop() {
 	logger.LogicLogger.Info("[Cleaner] Stopped")
 }
 
-// SetIdleTimeout 设置空闲超时时间（保持向后兼容）
+// SetIdleTimeout 设置空闲超时时间
 func (c *Cleaner) SetIdleTimeout(timeout time.Duration) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.idleTimeout = timeout
 	logger.LogicLogger.Info("[Cleaner] Set idle timeout", "timeout", timeout)
-	// 简化实现，不再存储idle timeout
 }
 
-// GetIdleTimeout 获取空闲超时时间（保持向后兼容）
+// GetIdleTimeout 获取空闲超时时间
 func (c *Cleaner) GetIdleTimeout() time.Duration {
-	return 10 * time.Minute // 返回默认值
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.idleTimeout
 }
 
 // cleanupLoop 后台清理循环
@@ -98,32 +120,67 @@ func (c *Cleaner) cleanupLoop() {
 
 // performCleanup 执行清理操作
 func (c *Cleaner) performCleanup() {
-	// 如果没有请求在处理且有模型加载
-	if !c.queueChecker.HasActiveRequests() {
-		currentModel := c.stateManager.GetCurrentModel()
-		if currentModel != "" {
-			// 检查空闲时间
-			if c.shouldUnloadModel(currentModel) {
-				logger.LogicLogger.Info("[Cleaner] Unloading idle model",
-					"model", currentModel)
-				c.unloadIdleModel(currentModel)
-			}
-		}
+	// 如果有活跃请求正在处理，跳过清理
+	if c.queueChecker.HasActiveRequests() {
+		logger.LogicLogger.Debug("[Cleaner] Skipping cleanup - active requests in progress")
+		return
+	}
+
+	// 获取当前空闲超时时间
+	idleTimeout := c.GetIdleTimeout()
+
+	// 获取所有空闲超时的模型
+	idleModels := c.getIdleModels(idleTimeout)
+
+	if len(idleModels) == 0 {
+		logger.LogicLogger.Debug("[Cleaner] No idle models found for cleanup")
+		return
+	}
+
+	logger.LogicLogger.Info("[Cleaner] Found idle models for cleanup",
+		"count", len(idleModels), "idle_timeout", idleTimeout)
+
+	// 卸载空闲模型
+	for _, modelState := range idleModels {
+		c.unloadIdleModel(modelState)
 	}
 }
 
-// shouldUnloadModel 检查是否应该卸载模型（简化实现）
-func (c *Cleaner) shouldUnloadModel(modelName string) bool {
-	// 简化实现：总是返回false，避免意外卸载
-	// 实际项目中可以根据需要实现更复杂的逻辑
-	return false
+// getIdleModels 获取所有空闲超时的模型
+func (c *Cleaner) getIdleModels(idleTimeout time.Duration) []*ModelState {
+	// 通过ModelLoader接口获取空闲模型
+	if loader, ok := c.modelLoader.(interface {
+		GetIdleModels(time.Duration) []*ModelState
+	}); ok {
+		return loader.GetIdleModels(idleTimeout)
+	}
+
+	logger.LogicLogger.Warn("[Cleaner] ModelLoader does not support GetIdleModels method")
+	return nil
 }
 
-// unloadIdleModel 卸载空闲模型（简化实现）
-func (c *Cleaner) unloadIdleModel(modelName string) {
-	// 简化实现：只记录日志
-	logger.LogicLogger.Info("[Cleaner] Would unload idle model", "model", modelName)
-	// 实际项目中可以调用相应的卸载逻辑
+// unloadIdleModel 卸载空闲模型
+func (c *Cleaner) unloadIdleModel(modelState *ModelState) {
+	if modelState == nil {
+		logger.LogicLogger.Warn("[Cleaner] Cannot unload nil model state")
+		return
+	}
+
+	logger.LogicLogger.Info("[Cleaner] Unloading idle model",
+		"model", modelState.ModelName,
+		"idle_time", time.Since(modelState.LastUsedTime),
+		"status", modelState.GetStatus())
+
+	// 调用loader的ForceUnloadModel方法
+	err := c.modelLoader.ForceUnloadModel(modelState.ModelName)
+	if err != nil {
+		logger.LogicLogger.Error("[Cleaner] Failed to unload idle model",
+			"model", modelState.ModelName, "error", err)
+		return
+	}
+
+	logger.LogicLogger.Info("[Cleaner] Successfully unloaded idle model",
+		"model", modelState.ModelName)
 }
 
 // ForceCleanup 强制执行一次清理
@@ -137,18 +194,11 @@ func (c *Cleaner) GetStats() map[string]interface{} {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	stats := map[string]interface{}{
+	return map[string]interface{}{
 		"cleanup_interval": c.interval.String(),
+		"idle_timeout":     c.idleTimeout.String(),
 		"started":          c.started,
 	}
-
-	if c.cleanupTicker != nil {
-		stats["has_ticker"] = true
-	} else {
-		stats["has_ticker"] = false
-	}
-
-	return stats
 }
 
 // IsStarted 检查清理服务是否已启动

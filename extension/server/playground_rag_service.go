@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"oadin/internal/logger"
 	"sort"
 	"strings"
 	"sync"
@@ -15,6 +14,7 @@ import (
 	"oadin/extension/entity"
 	"oadin/extension/model_engine"
 	"oadin/internal/datastore"
+	"oadin/internal/logger"
 )
 
 // 包含检索增强生成的配置选项
@@ -129,7 +129,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	// 检查VEC数据库初始化状态
 	if !vecInitialized || vecDB == nil {
 		logger.LogicLogger.Warn("[RAG] VEC未初始化，尝试初始化", "sessionID", session.ID) // 尝试初始化VEC数据库
-		dbPath := config.GlobalOADINEnvironment.Datastore
+		dbPath := config.GlobalEnvironment.Datastore
 		if err := initVecDB(dbPath); err != nil {
 			logger.LogicLogger.Error("[RAG] VEC初始化失败", "error", err)
 			return "", fmt.Errorf("VEC初始化失败: %w", err)
@@ -266,7 +266,7 @@ func (p *PlaygroundImpl) findRelevantContextWithVec(ctx context.Context, session
 	if !vecInitialized || vecDB == nil {
 		logger.LogicLogger.Error("[RAG] VEC数据库无法使用，尝试重新初始化", "sessionID", session.ID)
 		// 尝试初始化VEC数据库
-		dbPath := config.GlobalOADINEnvironment.Datastore
+		dbPath := config.GlobalEnvironment.Datastore
 		if err := initVecDB(dbPath); err != nil || !vecInitialized || vecDB == nil {
 			logger.LogicLogger.Error("[RAG] VEC初始化失败，无法执行检索", "error", err)
 			return "", fmt.Errorf("VEC数据库不可用: %w", err)

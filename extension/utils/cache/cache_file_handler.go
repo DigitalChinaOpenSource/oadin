@@ -15,7 +15,7 @@ const (
 )
 
 func CacheFilePath() string {
-	return filepath.Join(config.GlobalOADINEnvironment.RootDir, "cache")
+	return filepath.Join(config.GlobalEnvironment.RootDir, "cache")
 }
 
 // 获取本地配置文件路径

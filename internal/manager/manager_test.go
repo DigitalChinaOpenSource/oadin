@@ -109,15 +109,18 @@ func TestServiceTypeJudgment(t *testing.T) {
 
 func TestManager_BasicOperations(t *testing.T) {
 	// 创建一个新的管理器实例（不使用全局单例）
-	queue := NewQueue(5, 10*time.Second)
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 5*time.Minute)
-
 	manager := &Manager{
-		queue:   queue,
-		loader:  loader,
-		cleaner: cleaner,
+		modelStates: make(map[string]bool),
 	}
+
+	// 先创建loader
+	manager.loader = NewLoader(manager)
+
+	// 创建queue时注入接口依赖
+	manager.queue = NewQueue(manager, manager.loader)
+
+	// 创建cleaner时注入接口依赖
+	manager.cleaner = NewCleaner(manager.queue, manager.loader)
 
 	// 启动管理器
 	manager.Start(1 * time.Minute)
@@ -140,15 +143,18 @@ func TestManager_BasicOperations(t *testing.T) {
 
 func TestManager_ModelOperations(t *testing.T) {
 	// 创建一个新的管理器实例
-	queue := NewQueue(5, 10*time.Second)
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 5*time.Minute)
-
 	manager := &Manager{
-		queue:   queue,
-		loader:  loader,
-		cleaner: cleaner,
+		modelStates: make(map[string]bool),
 	}
+
+	// 先创建loader
+	manager.loader = NewLoader(manager)
+
+	// 创建queue时注入接口依赖
+	manager.queue = NewQueue(manager, manager.loader)
+
+	// 创建cleaner时注入接口依赖
+	manager.cleaner = NewCleaner(manager.queue, manager.loader)
 
 	manager.Start(1 * time.Minute)
 	defer manager.Stop()
@@ -157,7 +163,7 @@ func TestManager_ModelOperations(t *testing.T) {
 	ctx := context.Background()
 
 	// 测试模型加载
-	err := loader.EnsureModelLoaded(ctx, "test-model", mockProvider, "test-provider", "test-type")
+	err := manager.loader.EnsureModelLoaded(ctx, "test-model", mockProvider, "test-provider", "test-type")
 	if err != nil {
 		t.Fatalf("Failed to load model: %v", err)
 	}
@@ -195,15 +201,18 @@ func TestManager_ModelOperations(t *testing.T) {
 
 func TestManager_EnqueueLocalModelRequest(t *testing.T) {
 	// 创建一个新的管理器实例
-	queue := NewQueue(5, 10*time.Second)
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 5*time.Minute)
-
 	manager := &Manager{
-		queue:   queue,
-		loader:  loader,
-		cleaner: cleaner,
+		modelStates: make(map[string]bool),
 	}
+
+	// 先创建loader
+	manager.loader = NewLoader(manager)
+
+	// 创建queue时注入接口依赖
+	manager.queue = NewQueue(manager, manager.loader)
+
+	// 创建cleaner时注入接口依赖
+	manager.cleaner = NewCleaner(manager.queue, manager.loader)
 
 	manager.Start(1 * time.Minute)
 	defer manager.Stop()
@@ -249,15 +258,19 @@ func TestManager_EnqueueLocalModelRequest(t *testing.T) {
 
 func TestCleaner_ModelUnloading(t *testing.T) {
 	// 创建一个新的管理器实例，使用很短的空闲超时时间
-	queue := NewQueue(5, 10*time.Second)
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 100*time.Millisecond) // 100ms空闲超时
-
 	manager := &Manager{
-		queue:   queue,
-		loader:  loader,
-		cleaner: cleaner,
+		modelStates: make(map[string]bool),
 	}
+
+	// 先创建loader
+	manager.loader = NewLoader(manager)
+
+	// 创建queue时注入接口依赖
+	manager.queue = NewQueue(manager, manager.loader)
+
+	// 创建cleaner时注入接口依赖，设置很短的空闲超时
+	manager.cleaner = NewCleaner(manager.queue, manager.loader)
+	manager.cleaner.SetIdleTimeout(100 * time.Millisecond)
 
 	manager.Start(50 * time.Millisecond) // 50ms清理间隔
 	defer manager.Stop()
@@ -266,7 +279,7 @@ func TestCleaner_ModelUnloading(t *testing.T) {
 	ctx := context.Background()
 
 	// 加载一个模型
-	err := loader.EnsureModelLoaded(ctx, "test-model", mockProvider, "test-provider", "test-type")
+	err := manager.loader.EnsureModelLoaded(ctx, "test-model", mockProvider, "test-provider", "test-type")
 	if err != nil {
 		t.Fatalf("Failed to load model: %v", err)
 	}
@@ -299,15 +312,19 @@ func TestCleaner_ModelUnloading(t *testing.T) {
 
 func TestCleaner_ForceCleanup(t *testing.T) {
 	// 创建一个新的管理器实例
-	queue := NewQueue(5, 10*time.Second)
-	loader := NewLoader()
-	cleaner := NewCleaner(loader, 100*time.Millisecond)
-
 	manager := &Manager{
-		queue:   queue,
-		loader:  loader,
-		cleaner: cleaner,
+		modelStates: make(map[string]bool),
 	}
+
+	// 先创建loader
+	manager.loader = NewLoader(manager)
+
+	// 创建queue时注入接口依赖
+	manager.queue = NewQueue(manager, manager.loader)
+
+	// 创建cleaner时注入接口依赖，设置很短的空闲超时
+	manager.cleaner = NewCleaner(manager.queue, manager.loader)
+	manager.cleaner.SetIdleTimeout(100 * time.Millisecond)
 
 	manager.Start(1 * time.Hour) // 很长的清理间隔，不会自动清理
 	defer manager.Stop()
@@ -316,7 +333,7 @@ func TestCleaner_ForceCleanup(t *testing.T) {
 	ctx := context.Background()
 
 	// 加载一个模型
-	err := loader.EnsureModelLoaded(ctx, "test-model", mockProvider, "test-provider", "test-type")
+	err := manager.loader.EnsureModelLoaded(ctx, "test-model", mockProvider, "test-provider", "test-type")
 	if err != nil {
 		t.Fatalf("Failed to load model: %v", err)
 	}
@@ -325,7 +342,7 @@ func TestCleaner_ForceCleanup(t *testing.T) {
 	time.Sleep(150 * time.Millisecond)
 
 	// 手动触发清理
-	cleaner.ForceCleanup()
+	manager.cleaner.ForceCleanup()
 
 	// 验证模型已被清理
 	_, exists := manager.GetModelState("test-model")

@@ -24,8 +24,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/gin-gonic/gin"
-
 	"oadin/config"
 	"oadin/internal/constants"
 	"oadin/internal/datastore"
@@ -33,6 +31,8 @@ import (
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/version"
+
+	"github.com/gin-gonic/gin"
 )
 
 func InjectRouter(e *OADINCoreServer) {
@@ -75,7 +75,7 @@ func InjectRouter(e *OADINCoreServer) {
 	r.Handle(http.MethodGet, "/control_panel/about", e.GetProductInfoHandler)
 	r.Handle(http.MethodPost, "/control_panel/modelkey", e.GetModelkeyHandler)
 
-	slog.Info("Gateway started", "host", config.GlobalOADINEnvironment.ApiHost)
+	slog.Info("Gateway started", "host", config.GlobalEnvironment.ApiHost)
 }
 
 func rootHandler(c *gin.Context) {
@@ -136,7 +136,7 @@ func updateHandler(c *gin.Context) {
 	status := utils.IsServerRunning()
 	if status {
 		// stop server
-		pidFilePath := filepath.Join(config.GlobalOADINEnvironment.RootDir, "oadin.pid")
+		pidFilePath := filepath.Join(config.GlobalEnvironment.RootDir, "oadin.pid")
 		err := utils.StopOADINServer(pidFilePath)
 		if err != nil {
 			c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
@@ -147,22 +147,22 @@ func updateHandler(c *gin.Context) {
 	if runtime.GOOS != "windows" {
 		oadinFileName = "oadin"
 	}
-	oadinFilePath := filepath.Join(config.GlobalOADINEnvironment.RootDir, oadinFileName)
+	oadinFilePath := filepath.Join(config.GlobalEnvironment.RootDir, oadinFileName)
 	err := os.Remove(oadinFilePath)
 	if err != nil {
 		slog.Error("[Update] Failed to remove oadin file %s: %v\n", oadinFilePath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 	}
 	// install new version
-	downloadPath := filepath.Join(config.GlobalOADINEnvironment.RootDir, "download", oadinFileName)
+	downloadPath := filepath.Join(config.GlobalEnvironment.RootDir, "download", oadinFileName)
 	err = os.Rename(downloadPath, oadinFilePath)
 	if err != nil {
 		slog.Error("[Update] Failed to rename oadin file %s: %v\n", downloadPath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 	}
 	// start server
-	logPath := config.GlobalOADINEnvironment.ConsoleLog
-	rootDir := config.GlobalOADINEnvironment.RootDir
+	logPath := config.GlobalEnvironment.ConsoleLog
+	rootDir := config.GlobalEnvironment.RootDir
 	err = utils.StartOADINServer(logPath, rootDir)
 	if err != nil {
 		slog.Error("[Update] Failed to start oadin log %s: %v\n", logPath, err)

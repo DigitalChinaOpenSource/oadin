@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/getlantern/systray/example/icon"
-	"github.com/pkg/browser"
 	"oadin/config"
 	"oadin/internal/utils"
 	trayTemplate "oadin/tray/icon"
 	tray "oadin/tray/utils"
 
 	"github.com/getlantern/systray"
+	"github.com/getlantern/systray/example/icon"
+	"github.com/pkg/browser"
 	"github.com/sqweek/dialog"
 )
 
@@ -204,20 +204,20 @@ func (m *Manager) performUpdate() error {
 
 // installUpdate
 func (m *Manager) installUpdate() error {
-	emptyStatus := utils.IsDirEmpty(config.GlobalOADINEnvironment.UpdateDir)
+	emptyStatus := utils.IsDirEmpty(config.GlobalEnvironment.UpdateDir)
 	if emptyStatus {
 		return fmt.Errorf("installation directory is empty")
 	}
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		installFilaPath := filepath.Join(config.GlobalOADINEnvironment.UpdateDir, "oadin-installer-latest.pkg")
+		installFilaPath := filepath.Join(config.GlobalEnvironment.UpdateDir, "oadin-installer-latest.pkg")
 		cmd = exec.Command("open", installFilaPath)
 	case "linux":
 		installFilaPath := ""
 		fmt.Sprintf(installFilaPath)
 	case "windows":
-		installFilaPath := filepath.Join(config.GlobalOADINEnvironment.UpdateDir, "oadin-installer-latest.exe")
+		installFilaPath := filepath.Join(config.GlobalEnvironment.UpdateDir, "oadin-installer-latest.exe")
 		cmd = exec.Command(installFilaPath, "/S")
 	}
 	err := cmd.Run()
