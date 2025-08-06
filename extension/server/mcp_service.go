@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	ConfigRoot "oadin/config"
 	"oadin/extension/api/dto"
@@ -16,8 +18,6 @@ import (
 	"oadin/extension/utils/hardware/installer"
 	"oadin/internal/datastore"
 	"oadin/internal/logger"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
@@ -246,7 +246,7 @@ func (M *McpServiceImpl) DownloadMCP(ctx context.Context, id string) error {
 			output, errOut, err := commandBuilder.WithTimeout(time.Minute).Execute()
 			fmt.Printf("output of command execution: %s", output)
 			fmt.Printf("error output of command execution: %s", errOut)
-			//执行结果
+			// 执行结果
 			logger.LogicLogger.Info("output of command execution: ", output)
 			logger.LogicLogger.Info("errout of command execution: ", errOut)
 			if err != nil {

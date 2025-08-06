@@ -201,7 +201,7 @@ func DownloadNewVersion(ctx context.Context, updateResponse UpdateResponse) erro
 	if err != nil {
 		return err
 	}
-	_, err = utils.DownloadFile(updateResponse.UpdateURL, config.GlobalOADINEnvironment.UpdateDir)
+	_, err = utils.DownloadFile(updateResponse.UpdateURL, config.GlobalEnvironment.UpdateDir)
 	if err != nil {
 		return err
 	}

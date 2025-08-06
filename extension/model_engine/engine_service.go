@@ -522,7 +522,6 @@ func (e *EngineService) GenerateEmbedding(ctx context.Context, req *dto.Embeddin
 
 		var oadinResp dto.OadinAPIResponse
 		if err := json.Unmarshal(result.HTTP.Body, &oadinResp); err != nil {
-
 			logger.EngineLogger.Warn("[Embedding] 无法解析�?Oadin 响应格式",
 				"error", err.Error(),
 				"response_preview", responsePreview)

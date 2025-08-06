@@ -77,7 +77,7 @@ const (
 	EnvLocalModelQueueTimeout = "AOG_LOCAL_MODEL_QUEUE_TIMEOUT"
 )
 
-var GlobalOADINEnvironment *OADINEnvironment
+var GlobalEnvironment *OADINEnvironment
 
 type OADINEnvironment struct {
 	ApiHost                string        // host

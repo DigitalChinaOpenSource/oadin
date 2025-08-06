@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"oadin/internal/logger"
 	"time"
 
 	"oadin/config"
@@ -13,6 +12,7 @@ import (
 	"oadin/extension/entity"
 	"oadin/extension/model_engine"
 	"oadin/internal/datastore"
+	"oadin/internal/logger"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
 
@@ -56,7 +56,7 @@ func NewPlayground() Playground {
 	}
 	go func() {
 		ctx := context.Background()
-		dbPath := config.GlobalOADINEnvironment.Datastore
+		dbPath := config.GlobalEnvironment.Datastore
 		if err := InitPlaygroundVec(ctx, dbPath); err != nil {
 			logger.LogicLogger.Error("初始化VEC失败，将回退到标准向量搜索", "error", err)
 		} else {

@@ -63,7 +63,7 @@ func NewManager() *Manager {
 	manager.queue = NewQueue(manager, manager.loader)
 
 	// 创建cleaner时注入接口依赖
-	manager.cleaner = NewCleaner(manager, manager.queue)
+	manager.cleaner = NewCleaner(manager.queue, manager.loader)
 
 	return manager
 }
@@ -122,8 +122,8 @@ func (m *Manager) Start(cleanupInterval time.Duration) {
 
 	// 如果传入的清理间隔为0，使用配置中的默认值
 	if cleanupInterval == 0 {
-		if config.GlobalOADINEnvironment != nil && config.GlobalOADINEnvironment.ModelCleanupInterval > 0 {
-			cleanupInterval = config.GlobalOADINEnvironment.ModelCleanupInterval
+		if config.GlobalEnvironment != nil && config.GlobalEnvironment.ModelCleanupInterval > 0 {
+			cleanupInterval = config.GlobalEnvironment.ModelCleanupInterval
 		} else {
 			cleanupInterval = 1 * time.Minute // 默认1分钟
 		}
