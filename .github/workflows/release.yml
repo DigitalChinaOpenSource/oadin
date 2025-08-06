@@ -12,6 +12,8 @@ env:
   NEXUS_HOST_PORT: ${{ secrets.NEXUS_HOST_PORT }}
   NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
   NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+  HOOK_BRIDGE_URL: ${{ secrets.HOOK_BRIDGE_URL }}
+  PROJECT_FLAG: ${{ secrets.PROJECT_FLAG }}
 
 jobs:
   build-mac:
