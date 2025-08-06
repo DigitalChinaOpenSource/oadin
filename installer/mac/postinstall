@@ -1,5 +1,11 @@
 #!/bin/bash
 USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
+if [ -d /usr/local/bin ]; then
+    echo "目录存在"
+else
+    mkdir -p /usr/local/bin
+fi
+
 mkdir -p "$USER_HOME/Oadin"
 set -x
 cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"

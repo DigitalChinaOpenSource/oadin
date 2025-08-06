@@ -375,6 +375,7 @@ type GetSupportModelRequest struct {
 	PageSize      int    `form:"page_size"`
 	Page          int    `form:"page"`
 	SearchName    string `form:"search_name"`
+	EnvType       string `form:"env_type"`
 }
 
 // control panel 分页模型列表

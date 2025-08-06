@@ -157,7 +157,7 @@ func (s *SystemImpl) RestartOllama(ctx context.Context) error {
 		}
 		return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，当前有模型正在运行，请先停止模型")
 	} else {
-		err = engine.StopEngine()
+		err = engine.StopEngine(ctx)
 		if err != nil {
 			logger.LogicLogger.Error("停止引擎失败", "error", err)
 			return bcode.HttpError(bcode.ControlPanelSystemError, "无法切换代理启用状态，ollama服务无法重启")

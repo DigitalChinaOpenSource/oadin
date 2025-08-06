@@ -35,7 +35,7 @@ func NewOadinExtensionServer() *OadinExtensionServer {
 		Router:     coreServer.Router,
 		DataStore:  datastore.GetDefaultDatastore(),
 		CoreServer: coreServer,
-		RootRouter: coreServer.Router.Group("/oadin/" + version.OADINVersion),
+		RootRouter: coreServer.Router.Group("/oadin/" + version.OADINSpecVersion),
 	}
 }
 

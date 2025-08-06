@@ -172,7 +172,7 @@ func NewEditServiceCommand() *cobra.Command {
 			}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/%s/%s/service", constants.AppName, version.OADINVersion)
+			routerPath := fmt.Sprintf("/%s/%s/service", constants.AppName, version.OADINSpecVersion)
 
 			err = c.Client.Do(context.Background(), http.MethodPut, routerPath, req, &resp)
 			if err != nil {
@@ -423,7 +423,7 @@ func updateServiceProviderHandler(providerName, configFile string) error {
 	resp := dto.UpdateServiceProviderResponse{}
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/%s/%s/service_provider", constants.AppName, version.OADINVersion)
+	routerPath := fmt.Sprintf("/%s/%s/service_provider", constants.AppName, version.OADINSpecVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPut, routerPath, spConf, &resp)
 	if err != nil {
@@ -639,10 +639,10 @@ func NewStartApiServerCommand() *cobra.Command {
 				startMode = types.EngineStartModeStandard
 			}
 
-			err = StartModelEngine("openvino", startMode)
-			if err != nil {
-				return err
-			}
+			//err = StartModelEngine("openvino", startMode)
+			//if err != nil {
+			//	return err
+			//}
 
 			err = StartModelEngine("ollama", startMode)
 			if err != nil {
@@ -741,7 +741,7 @@ func NewListServicesCommand() *cobra.Command {
 			}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service", version.OADINSpecVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -790,7 +790,7 @@ func NewListModelsCommand() *cobra.Command {
 			}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINSpecVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -841,7 +841,7 @@ func NewListProvidersCommand() *cobra.Command {
 			}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINSpecVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -910,7 +910,7 @@ func installServiceProviderHandler(configFile string) error {
 	go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINSpecVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPost, routerPath, spConf, &resp)
 	if err != nil {
@@ -1033,7 +1033,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 		go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
 		c := config.NewOADINClient()
-		routerPath := fmt.Sprintf("/oadin/%s/service/install", version.OADINVersion)
+		routerPath := fmt.Sprintf("/oadin/%s/service/install", version.OADINSpecVersion)
 
 		err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 		if err != nil {
@@ -1113,12 +1113,12 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err := StartModelEngine("openvino", types.EngineStartModeDaemon)
-	if err != nil {
-		return
-	}
+	//err := StartModelEngine("openvino", types.EngineStartModeDaemon)
+	//if err != nil {
+	//	return
+	//}
 
-	err = StartModelEngine("ollama", types.EngineStartModeDaemon)
+	err := StartModelEngine("ollama", types.EngineStartModeDaemon)
 	if err != nil {
 		return
 	}
@@ -1136,7 +1136,7 @@ func StartModelEngine(engineName, mode string) error {
 
 	err := engineProvider.HealthCheck()
 	if err != nil {
-		cmd := exec.Command(engineConfig.ExecPath+engineConfig.ExecFile, "-h")
+		cmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 		err := cmd.Run()
 		if err != nil {
 			slog.Info("Check model engine " + engineName + " status")
@@ -1260,7 +1260,7 @@ func PullHandler(cmd *cobra.Command, args []string) {
 	req.ProviderName = providerName
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
+	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINSpecVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 	if err != nil {
@@ -1307,7 +1307,7 @@ func DeleteModelHandler(cmd *cobra.Command, args []string) {
 	req.ProviderName = providerName
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
+	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINSpecVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodDelete, routerPath, req, &resp)
 	if err != nil {
@@ -1332,7 +1332,7 @@ func DeleteProviderHandler(cmd *cobra.Command, args []string) {
 	req.ProviderName = providerName
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINSpecVersion)
 
 	err := c.Client.Do(context.Background(), http.MethodDelete, routerPath, req, &resp)
 	if err != nil {
@@ -1380,7 +1380,7 @@ func NewImportServiceCommand() *cobra.Command {
 			go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service/import", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service/import", version.OADINSpecVersion)
 
 			err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
@@ -1433,7 +1433,7 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 			resp := &dto.ExportServiceResponse{}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINSpecVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
@@ -1476,7 +1476,7 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 			resp := &dto.ExportServiceResponse{}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINSpecVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
