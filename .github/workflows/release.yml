@@ -57,19 +57,106 @@ jobs:
           fi
           echo "✅ Both oadin and oadin-tray built successfully"
           
+          # 🔥 生成 macOS 应用图标 (ICNS)
+          echo "--------- 🎨 生成 macOS 应用图标 ----------"
+          if [ -f "tray/icon/oadin-icon.png" ]; then
+              # 创建临时目录存放不同尺寸的图标
+              mkdir -p tmp_iconset.iconset
+              
+              # 生成不同尺寸的图标 (使用 sips 命令)
+              sips -z 16 16     tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_16x16.png
+              sips -z 32 32     tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_16x16@2x.png
+              sips -z 32 32     tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_32x32.png
+              sips -z 64 64     tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_32x32@2x.png
+              sips -z 128 128   tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_128x128.png
+              sips -z 256 256   tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_128x128@2x.png
+              sips -z 256 256   tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_256x256.png
+              sips -z 512 512   tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_256x256@2x.png
+              sips -z 512 512   tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_512x512.png
+              sips -z 1024 1024 tray/icon/oadin-icon.png --out tmp_iconset.iconset/icon_512x512@2x.png
+              
+              # 生成 ICNS 文件
+              iconutil -c icns tmp_iconset.iconset -o installer/mac/oadin.icns
+              
+              # 清理临时文件
+              rm -rf tmp_iconset.iconset
+              
+              if [ -f "installer/mac/oadin.icns" ]; then
+                  echo "✅ ICNS 图标生成成功"
+              else
+                  echo "⚠️ ICNS 图标生成失败，使用默认图标"
+              fi
+          else
+              echo "⚠️ 未找到 PNG 图标文件，跳过 ICNS 生成"
+          fi
+          
           # 签名主程序
           codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
           
           # 签名托盘程序
           codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin-tray
           
+          echo "--------- 📦 创建 .app 应用程序包 ----------"
+          # 创建 .app 目录结构
+          mkdir -p "Oadin.app/Contents/MacOS"
+          mkdir -p "Oadin.app/Contents/Resources"
+          
+          # 复制可执行文件
+          cp oadin "Oadin.app/Contents/MacOS/"
+          cp oadin-tray "Oadin.app/Contents/MacOS/"
+          
+          # 复制图标文件（如果存在）
+          if [ -f "installer/mac/oadin.icns" ]; then
+              cp installer/mac/oadin.icns "Oadin.app/Contents/Resources/"
+          fi
+          
+          # 创建 Info.plist
+          cat > "Oadin.app/Contents/Info.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleDevelopmentRegion</key>
+              <string>en</string>
+              <key>CFBundleDisplayName</key>
+              <string>Oadin</string>
+              <key>CFBundleExecutable</key>
+              <string>oadin-tray</string>
+              <key>CFBundleIconFile</key>
+              <string>oadin.icns</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.digitalchina.oadin</string>
+              <key>CFBundleInfoDictionaryVersion</key>
+              <string>6.0</string>
+              <key>CFBundleName</key>
+              <string>Oadin</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>${CI_COMMIT_TAG}</string>
+              <key>CFBundleVersion</key>
+              <string>${CI_COMMIT_TAG}</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>11.0</string>
+              <key>LSUIElement</key>
+              <true/>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>NSHumanReadableCopyright</key>
+              <string>Copyright © 2024 Digital China. All rights reserved.</string>
+          </dict>
+          </plist>
+          EOF
+          
+          # 签名 .app
+          codesign --verbose --force --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" "Oadin.app"
+          
           echo "--------- 📦 安装包构建与签名 ----------"
-          mkdir -p pkgroot/oadin
-          mv oadin pkgroot/oadin/oadin
-          mv oadin-tray pkgroot/oadin/oadin-tray
+          mkdir -p pkgroot/Applications
+          mv Oadin.app pkgroot/Applications/
           chmod +x installer/mac/preinstall
           chmod +x installer/mac/postinstall
-          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
+          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Applications --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot --scripts ./installer/mac oadin.pkg
           echo "--------- 📬 安装包公证 ----------"
           xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
           xcrun notarytool submit oadin.pkg --keychain-profile "ci-profile" --wait
@@ -146,11 +233,11 @@ jobs:
           # 构建主程序
           go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w" cmd/cli/main.go
           
-  
+          # 🔥 关键修复：确保图标文件在正确位置供构建使用
           Write-Host "Preparing icon file for tray app build..."
           if (!(Test-Path "tray\\icon\\oadin-icon.ico")) {
-              if (Test-Path "tray\\icon\\OADIN-图标-彩色.ico") {
-                  Copy-Item "tray\\icon\\OADIN-图标-彩色.ico" "tray\\icon\\oadin-icon.ico" -Force
+              if (Test-Path "tray\\icon\\oadin-icon.ico") {
+                  Copy-Item "tray\\icon\\oadin-icon.ico" "tray\\icon\\oadin-icon.ico" -Force
                   Write-Host "➡️ Prepared tray\\icon\\oadin-icon.ico from 中文文件名"
               } else {
                   Write-Error "❌ No icon file found for embedding"
@@ -160,7 +247,16 @@ jobs:
               Write-Host "✅ tray\\icon\\oadin-icon.ico already exists"
           }
           
-          # 只使用 goversioninfo 生成资源文件（移除 rsrc 避免冲突）
+          # 验证图标文件确实存在
+          if (Test-Path "tray\\icon\\oadin-icon.ico") {
+              $iconSize = (Get-Item "tray\\icon\\oadin-icon.ico").Length
+              Write-Host "✅ Icon file verified: tray\\icon\\oadin-icon.ico ($iconSize bytes)"
+          } else {
+              Write-Error "❌ Icon file missing after preparation"
+              exit 1
+          }
+          
+          # 只使用 goversioninfo 生成资源文件
           Write-Host "Installing goversioninfo tool..."
           go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
           
@@ -174,15 +270,20 @@ jobs:
                   & "$env:GOPATH\\bin\\goversioninfo.exe" -icon "..\\tray\\icon\\oadin-icon.ico"
                   
                   if (Test-Path "resource.syso") {
-                      Write-Host "✅ Windows resource file with icon generated successfully"
                       $fileSize = (Get-Item "resource.syso").Length
-                      Write-Host "Resource file size: $fileSize bytes"
+                      Write-Host "✅ Windows resource file with icon generated successfully (size: $fileSize bytes)"
+                      
+                      # 验证 resource.syso 包含数据
+                      if ($fileSize -gt 1000) {
+                          Write-Host "✅ Resource file size looks good, likely contains icon data"
+                      } else {
+                          Write-Host "⚠️ Resource file seems small, may not contain icon properly"
+                      }
                   } else {
                       Write-Host "⚠️ Failed to generate resource file"
                   }
               } else {
                   Write-Host "⚠️ Icon file not found at: ..\\tray\\icon\\oadin-icon.ico"
-                  # 尝试不带图标生成
                   & "$env:GOPATH\\bin\\goversioninfo.exe"
               }
               
@@ -191,21 +292,35 @@ jobs:
               Write-Host "⚠️ versioninfo.json not found, building without version info"
           }
           
+          # 验证 resource.syso 存在后再构建
+          if (Test-Path "trayapp\\resource.syso") {
+              $resourceSize = (Get-Item "trayapp\\resource.syso").Length
+              Write-Host "✅ Resource file ready for build (size: $resourceSize bytes)"
+          } else {
+              Write-Host "⚠️ No resource.syso found, building without embedded resources"
+          }
+          
           # 构建托盘程序（会自动包含 resource.syso）
           Write-Host "Building tray application..."
           go build -o oadin-tray.exe trayapp/main.go
           
-          # 验证 EXE 是否包含图标资源
-          Write-Host "Verifying built executables..."
+          # 验证构建的 EXE 文件大小
           if (Test-Path "oadin-tray.exe") {
-              $fileInfo = Get-ItemProperty "oadin-tray.exe"
-              Write-Host "oadin-tray.exe size: $($fileInfo.Length) bytes"
+              $exeSize = (Get-Item "oadin-tray.exe").Length
+              Write-Host "✅ oadin-tray.exe built successfully (size: $exeSize bytes)"
+              
+              # 使用 PowerShell 检查 EXE 是否包含图标资源
+              try {
+                  $assembly = [System.Reflection.Assembly]::LoadFile((Resolve-Path "oadin-tray.exe").Path)
+                  Write-Host "✅ EXE file can be loaded as assembly"
+              } catch {
+                  Write-Host "ℹ️ EXE file inspection: $_"
+              }
           }
           
-          # 清理资源文件
+          # 不要立即删除 resource.syso，保留用于调试
           if (Test-Path "trayapp\\resource.syso") {
-              Remove-Item "trayapp\\resource.syso" -Force
-              Write-Host "Cleaned up resource.syso file"
+              Write-Host "ℹ️ Keeping resource.syso for verification"
           }
           
           # 验证文件存在

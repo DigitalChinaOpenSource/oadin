@@ -27,11 +27,12 @@ else
     echo "Warning: oadin executable not found in ${MACOS_DIR}"
 fi
 
-# 启动服务（以真实用户身份）
-if [ -f "${MACOS_DIR}/oadin" ]; then
-    sudo -u "$REAL_USER" "${MACOS_DIR}/oadin" server start -d
-    echo "Oadin server started"
-fi
+# 确保权限正确
+chmod +x "${APP_BUNDLE}/Contents/MacOS/oadin"
+chmod +x "${APP_BUNDLE}/Contents/MacOS/oadin-tray"
+
+# 启动 oadin-tray (作为登录项)
+open "${APP_BUNDLE}"
 
 echo "Oadin installation completed successfully"
 exit 0

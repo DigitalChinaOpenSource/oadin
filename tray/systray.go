@@ -374,9 +374,9 @@ func getIcon() ([]byte, error) {
 
 	if runtime.GOOS == "darwin" {
 		if isMacDarkMode() {
-			files = []string{"oadin-icon-white.ico", "oadin-icon-white.png"}
+			files = []string{"oadin-icon-white.icns", "oadin-icon-white.png"}
 		} else {
-			files = []string{"OADIN-图标-单黑.ico", "OADIN-图标-单黑.png"}
+			files = []string{"oadin.icns", "oadin-icon-black.png"}
 		}
 	} else if runtime.GOOS == "windows" {
 		files = []string{"oadin-icon.ico", "oadin-icon.png"}
@@ -396,8 +396,8 @@ func getIcon() ([]byte, error) {
 
 	fmt.Println("Trying fallback icons...")
 	fallbackFiles := []string{
-		"oadin-icon.ico", "OADIN-图标-单黑.ico", "oadin-icon-white.ico",
-		"oadin-icon.png", "OADIN-图标-单黑.png", "oadin-icon-white.png",
+		"oadin.icns", "oadin-icon.ico", "oadin-icon-black.ico",
+		"oadin-icon.png", "oadin-icon-black.png", "oadin-icon-white.png",
 	}
 
 	for _, fallback := range fallbackFiles {
