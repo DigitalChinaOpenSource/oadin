@@ -157,6 +157,17 @@ jobs:
           echo "--------- 🗑️ 删除本地tag ----------"
           git checkout main
           git tag -d $env:CI_COMMIT_TAG
-          echo "--------- ♻️ 刷新CND ----------"
+          echo "--------- ♻️ 刷新CDN ----------"
           aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/oadin/releases/windows/oadin-installer-latest.exe" --ObjectType File
           echo "========== 🔧 Win Upload End =========="
+
+  notify-feishu:
+    name: Notify Feishu
+    runs-on: [ self-hosted, macOS, ARM64 ]
+    needs:
+      - build-mac
+      - build-win
+    steps:
+      - name: Notify Feishu
+        run: |
+          sh scripts/release-notice.sh
