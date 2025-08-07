@@ -1,5 +1,41 @@
 [
   {
+    "provider_name": "local_llamacpp_chat",
+    "service_name": "chat",
+    "service_source": "local",
+    "desc": "Local llamacpp chat/completion",
+    "api_flavor": "llamacpp",
+    "method": "POST",
+    "auth_type": "none",
+    "auth_key": "",
+    "flavor": "llamacpp",
+    "url": "http://127.0.0.1:16697/v1/chat/completions"
+  },
+  {
+    "provider_name": "local_llamacpp_generate",
+    "service_name": "generate",
+    "service_source": "local",
+    "desc": "Local llamacpp completion",
+    "api_flavor": "llamacpp",
+    "method": "POST",
+    "auth_type": "none",
+    "auth_key": "",
+    "flavor": "llamacpp",
+    "url": "http://127.0.0.1:16697/v1/completions"
+  },
+  {
+    "provider_name": "local_llamacpp_embed",
+    "desc": "Local llamacpp embed",
+    "service_name": "embed",
+    "service_source": "local",
+    "api_flavor": "llamacpp",
+    "method": "POST",
+    "auth_type": "none",
+    "auth_key": "",
+    "flavor": "llamacpp",
+    "url": "http://127.0.0.1:16697/v1/embeddings"
+  },
+  {
     "provider_name": "local_ollama_models",
     "service_name": "models",
     "service_source": "local",

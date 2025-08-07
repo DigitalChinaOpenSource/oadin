@@ -61,3 +61,9 @@ const (
 	MebiByte = KibiByte * 1024
 	GibiByte = MebiByte * 1024
 )
+
+// Model types
+const (
+	GGUFModelType = "ggufFile"
+)
+

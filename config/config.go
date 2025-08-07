@@ -71,10 +71,10 @@ const (
 
 	// Environment variable keys
 	EnvOADINHost              = "OADIN_HOST"
-	EnvModelIdleTimeout       = "AOG_MODEL_IDLE_TIMEOUT"
-	EnvModelCleanupInterval   = "AOG_MODEL_CLEANUP_INTERVAL"
-	EnvLocalModelQueueSize    = "AOG_LOCAL_MODEL_QUEUE_SIZE"
-	EnvLocalModelQueueTimeout = "AOG_LOCAL_MODEL_QUEUE_TIMEOUT"
+	EnvModelIdleTimeout       = "OADIN_MODEL_IDLE_TIMEOUT"
+	EnvModelCleanupInterval   = "OADIN_MODEL_CLEANUP_INTERVAL"
+	EnvLocalModelQueueSize    = "OADIN_LOCAL_MODEL_QUEUE_SIZE"
+	EnvLocalModelQueueTimeout = "OADIN_LOCAL_MODEL_QUEUE_TIMEOUT"
 )
 
 var GlobalEnvironment *OADINEnvironment

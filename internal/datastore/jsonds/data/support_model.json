@@ -1,4 +1,21 @@
 [
+    {
+    "id": "b7b2e6b3-7d91-41e2-ba98-adf5f4449c81",
+    "api_flavor": "llamacpp",
+    "avatar": "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/icon/qwen.png",
+    "class": [
+      "文本生成"
+    ],
+    "description": "Qwen3 是 Qwen 系列中最新一代大型语言模型，提供了一套全面的密集和混合专家 (MoE) 模型。",
+    "flavor": "llamacpp",
+    "name": "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF",
+    "ollama_id": "",
+    "params_size": 0.6,
+    "service_name": "chat",
+    "service_source": "local",
+    "size": "4.6GB",
+    "context": 125
+  },
   {
     "id": "b7b2e6b3-7d91-41e2-ba98-adf5f4449c82",
     "api_flavor": "ollama",

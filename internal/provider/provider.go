@@ -57,6 +57,8 @@ func GetModelEngine(engineName string) ModelServiceProvider {
 		return engine.NewOllamaProvider(nil)
 	case "openvino":
 		return engine.NewOpenvinoProvider(nil)
+	case "llamacpp":
+		return engine.NewLlamacppProvider(nil)
 	default:
 		return engine.NewOllamaProvider(nil)
 	}
