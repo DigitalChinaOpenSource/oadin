@@ -498,7 +498,7 @@ func (o *OpenvinoProvider) StartEngine(mode string) error {
 	return nil
 }
 
-func (o *OpenvinoProvider) StopEngine() error {
+func (o *OpenvinoProvider) StopEngine(ctx context.Context) error {
 	pidFile := "ovms.pid"
 	data, err := os.ReadFile(pidFile)
 	if err != nil {

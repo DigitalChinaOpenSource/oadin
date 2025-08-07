@@ -138,6 +138,9 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 
 	if mode == types.EngineStartModeDaemon {
 		cmd := exec.Command(execFile, "serve")
+		if runtime.GOOS == "windows" {
+			utils.SetCmdSysProcAttr(cmd)
+		}
 		err := cmd.Start()
 		if err != nil {
 			logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
@@ -162,6 +165,9 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 	} else {
 		if utils.IpexOllamaSupportGPUStatus() {
 			cmd := exec.Command(o.EngineConfig.ExecPath + "/" + OllamaBatchFile)
+			if runtime.GOOS == "windows" {
+				utils.SetCmdSysProcAttr(cmd)
+			}
 			err := cmd.Start()
 			if err != nil {
 				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
@@ -169,6 +175,9 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 			}
 		} else {
 			cmd := exec.Command(execFile, "serve")
+			if runtime.GOOS == "windows" {
+				utils.SetCmdSysProcAttr(cmd)
+			}
 			err := cmd.Start()
 			if err != nil {
 				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
@@ -180,7 +189,23 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 	return nil
 }
 
-func (o *OllamaProvider) StopEngine() error {
+func (o *OllamaProvider) StopEngine(ctx context.Context) error {
+	// unload model
+	runningModels, err := o.GetRunningModels(ctx)
+	if err != nil {
+		logger.EngineLogger.Error("[Ollama] failed get running models: " + err.Error())
+		return fmt.Errorf("failed get running models:: %v", err)
+	}
+	runningModelList := []string{}
+	for _, model := range runningModels.Models {
+		runningModelList = append(runningModelList, model.Name)
+	}
+	err = o.UnloadModel(ctx, &types.UnloadModelRequest{Models: runningModelList})
+	if err != nil {
+		logger.EngineLogger.Error("[Ollama] failed unload model: " + err.Error())
+		return fmt.Errorf("failed unload model: %v", err)
+	}
+
 	rootPath, err := utils.GetOADINDataDir()
 	if err != nil {
 		logger.EngineLogger.Error("[Ollama] failed get oadin dir: " + err.Error())
@@ -318,11 +343,11 @@ func (o *OllamaProvider) InstallEngine() error {
 		return fmt.Errorf("failed to download ollama: %v, url: %v", err, o.EngineConfig.DownloadUrl)
 	}
 
-	slog.Info("[Install Engine] start install...")
+	logger.EngineLogger.Info("[Install Engine] start install...")
 	if runtime.GOOS == "darwin" {
 		files, err := os.ReadDir(o.EngineConfig.DownloadPath)
 		if err != nil {
-			slog.Error("[Install Engine] read dir failed: ", o.EngineConfig.DownloadPath)
+			logger.EngineLogger.Error("[Install Engine] read dir failed: ", o.EngineConfig.DownloadPath)
 		}
 		for _, f := range files {
 			if f.IsDir() && f.Name() == "__MACOSX" {
@@ -353,15 +378,16 @@ func (o *OllamaProvider) InstallEngine() error {
 			// 解压文件
 			userDir, err := os.UserHomeDir()
 			if err != nil {
-				slog.Error("Get user home dir failed: ", err.Error())
+				logger.EngineLogger.Error("Get user home dir failed: ", err.Error())
 				return err
 			}
-			ipexPath := fmt.Sprintf("%s/%s", userDir)
+			ipexPath := userDir
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
 					unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
 					if err := unzipCmd.Run(); err != nil {
+						logger.EngineLogger.Error("[Install Engine] model engine install completed err : ", err.Error())
 						return fmt.Errorf("failed to unzip file: %v", err)
 					}
 				}
@@ -373,6 +399,7 @@ func (o *OllamaProvider) InstallEngine() error {
 				os.MkdirAll(ipexPath, 0o755)
 				unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
 				if err := unzipCmd.Run(); err != nil {
+					logger.LogicLogger.Info("[Install Engine] model engine install completed err : ", err.Error())
 					return fmt.Errorf("failed to unzip file: %v", err)
 				}
 			}
@@ -380,7 +407,7 @@ func (o *OllamaProvider) InstallEngine() error {
 			return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 		}
 	}
-	slog.Info("[Install Engine] model engine install completed")
+	logger.LogicLogger.Info("[Install Engine] model engine install completed")
 	return nil
 }
 
@@ -516,12 +543,30 @@ func (o *OllamaProvider) GetRunningModels(ctx context.Context) (*types.ListRespo
 
 func (o *OllamaProvider) UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error {
 	c := o.GetDefaultClient()
+	// chat model
 	for _, model := range req.Models {
 		reqBody := &types.OllamaUnloadModelRequest{
 			Model:     model,
 			KeepAlive: 0, // 默认为0，表示不保留模型
 		}
 		if err := c.Do(ctx, http.MethodPost, "/api/generate", reqBody, nil); err != nil {
+			slog.Error("Unload model failed : " + err.Error())
+			return err
+		}
+		slog.Info("Ollama: Model %s unloaded successfully\n", model)
+	}
+	reCheckRunModels, err := o.GetRunningModels(ctx)
+	if err != nil {
+		logger.EngineLogger.Error("[Ollama] Get run models failed : " + err.Error())
+		return err
+	}
+	// embed model
+	for _, model := range reCheckRunModels.Models {
+		reqBody := &types.OllamaUnloadModelRequest{
+			Model:     model.Name,
+			KeepAlive: 0,
+		}
+		if err := c.Do(ctx, http.MethodPost, "/api/embed", reqBody, nil); err != nil {
 			slog.Error("Unload model failed : " + err.Error())
 			return err
 		}

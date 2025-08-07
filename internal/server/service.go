@@ -117,12 +117,24 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 		m.ServiceName = request.ServiceName
 		m.ModelName = providerServiceInfo.DefaultModel
 
-		// 在创建后置为0
 		err := s.Ds.Get(ctx, service)
 		if err == nil {
 			service.Status = 0
 			_ = s.Ds.Put(ctx, service)
 		}
+
+		if sp.AuthType != types.AuthTypeNone {
+			checkSp := ChooseCheckServer(*sp, m.ModelName)
+			if checkSp != nil {
+				return nil, bcode.ErrProviderIsUnavailable
+			}
+			if !checkSp.CheckServer() {
+				return nil, bcode.ErrProviderIsUnavailable
+			}
+		}
+		// model auth successfully, update service status
+		service.Status = 0
+		_ = s.Ds.Put(ctx, service)
 	} else {
 		recommendConfig := getRecommendConfig(request.ServiceName)
 		// Check if engine is installed locally and if it is available.
@@ -152,14 +164,12 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 			sp.ProviderName = fmt.Sprintf("%s_%s_%s", request.ServiceSource, request.ApiFlavor, request.ServiceName)
 		}
 
-		cmd := exec.Command(engineConfig.ExecFile, "-h")
+		cmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 		err := cmd.Run()
 		if err != nil {
 			logger.LogicLogger.Info("Check model engine " + recommendConfig.ModelEngine + "  not exist...")
-			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
-			err = reCheckCmd.Run()
 			_, isExistErr := os.Stat(engineConfig.ExecPath + "/" + engineConfig.ExecFile)
-			if err != nil && isExistErr != nil {
+			if isExistErr != nil {
 				logger.LogicLogger.Info("Model engine " + recommendConfig.ModelEngine + " not exist, start download...")
 				err := engineProvider.InstallEngine()
 				if err != nil {

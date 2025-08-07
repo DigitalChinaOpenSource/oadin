@@ -19,7 +19,7 @@ package constants
 // Application information
 const (
 	AppName           = "oadin"
-	BaseDownloadURL   = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin"
+	BaseDownloadURL   = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog"
 	UrlDirPathWindows = "/windows"
 )
 

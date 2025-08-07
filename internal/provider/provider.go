@@ -28,7 +28,7 @@ type ModelServiceProvider interface {
 	// engine lifecycle management
 	InstallEngine() error
 	StartEngine(mode string) error
-	StopEngine() error
+	StopEngine(ctx context.Context) error
 	HealthCheck() error
 	InitEnv() error
 

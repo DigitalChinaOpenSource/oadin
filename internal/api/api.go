@@ -31,6 +31,7 @@ type OADINCoreServer struct {
 	AIGCService     server.AIGCService
 	Model           server.Model
 	ServiceProvider server.ServiceProvider
+	ControlPanel    server.ControlPanel
 }
 
 // NewOADINCoreServer is the constructor of the server structure
@@ -62,4 +63,5 @@ func (t *OADINCoreServer) Register() {
 	t.AIGCService = server.NewAIGCService()
 	t.ServiceProvider = server.NewServiceProvider()
 	t.Model = server.NewModel()
+	t.ControlPanel = server.NewControlPanel()
 }
