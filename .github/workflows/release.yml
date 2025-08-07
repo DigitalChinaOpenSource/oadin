@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '*' # 仅在版本标签推送时触发
+  workflow_dispatch:
 
 env:
   CI_COMMIT_TAG: "${{ github.ref_name }}"
