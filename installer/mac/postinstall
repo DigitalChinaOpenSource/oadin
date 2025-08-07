@@ -1,23 +1,44 @@
 #!/bin/bash
+
+# 获取当前用户家目录
 USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
-mkdir -p "$USER_HOME/Oadin"
-set -x
-cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
-ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
-SHELL_PATH=$(dscl . -read /Users/$USER UserShell | awk '{print $2}')
+USER_NAME=${SUDO_USER:-$USER}
+
+# 获取用户使用的 shell
+SHELL_PATH=$(dscl . -read /Users/$USER_NAME UserShell | awk '{print $2}')
 SHELL_NAME=$(basename "$SHELL_PATH")
 
+# 根据 shell 类型选择 rc 文件
 if [ "$SHELL_NAME" = "zsh" ]; then
   RC_FILE="$USER_HOME/.zshrc"
 elif [ "$SHELL_NAME" = "bash" ]; then
   RC_FILE="$USER_HOME/.bash_profile"
 else
-  RC_FILE=""
+  RC_FILE="$USER_HOME/.profile"  # 默认回退
 fi
 
-
-if [ -n "$RC_FILE" ] && [ -f "$RC_FILE" ]; then
-  su - "$USER" -c "source $RC_FILE && oadin server start -d"
-else
-  su - "$USER" -c "oadin server start -d"
+# 创建 /usr/local/bin（如不存在）
+if [ ! -d /usr/local/bin ]; then
+    mkdir -p /usr/local/bin
+    echo "已创建 /usr/local/bin 目录"
 fi
+
+# 确保 /usr/local/bin 在 PATH 中
+if [ -n "$RC_FILE" ]; then
+  touch "$RC_FILE"
+  if ! grep -q '/usr/local/bin' "$RC_FILE"; then
+    echo 'export PATH="/usr/local/bin:$PATH"' >> "$RC_FILE"
+    echo "已将 /usr/local/bin 添加到 PATH 中（$RC_FILE）"
+  fi
+fi
+
+# 复制 oadin 二进制文件到用户目录
+mkdir -p "$USER_HOME/Oadin"
+cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
+chmod +x "$USER_HOME/Oadin/oadin"
+
+# 链接到 /usr/local/bin
+ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
+
+# 启动 oadin 服务
+su - "$USER_NAME" -c "source $RC_FILE && oadin server start -d"
