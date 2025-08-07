@@ -1570,17 +1570,18 @@ func ListenModelEngineHealth() {
 						continue
 					}
 				}
-			} else if engine == types.FlavorLlamaCpp {
-				err := LlamaCppEngine.HealthCheck()
-				if err != nil {
-					logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
-					err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
-					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
-						continue
-					}
-				}
-			}
+			} 
+			// else if engine == types.FlavorLlamaCpp {
+			// 	err := LlamaCppEngine.HealthCheck()
+			// 	if err != nil {
+			// 		logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+			// 		err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+			// 		if err != nil {
+			// 			logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+			// 			continue
+			// 		}
+			// 	}
+			// }
 		}
 
 		time.Sleep(60 * time.Second)

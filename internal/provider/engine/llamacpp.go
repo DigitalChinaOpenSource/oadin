@@ -132,7 +132,7 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 	return nil
 }
 
-func (l *llamacppProvider) StopEngine() error {
+func (l *llamacppProvider) StopEngine(ctx context.Context) error {
 	rootPath, err := utils.GetOADINDataDir()
 	if err != nil {
 		logger.EngineLogger.Error("[llamacpp] failed get oadin dir: " + err.Error())
