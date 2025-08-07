@@ -4,9 +4,10 @@ on:
   push:
     tags:
       - '*' # 仅在版本标签推送时触发
+  workflow_dispatch:
 
 env:
-  CI_COMMIT_TAG: "${{ github.ref_name }}"
+  CI_COMMIT_ID: ${{ github.event_name == 'push' && github.ref_name || github.sha }}
   MAC_FILE_NAME: "oadin-installer-${{ github.ref_name }}.pkg"
   WIN_FILE_NAME: "oadin-installer-${{ github.ref_name }}.exe"
   NEXUS_HOST_PORT: ${{ secrets.NEXUS_HOST_PORT }}
