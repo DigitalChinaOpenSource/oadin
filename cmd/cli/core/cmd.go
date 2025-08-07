@@ -639,10 +639,10 @@ func NewStartApiServerCommand() *cobra.Command {
 				startMode = types.EngineStartModeStandard
 			}
 
-			//err = StartModelEngine("openvino", startMode)
-			//if err != nil {
-			//	return err
-			//}
+			err = StartModelEngine("openvino", startMode)
+			if err != nil {
+				return err
+			}
 
 			err = StartModelEngine("ollama", startMode)
 			if err != nil {
@@ -1130,12 +1130,12 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	//err := StartModelEngine("openvino", types.EngineStartModeDaemon)
-	//if err != nil {
-	//	return
-	//}
+	err := StartModelEngine("openvino", types.EngineStartModeDaemon)
+	if err != nil {
+		return
+	}
 
-	err := StartModelEngine("ollama", types.EngineStartModeDaemon)
+	err = StartModelEngine("ollama", types.EngineStartModeDaemon)
 	if err != nil {
 		return
 	}
