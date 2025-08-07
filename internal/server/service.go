@@ -43,6 +43,7 @@ const (
 	// Download URLs
 	OllamaEngineDownloadURL   = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ipex-llm-ollama-win.zip"
 	OpenvinoEngineDownloadURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/windows/ovms_windows.zip"
+	LlamaCppEngineDownloadURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/llamacpp-windows-vulkan.zip"
 )
 
 type AIGCService interface {
@@ -124,8 +125,19 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 		}
 	} else {
 		recommendConfig := getRecommendConfig(request.ServiceName)
-		// Check if ollama is installed locally and if it is available.
-		// If it is available, proceed to the next step. Otherwise, prompt that ollama is not installed.
+		// Check if engine is installed locally and if it is available.
+		// If it is available, proceed to the next step. Otherwise, prompt that engine is not installed.
+
+		// Use user-specified ApiFlavor if provided, otherwise use recommended engine
+		if request.ApiFlavor != "" && utils.Contains(types.SupportModelEngine, request.ApiFlavor) {
+			// User specified a valid engine flavor, use it
+			recommendConfig.ModelEngine = request.ApiFlavor
+		}
+		if request.ApiFlavor != "" && !utils.Contains(types.SupportModelEngine, request.ApiFlavor) {
+			// User specified an unsupported engine flavor
+			logger.LogicLogger.Warn("Unsupported ApiFlavor provided: " + request.ApiFlavor + ", using recommended engine instead")
+		}
+
 		engineProvider := provider.GetModelEngine(recommendConfig.ModelEngine)
 		engineConfig := engineProvider.GetConfig()
 		if request.ModelName != "" {

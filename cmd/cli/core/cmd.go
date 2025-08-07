@@ -588,7 +588,7 @@ func NewInstallServiceCommand() *cobra.Command {
 	installServiceCmd.Flags().StringVar(&authType, "auth_type", "none", "Authentication type (apikey/token/none)")
 	installServiceCmd.Flags().StringVar(&method, "method", "POST", "HTTP method (default POST)")
 	installServiceCmd.Flags().StringVar(&authKey, "auth_key", "", "Authentication key json format")
-	installServiceCmd.Flags().StringVar(&flavor, "flavor", "", "Flavor (tencent/deepseek)")
+	installServiceCmd.Flags().StringVar(&flavor, "flavor", "", "Flavor (tencent/deepseek/ollama/llamacpp/openvino)")
 	installServiceCmd.Flags().StringP("file", "f", "", "Path to the service provider file (required for service_provider)")
 	installServiceCmd.Flags().BoolVarP(&skipModelFlag, "skip_model", "", false, "Skip the model download")
 	installServiceCmd.Flags().StringVarP(&model, "model_name", "m", "", "Pull model name")
@@ -1003,7 +1003,24 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 			req.Method = method
 		} else {
 			req.ServiceSource = types.ServiceSourceLocal
-			req.ApiFlavor = types.FlavorOllama
+			// Retrieve the flavor type specified by the user
+			flavorType, err := cmd.Flags().GetString("flavor")
+			if err != nil || flavorType == "" {
+				flavorType = "ollama"
+			}
+
+			// Set ApiFlavor based on the flavor type specified by the user
+			switch flavorType {
+			case "llamacpp":
+				req.ApiFlavor = types.FlavorLlamaCpp
+			case "openvino":
+				req.ApiFlavor = types.FlavorOpenvino
+			case "ollama":
+				req.ApiFlavor = types.FlavorOllama
+			default:
+				req.ApiFlavor = types.FlavorOllama
+			}
+
 			if serviceName == types.ServiceTextToImage || serviceName == types.ServiceSpeechToText || serviceName == types.ServiceSpeechToTextWS {
 				req.ApiFlavor = types.FlavorOpenvino
 			}
@@ -1139,49 +1156,49 @@ func StartModelEngine(engineName, mode string) error {
 		cmd := exec.Command(engineConfig.ExecPath+engineConfig.ExecFile, "-h")
 		err := cmd.Run()
 		if err != nil {
-			slog.Info("Check model engine " + engineName + " status")
+			logger.LogicLogger.Info("Check model engine " + engineName + " status")
 			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 			err = reCheckCmd.Run()
 			_, isExistErr := os.Stat(engineConfig.ExecPath + "/" + engineConfig.ExecFile)
 			if err != nil && isExistErr != nil {
-				slog.Info("Model engine " + engineName + " status: not downloaded")
+				logger.LogicLogger.Info("Model engine " + engineName + " status: not downloaded")
 				return nil
 			}
 		}
 
-		slog.Info("Setting env...")
+		logger.LogicLogger.Info("Setting env...")
 		err = engineProvider.InitEnv()
 		if err != nil {
 			slog.Error("Setting env error: ", err.Error())
 			return err
 		}
 
-		slog.Info("Start " + engineName + "...")
+		logger.LogicLogger.Info("Start " + engineName + "...")
 		err = engineProvider.StartEngine(mode)
 		if err != nil {
 			slog.Error("Start engine "+engineName+" error: ", err.Error())
 			return err
 		}
 
-		slog.Info("Waiting model engine " + engineName + " start 60s...")
+		logger.LogicLogger.Info("Waiting model engine " + engineName + " start 60s...")
 		for i := 60; i > 0; i-- {
 			time.Sleep(time.Second * 1)
 			err = engineProvider.HealthCheck()
 			if err == nil {
-				slog.Info("Start " + engineName + " completed...")
+				logger.LogicLogger.Info("Start " + engineName + " completed...")
 				break
 			}
-			slog.Info("Waiting "+engineName+" start ...", strconv.Itoa(i), "s")
+			logger.LogicLogger.Info("Waiting "+engineName+" start ...", strconv.Itoa(i), "s")
 		}
 	}
 
 	err = engineProvider.HealthCheck()
 	if err != nil {
-		slog.Error(engineName + " failed start, Please try again later...")
+		logger.LogicLogger.Error(engineName + " failed start, Please try again later...")
 		return err
 	}
 
-	slog.Info(engineName + " start successfully.")
+	logger.LogicLogger.Info(engineName + " start successfully.")
 
 	return nil
 }
@@ -1504,6 +1521,7 @@ func ListenModelEngineHealth() {
 
 	OpenVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
 	OllamaEngine := provider.GetModelEngine(types.FlavorOllama)
+	// LlamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
 
 	for {
 		list, err := ds.List(context.Background(), sp, &datastore.ListOptions{Page: 0, PageSize: 100})
@@ -1549,6 +1567,16 @@ func ListenModelEngineHealth() {
 					err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
 					if err != nil {
 						logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
+						continue
+					}
+				}
+			} else if engine == types.FlavorLlamaCpp {
+				err := LlamaCppEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+					err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
 						continue
 					}
 				}

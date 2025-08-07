@@ -1,0 +1,328 @@
+version: "0.1"
+name: llamacpp # the name should be aligned with file name
+services:
+
+  chat: # service name defined by oadin
+    task_type: "text-generation"
+    protocol: "HTTP"
+    expose_protocol: "HTTP"
+    url: "http://127.0.0.1:16697/v1/chat/completions"
+    endpoints: ["POST /llamacpp/v1/chat/completions"] # request to this will use this flavor
+    extra_url: ""
+    auth_type: "none"
+    default_model: "qwen3-8b"
+    request_segments: 1 # request
+    install_raw_routes: true # also install routes without oadin prefix in url path
+    extra_headers: "{}"
+    request_to_oadin:
+      conversion:
+        # NOTE it doesn't directly use input model and stream
+        # it uses $model and $stream which will be input by oadin
+        # so oadin may change it to most suitable model and
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "stream": $stream,
+                "messages": messages,
+                "tools": tools,
+                "seed": options.seed,
+                "temperature": options.temperature,
+                "top_p": options.top_p,
+                "top_k": options.top_k,
+                "stop": options.stop,
+                "max_tokens": options.num_predict,
+                "keep_alive": keep_alive
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    request_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "stream": $stream,
+                "messages": messages,
+                "tools": tools,
+                "keep_alive": keep_alive,
+                "seed": seed,
+                "options": {
+                              "seed": seed,
+                              "temperature": temperature,
+                              "top_p": top_p,
+                              "top_k": top_k,
+                              "num_predict": max_tokens,
+                              "stop": stop
+                          }
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    # response need additional converter for responses from stream
+    response_to_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "created_at": created,
+                "message": choices[0].message,
+                "finished": choices[0].finish_reason ? true : false,
+                "finish_reason": choices[0].finish_reason
+            }
+
+    stream_response_to_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "created_at": created,
+                "message": choices[0].delta,
+                "finished": choices[0].finish_reason ? true : false,
+                "finish_reason": choices[0].finish_reason
+            }
+
+        - converter: header
+          config:
+            del: ["Content-Type"]
+            add:
+              Content-Type: text/event-stream
+
+    response_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": model,
+                "created": created_at,
+                "message": message,
+                "done": finished,
+                "done_reason": finished ? finish_reason : null
+            }
+
+    stream_response_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": model,
+                "created": created_at,
+                "message": message,
+                "done": finished,
+                "done_reason": finished ? finish_reason : null
+            }
+
+        - converter: header
+          config:
+            del: ["Content-Type"]
+            add:
+              Content-Type: application/x-ndjson
+
+  generate:
+    task_type: "text-generation"
+    protocol: "HTTP"
+    expose_protocol: "HTTP"
+    url: "http://127.0.0.1:16697/v1/completions"
+    endpoints: ["POST /llamacpp/v1/completions"] # request to this will use this flavor
+    extra_url: ""
+    auth_type: "none"
+    default_model: "qwen3-8b"
+    request_segments: 1 # request
+    install_raw_routes: true # also install routes without oadin prefix in url path
+    extra_headers: "{}"
+    request_to_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "stream": $stream,
+                "prompt": prompt,
+                "tools": tools,
+                "seed": options.seed,
+                "temperature": options.temperature,
+                "template": options.template,
+                "top_p": options.top_p,
+                "top_k": options.top_k,
+                "stop": options.stop,
+                "max_tokens": options.num_predict,
+                "keep_alive": keep_alive
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    request_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "stream": $stream,
+                "prompt": prompt,
+                "tools": tools,
+                "keep_alive": keep_alive,
+                "options": {
+                    "seed": seed,
+                    "temperature": temperature,
+                    "top_p": top_p,
+                    "top_k": top_k,
+                    "num_predict": max_tokens,
+                    "stop": stop
+                          }
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    response_to_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "created_at": created,
+                "response": choices[0].text,
+                "finished": choices[0].finish_reason ? true : false,
+                "finish_reason": choices[0].finish_reason
+            }
+
+    stream_response_to_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "created_at": created,
+                "response": choices[0].text,
+                "finished": choices[0].finish_reason ? true : false,
+                "finish_reason": choices[0].finish_reason
+            }
+
+        - converter: header
+          config:
+            del: ["Content-Type"]
+            add:
+              Content-Type: text/event-stream
+
+    response_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": model,
+                "created": created_at,
+                "response": text,
+                "done": finished,
+                "done_reason": finish_reason
+            }
+
+    stream_response_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": model,
+                "created": created_at,
+                "response": text,
+                "done": finished,
+                "done_reason": finish_reason
+            }
+
+        - converter: header
+          config:
+            del: [ "Content-Type" ]
+            add:
+              Content-Type: application/x-ndjson
+
+  embed:
+    task_type: "text-embeddings"
+    protocol: "HTTP"
+    expose_protocol: "HTTP"
+    url: "http://127.0.0.1:16697/v1/embeddings"
+    endpoints: ["POST /llamacpp/v1/embeddings"]
+    extra_url: ""
+    auth_type: "none"
+    default_model: "bge-m3-embedding"
+    request_segments: 1 # request
+    install_raw_routes: true # also install routes without oadin prefix in url path
+    extra_headers: "{}"
+    request_to_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "input": input,
+                "dimensions": dimensions,
+                "encoding_format": encoding_format
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    request_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "input": input,
+                "dimensions": dimensions,
+                "encoding_format": encoding_format
+  
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    response_to_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "data": $map(data, function($d, $i) {
+                {
+                  "index": $i,
+                  "embedding": $d.embedding
+                }
+                })
+            }
+
+    response_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "data": $map(data, function($d, $i) {
+                {
+                  "index": $i,
+                  "embedding": $d.embedding
+                }
+                })
+            }
