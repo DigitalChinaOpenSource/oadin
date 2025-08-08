@@ -55,6 +55,7 @@ import (
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
 	"oadin/internal/utils/progress"
+	serverUtils "oadin/internal/utils/server"
 	"oadin/tray"
 	"oadin/version"
 
@@ -360,7 +361,8 @@ func Run(ctx context.Context) error {
 			return nil
 		},
 		func() error {
-			return utils.StopOadinServer(pidFile)
+			stopCmd := exec.Command("oadin", "server", "stop")
+			return stopCmd.Run()
 		},
 		true,
 	)
@@ -490,73 +492,8 @@ func NewStopApiServerCommand() *cobra.Command {
 }
 
 func stopOadinServer(cmd *cobra.Command, args []string) error {
-	files, err := filepath.Glob(filepath.Join(config.GlobalEnvironment.RootDir, "*.pid"))
-	if err != nil {
-		return fmt.Errorf("failed to list pid files: %v", err)
-	}
-
-	if len(files) == 0 {
-		fmt.Println("No running processes found")
-		return nil
-	}
-
-	// Traverse all pid files.
-	for _, pidFile := range files {
-		pidData, err := os.ReadFile(pidFile)
-		if err != nil {
-			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
-		if err != nil {
-			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		process, err := os.FindProcess(pid)
-		if err != nil {
-			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
-			continue
-		}
-
-		if err := process.Kill(); err != nil {
-			if strings.Contains(err.Error(), "process already finished") {
-				fmt.Printf("Process with PID %d is already stopped\n", pid)
-			} else {
-				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
-				continue
-			}
-		} else {
-			fmt.Printf("Successfully stopped process with PID %d\n", pid)
-		}
-
-		// remove pid file
-		if err := os.Remove(pidFile); err != nil {
-			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
-		}
-	}
-	if runtime.GOOS == "windows" {
-		extraProcessName := "ollama-lib.exe"
-		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-		_, err := extraCmd.CombinedOutput()
-		if err != nil {
-			// fmt.Printf("failed to kill process: %s", extraProcessName)
-			return nil
-		}
-
-		ovmsProcessName := "ovms.exe"
-		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
-		_, err = ovmsCmd.CombinedOutput()
-		if err != nil {
-			// fmt.Printf("failed to kill process: %s", ovmsProcessName)
-			return nil
-		}
-
-		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
-	}
-
-	return nil
+	pidPath := filepath.Join(config.GlobalEnvironment.RootDir, "oadin.pid")
+	return serverUtils.StopOadinServer(pidPath)
 }
 
 // NewInstallServiceCommand will install a service
@@ -645,11 +582,6 @@ func NewStartApiServerCommand() *cobra.Command {
 			}
 
 			err = StartModelEngine("openvino", startMode)
-			if err != nil {
-				return err
-			}
-
-			err = StartModelEngine("llamacpp", startMode)
 			if err != nil {
 				return err
 			}
@@ -1110,7 +1042,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 }
 
 func CheckOADINServer(cmd *cobra.Command, args []string) {
-	if !utils.IsServerRunning() {
+	if !serverUtils.IsServerRunning() {
 		fmt.Println("OADIN server is not running, Please run 'oadin server start' first")
 		os.Exit(1)
 		return
@@ -1118,7 +1050,7 @@ func CheckOADINServer(cmd *cobra.Command, args []string) {
 }
 
 func StartOADINServer(cmd *cobra.Command, args []string) {
-	if utils.IsServerRunning() {
+	if serverUtils.IsServerRunning() {
 		return
 	}
 
@@ -1130,7 +1062,7 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 
 	time.Sleep(6 * time.Second)
 
-	if !utils.IsServerRunning() {
+	if !serverUtils.IsServerRunning() {
 		log.Fatal("Failed to start OADIN server.")
 		return
 	}
@@ -1141,11 +1073,6 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 	}
 
 	err = StartModelEngine("ollama", types.EngineStartModeDaemon)
-	if err != nil {
-		return
-	}
-
-	err = StartModelEngine("llamacpp", types.EngineStartModeDaemon)
 	if err != nil {
 		return
 	}
@@ -1216,7 +1143,7 @@ func StartModelEngine(engineName, mode string) error {
 func startOadinServer() error {
 	logPath := config.GlobalEnvironment.ConsoleLog
 	rootDir := config.GlobalEnvironment.RootDir
-	err := utils.StartOADINServer(logPath, rootDir)
+	err := serverUtils.StartOadinServer(logPath, rootDir)
 	if err != nil {
 		fmt.Printf("OADIN server start failed: %s", err.Error())
 		return err

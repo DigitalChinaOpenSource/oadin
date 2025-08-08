@@ -29,7 +29,7 @@ import (
 	"oadin/internal/datastore"
 	"oadin/internal/provider"
 	"oadin/internal/types"
-	"oadin/internal/utils"
+	serverUtils "oadin/internal/utils/server"
 	"oadin/version"
 
 	"github.com/gin-gonic/gin"
@@ -133,11 +133,11 @@ func updateAvailableHandler(c *gin.Context) {
 
 func updateHandler(c *gin.Context) {
 	// check server
-	status := utils.IsServerRunning()
+	status := serverUtils.IsServerRunning()
 	if status {
 		// stop server
 		pidFilePath := filepath.Join(config.GlobalEnvironment.RootDir, "oadin.pid")
-		err := utils.StopOADINServer(pidFilePath)
+		err := serverUtils.StopOadinServer(pidFilePath)
 		if err != nil {
 			c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
 		}
@@ -163,7 +163,7 @@ func updateHandler(c *gin.Context) {
 	// start server
 	logPath := config.GlobalEnvironment.ConsoleLog
 	rootDir := config.GlobalEnvironment.RootDir
-	err = utils.StartOADINServer(logPath, rootDir)
+	err = serverUtils.StartOadinServer(logPath, rootDir)
 	if err != nil {
 		slog.Error("[Update] Failed to start oadin log %s: %v\n", logPath, err)
 		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})

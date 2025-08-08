@@ -9,6 +9,7 @@ import (
 
 	"oadin/config"
 	"oadin/internal/utils"
+	serverUtils "oadin/internal/utils/server"
 	trayTemplate "oadin/tray/icon"
 	tray "oadin/tray/utils"
 
@@ -79,7 +80,7 @@ func (m *Manager) onReady() {
 		for {
 			select {
 			case <-mStartStop.ClickedCh:
-				oadinServerStatus := utils.IsServerRunning()
+				oadinServerStatus := serverUtils.IsServerRunning()
 				if oadinServerStatus != m.serverRunning {
 					m.serverRunning = oadinServerStatus
 					m.updateStartStopMenuItem(mStartStop)

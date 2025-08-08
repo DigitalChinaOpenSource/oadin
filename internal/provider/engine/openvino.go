@@ -497,7 +497,16 @@ func (o *OpenvinoProvider) StartEngine(mode string) error {
 }
 
 func (o *OpenvinoProvider) StopEngine(ctx context.Context) error {
-	pidFile := "ovms.pid"
+	rootPath, err := utils.GetOADINDataDir()
+	if err != nil {
+		logger.EngineLogger.Error("[llamacpp] failed get oadin dir: " + err.Error())
+		return fmt.Errorf("failed get oadin dir: %v", err)
+	}
+	pidFile := fmt.Sprintf("%s/ovms.pid", rootPath)
+	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
+		logger.EngineLogger.Info("[Openvino] Stop openvino Model Server not found pidfile: " + pidFile)
+		return nil
+	}
 	data, err := os.ReadFile(pidFile)
 	if err != nil {
 		slog.Error("Failed to read PID file", "error", err)
