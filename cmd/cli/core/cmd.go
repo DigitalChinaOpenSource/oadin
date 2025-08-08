@@ -639,12 +639,17 @@ func NewStartApiServerCommand() *cobra.Command {
 				startMode = types.EngineStartModeStandard
 			}
 
+			err = StartModelEngine("ollama", startMode)
+			if err != nil {
+				return err
+			}
+
 			err = StartModelEngine("openvino", startMode)
 			if err != nil {
 				return err
 			}
 
-			err = StartModelEngine("ollama", startMode)
+			err = StartModelEngine("llamacpp", startMode)
 			if err != nil {
 				return err
 			}
@@ -1140,6 +1145,11 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	err = StartModelEngine("llamacpp", types.EngineStartModeDaemon)
+	if err != nil {
+		return
+	}
+
 	fmt.Println("OADIN server start successfully.")
 }
 
@@ -1521,7 +1531,7 @@ func ListenModelEngineHealth() {
 
 	OpenVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
 	OllamaEngine := provider.GetModelEngine(types.FlavorOllama)
-	// LlamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
+	LlamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
 
 	for {
 		list, err := ds.List(context.Background(), sp, &datastore.ListOptions{Page: 0, PageSize: 100})
@@ -1570,18 +1580,17 @@ func ListenModelEngineHealth() {
 						continue
 					}
 				}
-			} 
-			// else if engine == types.FlavorLlamaCpp {
-			// 	err := LlamaCppEngine.HealthCheck()
-			// 	if err != nil {
-			// 		logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
-			// 		err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
-			// 		if err != nil {
-			// 			logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
-			// 			continue
-			// 		}
-			// 	}
-			// }
+			} else if engine == types.FlavorLlamaCpp {
+				err := LlamaCppEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+					err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+						continue
+					}
+				}
+			}
 		}
 
 		time.Sleep(60 * time.Second)

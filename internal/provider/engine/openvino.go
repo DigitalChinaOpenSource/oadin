@@ -245,13 +245,11 @@ func downloadSingleFileCheck(ctx context.Context, a AsyncDownloadModelFileData, 
 	f, err := os.Open(filePath)
 	defer f.Close()
 	if err != nil {
-		logger.EngineLogger.Error("[OpenVINO] downloadSingleFileCheck OpenFile error: " + err.Error())
 		return false
 	}
 
 	partSize, err := f.Seek(0, io.SeekEnd)
 	if err != nil {
-		logger.EngineLogger.Error("[OpenVINO] downloadSingleFileCheck Seek error: " + err.Error())
 		return false
 	}
 

@@ -10,7 +10,7 @@ services:
     endpoints: ["POST /llamacpp/v1/chat/completions"] # request to this will use this flavor
     extra_url: ""
     auth_type: "none"
-    default_model: "qwen3-8b"
+    default_model: "Qwen3-8B-GGUF"
     request_segments: 1 # request
     install_raw_routes: true # also install routes without oadin prefix in url path
     extra_headers: "{}"
@@ -137,7 +137,7 @@ services:
     endpoints: ["POST /llamacpp/v1/completions"] # request to this will use this flavor
     extra_url: ""
     auth_type: "none"
-    default_model: "qwen3-8b"
+    default_model: "Qwen3-8B-GGUF"
     request_segments: 1 # request
     install_raw_routes: true # also install routes without oadin prefix in url path
     extra_headers: "{}"
@@ -260,7 +260,7 @@ services:
     endpoints: ["POST /llamacpp/v1/embeddings"]
     extra_url: ""
     auth_type: "none"
-    default_model: "bge-m3-embedding"
+    default_model: "bge-m3-GGUF"
     request_segments: 1 # request
     install_raw_routes: true # also install routes without oadin prefix in url path
     extra_headers: "{}"

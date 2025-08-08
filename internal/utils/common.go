@@ -891,6 +891,15 @@ func StopOadinServer(pidFilePath string) error {
 		}
 
 		fmt.Printf("Successfully killed process: %s\n", ovmsProcessName)
+
+		// 增加llama-swap
+		llamaSwapProcessName := "llama-swap.exe"
+		llamaSwapCmd := exec.Command("taskkill", "/IM", llamaSwapProcessName, "/F")
+		_, err = llamaSwapCmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("failed to kill process: %s", llamaSwapProcessName)
+		}
+		fmt.Printf("Successfully killed process: %s\n", llamaSwapProcessName)
 	}
 
 	if runtime.GOOS == "darwin" {
