@@ -636,9 +636,9 @@ func (l *llamacppProvider) addModelToConfig(modelName, modelType string) error {
 const (
 	ServiceChatVlCmd = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --mmproj "%s\models\%s\mmproj-%s-Q8_0.gguf" -ngl 99 --port ${PORT}`
 	ServiceChatCmd   = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" -ngl 99 --port ${PORT}`
-	ServiceEmbedCmd  = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --embedding --pooling cls -ub 8192 -ngl 99 --port ${PORT}`
+	ServiceEmbedCmd  = `%s\llama-server.exe -m "%s\models\%s\%s-q4_k_m.gguf" --embedding --pooling cls -ub 8192 -ngl 99 --port ${PORT}`
 
-	ServiceSpeechToTextCmd = `%s\whisper-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --ngl 99 --port ${PORT}`
+	// ServiceSpeechToTextCmd = `%s\whisper-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --ngl 99 --port ${PORT}`
 )
 
 func (l *llamacppProvider) generateCmdTxt(modelName, modelType string) string {
@@ -659,6 +659,8 @@ func (l *llamacppProvider) generateCmdTxt(modelName, modelType string) string {
 		} else {
 			template = fmt.Sprintf(ServiceChatCmd, execPath, enginePath, modelName, modelNameSample)
 		}
+	case types.ServiceGenerate:
+		template = fmt.Sprintf(ServiceChatCmd, execPath, enginePath, modelName, modelNameSample)
 	case types.ServiceEmbed:
 		template = fmt.Sprintf(ServiceEmbedCmd, execPath, enginePath, modelName, modelNameSample)
 	default:
