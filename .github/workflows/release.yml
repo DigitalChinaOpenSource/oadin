@@ -12,6 +12,8 @@ env:
   NEXUS_HOST_PORT: ${{ secrets.NEXUS_HOST_PORT }}
   NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
   NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+  HOOK_BRIDGE_URL: ${{ secrets.HOOK_BRIDGE_URL }}
+  PROJECT_FLAG: ${{ secrets.PROJECT_FLAG }}
 
 jobs:
   build-mac:
@@ -38,15 +40,40 @@ jobs:
           echo $CI_COMMIT_TAG ; git checkout $CI_COMMIT_TAG
           echo "--------- 🛠️ 制品构建与签名 ----------"
           go mod tidy
+          # 清理可能存在的旧二进制文件和目录
+          rm -f oadin oadin-tray oadin.pkg
+          rm -rf pkgroot upload
           echo "$ENV active"
+          echo "=== 构建参数 ==="
+          echo "CGO_ENABLED=1"
+          echo "GOOS=darwin"
+          echo "GOARCH=arm64"
+          echo "Tags: $ENV"
+          echo "LDFLAGS: -s -w"
           CGO_ENABLED=1 CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec" GOOS=darwin GOARCH=arm64  go build -o oadin -tags "$ENV" -ldflags="-s -w"  cmd/cli/main.go
+          echo "=== 二进制分析 ==="
+          file oadin
+          echo "符号表大小分析:"
+          go tool nm -size oadin 2>/dev/null | head -10 || echo "符号表已被strip"
           codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
           echo "--------- 📦 安装包构建与签名 ----------"
-          mkdir -p pkgroot/oadin
-          mv oadin pkgroot/oadin/oadin
+          # 确保完全清理 pkgroot 目录
+          rm -rf pkgroot
+          # 使用正确的目录名称，确保一致性
+          mkdir -p pkgroot/Oadin
+          mv oadin pkgroot/Oadin/oadin
           chmod +x installer/mac/preinstall
           chmod +x installer/mac/postinstall
+          # 添加文件大小检查
+          echo "=== Mac 二进制文件详细信息 ==="
+          echo "二进制文件大小: $(du -h pkgroot/Oadin/oadin | cut -f1)"
+          echo "二进制文件大小(字节): $(stat -f%z pkgroot/Oadin/oadin)"
+          echo "pkgroot目录内容:"
+          ls -la pkgroot/Oadin/
+          # 确保只包含我们想要的文件
+          echo "pkgroot目录总大小: $(du -sh pkgroot | cut -f1)"
           pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
+          echo "安装包大小: $(du -h oadin.pkg | cut -f1)"
           echo "--------- 📬 安装包公证 ----------"
           xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
           xcrun notarytool submit oadin.pkg --keychain-profile "ci-profile" --wait
@@ -65,13 +92,6 @@ jobs:
           echo "-------- 📤 上传到 Nexus 私服 --------"
           curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
           curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/oadin-installer-latest.pkg"
-          echo "--------- 🧹 环境清理 ----------"
-          cd /Users/dcone/WebstormProjects/oadin
-          git reset --hard
-          git clean -fd
-          echo "--------- 🗑️ 删除本地tag ----------"
-          git checkout main
-          git tag -d $CI_COMMIT_TAG
           echo "========== 🔧 Mac Upload End =========="
       - name: upload oss
         if: ${{ !startsWith(github.ref_name, 'test') }}
@@ -115,15 +135,31 @@ jobs:
           echo $env:CI_COMMIT_TAG ; git checkout $env:CI_COMMIT_TAG
           echo "--------- 🛠️ 制品构建与签名 ----------"
           go mod tidy
+          # 清理可能存在的旧二进制文件
+          Remove-Item -Path "oadin.exe" -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "oadin-installer.exe" -Force -ErrorAction SilentlyContinue
           $env:CGO_ENABLED= 1
           $env:GOOS= "windows"
           $env:GOARCH= "amd64"
           $env:CGO_CFLAGS= "-I$PWD\internal\datastore\sqlite\sqlite-vec"
+          echo "=== 构建参数 ==="
+          echo "CGO_ENABLED: $($env:CGO_ENABLED)"
+          echo "GOOS: $($env:GOOS)"
+          echo "GOARCH: $($env:GOARCH)"
+          echo "Tags: $($env:ENV)"
+          echo "LDFLAGS: -s -w"
           go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
+          # 添加详细的文件大小检查
+          echo "=== Windows 二进制文件详细信息 ==="
+          Get-ChildItem -Path "oadin.exe" | Format-Table Name, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB,2)}}, Length -AutoSize
+          echo "二进制文件大小(字节): $((Get-Item 'oadin.exe').Length)"
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
           echo "--------- 📦 安装包构建与签名 ----------"
           makensis.exe -DVERSION=$env:CI_COMMIT_TAG installer\win\oadin.nsi
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
+          # 检查安装包大小
+          echo "安装包信息:"
+          Get-ChildItem -Path "oadin-installer.exe" | Format-Table Name, Length -AutoSize
           echo "--------- 📁 移动到待上传文件夹 ----------"
           New-Item -ItemType Directory -Path "upload" -Force
           Move-Item -Path "oadin-installer.exe" -Destination "upload\$($env:WIN_FILE_NAME)" -Force
@@ -136,12 +172,6 @@ jobs:
           cd C:\Users\Administrator\WebstormProjects\oadin
           curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$($env:WIN_FILE_NAME)"
           curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/oadin-installer-latest.exe"
-          echo "--------- 🧹 环境清理 ----------"
-          git reset --hard
-          git clean -fd
-          echo "--------- 🗑️ 删除本地tag ----------"
-          git checkout main
-          git tag -d $env:CI_COMMIT_TAG
           echo "========== 🔧 Win Upload End =========="
       - name: upload oss
         if: ${{ !startsWith(github.ref_name, 'test') }}
@@ -170,4 +200,13 @@ jobs:
     steps:
       - name: Notify Feishu
         run: |
+          echo "--------- 📬 发布通知 ----------"
+          cd /Users/dcone/WebstormProjects/oadin
           sh scripts/release-notice.sh
+          echo "--------- 🧹 环境清理 ----------"
+          cd /Users/dcone/WebstormProjects/oadin
+          git reset --hard
+          git clean -fd
+          echo "--------- 🗑️ 删除本地tag ----------"
+          git checkout main
+          git tag -d $CI_COMMIT_TAG
