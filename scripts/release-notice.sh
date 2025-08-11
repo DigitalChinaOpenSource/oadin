@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 判断环境和下载路径
-if [[ "$ENV" == "deployment" ]]; then
+if [[ "$ENV" == "development" ]]; then
   MAC_URL="http://$NEXUS_HOST_PORT/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/$MAC_FILE_NAME"
   WIN_URL="http://$NEXUS_HOST_PORT/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$WIN_FILE_NAME"
 else
