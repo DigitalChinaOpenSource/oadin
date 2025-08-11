@@ -20,7 +20,6 @@ env:
   NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
   HOOK_BRIDGE_URL: ${{ secrets.HOOK_BRIDGE_URL }}
   PROJECT_FLAG: ${{ secrets.PROJECT_FLAG }}
-  ENV: development
 
 jobs:
   build-mac:
