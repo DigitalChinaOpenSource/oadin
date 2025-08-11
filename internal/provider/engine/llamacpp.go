@@ -749,14 +749,6 @@ func (l *llamacppProvider) LoadModel(ctx context.Context, req *types.LoadRequest
 }
 
 func (l *llamacppProvider) UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error {
-	// POST http://127.0.0.1:16697/api/models/unload
-	c := l.GetDefaultClient()
-	if err := c.Do(context.Background(), http.MethodPost, "/models/unload", nil, nil); err != nil {
-		logger.EngineLogger.Error("[llamacpp] UnloadModel failed: ", err.Error(), "client", c)
-		return err
-	}
-
-	logger.EngineLogger.Info("[llamacpp] llamacpp server UnloadModel")
 	return nil
 }
 
