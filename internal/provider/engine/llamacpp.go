@@ -34,7 +34,7 @@ const (
 	LlamaCppPath         = "llama-b5757-bin-win-vulkan-x64"
 	LlamaSwapPath        = "llama-swap_148_windows_amd64"
 	LlamaSwapConfigFile  = "config.yaml"
-	llamacppDefaultModel = "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF"
+	llamacppDefaultModel = "Qwen3-8B-GGUF"
 	LlamaWhisperPath     = "whisper-1.7.6_windows_amd64"
 
 	// Windows download URLs for llamacpp
@@ -156,7 +156,7 @@ func NewLlamacppProvider(config *types.EngineRecommendConfig) *llamacppProvider 
 		return nil
 	}
 
-	downloadPath := fmt.Sprintf("%s/%s/%s", OADINDir, "engine", "llamacpp")
+	downloadPath := filepath.Join(OADINDir, "engine", "llamacpp")
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		err := os.MkdirAll(downloadPath, 0o750)
 		if err != nil {
@@ -195,7 +195,7 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 	execFile := llamacppServerExec
 	switch runtime.GOOS {
 	case "windows":
-		execFile = l.EngineConfig.ExecPath + "/" + l.EngineConfig.ExecFile
+		execFile = filepath.Join(l.EngineConfig.ExecPath, l.EngineConfig.ExecFile)
 
 	case "darwin":
 		logger.EngineLogger.Warn("[llamacpp] Darwin system does not support llamacpp yet")
@@ -209,7 +209,7 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 	}
 
 	if mode == types.EngineStartModeDaemon {
-		LlamaSwapConfigFilePath := fmt.Sprintf("%s/%s", l.EngineConfig.ExecPath, LlamaSwapConfigFile)
+		LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
 		logger.EngineLogger.Info("[llamacpp] exec file path: ", execFile, l.EngineConfig.Host, LlamaSwapConfigFilePath)
 		cmd := exec.Command(execFile, "-listen", l.EngineConfig.Host, "-config", LlamaSwapConfigFilePath)
 		err := cmd.Start()
@@ -223,7 +223,7 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 			logger.EngineLogger.Error("[llamacpp] failed get oadin dir: " + err.Error())
 			return fmt.Errorf("failed get oadin dir: %v", err)
 		}
-		pidFile := fmt.Sprintf("%s/llamacpp.pid", rootPath)
+		pidFile := filepath.Join(rootPath, "llamacpp.pid")
 		err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
 		if err != nil {
 			logger.EngineLogger.Error("[llamacpp] failed to write pid file: " + err.Error())
@@ -244,7 +244,7 @@ func (l *llamacppProvider) StopEngine(ctx context.Context) error {
 		logger.EngineLogger.Error("[llamacpp] failed get oadin dir: " + err.Error())
 		return fmt.Errorf("failed get oadin dir: %v", err)
 	}
-	pidFile := fmt.Sprintf("%s/llamacpp.pid", rootPath)
+	pidFile := filepath.Join(rootPath, "llamacpp.pid")
 	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
 		logger.EngineLogger.Info("[LLAMACPP] Stop openvino Model Server not found pidfile: " + pidFile)
 		return nil
