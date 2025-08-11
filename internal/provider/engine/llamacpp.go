@@ -370,30 +370,6 @@ func (l *llamacppProvider) InstallEngine() error {
 		}
 	}
 
-	// 新建 config.yaml 空 文件
-	LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
-	logger.EngineLogger.Info("[llamacpp] Create config.yaml file at: " + LlamaSwapConfigFilePath)
-	if _, err := os.Stat(LlamaSwapConfigFilePath); os.IsNotExist(err) {
-		file, err := os.Create(LlamaSwapConfigFilePath)
-		defer file.Close()
-		if err != nil {
-			logger.EngineLogger.Error("[llamacpp] Failed to create config.yaml: " + err.Error())
-			return err
-		}
-	}
-	// 写入默认配置
-	defaultConfig := LlamacppSwapServerConfig{
-		StartPort: 10001,
-		LogLevel:  "info",
-		Models:    map[string]Model{},
-		Groups:    map[string]Group{},
-	}
-	err := l.saveConfig(&defaultConfig)
-	if err != nil {
-		logger.EngineLogger.Error("[llamacpp] Failed to save config.yaml: ", err.Error())
-		return fmt.Errorf("failed to save config.yaml: %v", err)
-	}
-
 	file, err := utils.DownloadFile(l.EngineConfig.DownloadUrl, l.EngineConfig.DownloadPath)
 	if err != nil {
 		return fmt.Errorf("failed to download llamacpp-server: %v, url: %v", err, l.EngineConfig.DownloadUrl)
@@ -427,6 +403,36 @@ func (l *llamacppProvider) InstallEngine() error {
 
 	default:
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+
+	// 新建 config.yaml 空 文件
+	LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
+	logger.EngineLogger.Info("[llamacpp] Create config.yaml file at: " + LlamaSwapConfigFilePath)
+	if _, err := os.Stat(LlamaSwapConfigFilePath); os.IsNotExist(err) {
+		file, err := os.Create(LlamaSwapConfigFilePath)
+		defer file.Close()
+		if err != nil {
+			logger.EngineLogger.Error("[llamacpp] Failed to create config.yaml: " + err.Error())
+			return err
+		}
+	}
+	// 写入默认配置
+	defaultConfig := LlamacppSwapServerConfig{
+		StartPort: 10001,
+		LogLevel:  "info",
+		Models:    map[string]Model{},
+		Groups:    map[string]Group{},
+	}
+	data, err := yaml.Marshal(defaultConfig)
+	if err != nil {
+		logger.EngineLogger.Error("[llamacpp] Failed to Marshal " + err.Error())
+		return err
+	}
+
+	err = os.WriteFile(l.getConfigPath(), data, 0o644)
+	if err != nil {
+		logger.EngineLogger.Error("[llamacpp] Failed to WriteFile " + err.Error())
+		return err
 	}
 
 	logger.EngineLogger.Info("[llamacpp] llamacpp model engine install completed")

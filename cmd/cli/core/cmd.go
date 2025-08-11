@@ -586,6 +586,11 @@ func NewStartApiServerCommand() *cobra.Command {
 				return err
 			}
 
+			err = StartModelEngine("llamacpp", startMode)
+			if err != nil {
+				return err
+			}
+
 			return Run(context.Background())
 		},
 	}
@@ -1073,6 +1078,11 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 	}
 
 	err = StartModelEngine("ollama", types.EngineStartModeDaemon)
+	if err != nil {
+		return
+	}
+
+	err = StartModelEngine("llamacpp", types.EngineStartModeDaemon)
 	if err != nil {
 		return
 	}
