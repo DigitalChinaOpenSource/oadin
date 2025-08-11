@@ -10,11 +10,11 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
-	"path/filepath"
 
 	"oadin/internal/client"
 	"oadin/internal/constants"
@@ -25,15 +25,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (	
+const (
 	// Default configuration for llamacpp
-	llamacppDefaultPort = "16697"
-	llamacppDefaultHost = constants.DefaultHost + ":" + llamacppDefaultPort
-	llamacppServerExec  = "llama-swap.exe"
-	LlamaVulkanPath     = "llamacpp-windows-vulkan"
-	LlamaCppPath        = "llama-b5757-bin-win-vulkan-x64"
-	LlamaSwapPath       = "llama-swap_148_windows_amd64"
-	LlamaSwapConfigFile = "config.yaml"
+	llamacppDefaultPort  = "16697"
+	llamacppDefaultHost  = constants.DefaultHost + ":" + llamacppDefaultPort
+	llamacppServerExec   = "llama-swap.exe"
+	LlamaVulkanPath      = "llamacpp-windows-vulkan"
+	LlamaCppPath         = "llama-b5757-bin-win-vulkan-x64"
+	LlamaSwapPath        = "llama-swap_148_windows_amd64"
+	LlamaSwapConfigFile  = "config.yaml"
 	llamacppDefaultModel = "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF"
 	LlamaWhisperPath     = "whisper-1.7.6_windows_amd64"
 
@@ -41,7 +41,7 @@ const (
 	llamacppWindowsBaseURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/llamacpp-windows-vulkan.zip"
 	// 模型默认都在modelscope的
 	// ggml-org组织下载 	https://www.modelscope.cn/organization/ggml-org
-	// Embedding-GGUF	   https://www.modelscope.cn/organization/Embedding-GGUF 
+	// Embedding-GGUF	   https://www.modelscope.cn/organization/Embedding-GGUF
 )
 
 type llamacppProvider struct {
@@ -49,17 +49,17 @@ type llamacppProvider struct {
 }
 
 type LlamacppSwapServerConfig struct {
-	StartPort int               `yaml:"startPort"`
-	LogLevel  string            `yaml:"logLevel"`
-	Models    map[string]Model  `yaml:"models"`
-	Groups    map[string]Group  `yaml:"groups,omitempty"`
+	StartPort int              `yaml:"startPort"`
+	LogLevel  string           `yaml:"logLevel"`
+	Models    map[string]Model `yaml:"models"`
+	Groups    map[string]Group `yaml:"groups,omitempty"`
 }
 
 type Model struct {
-	Cmd         string `yaml:"cmd"`
+	Cmd           string `yaml:"cmd"`
 	CheckEndpoint string `yaml:"checkEndpoint,omitempty"`
-	TTL         int    `yaml:"ttl"`
-	UseModelName string `yaml:"useModelName,omitempty"`
+	TTL           int    `yaml:"ttl"`
+	UseModelName  string `yaml:"useModelName,omitempty"`
 }
 
 type Group struct {
@@ -69,7 +69,7 @@ type Group struct {
 	Members    []string `yaml:"members,omitempty"`
 }
 
-func pullModelGetOrig(Model, ModelType string)string{
+func pullModelGetOrig(Model, ModelType string) string {
 	// 如果ModelType为空或者chat或者generate，则默认为chat,则组织为ggml-org
 	// 如果是embed，则组织为Embedding-GGUF
 	if ModelType == "" || ModelType == types.ServiceChat || ModelType == types.ServiceGenerate {
@@ -128,7 +128,7 @@ func asyncDownloadModelFile(ctx context.Context, a AsyncDownloadModelFileData, e
 		logger.EngineLogger.Debug("[llamacpp] Downloaded file: " + fileData.Name)
 	}
 
-	logger.EngineLogger.Debug("[llamacpp] Generating generateCmdTxt for model: " , a.ModelName)
+	logger.EngineLogger.Debug("[llamacpp] Generating generateCmdTxt for model: ", a.ModelName)
 	if err := engine.addModelToConfig(a.ModelName, a.ModelType); err != nil {
 		logger.EngineLogger.Error("[llamacpp] Failed to add model to config: " + err.Error())
 		a.ErrCh <- errors.New("Failed to add model to config: " + err.Error())
@@ -245,6 +245,10 @@ func (l *llamacppProvider) StopEngine(ctx context.Context) error {
 		return fmt.Errorf("failed get oadin dir: %v", err)
 	}
 	pidFile := fmt.Sprintf("%s/llamacpp.pid", rootPath)
+	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
+		logger.EngineLogger.Info("[LLAMACPP] Stop openvino Model Server not found pidfile: " + pidFile)
+		return nil
+	}
 
 	pidData, err := os.ReadFile(pidFile)
 	if err != nil {
@@ -381,8 +385,8 @@ func (l *llamacppProvider) InstallEngine() error {
 	defaultConfig := LlamacppSwapServerConfig{
 		StartPort: 10001,
 		LogLevel:  "info",
-		Models: map[string]Model{},
-		Groups: map[string]Group{},
+		Models:    map[string]Model{},
+		Groups:    map[string]Group{},
 	}
 	err := l.saveConfig(&defaultConfig)
 	if err != nil {
@@ -463,8 +467,8 @@ func (l *llamacppProvider) loadConfig() (*LlamacppSwapServerConfig, error) {
 	var config LlamacppSwapServerConfig
 	// 使用 yaml 解析配置文件
 	if err := yaml.Unmarshal(data, &config); err != nil {
-			logger.EngineLogger.Error("[llamacpp] Failed to unmarshal yaml config: " + err.Error())
-			return nil, fmt.Errorf("failed to unmarshal yaml config: %v", err)
+		logger.EngineLogger.Error("[llamacpp] Failed to unmarshal yaml config: " + err.Error())
+		return nil, fmt.Errorf("failed to unmarshal yaml config: %v", err)
 	}
 
 	return &config, nil
@@ -592,7 +596,6 @@ func (l *llamacppProvider) deleteModelToConfig(modelName string) error {
 	return l.saveConfig(config)
 }
 
-
 func (l *llamacppProvider) addModelToConfig(modelName, modelType string) error {
 	config, err := l.loadConfig()
 	if err != nil {
@@ -606,16 +609,16 @@ func (l *llamacppProvider) addModelToConfig(modelName, modelType string) error {
 		}
 	}
 
-	if config.Models == nil{
+	if config.Models == nil {
 		config.Models = map[string]Model{}
 	}
 
-	cmd:=l.generateCmdTxt(modelName, modelType)
+	cmd := l.generateCmdTxt(modelName, modelType)
 	logger.EngineLogger.Info("[llamacpp] addModelToConfig cmd: ", cmd)
 	newModel := Model{
-		Cmd: cmd,
+		Cmd:           cmd,
 		CheckEndpoint: "/health",
-		TTL: 300,
+		TTL:           300,
 	}
 	// modelName为ggml-org/Qwen2.5-VL-7B-Instruct-GGUF，这里处理以下，只获取最后面的模型名字
 	modelName = filepath.Base(modelName)
@@ -626,15 +629,15 @@ func (l *llamacppProvider) addModelToConfig(modelName, modelType string) error {
 
 const (
 	ServiceChatVlCmd = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --mmproj "%s\models\%s\mmproj-%s-Q8_0.gguf" -ngl 99 --port ${PORT}`
-	ServiceChatCmd = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" -ngl 99 --port ${PORT}`
-	ServiceEmbedCmd = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --embedding --pooling cls -ub 8192 -ngl 99 --port ${PORT}`
-	
+	ServiceChatCmd   = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" -ngl 99 --port ${PORT}`
+	ServiceEmbedCmd  = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --embedding --pooling cls -ub 8192 -ngl 99 --port ${PORT}`
+
 	ServiceSpeechToTextCmd = `%s\whisper-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --ngl 99 --port ${PORT}`
 )
 
 func (l *llamacppProvider) generateCmdTxt(modelName, modelType string) string {
 	execPath := filepath.Join(l.EngineConfig.EnginePath, LlamaVulkanPath, LlamaCppPath)
-	enginePath:= l.EngineConfig.EnginePath
+	enginePath := l.EngineConfig.EnginePath
 	modelNameSample := strings.Replace(filepath.Base(modelName), "-GGUF", "", 1)
 	modelName = strings.Replace(modelName, "/", "\\", 1)
 	logger.EngineLogger.Debug("[llamacpp] generateCmdTxt execPath: ", execPath)

@@ -543,6 +543,8 @@ func AsyncPullModel(sp *types.ServiceProvider, m *types.Model, pullReq *types.Pu
 			relatedM.ModelName = m.ModelName
 			relatedM.ProviderName = strings.Replace(sp.ProviderName, sp.ServiceName, serviceName, -1)
 			relatedM.Status = "downloaded"
+			relatedM.ServiceName = strings.Replace(sp.ServiceName, sp.ServiceName, serviceName, -1)
+			relatedM.ServiceSource = sp.ServiceSource
 
 			relatedMIsExist, err := ds.IsExist(ctx, relatedM)
 			if err != nil {

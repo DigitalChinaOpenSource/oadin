@@ -190,6 +190,16 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 }
 
 func (o *OllamaProvider) StopEngine(ctx context.Context) error {
+	rootPath, err := utils.GetOADINDataDir()
+	if err != nil {
+		logger.EngineLogger.Error("[Ollama] failed get oadin dir: " + err.Error())
+		return fmt.Errorf("failed get oadin dir: %v", err)
+	}
+	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
+	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
+		logger.EngineLogger.Info("[Ollama] Stop openvino Model Server not found pidfile: " + pidFile)
+		return nil
+	}
 	// unload model
 	runningModels, err := o.GetRunningModels(ctx)
 	if err != nil {
@@ -205,13 +215,6 @@ func (o *OllamaProvider) StopEngine(ctx context.Context) error {
 		logger.EngineLogger.Error("[Ollama] failed unload model: " + err.Error())
 		return fmt.Errorf("failed unload model: %v", err)
 	}
-
-	rootPath, err := utils.GetOADINDataDir()
-	if err != nil {
-		logger.EngineLogger.Error("[Ollama] failed get oadin dir: " + err.Error())
-		return fmt.Errorf("failed get oadin dir: %v", err)
-	}
-	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
 
 	pidData, err := os.ReadFile(pidFile)
 	if err != nil {
@@ -555,6 +558,7 @@ func (o *OllamaProvider) UnloadModel(ctx context.Context, req *types.UnloadModel
 		}
 		slog.Info("Ollama: Model %s unloaded successfully\n", model)
 	}
+	time.Sleep(2 * time.Second)
 	reCheckRunModels, err := o.GetRunningModels(ctx)
 	if err != nil {
 		logger.EngineLogger.Error("[Ollama] Get run models failed : " + err.Error())

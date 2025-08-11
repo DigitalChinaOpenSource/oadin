@@ -807,6 +807,10 @@ type ModelServiceManager interface {
 	CheckServer() bool
 }
 
+type CheckLocalServer struct {
+	ServiceProvider types.ServiceProvider
+}
+
 type CheckModelsServer struct {
 	ServiceProvider types.ServiceProvider
 }
@@ -827,6 +831,15 @@ type CheckEmbeddingServer struct {
 type CheckTextToImageServer struct {
 	ServiceProvider types.ServiceProvider
 	ModelName       string
+}
+
+func (l *CheckLocalServer) CheckServer() bool {
+	engine := provider.GetModelEngine(l.ServiceProvider.Flavor)
+	status := true
+	if err := engine.HealthCheck(); err != nil {
+		status = false
+	}
+	return status
 }
 
 func (m *CheckModelsServer) CheckServer() bool {
@@ -978,20 +991,24 @@ func (e *CheckTextToImageServer) CheckServer() bool {
 
 func ChooseCheckServer(sp types.ServiceProvider, modelName string) ModelServiceManager {
 	var server ModelServiceManager
-	switch sp.ServiceName {
-	case types.ServiceModels:
-		server = &CheckModelsServer{ServiceProvider: sp}
-	case types.ServiceChat:
-		server = &CheckChatServer{ServiceProvider: sp, ModelName: modelName}
-	case types.ServiceGenerate:
-		server = &CheckGenerateServer{ServiceProvider: sp, ModelName: modelName}
-	case types.ServiceEmbed:
-		server = &CheckEmbeddingServer{ServiceProvider: sp, ModelName: modelName}
-	case types.ServiceTextToImage:
-		server = &CheckTextToImageServer{ServiceProvider: sp, ModelName: modelName}
-	default:
-		logger.LogicLogger.Error("[Schedule] Unknown service name", "error", sp.ServiceName)
-		return nil
+	if sp.ServiceSource == types.ServiceSourceLocal {
+		server = &CheckLocalServer{ServiceProvider: sp}
+	} else {
+		switch sp.ServiceName {
+		case types.ServiceModels:
+			server = &CheckModelsServer{ServiceProvider: sp}
+		case types.ServiceChat:
+			server = &CheckChatServer{ServiceProvider: sp, ModelName: modelName}
+		case types.ServiceGenerate:
+			server = &CheckGenerateServer{ServiceProvider: sp, ModelName: modelName}
+		case types.ServiceEmbed:
+			server = &CheckEmbeddingServer{ServiceProvider: sp, ModelName: modelName}
+		case types.ServiceTextToImage:
+			server = &CheckTextToImageServer{ServiceProvider: sp, ModelName: modelName}
+		default:
+			logger.LogicLogger.Error("[Schedule] Unknown service name", "error", sp.ServiceName)
+			return nil
+		}
 	}
 	return server
 }
