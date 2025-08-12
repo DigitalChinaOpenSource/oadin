@@ -164,8 +164,12 @@ Oadin 提供以下基本功能：
     pnpm install
     pnpm run dev
     ```
+## 从官网下载 Oadin（推荐）
 
-## 构建 Oadin 命令行工具
+从官网下载安装包并按照引导安装：
+https://oadin.dcclouds.com/
+
+## 构建 Oadin 命令行工具（开发者可选）
 
 作为开发者，为了构建 Oadin，您需要在您的系统上安装 [golang](https://go.dev/)。
 
