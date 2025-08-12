@@ -540,8 +540,9 @@ func NewVersionCommand() *cobra.Command {
 		Short: "Prints build version information.",
 		Long:  "Prints build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf(`OADIN Version: %s`,
-				version.OADINVersion)
+			// SDK需要Oadin Version是/oadin/v0.4/api_flavors/smartvision/v1/embeddings中的v0.4
+			fmt.Printf(`Oadin Version:%s\n`, version.OADINSpecVersion)
+			fmt.Printf(`Oadin SubVersion:%s\n`, version.OadinSubVersion)
 		},
 	}
 
@@ -581,14 +582,16 @@ func NewStartApiServerCommand() *cobra.Command {
 				return err
 			}
 
-			err = StartModelEngine("openvino", startMode)
-			if err != nil {
-				return err
-			}
+			if runtime.GOOS == "windows" {
+				err := StartModelEngine("openvino", startMode)
+				if err != nil {
+					return err
+				}
 
-			err = StartModelEngine("llamacpp", startMode)
-			if err != nil {
-				return err
+				err = StartModelEngine("llamacpp", startMode)
+				if err != nil {
+					return err
+				}
 			}
 
 			return Run(context.Background())
@@ -1072,19 +1075,21 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err := StartModelEngine("openvino", types.EngineStartModeDaemon)
+	err := StartModelEngine("ollama", types.EngineStartModeDaemon)
 	if err != nil {
 		return
 	}
 
-	err = StartModelEngine("ollama", types.EngineStartModeDaemon)
-	if err != nil {
-		return
-	}
+	if runtime.GOOS == "windows" {
+		err := StartModelEngine("openvino", types.EngineStartModeDaemon)
+		if err != nil {
+			return
+		}
 
-	err = StartModelEngine("llamacpp", types.EngineStartModeDaemon)
-	if err != nil {
-		return
+		err = StartModelEngine("llamacpp", types.EngineStartModeDaemon)
+		if err != nil {
+			return
+		}
 	}
 
 	fmt.Println("OADIN server start successfully.")
@@ -1507,24 +1512,28 @@ func ListenModelEngineHealth() {
 						continue
 					}
 				}
-			} else if engine == types.FlavorOpenvino {
-				err := OpenVINOEngine.HealthCheck()
-				if err != nil {
-					logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
-					err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
+			}
+			if runtime.GOOS == "windows" {
+				if engine == types.FlavorOpenvino {
+					err := OpenVINOEngine.HealthCheck()
 					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
-						continue
+						logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
+						err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
+							continue
+						}
 					}
 				}
-			} else if engine == types.FlavorLlamaCpp {
-				err := LlamaCppEngine.HealthCheck()
-				if err != nil {
-					logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
-					err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+				if engine == types.FlavorLlamaCpp {
+					err := LlamaCppEngine.HealthCheck()
 					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
-						continue
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+						err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+							continue
+						}
 					}
 				}
 			}
