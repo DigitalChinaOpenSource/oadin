@@ -118,6 +118,9 @@ jobs:
       - build-mac
       - build-win
     steps:
+      - name: Set ENV based on tag
+        run: |
+          echo "ENV=development" >> $GITHUB_ENV
       - name: Notify Feishu
         run: |
           echo "--------- 📬 发布通知 ----------"
