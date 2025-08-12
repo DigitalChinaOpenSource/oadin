@@ -7,6 +7,7 @@ import (
 	"oadin/extension/rpc"
 	"oadin/extension/server"
 	"oadin/extension/utils/bcode"
+	"oadin/extension/utils/hardware"
 	"oadin/internal/logger"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,11 @@ func (e *SystemlApi) InjectRoutes(api *gin.RouterGroup) {
 	api.PUT("/registry", e.ModifyRepositoryURL)
 	api.PUT("/proxy", e.SetProxy)
 	api.PUT("/proxy/switch", e.ProxySwitch)
+
+	// 硬件监控相关路由
+	api.GET("/memory", e.GetMemoryInfo)
+	api.GET("/gpu", e.GetGPUInfo)
+	api.GET("/hardware", e.GetHardwareInfo)
 }
 
 // About 获取关于信息
@@ -106,4 +112,74 @@ func (e *SystemlApi) SystemSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
+}
+
+// GetMemoryInfo 获取系统内存信息
+func (e *SystemlApi) GetMemoryInfo(c *gin.Context) {
+	memInfo, err := hardware.GetMemoryInfo()
+	if err != nil {
+		logger.ApiLogger.Error("Failed to get memory information", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "获取内存信息失败",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    memInfo,
+	})
+}
+
+// GetGPUInfo 获取系统GPU信息
+func (e *SystemlApi) GetGPUInfo(c *gin.Context) {
+	gpuInfo, err := hardware.GetGPUInfo()
+	if err != nil {
+		logger.ApiLogger.Error("Failed to get GPU information", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "获取GPU信息失败",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    gpuInfo,
+		"count":   len(gpuInfo),
+	})
+}
+
+// GetHardwareInfo 获取完整的系统硬件信息
+func (e *SystemlApi) GetHardwareInfo(c *gin.Context) {
+	// 获取内存信息
+	memInfo, err := hardware.GetMemoryInfo()
+	if err != nil {
+		logger.ApiLogger.Error("Failed to get memory information", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "获取内存信息失败",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// 获取GPU信息
+	gpuInfo, err := hardware.GetGPUInfo()
+	if err != nil {
+		logger.ApiLogger.Error("Failed to get GPU information", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "获取GPU信息失败",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"memory": memInfo,
+			"gpus":   gpuInfo,
+		},
+	})
 }

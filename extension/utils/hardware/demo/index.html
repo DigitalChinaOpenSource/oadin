@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OADIN 硬件监控面板</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 5px solid #4299e1;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #2d3748;
+            font-size: 1.3em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4299e1, #667eea);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .info-value {
+            color: #2d3748;
+        }
+
+        .gpu-list {
+            margin-top: 20px;
+        }
+
+        .gpu-item {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #48bb78;
+        }
+
+        .buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #4299e1, #667eea);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .timestamp {
+            text-align: center;
+            color: #718096;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ OADIN 硬件监控面板</h1>
+        
+        <div class="buttons">
+            <button onclick="loadMemoryInfo()">📊 刷新内存信息</button>
+            <button onclick="loadGPUInfo()">🎮 刷新GPU信息</button>
+            <button onclick="loadAllHardwareInfo()">🔄 刷新全部信息</button>
+        </div>
+
+        <div class="cards">
+            <!-- RAM信息卡片 -->
+            <div class="card">
+                <h3>📈 RAM 内存信息</h3>
+                <div id="ram-info" class="loading">正在加载...</div>
+            </div>
+
+            <!-- VRAM信息卡片 -->
+            <div class="card">
+                <h3>🎮 VRAM 显存信息</h3>
+                <div id="vram-info" class="loading">正在加载...</div>
+            </div>
+
+            <!-- 系统信息卡片 -->
+            <div class="card">
+                <h3>💻 系统信息</h3>
+                <div id="system-info" class="loading">正在加载...</div>
+            </div>
+        </div>
+
+        <!-- GPU详细信息 -->
+        <div class="card">
+            <h3>🖥️ GPU 设备信息</h3>
+            <div id="gpu-info" class="loading">正在加载...</div>
+        </div>
+
+        <div class="timestamp" id="last-update">
+            最后更新: --
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/system';
+
+        // 格式化字节数
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // 更新时间戳
+        function updateTimestamp() {
+            document.getElementById('last-update').textContent = 
+                '最后更新: ' + new Date().toLocaleString('zh-CN');
+        }
+
+        // 创建进度条HTML
+        function createProgressBar(percentage, label, used, total) {
+            return `
+                <div class="info-item">
+                    <span class="info-label">${label}:</span>
+                    <span class="info-value">${formatBytes(used)} / ${formatBytes(total)}</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${percentage}%"></div>
+                </div>
+                <div style="text-align: center; margin-top: 5px; font-size: 0.9em;">
+                    使用率: ${percentage.toFixed(1)}%
+                </div>
+            `;
+        }
+
+        // 加载内存信息
+        async function loadMemoryInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/memory`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const mem = data.data;
+                    
+                    // 更新RAM信息
+                    document.getElementById('ram-info').innerHTML = createProgressBar(
+                        mem.ram_used_pct, 'RAM使用', mem.ram_used, mem.ram_total
+                    );
+                    
+                    // 更新VRAM信息
+                    if (mem.vram_total > 0) {
+                        document.getElementById('vram-info').innerHTML = createProgressBar(
+                            mem.vram_used_pct, 'VRAM使用', mem.vram_used, mem.vram_total
+                        );
+                    } else {
+                        document.getElementById('vram-info').innerHTML = 
+                            '<div class="info-item"><span>未检测到独立显卡</span></div>';
+                    }
+                    
+                    // 更新系统信息
+                    document.getElementById('system-info').innerHTML = `
+                        <div class="info-item">
+                            <span class="info-label">操作系统:</span>
+                            <span class="info-value">${mem.platform}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">主机名:</span>
+                            <span class="info-value">${mem.hostname}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">更新时间:</span>
+                            <span class="info-value">${new Date(mem.update_time).toLocaleString('zh-CN')}</span>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('API返回失败');
+                }
+                updateTimestamp();
+            } catch (error) {
+                document.getElementById('ram-info').innerHTML = 
+                    `<div class="error">加载内存信息失败: ${error.message}</div>`;
+            }
+        }
+
+        // 加载GPU信息
+        async function loadGPUInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/gpu`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const gpus = data.data;
+                    let html = '';
+                    
+                    if (gpus.length === 0) {
+                        html = '<div class="info-item"><span>未检测到GPU设备</span></div>';
+                    } else {
+                        html = `<div style="margin-bottom: 15px;">检测到 ${gpus.length} 个GPU设备:</div>`;
+                        
+                        gpus.forEach((gpu, index) => {
+                            html += `
+                                <div class="gpu-item">
+                                    <div class="info-item">
+                                        <span class="info-label">GPU ${index + 1}:</span>
+                                        <span class="info-value">${gpu.name}</span>
+                                    </div>
+                                    ${gpu.memory_total > 0 ? `
+                                        <div class="info-item">
+                                            <span class="info-label">显存:</span>
+                                            <span class="info-value">${formatBytes(gpu.memory_used)} / ${formatBytes(gpu.memory_total)}</span>
+                                        </div>
+                                    ` : ''}
+                                    ${gpu.utilization >= 0 ? `
+                                        <div class="info-item">
+                                            <span class="info-label">使用率:</span>
+                                            <span class="info-value">${gpu.utilization.toFixed(1)}%</span>
+                                        </div>
+                                    ` : ''}
+                                    ${gpu.temperature > 0 ? `
+                                        <div class="info-item">
+                                            <span class="info-label">温度:</span>
+                                            <span class="info-value">${gpu.temperature.toFixed(1)}°C</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    document.getElementById('gpu-info').innerHTML = html;
+                } else {
+                    throw new Error('API返回失败');
+                }
+                updateTimestamp();
+            } catch (error) {
+                document.getElementById('gpu-info').innerHTML = 
+                    `<div class="error">加载GPU信息失败: ${error.message}</div>`;
+            }
+        }
+
+        // 加载所有硬件信息
+        async function loadAllHardwareInfo() {
+            await Promise.all([loadMemoryInfo(), loadGPUInfo()]);
+        }
+
+        // 页面加载时自动加载信息
+        window.addEventListener('load', loadAllHardwareInfo);
+
+        // 自动刷新 (每30秒)
+        setInterval(loadAllHardwareInfo, 30000);
+    </script>
+</body>
+</html>
