@@ -106,6 +106,7 @@ func (lm *LogManager) AddLogger(c LogConfig, name string) {
 	fileInfo, err := os.Stat(lumberjackLogger.Filename)
 	if err != nil && !os.IsExist(err) {
 		_ = os.MkdirAll(lumberjackLogger.Filename, 0o750)
+		fileInfo, _ = os.Stat(lumberjackLogger.Filename)
 	}
 
 	creationTime := fileInfo.ModTime()
