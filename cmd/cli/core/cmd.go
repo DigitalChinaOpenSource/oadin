@@ -1368,25 +1368,21 @@ func NewImportServiceCommand() *cobra.Command {
 }
 
 func NewExportServiceCommand() *cobra.Command {
-	var service, serviceProvider, model string
 	exportCmd := &cobra.Command{
 		Use:   "export",
 		Short: "Export service",
 		Long:  "Export service",
 	}
 
-	exportCmd.Flags().StringVar(&service, "service", "", "Service name")
-	exportCmd.Flags().StringVar(&serviceProvider, "provider", "", "Provider name")
-	exportCmd.Flags().StringVar(&model, "model", "", "Model name")
-
-	exportCmd.AddCommand(NewExportServiceToFileCommand(service, serviceProvider, model))
-	exportCmd.AddCommand(NewExportServiceToStdoutCommand(service, serviceProvider, model))
+	exportCmd.AddCommand(NewExportServiceToFileCommand())
+	exportCmd.AddCommand(NewExportServiceToStdoutCommand())
 
 	return exportCmd
 }
 
-func NewExportServiceToFileCommand(service, provider, model string) *cobra.Command {
-	var filePath string
+// NewExportServiceToFileCommand creates the export to file command
+func NewExportServiceToFileCommand() *cobra.Command {
+	var filePath, service, providerName, model string
 
 	cmd := &cobra.Command{
 		Use:    "to-file",
@@ -1396,7 +1392,7 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
-				ProviderName: provider,
+				ProviderName: providerName,
 				ModelName:    model,
 			}
 			resp := &dto.ExportServiceResponse{}
@@ -1404,7 +1400,7 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 			c := config.NewOADINClient()
 			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINSpecVersion)
 
-			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
+			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, resp)
 			if err != nil {
 				fmt.Println("Error exporting service:", err)
 				return
@@ -1425,12 +1421,19 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		},
 	}
 
-	cmd.Flags().StringVarP(&filePath, "file", "f", "./.oadin", "Output file path")
+	// 在子命令上定义所有参数
+	cmd.Flags().StringVarP(&filePath, "file", "f", "./.aog", "Output file path")
+	cmd.Flags().StringVar(&service, "service", "", "Service name")
+	cmd.Flags().StringVar(&providerName, "provider", "", "Provider name")
+	cmd.Flags().StringVar(&model, "model", "", "Model name")
 
 	return cmd
 }
 
-func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Command {
+// NewExportServiceToStdoutCommand creates the export to stdout command
+func NewExportServiceToStdoutCommand() *cobra.Command {
+	var service, providerName, model string
+
 	cmd := &cobra.Command{
 		Use:    "to-stdout",
 		Short:  "Export service to stdout",
@@ -1439,15 +1442,15 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
-				ProviderName: provider,
+				ProviderName: providerName,
 				ModelName:    model,
 			}
 			resp := &dto.ExportServiceResponse{}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINSpecVersion)
+			routerPath := fmt.Sprintf("/aog/%s/service/export", version.OADINSpecVersion)
 
-			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
+			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, resp)
 			if err != nil {
 				fmt.Println("Error exporting service:", err)
 				return
@@ -1461,6 +1464,12 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 			fmt.Println(string(data))
 		},
 	}
+
+	// 在子命令上定义参数
+	cmd.Flags().StringVar(&service, "service", "", "Service name")
+	cmd.Flags().StringVar(&providerName, "provider", "", "Provider name")
+	cmd.Flags().StringVar(&model, "model", "", "Model name")
+
 	return cmd
 }
 
