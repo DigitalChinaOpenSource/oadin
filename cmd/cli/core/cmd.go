@@ -1363,7 +1363,6 @@ func NewImportServiceCommand() *cobra.Command {
 }
 
 func NewExportServiceCommand() *cobra.Command {
-	var service, serviceProvider, model string
 	exportCmd := &cobra.Command{
 		Use:   "export",
 		Short: "Export service",
@@ -1420,7 +1419,7 @@ func NewExportServiceToFileCommand() *cobra.Command {
 	// 在子命令上定义所有参数
 	cmd.Flags().StringVarP(&filePath, "file", "f", "./.aog", "Output file path")
 	cmd.Flags().StringVar(&service, "service", "", "Service name")
-	cmd.Flags().StringVar(&provider, "provider", "", "Provider name")
+	cmd.Flags().StringVar(&providerName, "provider", "", "Provider name")
 	cmd.Flags().StringVar(&model, "model", "", "Model name")
 
 	return cmd
@@ -1463,7 +1462,7 @@ func NewExportServiceToStdoutCommand() *cobra.Command {
 
 	// 在子命令上定义参数
 	cmd.Flags().StringVar(&service, "service", "", "Service name")
-	cmd.Flags().StringVar(&provider, "provider", "", "Provider name")
+	cmd.Flags().StringVar(&providerName, "provider", "", "Provider name")
 	cmd.Flags().StringVar(&model, "model", "", "Model name")
 
 	return cmd
