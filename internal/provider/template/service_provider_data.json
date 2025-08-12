@@ -250,5 +250,53 @@
     "auth_key": "",
     "flavor": "openvino",
     "url": "127.0.0.1:9000"
+  },
+  {
+    "provider_name": "remote_aliyun_text-to-speech",
+    "desc": "Remote Aliyun text to speech",
+    "service_name": "text-to-speech",
+    "service_source": "remote",
+    "api_flavor": "aliyun",
+    "method": "POST",
+    "auth_type": "apikey",
+    "auth_key": "",
+    "flavor": "aliyun",
+    "url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+  },
+  {
+    "provider_name": "remote_aliyun_speech-to-text-ws",
+    "desc": "Remote aliyun Real-time Speech to text",
+    "service_name": "speech-to-text-ws",
+    "service_source": "remote",
+    "api_flavor": "aliyun",
+    "method": "POST",
+    "auth_type": "apikey",
+    "auth_key": "",
+    "flavor": "aliyun",
+    "url": "wss://dashscope.aliyuncs.com/api-ws/v1/inference"
+  },
+  {
+    "provider_name": "remote_aliyun_image-to-video",
+    "desc": "Remote aliyun Image to Video",
+    "service_name": "image-to-video",
+    "service_source": "remote",
+    "api_flavor": "aliyun",
+    "method": "POST",
+    "auth_type": "apikey",
+    "auth_key": "",
+    "flavor": "aliyun",
+    "url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis"
+  },
+  {
+    "provider_name": "remote_aliyun_image-to-image",
+    "desc": "Remote aliyun Image to Image",
+    "service_name": "image-to-image",
+    "service_source": "remote",
+    "api_flavor": "aliyun",
+    "method": "POST",
+    "auth_type": "apikey",
+    "auth_key": "",
+    "flavor": "aliyun",
+    "url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/image2image/image-synthesis"
   }
 ]
