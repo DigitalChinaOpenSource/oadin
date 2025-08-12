@@ -541,8 +541,8 @@ func NewVersionCommand() *cobra.Command {
 		Long:  "Prints build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
 			// SDK需要Oadin Version是/oadin/v0.4/api_flavors/smartvision/v1/embeddings中的v0.4
-			fmt.Printf(`Oadin Version:%s\n`, version.OADINSpecVersion)
-			fmt.Printf(`Oadin SubVersion:%s\n`, version.OadinSubVersion)
+			fmt.Println(`Oadin Version:`, version.OADINSpecVersion)
+			fmt.Println(`Oadin SubVersion:`, version.OadinSubVersion)
 		},
 	}
 
