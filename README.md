@@ -175,8 +175,10 @@ Oadin provides the following basic features:
     can be accessed through the Oadin API layer.
 
 ---
+## Download Oadin from the official website (Recommended)
+Download the installer from the official website and follow the setup guide: https://oadin.dcclouds.com/
 
-## Building the Oadin Command-Line Tool
+## Building the Oadin Command-Line Tool (Optional for developers)
 
 As a developer, to build Oadin, you need to install [golang](https://go.dev/) on your system.
 
