@@ -638,7 +638,7 @@ const (
 	ServiceChatCmd   = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" -ngl 99 --port ${PORT}`
 	ServiceEmbedCmd  = `%s\llama-server.exe -m "%s\models\%s\%s-q4_k_m.gguf" --embedding --pooling cls -ub 8192 -ngl 99 --port ${PORT}`
 
-	// ServiceSpeechToTextCmd = `%s\whisper-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --ngl 99 --port ${PORT}`
+	ServiceSpeechToTextCmd = `%s\llama-server.exe -m "%s\models\%s\Llama-3.2-1B-Instruct-Q4_K_M.gguf" --mmproj "%s\models\%s\mmproj-ultravox-v0_5-llama-3_2-1b-f16.gguf" -ngl 99 --port ${PORT}`
 )
 
 func (l *llamacppProvider) generateCmdTxt(modelName, modelType string) string {
@@ -663,6 +663,8 @@ func (l *llamacppProvider) generateCmdTxt(modelName, modelType string) string {
 		template = fmt.Sprintf(ServiceChatCmd, execPath, enginePath, modelName, modelNameSample)
 	case types.ServiceEmbed:
 		template = fmt.Sprintf(ServiceEmbedCmd, execPath, enginePath, modelName, modelNameSample)
+	case types.ServiceSpeechToText:
+		template = fmt.Sprintf(ServiceSpeechToTextCmd, execPath, enginePath, modelName, enginePath, modelName)
 	default:
 		logger.EngineLogger.Error("[llamacpp] Unsupported model type: " + modelType)
 		return ""
