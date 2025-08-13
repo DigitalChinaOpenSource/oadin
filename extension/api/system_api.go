@@ -31,9 +31,11 @@ func (e *SystemlApi) InjectRoutes(api *gin.RouterGroup) {
 	api.PUT("/proxy/switch", e.ProxySwitch)
 
 	// 硬件监控相关路由
+	api.GET("/cpu", e.GetCPUInfo)
 	api.GET("/memory", e.GetMemoryInfo)
 	api.GET("/gpu", e.GetGPUInfo)
 	api.GET("/hardware", e.GetHardwareInfo)
+	api.GET("/hardware/full", e.GetFullHardwareInfo)
 }
 
 // About 获取关于信息
@@ -181,5 +183,41 @@ func (e *SystemlApi) GetHardwareInfo(c *gin.Context) {
 			"memory": memInfo,
 			"gpus":   gpuInfo,
 		},
+	})
+}
+
+// GetCPUInfo 获取系统CPU信息
+func (e *SystemlApi) GetCPUInfo(c *gin.Context) {
+	cpuInfo, err := hardware.GetCPUInfo()
+	if err != nil {
+		logger.ApiLogger.Error("Failed to get CPU information", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "获取CPU信息失败",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    cpuInfo,
+	})
+}
+
+// GetFullHardwareInfo 获取完整的系统硬件信息（包含CPU）
+func (e *SystemlApi) GetFullHardwareInfo(c *gin.Context) {
+	hardwareInfo, err := hardware.GetSystemHardwareInfo()
+	if err != nil {
+		logger.ApiLogger.Error("Failed to get full hardware information", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "获取完整硬件信息失败",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    hardwareInfo,
 	})
 }

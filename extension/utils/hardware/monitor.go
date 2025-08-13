@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
 )
@@ -37,6 +38,30 @@ type GPUInfo struct {
 	MemoryFree  uint64  `json:"memory_free"`  // 可用显存 (bytes)
 	Utilization float64 `json:"utilization"`  // GPU使用率 (%)
 	Temperature float64 `json:"temperature"`  // GPU温度 (°C)
+}
+
+// CPUInfo CPU信息结构体
+type CPUInfo struct {
+	ModelName    string   `json:"model_name"`    // CPU型号名称
+	Brand        string   `json:"brand"`         // CPU品牌
+	Architecture string   `json:"architecture"`  // CPU架构 (x86_64, arm64, etc.)
+	Cores        int32    `json:"cores"`         // 物理核心数
+	Threads      int32    `json:"threads"`       // 逻辑核心数 (线程数)
+	MaxFrequency float64  `json:"max_frequency"` // 最大频率 (MHz)
+	CurrentUsage float64  `json:"current_usage"` // 当前使用率 (%)
+	Features     []string `json:"features"`      // 支持的指令集/特性
+	CacheSize    int32    `json:"cache_size"`    // 缓存大小 (KB)
+	Family       string   `json:"family"`        // CPU系列
+	Model        string   `json:"model"`         // CPU型号
+	Stepping     string   `json:"stepping"`      // CPU步进
+	Microcode    string   `json:"microcode"`     // 微码版本
+}
+
+// SystemHardwareInfo 系统硬件综合信息
+type SystemHardwareInfo struct {
+	CPU    *CPUInfo    `json:"cpu"`    // CPU信息
+	Memory *MemoryInfo `json:"memory"` // 内存信息
+	GPUs   []GPUInfo   `json:"gpus"`   // GPU信息列表
 }
 
 // GetMemoryInfo 获取内存信息
@@ -80,6 +105,88 @@ func GetMemoryInfo() (*MemoryInfo, error) {
 	}
 
 	return memInfo, nil
+}
+
+// GetCPUInfo 获取CPU信息
+func GetCPUInfo() (*CPUInfo, error) {
+	// 获取CPU基本信息
+	cpuInfos, err := cpu.Info()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CPU info: %w", err)
+	}
+
+	if len(cpuInfos) == 0 {
+		return nil, fmt.Errorf("no CPU information available")
+	}
+
+	// 获取第一个CPU的信息（通常所有核心信息相同）
+	cpuInfo := cpuInfos[0]
+
+	// 获取逻辑核心数
+	logicalCores, err := cpu.Counts(true)
+	if err != nil {
+		logicalCores = int(cpuInfo.Cores) // 降级处理
+	}
+
+	// 获取物理核心数
+	physicalCores, err := cpu.Counts(false)
+	if err != nil {
+		physicalCores = int(cpuInfo.Cores) // 降级处理
+	}
+
+	// 获取当前CPU使用率
+	cpuPercent, err := cpu.Percent(time.Second, false)
+	var currentUsage float64
+	if err == nil && len(cpuPercent) > 0 {
+		currentUsage = cpuPercent[0]
+	}
+
+	// 构建CPU信息结构
+	result := &CPUInfo{
+		ModelName:    cpuInfo.ModelName,
+		Brand:        cpuInfo.VendorID,
+		Architecture: runtime.GOARCH,
+		Cores:        int32(physicalCores),
+		Threads:      int32(logicalCores),
+		MaxFrequency: cpuInfo.Mhz,
+		CurrentUsage: currentUsage,
+		Features:     cpuInfo.Flags,
+		CacheSize:    cpuInfo.CacheSize,
+		Family:       cpuInfo.Family,
+		Model:        cpuInfo.Model,
+		Stepping:     fmt.Sprintf("%d", cpuInfo.Stepping),
+		Microcode:    cpuInfo.Microcode,
+	}
+
+	return result, nil
+}
+
+// GetSystemHardwareInfo 获取完整的系统硬件信息
+func GetSystemHardwareInfo() (*SystemHardwareInfo, error) {
+	// 获取CPU信息
+	cpuInfo, err := GetCPUInfo()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CPU info: %w", err)
+	}
+
+	// 获取内存信息
+	memoryInfo, err := GetMemoryInfo()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get memory info: %w", err)
+	}
+
+	// 获取GPU信息
+	gpuInfo, err := GetGPUInfo()
+	if err != nil {
+		// GPU信息获取失败不影响整体，记录错误但继续
+		gpuInfo = []GPUInfo{}
+	}
+
+	return &SystemHardwareInfo{
+		CPU:    cpuInfo,
+		Memory: memoryInfo,
+		GPUs:   gpuInfo,
+	}, nil
 }
 
 // GetGPUInfo 获取GPU信息（支持多GPU）
@@ -160,9 +267,69 @@ func PrintMemoryInfo() error {
 	return nil
 }
 
-func getSystemInformation() {
-	// 保持原有函数签名，可以调用 PrintMemoryInfo
+// PrintCPUInfo 打印CPU信息（用于调试）
+func PrintCPUInfo() error {
+	cpuInfo, err := GetCPUInfo()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("=== CPU信息 ===")
+	fmt.Printf("型号: %s\n", cpuInfo.ModelName)
+	fmt.Printf("品牌: %s\n", cpuInfo.Brand)
+	fmt.Printf("架构: %s\n", cpuInfo.Architecture)
+	fmt.Printf("物理核心: %d 核\n", cpuInfo.Cores)
+	fmt.Printf("逻辑核心: %d 线程\n", cpuInfo.Threads)
+	fmt.Printf("最大频率: %.0f MHz\n", cpuInfo.MaxFrequency)
+	fmt.Printf("当前使用率: %.1f%%\n", cpuInfo.CurrentUsage)
+
+	if cpuInfo.CacheSize > 0 {
+		fmt.Printf("缓存大小: %d KB\n", cpuInfo.CacheSize)
+	}
+
+	if len(cpuInfo.Features) > 0 {
+		fmt.Printf("支持的指令集: ")
+		// 只显示前10个重要的指令集特性
+		count := 0
+		for _, feature := range cpuInfo.Features {
+			if count >= 10 {
+				fmt.Printf("... (共%d个)", len(cpuInfo.Features))
+				break
+			}
+			if count > 0 {
+				fmt.Printf(", ")
+			}
+			fmt.Printf("%s", feature)
+			count++
+		}
+		fmt.Println()
+	}
+	fmt.Println()
+
+	return nil
+}
+
+// PrintSystemHardwareInfo 打印完整的系统硬件信息
+func PrintSystemHardwareInfo() error {
+	fmt.Println("🖥️  OADIN 系统硬件信息")
+	fmt.Println("================================")
+
+	// 打印CPU信息
+	if err := PrintCPUInfo(); err != nil {
+		fmt.Printf("❌ 获取CPU信息失败: %v\n", err)
+	}
+
+	// 打印内存信息
 	if err := PrintMemoryInfo(); err != nil {
+		fmt.Printf("❌ 获取内存信息失败: %v\n", err)
+	}
+
+	return nil
+}
+
+func getSystemInformation() {
+	// 保持原有函数签名，可以调用 PrintSystemHardwareInfo
+	if err := PrintSystemHardwareInfo(); err != nil {
 		fmt.Printf("获取系统信息失败: %v\n", err)
 	}
 }

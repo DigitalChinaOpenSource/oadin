@@ -11,6 +11,27 @@ func main() {
 	fmt.Println("🚀 OADIN 系统硬件监控测试")
 	fmt.Println("================================")
 
+	// 测试CPU信息获取
+	fmt.Println("\n🔧 获取CPU信息...")
+	cpuInfo, err := hardware.GetCPUInfo()
+	if err != nil {
+		log.Printf("❌ 获取CPU信息失败: %v", err)
+	} else {
+		fmt.Printf("✅ CPU信息获取成功\n")
+		fmt.Printf("   型号: %s\n", cpuInfo.ModelName)
+		fmt.Printf("   架构: %s\n", cpuInfo.Architecture)
+		fmt.Printf("   核心: %d核/%d线程\n", cpuInfo.Cores, cpuInfo.Threads)
+		fmt.Printf("   频率: %.0f MHz\n", cpuInfo.MaxFrequency)
+		fmt.Printf("   使用率: %.1f%%\n", cpuInfo.CurrentUsage)
+		if len(cpuInfo.Features) > 0 {
+			fmt.Printf("   指令集: %s", cpuInfo.Features[0])
+			if len(cpuInfo.Features) > 1 {
+				fmt.Printf(" (等%d个)", len(cpuInfo.Features))
+			}
+			fmt.Println()
+		}
+	}
+
 	// 测试内存信息获取
 	fmt.Println("\n📊 获取内存信息...")
 	memInfo, err := hardware.GetMemoryInfo()
@@ -61,10 +82,22 @@ func main() {
 		}
 	}
 
-	// 打印详细的内存信息
-	fmt.Println("\n📋 详细内存信息:")
+	// 测试完整硬件信息获取
+	fmt.Println("\n🖥️  获取完整硬件信息...")
+	fullInfo, err := hardware.GetSystemHardwareInfo()
+	if err != nil {
+		log.Printf("❌ 获取完整硬件信息失败: %v", err)
+	} else {
+		fmt.Printf("✅ 完整硬件信息获取成功\n")
+		fmt.Printf("   CPU: %s (%s)\n", fullInfo.CPU.ModelName, fullInfo.CPU.Architecture)
+		fmt.Printf("   内存: %s 总容量\n", hardware.FormatBytes(fullInfo.Memory.RAMTotal))
+		fmt.Printf("   GPU: %d 个设备\n", len(fullInfo.GPUs))
+	}
+
+	// 打印详细的硬件信息
+	fmt.Println("\n📋 详细硬件信息:")
 	fmt.Println("================================")
-	if err := hardware.PrintMemoryInfo(); err != nil {
+	if err := hardware.PrintSystemHardwareInfo(); err != nil {
 		log.Printf("❌ 打印详细信息失败: %v", err)
 	}
 }
