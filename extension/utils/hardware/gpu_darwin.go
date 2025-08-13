@@ -441,28 +441,6 @@ func parseMacGPUInfo(output string) []GPUInfo {
 	return gpus
 }
 
-// getAppleSiliconGPUMemory 获取Apple Silicon GPU内存（统一内存架构）
-func getAppleSiliconGPUMemory() uint64 {
-	// Apple Silicon使用统一内存架构，GPU和CPU共享内存
-	// 尝试获取系统总内存的一部分作为GPU可用内存
-
-	cmd := exec.Command("sysctl", "-n", "hw.memsize")
-	output, err := cmd.Output()
-	if err != nil {
-		return 0
-	}
-
-	totalMemStr := strings.TrimSpace(string(output))
-	totalMem, err := strconv.ParseUint(totalMemStr, 10, 64)
-	if err != nil {
-		return 0
-	}
-
-	// 假设GPU可以使用总内存的1/4到1/2
-	// 这是一个估算值，实际可用内存取决于系统配置
-	return totalMem / 3 // 约33%的系统内存用于GPU
-}
-
 // getTemperature 尝试获取macOS GPU温度（需要特殊权限）
 func getTemperature() float64 {
 	// macOS获取硬件温度需要特殊权限，通常需要第三方工具
