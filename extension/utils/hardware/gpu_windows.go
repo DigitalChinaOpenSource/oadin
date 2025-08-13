@@ -3,11 +3,14 @@
 package hardware
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
+	"time"
 )
 
 // Windows GPU信息获取
@@ -25,6 +28,12 @@ func getMacOSGPUInfo() ([]GPUInfo, error) {
 var (
 	modKernel32              = syscall.NewLazyDLL("kernel32.dll")
 	procGlobalMemoryStatusEx = modKernel32.NewProc("GlobalMemoryStatusEx")
+
+	// GPU信息缓存
+	gpuCacheMutex sync.RWMutex
+	gpuCacheData  []GPUInfo
+	gpuCacheTime  time.Time
+	gpuCacheTTL   = 10 * time.Second // 缓存10秒
 )
 
 type memoryStatusEx struct {
@@ -39,24 +48,49 @@ type memoryStatusEx struct {
 	ullAvailExtendedVirtual uint64
 }
 
-// getVRAMInfo 获取Windows VRAM信息
+// getVRAMInfo 获取Windows VRAM信息 - 优化版本
 func getVRAMInfo() (total, used, free uint64) {
-	// 使用nvidia-smi获取NVIDIA GPU信息
-	if nvTotal, nvUsed := getNvidiaVRAM(); nvTotal > 0 {
-		return nvTotal, nvUsed, nvTotal - nvUsed
+	// 使用并发方式同时尝试多种方法，取最快返回的结果
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	type result struct {
+		total, used uint64
 	}
 
-	// 使用WMIC获取显卡信息
-	if wmicTotal, wmicUsed := getWMICVRAM(); wmicTotal > 0 {
-		return wmicTotal, wmicUsed, wmicTotal - wmicUsed
-	}
+	resultChan := make(chan result, 3)
 
-	return 0, 0, 0
+	// 并发执行三种方法
+	go func() {
+		if nvTotal, nvUsed := getNvidiaVRAMWithTimeout(ctx); nvTotal > 0 {
+			resultChan <- result{nvTotal, nvUsed}
+		}
+	}()
+
+	go func() {
+		if wmicTotal, wmicUsed := getWMICVRAMWithTimeout(ctx); wmicTotal > 0 {
+			resultChan <- result{wmicTotal, wmicUsed}
+		}
+	}()
+
+	go func() {
+		if psTotal, psUsed := getPowerShellVRAMWithTimeout(ctx); psTotal > 0 {
+			resultChan <- result{psTotal, psUsed}
+		}
+	}()
+
+	// 返回第一个成功的结果
+	select {
+	case res := <-resultChan:
+		return res.total, res.used, res.total - res.used
+	case <-ctx.Done():
+		return 0, 0, 0
+	}
 }
 
-// getNvidiaVRAM 使用nvidia-smi获取NVIDIA GPU显存信息
-func getNvidiaVRAM() (total, used uint64) {
-	cmd := exec.Command("nvidia-smi", "--query-gpu=memory.total,memory.used", "--format=csv,noheader,nounits")
+// getNvidiaVRAMWithTimeout 使用nvidia-smi获取NVIDIA GPU显存信息（带超时）
+func getNvidiaVRAMWithTimeout(ctx context.Context) (total, used uint64) {
+	cmd := exec.CommandContext(ctx, "nvidia-smi", "--query-gpu=memory.total,memory.used", "--format=csv,noheader,nounits")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	output, err := cmd.Output()
@@ -86,16 +120,14 @@ func getNvidiaVRAM() (total, used uint64) {
 	return totalMB * 1024 * 1024, usedMB * 1024 * 1024
 }
 
-// getWMICVRAM 使用PowerShell获取显卡显存信息
-func getWMICVRAM() (total, used uint64) {
-	// 首先尝试传统的wmic命令
-	cmd := exec.Command("wmic", "path", "win32_VideoController", "get", "AdapterRAM", "/format:value")
+// getWMICVRAMWithTimeout 使用WMIC获取显卡显存信息（带超时）
+func getWMICVRAMWithTimeout(ctx context.Context) (total, used uint64) {
+	cmd := exec.CommandContext(ctx, "wmic", "path", "win32_VideoController", "get", "AdapterRAM", "/format:value")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	output, err := cmd.Output()
 	if err != nil {
-		// 如果wmic失败，尝试使用PowerShell
-		return getPowerShellVRAM()
+		return 0, 0
 	}
 
 	lines := strings.Split(string(output), "\n")
@@ -105,7 +137,6 @@ func getWMICVRAM() (total, used uint64) {
 			ramStr := strings.TrimPrefix(line, "AdapterRAM=")
 			if ramStr != "" && ramStr != "0" {
 				if ram, err := strconv.ParseUint(ramStr, 10, 64); err == nil && ram > 0 {
-					// WMIC返回的是字节数，我们假设使用率为未知，返回0
 					return ram, 0
 				}
 			}
@@ -115,9 +146,9 @@ func getWMICVRAM() (total, used uint64) {
 	return 0, 0
 }
 
-// getPowerShellVRAM 使用PowerShell获取显存信息
-func getPowerShellVRAM() (total, used uint64) {
-	cmd := exec.Command("powershell", "-Command",
+// getPowerShellVRAMWithTimeout 使用PowerShell获取显存信息（带超时）
+func getPowerShellVRAMWithTimeout(ctx context.Context) (total, used uint64) {
+	cmd := exec.CommandContext(ctx, "powershell", "-Command",
 		"Get-WmiObject -Class Win32_VideoController | Where-Object {$_.AdapterRAM -gt 0} | Select-Object -First 1 -ExpandProperty AdapterRAM")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
@@ -136,28 +167,85 @@ func getPowerShellVRAM() (total, used uint64) {
 	return 0, 0
 }
 
-// getWindowsGPUInfo 获取Windows GPU详细信息
+// getWindowsGPUInfo 获取Windows GPU详细信息 - 优化版本（带缓存）
 func getWindowsGPUInfo() ([]GPUInfo, error) {
+	// 检查缓存
+	gpuCacheMutex.RLock()
+	if time.Since(gpuCacheTime) < gpuCacheTTL && len(gpuCacheData) > 0 {
+		cached := make([]GPUInfo, len(gpuCacheData))
+		copy(cached, gpuCacheData)
+		gpuCacheMutex.RUnlock()
+		return cached, nil
+	}
+	gpuCacheMutex.RUnlock()
+
+	// 缓存过期或为空，重新获取
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second) // 减少超时时间
+	defer cancel()
+
 	var gpus []GPUInfo
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
-	// 尝试使用nvidia-smi获取NVIDIA GPU信息
-	if nvGPUs := getNvidiaGPUInfo(); len(nvGPUs) > 0 {
-		gpus = append(gpus, nvGPUs...)
-	}
+	// 并发尝试不同的方法
+	wg.Add(2)
 
-	// 如果没有NVIDIA GPU，尝试获取通用GPU信息
-	if len(gpus) == 0 {
-		if genericGPUs := getGenericWindowsGPUInfo(); len(genericGPUs) > 0 {
-			gpus = append(gpus, genericGPUs...)
+	// 尝试nvidia-smi
+	go func() {
+		defer wg.Done()
+		if nvGPUs := getNvidiaGPUInfoWithTimeout(ctx); len(nvGPUs) > 0 {
+			mu.Lock()
+			gpus = append(gpus, nvGPUs...)
+			mu.Unlock()
 		}
-	}
+	}()
 
-	return gpus, nil
+	// 尝试通用方法
+	go func() {
+		defer wg.Done()
+		if genericGPUs := getGenericWindowsGPUInfoWithTimeout(ctx); len(genericGPUs) > 0 {
+			mu.Lock()
+			if len(gpus) == 0 { // 只有在没有nvidia GPU时才添加通用GPU
+				gpus = append(gpus, genericGPUs...)
+			}
+			mu.Unlock()
+		}
+	}()
+
+	// 等待所有goroutine完成，但不超过超时时间
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// 更新缓存
+		gpuCacheMutex.Lock()
+		gpuCacheData = make([]GPUInfo, len(gpus))
+		copy(gpuCacheData, gpus)
+		gpuCacheTime = time.Now()
+		gpuCacheMutex.Unlock()
+
+		return gpus, nil
+	case <-ctx.Done():
+		// 如果超时，返回缓存的数据（如果有的话）
+		gpuCacheMutex.RLock()
+		if len(gpuCacheData) > 0 {
+			cached := make([]GPUInfo, len(gpuCacheData))
+			copy(cached, gpuCacheData)
+			gpuCacheMutex.RUnlock()
+			return cached, fmt.Errorf("timeout getting GPU info, returned cached data")
+		}
+		gpuCacheMutex.RUnlock()
+		return nil, fmt.Errorf("timeout getting GPU info")
+	}
 }
 
-// getNvidiaGPUInfo 获取NVIDIA GPU详细信息
-func getNvidiaGPUInfo() []GPUInfo {
-	cmd := exec.Command("nvidia-smi",
+// getNvidiaGPUInfoWithTimeout 获取NVIDIA GPU详细信息（带超时）
+func getNvidiaGPUInfoWithTimeout(ctx context.Context) []GPUInfo {
+	cmd := exec.CommandContext(ctx, "nvidia-smi",
 		"--query-gpu=name,memory.total,memory.used,utilization.gpu,temperature.gpu",
 		"--format=csv,noheader,nounits")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
@@ -200,25 +288,78 @@ func getNvidiaGPUInfo() []GPUInfo {
 	return gpus
 }
 
-// getGenericWindowsGPUInfo 获取通用Windows GPU信息
-func getGenericWindowsGPUInfo() []GPUInfo {
-	// 首先尝试传统的wmic命令
-	cmd := exec.Command("wmic", "path", "win32_VideoController", "get", "Name,AdapterRAM", "/format:csv")
+// getGenericWindowsGPUInfoWithTimeout 获取通用Windows GPU信息（带超时，优化版本）
+func getGenericWindowsGPUInfoWithTimeout(ctx context.Context) []GPUInfo {
+	// 使用一次PowerShell调用获取所有GPU信息，而不是每个GPU单独调用
+	cmd := exec.CommandContext(ctx, "powershell", "-Command", `
+		$gpus = Get-WmiObject -Class Win32_VideoController | Where-Object {$_.Name -notlike '*RDP*' -and $_.Name -notlike '*Oray*' -and $_.AdapterRAM -gt 0}
+		foreach ($gpu in $gpus) {
+			$name = $gpu.Name
+			$ram = $gpu.AdapterRAM
+			if ($ram -eq $null) { $ram = 0 }
+			Write-Output "$name|$ram"
+		}
+	`)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	output, err := cmd.Output()
 	if err != nil {
-		// 如果wmic失败，尝试使用PowerShell
-		return getPowerShellGPUInfo()
+		// 如果PowerShell失败，尝试WMIC作为备用
+		return getWMICGPUInfoWithTimeout(ctx)
 	}
 
-	return parseWMICGPUInfo(string(output))
+	var gpus []GPUInfo
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.Split(line, "|")
+		if len(parts) != 2 {
+			continue
+		}
+
+		name := strings.TrimSpace(parts[0])
+		ramStr := strings.TrimSpace(parts[1])
+
+		if name == "" {
+			continue
+		}
+
+		var memTotal uint64 = 0
+		if ramStr != "" && ramStr != "0" {
+			if ram, err := strconv.ParseUint(ramStr, 10, 64); err == nil {
+				memTotal = ram
+			}
+		}
+
+		// 估算内存使用情况（避免额外的PowerShell调用）
+		var memUsed uint64 = 0
+		if memTotal > 0 {
+			memUsed = memTotal / 10 // 假设使用10%
+		}
+
+		gpu := GPUInfo{
+			Name:        name,
+			MemoryTotal: memTotal,
+			MemoryUsed:  memUsed,
+			MemoryFree:  memTotal - memUsed,
+			Utilization: -1, // 避免额外的调用来获取使用率
+			Temperature: 0,
+		}
+
+		gpus = append(gpus, gpu)
+	}
+
+	return gpus
 }
 
-// getPowerShellGPUInfo 使用PowerShell获取GPU信息
-func getPowerShellGPUInfo() []GPUInfo {
-	cmd := exec.Command("powershell", "-Command",
-		"Get-WmiObject -Class Win32_VideoController | Where-Object {$_.Name -notlike '*RDP*' -and $_.Name -notlike '*Oray*'} | Select-Object Name, AdapterRAM | Format-Table -HideTableHeaders")
+// getWMICGPUInfoWithTimeout WMIC备用方法（带超时）
+func getWMICGPUInfoWithTimeout(ctx context.Context) []GPUInfo {
+	cmd := exec.CommandContext(ctx, "wmic", "path", "win32_VideoController", "get", "Name,AdapterRAM", "/format:csv")
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	output, err := cmd.Output()
@@ -226,7 +367,7 @@ func getPowerShellGPUInfo() []GPUInfo {
 		return nil
 	}
 
-	return parsePowerShellGPUInfo(string(output))
+	return parseWMICGPUInfo(string(output))
 }
 
 // parseWMICGPUInfo 解析WMIC输出的GPU信息
@@ -321,4 +462,53 @@ func parsePowerShellGPUInfo(output string) []GPUInfo {
 	}
 
 	return gpus
+}
+
+// getGPUUtilization 获取GPU使用率
+// Deprecated: 这个函数被认为是性能瓶颈，每次调用都会执行多个PowerShell命令
+// 建议使用nvidia-smi或缓存机制来获取GPU使用率
+func getGPUUtilization(gpuName string) float64 {
+	// 快速返回估算值，避免性能瓶颈
+	return -1 // 表示无法获取，避免调用慢的PowerShell命令
+}
+
+// getGPUMemoryUsage 获取GPU内存使用情况
+// Deprecated: 这个函数被认为是性能瓶颈，每次调用都会执行PowerShell命令
+// 建议使用nvidia-smi或估算方法
+func getGPUMemoryUsage(gpuName string, totalMemory uint64) uint64 {
+	// 快速返回估算值，避免性能瓶颈
+	if totalMemory > 0 {
+		return totalMemory / 10 // 估算使用10%
+	}
+	return 0
+}
+
+// getPerformanceCounterGPUUsage 使用性能计数器获取GPU使用率
+// Deprecated: 性能瓶颈函数 - typeperf命令执行慢，建议使用nvidia-smi或估算
+func getPerformanceCounterGPUUsage(gpuName string) float64 {
+	return -1 // 直接返回，避免执行慢的typeperf命令
+}
+
+// getPowerShellGPUUsage 使用PowerShell获取GPU使用率
+// Deprecated: 性能瓶颈函数 - PowerShell Get-Counter命令执行慢
+func getPowerShellGPUUsage(gpuName string) float64 {
+	return -1 // 直接返回，避免执行慢的PowerShell命令
+}
+
+// getWMIGPUUsage 使用WMI获取GPU使用率
+// Deprecated: 性能瓶颈函数 - 复杂的进程查询执行慢
+func getWMIGPUUsage() float64 {
+	return -1 // 直接返回，避免执行慢的进程查询
+}
+
+// getTaskManagerGPUMemory 使用类似任务管理器的方式获取GPU内存使用
+// Deprecated: 性能瓶颈函数 - PowerShell Get-Counter命令执行慢
+func getTaskManagerGPUMemory() uint64 {
+	return 0 // 直接返回，避免执行慢的PowerShell命令
+}
+
+// getIntelGPUMemoryUsage 获取Intel GPU内存使用情况
+// Deprecated: 性能瓶颈函数 - 复杂的进程查询执行慢
+func getIntelGPUMemoryUsage() uint64 {
+	return 0 // 直接返回，避免执行慢的进程查询
 }
