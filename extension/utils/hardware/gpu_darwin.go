@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
 )
 
 // getWindowsGPUInfo 在macOS平台返回错误
@@ -210,26 +209,42 @@ func parseMacGPUInfo(output string) []GPUInfo {
 
 	lines := strings.Split(output, "\n")
 	var currentGPU *GPUInfo
+	inDisplaysSection := false // 标记是否在 Displays 部分
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 
-		// 检查是否是新的GPU条目
+		// 检查是否进入 Displays 部分
+		if strings.HasPrefix(line, "Displays:") {
+			inDisplaysSection = true
+			continue
+		}
+
+		// 如果在 Displays 部分，跳过解析
+		if inDisplaysSection {
+			// 检查是否离开 Displays 部分
+			if line == "" {
+				inDisplaysSection = false
+			}
+			continue
+		}
+
+		// 检查是否是新的 GPU 条目
 		if strings.HasSuffix(line, ":") && !strings.Contains(line, "Displays") {
-			// 保存之前的GPU
+			// 保存之前的 GPU
 			if currentGPU != nil {
 				gpus = append(gpus, *currentGPU)
 			}
 
-			// 创建新的GPU
+			// 创建新的 GPU
 			gpuName := strings.TrimSuffix(line, ":")
 			currentGPU = &GPUInfo{
 				Name:        gpuName,
-				Utilization: -1, // macOS较难获取实时使用率
-				Temperature: 0,  // macOS需要特殊权限获取温度
+				Utilization: -1, // macOS 较难获取实时使用率
+				Temperature: 0,  // macOS 需要特殊权限获取温度
 			}
 		} else if currentGPU != nil {
-			// 解析GPU属性
+			// 解析 GPU 属性
 			if strings.Contains(line, "VRAM") || strings.Contains(line, "Memory") {
 				if mem := extractMemorySize(line); mem > 0 {
 					currentGPU.MemoryTotal = mem
@@ -239,16 +254,16 @@ func parseMacGPUInfo(output string) []GPUInfo {
 		}
 	}
 
-	// 添加最后一个GPU
+	// 添加最后一个 GPU
 	if currentGPU != nil {
 		gpus = append(gpus, *currentGPU)
 	}
 
-	// 如果没有找到GPU，添加一个默认的集成显卡
+	// 如果没有找到 GPU，添加一个默认的集成显卡
 	if len(gpus) == 0 {
 		totalMem := getSystemProfilerVRAM()
 		if totalMem == 0 {
-			// 对于Apple Silicon，尝试获取统一内存的一部分
+			// 对于 Apple Silicon，尝试获取统一内存的一部分
 			totalMem = getAppleSiliconGPUMemory()
 		}
 
