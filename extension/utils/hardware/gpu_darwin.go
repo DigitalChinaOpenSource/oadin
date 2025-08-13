@@ -98,7 +98,6 @@ func getAppleSiliconGPUMemory() (total, used uint64) {
 		estimatedGPUMemory := totalSystemMemory * 3 / 10 // 30%
 
 		// 估算GPU使用的内存（非精确）
-		freeMemory := (freePages + inactivePages + speculative) * pageSize
 		usedMemory := estimatedGPUMemory * 2 / 10 // 估算20%被GPU使用
 
 		return estimatedGPUMemory, usedMemory
@@ -423,16 +422,17 @@ func parseMacGPUInfo(output string) []GPUInfo {
 	// 如果没有找到 GPU，添加一个默认的集成显卡
 	if len(gpus) == 0 {
 		totalMem := getSystemProfilerVRAM()
+		var usedMem uint64
 		if totalMem == 0 {
 			// 对于 Apple Silicon，尝试获取统一内存的一部分
-			totalMem = getAppleSiliconGPUMemory()
+			totalMem, usedMem = getAppleSiliconGPUMemory()
 		}
 
 		gpus = append(gpus, GPUInfo{
 			Name:        "Integrated Graphics",
 			MemoryTotal: totalMem,
-			MemoryUsed:  0,
-			MemoryFree:  totalMem,
+			MemoryUsed:  usedMem,
+			MemoryFree:  totalMem - usedMem,
 			Utilization: getMacOSGPUUtilization(), // 尝试获取实际使用率
 			Temperature: 0,
 		})
