@@ -343,24 +343,127 @@ func extractNumber(s string) string {
 func getMacOSGPUInfo() ([]GPUInfo, error) {
 	var gpus []GPUInfo
 
-	// 使用system_profiler获取显卡信息
-	cmd := exec.Command("system_profiler", "SPDisplaysDataType")
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-
-	gpus = parseMacGPUInfo(string(output))
-
-	// 如果找到了GPU，尝试获取更详细的信息
-	for i := range gpus {
-		if gpus[i].MemoryTotal == 0 {
-			// 尝试其他方法获取内存信息
-			gpus[i].MemoryTotal = getSystemProfilerVRAM()
+	// 首先尝试检测Apple Silicon GPU
+	if runtime.GOARCH == "arm64" {
+		appleGPU := getAppleSiliconGPUInfo()
+		if appleGPU.MemoryTotal > 0 {
+			gpus = append(gpus, appleGPU)
 		}
 	}
 
+	// 使用system_profiler获取显卡信息（用于检测独立显卡或Intel Mac）
+	cmd := exec.Command("system_profiler", "SPDisplaysDataType")
+	output, err := cmd.Output()
+	if err == nil {
+		additionalGPUs := parseMacGPUInfo(string(output))
+		for _, gpu := range additionalGPUs {
+			// 避免重复添加相同的GPU
+			isDuplicate := false
+			for _, existingGPU := range gpus {
+				if strings.Contains(existingGPU.Name, "Apple") && strings.Contains(gpu.Name, "Apple") {
+					isDuplicate = true
+					break
+				}
+			}
+			if !isDuplicate {
+				gpus = append(gpus, gpu)
+			}
+		}
+	}
+
+	// 如果仍然没有找到GPU，添加默认的集成显卡
+	if len(gpus) == 0 {
+		totalMem := getSystemProfilerVRAM()
+		var usedMem uint64
+		if totalMem == 0 {
+			// 对于 Apple Silicon，尝试获取统一内存的一部分
+			totalMem, usedMem = getAppleSiliconGPUMemory()
+		}
+
+		gpus = append(gpus, GPUInfo{
+			Name:        "Integrated Graphics",
+			MemoryTotal: totalMem,
+			MemoryUsed:  usedMem,
+			MemoryFree:  totalMem - usedMem,
+			Utilization: getMacOSGPUUtilization(), // 尝试获取实际使用率
+			Temperature: 0,
+		})
+	}
+
 	return gpus, nil
+}
+
+// getAppleSiliconGPUInfo 获取Apple Silicon GPU信息
+func getAppleSiliconGPUInfo() GPUInfo {
+	// 获取CPU型号来确定GPU型号
+	cpuName := getAppleSiliconCPUName()
+	gpuName := mapCPUToGPU(cpuName)
+
+	// 获取内存信息
+	totalMem, usedMem := getAppleSiliconGPUMemory()
+
+	// 获取使用率
+	utilization := getMacOSGPUUtilization()
+	if utilization < 0 {
+		utilization = 0 // 如果无法获取，设为0而不是-1
+	}
+
+	return GPUInfo{
+		Name:        gpuName,
+		MemoryTotal: totalMem,
+		MemoryUsed:  usedMem,
+		MemoryFree:  totalMem - usedMem,
+		Utilization: utilization,
+		Temperature: 0, // Apple Silicon温度获取需要特殊权限
+	}
+}
+
+// getAppleSiliconCPUName 获取Apple Silicon CPU名称
+func getAppleSiliconCPUName() string {
+	cmd := exec.Command("sysctl", "-n", "machdep.cpu.brand_string")
+	output, err := cmd.Output()
+	if err != nil {
+		return "Apple Silicon"
+	}
+	return strings.TrimSpace(string(output))
+}
+
+// mapCPUToGPU 根据CPU型号映射对应的GPU名称
+func mapCPUToGPU(cpuName string) string {
+	cpuName = strings.ToLower(cpuName)
+
+	// Apple Silicon GPU映射
+	if strings.Contains(cpuName, "m1 pro") {
+		return "Apple M1 Pro GPU"
+	} else if strings.Contains(cpuName, "m1 max") {
+		return "Apple M1 Max GPU"
+	} else if strings.Contains(cpuName, "m1 ultra") {
+		return "Apple M1 Ultra GPU"
+	} else if strings.Contains(cpuName, "m1") {
+		return "Apple M1 GPU"
+	} else if strings.Contains(cpuName, "m2 pro") {
+		return "Apple M2 Pro GPU"
+	} else if strings.Contains(cpuName, "m2 max") {
+		return "Apple M2 Max GPU"
+	} else if strings.Contains(cpuName, "m2 ultra") {
+		return "Apple M2 Ultra GPU"
+	} else if strings.Contains(cpuName, "m2") {
+		return "Apple M2 GPU"
+	} else if strings.Contains(cpuName, "m3 pro") {
+		return "Apple M3 Pro GPU"
+	} else if strings.Contains(cpuName, "m3 max") {
+		return "Apple M3 Max GPU"
+	} else if strings.Contains(cpuName, "m3") {
+		return "Apple M3 GPU"
+	} else if strings.Contains(cpuName, "m4 pro") {
+		return "Apple M4 Pro GPU"
+	} else if strings.Contains(cpuName, "m4 max") {
+		return "Apple M4 Max GPU"
+	} else if strings.Contains(cpuName, "m4") {
+		return "Apple M4 GPU"
+	}
+
+	return "Apple Silicon GPU"
 }
 
 // parseMacGPUInfo 解析macOS GPU信息
