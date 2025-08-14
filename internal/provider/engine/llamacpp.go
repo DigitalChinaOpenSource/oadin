@@ -609,12 +609,6 @@ func (l *llamacppProvider) addModelToConfig(modelName, modelType string) error {
 		return err
 	}
 
-	for key := range config.Models {
-		if key == modelName {
-			return nil
-		}
-	}
-
 	if config.Models == nil {
 		config.Models = map[string]Model{}
 	}
