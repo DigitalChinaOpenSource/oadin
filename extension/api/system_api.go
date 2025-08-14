@@ -36,6 +36,10 @@ func (e *SystemlApi) InjectRoutes(api *gin.RouterGroup) {
 	api.GET("/gpu", e.GetGPUInfo)
 	api.GET("/hardware", e.GetHardwareInfo)
 	api.GET("/hardware/full", e.GetFullHardwareInfo)
+
+	// ollama & openvino 监控
+	api.GET("/ollama/monitor", e.OllamaMonitor)
+	api.GET("/openvino/monitor", e.OpenVinoMonitor)
 }
 
 // About 获取关于信息
@@ -201,6 +205,44 @@ func (e *SystemlApi) GetCPUInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    cpuInfo,
+	})
+}
+
+// OllamaMonitor 获取Ollama监控信息
+func (e *SystemlApi) OllamaMonitor(c *gin.Context) {
+	// 获取Ollama监控信息
+	monitorInfo, err := hardware.GetOllamaMonitor()
+	if err != nil {
+		logger.ApiLogger.Error("Failed to get Ollama monitor information", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "获取Ollama监控信息失败",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    monitorInfo,
+	})
+}
+
+// OpenVinoMonitor 获取OpenVino监控信息
+func (e *SystemlApi) OpenVinoMonitor(c *gin.Context) {
+	// 获取OpenVino监控信息
+	monitorInfo, err := hardware.GetOpenVinoMonitor()
+	if err != nil {
+		logger.ApiLogger.Error("Failed to get OpenVino monitor information", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "获取OpenVino监控信息失败",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    monitorInfo,
 	})
 }
 
