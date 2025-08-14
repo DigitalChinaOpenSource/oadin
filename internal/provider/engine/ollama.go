@@ -376,7 +376,7 @@ func (o *OllamaProvider) InstallEngine() error {
 			}
 		}
 
-	} else {
+	} else if runtime.GOOS == "windows" {
 		if utils.IpexOllamaSupportGPUStatus() {
 			// 解压文件
 			userDir, err := os.UserHomeDir()
@@ -384,31 +384,31 @@ func (o *OllamaProvider) InstallEngine() error {
 				logger.EngineLogger.Error("Get user home dir failed: ", err.Error())
 				return err
 			}
-			ipexPath := userDir
+			ipexPath := filepath.Join(userDir, "ipex-llm-ollama")
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
 					unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
 					if err := unzipCmd.Run(); err != nil {
-						logger.EngineLogger.Error("[Install Engine] model engine install completed err : ", err.Error())
+						logger.EngineLogger.Error("[Install Engine] model engine install completed err : " + err.Error())
 						return fmt.Errorf("failed to unzip file: %v", err)
 					}
 				}
 			}
 
-		} else if runtime.GOOS == "windows" {
-			ipexPath := o.EngineConfig.ExecPath
-			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
-				os.MkdirAll(ipexPath, 0o755)
-				unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
+		} else {
+			filePath := o.EngineConfig.ExecPath
+			if _, err = os.Stat(filePath); os.IsNotExist(err) {
+				os.MkdirAll(filePath, 0o755)
+				unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, filePath)
 				if err := unzipCmd.Run(); err != nil {
-					logger.LogicLogger.Info("[Install Engine] model engine install completed err : ", err.Error())
+					logger.EngineLogger.Info("[Install Engine] model engine install completed err : " + err.Error())
 					return fmt.Errorf("failed to unzip file: %v", err)
 				}
 			}
-		} else {
-			return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 		}
+	} else {
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 	logger.LogicLogger.Info("[Install Engine] model engine install completed")
 	return nil
