@@ -9,3 +9,13 @@ type EngineManageRequest struct {
 	ServiceName   string `json:"service_name"`
 	ServiceSource string `json:"service_source"`
 }
+
+type EngineDownloadRequest struct {
+	EngineName    string `json:"engineName" validate:"required"`
+}
+
+type ModelDownloadRequest struct {
+	EngineName    string `json:"engineName" validate:"required"`
+	ModelName     string `json:"modelName" validate:"required"`
+	ModelType     string `json:"modelType" validate:"required"`
+}

@@ -28,6 +28,7 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+	"encoding/json"
 
 	"oadin/internal/client"
 	"oadin/internal/constants"
@@ -600,4 +601,109 @@ func (o *OllamaProvider) GetOperateStatus() int {
 func (o *OllamaProvider) SetOperateStatus(status int) {
 	OllamaOperateStatus = status
 	slog.Info("Ollama operate status set to", "status", OllamaOperateStatus)
+}
+
+func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan chan []byte, newErrChan chan error) {
+	defer close(newDataChan)
+    defer close(newErrChan)
+
+	execPath := o.EngineConfig.ExecPath
+	fmt.Println("[ollama] Checking if execPath exists:", execPath)
+	if _, err := os.Stat(execPath); err == nil {
+		return
+	}
+
+	// 下载
+	onProgress := func(downloaded, total int64) {
+        if total > 0 {
+			progress := types.ProgressResponse{
+				Status:    "downloading",
+				Total:     total,
+				Completed: downloaded,
+			}
+			if dataBytes, err := json.Marshal(progress); err == nil {
+				newDataChan <- dataBytes
+			}
+        }
+	}
+	file, err := utils.DownloadFileWithProgress(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath, onProgress)
+	if err != nil {
+		newErrChan <- err
+		return 
+	}
+
+	logger.EngineLogger.Info("[Install Engine] start install...")
+	if runtime.GOOS == "darwin" {
+		files, err := os.ReadDir(o.EngineConfig.DownloadPath)
+		if err != nil {
+			logger.EngineLogger.Error("[Install Engine] read dir failed: ", o.EngineConfig.DownloadPath)
+			newErrChan <- err
+			return 
+		}
+		for _, f := range files {
+			if f.IsDir() && f.Name() == "__MACOSX" {
+				fPath := filepath.Join(o.EngineConfig.DownloadPath, f.Name())
+				os.RemoveAll(fPath)
+			}
+		}
+		appPath := filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		if _, err = os.Stat(appPath); os.IsNotExist(err) {
+			unzipCmd := exec.Command(UnzipCommand, file, UnzipDestFlag, o.EngineConfig.DownloadPath)
+			if err := unzipCmd.Run(); err != nil {
+				newErrChan <- err
+				return
+			}
+			appPath = filepath.Join(o.EngineConfig.DownloadPath, "Ollama.app")
+		}
+
+		// move it to Applications
+		applicationPath := filepath.Join("/Applications/", "Ollama.app")
+		if _, err = os.Stat(applicationPath); os.IsNotExist(err) {
+			mvCmd := exec.Command(MoveCommand, appPath, "/Applications/")
+			if err := mvCmd.Run(); err != nil {
+				newErrChan <- err
+				return 
+			}
+		}
+
+	} else {
+		if utils.IpexOllamaSupportGPUStatus() {
+			// 解压文件
+			userDir, err := os.UserHomeDir()
+			if err != nil {
+				newErrChan <- err
+				return 
+			}
+			ipexPath := userDir
+			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
+				os.MkdirAll(ipexPath, 0o755)
+				if runtime.GOOS == "windows" {
+					unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
+					if err := unzipCmd.Run(); err != nil {
+						logger.EngineLogger.Error("[Install Engine] model engine install completed err : ", err.Error())
+						newErrChan <- err
+						return 
+					}
+				}
+			}
+
+		} else if runtime.GOOS == "windows" {
+			ipexPath := o.EngineConfig.ExecPath
+			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
+				os.MkdirAll(ipexPath, 0o755)
+				unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
+				if err := unzipCmd.Run(); err != nil {
+					logger.LogicLogger.Info("[Install Engine] model engine install completed err : ", err.Error())
+					newErrChan <- err
+					return
+				}
+			}
+		} else {
+			err := fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+			newErrChan <- err
+			return
+		}
+	}
+
+	logger.LogicLogger.Info("[ollama] model engine install completed")
 }

@@ -80,4 +80,7 @@ func (e *OadinExtensionServer) injectRoute() {
 
 	systemApi := NewSystemlApi()
 	systemApi.InjectRoutes(e.RootRouter.Group("/system"))
+
+	engineApi := NewEngineApi()
+	engineApi.InjectRoutes(e.RootRouter.Group("/engine"))
 }

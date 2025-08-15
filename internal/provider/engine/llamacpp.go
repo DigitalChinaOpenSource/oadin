@@ -780,3 +780,103 @@ func (l *llamacppProvider) GetOperateStatus() int {
 }
 
 func (l *llamacppProvider) SetOperateStatus(status int) {}
+
+func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh chan []byte, newErrChan chan error) {
+	defer close(newDataCh)
+    defer close(newErrChan)
+
+	execPath := l.EngineConfig.ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		return
+	}
+
+	// 下载
+	onProgress := func(downloaded, total int64) {
+        if total > 0 {
+			progress := types.ProgressResponse{
+				Status:    "downloading",
+				Total:     total,
+				Completed: downloaded,
+			}
+			if dataBytes, err := json.Marshal(progress); err == nil {
+				newDataCh <- dataBytes
+			}
+        }
+	}
+	file, err := utils.DownloadFileWithProgress(l.EngineConfig.DownloadUrl, l.EngineConfig.DownloadPath, onProgress)
+	if err != nil {
+		logger.EngineLogger.Error("[llamacpp] Failed to download file: ", err)
+		newErrChan <- err
+		return 
+	}
+
+	// 解压
+	switch runtime.GOOS {
+	case "windows":
+		// On Win
+		// dows: Extract to the engine directory
+		engineDir := l.EngineConfig.EnginePath
+		if _, err := os.Stat(engineDir); os.IsNotExist(err) {
+			err := os.MkdirAll(engineDir, 0o755)
+			if err != nil {
+				newErrChan <- fmt.Errorf("failed to create engine directory: %v", err)
+				return
+			}
+		}
+
+		// Use PowerShell's Expand-Archive command to extract the ZIP file
+		unzipCmd := exec.Command("powershell", "-Command", fmt.Sprintf("Expand-Archive -Path '%s' -DestinationPath '%s' -Force", file, engineDir))
+		if err := unzipCmd.Run(); err != nil {
+			newErrChan <- fmt.Errorf("failed to unzip file to engine directory: %v", err)
+			return
+		}
+		logger.EngineLogger.Info("[llamacpp] llamacpp extracted to engine directory", "path", engineDir)
+	case "darwin":
+		logger.EngineLogger.Warn("[llamacpp] darwin installation not implemented yet")
+
+	case "linux":
+		logger.EngineLogger.Warn("[llamacpp] Linux installation not implemented yet")
+
+	default:
+		err := fmt.Errorf("[llamacpp] unsupported operating system: %s", runtime.GOOS)
+		newErrChan <- err
+		return
+	}
+
+	// 处理 config.yaml
+	LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
+	if _, err := os.Stat(LlamaSwapConfigFilePath); os.IsNotExist(err) {
+		file, err := os.Create(LlamaSwapConfigFilePath)
+		if err != nil {
+			logger.EngineLogger.Error("[llamacpp] Failed to create config.yaml: ", err.Error())
+			newErrChan <- err
+			return 
+		}
+		defer file.Close()
+
+		defaultConfig := LlamacppSwapServerConfig{
+			StartPort: 10001,
+			LogLevel:  "info",
+			Models:    map[string]Model{},
+			Groups:    map[string]Group{},
+		}
+		data, _ := yaml.Marshal(defaultConfig)
+		err = os.WriteFile(l.getConfigPath(), data, 0o644)
+		if err != nil {
+			newErrChan <- err
+			return 
+		}
+	}
+
+	// 创建models文件夹
+	modelDir := filepath.Join(l.EngineConfig.EnginePath, "models")
+	if _, err := os.Stat(modelDir); os.IsNotExist(err) {
+		err := os.MkdirAll(modelDir, 0o750)
+		if err != nil {
+			newErrChan <- err
+			return
+		}
+	}
+
+	logger.LogicLogger.Info("[llamacpp] model engine install completed")
+}
