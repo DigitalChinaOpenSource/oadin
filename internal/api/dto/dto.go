@@ -132,18 +132,23 @@ type Service struct {
 }
 
 type CreateModelRequest struct {
-	ProviderName  string `json:"provider_name"`
+	ProviderName  string `json:"provider_name" validate:"required"`
 	ModelName     string `json:"model_name" validate:"required"`
 	ServiceName   string `json:"service_name" validate:"required"`
 	ServiceSource string `json:"service_source" validate:"required"`
 	Size          string `json:"size"`
+	AuthType      string `json:"auth_type"`
+	AuthInfo      string `json:"auth_info"`
 }
 
 type CreateModelStreamRequest struct {
-	ProviderName  string `json:"provider_name"`
+	ProviderName  string `json:"provider_name" validate:"required"`
 	ModelName     string `json:"model_name" validate:"required"`
-	ServiceName   string `json:"service_name"`
-	ServiceSource string `json:"service_source"`
+	ServiceName   string `json:"service_name" validate:"required"`
+	ServiceSource string `json:"service_source" validate:"required"`
+	Size          string `json:"size"`
+	AuthType      string `json:"auth_type"`
+	AuthInfo      string `json:"auth_info"`
 }
 
 type SelectDefaultModelRequest struct {
@@ -277,19 +282,18 @@ type CreateServiceProviderRequest struct {
 }
 
 type UpdateServiceProviderRequest struct {
-	ProviderName  string   `json:"provider_name" validate:"required"`
-	ServiceName   string   `json:"service_name"`
-	ServiceSource string   `json:"service_source"`
-	ApiFlavor     string   `json:"api_flavor"`
-	Desc          string   `json:"desc"`
-	Method        string   `json:"method"`
-	Url           string   `json:"url"`
-	AuthType      string   `json:"auth_type"`
-	AuthKey       string   `json:"auth_key"`
-	Models        []string `json:"models"`
-	ExtraHeaders  string   `json:"extra_headers"`
-	ExtraJsonBody string   `json:"extra_json_body"`
-	Properties    string   `json:"properties"`
+	ProviderName  string `json:"provider_name" validate:"required"`
+	ServiceName   string `json:"service_name"`
+	ServiceSource string `json:"service_source"`
+	ApiFlavor     string `json:"api_flavor"`
+	Desc          string `json:"desc"`
+	Method        string `json:"method"`
+	Url           string `json:"url"`
+	AuthType      string `json:"auth_type"`
+	AuthKey       string `json:"auth_key"`
+	ExtraHeaders  string `json:"extra_headers"`
+	ExtraJsonBody string `json:"extra_json_body"`
+	Properties    string `json:"properties"`
 }
 
 type DeleteServiceProviderRequest struct {
