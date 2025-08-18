@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"strings"
 	"net/http"
+	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"oadin/extension/api/dto"
 	"oadin/extension/server"
+	"oadin/internal/utils"
 	"oadin/extension/utils/bcode"
 	"oadin/internal/provider"
 	"oadin/internal/types"
@@ -27,6 +29,7 @@ func (e *EngineApi) InjectRoutes(api *gin.RouterGroup) {
 	api.GET("/exist", e.exist)
 	api.POST("/install", e.install)
 	api.POST("/Download/streamEngine", e.DownloadStreamEngine)
+	api.GET("/Download/checkMemoryConfig", e.CheckMemoryConfig)
 	api.POST("/Download/streamModel", e.DownloadStreamModel)
 }
 
@@ -75,11 +78,12 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 	}
 	modelEngine := provider.GetModelEngine(request.EngineName)
 
-	// 有就是不同批次返回，没有就是同一批出来的
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
-	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	if request.Stream {
+		c.Writer.Header().Set("Content-Type", "text/event-stream")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	}
 
 	ctx := c.Request.Context()
 
@@ -94,6 +98,10 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 	errCh := make(chan error, 1)
 	go modelEngine.InstallEngineStream(ctx, dataCh, errCh)
 
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
 	for {
 		select {
 		case data, ok := <-dataCh:
@@ -101,35 +109,74 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 				select {
 				case err, _ := <-errCh:
 					if err != nil {
-						fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
-						flusher.Flush()
+						res.Status = "error"
+						res.Data = err.Error()
+						if request.Stream {
+							dataBytes, _ := json.Marshal(res)
+							fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+							flusher.Flush()
+						} else {
+							c.JSON(http.StatusInternalServerError, res)
+						}
 						return
 					}
 				}
 				// 数据通道关闭，发送结束标记
 				if data == nil {
-					fmt.Fprintf(w, "data: {\"status\": \"success\"}\n\n")
+					if request.Stream {
+						dataBytes, _ := json.Marshal(res)
+						fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+						flusher.Flush()
+					} else {
+						c.JSON(http.StatusOK, res)
+						modelEngine.StartEngine(types.EngineStartModeDaemon)
+					}
 					return
 				}
 			}
 
-			fmt.Fprintf(w, "data: %s\n\n", string(data))
-			flusher.Flush()
-
+			if request.Stream {
+				fmt.Fprintf(w, "data: %s\n\n", string(data))
+				flusher.Flush()
+			}
 		case err, _ := <-errCh:
 			if err != nil {
-				// 发送错误信息到前端
-				fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
-				flusher.Flush()
+				res.Status = "error"
+				res.Data = err.Error()
+				if request.Stream {
+					dataBytes, _ := json.Marshal(res)
+					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+					flusher.Flush()
+				} else {
+					c.JSON(http.StatusInternalServerError, res)
+				}
 				return
 			}
 
 		case <-ctx.Done():
-			fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"timeout\"}\n\n")
-			flusher.Flush()
+			res.Status = "error"
+			res.Data = "timeout"
+			if request.Stream {
+				dataBytes, _ := json.Marshal(res)
+				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+				flusher.Flush()
+			} else {
+				c.JSON(http.StatusInternalServerError, res)
+			}
 			return
 		}
 	}
+}
+
+func (e *EngineApi) CheckMemoryConfig(c *gin.Context) {
+	// 检查引擎配置
+	memoryInfo, err := utils.GetMemoryInfo()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, memoryInfo)
 }
 
 func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
@@ -142,16 +189,15 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
 		return
 	}
-	if !strings.Contains("ollama,openvino,llamacpp", request.EngineName) {
-		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
-		return
-	}
+
 	modelEngine := provider.GetModelEngine(request.EngineName)
 
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
-	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	if request.Stream {
+		c.Writer.Header().Set("Content-Type", "text/event-stream")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	}
 
 	ctx := c.Request.Context()
 
@@ -169,6 +215,10 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 	// dataCh, errCh := t.Model.CreateModelStream(ctx, request)
 	dataCh, errCh := modelEngine.PullModelStream(ctx, &req)
 
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
 	for {
 		select {
 		case data, ok := <-dataCh:
@@ -176,33 +226,62 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 				select {
 				case err, _ := <-errCh:
 					if err != nil {
-						fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
-						flusher.Flush()
+						res.Status = "error"
+						res.Data = err.Error()
+						if request.Stream {
+							dataBytes, _ := json.Marshal(res)
+							fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+							flusher.Flush()
+						} else {
+							c.JSON(http.StatusInternalServerError, res)
+						}
 						return
 					}
 				}
 				// 数据通道关闭，发送结束标记
 				if data == nil {
-					fmt.Fprintf(w, "data: {\"status\": \"success\"}\n\n")
+					if request.Stream {
+						dataBytes, _ := json.Marshal(res)
+						fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+						flusher.Flush()
+					} else {
+						c.JSON(http.StatusOK, res)
+					}
 					return
 				}
 			}
 
-			fmt.Fprintf(w, "data: %s\n\n", string(data))
-			flusher.Flush()
-
+			if request.Stream {
+				fmt.Fprintf(w, "data: %s\n\n", string(data))
+				flusher.Flush()
+			}
 		case err, _ := <-errCh:
 			if err != nil {
-				// 发送错误信息到前端
-				fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"%v\"}\n\n", err)
-				flusher.Flush()
+				res.Status = "error"
+				res.Data = err.Error()
+				if request.Stream {
+					dataBytes, _ := json.Marshal(res)
+					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+					flusher.Flush()
+				} else {
+					c.JSON(http.StatusInternalServerError, res)
+				}
 				return
 			}
 
 		case <-ctx.Done():
-			fmt.Fprintf(w, "data: {\"status\": \"error\", \"data\":\"timeout\"}\n\n")
-			flusher.Flush()
+			res.Status = "error"
+			res.Data = "timeout"
+			if request.Stream {
+				dataBytes, _ := json.Marshal(res)
+				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+				flusher.Flush()
+			} else {
+				c.JSON(http.StatusInternalServerError, res)
+			}
 			return
 		}
 	}
 }
+
+
