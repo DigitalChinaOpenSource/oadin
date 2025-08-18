@@ -54,10 +54,10 @@ const (
 	WindowsBaseURL     = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-base.zip"
 
 	// Linux download URLs
-	LinuxURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/linux/OllamaSetup.exe"
+	LinuxURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/OllamaSetup.exe"
 
 	// macOS download URLs
-	MacOSIntelURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/macos/Ollama-darwin.zip"
+	MacOSIntelURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/Ollama-darwin.zip"
 
 	// Archive commands
 	TarCommand     = "tar"
@@ -608,7 +608,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
     defer close(newErrChan)
 
 	execPath := o.EngineConfig.ExecPath
-	fmt.Println("[ollama] Checking if execPath exists:", execPath, o.EngineConfig.DownloadUrl)
+	fmt.Println("[ollama] Checking if execPath exists:", execPath, o.EngineConfig.DownloadUrl, MacOSIntelURL)
 	if _, err := os.Stat(execPath); err == nil {
 		return
 	}

@@ -238,17 +238,17 @@ func DownloadFileWithProgress(downloadURL string, saveDir string, onProgress fun
 
     resp, err := client.Get(downloadURL)
     if err != nil {
-        return "", fmt.Errorf("failed to download file: %v", err)
+        return "", fmt.Errorf("failed to download file: %v, url: %s", err, downloadURL)
     }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        return "", fmt.Errorf("failed to download file: HTTP status %s", resp.Status)
+        return "", fmt.Errorf("failed to download file: HTTP status %s, url: %s", resp.Status, downloadURL)
     }
 
     file, err := os.Create(savePath)
     if err != nil {
-        return "", fmt.Errorf("failed to create file: %v", err)
+        return "", fmt.Errorf("failed to create file: %v, url: %s", err, downloadURL)
     }
     defer file.Close()
 
