@@ -608,7 +608,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
     defer close(newErrChan)
 
 	execPath := o.EngineConfig.ExecPath
-	fmt.Println("[ollama] Checking if execPath exists:", execPath, o.EngineConfig.DownloadUrl, MacOSIntelURL)
+	fmt.Println("[ollama] Checking if execPath exists:", execPath, o.EngineConfig.DownloadUrl)
 	if _, err := os.Stat(execPath); err == nil {
 		return
 	}
