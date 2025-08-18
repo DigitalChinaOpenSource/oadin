@@ -302,7 +302,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		downloadUrl = LinuxURL
 	case "darwin":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources")
+		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", execFile)
 		downloadUrl = MacOSIntelURL
 	default:
 		return nil
@@ -608,7 +608,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
     defer close(newErrChan)
 
 	execPath := o.EngineConfig.ExecPath
-	fmt.Println("[ollama] Checking if execPath exists:", execPath)
+	fmt.Println("[ollama] Checking if execPath exists:", execPath, o.EngineConfig.DownloadUrl)
 	if _, err := os.Stat(execPath); err == nil {
 		return
 	}
