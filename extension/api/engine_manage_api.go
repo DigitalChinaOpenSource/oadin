@@ -1,18 +1,25 @@
 package api
 
 import (
-	"encoding/json"
+	"context"
+	"enco
 	"fmt"
 	"net/http"
-	"oadin/internal/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"oadin/extension/api/dto"
+onic/gin"
+	"oadin/config"
+
 	"oadin/extension/server"
+	"oadin/extension/serve
+	"oadin/internal/utils"
 	"oadin/extension/utils/bcode"
-	"oadin/internal/provider"
-	"oadin/internal/types"
+api/dto"
+	"oadin/internal/
+	"oadin/version"
+	"oadin/config"
+	dto2 "oadin/internal/api/dto"
 )
 
 type EngineApi struct {
@@ -109,9 +116,16 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 				// 数据通道关闭，发送结束标记
 				err := modelEngine.HealthCheck()
 				if err != nil {
-					modelEngine.InitEnv()
-					modelEngine.StartEngine(types.EngineStartModeDaemon)
+					err = modelEngine.InitEnv()
+					if err != nil {
+						res.Status = "error"
+					}
+					err = modelEngine.StartEngine(types.EngineStartModeDaemon)
+					if err != nil {
+						res.Status = "error"
+					}
 				}
+
 				if request.Stream {
 					dataBytes, _ := json.Marshal(res)
 					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -208,21 +222,22 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		select {
 		case data, ok := <-dataCh:
 			if !ok {
-				select {
-				case err, _ := <-errCh:
-					if err != nil {
-						res.Status = "error"
-						res.Data = err.Error()
-						if request.Stream {
-							dataBytes, _ := json.Marshal(res)
-							fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-							flusher.Flush()
-						} else {
-							c.JSON(http.StatusInternalServerError, res)
-						}
-						return
-					}
+				// 更新service表和model表
+				newC := config.NewOADINClient()
+					ServiceName:   request.ModelType,
+
+					ApiFlavor:     request.EngineName,
+					ModelName:     request.ModelName,
+					ServiceSource: "local",
+					ApiFlavor: request.EngineName,
+					ModelName: request.ModelName,
 				}
+				newResp := bcode.Bcode{}
+				err := newC.Client.Do(context.Background(), http.MethodPost, routerPath, newReq, &newResp)
+				if err != nil {
+					fmt.Printf("\rService install failed: %s", err.Error())
+				}
+
 				// 数据通道关闭，发送结束标记
 				if data == nil {
 					if request.Stream {

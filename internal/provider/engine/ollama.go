@@ -646,7 +646,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 		newErrChan <- err
 		return
 	}
-
+	time.Sleep(3 * time.Second)
 	logger.EngineLogger.Info("[Install Engine] start install...")
 	if runtime.GOOS == "darwin" {
 		files, err := os.ReadDir(o.EngineConfig.DownloadPath)
