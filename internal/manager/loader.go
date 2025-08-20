@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"os"
 
 	"oadin/internal/logger"
 	"oadin/internal/provider"
@@ -492,6 +493,11 @@ func (l *Loader) InitializeRunningModels() {
 	for _, flavor := range supportedProviders {
 		providerInstance := provider.GetModelEngine(flavor)
 		if providerInstance == nil {
+			continue
+		}
+		
+		execPath := providerInstance.GetConfig().ExecPath
+		if _, err := os.Stat(execPath); err != nil {
 			continue
 		}
 

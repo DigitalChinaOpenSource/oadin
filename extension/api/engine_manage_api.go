@@ -106,36 +106,23 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 		select {
 		case data, ok := <-dataCh:
 			if !ok {
-				select {
-				case err, _ := <-errCh:
-					if err != nil {
-						res.Status = "error"
-						res.Data = err.Error()
-						if request.Stream {
-							dataBytes, _ := json.Marshal(res)
-							fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-							flusher.Flush()
-						} else {
-							c.JSON(http.StatusInternalServerError, res)
-						}
-						return
-					}
-				}
 				// 数据通道关闭，发送结束标记
-				if data == nil {
-					if request.Stream {
-						dataBytes, _ := json.Marshal(res)
-						fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-						flusher.Flush()
-					} else {
-						c.JSON(http.StatusOK, res)
-						modelEngine.StartEngine(types.EngineStartModeDaemon)
-					}
-					return
+				err := modelEngine.HealthCheck()
+				if err != nil {
+					modelEngine.InitEnv()
+					modelEngine.StartEngine(types.EngineStartModeDaemon)
 				}
+				if request.Stream {
+					dataBytes, _ := json.Marshal(res)
+					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+					flusher.Flush()
+				} else {
+					c.JSON(http.StatusOK, res)
+				}
+				return
 			}
 
-			if request.Stream {
+			if request.Stream && data != nil {
 				fmt.Fprintf(w, "data: %s\n\n", string(data))
 				flusher.Flush()
 			}
@@ -150,9 +137,7 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 				} else {
 					c.JSON(http.StatusInternalServerError, res)
 				}
-				return
 			}
-
 		case <-ctx.Done():
 			res.Status = "error"
 			res.Data = "timeout"
@@ -251,7 +236,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 				}
 			}
 
-			if request.Stream {
+			if request.Stream && data != nil {
 				fmt.Fprintf(w, "data: %s\n\n", string(data))
 				flusher.Flush()
 			}
