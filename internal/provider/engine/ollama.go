@@ -29,7 +29,6 @@ import (
 	"strconv"
 	"time"
 	"encoding/json"
-	"strings"
 
 	"oadin/internal/client"
 	"oadin/internal/constants"
@@ -632,7 +631,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 		newErrChan <- err
 		return 
 	}
-
+	time.Sleep(3 * time.Second)
 	logger.EngineLogger.Info("[Install Engine] start install...")
 	if runtime.GOOS == "darwin" {
 		files, err := os.ReadDir(o.EngineConfig.DownloadPath)
@@ -680,13 +679,6 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
 					unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
-					// 打印该命令---------
-					// logger.EngineLogger.Info("unzipCmd string: ", strings.Join(unzipCmd.Args, " "))
-					// err := fmt.Errorf("unzipCmd stop")
-					// newErrChan <- err
-					// logger.EngineLogger.Info("unzipCmd stop")
-					// return
-					// 打印该命令---------
 					if err := unzipCmd.Run(); err != nil {
 						logger.EngineLogger.Error("[Install Engine] model engine install completed err : ", err.Error())
 						newErrChan <- err
