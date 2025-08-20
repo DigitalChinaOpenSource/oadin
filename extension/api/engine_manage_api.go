@@ -28,9 +28,9 @@ func NewEngineApi() *EngineApi {
 func (e *EngineApi) InjectRoutes(api *gin.RouterGroup) {
 	api.GET("/exist", e.exist)
 	api.POST("/install", e.install)
-	api.POST("/Download/streamEngine", e.DownloadStreamEngine)
-	api.GET("/Download/checkMemoryConfig", e.CheckMemoryConfig)
-	api.POST("/Download/streamModel", e.DownloadStreamModel)
+	api.POST("/download/streamEngine", e.DownloadStreamEngine)
+	api.GET("/download/checkMemoryConfig", e.CheckMemoryConfig)
+	api.POST("/download/streamModel", e.DownloadStreamModel)
 }
 
 // exist 检查引擎是否存在
