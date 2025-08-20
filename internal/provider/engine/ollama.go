@@ -689,7 +689,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 				newErrChan <- err
 				return
 			}
-			ipexPath := userDir
+			ipexPath := filepath.Join(userDir, "ipex-llm-ollama")
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
@@ -720,7 +720,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 		}
 	}
 
-	logger.LogicLogger.Info("[ollama] model engine install completed")
+	logger.EngineLogger.Info("[ollama] model engine install completed")
 }
 
 func (o *OllamaProvider) InstallEngineExtraDepends(ctx context.Context) error {

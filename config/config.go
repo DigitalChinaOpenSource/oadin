@@ -46,7 +46,7 @@ const (
 	LogLevelError = "error"
 
 	// Default configurations
-	DefaultLogLevel = "debug"
+	DefaultLogLevel = "info"
 	DefaultVerbose  = "info"
 	DefaultRootDir  = "./"
 
