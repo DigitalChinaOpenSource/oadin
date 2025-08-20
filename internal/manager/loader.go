@@ -3,10 +3,10 @@ package manager
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"os"
-	
 	"sync"
-	"os"
 
 	"oadin/internal/logger"
 	"oadin/internal/provider"
@@ -496,16 +496,16 @@ func (l *Loader) InitializeRunningModels() {
 		if providerInstance == nil {
 			continue
 
-		
-		execPath := providerInstance.GetConfig().ExecPath
-		if _, err := os.Stat(execPath); err != nil {
-			continue
+			execPath := providerInstance.GetConfig().ExecPath
+			if _, err := os.Stat(execPath); err != nil {
+				continue
+			}
+
+			l.cleanupProviderModels(flavor, providerInstance)
 		}
 
-		l.cleanupProviderModels(flavor, providerInstance)
+		logger.LogicLogger.Info("[Loader] Initialization complete - all running models cleaned up")
 	}
-
-	logger.LogicLogger.Info("[Loader] Initialization complete - all running models cleaned up")
 }
 
 // cleanupProviderModels 清理指定provider的运行模型
