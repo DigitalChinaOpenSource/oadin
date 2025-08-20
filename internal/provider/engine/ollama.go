@@ -18,6 +18,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -28,7 +29,6 @@ import (
 	"runtime"
 	"strconv"
 	"time"
-	"encoding/json"
 
 	"oadin/internal/client"
 	"oadin/internal/constants"
@@ -47,11 +47,13 @@ const (
 	OllamaBatchFile = "ollama-serve.bat"
 
 	// Windows download URLs
-	WindowsAllGPUURL   = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-all.zip"
-	WindowsNvidiaURL   = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64.zip"
-	WindowsAMDURL      = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm.zip"
-	WindowsIntelArcURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ipex-llm-ollama.zip"
-	WindowsBaseURL     = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-base.zip"
+	WindowsAllGPUURL        = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-all.zip"
+	WindowsNvidiaURL        = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64.zip"
+	WindowsAMDURL           = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm.zip"
+	WindowsIntelArcURL      = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ipex-llm-ollama.zip"
+	WindowsBaseURL          = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-base.zip"
+	WindowsDDLDependsX64URL = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+	WindowsDDLDependsX86URL = "https://aka.ms/vs/17/release/vc_redist.x86.exe"
 
 	// Linux download URLs
 	LinuxURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/OllamaSetup.exe"
@@ -67,6 +69,15 @@ const (
 	UnzipDestFlag  = "-d"
 	MoveCommand    = "mv"
 )
+
+var OllamaDDLDependsList = []string{
+	"vcruntime140.dll",
+	"vcruntime140_1.dll",
+	"msvcp140.dll",
+	"msvcp140_1.dll",
+	"msvcp140_2.dll",
+	"concrt140.dll",
+}
 
 type OllamaProvider struct {
 	EngineConfig *types.EngineRecommendConfig
@@ -408,6 +419,10 @@ func (o *OllamaProvider) InstallEngine() error {
 				}
 			}
 		}
+		err = o.InstallEngineExtraDepends(context.Background())
+		if err != nil {
+			return fmt.Errorf("[Install Engine DDL Depends] completed")
+		}
 	} else {
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
@@ -605,7 +620,7 @@ func (o *OllamaProvider) SetOperateStatus(status int) {
 
 func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan chan []byte, newErrChan chan error) {
 	defer close(newDataChan)
-    defer close(newErrChan)
+	defer close(newErrChan)
 
 	execPath := o.EngineConfig.ExecPath
 	fmt.Println("[ollama] Checking if execPath exists:", execPath, o.EngineConfig.DownloadUrl)
@@ -615,7 +630,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 
 	// 下载
 	onProgress := func(downloaded, total int64) {
-        if total > 0 {
+		if total > 0 {
 			progress := types.ProgressResponse{
 				Status:    "downloading",
 				Total:     total,
@@ -624,12 +639,12 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 			if dataBytes, err := json.Marshal(progress); err == nil {
 				newDataChan <- dataBytes
 			}
-        }
+		}
 	}
 	file, err := utils.DownloadFileWithProgress(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath, onProgress)
 	if err != nil {
 		newErrChan <- err
-		return 
+		return
 	}
 
 	logger.EngineLogger.Info("[Install Engine] start install...")
@@ -638,7 +653,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 		if err != nil {
 			logger.EngineLogger.Error("[Install Engine] read dir failed: ", o.EngineConfig.DownloadPath)
 			newErrChan <- err
-			return 
+			return
 		}
 		for _, f := range files {
 			if f.IsDir() && f.Name() == "__MACOSX" {
@@ -662,7 +677,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 			mvCmd := exec.Command(MoveCommand, appPath, "/Applications/")
 			if err := mvCmd.Run(); err != nil {
 				newErrChan <- err
-				return 
+				return
 			}
 		}
 
@@ -672,7 +687,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 			userDir, err := os.UserHomeDir()
 			if err != nil {
 				newErrChan <- err
-				return 
+				return
 			}
 			ipexPath := userDir
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
@@ -682,7 +697,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 					if err := unzipCmd.Run(); err != nil {
 						logger.EngineLogger.Error("[Install Engine] model engine install completed err : ", err.Error())
 						newErrChan <- err
-						return 
+						return
 					}
 				}
 			}
@@ -706,4 +721,35 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 	}
 
 	logger.LogicLogger.Info("[ollama] model engine install completed")
+}
+
+func (o *OllamaProvider) InstallEngineExtraDepends(ctx context.Context) error {
+	// check ddl file exists
+	missingList := []string{}
+	for _, f := range OllamaDDLDependsList {
+		checkStatus := utils.CheckDllExists(f)
+		if !checkStatus {
+			missingList = append(missingList, f)
+		}
+	}
+	if len(missingList) > 0 {
+		// download ddl depends
+		var downloadUrl string
+		if runtime.GOARCH == "amd64" {
+			downloadUrl = WindowsDDLDependsX64URL
+		} else {
+			downloadUrl = WindowsDDLDependsX86URL
+		}
+		file, err := utils.DownloadFile(downloadUrl, o.EngineConfig.ExecPath)
+		if err != nil {
+			logger.LogicLogger.Error("[Install Engine DDL Depends] download url failed: ", downloadUrl)
+			return err
+		}
+		logger.EngineLogger.Info("[Install Engine DDL Depends] install Successfully")
+		cmd := exec.Command(file, "/quiet", "/norestart")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	}
+	return nil
 }

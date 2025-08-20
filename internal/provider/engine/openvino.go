@@ -317,8 +317,8 @@ func downloadSingleFile(ctx context.Context, a AsyncDownloadModelFileData, fileD
 	// 下载内容
 	digest := sha256.New()
 	// 进度推送相关变量
-    const progressThreshold = 10 * 1024 * 1024 // 10MB
-    var lastProgressSize int64 = 0            // 上次推送进度时的大小
+	const progressThreshold = 10 * 1024 * 1024 // 10MB
+	var lastProgressSize int64 = 0             // 上次推送进度时的大小
 
 	for {
 		select {
@@ -362,19 +362,19 @@ func downloadSingleFile(ctx context.Context, a AsyncDownloadModelFileData, fileD
 			partSize += int64(n)
 
 			// 写入进度
-            // 检查是否需要推送进度（每10MB推送一次，或者文件下载完成时推送）
-            if partSize-lastProgressSize >= progressThreshold || partSize == fileData.Size {
-                progress := types.ProgressResponse{
-                    Status:    fmt.Sprintf("pulling %s", fileData.Name),
-                    Digest:    fileData.Digest,
-                    Total:     fileData.Size,
-                    Completed: partSize,
-                }
-                if dataBytes, err := json.Marshal(progress); err == nil {
-                    a.DataCh <- dataBytes
-                }
-                lastProgressSize = partSize // 更新上次推送进度的大小
-            }
+			// 检查是否需要推送进度（每10MB推送一次，或者文件下载完成时推送）
+			if partSize-lastProgressSize >= progressThreshold || partSize == fileData.Size {
+				progress := types.ProgressResponse{
+					Status:    fmt.Sprintf("pulling %s", fileData.Name),
+					Digest:    fileData.Digest,
+					Total:     fileData.Size,
+					Completed: partSize,
+				}
+				if dataBytes, err := json.Marshal(progress); err == nil {
+					a.DataCh <- dataBytes
+				}
+				lastProgressSize = partSize // 更新上次推送进度的大小
+			}
 		case err := <-reqErrCh:
 			if err != nil {
 				return err
@@ -1229,7 +1229,7 @@ func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRe
 
 func (o *OpenvinoProvider) InstallEngineStream(ctx context.Context, newDataChan chan []byte, newErrChan chan error) {
 	defer close(newDataChan)
-    defer close(newErrChan)
+	defer close(newErrChan)
 
 	execPath := o.EngineConfig.ExecPath
 	fmt.Println("[OpenVINO] Checking if execPath exists:", execPath)
@@ -1268,7 +1268,7 @@ func (o *OpenvinoProvider) InstallEngineStream(ctx context.Context, newDataChan 
 	}
 
 	onProgress := func(downloaded, total int64) {
-        if total > 0 {
+		if total > 0 {
 			progress := types.ProgressResponse{
 				Status:    "downloading",
 				Total:     total,
@@ -1277,7 +1277,7 @@ func (o *OpenvinoProvider) InstallEngineStream(ctx context.Context, newDataChan 
 			if dataBytes, err := json.Marshal(progress); err == nil {
 				newDataChan <- dataBytes
 			}
-        }
+		}
 	}
 	file, err := utils.DownloadFileWithProgress(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath, onProgress)
 	if err != nil {
@@ -1351,4 +1351,8 @@ func (o *OpenvinoProvider) InstallEngineStream(ctx context.Context, newDataChan 
 	}
 
 	logger.EngineLogger.Info("[OpenVINO] OpenVINO Model Server install completed")
+}
+
+func (o *OpenvinoProvider) InstallEngineExtraDepends(ctx context.Context) error {
+	return nil
 }
