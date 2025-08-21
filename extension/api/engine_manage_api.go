@@ -35,6 +35,7 @@ func (e *EngineApi) InjectRoutes(api *gin.RouterGroup) {
 	api.POST("/download/streamEngine", e.DownloadStreamEngine)
 	api.GET("/download/checkMemoryConfig", e.CheckMemoryConfig)
 	api.POST("/download/streamModel", e.DownloadStreamModel)
+	api.GET("/download/checkDist", e.DownloadCheckDist)
 }
 
 // exist 检查引擎是否存在
@@ -305,6 +306,46 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			return
 		}
 	}
+}
+
+func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
+	request := dto.EngineDownloadRequest{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		dto.ValidFailure(c, err.Error())
+		return
+	}
+	if !strings.Contains("ollama,openvino,llamacpp", request.EngineName) {
+		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
+		return
+	}
+
+	modelEngine := provider.GetModelEngine(request.EngineName)
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
+
+	err := modelEngine.HealthCheck()
+	if err != nil {
+		res.Status = "error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	modelList, err := modelEngine.ListModels(c)
+	if err != nil {
+		res.Status = "error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	if modelList == nil || len(modelList.Models) == 0 {
+		res.Status = "error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }
 
 
