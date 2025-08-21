@@ -622,12 +622,6 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 	defer close(newDataChan)
 	defer close(newErrChan)
 
-	execPath := o.EngineConfig.ExecPath
-	fmt.Println("[ollama] Checking if execPath exists:", execPath, o.EngineConfig.DownloadUrl)
-	if _, err := os.Stat(execPath); err == nil {
-		return
-	}
-
 	// 下载
 	onProgress := func(downloaded, total int64) {
 		if total > 0 {
@@ -646,7 +640,6 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 		newErrChan <- err
 		return
 	}
-	time.Sleep(3 * time.Second)
 	logger.EngineLogger.Info("[Install Engine] start install...")
 	if runtime.GOOS == "darwin" {
 		files, err := os.ReadDir(o.EngineConfig.DownloadPath)
@@ -696,6 +689,16 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 					unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
 					if err := unzipCmd.Run(); err != nil {
 						logger.EngineLogger.Error("[Install Engine] model engine install completed err : ", err.Error())
+						newErrChan <- err
+						return
+					}
+				}
+			} else {
+				execPath := filepath.Join(o.GetConfig().ExecPath, o.GetConfig().ExecFile)
+				if _, err = os.Stat(execPath); os.IsNotExist(err) {
+					unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
+					if err := unzipCmd.Run(); err != nil {
+						logger.EngineLogger.Error("[Install Engine] model engine install completed err 2: ", err.Error())
 						newErrChan <- err
 						return
 					}

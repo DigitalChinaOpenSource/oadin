@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"oadin/extension/api/dto"
@@ -102,7 +103,8 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 		Status: "success",
 	}
 
-	execPath := modelEngine.GetConfig().ExecPath
+	execPath := filepath.Join(modelEngine.GetConfig().ExecPath, modelEngine.GetConfig().ExecFile)
+	fmt.Printf("execPath: %s", execPath)
 	if _, err := os.Stat(execPath); err == nil {
 		if request.Stream {
 			dataBytes, _ := json.Marshal(res)
@@ -123,16 +125,18 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 		case data, ok := <-dataCh:
 			if !ok {
 				// 数据通道关闭，发送结束标记
-				err := modelEngine.HealthCheck()
-				if err != nil {
+				if _, err := os.Stat(execPath); err == nil {
 					err = modelEngine.InitEnv()
 					if err != nil {
 						res.Status = "error"
+					} else {
+						err := modelEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							res.Status = "error"
+						}
 					}
-					err = modelEngine.StartEngine(types.EngineStartModeDaemon)
-					if err != nil {
-						res.Status = "error"
-					}
+				} else {
+					res.Status = "error"
 				}
 
 				if request.Stream {
@@ -214,6 +218,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		return
 	}
 
+	logger.EngineLogger.Info("DownloadStreamModel request: ", request)
 	modelEngine := provider.GetModelEngine(request.EngineName)
 
 	res := dto.DownloadResponse{
