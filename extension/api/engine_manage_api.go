@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"oadin/extension/api/dto"
@@ -34,6 +35,7 @@ func (e *EngineApi) InjectRoutes(api *gin.RouterGroup) {
 	api.POST("/download/streamEngine", e.DownloadStreamEngine)
 	api.GET("/download/checkMemoryConfig", e.CheckMemoryConfig)
 	api.POST("/download/streamModel", e.DownloadStreamModel)
+	api.POST("/download/checkDist", e.DownloadCheckDist)
 }
 
 // exist 检查引擎是否存在
@@ -102,7 +104,8 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 		Status: "success",
 	}
 
-	execPath := modelEngine.GetConfig().ExecPath
+	execPath := filepath.Join(modelEngine.GetConfig().ExecPath, modelEngine.GetConfig().ExecFile)
+	fmt.Printf("execPath: %s", execPath)
 	if _, err := os.Stat(execPath); err == nil {
 		if request.Stream {
 			dataBytes, _ := json.Marshal(res)
@@ -123,16 +126,18 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 		case data, ok := <-dataCh:
 			if !ok {
 				// 数据通道关闭，发送结束标记
-				err := modelEngine.HealthCheck()
-				if err != nil {
+				if _, err := os.Stat(execPath); err == nil {
 					err = modelEngine.InitEnv()
 					if err != nil {
 						res.Status = "error"
+					} else {
+						err := modelEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							res.Status = "error"
+						}
 					}
-					err = modelEngine.StartEngine(types.EngineStartModeDaemon)
-					if err != nil {
-						res.Status = "error"
-					}
+				} else {
+					res.Status = "error"
 				}
 
 				if request.Stream {
@@ -214,6 +219,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		return
 	}
 
+	logger.EngineLogger.Info("DownloadStreamModel request: ", request)
 	modelEngine := provider.GetModelEngine(request.EngineName)
 
 	res := dto.DownloadResponse{
@@ -300,6 +306,46 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			return
 		}
 	}
+}
+
+func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
+	request := dto.DownloadCheckDistRequest{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		dto.ValidFailure(c, err.Error())
+		return
+	}
+	if !strings.Contains("ollama,openvino,llamacpp", request.EngineName) {
+		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
+		return
+	}
+
+	modelEngine := provider.GetModelEngine(request.EngineName)
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
+
+	err := modelEngine.HealthCheck()
+	if err != nil {
+		res.Status = "error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	modelList, err := modelEngine.ListModels(c)
+	if err != nil {
+		res.Status = "error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	if modelList == nil || len(modelList.Models) == 0 {
+		res.Status = "error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }
 
 
