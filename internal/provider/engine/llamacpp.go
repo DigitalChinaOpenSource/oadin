@@ -783,7 +783,7 @@ func (l *llamacppProvider) SetOperateStatus(status int) {}
 
 func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh chan []byte, newErrChan chan error) {
 	defer close(newDataCh)
-    defer close(newErrChan)
+	defer close(newErrChan)
 
 	execPath := l.EngineConfig.ExecPath
 	if _, err := os.Stat(execPath); err == nil {
@@ -792,7 +792,7 @@ func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh ch
 
 	// 下载
 	onProgress := func(downloaded, total int64) {
-        if total > 0 {
+		if total > 0 {
 			progress := types.ProgressResponse{
 				Status:    "downloading",
 				Total:     total,
@@ -801,13 +801,13 @@ func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh ch
 			if dataBytes, err := json.Marshal(progress); err == nil {
 				newDataCh <- dataBytes
 			}
-        }
+		}
 	}
 	file, err := utils.DownloadFileWithProgress(l.EngineConfig.DownloadUrl, l.EngineConfig.DownloadPath, onProgress)
 	if err != nil {
 		logger.EngineLogger.Error("[llamacpp] Failed to download file: ", err)
 		newErrChan <- err
-		return 
+		return
 	}
 
 	// 解压
@@ -850,7 +850,7 @@ func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh ch
 		if err != nil {
 			logger.EngineLogger.Error("[llamacpp] Failed to create config.yaml: ", err.Error())
 			newErrChan <- err
-			return 
+			return
 		}
 		defer file.Close()
 
@@ -864,7 +864,7 @@ func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh ch
 		err = os.WriteFile(l.getConfigPath(), data, 0o644)
 		if err != nil {
 			newErrChan <- err
-			return 
+			return
 		}
 	}
 
@@ -879,4 +879,8 @@ func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh ch
 	}
 
 	logger.LogicLogger.Info("[llamacpp] model engine install completed")
+}
+
+func (o *llamacppProvider) InstallEngineExtraDepends(ctx context.Context) error {
+	return nil
 }
