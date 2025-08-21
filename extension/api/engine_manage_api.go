@@ -5,7 +5,7 @@ import (
 	"strings"
 	"net/http"
 	"encoding/json"
-	"context"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"oadin/extension/api/dto"
@@ -14,9 +14,8 @@ import (
 	"oadin/extension/utils/bcode"
 	"oadin/internal/provider"
 	"oadin/internal/types"
-	"oadin/version"
-	"oadin/config"
 	dto2 "oadin/internal/api/dto"
+	"oadin/internal/logger"
 )
 
 type EngineApi struct {
@@ -80,7 +79,6 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
 		return
 	}
-	modelEngine := provider.GetModelEngine(request.EngineName)
 
 	if request.Stream {
 		c.Writer.Header().Set("Content-Type", "text/event-stream")
@@ -98,13 +96,27 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 		return
 	}
 
-	dataCh := make(chan []byte, 100)
-	errCh := make(chan error, 1)
-	go modelEngine.InstallEngineStream(ctx, dataCh, errCh)
+	modelEngine := provider.GetModelEngine(request.EngineName)
 
 	res := dto.DownloadResponse{
 		Status: "success",
 	}
+
+	execPath := modelEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		if request.Stream {
+			dataBytes, _ := json.Marshal(res)
+			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+			flusher.Flush()
+		} else {
+			c.JSON(http.StatusOK, res)
+		}
+		return
+	}
+
+	dataCh := make(chan []byte, 100)
+	errCh := make(chan error, 1)
+	go modelEngine.InstallEngineStream(ctx, dataCh, errCh)
 
 	for {
 		select {
@@ -186,8 +198,6 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		return
 	}
 
-	modelEngine := provider.GetModelEngine(request.EngineName)
-
 	if request.Stream {
 		c.Writer.Header().Set("Content-Type", "text/event-stream")
 		c.Writer.Header().Set("Cache-Control", "no-cache")
@@ -204,6 +214,23 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		return
 	}
 
+	modelEngine := provider.GetModelEngine(request.EngineName)
+
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
+	if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
+		if request.Stream {
+			dataBytes, _ := json.Marshal(res)
+			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+			flusher.Flush()
+		} else {
+			c.JSON(http.StatusOK, res)
+		}
+		return
+	}
+
 	req := types.PullModelRequest{
 		Model:    request.ModelName,
 		ModelType: request.ModelType,
@@ -211,32 +238,26 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 	// dataCh, errCh := t.Model.CreateModelStream(ctx, request)
 	dataCh, errCh := modelEngine.PullModelStream(ctx, &req)
 
-	res := dto.DownloadResponse{
-		Status: "success",
-	}
-
 	for {
 		select {
 		case data, ok := <-dataCh:
 			if !ok {
-				// 更新service表和model表
-				newC := config.NewOADINClient()
-				routerPath := fmt.Sprintf("/oadin/%s/service/install", version.OADINSpecVersion)
-
-				newReq := &dto2.CreateAIGCServiceRequest{
-					ServiceName: request.ModelType,
-					ServiceSource: "local",
-					ApiFlavor: request.EngineName,
-					ModelName: request.ModelName,
-				}
-				newResp := bcode.Bcode{}
-				err := newC.Client.Do(context.Background(), http.MethodPost, routerPath, newReq, &newResp)
-				if err != nil {
-					fmt.Printf("\rService install failed: %s", err.Error())
-				}
-
 				// 数据通道关闭，发送结束标记
 				if data == nil {
+					// 更新service表和model表
+					newReq := &dto2.CreateAIGCServiceRequest{
+						ServiceName: request.ModelType,
+						ServiceSource: "local",
+						ApiFlavor: request.EngineName,
+						ModelName: request.ModelName,
+					}
+					logger.EngineLogger.Info("CreateAIGCServiceSync newReq: ", newReq)
+					err := e.EngineManageService.CreateAIGCServiceSync(ctx, newReq)
+					if err != nil {
+						logger.EngineLogger.Error("CreateAIGCServiceSync error: ", err)
+						return
+					}
+
 					if request.Stream {
 						dataBytes, _ := json.Marshal(res)
 						fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
