@@ -3,11 +3,11 @@
 !endif
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
-!define INSTALL_DIR "$PROFILE\Oadin"
+!define INSTALL_DIR "$PROGRAMFILES\Oadin"
 
 Outfile "..\..\oadin-installer.exe"
 InstallDir "${INSTALL_DIR}"
-RequestExecutionLevel user ; Install to user's profile, so no admin rights needed by default
+RequestExecutionLevel admin ; Admin rights required for Program Files installation
 SetCompress auto
 SetCompressor lzma
 
@@ -17,6 +17,9 @@ Section "Install"
   File "preinstall.bat"
   File "postinstall.bat"
   File "start-oadin.bat"
+
+  # Create data directory in ProgramData
+  CreateDirectory "$COMMONAPPDATA\Oadin"
 
   # Pre-install silently
   nsExec::Exec '"$INSTDIR\preinstall.bat"'

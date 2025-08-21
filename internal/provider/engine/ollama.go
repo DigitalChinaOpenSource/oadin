@@ -23,6 +23,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"oadin/internal/utils/directory"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -264,11 +265,14 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		return o.EngineConfig
 	}
 
-	userDir, err := os.UserHomeDir()
+	// 此处改造成使用program files目录
+	executableDir, err := directory.GetWindowsPaths()
+
 	if err != nil {
 		logger.EngineLogger.Error("[Ollama] Get user home dir failed: ", err.Error())
 		return nil
 	}
+	homeDir, err := os.UserHomeDir()
 
 	downloadPath, _ := utils.GetDownloadDir()
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
@@ -278,11 +282,8 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			return nil
 		}
 	}
-	dataDir, err := utils.GetOADINDataDir()
-	if err != nil {
-		slog.Error("Get Byze data dir failed", "error", err)
-		return nil
-	}
+	// 模型文件的路径
+	dataDir := executableDir.ProgramData + "/Oadin"
 
 	execFile := ""
 	execPath := ""
@@ -291,7 +292,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	switch runtime.GOOS {
 	case "windows":
 		execFile = "ollama.exe"
-		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+		execPath = fmt.Sprintf("%s/%s", executableDir.ProgramFiles, "/Oadin/ollama")
 
 		switch utils.DetectGpuModel() {
 		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
@@ -301,7 +302,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		case types.GPUTypeAmd:
 			downloadUrl = WindowsAMDURL
 		case types.GPUTypeIntelArc:
-			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			execPath = fmt.Sprintf("%s/%s", executableDir.ProgramFiles, "/Oadin/ipex-llm-ollama")
 			downloadUrl = WindowsIntelArcURL
 		default:
 			downloadUrl = WindowsBaseURL
@@ -309,7 +310,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 
 	case "linux":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+		execPath = fmt.Sprintf("%s/%s", homeDir, "ollama")
 		downloadUrl = LinuxURL
 	case "darwin":
 		execFile = "ollama"
@@ -391,12 +392,11 @@ func (o *OllamaProvider) InstallEngine() error {
 	} else if runtime.GOOS == "windows" {
 		if utils.IpexOllamaSupportGPUStatus() {
 			// 解压文件
-			userDir, err := os.UserHomeDir()
 			if err != nil {
 				logger.EngineLogger.Error("Get user home dir failed: ", err.Error())
 				return err
 			}
-			ipexPath := filepath.Join(userDir, "ipex-llm-ollama")
+			ipexPath := filepath.Join(o.GetConfig().ExecPath, "ipex-llm-ollama")
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
@@ -684,12 +684,13 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 	} else {
 		if utils.IpexOllamaSupportGPUStatus() {
 			// 解压文件
-			userDir, err := os.UserHomeDir()
+			//userDir, err := os.UserHomeDir()
+			// 目录改造
 			if err != nil {
 				newErrChan <- err
 				return
 			}
-			ipexPath := filepath.Join(userDir, "ipex-llm-ollama")
+			ipexPath := o.GetConfig().ExecPath
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
