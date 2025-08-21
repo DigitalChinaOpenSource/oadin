@@ -18,9 +18,6 @@ Section "Install"
   File "postinstall.bat"
   File "start-oadin.bat"
 
-  # Create data directory in ProgramData
-  CreateDirectory "$COMMONAPPDATA\Oadin"
-
   # Pre-install silently
   nsExec::Exec '"$INSTDIR\preinstall.bat"'
 
