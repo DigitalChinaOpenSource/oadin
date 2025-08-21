@@ -586,19 +586,23 @@ func (h *HTTPInvoker) logRequest(req *http.Request, content types.HTTPContent) {
 		"taskid", h.task.Schedule.Id,
 		"url", req.URL.String())
 
+	body := string(content.Body)
+	if len(body) > 1000 {
+		body = body[:1000]
+	}
 	logger.LogicLogger.Debug("[Service] Request Sending to Service Provider ...",
 		"taskid", h.task.Schedule.Id,
 		"method", req.Method,
 		"url", req.URL.String(),
 		"header", fmt.Sprintf("%+v", req.Header),
-		"body", string(content.Body))
+		"body", body)
 
 	fmt.Println("[Service] Request Sending to Service Provider ...",
 		"taskid", h.task.Schedule.Id,
 		"method", req.Method,
 		"url", req.URL.String(),
 		"header", fmt.Sprintf("%+v", req.Header),
-		"body", string(content.Body))
+		"body", body)
 }
 
 func (h *HTTPInvoker) handleErrorResponse(resp *http.Response) (*http.Response, error) {

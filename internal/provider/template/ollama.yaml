@@ -197,7 +197,7 @@ services:
                       {
                           "model": $model,
                           "stream": $stream,
-                          "messages": messages,
+                          "prompt": prompt,
                           "seed": options.seed,
                           "think": think,
                           "images": images,

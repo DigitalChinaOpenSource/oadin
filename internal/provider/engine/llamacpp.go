@@ -34,7 +34,7 @@ const (
 	LlamaCppPath         = "llama-b5757-bin-win-vulkan-x64"
 	LlamaSwapPath        = "llama-swap_148_windows_amd64"
 	LlamaSwapConfigFile  = "config.yaml"
-	llamacppDefaultModel = "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF"
+	llamacppDefaultModel = "Qwen3-8B-GGUF"
 	LlamaWhisperPath     = "whisper-1.7.6_windows_amd64"
 
 	// Windows download URLs for llamacpp
@@ -156,7 +156,7 @@ func NewLlamacppProvider(config *types.EngineRecommendConfig) *llamacppProvider 
 		return nil
 	}
 
-	downloadPath := fmt.Sprintf("%s/%s/%s", OADINDir, "engine", "llamacpp")
+	downloadPath := filepath.Join(OADINDir, "engine", "llamacpp")
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		err := os.MkdirAll(downloadPath, 0o750)
 		if err != nil {
@@ -195,7 +195,7 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 	execFile := llamacppServerExec
 	switch runtime.GOOS {
 	case "windows":
-		execFile = l.EngineConfig.ExecPath + "/" + l.EngineConfig.ExecFile
+		execFile = filepath.Join(l.EngineConfig.ExecPath, l.EngineConfig.ExecFile)
 
 	case "darwin":
 		logger.EngineLogger.Warn("[llamacpp] Darwin system does not support llamacpp yet")
@@ -209,7 +209,7 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 	}
 
 	if mode == types.EngineStartModeDaemon {
-		LlamaSwapConfigFilePath := fmt.Sprintf("%s/%s", l.EngineConfig.ExecPath, LlamaSwapConfigFile)
+		LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
 		logger.EngineLogger.Info("[llamacpp] exec file path: ", execFile, l.EngineConfig.Host, LlamaSwapConfigFilePath)
 		cmd := exec.Command(execFile, "-listen", l.EngineConfig.Host, "-config", LlamaSwapConfigFilePath)
 		err := cmd.Start()
@@ -223,7 +223,7 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 			logger.EngineLogger.Error("[llamacpp] failed get oadin dir: " + err.Error())
 			return fmt.Errorf("failed get oadin dir: %v", err)
 		}
-		pidFile := fmt.Sprintf("%s/llamacpp.pid", rootPath)
+		pidFile := filepath.Join(rootPath, "llamacpp.pid")
 		err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
 		if err != nil {
 			logger.EngineLogger.Error("[llamacpp] failed to write pid file: " + err.Error())
@@ -244,7 +244,7 @@ func (l *llamacppProvider) StopEngine(ctx context.Context) error {
 		logger.EngineLogger.Error("[llamacpp] failed get oadin dir: " + err.Error())
 		return fmt.Errorf("failed get oadin dir: %v", err)
 	}
-	pidFile := fmt.Sprintf("%s/llamacpp.pid", rootPath)
+	pidFile := filepath.Join(rootPath, "llamacpp.pid")
 	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
 		logger.EngineLogger.Info("[LLAMACPP] Stop openvino Model Server not found pidfile: " + pidFile)
 		return nil
@@ -370,30 +370,6 @@ func (l *llamacppProvider) InstallEngine() error {
 		}
 	}
 
-	// 新建 config.yaml 空 文件
-	LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
-	logger.EngineLogger.Info("[llamacpp] Create config.yaml file at: " + LlamaSwapConfigFilePath)
-	if _, err := os.Stat(LlamaSwapConfigFilePath); os.IsNotExist(err) {
-		file, err := os.Create(LlamaSwapConfigFilePath)
-		defer file.Close()
-		if err != nil {
-			logger.EngineLogger.Error("[llamacpp] Failed to create config.yaml: " + err.Error())
-			return err
-		}
-	}
-	// 写入默认配置
-	defaultConfig := LlamacppSwapServerConfig{
-		StartPort: 10001,
-		LogLevel:  "info",
-		Models:    map[string]Model{},
-		Groups:    map[string]Group{},
-	}
-	err := l.saveConfig(&defaultConfig)
-	if err != nil {
-		logger.EngineLogger.Error("[llamacpp] Failed to save config.yaml: ", err.Error())
-		return fmt.Errorf("failed to save config.yaml: %v", err)
-	}
-
 	file, err := utils.DownloadFile(l.EngineConfig.DownloadUrl, l.EngineConfig.DownloadPath)
 	if err != nil {
 		return fmt.Errorf("failed to download llamacpp-server: %v, url: %v", err, l.EngineConfig.DownloadUrl)
@@ -427,6 +403,36 @@ func (l *llamacppProvider) InstallEngine() error {
 
 	default:
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+
+	// 新建 config.yaml 空 文件
+	LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
+	logger.EngineLogger.Info("[llamacpp] Create config.yaml file at: " + LlamaSwapConfigFilePath)
+	if _, err := os.Stat(LlamaSwapConfigFilePath); os.IsNotExist(err) {
+		file, err := os.Create(LlamaSwapConfigFilePath)
+		defer file.Close()
+		if err != nil {
+			logger.EngineLogger.Error("[llamacpp] Failed to create config.yaml: " + err.Error())
+			return err
+		}
+	}
+	// 写入默认配置
+	defaultConfig := LlamacppSwapServerConfig{
+		StartPort: 10001,
+		LogLevel:  "info",
+		Models:    map[string]Model{},
+		Groups:    map[string]Group{},
+	}
+	data, err := yaml.Marshal(defaultConfig)
+	if err != nil {
+		logger.EngineLogger.Error("[llamacpp] Failed to Marshal " + err.Error())
+		return err
+	}
+
+	err = os.WriteFile(l.getConfigPath(), data, 0o644)
+	if err != nil {
+		logger.EngineLogger.Error("[llamacpp] Failed to WriteFile " + err.Error())
+		return err
 	}
 
 	logger.EngineLogger.Info("[llamacpp] llamacpp model engine install completed")
@@ -603,12 +609,6 @@ func (l *llamacppProvider) addModelToConfig(modelName, modelType string) error {
 		return err
 	}
 
-	for key := range config.Models {
-		if key == modelName {
-			return nil
-		}
-	}
-
 	if config.Models == nil {
 		config.Models = map[string]Model{}
 	}
@@ -630,9 +630,9 @@ func (l *llamacppProvider) addModelToConfig(modelName, modelType string) error {
 const (
 	ServiceChatVlCmd = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --mmproj "%s\models\%s\mmproj-%s-Q8_0.gguf" -ngl 99 --port ${PORT}`
 	ServiceChatCmd   = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" -ngl 99 --port ${PORT}`
-	ServiceEmbedCmd  = `%s\llama-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --embedding --pooling cls -ub 8192 -ngl 99 --port ${PORT}`
+	ServiceEmbedCmd  = `%s\llama-server.exe -m "%s\models\%s\%s-q4_k_m.gguf" --embedding --pooling cls -ub 8192 -ngl 99 --port ${PORT}`
 
-	ServiceSpeechToTextCmd = `%s\whisper-server.exe -m "%s\models\%s\%s-Q4_K_M.gguf" --ngl 99 --port ${PORT}`
+	ServiceSpeechToTextCmd = `%s\llama-server.exe -m "%s\models\%s\Llama-3.2-1B-Instruct-Q4_K_M.gguf" --mmproj "%s\models\%s\mmproj-ultravox-v0_5-llama-3_2-1b-f16.gguf" -ngl 99 --port ${PORT}`
 )
 
 func (l *llamacppProvider) generateCmdTxt(modelName, modelType string) string {
@@ -653,8 +653,12 @@ func (l *llamacppProvider) generateCmdTxt(modelName, modelType string) string {
 		} else {
 			template = fmt.Sprintf(ServiceChatCmd, execPath, enginePath, modelName, modelNameSample)
 		}
+	case types.ServiceGenerate:
+		template = fmt.Sprintf(ServiceChatCmd, execPath, enginePath, modelName, modelNameSample)
 	case types.ServiceEmbed:
 		template = fmt.Sprintf(ServiceEmbedCmd, execPath, enginePath, modelName, modelNameSample)
+	case types.ServiceSpeechToText:
+		template = fmt.Sprintf(ServiceSpeechToTextCmd, execPath, enginePath, modelName, enginePath, modelName)
 	default:
 		logger.EngineLogger.Error("[llamacpp] Unsupported model type: " + modelType)
 		return ""
@@ -749,14 +753,6 @@ func (l *llamacppProvider) LoadModel(ctx context.Context, req *types.LoadRequest
 }
 
 func (l *llamacppProvider) UnloadModel(ctx context.Context, req *types.UnloadModelRequest) error {
-	// POST http://127.0.0.1:16697/api/models/unload
-	c := l.GetDefaultClient()
-	if err := c.Do(context.Background(), http.MethodPost, "/models/unload", nil, nil); err != nil {
-		logger.EngineLogger.Error("[llamacpp] UnloadModel failed: ", err.Error(), "client", c)
-		return err
-	}
-
-	logger.EngineLogger.Info("[llamacpp] llamacpp server UnloadModel")
 	return nil
 }
 
@@ -784,3 +780,107 @@ func (l *llamacppProvider) GetOperateStatus() int {
 }
 
 func (l *llamacppProvider) SetOperateStatus(status int) {}
+
+func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh chan []byte, newErrChan chan error) {
+	defer close(newDataCh)
+	defer close(newErrChan)
+
+	execPath := l.EngineConfig.ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		return
+	}
+
+	// 下载
+	onProgress := func(downloaded, total int64) {
+		if total > 0 {
+			progress := types.ProgressResponse{
+				Status:    "downloading",
+				Total:     total,
+				Completed: downloaded,
+			}
+			if dataBytes, err := json.Marshal(progress); err == nil {
+				newDataCh <- dataBytes
+			}
+		}
+	}
+	file, err := utils.DownloadFileWithProgress(l.EngineConfig.DownloadUrl, l.EngineConfig.DownloadPath, onProgress)
+	if err != nil {
+		logger.EngineLogger.Error("[llamacpp] Failed to download file: ", err)
+		newErrChan <- err
+		return
+	}
+
+	// 解压
+	switch runtime.GOOS {
+	case "windows":
+		// On Win
+		// dows: Extract to the engine directory
+		engineDir := l.EngineConfig.EnginePath
+		if _, err := os.Stat(engineDir); os.IsNotExist(err) {
+			err := os.MkdirAll(engineDir, 0o755)
+			if err != nil {
+				newErrChan <- fmt.Errorf("failed to create engine directory: %v", err)
+				return
+			}
+		}
+
+		// Use PowerShell's Expand-Archive command to extract the ZIP file
+		unzipCmd := exec.Command("powershell", "-Command", fmt.Sprintf("Expand-Archive -Path '%s' -DestinationPath '%s' -Force", file, engineDir))
+		if err := unzipCmd.Run(); err != nil {
+			newErrChan <- fmt.Errorf("failed to unzip file to engine directory: %v", err)
+			return
+		}
+		logger.EngineLogger.Info("[llamacpp] llamacpp extracted to engine directory", "path", engineDir)
+	case "darwin":
+		logger.EngineLogger.Warn("[llamacpp] darwin installation not implemented yet")
+
+	case "linux":
+		logger.EngineLogger.Warn("[llamacpp] Linux installation not implemented yet")
+
+	default:
+		err := fmt.Errorf("[llamacpp] unsupported operating system: %s", runtime.GOOS)
+		newErrChan <- err
+		return
+	}
+
+	// 处理 config.yaml
+	LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
+	if _, err := os.Stat(LlamaSwapConfigFilePath); os.IsNotExist(err) {
+		file, err := os.Create(LlamaSwapConfigFilePath)
+		if err != nil {
+			logger.EngineLogger.Error("[llamacpp] Failed to create config.yaml: ", err.Error())
+			newErrChan <- err
+			return
+		}
+		defer file.Close()
+
+		defaultConfig := LlamacppSwapServerConfig{
+			StartPort: 10001,
+			LogLevel:  "info",
+			Models:    map[string]Model{},
+			Groups:    map[string]Group{},
+		}
+		data, _ := yaml.Marshal(defaultConfig)
+		err = os.WriteFile(l.getConfigPath(), data, 0o644)
+		if err != nil {
+			newErrChan <- err
+			return
+		}
+	}
+
+	// 创建models文件夹
+	modelDir := filepath.Join(l.EngineConfig.EnginePath, "models")
+	if _, err := os.Stat(modelDir); os.IsNotExist(err) {
+		err := os.MkdirAll(modelDir, 0o750)
+		if err != nil {
+			newErrChan <- err
+			return
+		}
+	}
+
+	logger.LogicLogger.Info("[llamacpp] model engine install completed")
+}
+
+func (o *llamacppProvider) InstallEngineExtraDepends(ctx context.Context) error {
+	return nil
+}

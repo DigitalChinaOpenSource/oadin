@@ -17,5 +17,9 @@ services:
         endpoints: [ "POST /speech-to-text", "GET /speech-to-text" ]
     speech-to-text-ws:
         endpoints: ["WEBSOCKET /speech-to-text"]
+    image-to-video:
+        endpoints: [ "POST /image-to-video" ]
+    image-to-image:
+        endpoints: [ "POST /image-to-image" ]
     health:
         endpoints: ["GET /health"]

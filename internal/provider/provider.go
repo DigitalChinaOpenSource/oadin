@@ -48,6 +48,8 @@ type ModelServiceProvider interface {
 	GetRunningModels(ctx context.Context) (*types.ListResponse, error)
 	GetOperateStatus() int
 	SetOperateStatus(status int)
+	InstallEngineStream(ctx context.Context, newDataChan chan []byte, newErrChan chan error)
+	InstallEngineExtraDepends(ctx context.Context) error
 }
 
 // GetModelEngine get model service provider by engine name

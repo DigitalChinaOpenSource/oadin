@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	ex_datastore "oadin/extension/datastore"
 	"os"
 	"reflect"
 	"strings"
@@ -28,7 +29,6 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	ex_datastore "oadin/extension/datastore"
 	"oadin/internal/datastore"
 	"oadin/internal/provider/template"
 	"oadin/internal/types"
@@ -60,7 +60,7 @@ func New(dbPath string) (*SQLite, error) {
 	return &SQLite{db: db}, nil
 }
 
-// Init TODO 这里需要考虑表结构变动的情况
+// Init TODO need to consider table structure changes here
 func (ds *SQLite) Init() error {
 	// 自动迁移表结构
 	if err := ds.db.AutoMigrate(
@@ -83,81 +83,104 @@ func (ds *SQLite) Init() error {
 	return nil
 }
 
-// insertInitialData 插入初始化数据
+// insertInitialData inserts initialization data
 func (ds *SQLite) insertInitialData() error {
-	var count int64
-	if err := ds.db.Model(&types.Service{}).Count(&count).Error; err != nil {
-		return fmt.Errorf("failed to count initial data: %v", err)
-	}
-	var servicesProviderCount int64
-	if err := ds.db.Model(&types.Service{}).Count(&servicesProviderCount).Error; err != nil {
-		return fmt.Errorf("failed to count initial data: %v", err)
-	}
-	if count == 0 {
-		initService := make([]*types.Service, 0)
-		initService = append(initService, &types.Service{
-			Name:         "chat",
-			HybridPolicy: "default",
-			Status:       -1,
-			CanInstall:   1,
-			Avatar:       types.ServiceChatAvatar,
-		}, &types.Service{
-			Name:         "models",
-			HybridPolicy: "default",
-			Status:       -1,
-			CanInstall:   0,
-		}, &types.Service{
-			Name:         "embed",
-			HybridPolicy: "default",
-			Status:       -1,
-			CanInstall:   1,
-			Avatar:       types.ServiceEmbedAvatar,
-		}, &types.Service{
-			Name:         "generate",
-			HybridPolicy: "default",
-			Status:       -1,
-			CanInstall:   1,
-			Avatar:       types.ServiceGenerateAvatar,
-		}, &types.Service{
-			Name:         "text-to-image",
-			HybridPolicy: "always_remote",
-			Status:       -1,
-			CanInstall:   1,
-			Avatar:       types.ServiceTextToImageAvatar,
-		}, &types.Service{
-			Name:         "speech-to-text",
-			HybridPolicy: "default",
-			Status:       -1,
-			CanInstall:   1,
-			Avatar:       types.ServiceSpeechToTextAvatar,
-		}, &types.Service{
-			Name:         "speech-to-text-ws",
-			HybridPolicy: "default",
-			Status:       -1,
-			CanInstall:   1,
-			Avatar:       types.ServiceSpeechToTextAvatar,
-		})
+	// service
+	initService := make([]*types.Service, 0)
+	initService = append(initService, &types.Service{
+		Name:         "chat",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceChatAvatar,
+	}, &types.Service{
+		Name:         "models",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   0,
+	}, &types.Service{
+		Name:         "embed",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceEmbedAvatar,
+	}, &types.Service{
+		Name:         "generate",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceGenerateAvatar,
+	}, &types.Service{
+		Name:         "text-to-image",
+		HybridPolicy: "always_remote",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceTextToImageAvatar,
+	}, &types.Service{
+		Name:         "speech-to-text",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceSpeechToTextAvatar,
+	}, &types.Service{
+		Name:         "speech-to-text-ws",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceSpeechToTextAvatar,
+	}, &types.Service{
+		Name:         "text-to-speech",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceSpeechToTextAvatar,
+	}, &types.Service{
+		Name:         "image-to-video",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceSpeechToTextAvatar,
+	}, &types.Service{
+		Name:         "image-to-image",
+		HybridPolicy: "default",
+		Status:       -1,
+		CanInstall:   1,
+		Avatar:       types.ServiceSpeechToTextAvatar,
+	})
 
-		if err := ds.db.CreateInBatches(initService, len(initService)).Error; err != nil {
+	needInitService := make([]*types.Service, 0)
+	for _, service := range initService {
+		err := ds.Get(context.Background(), service)
+		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
 			return fmt.Errorf("failed to create initial service: %v", err)
+		} else if errors.Is(err, datastore.ErrEntityInvalid) {
+			needInitService = append(needInitService, service)
 		}
 	}
-	if servicesProviderCount == 0 {
-		var serviceProviders []*types.ServiceProvider
-		serviceProviderData, err := template.FlavorTemplateFs.ReadFile("service_provider_data.json")
-		if err != nil {
-			return fmt.Errorf("failed to read service provider data: %v", err)
-		}
-		if err := json.Unmarshal(serviceProviderData, &serviceProviders); err != nil {
-			return fmt.Errorf("failed to unmarshal service provider data: %v", err)
-		}
-		initServiceProvider := make([]*types.ServiceProvider, 0)
-		for _, serviceProvider := range serviceProviders {
+	if err := ds.db.CreateInBatches(needInitService, len(needInitService)).Error; err != nil {
+		return fmt.Errorf("failed to create initial service: %v", err)
+
+	}
+	// service provider
+	var serviceProviders []*types.ServiceProvider
+	serviceProviderData, err := template.FlavorTemplateFs.ReadFile("service_provider_data.json")
+	if err != nil {
+		return fmt.Errorf("failed to read service provider data: %v", err)
+	}
+	if err := json.Unmarshal(serviceProviderData, &serviceProviders); err != nil {
+		return fmt.Errorf("failed to unmarshal service provider data: %v", err)
+	}
+	initServiceProvider := make([]*types.ServiceProvider, 0)
+	for _, serviceProvider := range serviceProviders {
+		err = ds.Get(context.Background(), serviceProvider)
+		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+			return fmt.Errorf("failed to create initial service: %v", err)
+		} else if errors.Is(err, datastore.ErrEntityInvalid) {
 			initServiceProvider = append(initServiceProvider, serviceProvider)
 		}
-		if err := ds.db.CreateInBatches(initServiceProvider, len(initServiceProvider)).Error; err != nil {
-			return fmt.Errorf("failed to create initial service: %v", err)
-		}
+	}
+	if err := ds.db.CreateInBatches(initServiceProvider, len(initServiceProvider)).Error; err != nil {
+		return fmt.Errorf("failed to create initial service: %v", err)
 
 	}
 	return nil

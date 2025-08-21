@@ -405,7 +405,8 @@ func (h *ResponseHandler) handleNonStreamResponse(ctx *ServiceContext) error {
 	if err != nil {
 		return fmt.Errorf("[Service] Failed to read response body: %s", err.Error())
 	}
-
+	fmt.Println("handleNonStreamResponse body:", string(body))
+	logger.LogicLogger.Debug("handleNonStreamResponse body:", string(body))
 	content := types.HTTPContent{Body: body, Header: ctx.Response.Header.Clone()}
 
 	requestFlavor, err := GetAPIFlavor(ctx.Task.Request.FromFlavor)

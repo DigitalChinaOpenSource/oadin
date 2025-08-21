@@ -277,7 +277,7 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	go ListenModelEngineHealth()
+	go ListenModelEngineHealthTotal()
 
 	// Run the server
 	if err != nil {
@@ -540,8 +540,9 @@ func NewVersionCommand() *cobra.Command {
 		Short: "Prints build version information.",
 		Long:  "Prints build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf(`OADIN Version: %s`,
-				version.OADINVersion)
+			// SDK需要Oadin Version是/oadin/v0.4/api_flavors/smartvision/v1/embeddings中的v0.4
+			fmt.Println(`Oadin Version:`, version.OADINSpecVersion)
+			fmt.Println(`Oadin SubVersion:`, version.OadinSubVersion)
 		},
 	}
 
@@ -576,12 +577,7 @@ func NewStartApiServerCommand() *cobra.Command {
 				startMode = types.EngineStartModeStandard
 			}
 
-			err = StartModelEngine("ollama", startMode)
-			if err != nil {
-				return err
-			}
-
-			err = StartModelEngine("openvino", startMode)
+			err = StartEngineTotall(startMode)
 			if err != nil {
 				return err
 			}
@@ -1067,13 +1063,9 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err := StartModelEngine("openvino", types.EngineStartModeDaemon)
+	err := StartEngineTotall(types.EngineStartModeDaemon)
 	if err != nil {
-		return
-	}
-
-	err = StartModelEngine("ollama", types.EngineStartModeDaemon)
-	if err != nil {
+		log.Fatal("Failed to start Engine.")
 		return
 	}
 
@@ -1353,25 +1345,21 @@ func NewImportServiceCommand() *cobra.Command {
 }
 
 func NewExportServiceCommand() *cobra.Command {
-	var service, serviceProvider, model string
 	exportCmd := &cobra.Command{
 		Use:   "export",
 		Short: "Export service",
 		Long:  "Export service",
 	}
 
-	exportCmd.Flags().StringVar(&service, "service", "", "Service name")
-	exportCmd.Flags().StringVar(&serviceProvider, "provider", "", "Provider name")
-	exportCmd.Flags().StringVar(&model, "model", "", "Model name")
-
-	exportCmd.AddCommand(NewExportServiceToFileCommand(service, serviceProvider, model))
-	exportCmd.AddCommand(NewExportServiceToStdoutCommand(service, serviceProvider, model))
+	exportCmd.AddCommand(NewExportServiceToFileCommand())
+	exportCmd.AddCommand(NewExportServiceToStdoutCommand())
 
 	return exportCmd
 }
 
-func NewExportServiceToFileCommand(service, provider, model string) *cobra.Command {
-	var filePath string
+// NewExportServiceToFileCommand creates the export to file command
+func NewExportServiceToFileCommand() *cobra.Command {
+	var filePath, service, providerName, model string
 
 	cmd := &cobra.Command{
 		Use:    "to-file",
@@ -1381,7 +1369,7 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
-				ProviderName: provider,
+				ProviderName: providerName,
 				ModelName:    model,
 			}
 			resp := &dto.ExportServiceResponse{}
@@ -1389,7 +1377,7 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 			c := config.NewOADINClient()
 			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINSpecVersion)
 
-			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
+			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, resp)
 			if err != nil {
 				fmt.Println("Error exporting service:", err)
 				return
@@ -1410,12 +1398,19 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		},
 	}
 
-	cmd.Flags().StringVarP(&filePath, "file", "f", "./.oadin", "Output file path")
+	// 在子命令上定义所有参数
+	cmd.Flags().StringVarP(&filePath, "file", "f", "./.aog", "Output file path")
+	cmd.Flags().StringVar(&service, "service", "", "Service name")
+	cmd.Flags().StringVar(&providerName, "provider", "", "Provider name")
+	cmd.Flags().StringVar(&model, "model", "", "Model name")
 
 	return cmd
 }
 
-func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Command {
+// NewExportServiceToStdoutCommand creates the export to stdout command
+func NewExportServiceToStdoutCommand() *cobra.Command {
+	var service, providerName, model string
+
 	cmd := &cobra.Command{
 		Use:    "to-stdout",
 		Short:  "Export service to stdout",
@@ -1424,15 +1419,15 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
-				ProviderName: provider,
+				ProviderName: providerName,
 				ModelName:    model,
 			}
 			resp := &dto.ExportServiceResponse{}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINSpecVersion)
+			routerPath := fmt.Sprintf("/aog/%s/service/export", version.OADINSpecVersion)
 
-			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
+			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, resp)
 			if err != nil {
 				fmt.Println("Error exporting service:", err)
 				return
@@ -1446,6 +1441,12 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 			fmt.Println(string(data))
 		},
 	}
+
+	// 在子命令上定义参数
+	cmd.Flags().StringVar(&service, "service", "", "Service name")
+	cmd.Flags().StringVar(&providerName, "provider", "", "Provider name")
+	cmd.Flags().StringVar(&model, "model", "", "Model name")
+
 	return cmd
 }
 
@@ -1497,24 +1498,28 @@ func ListenModelEngineHealth() {
 						continue
 					}
 				}
-			} else if engine == types.FlavorOpenvino {
-				err := OpenVINOEngine.HealthCheck()
-				if err != nil {
-					logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
-					err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
+			}
+			if runtime.GOOS == "windows" {
+				if engine == types.FlavorOpenvino {
+					err := OpenVINOEngine.HealthCheck()
 					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
-						continue
+						logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
+						err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
+							continue
+						}
 					}
 				}
-			} else if engine == types.FlavorLlamaCpp {
-				err := LlamaCppEngine.HealthCheck()
-				if err != nil {
-					logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
-					err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+				if engine == types.FlavorLlamaCpp {
+					err := LlamaCppEngine.HealthCheck()
 					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
-						continue
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+						err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+							continue
+						}
 					}
 				}
 			}
@@ -1522,6 +1527,104 @@ func ListenModelEngineHealth() {
 
 		time.Sleep(60 * time.Second)
 	}
+}
+
+func ListenModelEngineHealthTotal() {
+	OllamaEngine := provider.GetModelEngine(types.FlavorOllama)
+	OpenVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
+	LlamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
+
+	engineList := make([]string, 0)
+
+	execPath := OllamaEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		engineList = append(engineList, types.FlavorOllama)
+	}
+
+	execPath = OpenVINOEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		engineList = append(engineList, types.FlavorOpenvino)
+	}
+
+	execPath = LlamaCppEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		engineList = append(engineList, types.FlavorLlamaCpp)
+	}
+
+	for {
+		for _, engine := range engineList {
+			if engine == types.FlavorOllama {
+				err := OllamaEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Ollama engine health check failed: ", err.Error())
+					err := OllamaEngine.InitEnv()
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Ollama engine init env failed: ", err.Error())
+						return
+					}
+					err = OllamaEngine.StartEngine(types.EngineStartModeDaemon)
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Ollama engine start failed: ", err.Error())
+						continue
+					}
+				}
+			} else if engine == types.FlavorOpenvino {
+					err := OpenVINOEngine.HealthCheck()
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
+						err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
+							continue
+						}
+					}
+			} else if engine == types.FlavorLlamaCpp {
+					err := LlamaCppEngine.HealthCheck()
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+						err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+							continue
+						}
+					}
+			}
+		}
+
+		time.Sleep(60 * time.Second)
+	}
+}
+
+func StartEngineTotall(startMode string) error {
+	ollamaEngine := provider.GetModelEngine(types.FlavorOllama)
+	openVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
+	llamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
+
+	execPath := ollamaEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		err = StartModelEngine(types.FlavorOllama, startMode)
+		if err != nil {
+			return err
+		}
+	}
+
+	execPath = openVINOEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		err := StartModelEngine(types.FlavorOpenvino, startMode)
+		if err != nil {
+			return err
+		}
+	}
+
+	execPath = llamaCppEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		err = StartModelEngine(types.FlavorLlamaCpp, startMode)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ServerManager 用于管理服务器实例

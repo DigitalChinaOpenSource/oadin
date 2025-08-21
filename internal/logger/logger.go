@@ -18,16 +18,18 @@ package logger
 
 import (
 	"log/slog"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/natefinch/lumberjack"
 )
 
 const (
 	LoggerMaxSize    = 100
-	LoggerMaxBackups = 7
-	LoggerMaxAge     = 0
-	LoggerCompress   = true
+	LoggerMaxBackups = 30
+	LoggerMaxAge     = 30
+	LoggerCompress   = false
 )
 
 var loggerNameArray = []string{"logic", "api", "engine"}
@@ -37,6 +39,21 @@ var (
 	ApiLogger    *slog.Logger
 	EngineLogger *slog.Logger
 )
+
+type customLogger struct {
+	lj      *lumberjack.Logger
+	lastDay string
+}
+
+func (c *customLogger) Write(p []byte) (n int, err error) {
+	now := time.Now().Format("2006-01-02")
+	if now != c.lastDay {
+		c.lj.Rotate()
+		c.lastDay = now
+	}
+
+	return c.lj.Write(p)
+}
 
 type LogConfig struct {
 	LogLevel string `json:"log_level"`
@@ -85,9 +102,22 @@ func (lm *LogManager) AddLogger(c LogConfig, name string) {
 		MaxAge:     LoggerMaxAge,     // Maximum number of days reserved
 		Compress:   LoggerCompress,
 	}
+	// Get file date
+	fileInfo, err := os.Stat(lumberjackLogger.Filename)
+	if err != nil && !os.IsExist(err) {
+		_ = os.MkdirAll(lumberjackLogger.Filename, 0o750)
+		fileInfo, _ = os.Stat(lumberjackLogger.Filename)
+	}
 
+	creationTime := fileInfo.ModTime()
+
+	day := creationTime.Format("2006-01-02")
+	cl := &customLogger{
+		lj:      lumberjackLogger,
+		lastDay: day,
+	}
 	// Create a log handler in JSON format
-	jsonHandler := slog.NewJSONHandler(lumberjackLogger, &slog.HandlerOptions{
+	jsonHandler := slog.NewJSONHandler(cl, &slog.HandlerOptions{
 		Level: logLevel,
 	})
 	logger := slog.New(jsonHandler)

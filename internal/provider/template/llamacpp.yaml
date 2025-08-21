@@ -326,3 +326,72 @@ services:
                 }
                 })
             }
+
+  speech-to-text: # service name defined by oadin
+    task_type: "speech-to-text"
+    protocol: "HTTP"
+    expose_protocol: "HTTP"
+    url: "http://127.0.0.1:16697/v1/chat/completions"
+    endpoints: [] # request to this will use this flavor
+    extra_url: ""
+    auth_type: "none"
+    default_model: "ultravox-v0_5-llama-3_2-1b-GGUF"
+    request_segments: 1 # request
+    install_raw_routes: true # also install routes without oadin prefix in url path
+    extra_headers: "{}"
+    request_to_oadin:
+      conversion:
+        # NOTE it doesn't directly use input model and stream
+        # it uses $model and $stream which will be input by oadin
+        # so oadin may change it to most suitable model and
+        - converter: jsonata
+          config: |
+            {
+                "model": model,
+                "messages": messages
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    request_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": $model,
+                "messages": messages
+            }
+
+        - converter: header
+          config:
+            set:
+              Content-Type: application/json
+
+    # response need additional converter for responses from stream
+    response_to_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "id": id,
+                "model": model,
+                "created_at": created,
+                "message": choices[0].message,
+                "finished": choices[0].finish_reason ? true : false,
+                "finish_reason": choices[0].finish_reason
+            }
+
+    response_from_oadin:
+      conversion:
+        - converter: jsonata
+          config: |
+            {
+                "model": model,
+                "created": created_at,
+                "message": message,
+                "done": finished,
+                "done_reason": finished ? finish_reason : null
+            }

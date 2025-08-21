@@ -63,7 +63,7 @@ func (m *Manager) onReady() {
 	// Add menu items
 	mStartStop := systray.AddMenuItem("Start Server", "Start/Stop Oadin server")
 	systray.AddSeparator()
-	mConsole := systray.AddMenuItem("Web Console", "Open Control Panel")
+	// mConsole := systray.AddMenuItem("Web Console", "Open Control Panel")
 	m.mRestartUpdate = systray.AddMenuItem("Restart and Update", "Restart and install update")
 	if !m.updateAvailable {
 		m.mRestartUpdate.Hide()
@@ -105,11 +105,11 @@ func (m *Manager) onReady() {
 					}
 				}
 
-			case <-mConsole.ClickedCh:
-				err := m.openControlPanel()
-				if err != nil {
-					dialog.Message("Failed to open control panel: %v", err).Title("Error").Error()
-				}
+			// case <-mConsole.ClickedCh:
+			// 	err := m.openControlPanel()
+			// 	if err != nil {
+			// 		dialog.Message("Failed to open control panel: %v", err).Title("Error").Error()
+			// 	}
 			case <-m.mRestartUpdate.ClickedCh:
 				if confirmed := dialog.Message("This will stop all servers and install the update. Continue?").Title("Confirm Update").YesNo(); confirmed {
 					if err := m.performUpdate(); err != nil {
