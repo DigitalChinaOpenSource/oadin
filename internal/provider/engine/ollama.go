@@ -313,7 +313,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		downloadUrl = LinuxURL
 	case "darwin":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("/%s/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources", execFile)
+		execPath = fmt.Sprintf("/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources")
 		downloadUrl = MacOSIntelURL
 	default:
 		return nil
