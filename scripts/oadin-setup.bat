@@ -6,11 +6,15 @@ set "SETUP_FILE=oadin-installer-test-2.0.8.exe"
 set "SILENT_ARGS=/S"
 set "LOG_FILE=install.log"
 
+set "AI_SMARTVISION_FILE=ai-smartvision-2.0.0-x64.exe"
+set "AI_SMARTVISION_INSTALL_DIR=%ProgramFiles%\ai-smartvision"
+set "AI_SMARTVISION_LOG=ai-smartvision-install.log"
+
 set "OLLAMA_ZIP=ollama-win.zip"
-set "OLLAMA_DIR=C:\ollama"
+set "OLLAMA_DIR=%ProgramFiles%\Oadin"
 
 set "MODEL_ZIP=model.zip"
-set "MODEL_DIR=C:\ollama\models"
+set "MODEL_DIR=%ProgramFiles%/Oadin/engine/ollama"
 
 REM === 检查管理员权限 ===
 openfiles >nul 2>&1
@@ -35,11 +39,27 @@ if %errorlevel% EQU 0 (
     echo 安装过程返回错误码^: %errorlevel%
 )
 
+REM === 安装 AI SmartVision ===
+if not exist "%AI_SMARTVISION_FILE%" (
+    echo 没有找到 AI SmartVision 安装包: %AI_SMARTVISION_FILE%
+    pause
+    exit /b 7
+)
+echo 正在静默安装 AI SmartVision ...
+start /wait "" "%AI_SMARTVISION_FILE%" /S /D="%AI_SMARTVISION_INSTALL_DIR%" /WAIT /LOG="%AI_SMARTVISION_LOG%"
+if %errorlevel% EQU 0 (
+    echo AI SmartVision 安装完成！
+) else (
+    echo AI SmartVision 安装失败，错误码: %errorlevel%
+    pause
+    exit /b 8
+)
+
 REM === 解压ollama的zip包到指定目录 ===
 if not exist "%OLLAMA_ZIP%" (
     echo 没有找到Ollama安装包: %OLLAMA_ZIP%
     pause
-    exit /b 3
+    exit /b 9
 )
 echo 正在解压Ollama压缩包到 %OLLAMA_DIR% ...
 powershell -command "Expand-Archive -Path '%OLLAMA_ZIP%' -DestinationPath '%OLLAMA_DIR%' -Force"
@@ -48,14 +68,14 @@ if %errorlevel% EQU 0 (
 ) else (
     echo Ollama 解压失败！
     pause
-    exit /b 4
+    exit /b 10
 )
 
 REM === 解压模型包到指定目录 ===
 if not exist "%MODEL_ZIP%" (
     echo 没有找到模型包: %MODEL_ZIP%
     pause
-    exit /b 5
+    exit /b 11
 )
 if not exist "%MODEL_DIR%" (
     mkdir "%MODEL_DIR%"
@@ -67,7 +87,7 @@ if %errorlevel% EQU 0 (
 ) else (
     echo 模型解压失败！
     pause
-    exit /b 6
+    exit /b 12
 )
 
 echo 所有操作完成！
