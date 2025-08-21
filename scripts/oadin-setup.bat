@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 REM === 配置部分 ===
-set "SETUP_FILE=oadin-installer-test-2.0.8.exe"
+set "SETUP_FILE=oadin-installer-test-2.0.40.exe"
 set "SILENT_ARGS=/S"
 set "LOG_FILE=install.log"
 
@@ -10,10 +10,10 @@ set "AI_SMARTVISION_FILE=ai-smartvision-2.0.0-x64.exe"
 set "AI_SMARTVISION_INSTALL_DIR=%ProgramFiles%\ai-smartvision"
 set "AI_SMARTVISION_LOG=ai-smartvision-install.log"
 
-set "OLLAMA_ZIP=ollama-win.zip"
+set "OLLAMA_ZIP=ipex-llm-ollama.zip"
 set "OLLAMA_DIR=%ProgramFiles%\Oadin"
 
-set "MODEL_ZIP=model.zip"
+set "MODEL_ZIP=models.zip"
 set "MODEL_DIR=%ProgramFiles%/Oadin/engine/ollama"
 
 REM === 检查管理员权限 ===
