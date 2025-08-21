@@ -35,7 +35,7 @@ func (e *EngineApi) InjectRoutes(api *gin.RouterGroup) {
 	api.POST("/download/streamEngine", e.DownloadStreamEngine)
 	api.GET("/download/checkMemoryConfig", e.CheckMemoryConfig)
 	api.POST("/download/streamModel", e.DownloadStreamModel)
-	api.GET("/download/checkDist", e.DownloadCheckDist)
+	api.POST("/download/checkDist", e.DownloadCheckDist)
 }
 
 // exist 检查引擎是否存在
@@ -309,7 +309,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 }
 
 func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
-	request := dto.EngineDownloadRequest{}
+	request := dto.DownloadCheckDistRequest{}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		dto.ValidFailure(c, err.Error())
 		return

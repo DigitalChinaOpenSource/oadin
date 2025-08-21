@@ -20,7 +20,7 @@ type EngineDownloadRequest struct {
 	Stream     bool   `json:"stream"`
 }
 
-type EngineDownloadRequest struct {
+type DownloadCheckDistRequest struct {
 	EngineName string `json:"engineName" validate:"required"`
 }
 
