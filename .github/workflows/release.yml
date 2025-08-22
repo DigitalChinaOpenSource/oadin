@@ -155,7 +155,8 @@ jobs:
           echo "二进制文件大小(字节): $((Get-Item 'oadin.exe').Length)"
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
           echo "--------- 📦 安装包构建与签名 ----------"
-          makensis.exe -DVERSION=$env:CI_COMMIT_TAG installer\win\oadin.nsi
+          echo "使用CI兼容的64位NSIS脚本..."
+          makensis.exe -DVERSION=$env:CI_COMMIT_TAG installer\win\oadin-ci.nsi
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
           # 检查安装包大小
           echo "安装包信息:"

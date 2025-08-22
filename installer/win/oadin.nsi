@@ -2,9 +2,9 @@
   !define VERSION "0.0.0"
 !endif
 
-; 强制64位安装器 - 确保编译为64位目标
-Unicode True
-Target amd64-unicode
+; Compatible with 32-bit NSIS but forces 64-bit installation behavior
+; Remove Target amd64-unicode for CI/CD compatibility
+; Unicode True
 
 ; 包含64位支持库
 !include "x64.nsh"
@@ -37,12 +37,28 @@ Function .onInit
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; 强制设置安装目录为64位Program Files - 绝对确保不会重定向到x86
+  ; 强制设置安装目录为64位Program Files - CI/CD兼容版本
+  ; 多重保障防止安装到x86目录
+  
+  ; 方法1: 使用PROGRAMFILES64
   StrCpy $INSTDIR "$PROGRAMFILES64\Oadin"
+  
+  ; 方法2: 如果PROGRAMFILES64为空，使用备选方案
+  ${If} $INSTDIR == "\Oadin"
+    ; PROGRAMFILES64变量为空，使用其他方式
+    ReadEnvStr $R0 "ProgramW6432"
+    ${If} $R0 != ""
+      StrCpy $INSTDIR "$R0\Oadin"
+    ${Else}
+      ; 最后的保障：硬编码64位路径
+      StrCpy $INSTDIR "C:\Program Files\Oadin"
+    ${EndIf}
+  ${EndIf}
 
-  ; 调试信息显示 - 验证路径设置
-  MessageBox MB_OK "64位安装路径确认:$\n$INSTDIR$\n$\n系统环境:$\nPROGRAMFILES64: $PROGRAMFILES64$\nPROGRAMFILES: $PROGRAMFILES$\n$\n确认安装到正确的64位目录？" IDOK continue
-  continue:
+  ; CI环境检测：如果静默安装则跳过对话框
+  IfSilent +3 0
+  MessageBox MB_OK "64位安装路径: $INSTDIR"
+  Goto +1
 FunctionEnd
 
 Section "Install"
