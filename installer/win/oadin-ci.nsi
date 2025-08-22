@@ -65,10 +65,7 @@ Function .onInit
   ; Log installation path for CI debugging
   DetailPrint "Target installation directory: $INSTDIR"
   
-  ; Skip MessageBox in silent mode (CI)
-  IfSilent end_init
-  MessageBox MB_OK "Installing to 64-bit directory: $INSTDIR"
-  end_init:
+  ; No MessageBox - silent installation
 FunctionEnd
 
 ; String search function

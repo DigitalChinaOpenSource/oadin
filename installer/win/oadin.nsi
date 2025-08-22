@@ -55,10 +55,7 @@ Function .onInit
     ${EndIf}
   ${EndIf}
 
-  ; CI环境检测：如果静默安装则跳过对话框
-  IfSilent +3 0
-  MessageBox MB_OK "64位安装路径: $INSTDIR"
-  Goto +1
+  ; 静默安装 - 无需弹窗确认
 FunctionEnd
 
 Section "Install"
