@@ -7,15 +7,16 @@ REM ========================================
 
 REM === 配置部分 ===
 set "SETUP_FILE=oadin-installer-test-2.0.40.exe"
+set "OADIN_INSTALL_DIR=%ProgramFiles%\Oadin"
 set "SILENT_ARGS=/S"
-set "LOG_FILE=%ProgramFiles%\Oadin\install.log"
+set "LOG_FILE=%OADIN_INSTALL_DIR%\install.log"
 
 set "AI_SMARTVISION_FILE=ai-smartvision-2.0.0-x64.exe"
 set "AI_SMARTVISION_INSTALL_DIR=%ProgramFiles%\ai-smartvision"
-set "AI_SMARTVISION_LOG=%ProgramFiles%\Oadin\ai-smartvision-install.log"
+set "AI_SMARTVISION_LOG=%OADIN_INSTALL_DIR%\ai-smartvision-install.log"
 
 set "OLLAMA_ZIP=ipex-llm-ollama.zip"
-set "OLLAMA_DIR=%ProgramFiles%\Oadin\ipex-llm-ollama"
+set "OLLAMA_DIR=%OADIN_INSTALL_DIR%\ipex-llm-ollama"
 
 set "MODEL_ZIP=models.zip"
 set "MODEL_DIR=%ProgramData%\Oadin\engine\ollama"
@@ -278,12 +279,23 @@ if errorlevel 1 (
 )
 call :print_success "管理员权限验证通过"
 
+REM === 显示安装目录配置 ===
+call :print_status "========================================="
+call :print_status "安装目录配置:"
+call :print_status "  - OADIN 主程序: %OADIN_INSTALL_DIR%"
+call :print_status "  - AI SmartVision: %AI_SMARTVISION_INSTALL_DIR%"
+call :print_status "  - Ollama: %OLLAMA_DIR%"
+call :print_status "  - 模型数据: %MODEL_DIR%"
+call :print_status "  - 日志文件: %LOG_FILE%"
+call :print_status "========================================="
+
 REM === 创建临时目录 ===
 call :create_directory "%TEMP_EXTRACT_DIR%"
 
 REM === 安装 OADIN 主程序 ===
 call :print_status "=== 第1步: 安装 OADIN 主程序 ==="
-call :install_program "%SETUP_FILE%" "%SILENT_ARGS%" "%LOG_FILE%" "OADIN"
+call :print_status "目标安装目录: %OADIN_INSTALL_DIR%"
+call :install_program "%SETUP_FILE%" "/S /D=\"%OADIN_INSTALL_DIR%\"" "%LOG_FILE%" "OADIN"
 if !errorlevel! NEQ 0 (
     call :cleanup_temp
     pause
@@ -324,7 +336,7 @@ call :print_status "=== 验证安装结果 ==="
 
 set "VERIFICATION_FAILED=0"
 
-if exist "%ProgramFiles%\Oadin\oadin.exe" (
+if exist "%OADIN_INSTALL_DIR%\oadin.exe" (
     call :print_success "OADIN 主程序安装成功"
 ) else (
     call :print_error "OADIN 主程序安装验证失败"
@@ -361,7 +373,7 @@ if %VERIFICATION_FAILED% EQU 0 (
     call :print_success "所有组件安装完成！"
     call :print_success "========================================="
     call :print_status "安装详情:"
-    call :print_status "  - OADIN: %ProgramFiles%\Oadin"
+    call :print_status "  - OADIN: %OADIN_INSTALL_DIR%"
     call :print_status "  - AI SmartVision: %AI_SMARTVISION_INSTALL_DIR%"
     call :print_status "  - Ollama: %OLLAMA_DIR%"
     call :print_status "  - 模型文件: %MODEL_DIR%"
