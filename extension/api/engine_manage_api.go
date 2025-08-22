@@ -327,20 +327,20 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 
 	err := modelEngine.HealthCheck()
 	if err != nil {
-		res.Status = "error"
+		res.Status = "engine error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
 
 	modelList, err := modelEngine.ListModels(c)
 	if err != nil {
-		res.Status = "error"
+		res.Status = "list error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
 
 	if modelList == nil || len(modelList.Models) == 0 {
-		res.Status = "error"
+		res.Status = "no model error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
