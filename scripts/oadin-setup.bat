@@ -2,12 +2,7 @@
 setlocal enabledelayedexpansion
 
 REM ========================================
-@echo off
-setlocal enabledelayedexpansion
-
-REM ========================================
 REM OADIN Auto Installation Script (No PowerShell)
-REM ========================================
 REM ========================================
 
 REM === 配置部分 ===
@@ -204,17 +199,20 @@ exit /b %errorlevel%
 :install_program
 set "INSTALLER=%~1"
 set "INSTALL_ARGS=%~2"
-set "LOG_FILE=%~3"
+set "LOG_FILE_PARAM=%~3"
 set "PROGRAM_NAME=%~4"
 
 call :print_status "开始安装 %PROGRAM_NAME%..."
 call :check_file_exists "%INSTALLER%"
 if !errorlevel! NEQ 0 exit /b !errorlevel!
 
-if not "%LOG_FILE%"=="" (
-    start /wait "" "%INSTALLER%" %INSTALL_ARGS% /log="%LOG_FILE%"
+REM 调试输出
+call :print_status "执行命令: %INSTALLER% %INSTALL_ARGS%"
+
+if not "%LOG_FILE_PARAM%"=="" (
+    "%INSTALLER%" %INSTALL_ARGS% /log="%LOG_FILE_PARAM%"
 ) else (
-    start /wait "" "%INSTALLER%" %INSTALL_ARGS%
+    "%INSTALLER%" %INSTALL_ARGS%
 )
 
 if !errorlevel! EQU 0 (
@@ -222,6 +220,39 @@ if !errorlevel! EQU 0 (
 ) else (
     call :print_error "%PROGRAM_NAME% 安装失败，错误码: !errorlevel!"
     exit /b !errorlevel!
+)
+goto :eof
+
+:install_ai_smartvision
+set "INSTALLER=%~1"
+set "INSTALL_DIR=%~2"
+set "LOG_FILE_PARAM=%~3"
+
+call :print_status "开始安装 AI SmartVision..."
+call :check_file_exists "%INSTALLER%"
+if !errorlevel! NEQ 0 exit /b !errorlevel!
+
+call :print_status "安装路径: %INSTALL_DIR%"
+call :print_status "日志文件: %LOG_FILE_PARAM%"
+
+REM 使用临时批处理文件来避免引号问题
+set "TEMP_BAT=%TEMP%\ai_smartvision_install_%RANDOM%.bat"
+(
+echo @echo off
+echo "%INSTALLER%" /S "/D=%INSTALL_DIR%" /WAIT /log="%LOG_FILE_PARAM%"
+echo exit /b %%errorlevel%%
+) > "%TEMP_BAT%"
+
+call "%TEMP_BAT%"
+set "INSTALL_RESULT=%errorlevel%"
+
+if exist "%TEMP_BAT%" del "%TEMP_BAT%" >nul 2>&1
+
+if %INSTALL_RESULT% EQU 0 (
+    call :print_success "AI SmartVision 安装完成！"
+) else (
+    call :print_error "AI SmartVision 安装失败，错误码: %INSTALL_RESULT%"
+    exit /b %INSTALL_RESULT%
 )
 goto :eof
 
@@ -261,7 +292,7 @@ if !errorlevel! NEQ 0 (
 
 REM === 安装 AI SmartVision ===
 call :print_status "=== 第2步: 安装 AI SmartVision ==="
-call :install_program "%AI_SMARTVISION_FILE%" "/S /D=\"%AI_SMARTVISION_INSTALL_DIR%\" /WAIT" "%AI_SMARTVISION_LOG%" "AI SmartVision"
+call :install_ai_smartvision "%AI_SMARTVISION_FILE%" "%AI_SMARTVISION_INSTALL_DIR%" "%AI_SMARTVISION_LOG%"
 if !errorlevel! NEQ 0 (
     call :cleanup_temp
     pause

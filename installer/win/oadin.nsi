@@ -2,12 +2,17 @@
   !define VERSION "0.0.0"
 !endif
 
+; 强制64位安装器 - 确保编译为64位目标
+Unicode True
+Target amd64-unicode
+
 ; 包含64位支持库
 !include "x64.nsh"
+!include "LogicLib.nsh"
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
-; 明确指定64位Program Files目录
+; 明确指定64位Program Files目录 - 使用PROGRAMFILES64确保不会重定向
 !define INSTALL_DIR "$PROGRAMFILES64\Oadin"
 
 Outfile "..\..\oadin-installer.exe"
@@ -19,9 +24,6 @@ SetCompressor lzma
 ; 安装器页面设置
 Name "${APP_NAME}"
 Caption "${APP_NAME} ${VERSION} 安装程序"
-
-; 64位安装器设置
-Target amd64-unicode
 
 ; 强制安装到64位Program Files目录
 Function .onInit
@@ -35,14 +37,12 @@ Function .onInit
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; 明确设置安装目录为64位Program Files
-  ; 使用$PROGRAMFILES64确保安装到正确位置
-  ${If} ${RunningX64}
-    StrCpy $INSTDIR "$PROGRAMFILES64\Oadin"
-  ${EndIf}
+  ; 强制设置安装目录为64位Program Files - 绝对确保不会重定向到x86
+  StrCpy $INSTDIR "$PROGRAMFILES64\Oadin"
 
-  ; 显示安装路径确认
-  ; MessageBox MB_OK "安装路径: $INSTDIR"
+  ; 调试信息显示 - 验证路径设置
+  MessageBox MB_OK "64位安装路径确认:$\n$INSTDIR$\n$\n系统环境:$\nPROGRAMFILES64: $PROGRAMFILES64$\nPROGRAMFILES: $PROGRAMFILES$\n$\n确认安装到正确的64位目录？" IDOK continue
+  continue:
 FunctionEnd
 
 Section "Install"
@@ -63,16 +63,20 @@ Section "Install"
   ; 写入安装信息到注册表（64位）
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
+  WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "UninstallString" "$INSTDIR\uninstall.exe"
+  
+  ; 生成卸载器
+  WriteUninstaller "$INSTDIR\uninstall.exe"
 
-  # Pre-install silently
+  ; Pre-install silently
   DetailPrint "执行预安装脚本..."
   nsExec::Exec '"$INSTDIR\preinstall.bat"'
 
-  # Post-install silently with argument
+  ; Post-install silently with argument
   DetailPrint "执行后安装脚本..."
   nsExec::Exec '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
-  # start oadin server
+  ; start oadin server
   DetailPrint "启动 Oadin 服务..."
   nsExec::Exec '"$INSTDIR\start-oadin.bat"'
 
@@ -89,11 +93,16 @@ Function un.onInit
 FunctionEnd
 
 Section "Uninstall"
+  ; 确保64位环境
+  SetRegView 64
+  ${DisableX64FSRedirection}
+  
   ; 删除文件
   Delete "$INSTDIR\oadin.exe"
   Delete "$INSTDIR\preinstall.bat"
   Delete "$INSTDIR\postinstall.bat"
   Delete "$INSTDIR\start-oadin.bat"
+  Delete "$INSTDIR\uninstall.exe"
 
   ; 删除目录
   RMDir "$INSTDIR"
@@ -101,5 +110,8 @@ Section "Uninstall"
   ; 清理注册表
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
 
+  ; 恢复文件系统重定向
   ${EnableX64FSRedirection}
+  
+  MessageBox MB_OK "卸载完成！"
 SectionEnd
