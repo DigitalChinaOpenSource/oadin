@@ -21,7 +21,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -81,7 +80,7 @@ func (g *GRPCInvoker) Invoke(sp *types.ServiceProvider, content types.HTTPConten
 		logger.LogicLogger.Debug("[Service] Invoking GRPC streaming service",
 			"service", sp.ServiceName,
 			"model", g.task.Target.Model,
-			"taskid", g.task.Schedule.Id)
+			"taskID", g.task.Schedule.Id)
 		return g.invokeStreamService(handler, content)
 	}
 
@@ -89,7 +88,7 @@ func (g *GRPCInvoker) Invoke(sp *types.ServiceProvider, content types.HTTPConten
 	logger.LogicLogger.Debug("[Service] Invoking GRPC non-streaming service",
 		"service", sp.ServiceName,
 		"model", g.task.Target.Model,
-		"taskid", g.task.Schedule.Id)
+		"taskID", g.task.Schedule.Id)
 	return g.invokeNonStreamService(handler, content)
 }
 
@@ -115,7 +114,7 @@ func (g *GRPCInvoker) invokeNonStreamService(handler GRPCServiceHandler, content
 	// Send the request
 	inferResponse, err := client.ModelInfer(context.Background(), grpcReq)
 	if err != nil {
-		logger.LogicLogger.Error("[Service] Error processing InferRequest", "taskid", g.task.Schedule.Id, "error", err)
+		logger.LogicLogger.Error("[Service] Error processing InferRequest", "taskID", g.task.Schedule.Id, "error", err)
 		return nil, err
 	}
 
@@ -125,7 +124,7 @@ func (g *GRPCInvoker) invokeNonStreamService(handler GRPCServiceHandler, content
 		return nil, fmt.Errorf("failed to process response: %w", err)
 	}
 
-	logger.LogicLogger.Debug("[Service] Response Receiving", "taskid", g.task.Schedule.Id, "header",
+	logger.LogicLogger.Debug("[Service] Response Receiving", "taskID", g.task.Schedule.Id, "header",
 		fmt.Sprintf("%+v", resp.Header), "task", g.task)
 
 	return resp, nil
@@ -234,7 +233,7 @@ func (g *GRPCInvoker) handleStreamData(handler GRPCServiceHandler, content types
 		if err := session.Stream.Send(grpcReq); err != nil {
 			grpcStreamManager.CloseSessionByWSConnID(wsConnID)
 			logger.LogicLogger.Error("[Service] Error sending to existing stream",
-				"taskid", g.task.Schedule.Id,
+				"taskID", g.task.Schedule.Id,
 				"wsConnID", wsConnID,
 				"error", err)
 			return nil, err
@@ -284,7 +283,7 @@ func (g *GRPCInvoker) createStreamSession(handler GRPCServiceHandler, content ty
 	if err != nil {
 		cancel()
 		logger.LogicLogger.Error("[Service] Error creating stream",
-			"taskid", g.task.Schedule.Id,
+			"taskID", g.task.Schedule.Id,
 			"wsConnID", wsConnID,
 			"error", err)
 		return nil, err
@@ -306,7 +305,7 @@ func (g *GRPCInvoker) createStreamSession(handler GRPCServiceHandler, content ty
 	if err := stream.Send(grpcReq); err != nil {
 		grpcStreamManager.CloseSessionByWSConnID(wsConnID)
 		logger.LogicLogger.Error("[Service] Error sending stream request",
-			"taskid", g.task.Schedule.Id,
+			"taskID", g.task.Schedule.Id,
 			"wsConnID", wsConnID,
 			"error", err)
 		return nil, err
@@ -379,12 +378,13 @@ func (h *HTTPInvoker) Invoke(sp *types.ServiceProvider, content types.HTTPConten
 	// 9. Handle segmented request
 	serviceDefaultInfo := GetProviderServiceDefaultInfo(h.task.Target.ToFavor, h.task.Request.Service)
 	if serviceDefaultInfo.RequestSegments > 1 {
+		logger.LogicLogger.Debug("[Service] Handling segmented request: taskID: %d ", h.task.Schedule.Id)
 		return h.handleSegmentedRequest(client, resp, sp, serviceDefaultInfo)
 	}
 
 	// 10. Log the response
 	logger.LogicLogger.Debug("[Service] Response Receiving",
-		"taskid", h.task.Schedule.Id,
+		"taskID", h.task.Schedule.Id,
 		"header", fmt.Sprintf("%+v", resp.Header),
 		"task", h.task)
 
@@ -407,7 +407,7 @@ func (h *HTTPInvoker) handleAuthentication(req *http.Request, sp *types.ServiceP
 
 	if err := authenticator.Authenticate(); err != nil {
 		logger.LogicLogger.Error("[Service] Failed to authenticate",
-			"taskid", h.task.Schedule.Id,
+			"taskID", h.task.Schedule.Id,
 			"error", err)
 		return fmt.Errorf("failed to authenticate: %w", err)
 	}
@@ -480,7 +480,8 @@ func (h *HTTPInvoker) pollTaskStatus(client *http.Client, sp *types.ServiceProvi
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			return h.handleErrorStatusResponse(resp)
+			logger.LogicLogger.Info("[Service] Segment task Failed")
+			return h.handleErrorResponse(resp)
 		}
 
 		status, body, err := h.parseTaskStatusResponse(resp)
@@ -489,6 +490,8 @@ func (h *HTTPInvoker) pollTaskStatus(client *http.Client, sp *types.ServiceProvi
 		}
 
 		if h.isTaskComplete(status) {
+
+			logger.LogicLogger.Info("[Service] Segment task completed")
 			return &http.Response{
 				StatusCode: resp.StatusCode,
 				Header:     resp.Header.Clone(),
@@ -533,27 +536,6 @@ func (h *HTTPInvoker) authenticateStatusRequest(req *http.Request, sp *types.Ser
 	return authenticator.Authenticate()
 }
 
-// handleErrorStatusResponse Handle error status responses
-func (h *HTTPInvoker) handleErrorStatusResponse(resp *http.Response) (*http.Response, error) {
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read error response body: %w", err)
-	}
-
-	logger.LogicLogger.Warn("[Service] Service Provider returns Error",
-		"taskid", h.task.Schedule.Id,
-		"status_code", resp.StatusCode,
-		"body", string(body))
-
-	return nil, &types.HTTPErrorResponse{
-		StatusCode: resp.StatusCode,
-		Header:     resp.Header.Clone(),
-		Body:       body,
-	}
-}
-
 // parseTaskStatusResponse Parse the task status response
 func (h *HTTPInvoker) parseTaskStatusResponse(resp *http.Response) (string, []byte, error) {
 	body, err := io.ReadAll(resp.Body)
@@ -582,23 +564,19 @@ func (h *HTTPInvoker) isTaskComplete(status string) bool {
 
 // logRequest Log the request
 func (h *HTTPInvoker) logRequest(req *http.Request, content types.HTTPContent) {
-	logger.LogicLogger.Info("[Service] Request Sending to Service Provider ...",
-		"taskid", h.task.Schedule.Id,
-		"url", req.URL.String())
-
 	body := string(content.Body)
 	if len(body) > 1000 {
 		body = body[:1000]
 	}
-	logger.LogicLogger.Debug("[Service] Request Sending to Service Provider ...",
-		"taskid", h.task.Schedule.Id,
+	logger.LogicLogger.Info("[Service] Request Sending to Service Provider ...",
+		"taskID", h.task.Schedule.Id,
 		"method", req.Method,
 		"url", req.URL.String(),
 		"header", fmt.Sprintf("%+v", req.Header),
 		"body", body)
 
 	fmt.Println("[Service] Request Sending to Service Provider ...",
-		"taskid", h.task.Schedule.Id,
+		"taskID", h.task.Schedule.Id,
 		"method", req.Method,
 		"url", req.URL.String(),
 		"header", fmt.Sprintf("%+v", req.Header),
@@ -611,10 +589,16 @@ func (h *HTTPInvoker) handleErrorResponse(resp *http.Response) (*http.Response, 
 	if err != nil {
 		sbody = string(b)
 	}
-	logger.LogicLogger.Warn("[Service] Service Provider returns Error", "taskid", h.task.Schedule.Id,
+
+	logger.LogicLogger.Warn("[Service] Service Provider returns Error", "taskID", h.task.Schedule.Id,
 		"status_code", resp.StatusCode, "body", sbody)
 	resp.Body.Close()
-	return nil, errors.New("[Service] Service Provider API returns Error err: \n" + sbody)
+
+	return nil, &types.HTTPErrorResponse{
+		StatusCode: resp.StatusCode,
+		Header:     resp.Header.Clone(),
+		Body:       b,
+	}
 }
 
 // createHTTPClient Create an HTTP client
