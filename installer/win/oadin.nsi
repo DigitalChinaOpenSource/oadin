@@ -2,9 +2,8 @@
   !define VERSION "0.0.0"
 !endif
 
-; 64位NSIS支持
-Unicode True
-Target amd64-unicode
+; 包含64位支持库
+!include "x64.nsh"
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
@@ -16,22 +15,23 @@ RequestExecutionLevel admin ; Admin rights required for Program Files installati
 SetCompress auto
 SetCompressor lzma
 
-; 64位系统检查
+; 强制安装到64位Program Files目录
 Function .onInit
-  ; 检查是否为64位系统
-  System::Call "kernel32::GetCurrentProcess() i .s"
-  System::Call "kernel32::IsWow64Process(i s, *i .r0)"
-  IntCmp $0 0 not64bit
-  Goto is64bit
-  not64bit:
-    MessageBox MB_OK|MB_ICONSTOP "此安装程序需要64位Windows系统。"
-    Abort
-  is64bit:
-    ; 设置64位安装路径
+  ${If} ${RunningX64}
+    ; 在64位系统上，强制使用真正的Program Files目录
+    ; 而不是被重定向到Program Files (x86)
+    SetRegView 64
     StrCpy $INSTDIR "$PROGRAMFILES\Oadin"
+  ${Else}
+    MessageBox MB_OK|MB_ICONSTOP "此应用程序需要64位Windows系统。"
+    Abort
+  ${EndIf}
 FunctionEnd
 
 Section "Install"
+  ; 禁用WOW64文件系统重定向，确保安装到真正的Program Files
+  ${DisableX64FSRedirection}
+  
   SetOutPath "$INSTDIR"
   File "..\..\oadin.exe"
   File "preinstall.bat"
@@ -46,4 +46,7 @@ Section "Install"
 
   # start oadin server
   nsExec::Exec '"$INSTDIR\start-oadin.bat"'
+  
+  ; 重新启用文件系统重定向
+  ${EnableX64FSRedirection}
 SectionEnd
