@@ -243,10 +243,10 @@ func downloadSingleFileCheck(ctx context.Context, a AsyncDownloadModelFileData, 
 	}
 
 	f, err := os.Open(filePath)
-	defer f.Close()
 	if err != nil {
 		return false
 	}
+	defer f.Close()
 
 	partSize, err := f.Seek(0, io.SeekEnd)
 	if err != nil {
@@ -316,6 +316,10 @@ func downloadSingleFile(ctx context.Context, a AsyncDownloadModelFileData, fileD
 
 	// 下载内容
 	digest := sha256.New()
+	// 进度推送相关变量
+	const progressThreshold = 10 * 1024 * 1024 // 10MB
+	var lastProgressSize int64 = 0             // 上次推送进度时的大小
+
 	for {
 		select {
 		case data, ok := <-reqDataCh:
@@ -358,14 +362,18 @@ func downloadSingleFile(ctx context.Context, a AsyncDownloadModelFileData, fileD
 			partSize += int64(n)
 
 			// 写入进度
-			progress := types.ProgressResponse{
-				Status:    fmt.Sprintf("pulling %s", fileData.Name),
-				Digest:    fileData.Digest,
-				Total:     fileData.Size,
-				Completed: partSize,
-			}
-			if dataBytes, err := json.Marshal(progress); err == nil {
-				a.DataCh <- dataBytes
+			// 检查是否需要推送进度（每10MB推送一次，或者文件下载完成时推送）
+			if partSize-lastProgressSize >= progressThreshold || partSize == fileData.Size {
+				progress := types.ProgressResponse{
+					Status:    fmt.Sprintf("pulling %s", fileData.Name),
+					Digest:    fileData.Digest,
+					Total:     fileData.Size,
+					Completed: partSize,
+				}
+				if dataBytes, err := json.Marshal(progress); err == nil {
+					a.DataCh <- dataBytes
+				}
+				lastProgressSize = partSize // 更新上次推送进度的大小
 			}
 		case err := <-reqErrCh:
 			if err != nil {
@@ -1216,5 +1224,135 @@ func (o *OpenvinoProvider) SetOperateStatus(status int) {
 }
 
 func (o *OpenvinoProvider) CopyModel(ctx context.Context, req *types.CopyModelRequest) error {
+	return nil
+}
+
+func (o *OpenvinoProvider) InstallEngineStream(ctx context.Context, newDataChan chan []byte, newErrChan chan error) {
+	defer close(newDataChan)
+	defer close(newErrChan)
+
+	execPath := o.EngineConfig.ExecPath
+	fmt.Println("[OpenVINO] Checking if execPath exists:", execPath)
+	if _, err := os.Stat(execPath); err == nil {
+		return
+	}
+
+	modelDir := fmt.Sprintf("%s/models", o.EngineConfig.EnginePath)
+	if _, err := os.Stat(modelDir); os.IsNotExist(err) {
+		err := os.MkdirAll(modelDir, 0o750)
+		if err != nil {
+			logger.EngineLogger.Error("[OpenVINO] Failed to create models directory: " + err.Error())
+			newErrChan <- err
+			return
+		}
+	}
+
+	// 新建 config.json 空 文件
+	configFile := fmt.Sprintf("%s/config.json", modelDir)
+	_, err := os.Create(configFile)
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to create config.json: " + err.Error())
+		newErrChan <- err
+		return
+	}
+	// 写入默认config配置
+	defaultConfig := OpenvinoModelServerConfig{
+		MediapipeConfigList: []ModelConfig{},
+		ModelConfigList:     []interface{}{},
+	}
+	err = o.saveConfig(&defaultConfig)
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to save config.json: " + err.Error())
+		newErrChan <- err
+		return
+	}
+
+	onProgress := func(downloaded, total int64) {
+		if total > 0 {
+			progress := types.ProgressResponse{
+				Status:    "downloading",
+				Total:     total,
+				Completed: downloaded,
+			}
+			if dataBytes, err := json.Marshal(progress); err == nil {
+				newDataChan <- dataBytes
+			}
+		}
+	}
+	file, err := utils.DownloadFileWithProgress(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath, onProgress)
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to download OpenVINO Model Server: " + err.Error())
+		newErrChan <- err
+		return
+	}
+
+	// 解压ovms文件
+	err = utils.UnzipFile(file, o.EngineConfig.EnginePath)
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to unzip OpenVINO Model Server: " + err.Error())
+		newErrChan <- err
+		return
+	}
+
+	// 下载py 脚本文件压缩包
+	// scriptZipUrl := "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/scripts.zip"
+	scriptZipUrl := ScriptsDownloadURL
+	scriptZipFile, err := utils.DownloadFile(scriptZipUrl, o.EngineConfig.EnginePath)
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to download scripts.zip: " + err.Error())
+		newErrChan <- err
+		return
+	}
+
+	// 解压py 脚本文件
+	err = utils.UnzipFile(scriptZipFile, o.EngineConfig.EnginePath)
+	if err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to unzip scripts.zip: " + err.Error())
+		newErrChan <- err
+		return
+	}
+
+	execPath = strings.Replace(o.EngineConfig.ExecPath, "/", "\\", -1)
+	enginePath := strings.Replace(o.EngineConfig.EnginePath, "/", "\\", -1)
+
+	// 1. 构造批处理命令（确保所有命令在同一个会话中执行）
+	batchContent := fmt.Sprintf(`
+	@echo on
+	call "%s\\setupvars.bat"
+	set PATH=%s\\python\\Scripts;%%PATH%%
+	python -m pip install -r "%s\\scripts\\requirements.txt" -i https://mirrors.aliyun.com/pypi/simple/
+	`, execPath, execPath, enginePath)
+
+	logger.EngineLogger.Debug("[OpenVINO] Batch content: " + batchContent)
+
+	// 2. 创建临时批处理文件
+	tmpBatchFile := filepath.Join(os.TempDir(), "run_install.bat")
+	if err := os.WriteFile(tmpBatchFile, []byte(batchContent), 0o644); err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to create temp batch file: " + err.Error())
+		newErrChan <- err
+		return
+	}
+	defer os.Remove(tmpBatchFile) // 执行后删除临时文件
+
+	// 3. 执行批处理文件
+	cmd := exec.Command("cmd", "/C", tmpBatchFile)
+	cmd.Dir = enginePath
+
+	var stdout, stderr bytes.Buffer
+
+	// 实时输出 stdout 和 stderr
+	cmd.Stdout = io.MultiWriter(os.Stdout, &stdout) // 同时输出到控制台和缓冲区
+	cmd.Stderr = io.MultiWriter(os.Stderr, &stderr) // 同时输出到控制台和缓冲区
+
+	if err := cmd.Run(); err != nil {
+		logger.EngineLogger.Error("[OpenVINO] Failed to run batch script: " + err.Error())
+		newErrChan <- err
+		return
+	}
+
+	logger.EngineLogger.Info("[OpenVINO] OpenVINO Model Server install completed")
+}
+
+func (o *OpenvinoProvider) InstallEngineExtraDepends(ctx context.Context) error {
 	return nil
 }

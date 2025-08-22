@@ -216,57 +216,96 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 		}
 	}
 	ds := datastore.GetDefaultDatastore()
-	service := &types.Service{
-		Name: task.Request.Service,
-	}
-
-	err := ds.Get(context.Background(), service)
-	if err != nil {
-		logger.LogicLogger.Error("[Schedule] Failed to get service", "error", err, "service", task.Request.Service)
-		return nil, bcode.ErrServiceRecordNotFound
-	}
-
-	if service.LocalProvider == "" && service.RemoteProvider == "" {
-		logger.LogicLogger.Error("[Schedule] Service ", task.Request.Service, " does not have local or remote provider")
-		return nil, bcode.ErrNotExistDefaultProvider
-	}
-
-	m := &types.Model{
-		ModelName:   task.Request.Model,
-		ServiceName: task.Request.Service,
-	}
+	//service := &types.Service{
+	//	Name: task.Request.Service,
+	//}
+	//
+	//err := ds.Get(context.Background(), service)
+	//if err != nil {
+	//	logger.LogicLogger.Error("[Schedule] Failed to get service", "error", err, "service", task.Request.Service)
+	//	return nil, bcode.ErrServiceRecordNotFound
+	//}
+	//
+	//if service.LocalProvider == "" && service.RemoteProvider == "" {
+	//	logger.LogicLogger.Error("[Schedule] Service ", task.Request.Service, " does not have local or remote provider")
+	//	return nil, bcode.ErrNotExistDefaultProvider
+	//}
 
 	// Provider Selection
 	// ================
-	providerName := service.LocalProvider
+	//providerName := service.LocalProvider
+	sortOption := []datastore.SortOption{
+		{Key: "updated_at", Order: -1},
+	}
+	var m *types.Model
 	if model == "" {
-		if location == types.ServiceSourceRemote {
-			if service.RemoteProvider == "" {
-				providerName = service.LocalProvider
-			} else {
-				providerName = service.RemoteProvider
+		mObj := new(types.Model)
+		queries := []datastore.FuzzyQueryOption{}
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "service_name", Query: task.Request.Service})
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "is_default", Query: "true"})
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "service_source", Query: location})
+		ms, err := ds.List(context.Background(), mObj, &datastore.ListOptions{
+			FilterOptions: datastore.FilterOptions{
+				Queries: queries,
+			},
+			SortBy: sortOption,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if len(ms) == 0 {
+			newQueries := []datastore.FuzzyQueryOption{}
+			newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "service_name", Query: task.Request.Service})
+			newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "service_source", Query: location})
+			newMs, err := ds.List(context.Background(), mObj, &datastore.ListOptions{
+				FilterOptions: datastore.FilterOptions{
+					Queries: newQueries,
+				},
+				SortBy: sortOption,
+			})
+			if err != nil {
+				return nil, err
 			}
-		} else if service.LocalProvider == "" {
-			providerName = service.RemoteProvider
+			if len(newMs) == 0 {
+				logger.LogicLogger.Error("[Schedule] model not found", "error", err, "model", task.Request.Model)
+				return nil, bcode.ErrModelRecordNotFound
+			}
+			m = newMs[0].(*types.Model)
+		} else {
+			m = ms[0].(*types.Model)
 		}
 	} else {
-		err := ds.Get(context.Background(), m)
+		mObj := new(types.Model)
+		mObj.ModelName = model
+		queries := []datastore.FuzzyQueryOption{}
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "service_source", Query: location})
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "service_name", Query: task.Request.Service})
+		ms, err := ds.List(context.Background(), mObj, &datastore.ListOptions{
+			FilterOptions: datastore.FilterOptions{
+				Queries: queries,
+			},
+			SortBy: sortOption,
+		})
 		if err != nil {
 			logger.LogicLogger.Error("[Schedule] model not found", "error", err, "model", task.Request.Model)
 			return nil, bcode.ErrModelRecordNotFound
 		}
+		if len(ms) == 0 {
+			logger.LogicLogger.Error("[Schedule] model installing", "model", task.Request.Model, "status", m.Status)
+			return nil, bcode.ErrModelUnDownloaded
+		}
+		m = ms[0].(*types.Model)
 		if m.Status != "downloaded" {
 			logger.LogicLogger.Error("[Schedule] model installing", "model", task.Request.Model, "status", m.Status)
 			return nil, bcode.ErrModelUnDownloaded
 		}
-
-		providerName = m.ProviderName
 	}
+	providerName := m.ProviderName
 
 	sp := &types.ServiceProvider{
 		ProviderName: providerName,
 	}
-	err = ds.Get(context.Background(), sp)
+	err := ds.Get(context.Background(), sp)
 	if err != nil {
 		logger.LogicLogger.Error("[Schedule] service provider not found for ", location, " of Service ", task.Request.Service)
 		return nil, bcode.ErrProviderNotExist

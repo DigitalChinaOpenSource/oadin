@@ -16,6 +16,7 @@ import (
 	"oadin/internal/provider"
 	"oadin/internal/server"
 	"oadin/internal/types"
+	"oadin/internal/datastore"
 )
 
 // Engine status constants
@@ -41,16 +42,23 @@ type EngineManageService interface {
 	Exist(ctx context.Context, req dto.EngineManageRequest) int
 	// Install installs the specified engine if it is not already installed
 	Install(ctx context.Context, req dto.EngineManageRequest) error
+
+	CreateAIGCServiceSync(ctx context.Context, req *interalDTO.CreateAIGCServiceRequest) error
+	CheckLocalModelExist(ctx context.Context, request dto.ModelDownloadRequest) error
 }
 
 // EngineManageServiceImpl implements the EngineManageService interface
 type EngineManageServiceImpl struct {
 	AIGCService server.AIGCService
+	Ds datastore.Datastore
 }
 
 // NewEngineManageService creates a new instance of EngineManageServiceImpl
 func NewEngineManageService() EngineManageService {
-	return &EngineManageServiceImpl{}
+	return &EngineManageServiceImpl{
+		AIGCService: server.NewAIGCService(),
+		Ds: datastore.GetDefaultDatastore(),
+	}
 }
 
 // Exist checks if the specified engine exists and returns its status
@@ -193,6 +201,23 @@ func (s *EngineManageServiceImpl) performInstallWithContext(ctx context.Context,
 
 	logger.LogicLogger.Info("Engine installation completed successfully", "service", req.ServiceName)
 	return true, nil
+}
+
+
+func (s *EngineManageServiceImpl) CreateAIGCServiceSync(ctx context.Context, req *interalDTO.CreateAIGCServiceRequest) error {
+	// Synchronously create the AIGC service
+	_, err := s.AIGCService.CreateAIGCService(ctx, req)
+	return err
+}
+
+func (s *EngineManageServiceImpl) CheckLocalModelExist(ctx context.Context, request dto.ModelDownloadRequest) error {
+	m := &types.Model{}
+	m.ModelName = request.ModelName
+	m.ProviderName = fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)
+	m.Status = "downloaded"
+	err := s.Ds.Get(ctx, m)
+	fmt.Println("CheckLocalModelExist:", err)
+	return err
 }
 
 // IsDownloading checks if an engine is currently being downloaded

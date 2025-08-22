@@ -9,3 +9,24 @@ type EngineManageRequest struct {
 	ServiceName   string `json:"service_name"`
 	ServiceSource string `json:"service_source"`
 }
+
+type DownloadResponse struct {
+	Status string `json:"status"`
+	Data   string `json:"data,omitempty"`
+}
+
+type EngineDownloadRequest struct {
+	EngineName string `json:"engineName" validate:"required"`
+	Stream     bool   `json:"stream"`
+}
+
+type DownloadCheckDistRequest struct {
+	EngineName string `json:"engineName" validate:"required"`
+}
+
+type ModelDownloadRequest struct {
+	EngineName    string `json:"engineName" validate:"required"`
+	ModelName     string `json:"modelName" validate:"required"`
+	ModelType     string `json:"modelType" validate:"required"`
+	Stream        bool   `json:"stream" validate:"required"`
+}
