@@ -291,7 +291,7 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 			return nil, bcode.ErrModelRecordNotFound
 		}
 		if len(ms) == 0 {
-			logger.LogicLogger.Error("[Schedule] model installing", "model", task.Request.Model, "status", m.Status)
+			logger.LogicLogger.Error("[Schedule] model installing", "model", task.Request.Model)
 			return nil, bcode.ErrModelUnDownloaded
 		}
 		m = ms[0].(*types.Model)

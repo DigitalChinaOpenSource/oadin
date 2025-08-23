@@ -345,6 +345,7 @@ func (h *HTTPInvoker) Invoke(sp *types.ServiceProvider, content types.HTTPConten
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
+	req = req.WithContext(h.task.Request.OriginalRequest.Context())
 
 	// 3. Set the request headers
 	if err := h.setRequestHeaders(req, sp, content); err != nil {
