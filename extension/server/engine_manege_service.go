@@ -215,9 +215,24 @@ func (s *EngineManageServiceImpl) CheckLocalModelExist(ctx context.Context, requ
 	m.ModelName = request.ModelName
 	m.ProviderName = fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)
 	m.Status = "downloaded"
-	err := s.Ds.Get(ctx, m)
-	fmt.Println("CheckLocalModelExist:", err)
-	return err
+
+	newQueries := []datastore.FuzzyQueryOption{}
+	newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "model_name", Query: request.ModelName})
+	newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "provider_name", Query: fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)})
+	newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "status", Query: "downloaded"})
+
+	list, err := s.Ds.List(ctx, m, &datastore.ListOptions{
+		FilterOptions: datastore.FilterOptions{
+			Queries: newQueries,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if len(list) == 0 {
+		return fmt.Errorf("local model not found: %s", m.ModelName)
+	}
+	return nil
 }
 
 // IsDownloading checks if an engine is currently being downloaded
