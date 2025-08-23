@@ -105,8 +105,20 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 	}
 
 	execPath := filepath.Join(modelEngine.GetConfig().ExecPath, modelEngine.GetConfig().ExecFile)
-	fmt.Printf("execPath: %s", execPath)
 	if _, err := os.Stat(execPath); err == nil {
+		err := modelEngine.HealthCheck()
+		if err != nil {
+			err = modelEngine.InitEnv()
+			if err != nil {
+				res.Status = "error"
+			} else {
+				err := modelEngine.StartEngine(types.EngineStartModeDaemon)
+				if err != nil {
+					res.Status = "error"
+				}
+			}
+		}
+
 		if request.Stream {
 			dataBytes, _ := json.Marshal(res)
 			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -156,6 +168,7 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 			}
 		case err, _ := <-errCh:
 			if err != nil {
+				logger.EngineLogger.Error("DownloadStreamEngine", err)
 				res.Status = "error"
 				res.Data = err.Error()
 				if request.Stream {
@@ -281,6 +294,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			}
 		case err, _ := <-errCh:
 			if err != nil {
+				logger.EngineLogger.Error("DownloadStreamModel", err)
 				res.Status = "error"
 				res.Data = err.Error()
 				if request.Stream {

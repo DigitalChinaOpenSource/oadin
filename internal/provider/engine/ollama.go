@@ -503,7 +503,6 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 	reqHeader["Content-Type"] = "application/json"
 	reqHeader["Accept"] = "application/json"
 	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req, reqHeader)
-	logger.EngineLogger.Info("[Ollama] Pull model success: " + req.Name + " , mode: stream")
 
 	return dataCh, errCh
 }
