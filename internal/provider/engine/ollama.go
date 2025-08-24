@@ -186,6 +186,7 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
 				return fmt.Errorf("failed to start ollama: %v", err)
 			}
+			logger.EngineLogger.Info("ipex运行环境变量: %s", cmd.Env)
 		} else {
 			cmd := exec.Command(execFile, "serve")
 			if runtime.GOOS == "windows" {
@@ -471,11 +472,11 @@ func (o *OllamaProvider) InitEnv() error {
 		// 加长ipex的 长度设置
 		err = os.Setenv("OLLAMA_NUM_CTX", "8192")
 		if err != nil {
-			return fmt.Errorf("failed to set ZES_ENABLE_SYSMAN: %w", err)
+			return fmt.Errorf("failed to set OLLAMA_NUM_CTX: %w", err)
 		}
 		err = os.Setenv("OLLAMA_NUM_PARALLEL", "1")
 		if err != nil {
-			return fmt.Errorf("failed to set SYCL_CACHE_PERSISTENT: %w", err)
+			return fmt.Errorf("failed to set OLLAMA_NUM_PARALLEL: %w", err)
 		}
 	}
 
