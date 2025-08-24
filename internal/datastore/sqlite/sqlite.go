@@ -29,6 +29,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"oadin/internal/datastore"
 	"oadin/internal/provider/template"
 	"oadin/internal/types"
@@ -52,7 +53,9 @@ func New(dbPath string) (*SQLite, error) {
 		}
 	}
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Error), // 添加SQL日志打印
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err)
 	}

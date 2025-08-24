@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"oadin/extension/api/dto"
@@ -105,8 +106,21 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 	}
 
 	execPath := filepath.Join(modelEngine.GetConfig().ExecPath, modelEngine.GetConfig().ExecFile)
-	fmt.Printf("execPath: %s", execPath)
 	if _, err := os.Stat(execPath); err == nil {
+		err = modelEngine.HealthCheck()
+		if err != nil {
+			err = modelEngine.InitEnv()
+			if err != nil {
+				res.Status = "error"
+			} else {
+				err = modelEngine.StartEngine(types.EngineStartModeDaemon)
+				if err != nil {
+					res.Status = "error"
+				}
+				time.Sleep(1 * time.Second)
+			}
+		}
+
 		if request.Stream {
 			dataBytes, _ := json.Marshal(res)
 			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -127,13 +141,17 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 			if !ok {
 				// 数据通道关闭，发送结束标记
 				if _, err := os.Stat(execPath); err == nil {
-					err = modelEngine.InitEnv()
+					err = modelEngine.HealthCheck()
 					if err != nil {
-						res.Status = "error"
-					} else {
-						err := modelEngine.StartEngine(types.EngineStartModeDaemon)
+						err = modelEngine.InitEnv()
 						if err != nil {
 							res.Status = "error"
+						} else {
+							err = modelEngine.StartEngine(types.EngineStartModeDaemon)
+							if err != nil {
+								res.Status = "error"
+							}
+							time.Sleep(1 * time.Second)
 						}
 					}
 				} else {
@@ -156,6 +174,7 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 			}
 		case err, _ := <-errCh:
 			if err != nil {
+				logger.EngineLogger.Error("DownloadStreamEngine", err)
 				res.Status = "error"
 				res.Data = err.Error()
 				if request.Stream {
@@ -227,6 +246,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 	}
 
 	if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
+		logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
 		if request.Stream {
 			dataBytes, _ := json.Marshal(res)
 			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -251,16 +271,24 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 				// 数据通道关闭，发送结束标记
 				if data == nil {
 					// 更新service表和model表
+					time.Sleep(1 * time.Second)
 					newReq := &dto2.CreateAIGCServiceRequest{
 						ServiceName: request.ModelType,
 						ServiceSource: "local",
 						ApiFlavor: request.EngineName,
 						ModelName: request.ModelName,
 					}
-					logger.EngineLogger.Info("CreateAIGCServiceSync newReq: ", newReq)
 					err := e.EngineManageService.CreateAIGCServiceSync(ctx, newReq)
-					if err != nil {
+					if err != nil && err.Error() != "provider model already exist" {
 						logger.EngineLogger.Error("CreateAIGCServiceSync error: ", err)
+						res.Status = err.Error()
+						if request.Stream {
+							dataBytes, _ := json.Marshal(res)
+							fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+							flusher.Flush()
+						} else {
+							c.JSON(http.StatusInternalServerError, res)
+						}
 						return
 					}
 
@@ -281,8 +309,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			}
 		case err, _ := <-errCh:
 			if err != nil {
-				res.Status = "error"
-				res.Data = err.Error()
+				logger.EngineLogger.Error("DownloadStreamModel err: ", err)
+				res.Status = err.Error()
 				if request.Stream {
 					dataBytes, _ := json.Marshal(res)
 					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -294,8 +322,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			}
 
 		case <-ctx.Done():
-			res.Status = "error"
-			res.Data = "timeout"
+			res.Status = "timeout"
+			logger.EngineLogger.Error("DownloadStreamModel timeout")
 			if request.Stream {
 				dataBytes, _ := json.Marshal(res)
 				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
