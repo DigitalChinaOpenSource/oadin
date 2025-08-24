@@ -467,6 +467,16 @@ func (o *OllamaProvider) InitEnv() error {
 		if err != nil {
 			return fmt.Errorf("failed to set SYCL_CACHE_PERSISTENT: %w", err)
 		}
+
+		// 加长ipex的 长度设置
+		err = os.Setenv("OLLAMA_NUM_CTX", "8192")
+		if err != nil {
+			return fmt.Errorf("failed to set ZES_ENABLE_SYSMAN: %w", err)
+		}
+		err = os.Setenv("OLLAMA_NUM_PARALLEL", "1")
+		if err != nil {
+			return fmt.Errorf("failed to set SYCL_CACHE_PERSISTENT: %w", err)
+		}
 	}
 
 	return nil
