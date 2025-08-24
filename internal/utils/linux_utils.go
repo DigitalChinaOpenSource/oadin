@@ -89,3 +89,7 @@ func ModifySystemUserVariables(envInfo *types.EnvVariables) error {
 func SetCmdSysProcAttr(cmd *exec.Cmd) {
 	fmt.Printf("not implement")
 }
+
+func CheckDllExists(dllName string) bool {
+	return true
+}

@@ -1536,7 +1536,7 @@ func ListenModelEngineHealthTotal() {
 
 	engineList := make([]string, 0)
 
-	execPath := OllamaEngine.GetConfig().ExecPath
+	execPath := filepath.Join(OllamaEngine.GetConfig().ExecPath, OllamaEngine.GetConfig().ExecFile)
 	if _, err := os.Stat(execPath); err == nil {
 		engineList = append(engineList, types.FlavorOllama)
 	}
@@ -1600,7 +1600,7 @@ func StartEngineTotall(startMode string) error {
 	openVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
 	llamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
 
-	execPath := ollamaEngine.GetConfig().ExecPath
+	execPath := filepath.Join(ollamaEngine.GetConfig().ExecPath, ollamaEngine.GetConfig().ExecFile)
 	if _, err := os.Stat(execPath); err == nil {
 		err = StartModelEngine(types.FlavorOllama, startMode)
 		if err != nil {

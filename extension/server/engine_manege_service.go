@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"sync"
-	"time"
 
 	"golang.org/x/sync/singleflight"
 
@@ -208,9 +207,6 @@ func (s *EngineManageServiceImpl) performInstallWithContext(ctx context.Context,
 func (s *EngineManageServiceImpl) CreateAIGCServiceSync(ctx context.Context, req *interalDTO.CreateAIGCServiceRequest) error {
 	// Synchronously create the AIGC service
 	_, err := s.AIGCService.CreateAIGCService(ctx, req)
-	if err == nil {
-		time.Sleep(1 * time.Second)
-	}
 	return err
 }
 
