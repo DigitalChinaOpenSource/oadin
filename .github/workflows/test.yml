@@ -64,8 +64,8 @@ jobs:
         run: |
           echo "========== 🔧 Mac Upload Begin =========="
           echo "-------- 📤 上传到 Nexus 私服 --------"
-          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
-          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/oadin-installer-latest.pkg"
+          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/dist/mac/${MAC_FILE_NAME}"
+          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/dist/mac/oadin-installer-latest.pkg"
           echo "========== 🔧 Mac Upload End =========="
 
   build-win:
@@ -106,8 +106,8 @@ jobs:
           echo "========== 🔧 Win Upload Begin =========="
           echo "-------- 📤 上传到 Nexus 私服 --------"
           cd C:\Users\Administrator\WebstormProjects\oadin
-          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$($env:WIN_FILE_NAME)"
-          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/oadin-installer-latest.exe"
+          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/dist/win/$($env:WIN_FILE_NAME)"
+          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/dist/win/oadin-installer-latest.exe"
           echo "========== 🔧 Win Upload End =========="
           
 

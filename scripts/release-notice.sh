@@ -2,11 +2,11 @@
 
 # 判断环境和下载路径
 if [[ "$ENV" == "development" ]]; then
-  MAC_URL="http://$NEXUS_HOST_PORT/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/$MAC_FILE_NAME"
-  WIN_URL="http://$NEXUS_HOST_PORT/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$WIN_FILE_NAME"
+  MAC_URL="http://$NEXUS_HOST_PORT/repository/raw-hosted/intel-ai-pc/oadin/dist/mac/$MAC_FILE_NAME"
+  WIN_URL="http://$NEXUS_HOST_PORT/repository/raw-hosted/intel-ai-pc/oadin/dist/win/$WIN_FILE_NAME"
 else
-  MAC_URL="https://oss-aipc.dcclouds.com/oadin/releases/macos/$MAC_FILE_NAME"
-  WIN_URL="https://oss-aipc.dcclouds.com/oadin/releases/windows/$WIN_FILE_NAME"
+  MAC_URL="https://oss-aipc.dcclouds.com/oadin/dist/macos/$MAC_FILE_NAME"
+  WIN_URL="https://oss-aipc.dcclouds.com/oadin/dist/windows/$WIN_FILE_NAME"
 fi
 
 BODY=$(cat <<EOF
