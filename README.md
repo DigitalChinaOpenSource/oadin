@@ -86,7 +86,7 @@ Oadin now supports a complete AI service ecosystem, including core functions suc
 
 ## Features of Oadin
 
-Oadin (AIPC Open Gateway) aims to decouple AI applications on AI PCs from the AI services they rely
+Oadin (Open AIPC Development Infrastructure) aims to decouple AI applications on AI PCs from the AI services they rely
 on. It is designed to provide developers with an extremely simple and easy-to-use infrastructure to
 install local AI services in their development environments and publish their AI applications
 without packaging their own AI stacks and models.
