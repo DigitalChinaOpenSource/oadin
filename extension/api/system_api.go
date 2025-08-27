@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"runtime"
 
 	"oadin/extension/api/dto"
 	"oadin/extension/rpc"
@@ -210,21 +211,12 @@ func (e *SystemlApi) GetCPUInfo(c *gin.Context) {
 
 // OllamaMonitor 获取Ollama监控信息
 func (e *SystemlApi) OllamaMonitor(c *gin.Context) {
-	// TODO: 实现Ollama监控功能
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    nil,
-	})
+	e.serviceMonitor(c, "ollama")
 }
 
 // OpenVinoMonitor 获取OpenVino监控信息
 func (e *SystemlApi) OpenVinoMonitor(c *gin.Context) {
-	// TODO: 实现OpenVino监控功能
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    nil,
-	})
+	e.serviceMonitor(c, "openvino")
 }
 
 // GetFullHardwareInfo 获取完整的系统硬件信息（包含CPU）
@@ -243,4 +235,69 @@ func (e *SystemlApi) GetFullHardwareInfo(c *gin.Context) {
 		"success": true,
 		"data":    hardwareInfo,
 	})
+}
+
+// serviceMonitor 通用的服务监控方法
+func (e *SystemlApi) serviceMonitor(c *gin.Context, serviceName string) {
+	platform := runtime.GOOS
+
+	// 检查是否支持该平台
+	if !e.isSupportedPlatform(platform) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success":  false,
+			"error":    "Unsupported operating system",
+			"message":  "不支持的操作系统",
+			"platform": platform,
+		})
+		return
+	}
+
+	// 调用平台特定的监控方法
+	data := e.getPlatformSpecificData(serviceName, platform)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":  true,
+		"platform": platform,
+		"service":  serviceName,
+		"data":     data,
+	})
+}
+
+// isSupportedPlatform 检查是否支持该平台
+func (e *SystemlApi) isSupportedPlatform(platform string) bool {
+	supportedPlatforms := []string{"windows", "darwin", "linux"}
+	for _, p := range supportedPlatforms {
+		if p == platform {
+			return true
+		}
+	}
+	return false
+}
+
+// getPlatformSpecificData 获取平台特定的监控数据
+func (e *SystemlApi) getPlatformSpecificData(serviceName, platform string) interface{} {
+	// 使用通用方法获取服务监控数据
+	return e.getServiceMonitoringData(serviceName, platform)
+}
+
+// getServiceMonitoringData 通用的服务监控数据获取方法
+func (e *SystemlApi) getServiceMonitoringData(serviceName, platform string) interface{} {
+	// TODO: 实现具体的监控逻辑
+	// 这里可以根据服务名称和平台调用不同的实际监控功能
+
+	// 目前返回统一的未实现状态
+	return map[string]interface{}{
+		"status":    "not_implemented",
+		"service":   serviceName,
+		"platform":  platform,
+		"note":      e.getImplementationNote(serviceName, platform),
+		"timestamp": "placeholder", // 可以添加时间戳
+		"version":   "unknown",     // 可以添加服务版本信息
+		"health":    "unknown",     // 可以添加健康状态
+	}
+}
+
+// getImplementationNote 获取实现说明
+func (e *SystemlApi) getImplementationNote(serviceName, platform string) string {
+	return serviceName + " monitoring on " + platform + " platform not implemented yet"
 }
