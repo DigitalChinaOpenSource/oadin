@@ -117,7 +117,7 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 				if err != nil {
 					res.Status = "error"
 				}
-				time.Sleep(1 * time.Second)
+				time.Sleep(3 * time.Second)
 			}
 		}
 
@@ -151,7 +151,7 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 							if err != nil {
 								res.Status = "error"
 							}
-							time.Sleep(1 * time.Second)
+							time.Sleep(3 * time.Second)
 						}
 					}
 				} else {
@@ -271,7 +271,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 				// 数据通道关闭，发送结束标记
 				if data == nil {
 					// 更新service表和model表
-					time.Sleep(1 * time.Second)
+					time.Sleep(3 * time.Second)
 					newReq := &dto2.CreateAIGCServiceRequest{
 						ServiceName: request.ModelType,
 						ServiceSource: "local",
