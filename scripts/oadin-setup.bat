@@ -30,30 +30,30 @@ set "MODEL_DIR=%ProgramData%\Oadin\engine\ollama"
 set "TEMP_EXTRACT_DIR=%TEMP%\oadin_extract_%RANDOM%"
 
 REM === Color definitions ===
-REM Simplified to avoid special character issues
-set "GREEN_PREFIX=[SUCCESS]"
-set "RED_PREFIX=[ERROR]" 
-set "YELLOW_PREFIX=[WARNING]"
-set "BLUE_PREFIX=[INFO]"
+set "GREEN=[92m"
+set "RED=[91m"
+set "YELLOW=[93m"
+set "BLUE=[94m"
+set "NC=[0m"
 
 REM === Jump to main function ===
 goto :main
 
 REM === Function definitions ===
 :print_status
-echo %BLUE_PREFIX% %~1
+echo %BLUE%[INFO]%NC% %~1
 goto :eof
 
 :print_success
-echo %GREEN_PREFIX% %~1
+echo %GREEN%[SUCCESS]%NC% %~1
 goto :eof
 
 :print_error
-echo %RED_PREFIX% %~1
+echo %RED%[ERROR]%NC% %~1
 goto :eof
 
 :print_warning
-echo %YELLOW_PREFIX% %~1
+echo %YELLOW%[WARNING]%NC% %~1
 goto :eof
 
 :create_directory
@@ -113,8 +113,7 @@ set "ZIP_FILE=%~1"
 set "DEST_DIR=%~2"
 set "EXTRACT_TEMP=%TEMP_EXTRACT_DIR%\%RANDOM%"
 
-call :print_status "Starting extraction of: %ZIP_FILE%"
-call :print_status "Target directory: %DEST_DIR%"
+call :print_status "Starting extraction: %ZIP_FILE% -> %DEST_DIR%"
 
 REM Create temporary extraction directory
 call :create_directory "%EXTRACT_TEMP%"
