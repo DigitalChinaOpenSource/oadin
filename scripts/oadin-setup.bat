@@ -5,20 +5,14 @@ REM ========================================
 REM OADIN Auto Installation Script (No PowerShell)
 REM ========================================
 
-REM === Configuration section ===
+REM === 配置部分 ===
 set "SETUP_FILE=oadin-installer-test-2.0.40.exe"
-REM Ensure complete Program Files path is used to prevent path parsing errors
-if defined ProgramFiles (
-    set "OADIN_INSTALL_DIR=%ProgramFiles%\Oadin"
-    set "AI_SMARTVISION_INSTALL_DIR=%ProgramFiles%\ai-smartvision"
-) else (
-    set "OADIN_INSTALL_DIR=C:\Program Files\Oadin"
-    set "AI_SMARTVISION_INSTALL_DIR=C:\Program Files\ai-smartvision"
-)
+set "OADIN_INSTALL_DIR=%ProgramFiles%\Oadin"
 set "SILENT_ARGS=/S"
 set "LOG_FILE=%OADIN_INSTALL_DIR%\install.log"
 
 set "AI_SMARTVISION_FILE=ai-smartvision-2.0.0-x64.exe"
+set "AI_SMARTVISION_INSTALL_DIR=%ProgramFiles%\ai-smartvision"
 set "AI_SMARTVISION_LOG=%OADIN_INSTALL_DIR%\ai-smartvision-install.log"
 
 set "OLLAMA_ZIP=ipex-llm-ollama.zip"
@@ -29,17 +23,17 @@ set "MODEL_DIR=%ProgramData%\Oadin\engine\ollama"
 
 set "TEMP_EXTRACT_DIR=%TEMP%\oadin_extract_%RANDOM%"
 
-REM === Color definitions ===
+REM === 颜色定义 ===
 set "GREEN=[92m"
 set "RED=[91m"
 set "YELLOW=[93m"
 set "BLUE=[94m"
 set "NC=[0m"
 
-REM === Jump to main function ===
+REM === 跳转到主函数 ===
 goto :main
 
-REM === Function definitions ===
+REM === 函数定义 ===
 :print_status
 echo %BLUE%[INFO]%NC% %~1
 goto :eof
@@ -58,54 +52,24 @@ goto :eof
 
 :create_directory
 if not exist "%~1" (
-    call :print_status "Creating directory: %~1"
+    call :print_status "创建目录: %~1"
     mkdir "%~1" 2>nul
     if !errorlevel! NEQ 0 (
-        call :print_error "Failed to create directory: %~1"
+        call :print_error "无法创建目录: %~1"
         exit /b 1
     )
-    call :print_success "Directory created successfully"
+    call :print_success "目录创建成功"
 ) else (
-    call :print_status "Directory already exists: %~1"
+    call :print_status "目录已存在: %~1"
 )
-goto :eof
-
-:validate_paths
-REM === Validate path settings ===
-call :print_status "Validating path settings..."
-
-REM Check if OADIN_INSTALL_DIR contains complete Program Files path
-echo "%OADIN_INSTALL_DIR%" | findstr /C:"Program Files" >nul
-if %errorlevel% NEQ 0 (
-    call :print_error "Error: OADIN_INSTALL_DIR path is incorrect: %OADIN_INSTALL_DIR%"
-    call :print_error "Should contain 'Program Files'"
-    exit /b 1
-)
-
-REM Check path length to ensure it's not truncated
-set "PATH_LENGTH=0"
-set "TEST_PATH=%OADIN_INSTALL_DIR%"
-:count_loop
-if defined TEST_PATH (
-    set /a PATH_LENGTH+=1
-    set "TEST_PATH=%TEST_PATH:~1%"
-    goto count_loop
-)
-
-if %PATH_LENGTH% LSS 10 (
-    call :print_error "Error: Path too short, might be truncated: %OADIN_INSTALL_DIR%"
-    exit /b 1
-)
-
-call :print_success "Path validation passed"
 goto :eof
 
 :check_file_exists
 if not exist "%~1" (
-    call :print_error "File does not exist: %~1"
+    call :print_error "文件不存在: %~1"
     exit /b 1
 )
-call :print_success "File check passed: %~1"
+call :print_success "文件检查通过: %~1"
 goto :eof
 
 :extract_zip_native
@@ -113,45 +77,45 @@ set "ZIP_FILE=%~1"
 set "DEST_DIR=%~2"
 set "EXTRACT_TEMP=%TEMP_EXTRACT_DIR%\%RANDOM%"
 
-call :print_status "Starting extraction: %ZIP_FILE% -> %DEST_DIR%"
+call :print_status "开始解压: %ZIP_FILE% -> %DEST_DIR%"
 
-REM Create temporary extraction directory
+REM 创建临时解压目录
 call :create_directory "%EXTRACT_TEMP%"
 
-REM Use system built-in extraction tool (Windows 10+)
+REM 使用系统自带的解压工具 (Windows 10+)
 if exist "%SystemRoot%\System32\tar.exe" (
-    call :print_status "Using tar.exe for extraction..."
+    call :print_status "使用 tar.exe 解压..."
     "%SystemRoot%\System32\tar.exe" -xf "%ZIP_FILE%" -C "%EXTRACT_TEMP%" >nul 2>&1
     if !errorlevel! EQU 0 (
         call :move_extracted_files "%EXTRACT_TEMP%" "%DEST_DIR%"
         if !errorlevel! EQU 0 (
-            call :print_success "tar.exe extraction successful"
+            call :print_success "使用 tar.exe 解压成功"
             goto :extract_cleanup
         )
     )
-    call :print_warning "tar.exe extraction failed, trying other methods..."
+    call :print_warning "tar.exe 解压失败，尝试其他方法..."
 )
 
-REM Use VBScript extraction
-call :print_status "Using VBScript for extraction..."
+REM 使用 VBScript 解压
+call :print_status "使用 VBScript 解压..."
 call :extract_zip_vbs "%ZIP_FILE%" "%EXTRACT_TEMP%"
 if !errorlevel! EQU 0 (
     call :move_extracted_files "%EXTRACT_TEMP%" "%DEST_DIR%"
     if !errorlevel! EQU 0 (
-        call :print_success "VBScript extraction successful"
+        call :print_success "使用 VBScript 解压成功"
         goto :extract_cleanup
     )
 )
 
-REM Use 7-Zip (if installed)
-call :print_status "Trying 7-Zip extraction..."
+REM 使用 7-Zip (如果安装了)
+call :print_status "尝试使用 7-Zip 解压..."
 call :extract_zip_7zip "%ZIP_FILE%" "%DEST_DIR%"
 if !errorlevel! EQU 0 (
-    call :print_success "7-Zip extraction successful"
+    call :print_success "使用 7-Zip 解压成功"
     goto :extract_cleanup
 )
 
-call :print_error "All extraction methods failed"
+call :print_error "所有解压方法都失败了"
 exit /b 1
 
 :extract_cleanup
@@ -166,7 +130,7 @@ set "DEST_DIR=%~2"
 
 call :create_directory "%DEST_DIR%"
 
-REM Move all files and folders
+REM 移动所有文件和文件夹
 for /d %%i in ("%SRC_DIR%\*") do (
     xcopy "%%i" "%DEST_DIR%\%%~ni" /E /I /H /Y >nul 2>&1
 )
@@ -182,7 +146,7 @@ set "ZIP_FILE=%~1"
 set "DEST_DIR=%~2"
 set "VBS_FILE=%TEMP%\extract_%RANDOM%.vbs"
 
-REM Create VBScript extraction script
+REM 创建VBScript解压脚本
 (
 echo Set objShell = CreateObject^("Shell.Application"^)
 echo Set objFolder = objShell.NameSpace^("%ZIP_FILE%"^)
@@ -212,7 +176,7 @@ exit /b %VBS_RESULT%
 set "ZIP_FILE=%~1"
 set "DEST_DIR=%~2"
 
-REM Check common 7-Zip installation locations
+REM 检查常见的7-Zip安装位置
 set "SEVENZIP_EXE="
 for %%p in (
     "%ProgramFiles%\7-Zip\7z.exe"
@@ -239,12 +203,12 @@ set "INSTALL_ARGS=%~2"
 set "LOG_FILE_PARAM=%~3"
 set "PROGRAM_NAME=%~4"
 
-call :print_status "Starting installation of %PROGRAM_NAME%..."
+call :print_status "开始安装 %PROGRAM_NAME%..."
 call :check_file_exists "%INSTALLER%"
 if !errorlevel! NEQ 0 exit /b !errorlevel!
 
-REM Debug output
-call :print_status "Executing command: %INSTALLER% %INSTALL_ARGS%"
+REM 调试输出
+call :print_status "执行命令: %INSTALLER% %INSTALL_ARGS%"
 
 if not "%LOG_FILE_PARAM%"=="" (
     "%INSTALLER%" %INSTALL_ARGS% /log="%LOG_FILE_PARAM%"
@@ -253,9 +217,9 @@ if not "%LOG_FILE_PARAM%"=="" (
 )
 
 if !errorlevel! EQU 0 (
-    call :print_success "%PROGRAM_NAME% installation completed!"
+    call :print_success "%PROGRAM_NAME% 安装完成！"
 ) else (
-    call :print_error "%PROGRAM_NAME% installation failed, error code: !errorlevel!"
+    call :print_error "%PROGRAM_NAME% 安装失败，错误码: !errorlevel!"
     exit /b !errorlevel!
 )
 goto :eof
@@ -265,14 +229,14 @@ set "INSTALLER=%~1"
 set "INSTALL_DIR=%~2"
 set "LOG_FILE_PARAM=%~3"
 
-call :print_status "Starting AI SmartVision installation..."
+call :print_status "开始安装 AI SmartVision..."
 call :check_file_exists "%INSTALLER%"
 if !errorlevel! NEQ 0 exit /b !errorlevel!
 
-call :print_status "Installation path: %INSTALL_DIR%"
-call :print_status "Log file: %LOG_FILE_PARAM%"
+call :print_status "安装路径: %INSTALL_DIR%"
+call :print_status "日志文件: %LOG_FILE_PARAM%"
 
-REM Use temporary batch file to avoid quote issues
+REM 使用临时批处理文件来避免引号问题
 set "TEMP_BAT=%TEMP%\ai_smartvision_install_%RANDOM%.bat"
 (
 echo @echo off
@@ -286,75 +250,60 @@ set "INSTALL_RESULT=%errorlevel%"
 if exist "%TEMP_BAT%" del "%TEMP_BAT%" >nul 2>&1
 
 if %INSTALL_RESULT% EQU 0 (
-    call :print_success "AI SmartVision installation completed!"
+    call :print_success "AI SmartVision 安装完成！"
 ) else (
-    call :print_error "AI SmartVision installation failed, error code: %INSTALL_RESULT%"
+    call :print_error "AI SmartVision 安装失败，错误码: %INSTALL_RESULT%"
     exit /b %INSTALL_RESULT%
 )
 goto :eof
 
 :cleanup_temp
 if exist "%TEMP_EXTRACT_DIR%" (
-    call :print_status "Cleaning up temporary files..."
+    call :print_status "清理临时文件..."
     rmdir /s /q "%TEMP_EXTRACT_DIR%" >nul 2>&1
 )
 goto :eof
 
 :main
-REM === Script start ===
-call :print_status "OADIN Auto Installation Script Starting"
-call :print_status "Current time: %date% %time%"
+REM === 脚本开始 ===
+call :print_status "OADIN 自动化安装脚本启动"
+call :print_status "当前时间: %date% %time%"
 
-REM === Debug environment variables ===
-call :print_status "Debug information - Environment variables:"
-call :print_status "  ProgramFiles = %ProgramFiles%"
-call :print_status "  ProgramFiles(x86) = %ProgramFiles(x86)%"
-call :print_status "  OADIN_INSTALL_DIR = %OADIN_INSTALL_DIR%"
-call :print_status "  AI_SMARTVISION_INSTALL_DIR = %AI_SMARTVISION_INSTALL_DIR%"
-
-REM === Check administrator privileges ===
-call :print_status "Checking administrator privileges..."
+REM === 检查管理员权限 ===
+call :print_status "检查管理员权限..."
 openfiles >nul 2>&1
 if errorlevel 1 (
-    call :print_error "Please run this script as administrator!"
+    call :print_error "请以管理员方式运行本脚本！"
     pause
     exit /b 1
 )
-call :print_success "Administrator privileges verified"
+call :print_success "管理员权限验证通过"
 
-REM === Validate path configuration ===
-call :validate_paths
-if !errorlevel! NEQ 0 (
-    pause
-    exit /b !errorlevel!
-)
-
-REM === Display installation directory configuration ===
+REM === 显示安装目录配置 ===
 call :print_status "========================================="
-call :print_status "Installation directory configuration:"
-call :print_status "  - OADIN Main Program: %OADIN_INSTALL_DIR%"
+call :print_status "安装目录配置:"
+call :print_status "  - OADIN 主程序: %OADIN_INSTALL_DIR%"
 call :print_status "  - AI SmartVision: %AI_SMARTVISION_INSTALL_DIR%"
 call :print_status "  - Ollama: %OLLAMA_DIR%"
-call :print_status "  - Model Data: %MODEL_DIR%"
-call :print_status "  - Log File: %LOG_FILE%"
+call :print_status "  - 模型数据: %MODEL_DIR%"
+call :print_status "  - 日志文件: %LOG_FILE%"
 call :print_status "========================================="
 
-REM === Create temporary directory ===
+REM === 创建临时目录 ===
 call :create_directory "%TEMP_EXTRACT_DIR%"
 
-REM === Install OADIN main program ===
-call :print_status "=== Step 1: Install OADIN Main Program ==="
-call :print_status "Target installation directory: %OADIN_INSTALL_DIR%"
-REM Ensure path is properly quoted to avoid space issues
-call :install_program "%SETUP_FILE%" "/S /D=%OADIN_INSTALL_DIR%" "%LOG_FILE%" "OADIN"
+REM === 安装 OADIN 主程序 ===
+call :print_status "=== 第1步: 安装 OADIN 主程序 ==="
+call :print_status "目标安装目录: %OADIN_INSTALL_DIR%"
+call :install_program "%SETUP_FILE%" "/S /D=\"%OADIN_INSTALL_DIR%\"" "%LOG_FILE%" "OADIN"
 if !errorlevel! NEQ 0 (
     call :cleanup_temp
     pause
     exit /b !errorlevel!
 )
 
-REM === Install AI SmartVision ===
-call :print_status "=== Step 2: Install AI SmartVision ==="
+REM === 安装 AI SmartVision ===
+call :print_status "=== 第2步: 安装 AI SmartVision ==="
 call :install_ai_smartvision "%AI_SMARTVISION_FILE%" "%AI_SMARTVISION_INSTALL_DIR%" "%AI_SMARTVISION_LOG%"
 if !errorlevel! NEQ 0 (
     call :cleanup_temp
@@ -362,79 +311,79 @@ if !errorlevel! NEQ 0 (
     exit /b !errorlevel!
 )
 
-REM === Extract Ollama package ===
-call :print_status "=== Step 3: Install Ollama ==="
+REM === 解压 Ollama 包 ===
+call :print_status "=== 第3步: 安装 Ollama ==="
 call :extract_zip_native "%OLLAMA_ZIP%" "%OLLAMA_DIR%"
 if !errorlevel! NEQ 0 (
-    call :print_error "Ollama installation failed"
+    call :print_error "Ollama 安装失败"
     call :cleanup_temp
     pause
     exit /b !errorlevel!
 )
 
-REM === Extract model package ===
-call :print_status "=== Step 4: Install Model Files ==="
+REM === 解压模型包 ===
+call :print_status "=== 第4步: 安装模型文件 ==="
 call :extract_zip_native "%MODEL_ZIP%" "%MODEL_DIR%"
 if !errorlevel! NEQ 0 (
-    call :print_error "Model files installation failed"
+    call :print_error "模型文件安装失败"
     call :cleanup_temp
     pause
     exit /b !errorlevel!
 )
 
-REM === Verify installation results ===
-call :print_status "=== Verifying Installation Results ==="
+REM === 验证安装结果 ===
+call :print_status "=== 验证安装结果 ==="
 
 set "VERIFICATION_FAILED=0"
 
 if exist "%OADIN_INSTALL_DIR%\oadin.exe" (
-    call :print_success "OADIN main program installation successful"
+    call :print_success "OADIN 主程序安装成功"
 ) else (
-    call :print_error "OADIN main program installation verification failed"
+    call :print_error "OADIN 主程序安装验证失败"
     set "VERIFICATION_FAILED=1"
 )
 
 if exist "%AI_SMARTVISION_INSTALL_DIR%" (
-    call :print_success "AI SmartVision installation successful"
+    call :print_success "AI SmartVision 安装成功"
 ) else (
-    call :print_error "AI SmartVision installation verification failed"
+    call :print_error "AI SmartVision 安装验证失败"
     set "VERIFICATION_FAILED=1"
 )
 
 if exist "%OLLAMA_DIR%" (
-    call :print_success "Ollama installation successful"
+    call :print_success "Ollama 安装成功"
 ) else (
-    call :print_error "Ollama installation verification failed"
+    call :print_error "Ollama 安装验证失败"
     set "VERIFICATION_FAILED=1"
 )
 
 if exist "%MODEL_DIR%" (
-    call :print_success "Model files installation successful"
+    call :print_success "模型文件安装成功"
 ) else (
-    call :print_error "Model files installation verification failed"
+    call :print_error "模型文件安装验证失败"
     set "VERIFICATION_FAILED=1"
 )
 
-REM === Clean up temporary files ===
+REM === 清理临时文件 ===
 call :cleanup_temp
 
-REM === Complete ===
+REM === 完成 ===
 if %VERIFICATION_FAILED% EQU 0 (
     call :print_success "========================================="
-    call :print_success "All components installation completed!"
+    call :print_success "所有组件安装完成！"
     call :print_success "========================================="
-    call :print_status "Installation details:"
+    call :print_status "安装详情:"
     call :print_status "  - OADIN: %OADIN_INSTALL_DIR%"
     call :print_status "  - AI SmartVision: %AI_SMARTVISION_INSTALL_DIR%"
     call :print_status "  - Ollama: %OLLAMA_DIR%"
-    call :print_status "  - Model Files: %MODEL_DIR%"
+    call :print_status "  - 模型文件: %MODEL_DIR%"
     call :print_status "========================================="
 ) else (
-    call :print_error "Errors occurred during installation, please check log files"
-    call :print_error "Log location: %LOG_FILE%"
+    call :print_error "安装过程中存在错误，请检查日志文件"
+    call :print_error "日志位置: %LOG_FILE%"
 )
 
 echo.
-call :print_status "Press any key to exit..."
+call :print_status "按任意键退出..."
 pause >nul
 endlocal
