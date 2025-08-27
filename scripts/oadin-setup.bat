@@ -366,15 +366,26 @@ if !errorlevel! NEQ 0 (
 REM === Extract Ollama package ===
 call :print_status "=== Step 3: Install Ollama ==="
 call :extract_zip_native "%OLLAMA_ZIP%" "%OLLAMA_DIR%"
-if !errorlevel! NEQ 0 (
+set "OLLAMA_RESULT=!errorlevel!"
+call :print_status "Debug: Ollama extraction result = !OLLAMA_RESULT!"
+if !OLLAMA_RESULT! NEQ 0 (
     call :print_error "Ollama installation failed"
     call :cleanup_temp
     pause
-    exit /b !errorlevel!
+    exit /b !OLLAMA_RESULT!
 )
 
 REM === Extract model package ===
 call :print_status "=== Step 4: Install Model Files ==="
+call :print_status "Debug: MODEL_ZIP = %MODEL_ZIP%"
+call :print_status "Debug: MODEL_DIR = %MODEL_DIR%"
+if not exist "%MODEL_ZIP%" (
+    call :print_error "Model ZIP file not found: %MODEL_ZIP%"
+    call :cleanup_temp
+    pause
+    exit /b 1
+)
+call :print_status "Model ZIP file exists, proceeding with extraction..."
 call :extract_zip_native "%MODEL_ZIP%" "%MODEL_DIR%"
 if !errorlevel! NEQ 0 (
     call :print_error "Model files installation failed"
