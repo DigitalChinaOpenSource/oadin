@@ -6,7 +6,7 @@ REM OADIN Auto Installation Script (No PowerShell)
 REM ========================================
 
 REM === 配置部分 ===
-set "SETUP_FILE=oadin-installer-test-2.0.40.exe"
+set "SETUP_FILE=oadin-installer-latest.exe"
 set "OADIN_INSTALL_DIR=%ProgramFiles%\Oadin"
 set "SILENT_ARGS=/S"
 set "LOG_FILE=%OADIN_INSTALL_DIR%\install.log"
