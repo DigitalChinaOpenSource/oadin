@@ -210,39 +210,20 @@ func (e *SystemlApi) GetCPUInfo(c *gin.Context) {
 
 // OllamaMonitor 获取Ollama监控信息
 func (e *SystemlApi) OllamaMonitor(c *gin.Context) {
-	// 获取Ollama监控信息
-	monitorInfo, err := hardware.GetOllamaMonitor()
-	if err != nil {
-		logger.ApiLogger.Error("Failed to get Ollama monitor information", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "获取Ollama监控信息失败",
-			"message": err.Error(),
-		})
-		return
-	}
+	// TODO: 实现Ollama监控功能
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    monitorInfo,
+		"data":    nil,
 	})
 }
 
 // OpenVinoMonitor 获取OpenVino监控信息
 func (e *SystemlApi) OpenVinoMonitor(c *gin.Context) {
-	// 获取OpenVino监控信息
-	monitorInfo, err := hardware.GetOpenVinoMonitor()
-	if err != nil {
-		logger.ApiLogger.Error("Failed to get OpenVino monitor information", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "获取OpenVino监控信息失败",
-			"message": err.Error(),
-		})
-		return
-	}
-
+	// TODO: 实现OpenVino监控功能
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    monitorInfo,
+		"data":    nil,
 	})
 }
 
