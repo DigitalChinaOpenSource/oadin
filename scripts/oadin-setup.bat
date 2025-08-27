@@ -1,4 +1,3 @@
-      
 @echo off
 setlocal enabledelayedexpansion
 
@@ -376,5 +375,3 @@ echo.
 call :print_status "按任意键退出..."
 pause >nul
 endlocal
-
-    
