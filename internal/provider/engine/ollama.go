@@ -186,7 +186,6 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
 				return fmt.Errorf("failed to start ollama: %v", err)
 			}
-			logger.EngineLogger.Info("ipex运行环境变量: %s", cmd.Env)
 		} else {
 			cmd := exec.Command(execFile, "serve")
 			if runtime.GOOS == "windows" {
@@ -447,13 +446,20 @@ func (o *OllamaProvider) InitEnv() error {
 	if currModelPath != "" {
 		modelPath = currModelPath
 	}
-	slog.Info("[Init Env] start model..." + modelPath)
+	logger.EngineLogger.Info("[Init Env] start model..." + modelPath)
 	err = os.Setenv("OLLAMA_MODELS", modelPath)
 	if err != nil {
 		return fmt.Errorf("failed to set OLLAMA_MODELS: %w", err)
 	}
 	ollamaModels := os.Getenv("OLLAMA_MODELS")
-	slog.Info("[Init Env] end model...ollama" + ollamaModels)
+	logger.EngineLogger.Info("[Init Env] end model...ollama" + ollamaModels)
+
+	err = os.Setenv("OLLAMA_CONTEXT_LENGTH", "8192")
+	if err != nil {
+		return fmt.Errorf("failed to set OLLAMA_CONTEXT_LENGTH: %w", err)
+	}
+	OLLAMA_CONTEXT_LENGTH := os.Getenv("OLLAMA_CONTEXT_LENGTH")
+	logger.EngineLogger.Info("[Ollama] 运行环境变量OLLAMA_CONTEXT_LENGTH: %s", OLLAMA_CONTEXT_LENGTH)
 
 	if utils.IpexOllamaSupportGPUStatus() {
 		err = os.Setenv("OLLAMA_NUM_GPU", "999")
@@ -474,6 +480,9 @@ func (o *OllamaProvider) InitEnv() error {
 		if err != nil {
 			return fmt.Errorf("failed to set OLLAMA_NUM_CTX: %w", err)
 		}
+		OLLAMA_NUM_CTX := os.Getenv("OLLAMA_NUM_CTX")
+		logger.EngineLogger.Info("[Ollama] ipex 运行环境变量OLLAMA_NUM_CTX: %s", OLLAMA_NUM_CTX)
+
 		err = os.Setenv("OLLAMA_NUM_PARALLEL", "1")
 		if err != nil {
 			return fmt.Errorf("failed to set OLLAMA_NUM_PARALLEL: %w", err)
