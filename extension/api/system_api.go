@@ -39,8 +39,7 @@ func (e *SystemlApi) InjectRoutes(api *gin.RouterGroup) {
 	api.GET("/hardware/full", e.GetFullHardwareInfo)
 
 	// ollama & openvino 监控
-	api.GET("/ollama/monitor", e.OllamaMonitor)
-	api.GET("/openvino/monitor", e.OpenVinoMonitor)
+	api.GET("/:service/monitor", e.ServiceMonitor)
 }
 
 // About 获取关于信息
@@ -209,14 +208,26 @@ func (e *SystemlApi) GetCPUInfo(c *gin.Context) {
 	})
 }
 
-// OllamaMonitor 获取Ollama监控信息
-func (e *SystemlApi) OllamaMonitor(c *gin.Context) {
-	e.serviceMonitor(c, "ollama")
-}
+// ServiceMonitor 通用服务监控方法
+func (e *SystemlApi) ServiceMonitor(c *gin.Context) {
+	serviceName := c.Param("service")
 
-// OpenVinoMonitor 获取OpenVino监控信息
-func (e *SystemlApi) OpenVinoMonitor(c *gin.Context) {
-	e.serviceMonitor(c, "openvino")
+	// 验证服务名称是否有效
+	validServices := map[string]bool{
+		"ollama":   true,
+		"openvino": true,
+	}
+
+	if !validServices[serviceName] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid service name",
+			"message": "无效的服务名称",
+		})
+		return
+	}
+
+	e.serviceMonitor(c, serviceName)
 }
 
 // GetFullHardwareInfo 获取完整的系统硬件信息（包含CPU）
@@ -241,63 +252,58 @@ func (e *SystemlApi) GetFullHardwareInfo(c *gin.Context) {
 func (e *SystemlApi) serviceMonitor(c *gin.Context, serviceName string) {
 	platform := runtime.GOOS
 
-	// 检查是否支持该平台
-	if !e.isSupportedPlatform(platform) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success":  false,
-			"error":    "Unsupported operating system",
-			"message":  "不支持的操作系统",
-			"platform": platform,
-		})
-		return
+	// 根据平台调用对应的处理方法
+	switch platform {
+	case "darwin":
+		e.handleDarwinMonitor(c, serviceName)
+	case "windows":
+		e.handleWindowsMonitor(c, serviceName)
+	case "linux":
+		e.handleLinuxMonitor(c, serviceName)
 	}
+}
 
-	// 调用平台特定的监控方法
-	data := e.getPlatformSpecificData(serviceName, platform)
+// handleDarwinMonitor 处理苹果系统监控
+func (e *SystemlApi) handleDarwinMonitor(c *gin.Context, serviceName string) {
+	// TODO: 实现苹果系统的具体监控逻辑
+	// 这里可以调用苹果系统特定的监控命令或工具
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
-		"platform": platform,
-		"service":  serviceName,
-		"data":     data,
+		"cpu_used":       0.0,   // CPU使用量
+		"cpu_total":      100.0, // CPU总量
+		"cpu_percentage": 0.0,   // CPU占用比
+		"gpu_used":       0.0,   // GPU使用量
+		"gpu_total":      100.0, // GPU总量
+		"gpu_percentage": 0.0,   // GPU占用比
 	})
 }
 
-// isSupportedPlatform 检查是否支持该平台
-func (e *SystemlApi) isSupportedPlatform(platform string) bool {
-	supportedPlatforms := []string{"windows", "darwin", "linux"}
-	for _, p := range supportedPlatforms {
-		if p == platform {
-			return true
-		}
-	}
-	return false
+// handleWindowsMonitor 处理Windows系统监控
+func (e *SystemlApi) handleWindowsMonitor(c *gin.Context, serviceName string) {
+	// TODO: 实现Windows系统的具体监控逻辑
+	// 这里可以调用Windows系统特定的监控命令或工具
+
+	c.JSON(http.StatusOK, gin.H{
+		"cpu_used":       0.0,   // CPU使用量
+		"cpu_total":      100.0, // CPU总量
+		"cpu_percentage": 0.0,   // CPU占用比
+		"gpu_used":       0.0,   // GPU使用量
+		"gpu_total":      100.0, // GPU总量
+		"gpu_percentage": 0.0,   // GPU占用比
+	})
 }
 
-// getPlatformSpecificData 获取平台特定的监控数据
-func (e *SystemlApi) getPlatformSpecificData(serviceName, platform string) interface{} {
-	// 使用通用方法获取服务监控数据
-	return e.getServiceMonitoringData(serviceName, platform)
-}
+// handleLinuxMonitor 处理Linux系统监控
+func (e *SystemlApi) handleLinuxMonitor(c *gin.Context, serviceName string) {
+	// TODO: 实现Linux系统的具体监控逻辑
+	// 这里可以调用Linux系统特定的监控命令或工具
 
-// getServiceMonitoringData 通用的服务监控数据获取方法
-func (e *SystemlApi) getServiceMonitoringData(serviceName, platform string) interface{} {
-	// TODO: 实现具体的监控逻辑
-	// 这里可以根据服务名称和平台调用不同的实际监控功能
-
-	// 目前返回统一的未实现状态
-	return map[string]interface{}{
-		"status":    "not_implemented",
-		"service":   serviceName,
-		"platform":  platform,
-		"note":      e.getImplementationNote(serviceName, platform),
-		"timestamp": "placeholder", // 可以添加时间戳
-		"version":   "unknown",     // 可以添加服务版本信息
-		"health":    "unknown",     // 可以添加健康状态
-	}
-}
-
-// getImplementationNote 获取实现说明
-func (e *SystemlApi) getImplementationNote(serviceName, platform string) string {
-	return serviceName + " monitoring on " + platform + " platform not implemented yet"
+	c.JSON(http.StatusOK, gin.H{
+		"cpu_used":       0.0,   // CPU使用量
+		"cpu_total":      100.0, // CPU总量
+		"cpu_percentage": 0.0,   // CPU占用比
+		"gpu_used":       0.0,   // GPU使用量
+		"gpu_total":      100.0, // GPU总量
+		"gpu_percentage": 0.0,   // GPU占用比
+	})
 }
