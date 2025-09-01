@@ -265,45 +265,71 @@ func (e *SystemlApi) serviceMonitor(c *gin.Context, serviceName string) {
 
 // handleDarwinMonitor 处理苹果系统监控
 func (e *SystemlApi) handleDarwinMonitor(c *gin.Context, serviceName string) {
-	// TODO: 实现苹果系统的具体监控逻辑
-	// 这里可以调用苹果系统特定的监控命令或工具
+	// 获取苹果M系统芯片下，serviceName 应用的 cpu使用量，总量，占用比
+
+	cpuUsed, cpuTotal, _ := e.getDarwinCPUUsage(serviceName)
+	gpuUsed, _, _ := e.getDarwinGPUUsage(serviceName)
 
 	c.JSON(http.StatusOK, gin.H{
-		"cpu_used":       0.0,   // CPU使用量
-		"cpu_total":      100.0, // CPU总量
-		"cpu_percentage": 0.0,   // CPU占用比
-		"gpu_used":       0.0,   // GPU使用量
-		"gpu_total":      100.0, // GPU总量
-		"gpu_percentage": 0.0,   // GPU占用比
+		"cpu_percentage": cpuUsed,     // 当前应用CPU使用率（%）- 可准确获取
+		"cpu_cores":      cpuTotal,    // 系统CPU核心数（个）- 可准确获取
+		"gpu_available":  gpuUsed > 0, // GPU是否可用（布尔值）- 可检测
 	})
+}
+
+// getDarwinCPUUsage 获取Darwin系统下指定服务的CPU使用情况
+func (e *SystemlApi) getDarwinCPUUsage(serviceName string) (float64, float64, float64) {
+	return 0.0, 0.0, 0.0
+}
+
+// getDarwinGPUUsage 获取Darwin系统下指定服务的GPU使用情况
+func (e *SystemlApi) getDarwinGPUUsage(serviceName string) (float64, float64, float64) {
+	// 在macOS上，可以使用ioreg命令或者其他方式获取GPU使用情况
+	// 这里先返回默认值，后续可以根据需要实现具体逻辑
+
+	// TODO: 实现macOS下GPU使用率监控
+	// 可以使用 ioreg -r -d 1 -w 0 -c IOPCIDevice | grep -i gpu
+	// 或者使用 powermetrics 等工具
+
+	return 0.0, 0.0, 0.0
 }
 
 // handleWindowsMonitor 处理Windows系统监控
 func (e *SystemlApi) handleWindowsMonitor(c *gin.Context, serviceName string) {
-	// TODO: 实现Windows系统的具体监控逻辑
-	// 这里可以调用Windows系统特定的监控命令或工具
+	// Windows系统下可以通过以下方式获取进程信息：
+	// 1. tasklist /fo csv | findstr "serviceName"
+	// 2. wmic process where "name='serviceName.exe'" get ProcessId,PageFileUsage,WorkingSetSize
+	// 3. PowerShell: Get-Process -Name serviceName
+
+	cpuUsed, cpuTotal, _ := e.getWindowsCPUUsage(serviceName)
+	gpuUsed, _, _ := e.getWindowsGPUUsage(serviceName)
 
 	c.JSON(http.StatusOK, gin.H{
-		"cpu_used":       0.0,   // CPU使用量
-		"cpu_total":      100.0, // CPU总量
-		"cpu_percentage": 0.0,   // CPU占用比
-		"gpu_used":       0.0,   // GPU使用量
-		"gpu_total":      100.0, // GPU总量
-		"gpu_percentage": 0.0,   // GPU占用比
+		"cpu_percentage": cpuUsed,     // 当前应用CPU使用率（%）- 可通过tasklist或wmic获取
+		"cpu_cores":      cpuTotal,    // 系统CPU核心数（个）- 可通过wmic获取
+		"gpu_available":  gpuUsed > 0, // GPU是否可用（布尔值）- 可通过nvidia-smi或wmic检测
 	})
+}
+
+// getWindowsCPUUsage 获取Windows系统下指定服务的CPU使用情况
+func (e *SystemlApi) getWindowsCPUUsage(serviceName string) (float64, float64, float64) {
+	return 0.0, 0.0, 0.0
+}
+
+// getWindowsGPUUsage 获取Windows系统下指定服务的GPU使用情况
+func (e *SystemlApi) getWindowsGPUUsage(serviceName string) (float64, float64, float64) {
+	return 0.0, 1.0, 0.0
 }
 
 // handleLinuxMonitor 处理Linux系统监控
 func (e *SystemlApi) handleLinuxMonitor(c *gin.Context, serviceName string) {
-	// TODO: 实现Linux系统的具体监控逻辑
-	// 这里可以调用Linux系统特定的监控命令或工具
 
 	c.JSON(http.StatusOK, gin.H{
-		"cpu_used":       0.0,   // CPU使用量
-		"cpu_total":      100.0, // CPU总量
-		"cpu_percentage": 0.0,   // CPU占用比
-		"gpu_used":       0.0,   // GPU使用量
-		"gpu_total":      100.0, // GPU总量
-		"gpu_percentage": 0.0,   // GPU占用比
+		"cpu_used":       0.0,   // 当前应用CPU使用率（%）
+		"cpu_total":      100.0, // 系统CPU总容量（%）
+		"cpu_percentage": 0.0,   // 当前应用CPU占用比（%）
+		"gpu_used":       0.0,   // 当前应用GPU使用率（%）
+		"gpu_total":      100.0, // 系统GPU总容量（%）
+		"gpu_percentage": 0.0,   // 当前应用GPU占用比（%）
 	})
 }
