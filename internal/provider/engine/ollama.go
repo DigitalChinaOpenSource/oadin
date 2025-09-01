@@ -265,14 +265,11 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		return o.EngineConfig
 	}
 
-	// 此处改造成使用program files目录
-	executableDir, err := directory.GetWindowsPaths()
-
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		logger.EngineLogger.Error("[Ollama] Get user home dir failed: ", err.Error())
 		return nil
 	}
-	homeDir, err := os.UserHomeDir()
 
 	downloadPath, _ := utils.GetDownloadDir()
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
@@ -282,8 +279,13 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			return nil
 		}
 	}
+
 	// 模型文件的路径
-	dataDir := executableDir.ProgramData + "/Oadin"
+	dataDir, err := utils.GetOADINDataDir()
+	if err != nil {
+		slog.Error("Get Byze data dir failed", "error", err)
+		return nil
+	}
 
 	execFile := ""
 	execPath := ""
@@ -291,8 +293,18 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	enginePath := fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 	switch runtime.GOOS {
 	case "windows":
+		// 此处改造成使用program files目录
+		executableDir, err1 := directory.GetWindowsPaths()
+		if err1 != nil {
+			logger.EngineLogger.Error("[Ollama] Get windows special folder failed: ", err1.Error())
+			return nil
+		}
+
 		execFile = "ollama.exe"
 		execPath = fmt.Sprintf("%s/%s", executableDir.ProgramFiles, "/Oadin/ollama")
+		// 针对预装的windows系统, 放在 ProgramData 目录下
+		dataDir = executableDir.ProgramData + "/Oadin"
+		enginePath = fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 
 		switch utils.DetectGpuModel() {
 		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
