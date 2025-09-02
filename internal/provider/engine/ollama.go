@@ -56,7 +56,8 @@ const (
 	WindowsDDLDependsX86URL = "https://aka.ms/vs/17/release/vc_redist.x86.exe"
 
 	// Linux download URLs
-	LinuxURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/OllamaSetup.exe"
+	LinuxAmdURL = constants.BaseDownloadURL + "linux" + "/ollama-linux-amd64.tgz"
+	LinuxArmURL  = constants.BaseDownloadURL + "linux" + "/ollama-linux-arm64.tgz"
 
 	// macOS download URLs
 	MacOSIntelURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/Ollama-darwin.zip"
@@ -97,7 +98,7 @@ func NewOllamaProvider(config *types.EngineRecommendConfig) *OllamaProvider {
 		return nil
 	}
 
-	downloadPath := fmt.Sprintf("%s/%s/%s", OADINDir, "engine", "ollama")
+	downloadPath := filepath.Join(OADINDir, "engine", "ollama")
 	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		err := os.MkdirAll(downloadPath, 0o750)
 		if err != nil {
@@ -142,12 +143,12 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 	case "darwin":
 		execFile = "/Applications/Ollama.app/Contents/Resources/ollama"
 	case "linux":
-		execFile = "ollama"
+		execFile = filepath.Join(o.EngineConfig.ExecPath, o.EngineConfig.ExecFile)
 	default:
 		logger.EngineLogger.Error("[Ollama] unsupported operating system: " + runtime.GOOS)
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
-
+	logger.EngineLogger.Info("[Ollama] Start engine execFile: " + execFile)
 	if mode == types.EngineStartModeDaemon {
 		cmd := exec.Command(execFile, "serve")
 		if runtime.GOOS == "windows" {
@@ -164,7 +165,7 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 			logger.EngineLogger.Error("[Ollama] failed get oadin dir: " + err.Error())
 			return fmt.Errorf("failed get oadin dir: %v", err)
 		}
-		pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
+		pidFile := filepath.Join(rootPath, "ollama.pid")
 		err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0o644)
 		if err != nil {
 			logger.EngineLogger.Error("[Ollama] failed to write pid file: " + err.Error())
@@ -207,7 +208,7 @@ func (o *OllamaProvider) StopEngine(ctx context.Context) error {
 		logger.EngineLogger.Error("[Ollama] failed get oadin dir: " + err.Error())
 		return fmt.Errorf("failed get oadin dir: %v", err)
 	}
-	pidFile := fmt.Sprintf("%s/ollama.pid", rootPath)
+	pidFile := filepath.Join(rootPath, "ollama.pid")
 	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
 		logger.EngineLogger.Info("[Ollama] Stop openvino Model Server not found pidfile: " + pidFile)
 		return nil
@@ -280,14 +281,14 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	}
 	dataDir, err := utils.GetOADINDataDir()
 	if err != nil {
-		slog.Error("Get Byze data dir failed", "error", err)
+		logger.EngineLogger.Error("[Ollama] Get OADIN data dir failed", "error", err)
 		return nil
 	}
 
 	execFile := ""
 	execPath := ""
 	downloadUrl := ""
-	enginePath := fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
+	enginePath := filepath.Join(dataDir, "engine", "ollama")
 	switch runtime.GOOS {
 	case "windows":
 		execFile = "ollama.exe"
@@ -309,8 +310,11 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 
 	case "linux":
 		execFile = "ollama"
-		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
-		downloadUrl = LinuxURL
+		execPath = filepath.Join(userDir, "ollama")
+		downloadUrl = LinuxAmdURL
+		if runtime.GOARCH == "arm64" {
+			downloadUrl = LinuxArmURL
+		}
 	case "darwin":
 		execFile = "ollama"
 		execPath = fmt.Sprintf("/%s/%s/%s/%s", "Applications", "Ollama.app", "Contents", "Resources")
@@ -318,7 +322,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	default:
 		return nil
 	}
-
+	logger.EngineLogger.Error("[Ollama] GetConfig execPath: ", execPath)
 	return &types.EngineRecommendConfig{
 		Host:           DefaultHost,
 		Origin:         constants.DefaultHost,
@@ -423,10 +427,20 @@ func (o *OllamaProvider) InstallEngine() error {
 		if err != nil {
 			return fmt.Errorf("[Install Engine DDL Depends] completed")
 		}
+	} else if runtime.GOOS == "linux" {
+			filePath := o.EngineConfig.ExecPath
+			if _, err = os.Stat(filePath); os.IsNotExist(err) {
+				os.MkdirAll(filePath, 0o755)
+				cmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, filePath)
+				if err := cmd.Run(); err != nil {
+					logger.EngineLogger.Info("[Ollama] model engine install completed err : " + err.Error())
+					return fmt.Errorf("[Ollama] failed to tar file: %v", err)
+				}
+			}		
 	} else {
-		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+		return fmt.Errorf("[Ollama] unsupported operating system: %s", runtime.GOOS)
 	}
-	logger.LogicLogger.Info("[Install Engine] model engine install completed")
+	logger.LogicLogger.Info("[Ollama] model engine install completed")
 	return nil
 }
 
@@ -684,7 +698,18 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 			}
 		}
 
-	} else {
+	} else if runtime.GOOS == "linux" {
+			execPath := o.EngineConfig.ExecPath
+			if _, err = os.Stat(execPath); os.IsNotExist(err) {
+				os.MkdirAll(execPath, 0o755)
+				unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, execPath)
+				if err := unzipCmd.Run(); err != nil {
+					logger.LogicLogger.Info("[Ollama] model engine install completed err : ", err.Error())
+					newErrChan <- err
+					return
+				}
+			}
+	} else if runtime.GOOS == "windows" {
 		if utils.IpexOllamaSupportGPUStatus() {
 			// 解压文件
 			userDir, err := os.UserHomeDir()
@@ -715,7 +740,7 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 				}
 			}
 
-		} else if runtime.GOOS == "windows" {
+		} else {
 			ipexPath := o.EngineConfig.ExecPath
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
@@ -726,10 +751,6 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 					return
 				}
 			}
-		} else {
-			err := fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
-			newErrChan <- err
-			return
 		}
 	}
 

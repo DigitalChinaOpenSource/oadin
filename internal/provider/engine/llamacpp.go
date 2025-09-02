@@ -29,16 +29,24 @@ const (
 	// Default configuration for llamacpp
 	llamacppDefaultPort  = "16697"
 	llamacppDefaultHost  = constants.DefaultHost + ":" + llamacppDefaultPort
+	LlamaSwapConfigFile  = "config.yaml"
+	llamacppDefaultModel = "Qwen3-8B-GGUF"
+
 	llamacppServerExec   = "llama-swap.exe"
 	LlamaVulkanPath      = "llamacpp-windows-vulkan"
 	LlamaCppPath         = "llama-b5757-bin-win-vulkan-x64"
 	LlamaSwapPath        = "llama-swap_148_windows_amd64"
-	LlamaSwapConfigFile  = "config.yaml"
-	llamacppDefaultModel = "Qwen3-8B-GGUF"
-	LlamaWhisperPath     = "whisper-1.7.6_windows_amd64"
+
+	llamacppServerExecLinux   = "llama-swap"
+	LlamaVulkanPathLinux      = "llamacpp-linux-vulkan"
+	LlamaCppPathLinux         = "llama-b6316-bin-ubuntu-vulkan-x64"
+	LlamaSwapPathLinuxAmd     = "llama-swap_156_linux_amd64"
+	LlamaSwapPathLinuxArm     = "llama-swap_156_linux_arm64"
 
 	// Windows download URLs for llamacpp
 	llamacppWindowsBaseURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/llamacpp-windows-vulkan.zip"
+	llamacppLinuxBaseURL = constants.BaseDownloadURL + "linux" + "/llamacpp-linux-vulkan.zip"
+
 	// 模型默认都在modelscope的
 	// ggml-org组织下载 	https://www.modelscope.cn/organization/ggml-org
 	// Embedding-GGUF	   https://www.modelscope.cn/organization/Embedding-GGUF
@@ -201,13 +209,15 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 		logger.EngineLogger.Warn("[llamacpp] Darwin system does not support llamacpp yet")
 
 	case "linux":
-		logger.EngineLogger.Warn("[llamacpp] linux system does not support llamacpp yet")
+		execFile = filepath.Join(l.EngineConfig.ExecPath, l.EngineConfig.ExecFile)
 
 	default:
 		logger.EngineLogger.Error("[llamacpp] unsupported operating system: " + runtime.GOOS)
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
+	logger.EngineLogger.Info("[llamacpp] Start engine execFile: " + execFile)
 
+	mode = types.EngineStartModeDaemon
 	if mode == types.EngineStartModeDaemon {
 		LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
 		logger.EngineLogger.Info("[llamacpp] exec file path: ", execFile, l.EngineConfig.Host, LlamaSwapConfigFilePath)
@@ -308,24 +318,22 @@ func (l *llamacppProvider) GetConfig() *types.EngineRecommendConfig {
 	case "windows":
 		execFile = llamacppServerExec
 		execPath = filepath.Join(enginePath, LlamaVulkanPath, LlamaSwapPath)
-
-		switch utils.DetectGpuModel() {
-		case types.GPUTypeAmd:
-			downloadUrl = llamacppWindowsBaseURL
-		default:
-			downloadUrl = llamacppWindowsBaseURL
-		}
-
+		downloadUrl = llamacppWindowsBaseURL
 	case "linux":
-		logger.EngineLogger.Warn("[llamacpp] linux system does not support llamacpp yet")
-
+		execFile = llamacppServerExecLinux
+		LlamaSwapPathLinux := LlamaSwapPathLinuxAmd
+		if runtime.GOARCH == "arm64" {
+			LlamaSwapPathLinux = LlamaSwapPathLinuxArm
+		}
+		execPath = filepath.Join(enginePath, LlamaVulkanPathLinux, LlamaSwapPathLinux)
+		downloadUrl = llamacppLinuxBaseURL
 	case "darwin":
 		logger.EngineLogger.Warn("[llamacpp] Darwin system does not support llamacpp yet")
 
 	default:
 		return nil
 	}
-
+	logger.EngineLogger.Error("[llamacpp] GetConfig: ", execFile, execPath, downloadUrl)
 	return &types.EngineRecommendConfig{
 		Host:           llamacppDefaultHost,
 		Origin:         constants.DefaultHost,
@@ -399,7 +407,15 @@ func (l *llamacppProvider) InstallEngine() error {
 		logger.EngineLogger.Warn("[llamacpp] darwin installation not implemented yet")
 
 	case "linux":
-		logger.EngineLogger.Warn("[llamacpp] Linux installation not implemented yet")
+			filePath := l.EngineConfig.ExecPath
+			if _, err = os.Stat(filePath); os.IsNotExist(err) {
+				os.MkdirAll(filePath, 0o755)
+				cmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, filePath)
+				if err := cmd.Run(); err != nil {
+					logger.EngineLogger.Info("[llamacpp] model engine install completed err : " + err.Error())
+					return fmt.Errorf("failed to tar file: %v", err)
+				}
+			}
 
 	default:
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
@@ -835,8 +851,15 @@ func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh ch
 		logger.EngineLogger.Warn("[llamacpp] darwin installation not implemented yet")
 
 	case "linux":
-		logger.EngineLogger.Warn("[llamacpp] Linux installation not implemented yet")
-
+			filePath := l.EngineConfig.ExecPath
+			if _, err = os.Stat(filePath); os.IsNotExist(err) {
+				os.MkdirAll(filePath, 0o755)
+				cmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, filePath)
+				if err := cmd.Run(); err != nil {
+					newErrChan <- fmt.Errorf("failed to unzip file to engine directory: %v", err)
+					return
+				}
+			}
 	default:
 		err := fmt.Errorf("[llamacpp] unsupported operating system: %s", runtime.GOOS)
 		newErrChan <- err
