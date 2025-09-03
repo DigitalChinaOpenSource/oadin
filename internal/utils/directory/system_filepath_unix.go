@@ -82,7 +82,7 @@ func GetUnixPaths() (*UnixPaths, error) {
 // 以下是与 Windows 版本保持兼容的函数
 
 // GetWindowsPaths 在非 Windows 系统上返回错误
-func GetWindowsPaths() (interface{}, error) {
+func GetWindowsPaths() (*WindowsPaths, error) {
 	return nil, fmt.Errorf("不支持在 %s 平台上获取 Windows 路径", runtime.GOOS)
 }
 
