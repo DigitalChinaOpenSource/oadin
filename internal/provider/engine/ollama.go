@@ -525,18 +525,136 @@ func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequ
 }
 
 func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullModelRequest) (chan []byte, chan error) {
-	logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
+    logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
 
-	c := o.GetDefaultClient()
-	ctx, cancel := context.WithCancel(ctx)
-	modelArray := append(client.ModelClientMap[req.Model], cancel)
-	client.ModelClientMap[req.Model] = modelArray
-	reqHeader := make(map[string]string)
-	reqHeader["Content-Type"] = "application/json"
-	reqHeader["Accept"] = "application/json"
-	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req, reqHeader)
+    // 创建两个通道用于返回给调用方
+    dataCh := make(chan []byte, 100)
+    errCh := make(chan error, 10)
 
-	return dataCh, errCh
+    go func() {
+        defer close(dataCh)
+        defer close(errCh)
+
+        // 创建重试上下文，可以在检测到低速下载时取消
+        retryCtx, cancelRetry := context.WithCancel(ctx)
+        defer cancelRetry()
+        
+        // 监控下载速度
+        var lastBytes int64
+        var lowSpeedCounter int
+        speedCheckTicker := time.NewTicker(5 * time.Second)
+        defer speedCheckTicker.Stop()
+        
+        // 用于转发数据的通道
+        internalDataCh := make(chan []byte, 100)
+        internalErrCh := make(chan error, 10)
+        
+        // 启动拉取任务
+        startPull := func() {
+            c := o.GetDefaultClient()
+            modelArray := append(client.ModelClientMap[req.Model], cancelRetry)
+            client.ModelClientMap[req.Model] = modelArray
+            reqHeader := make(map[string]string)
+            reqHeader["Content-Type"] = "application/json"
+            reqHeader["Accept"] = "application/json"
+            dataCh, errCh := c.StreamResponse(retryCtx, http.MethodPost, "/api/pull", req, reqHeader)
+            
+            // 转发数据到内部通道
+            go func() {
+                for data := range dataCh {
+                    internalDataCh <- data
+                }
+            }()
+            
+            go func() {
+                for err := range errCh {
+                    internalErrCh <- err
+                }
+            }()
+        }
+        
+        // 启动初始拉取
+        startPull()
+        
+        var currentProgress types.ProgressResponse
+        var totalDownloaded int64
+        
+        // 主循环：处理数据并监控速度
+        for {
+            select {
+            case <-ctx.Done():
+                logger.EngineLogger.Info("[Ollama] Pull model cancelled by caller")
+                return
+                
+            case <-speedCheckTicker.C:
+                // 检查下载速度
+                if currentProgress.Total > 0 && currentProgress.Completed > 0 {
+                    downloadedSinceLastCheck := currentProgress.Completed - lastBytes
+                    downloadSpeedKBps := downloadedSinceLastCheck / 5 / 1024 // KB/s
+                    
+                    // 如果速度低于预期值(50KB/s)，增加计数器
+                    if downloadSpeedKBps < 50 && currentProgress.Completed < currentProgress.Total {
+                        lowSpeedCounter++
+                        logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Low download speed detected: %d KB/s, counter: %d", 
+                            downloadSpeedKBps, lowSpeedCounter))
+                        
+                        // 连续3次低速，尝试重启下载
+                        if lowSpeedCounter >= 3 {
+                            logger.EngineLogger.Info("[Ollama] Restarting download to improve speed...")
+                            
+                            // 保存当前进度
+                            totalDownloaded = currentProgress.Completed
+                            
+                            // 取消当前下载并重新开始
+                            cancelRetry()
+                            retryCtx, cancelRetry = context.WithCancel(ctx)
+                            lowSpeedCounter = 0
+                            
+                            // 给服务器一点时间响应取消
+                            time.Sleep(2 * time.Second)
+                            startPull()
+                        }
+                    } else {
+                        // 速度恢复，重置计数器
+                        lowSpeedCounter = 0
+                    }
+                    
+                    lastBytes = currentProgress.Completed
+                }
+                
+            case data := <-internalDataCh:
+                // 解析进度信息
+                if err := json.Unmarshal(data, &currentProgress); err == nil {
+                    // 如果是断点续传，调整已完成字节数
+                    if totalDownloaded > 0 && currentProgress.Status == "downloading" {
+                        // 确保进度不会倒退
+                        if currentProgress.Completed < totalDownloaded {
+                            currentProgress.Completed = totalDownloaded
+                            modifiedData, _ := json.Marshal(currentProgress)
+                            dataCh <- modifiedData
+                            continue
+                        }
+                    }
+                }
+                
+                // 转发数据到调用方
+                dataCh <- data
+                
+            case err := <-internalErrCh:
+                // 如果是因为我们自己取消而产生的错误，不转发给调用方
+                if retryCtx.Err() != nil && err.Error() == "context canceled" {
+                    logger.EngineLogger.Info("[Ollama] Ignoring error from canceled retry context")
+                    continue
+                }
+                
+                // 转发其他错误到调用方
+                errCh <- err
+                return
+            }
+        }
+    }()
+
+    return dataCh, errCh
 }
 
 func (o *OllamaProvider) DeleteModel(ctx context.Context, req *types.DeleteRequest) error {
