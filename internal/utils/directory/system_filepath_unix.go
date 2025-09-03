@@ -10,6 +10,39 @@ import (
 	"runtime"
 )
 
+type WindowsPaths struct {
+	// 程序目录
+	ProgramFiles    string // C:\Program Files
+	ProgramFilesX86 string // C:\Program Files (x86)
+	ProgramData     string // C:\ProgramData
+	WindowsDir      string // C:\Windows
+	SystemDir       string // C:\Windows\System32
+	System32Dir     string // C:\Windows\System32
+	SysWOW64Dir     string // C:\Windows\SysWOW64
+
+	// 用户数据目录
+	UserProfile    string // C:\Users\{username}
+	AppData        string // C:\Users\{username}\AppData
+	AppDataLocal   string // C:\Users\{username}\AppData\Local
+	AppDataRoaming string // C:\Users\{username}\AppData\Roaming
+	LocalAppData   string // C:\Users\{username}\AppData\Local
+	Documents      string // C:\Users\{username}\Documents
+	Desktop        string // C:\Users\{username}\Desktop
+	Downloads      string // C:\Users\{username}\Downloads
+
+	// 公共目录
+	PublicDesktop   string // C:\Users\Public\Desktop
+	PublicDocuments string // C:\Users\Public\Documents
+	PublicDownloads string // C:\Users\{username}\Downloads
+
+	// 临时目录
+	TempDir     string // C:\Users\{username}\AppData\Local\Temp
+	WindowsTemp string // C:\Windows\Temp
+
+	// 预装软件常见目录
+	PreinstalledApps []string // 预装软件可能的安装位置
+}
+
 // UnixPaths 存储 Unix/Linux/macOS 系统各种路径信息
 type UnixPaths struct {
 	// 系统目录
