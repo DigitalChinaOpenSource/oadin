@@ -592,8 +592,8 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
                     downloadedSinceLastCheck := currentProgress.Completed - lastBytes
                     downloadSpeedKBps := downloadedSinceLastCheck / 5 / 1024 // KB/s
                     
-                    // 如果速度低于预期值(50KB/s)，增加计数器
-                    if downloadSpeedKBps < 50 && currentProgress.Completed < currentProgress.Total {
+                    // 如果速度低于预期值(200KB/s)，增加计数器
+                    if downloadSpeedKBps < 200 && currentProgress.Completed < currentProgress.Total {
                         lowSpeedCounter++
                         logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Low download speed detected: %d KB/s, counter: %d", 
                             downloadSpeedKBps, lowSpeedCounter))
