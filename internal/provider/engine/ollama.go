@@ -590,6 +590,14 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
                 // 检查下载速度
                 if currentProgress.Total > 0 && currentProgress.Completed > 0 {
                     downloadedSinceLastCheck := currentProgress.Completed - lastBytes
+					
+					// 添加检查，确保不会出现负数下载速度
+					if downloadedSinceLastCheck < 0 {
+						logger.EngineLogger.Info("[Ollama] Progress report inconsistency detected, resetting speed counter")
+						lastBytes = currentProgress.Completed
+						continue
+					}
+					
                     downloadSpeedKBps := downloadedSinceLastCheck / 5 / 1024 // KB/s
                     
                     // 如果速度低于预期值(500 KB/s)，增加计数器
