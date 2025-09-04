@@ -373,6 +373,42 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 		return
 	}
 
+	// 检查引擎配置
+	var models []string
+	memoryInfo, err := utils.GetMemoryInfo()
+	if err != nil {
+		res.Status = "size error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	fmt.Println("MemoryInfo:", memoryInfo.Size)
+
+	if memoryInfo.Size < 32 {
+		models = []string{"qwen3:8b", "quentinz/bge-large-zh-v1.5:f16"}
+	}else {
+		models = []string{"qwen3:14b", "bge-m3:567m"}
+	}
+
+	fmt.Println("modelList.Models[0]:", modelList.Models[0])
+	// 判断modelList.Models是否包含models的模型 如果缺少models的模型，则报错
+	for _, requiredModel := range models {
+		found := false
+		for _, existingModel := range modelList.Models {
+			if existingModel.Name == requiredModel || existingModel.Model == requiredModel {
+				found = true
+				break
+			}
+		}
+		
+		// 如果找不到必需的模型，设置错误状态
+		if !found {
+			res.Status = fmt.Sprintf("missing required model: %s", requiredModel)
+			c.JSON(http.StatusOK, res)
+			return
+		}
+	}
+
+	// 如果所有必需模型都存在，继续执行
 	c.JSON(http.StatusOK, res)
 }
 

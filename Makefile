@@ -19,7 +19,7 @@ endif
 
 
 build-cli-win:
-	set CGO_ENABLED=1 && go build -o oadin.exe -ldflags="-s -w"  cmd/cli/main.go
+	set CGO_ENABLED=1 ; go build -o oadin.exe -ldflags="-s -w"  cmd/cli/main.go
 
 build-cli-darwin:
 	CGO_ENABLED=1 GOOS=darwin GOARCH=amd64  go build -o oadin -ldflags="-s -w"  cmd/cli/main.go
