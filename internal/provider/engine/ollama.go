@@ -541,7 +541,7 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 
     // logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
 
-    // // 创建两个通道用于返回给调用方
+    // 创建两个通道用于返回给调用方
     // dataCh := make(chan []byte, 100)
     // errCh := make(chan error, 10)
 
