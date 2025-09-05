@@ -593,6 +593,7 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 
             shouldRetry := false
             pullFailed := false
+			downloadSuccess := false
 
             // 处理流数据
             for {
@@ -682,9 +683,10 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
                 case data, ok := <-currentDataCh:
                     if !ok {
                         // 数据通道关闭，正常完成
-                        logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Data channel closed for pull model, download success: %s", req.Model))
-						fmt.Println(fmt.Sprintf("[Ollama] Data channel closed for pull model, download success: %s", req.Model))
-                        return
+                        logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Data channel closed for pull model: %s", req.Model))
+						fmt.Println(fmt.Sprintf("[Ollama] Data channel closed for pull model: %s", req.Model))
+						downloadSuccess = true
+                        break
                     }
                     
                     // 转发数据到主通道
@@ -713,7 +715,7 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
                 }
                 
                 // 检查是否需要中断当前循环
-                if shouldRetry || pullFailed {
+                if shouldRetry || pullFailed || downloadSuccess{
                     break
                 }
             }
@@ -744,13 +746,14 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
             } else {
                 // 已达到最大重试次数
                 if retry == maxRetries-1 && (shouldRetry || pullFailed) {
-                    logger.EngineLogger.Warn(fmt.Sprintf("[Ollama] Max retries reached for pull model: %s", req.Model))
+                    logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Max retries reached for pull model: %s", req.Model))
 					fmt.Println(fmt.Sprintf("[Ollama] Max retries reached for pull model: %s", req.Model))
 					errCh <- errors.New("Max retries reached for pull model")
-                } else {
-					logger.EngineLogger.Warn(fmt.Sprintf("[Ollama] Max retries reached for pull model and error occurred: %s", req.Model))
-					fmt.Println(fmt.Sprintf("[Ollama] Max retries reached for pull model and error occurred: %s", req.Model))
-					errCh <- errors.New("Max retries reached for pull model and error occurred")
+                }
+
+				if downloadSuccess {
+					logger.EngineLogger.Info(fmt.Sprintf("[Ollama] download success: %s", req.Model))
+					fmt.Println(fmt.Sprintf("[Ollama] download success: %s", req.Model))
                 }
                 break
             }
