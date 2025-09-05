@@ -17,6 +17,7 @@
 package logger
 
 import (
+	"io"
 	"log/slog"
 	"os"
 	"strings"
@@ -116,8 +117,11 @@ func (lm *LogManager) AddLogger(c LogConfig, name string) {
 		lj:      lumberjackLogger,
 		lastDay: day,
 	}
+
+	// Create a multi-writer to write to both file and stdout
+	mw := io.MultiWriter(cl, os.Stdout)
 	// Create a log handler in JSON format
-	jsonHandler := slog.NewJSONHandler(cl, &slog.HandlerOptions{
+	jsonHandler := slog.NewJSONHandler(mw, &slog.HandlerOptions{
 		Level: logLevel,
 	})
 	logger := slog.New(jsonHandler)
