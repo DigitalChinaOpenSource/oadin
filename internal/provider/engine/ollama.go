@@ -682,23 +682,34 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
                     
                 case data, ok := <-currentDataCh:
                     if !ok {
-                        // 数据通道关闭，正常完成
-                        logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Data channel closed for pull model: %s", req.Model))
-						fmt.Println(fmt.Sprintf("[Ollama] Data channel closed for pull model: %s", req.Model))
-						downloadSuccess = true
-                        break
+						fmt.Println(fmt.Sprintf("[Ollama] Data channel closed for pull model: %s", req.Model), data)
+						continue
                     }
                     
                     // 转发数据到主通道
 					// 保存最新的进度数据
                     latestProgressData = data
                     dataCh <- data
+					
+					// 只有从ollama获取到这个状态才算成功
+					var statusResp struct {
+						Status string `json:"status"`
+					}
+					if err := json.Unmarshal(data, &statusResp); err == nil {
+						if statusResp.Status == "success" {
+							downloadSuccess = true
+							break
+						}
+					}
 
                 case err, ok := <-currentErrCh:
                     if !ok {
                         // 错误通道关闭
-						fmt.Println(fmt.Sprintf("[Ollama] error channel closed for pull model: %s", req.Model))
-                        continue
+						fmt.Println(fmt.Sprintf("[Ollama] error channel closed for pull model: %s", req.Model), err)
+                        if err == nil {
+							pullFailed = true
+							break
+						}
                     }
                     fmt.Println("Pull model error: ", err)
                     if shouldRetry {
@@ -754,7 +765,11 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 				if downloadSuccess {
 					logger.EngineLogger.Info(fmt.Sprintf("[Ollama] download success: %s", req.Model))
 					fmt.Println(fmt.Sprintf("[Ollama] download success: %s", req.Model))
-                }
+                } else {
+                    logger.EngineLogger.Info(fmt.Sprintf("[Ollama] download failed: %s", req.Model))
+					fmt.Println(fmt.Sprintf("[Ollama] download failed: %s", req.Model))
+					errCh <- errors.New("download failed")					
+				}
                 break
             }
         }
