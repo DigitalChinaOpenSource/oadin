@@ -539,9 +539,18 @@ func NewVersionCommand() *cobra.Command {
 		Short: "Prints build version information.",
 		Long:  "Prints build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			// SDK需要Oadin Version是/oadin/v0.4/api_flavors/smartvision/v1/embeddings中的v0.4
-			fmt.Println(`Oadin Version:`, version.OADINSpecVersion)
+			// 增加奥丁真正的主版本号
+			fmt.Println(`Oadin Release Version:`, version.OADINVersion)
+			// 子版本号
 			fmt.Println(`Oadin SubVersion:`, version.OadinSubVersion)
+			// SDK需要Oadin Version是/oadin/v0.4/api_flavors/smartvision/v1/embeddings中的v0.4
+			// 因为动这里的参数会导致老sdk不兼容，所以只能先这样, 因此添加注释加以说明
+			fmt.Printf("Oadin Version: %s    # Open API Version for SDK\n", version.OADINSpecVersion)
+
+			fmt.Println()
+			// 应用简介
+			fmt.Println(version.OADINDescription)
+
 		},
 	}
 
@@ -1568,25 +1577,25 @@ func ListenModelEngineHealthTotal() {
 					}
 				}
 			} else if engine == types.FlavorOpenvino {
-					err := OpenVINOEngine.HealthCheck()
+				err := OpenVINOEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
+					err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
 					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
-						err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
-						if err != nil {
-							logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
-							continue
-						}
+						logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
+						continue
 					}
+				}
 			} else if engine == types.FlavorLlamaCpp {
-					err := LlamaCppEngine.HealthCheck()
+				err := LlamaCppEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+					err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
 					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
-						err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
-						if err != nil {
-							logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
-							continue
-						}
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+						continue
 					}
+				}
 			}
 		}
 
