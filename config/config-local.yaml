@@ -5,3 +5,6 @@ vega:
 
 oss:
   endpoint: https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com
+
+ollama:
+  url: https://smartvision-registry.dcclouds.com
