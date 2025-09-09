@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
-	"syscall"
 
 	"oadin/config"
 	"oadin/internal/utils"
