@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+	"syscall"
 
 	"oadin/config"
 	"oadin/internal/utils"
@@ -57,19 +58,19 @@ func (m *Manager) Start() {
 	// 启动时如果服务器没运行，自动启动并打开浏览器
 	if !m.serverRunning {
 		fmt.Println("Server not running, attempting to start...")
-		err := utils.StartOADINServer(m.logPath, m.pidPath)
+		err := StartOADINServerTray(m.logPath, m.pidPath)
 		if err == nil {
 			m.serverRunning = true
 			fmt.Println("Server started successfully")
 			// 启动成功后自动打开浏览器
-			go m.waitAndOpenBrowser()
+			// go m.waitAndOpenBrowser()
 		} else {
 			fmt.Printf("Failed to start server: %v\n", err)
 		}
 	} else {
 		fmt.Println("Server is already running")
 		// 如果服务器已经运行，直接打开浏览器
-		go m.waitAndOpenBrowser()
+		// go m.waitAndOpenBrowser()
 	}
 
 	fmt.Println("Starting system tray...")
@@ -422,4 +423,47 @@ func isMacDarkMode() bool {
 		return false // 未设置暗色模式时会报错
 	}
 	return string(out) == "Dark\n"
+}
+
+
+func StartOADINServerTray(logPath string, pidFilePath string) error {
+	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return fmt.Errorf("failed to open log file: %v", err)
+	}
+	defer logFile.Close()
+	appExe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %v", err)
+	}
+
+	oadinExe := "oadin"
+	if runtime.GOOS == "windows" {
+		oadinExe = "oadin.exe"
+	} 
+	execFile := filepath.Join(filepath.Dir(appExe), oadinExe)
+	fmt.Println("Starting oadin server: ", execFile)
+	cmd := exec.Command(execFile, "server", "start")
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
+	if runtime.GOOS == "windows" {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+		CreationFlags: syscall.CERT_TRUST_HAS_NOT_SUPPORTED_CRITICAL_EXT | syscall.CREATE_NEW_PROCESS_GROUP,
+		HideWindow:    true,
+	}
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start oadin server: %v", err)
+	}
+
+	// Save PID to file.
+	pid := cmd.Process.Pid
+	pidFile := filepath.Join(pidFilePath, "oadin.pid")
+	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
+		return fmt.Errorf("failed to save PID to file: %v", err)
+	}
+
+	fmt.Printf("\roadin server started with PID: %d\n", cmd.Process.Pid)
+	return nil
 }

@@ -310,16 +310,16 @@ func Run(ctx context.Context) error {
 	_, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
 
 	// create tray manager
-	trayManager := tray.NewManager(
-		true,
-		config.GlobalOADINEnvironment.LogDir,
-		config.GlobalOADINEnvironment.LogDir,
-	)
-	globalServerManager.trayManager = trayManager
+	// trayManager := tray.NewManager(
+	// 	true,
+	// 	config.GlobalOADINEnvironment.LogDir,
+	// 	config.GlobalOADINEnvironment.LogDir,
+	// )
+	// globalServerManager.trayManager = trayManager
 
-	tray.StartCheckUpdate(ctx, trayManager)
-	// start tray
-	trayManager.Start()
+	// tray.StartCheckUpdate(ctx, trayManager)
+	// // start tray
+	// trayManager.Start()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)

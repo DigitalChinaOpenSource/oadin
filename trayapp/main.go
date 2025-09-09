@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"oadin/tray"
+	"oadin/internal/utils"
 )
 
 var (
@@ -42,24 +43,24 @@ func cleanup() {
 func main() {
 	fmt.Println("Starting Oadin Tray Application...")
 
-	// 检查单实例
-	if !checkSingleInstance() {
-		fmt.Println("Another instance is already running. Exiting...")
-		return
-	}
+	// // 检查单实例
+	// if !checkSingleInstance() {
+	// 	fmt.Println("Another instance is already running. Exiting...")
+	// 	return
+	// }
 
-	// 确保程序退出时清理
-	defer cleanup()
+	// // 确保程序退出时清理
+	// defer cleanup()
 
 	// 获取用户目录
-	homeDir, err := os.UserHomeDir()
+	rootDir, err := utils.GetOADINDataDir()
 	if err != nil {
-		fmt.Printf("Failed to get user home directory: %v\n", err)
+		fmt.Printf("Failed to get oadin home directory: %v\n", err)
 		return
 	}
 
-	logPath := filepath.Join(homeDir, "Oadin")
-	pidPath := filepath.Join(homeDir, "Oadin")
+	logPath := filepath.Join(rootDir, "logs", "console.log")
+	pidPath := rootDir
 
 	// 确保目录存在
 	os.MkdirAll(logPath, 0755)

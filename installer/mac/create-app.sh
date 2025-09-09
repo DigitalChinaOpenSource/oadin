@@ -2,6 +2,8 @@
 set -e
 
 APP_NAME="Oadin"
+# "/Applications/Oadin.app/Contents/MacOS"
+# "/Applications/Oadin.app/Contents/Resources"
 APP_BUNDLE="/Applications/${APP_NAME}.app"
 CONTENTS_DIR="${APP_BUNDLE}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"

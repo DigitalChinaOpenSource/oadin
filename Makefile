@@ -35,22 +35,23 @@ build-cli-linux:
 
 trayapp:
 ifeq ($(GOOS),windows)
-	go build -o oadin-tray.exe trayapp/main.go
+	go build -ldflags="-s -w -H=windowsgui" -o oadin-tray.exe trayapp/main.go
 else
-	go build -o oadin-tray trayapp/main.go
+	go build -ldflags="-s -w" -o oadin-tray trayapp/main.go
 endif
 
 build-for-ci:
 ifeq ($(GOOS),windows)
-	go build -o oadin-tray.exe trayapp/main.go
+	go build -ldflags="-s -w -H=windowsgui" -o oadin-tray.exe trayapp/main.go
 else
-	go build -o oadin-tray trayapp/main.go
+	go build -ldflags="-s -w" -o oadin-tray trayapp/main.go
 endif
 	@echo "CI build completed"
 
 copy-win-artifacts:
-	copy /Y oadin.exe installer\win\
-	copy /Y oadin-tray.exe installer\win\
+	@copy /Y oadin.exe installer\win\ >nul
+	@copy /Y oadin-tray.exe installer\win\ >nul
+	@copy /Y tray\icon\oadin-icon.ico installer\win\ >nul
 
 copy-mac-artifacts:
 	cp oadin installer/mac/
@@ -65,10 +66,9 @@ build-win-installer: build-cli-win copy-win-artifacts
 
 build-mac-installer: build-cli-darwin build-mac-app
 
-.PHONY: build-all build-cli-win build-cli-darwin build-cli-darwin-arm build-cli-linux trayapp build-for-ci copy-win-artifacts copy-mac-artifacts build-mac-app build-win-installer build-mac-installer ensure-trayapp prepare-win-build force-build-tray verify-build
 
 build-for-pipeline:
-	go build -o oadin-tray.exe trayapp/main.go
+	go build -ldflags="-s -w -H=windowsgui" -o oadin-tray.exe trayapp/main.go
 	@echo "Pipeline build completed with trayapp"
 
 
@@ -76,14 +76,14 @@ ensure-trayapp:
 ifeq ($(GOOS),windows)
 	@if not exist oadin-tray.exe ( \
 		echo Building missing oadin-tray.exe... && \
-		go build -o oadin-tray.exe trayapp/main.go \
+		go build -ldflags="-s -w -H=windowsgui" -o oadin-tray.exe trayapp/main.go \
 	) else ( \
 		echo oadin-tray.exe already exists \
 	)
 else
 	@if [ ! -f oadin-tray ]; then \
 		echo "Building missing oadin-tray..."; \
-		go build -o oadin-tray trayapp/main.go; \
+		go build -ldflags="-s -w" -o oadin-tray trayapp/main.go; \
 	else \
 		echo "oadin-tray already exists"; \
 	fi
@@ -92,14 +92,14 @@ endif
 
 prepare-win-build:
 	@echo "Preparing Windows build for CI..."
-	go build -o oadin-tray.exe trayapp/main.go
+	go build -ldflags="-s -w -H=windowsgui" -o oadin-tray.exe trayapp/main.go
 	@echo "oadin-tray.exe built successfully"
 	@if exist oadin.exe echo "oadin.exe found" else echo "Warning: oadin.exe not found"
 	@if exist oadin-tray.exe echo "oadin-tray.exe found" else echo "Warning: oadin-tray.exe not found"
 
 force-build-tray:
 	@echo "Force building trayapp for pipeline..."
-	go build -o oadin-tray.exe trayapp/main.go
+	go build -ldflags="-s -w -H=windowsgui" -o oadin-tray.exe trayapp/main.go
 	@echo "✅ oadin-tray.exe built successfully"
 
 verify-build:
@@ -108,5 +108,4 @@ verify-build:
 	@if exist oadin-tray.exe ( echo "✅ oadin-tray.exe found" ) else ( echo "❌ oadin-tray.exe missing" && exit 1 )
 	@echo "All artifacts verified successfully"
 
-.PHONY: build-all build-cli-win build-cli-darwin build-cli-darwin-arm build-cli-linux trayapp build-for-ci copy-win-artifacts copy-mac-artifacts build-mac-app build-win-installer build-mac-installer ensure-trayapp prepare-win-build force-build-tray verify-build
 .PHONY: build-all build-cli-win build-cli-darwin build-cli-darwin-arm build-cli-linux trayapp build-for-ci copy-win-artifacts copy-mac-artifacts build-mac-app build-win-installer build-mac-installer ensure-trayapp prepare-win-build force-build-tray verify-build
