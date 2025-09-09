@@ -446,12 +446,7 @@ func StartOADINServerTray(logPath string, pidFilePath string) error {
 	cmd := exec.Command(execFile, "server", "start")
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: syscall.CERT_TRUST_HAS_NOT_SUPPORTED_CRITICAL_EXT | syscall.CREATE_NEW_PROCESS_GROUP,
-		HideWindow:    true,
-	}
-	}
+	utils.SetCmdSysProcAttr(cmd)
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start oadin server: %v", err)
