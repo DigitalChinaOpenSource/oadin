@@ -36,7 +36,7 @@ import (
 	"time"
 
 	"oadin/config"
-	"oadin/console"
+	// "oadin/console"
 	extensionApi "oadin/extension/api"
 	server2 "oadin/extension/server"
 	ex_utils "oadin/extension/utils"
@@ -59,7 +59,7 @@ import (
 	"oadin/tray"
 	"oadin/version"
 
-	"github.com/fatih/color"
+	// "github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -310,67 +310,66 @@ func Run(ctx context.Context) error {
 	}()
 
 	// start console server
-	consoleSrv, err := console.StartConsoleServer(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to start console server: %v", err)
-	}
-	globalServerManager.consoleServer = consoleSrv
+	// consoleSrv, err := console.StartConsoleServer(ctx)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to start console server: %v", err)
+	// }
+	// globalServerManager.consoleServer = consoleSrv
 
-	_, _ = color.New(color.FgHiGreen).Println("Oadin Gateway starting on port", config.GlobalEnvironment.ApiHost)
-	_, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
+	// _, _ = color.New(color.FgHiGreen).Println("Oadin Gateway starting on port", config.GlobalEnvironment.ApiHost)
+	// _, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
 
 	// create tray manager
-	trayManager := tray.NewManager(
-		func() error {
-			if globalServerManager.oadinServer != nil {
-				return fmt.Errorf("server is already running")
-			}
-			oadinSrv = &http.Server{
-				Addr:    config.GlobalEnvironment.ApiHost,
-				Handler: oadinServer.Router,
-			}
-			go func() {
-				if err := oadinSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					errChan <- fmt.Errorf("oadin server error: %v", err)
-				}
-			}()
-			globalServerManager.oadinServer = oadinSrv
-			return nil
-		},
-		func() error {
-			if globalServerManager.oadinServer == nil {
-				return fmt.Errorf("server is not running")
-			}
-			return globalServerManager.StopServer("oadin")
-		},
-		func() error {
-			var errs []error
-			if globalServerManager.oadinServer != nil {
-				if err := globalServerManager.StopServer("oadin"); err != nil {
-					errs = append(errs, fmt.Errorf("failed to stop oadin server: %v", err))
-				}
-			}
-			if globalServerManager.consoleServer != nil {
-				if err := globalServerManager.StopServer("console"); err != nil {
-					errs = append(errs, fmt.Errorf("failed to stop console server: %v", err))
-				}
-			}
-			if len(errs) > 0 {
-				return fmt.Errorf("errors stopping servers: %v", errs)
-			}
-			return nil
-		},
-		func() error {
-			stopCmd := exec.Command("oadin", "server", "stop")
-			return stopCmd.Run()
-		},
-		true,
-	)
-	globalServerManager.trayManager = trayManager
+	// trayManager := tray.NewManager(
+	// 	func() error {
+	// 		if globalServerManager.oadinServer != nil {
+	// 			return fmt.Errorf("server is already running")
+	// 		}
+	// 		oadinSrv = &http.Server{
+	// 			Addr:    config.GlobalEnvironment.ApiHost,
+	// 			Handler: oadinServer.Router,
+	// 		}
+	// 		go func() {
+	// 			if err := oadinSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 				errChan <- fmt.Errorf("oadin server error: %v", err)
+	// 			}
+	// 		}()
+	// 		globalServerManager.oadinServer = oadinSrv
+	// 		return nil
+	// 	},
+	// 	func() error {
+	// 		if globalServerManager.oadinServer == nil {
+	// 			return fmt.Errorf("server is not running")
+	// 		}
+	// 		return globalServerManager.StopServer("oadin")
+	// 	},
+	// 	func() error {
+	// 		var errs []error
+	// 		if globalServerManager.oadinServer != nil {
+	// 			if err := globalServerManager.StopServer("oadin"); err != nil {
+	// 				errs = append(errs, fmt.Errorf("failed to stop oadin server: %v", err))
+	// 			}
+	// 		}
+	// 		if globalServerManager.consoleServer != nil {
+	// 			if err := globalServerManager.StopServer("console"); err != nil {
+	// 				errs = append(errs, fmt.Errorf("failed to stop console server: %v", err))
+	// 			}
+	// 		}
+	// 		if len(errs) > 0 {
+	// 			return fmt.Errorf("errors stopping servers: %v", errs)
+	// 		}
+	// 		return nil
+	// 	},
+	// 	func() error {
+	// 		stopCmd := exec.Command("oadin", "server", "stop")
+	// 		return stopCmd.Run()
+	// 	},
+	// 	true,
+	// )
+	// globalServerManager.trayManager = trayManager
 
-	tray.StartCheckUpdate(ctx, trayManager)
-	// start tray
-	trayManager.Start()
+	// tray.StartCheckUpdate(ctx, trayManager)
+	// trayManager.Start()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -540,9 +539,18 @@ func NewVersionCommand() *cobra.Command {
 		Short: "Prints build version information.",
 		Long:  "Prints build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			// SDK需要Oadin Version是/oadin/v0.4/api_flavors/smartvision/v1/embeddings中的v0.4
-			fmt.Println(`Oadin Version:`, version.OADINSpecVersion)
+			// 增加奥丁真正的主版本号
+			fmt.Println(`Oadin Release Version:`, version.OADINVersion)
+			// 子版本号
 			fmt.Println(`Oadin SubVersion:`, version.OadinSubVersion)
+			// SDK需要Oadin Version是/oadin/v0.4/api_flavors/smartvision/v1/embeddings中的v0.4
+			// 因为动这里的参数会导致老sdk不兼容，所以只能先这样, 因此添加注释加以说明
+			fmt.Printf("Oadin Version: %s    # Open API Version for SDK\n", version.OADINSpecVersion)
+
+			fmt.Println()
+			// 应用简介
+			fmt.Println(version.OADINDescription)
+
 		},
 	}
 
@@ -1569,25 +1577,25 @@ func ListenModelEngineHealthTotal() {
 					}
 				}
 			} else if engine == types.FlavorOpenvino {
-					err := OpenVINOEngine.HealthCheck()
+				err := OpenVINOEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
+					err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
 					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
-						err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
-						if err != nil {
-							logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
-							continue
-						}
+						logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
+						continue
 					}
+				}
 			} else if engine == types.FlavorLlamaCpp {
-					err := LlamaCppEngine.HealthCheck()
+				err := LlamaCppEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+					err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
 					if err != nil {
-						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
-						err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
-						if err != nil {
-							logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
-							continue
-						}
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+						continue
 					}
+				}
 			}
 		}
 

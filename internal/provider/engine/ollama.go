@@ -23,12 +23,17 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"oadin/config"
+	"oadin/extension/utils/cache"
+	"oadin/internal/utils/directory"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
+	"errors"
 
 	"oadin/internal/client"
 	"oadin/internal/constants"
@@ -265,7 +270,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		return o.EngineConfig
 	}
 
-	userDir, err := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		logger.EngineLogger.Error("[Ollama] Get user home dir failed: ", err.Error())
 		return nil
@@ -279,6 +284,8 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 			return nil
 		}
 	}
+
+	// 模型文件的路径
 	dataDir, err := utils.GetOADINDataDir()
 	if err != nil {
 		logger.EngineLogger.Error("[Ollama] Get OADIN data dir failed", "error", err)
@@ -291,8 +298,18 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	enginePath := filepath.Join(dataDir, "engine", "ollama")
 	switch runtime.GOOS {
 	case "windows":
+		// 此处改造成使用program files目录
+		executableDir, err1 := directory.GetWindowsPaths()
+		if err1 != nil {
+			logger.EngineLogger.Error("[Ollama] Get windows special folder failed: ", err1.Error())
+			return nil
+		}
+
 		execFile = "ollama.exe"
-		execPath = fmt.Sprintf("%s/%s", userDir, "ollama")
+		execPath = fmt.Sprintf("%s/%s", executableDir.ProgramFiles, "/Oadin/ollama")
+		// 针对预装的windows系统, 放在 ProgramData 目录下
+		dataDir = executableDir.ProgramData + "/Oadin"
+		enginePath = fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 
 		switch utils.DetectGpuModel() {
 		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
@@ -302,7 +319,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		case types.GPUTypeAmd:
 			downloadUrl = WindowsAMDURL
 		case types.GPUTypeIntelArc:
-			execPath = fmt.Sprintf("%s/%s", userDir, "ipex-llm-ollama")
+			execPath = fmt.Sprintf("%s/%s", executableDir.ProgramFiles, "/Oadin/ipex-llm-ollama")
 			downloadUrl = WindowsIntelArcURL
 		default:
 			downloadUrl = WindowsBaseURL
@@ -395,12 +412,11 @@ func (o *OllamaProvider) InstallEngine() error {
 	} else if runtime.GOOS == "windows" {
 		if utils.IpexOllamaSupportGPUStatus() {
 			// 解压文件
-			userDir, err := os.UserHomeDir()
 			if err != nil {
 				logger.EngineLogger.Error("Get user home dir failed: ", err.Error())
 				return err
 			}
-			ipexPath := filepath.Join(userDir, "ipex-llm-ollama")
+			ipexPath := filepath.Join(o.GetConfig().ExecPath, "ipex-llm-ollama")
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
@@ -436,7 +452,7 @@ func (o *OllamaProvider) InstallEngine() error {
 					logger.EngineLogger.Info("[Ollama] model engine install completed err : " + err.Error())
 					return fmt.Errorf("[Ollama] failed to tar file: %v", err)
 				}
-			}		
+			}
 	} else {
 		return fmt.Errorf("[Ollama] unsupported operating system: %s", runtime.GOOS)
 	}
@@ -460,13 +476,20 @@ func (o *OllamaProvider) InitEnv() error {
 	if currModelPath != "" {
 		modelPath = currModelPath
 	}
-	slog.Info("[Init Env] start model..." + modelPath)
+	logger.EngineLogger.Info("[Init Env] start model..." + modelPath)
 	err = os.Setenv("OLLAMA_MODELS", modelPath)
 	if err != nil {
 		return fmt.Errorf("failed to set OLLAMA_MODELS: %w", err)
 	}
 	ollamaModels := os.Getenv("OLLAMA_MODELS")
-	slog.Info("[Init Env] end model...ollama" + ollamaModels)
+	logger.EngineLogger.Info("[Init Env] end model...ollama" + ollamaModels)
+
+	err = os.Setenv("OLLAMA_CONTEXT_LENGTH", "8192")
+	if err != nil {
+		return fmt.Errorf("failed to set OLLAMA_CONTEXT_LENGTH: %w", err)
+	}
+	OLLAMA_CONTEXT_LENGTH := os.Getenv("OLLAMA_CONTEXT_LENGTH")
+	logger.EngineLogger.Info("[Ollama] 运行环境变量OLLAMA_CONTEXT_LENGTH: %s", OLLAMA_CONTEXT_LENGTH)
 
 	if utils.IpexOllamaSupportGPUStatus() {
 		err = os.Setenv("OLLAMA_NUM_GPU", "999")
@@ -487,6 +510,9 @@ func (o *OllamaProvider) InitEnv() error {
 		if err != nil {
 			return fmt.Errorf("failed to set OLLAMA_NUM_CTX: %w", err)
 		}
+		OLLAMA_NUM_CTX := os.Getenv("OLLAMA_NUM_CTX")
+		logger.EngineLogger.Info("[Ollama] ipex 运行环境变量OLLAMA_NUM_CTX: %s", OLLAMA_NUM_CTX)
+
 		err = os.Setenv("OLLAMA_NUM_PARALLEL", "1")
 		if err != nil {
 			return fmt.Errorf("failed to set OLLAMA_NUM_PARALLEL: %w", err)
@@ -517,19 +543,256 @@ func (o *OllamaProvider) PullModel(ctx context.Context, req *types.PullModelRequ
 }
 
 func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullModelRequest) (chan []byte, chan error) {
-	logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
+	// logger.EngineLogger.Info("[Ollama] Pull model: " + req.Model + " , mode: stream")
 
-	c := o.GetDefaultClient()
-	ctx, cancel := context.WithCancel(ctx)
-	modelArray := append(client.ModelClientMap[req.Model], cancel)
-	client.ModelClientMap[req.Model] = modelArray
-	reqHeader := make(map[string]string)
-	reqHeader["Content-Type"] = "application/json"
-	reqHeader["Accept"] = "application/json"
-	dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req, reqHeader)
-	logger.EngineLogger.Info("[Ollama] Pull model success: " + req.Name + " , mode: stream")
+	// c := o.GetDefaultClient()
+	// ctx, cancel := context.WithCancel(ctx)
+	// modelArray := append(client.ModelClientMap[req.Model], cancel)
+	// client.ModelClientMap[req.Model] = modelArray
+	// reqHeader := make(map[string]string)
+	// reqHeader["Content-Type"] = "application/json"
+	// reqHeader["Accept"] = "application/json"
+	// dataCh, errCh := c.StreamResponse(ctx, http.MethodPost, "/api/pull", req, reqHeader)
+	// logger.EngineLogger.Info("[Ollama] Pull model success: " + req.Name + " , mode: stream")
 
-	return dataCh, errCh
+	// return dataCh, errCh
+
+    // logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
+
+    logger.EngineLogger.Info("[Ollama] Pull model: " + req.Model + " , mode: stream")
+
+    c := o.GetDefaultClient()
+    // 创建主数据和错误通道，这是返回给调用方的
+    dataCh := make(chan []byte, 100)
+    errCh := make(chan error, 1)
+
+    go func() {
+        defer close(dataCh)
+        defer close(errCh)
+
+        var lastProgress int64 = 0
+        var lastTime time.Time = time.Now()
+        var lastTotal int64 = 0
+        var retry int = 0
+        var fileCounter int = 0
+        var slowSpeedCounter int = 0
+        // 用于存储最新的进度信息
+        var latestProgressData []byte
+
+        const maxRetries = 3
+        const maxSlowSpeedDetections = 3 // 允许连续几次检测到低速率
+        const minExpectedSpeed = 100 * 1024 // 100KB/s最低期望速度
+        const checkInterval = 5 * time.Second // 每5秒检查一次下载速度
+
+        for retry < maxRetries {
+            // 为每次尝试创建新的上下文
+            pullCtx, cancelPull := context.WithCancel(context.Background())
+
+            // 记录本次尝试的开始
+            logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Pull model attempt %d: %s , mode: stream", retry+1, req.Model))
+			fmt.Println(fmt.Sprintf("[Ollama] Pull model attempt %d: %s , mode: stream", retry+1, req.Model))
+
+            // 构建请求头
+            reqHeader := make(map[string]string)
+            reqHeader["Content-Type"] = "application/json"
+            reqHeader["Accept"] = "application/json"
+
+            // 保存取消函数，使其他地方可以取消此请求
+            modelArray := append(client.ModelClientMap[req.Model], cancelPull)
+            client.ModelClientMap[req.Model] = modelArray
+
+            // 发起流式请求
+            currentDataCh, currentErrCh := c.StreamResponse(pullCtx, http.MethodPost, "/api/pull", req, reqHeader)
+
+            // 速度检查定时器
+            speedCheckTicker := time.NewTicker(checkInterval)
+            defer speedCheckTicker.Stop()
+
+            shouldRetry := false
+            pullFailed := false
+			downloadSuccess := false
+
+            // 处理流数据
+            for {
+                select {
+                case <-ctx.Done():
+                    // 客户端取消，终止整个过程
+                    logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Client canceled pull model: %s", req.Model))
+					fmt.Println(fmt.Sprintf("[Ollama] Client canceled pull model: %s", req.Model))
+                    cancelPull()
+                    return
+
+                case <-speedCheckTicker.C:
+                    // 检查下载速度
+                    currentTime := time.Now()
+                    duration := currentTime.Sub(lastTime).Seconds()
+                    var progress types.ProgressResponse
+					if latestProgressData != nil {
+						if err := json.Unmarshal(latestProgressData, &progress); err == nil {
+							fmt.Println("speedCheckTicker Pull model progress: ", progress, lastTotal, lastProgress)
+							// 检测是否开始了新文件
+							if progress.Total > 0 && lastTotal != progress.Total {
+								// 检测到新文件的开始
+								fileCounter++
+								logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Detected new file #%d, size: %d bytes", fileCounter, progress.Total))
+								fmt.Println(fmt.Sprintf("[Ollama] Detected new file #%d, size: %d bytes", fileCounter, progress.Total))
+								// 重置进度追踪
+								lastProgress = 0
+								lastTime = currentTime
+								lastTotal = progress.Total
+								// 重置慢速计数器，给新文件一个机会
+								slowSpeedCounter = 0
+								continue
+							}
+
+							// 保存当前total值
+							if progress.Total > 0 {
+								lastTotal = progress.Total
+							}
+
+							if progress.Completed > 0 {
+								// 如果Completed值小于上次，说明是新文件
+								if progress.Completed < lastProgress {
+									// 重置进度，开始新文件的追踪
+									lastProgress = 0
+									lastTime = currentTime
+									continue
+								}
+
+								bytesDownloaded := progress.Completed - lastProgress
+								speed := float64(bytesDownloaded) / duration
+
+								logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Download speed: %.2f KB/s, Progress: %d/%d bytes (%.2f%%)",
+									speed/1024, progress.Completed, progress.Total, float64(progress.Completed)/float64(progress.Total)*100))
+								fmt.Println(fmt.Sprintf("[Ollama] Download speed: %.2f KB/s, Progress: %d/%d bytes (%.2f%%)",
+									speed/1024, progress.Completed, progress.Total, float64(progress.Completed)/float64(progress.Total)*100))
+
+								// 如果速度低于阈值，考虑重试
+								if speed < float64(minExpectedSpeed) {
+									slowSpeedCounter++
+									logger.EngineLogger.Warn(fmt.Sprintf("[Ollama] Download speed too slow (%.2f KB/s < %d KB/s), detection %d/%d",
+										speed/1024, minExpectedSpeed/1024, slowSpeedCounter, maxSlowSpeedDetections))
+									fmt.Println(fmt.Sprintf("[Ollama] Download speed too slow (%.2f KB/s < %d KB/s), detection %d/%d",
+										speed/1024, minExpectedSpeed/1024, slowSpeedCounter, maxSlowSpeedDetections))
+
+									// 只有连续几次检测到低速率才重试
+									if slowSpeedCounter >= maxSlowSpeedDetections {
+										logger.EngineLogger.Warn(fmt.Sprintf("[Ollama] Persistent slow speed detected, attempting retry"))
+										fmt.Println(fmt.Sprintf("[Ollama] Persistent slow speed detected, attempting retry"))
+										if !shouldRetry{
+											shouldRetry = true
+										    cancelPull() // 取消当前的下载
+										}
+										break
+									}
+								} else {
+									// 速度正常，重置慢速计数器
+									slowSpeedCounter = 0
+								}
+
+								// 更新进度记录
+								lastProgress = progress.Completed
+								lastTime = currentTime
+							}
+						}
+					}
+
+                case data, ok := <-currentDataCh:
+                    if !ok {
+						fmt.Println(fmt.Sprintf("[Ollama] Data channel closed for pull model: %s", req.Model), data)
+						continue
+                    }
+
+                    // 转发数据到主通道
+					// 保存最新的进度数据
+                    latestProgressData = data
+                    dataCh <- data
+
+					// 只有从ollama获取到这个状态才算成功
+					var statusResp struct {
+						Status string `json:"status"`
+					}
+					if err := json.Unmarshal(data, &statusResp); err == nil {
+						if statusResp.Status == "success" {
+							downloadSuccess = true
+							break
+						}
+					}
+
+                case err, ok := <-currentErrCh:
+                    if !ok {
+                        // 错误通道关闭
+						fmt.Println(fmt.Sprintf("[Ollama] error channel closed for pull model: %s", req.Model), err)
+                        if err == nil {
+							pullFailed = true
+							break
+						}
+                    }
+                    fmt.Println("Pull model error: ", err)
+                    if shouldRetry {
+                        // 如果已经决定重试，忽略当前错误
+                        continue
+                    }
+
+                    if err != nil {
+                        logger.EngineLogger.Error(fmt.Sprintf("[Ollama] Error pulling model: %s, error: %v", req.Model, err))
+						fmt.Println(fmt.Sprintf("[Ollama] Error pulling model: %s, error: %v", req.Model, err))
+                        pullFailed = true
+                        break
+                    }
+                }
+
+                // 检查是否需要中断当前循环
+                if shouldRetry || pullFailed || downloadSuccess{
+                    break
+                }
+            }
+
+            // 判断是否需要重试
+            if shouldRetry && retry < maxRetries-1 {
+                retry++
+                logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Retrying pull model (attempt %d/%d): %s", retry+1, maxRetries, req.Model))
+				fmt.Println(fmt.Sprintf("[Ollama] Retrying pull model (attempt %d/%d): %s", retry+1, maxRetries, req.Model))
+                // 重置追踪变量
+                lastProgress = 0
+                lastTotal = 0
+                fileCounter = 0
+                slowSpeedCounter = 0
+                time.Sleep(2 * time.Second) // 稍等一会再重试
+                continue
+            } else if pullFailed && retry < maxRetries-1 {
+                retry++
+                logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Pull failed, retrying (attempt %d/%d): %s", retry+1, maxRetries, req.Model))
+				fmt.Println(fmt.Sprintf("[Ollama] Pull failed, retrying (attempt %d/%d): %s", retry+1, maxRetries, req.Model))
+                // 重置追踪变量
+                lastProgress = 0
+                lastTotal = 0
+                fileCounter = 0
+                slowSpeedCounter = 0
+                time.Sleep(2 * time.Second)
+                continue
+            } else {
+                // 已达到最大重试次数
+                if retry == maxRetries-1 && (shouldRetry || pullFailed) {
+                    logger.EngineLogger.Info(fmt.Sprintf("[Ollama] Max retries reached for pull model: %s", req.Model))
+					fmt.Println(fmt.Sprintf("[Ollama] Max retries reached for pull model: %s", req.Model))
+					errCh <- errors.New("Max retries reached for pull model")
+                }
+
+				if downloadSuccess {
+					logger.EngineLogger.Info(fmt.Sprintf("[Ollama] download success: %s", req.Model))
+					fmt.Println(fmt.Sprintf("[Ollama] download success: %s", req.Model))
+                } else {
+                    logger.EngineLogger.Info(fmt.Sprintf("[Ollama] download failed: %s", req.Model))
+					fmt.Println(fmt.Sprintf("[Ollama] download failed: %s", req.Model))
+					errCh <- errors.New("download failed")
+				}
+                break
+            }
+        }
+    }()
+
+    return dataCh, errCh
 }
 
 func (o *OllamaProvider) DeleteModel(ctx context.Context, req *types.DeleteRequest) error {
@@ -712,12 +975,13 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 	} else if runtime.GOOS == "windows" {
 		if utils.IpexOllamaSupportGPUStatus() {
 			// 解压文件
-			userDir, err := os.UserHomeDir()
+			//userDir, err := os.UserHomeDir()
+			// 目录改造
 			if err != nil {
 				newErrChan <- err
 				return
 			}
-			ipexPath := filepath.Join(userDir, "ipex-llm-ollama")
+			ipexPath := o.GetConfig().ExecPath
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
@@ -786,4 +1050,31 @@ func (o *OllamaProvider) InstallEngineExtraDepends(ctx context.Context) error {
 		return cmd.Run()
 	}
 	return nil
+}
+
+// 替換為私倉拉取模型, 為防止出現中斷, 不做異常處理
+func privateRegistryHandle(req *types.PullModelRequest) {
+	// 从用户配置文件中读取系统设置
+	var settings cache.SystemSettings
+	err := cache.ReadSystemSettings(&settings)
+	if err != nil {
+		slog.Error("获取Ollama仓库地址失败", "error", err)
+		return
+	}
+
+	// 如果用户没有设置Ollama仓库地址，则使用配置文件中的默认值
+	if settings.OllamaRegistry == "" {
+		settings.OllamaRegistry = config.ConfigRootInstance.Ollama.Url
+	}
+
+	// 如果用户设置了Ollama仓库地址，则将其添加到请求中
+	if settings.OllamaRegistry != "" {
+		req.Insecure = true // 设置为true以允许不安全的连接
+		if strings.Contains(req.Model, "/") {
+			req.Model = settings.OllamaRegistry + "/" + req.Model
+		} else {
+			req.Model = settings.OllamaRegistry + "/library/" + req.Model
+		}
+		fmt.Println("[PullModel] Using private registry:", req.Model)
+	}
 }

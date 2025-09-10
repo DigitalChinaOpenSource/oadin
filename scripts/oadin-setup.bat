@@ -1,75 +1,190 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM === 配置部分 ===
-set "SETUP_FILE=oadin-installer-test-2.0.8.exe"
-set "SILENT_ARGS=/S"
-set "LOG_FILE=install.log"
+REM ========================================
+REM OADIN Auto Installation Script (Simple)
+REM This script will install:
+REM 1. OADIN Main Program
+REM 2. AI SmartVision
+REM 3. Ollama (IPEX-LLM version)
+REM 4. Model Files
+REM ========================================
 
-set "OLLAMA_ZIP=ollama-win.zip"
-set "OLLAMA_DIR=C:\ollama"
+REM === Configuration Section ===
+set "SETUP_FILE=oadin-installer-latest.exe"
+set "OADIN_INSTALL_DIR=%ProgramFiles%\Oadin"
 
-set "MODEL_ZIP=model.zip"
-set "MODEL_DIR=C:\ollama\models"
+set "AI_SMARTVISION_FILE=ai-smartvision-2.0.0-x64.exe"
+set "AI_SMARTVISION_INSTALL_DIR=%ProgramFiles%\ai-smartvision"
 
-REM === 检查管理员权限 ===
+set "OLLAMA_ZIP=ipex-llm-ollama.zip"
+set "OLLAMA_DIR=%OADIN_INSTALL_DIR%\ipex-llm-ollama"
+
+set "MODEL_ZIP=models.zip"
+set "MODEL_DIR=%ProgramData%\Oadin\engine\ollama"
+
+REM === Start Installation ===
+echo ========================================
+echo OADIN Auto Installation Script
+echo Current Time: %date% %time%
+echo ========================================
+
+REM Check administrator privileges
+echo [INFO] Checking administrator privileges...
 openfiles >nul 2>&1
 if errorlevel 1 (
-    echo 请以管理员方式运行本脚本！
+    echo [ERROR] Please run this script as administrator!
     pause
     exit /b 1
 )
+echo [OK] Administrator privileges verified
 
-REM === 检查安装包是否存在 ===
+echo.
+echo ========================================
+echo Starting Installation Process
+echo ========================================
+
+REM === Step 1: Install OADIN Main Program ===
+echo.
+echo === Step 1: Install OADIN Main Program ===
+echo [INFO] Checking installer: %SETUP_FILE%
 if not exist "%SETUP_FILE%" (
-    echo 没有找到安装包^: %SETUP_FILE%
-    pause
-    exit /b 2
+    echo [ERROR] Installer not found: %SETUP_FILE%
+    goto :install_failed
 )
-echo 正在静默安装 %SETUP_FILE% ...
-start /wait "" "%SETUP_FILE%" %SILENT_ARGS% /log=%LOG_FILE%
-REM === 检查安装是否成功 ===
-if %errorlevel% EQU 0 (
-    echo 安装完成！
-) else (
-    echo 安装过程返回错误码^: %errorlevel%
-)
+echo [OK] Installer check passed
 
-REM === 解压ollama的zip包到指定目录 ===
+echo [INFO] Starting OADIN installation...
+"%SETUP_FILE%" /S "/D=%OADIN_INSTALL_DIR%"
+if !errorlevel! NEQ 0 (
+    echo [ERROR] OADIN installation failed, error code: !errorlevel!
+    goto :install_failed
+)
+echo [OK] OADIN installation successful
+
+REM === Step 2: Install AI SmartVision ===
+echo.
+echo === Step 2: Install AI SmartVision ===
+echo [INFO] Checking installer: %AI_SMARTVISION_FILE%
+if not exist "%AI_SMARTVISION_FILE%" (
+    echo [ERROR] Installer not found: %AI_SMARTVISION_FILE%
+    goto :install_failed
+)
+echo [OK] Installer check passed
+
+echo [INFO] Starting AI SmartVision installation...
+"%AI_SMARTVISION_FILE%" /S "/D=%AI_SMARTVISION_INSTALL_DIR%"
+if !errorlevel! NEQ 0 (
+    echo [ERROR] AI SmartVision installation failed, error code: !errorlevel!
+    goto :install_failed
+)
+echo [OK] AI SmartVision installation successful
+
+REM === Step 3: Extract Ollama ===
+echo.
+echo === Step 3: Install Ollama ===
+echo [INFO] Checking archive: %OLLAMA_ZIP%
 if not exist "%OLLAMA_ZIP%" (
-    echo 没有找到Ollama安装包: %OLLAMA_ZIP%
-    pause
-    exit /b 3
+    echo [ERROR] Archive not found: %OLLAMA_ZIP%
+    goto :install_failed
 )
-echo 正在解压Ollama压缩包到 %OLLAMA_DIR% ...
-powershell -command "Expand-Archive -Path '%OLLAMA_ZIP%' -DestinationPath '%OLLAMA_DIR%' -Force"
-if %errorlevel% EQU 0 (
-    echo Ollama 解压成功！
-) else (
-    echo Ollama 解压失败！
-    pause
-    exit /b 4
-)
+echo [OK] Archive check passed
 
-REM === 解压模型包到指定目录 ===
+echo [INFO] Creating directory: %OLLAMA_DIR%
+if not exist "%OLLAMA_DIR%" mkdir "%OLLAMA_DIR%"
+
+echo [INFO] Starting Ollama extraction...
+tar -xf "%OLLAMA_ZIP%" -C "%OLLAMA_DIR%" --strip-components=0
+if !errorlevel! NEQ 0 (
+    echo [ERROR] Ollama extraction failed, error code: !errorlevel!
+    goto :install_failed
+)
+echo [OK] Ollama extraction successful
+
+REM === Step 4: Extract Model Files ===
+echo.
+echo === Step 4: Install Model Files ===
+echo [INFO] Checking archive: %MODEL_ZIP%
 if not exist "%MODEL_ZIP%" (
-    echo 没有找到模型包: %MODEL_ZIP%
-    pause
-    exit /b 5
+    echo [ERROR] Archive not found: %MODEL_ZIP%
+    goto :install_failed
 )
-if not exist "%MODEL_DIR%" (
-    mkdir "%MODEL_DIR%"
+echo [OK] Archive check passed
+
+echo [INFO] Creating directory: %MODEL_DIR%
+if not exist "%MODEL_DIR%" mkdir "%MODEL_DIR%"
+
+echo [INFO] Starting model files extraction...
+tar -xf "%MODEL_ZIP%" -C "%MODEL_DIR%" --strip-components=0
+if !errorlevel! NEQ 0 (
+    echo [ERROR] Model files extraction failed, error code: !errorlevel!
+    goto :install_failed
 )
-echo 正在解压模型包到 %MODEL_DIR% ...
-powershell -command "Expand-Archive -Path '%MODEL_ZIP%' -DestinationPath '%MODEL_DIR%' -Force"
-if %errorlevel% EQU 0 (
-    echo 模型解压完成！
+echo [OK] Model files extraction successful
+
+REM === Verify Installation Results ===
+echo.
+echo === Verify Installation Results ===
+set "FAILED=0"
+
+echo [INFO] Checking OADIN main program...
+if exist "%OADIN_INSTALL_DIR%\oadin.exe" (
+    echo [OK] OADIN main program installation successful
 ) else (
-    echo 模型解压失败！
-    pause
-    exit /b 6
+    echo [ERROR] OADIN main program not found
+    set "FAILED=1"
 )
 
-echo 所有操作完成！
-pause
-endlocal
+echo [INFO] Checking AI SmartVision...
+if exist "%AI_SMARTVISION_INSTALL_DIR%" (
+    echo [OK] AI SmartVision installation successful
+) else (
+    echo [ERROR] AI SmartVision directory not found
+    set "FAILED=1"
+)
+
+echo [INFO] Checking Ollama...
+if exist "%OLLAMA_DIR%" (
+    echo [OK] Ollama installation successful
+) else (
+    echo [ERROR] Ollama directory not found
+    set "FAILED=1"
+)
+
+echo [INFO] Checking model files...
+if exist "%MODEL_DIR%" (
+    echo [OK] Model files installation successful
+) else (
+    echo [ERROR] Model files directory not found
+    set "FAILED=1"
+)
+
+if %FAILED% NEQ 0 goto :install_failed
+
+REM === Installation Successful ===
+echo.
+echo ========================================
+echo [OK] All components installed successfully!
+echo ========================================
+echo Installation details:
+echo   - OADIN: %OADIN_INSTALL_DIR%
+echo   - AI SmartVision: %AI_SMARTVISION_INSTALL_DIR%
+echo   - Ollama: %OLLAMA_DIR%
+echo   - Model Files: %MODEL_DIR%
+echo ========================================
+echo.
+echo Press any key to exit...
+pause >nul
+exit /b 0
+
+REM === Installation Failed Handler ===
+:install_failed
+echo.
+echo ========================================
+echo [ERROR] An error occurred during installation!
+echo ========================================
+echo Please check the error messages above and try again.
+echo.
+echo Press any key to exit...
+pause >nul
+exit /b 1
