@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"context"
 
 	"oadin/tray"
 	"oadin/internal/utils"
@@ -67,8 +68,10 @@ func main() {
 	os.MkdirAll(pidPath, 0755)
 
 	// 创建托盘管理器
-	manager := tray.NewManager(true, logPath, pidPath)
+	trayManager := tray.NewManager(true, logPath, pidPath)
+	ctx := context.Background()
+	tray.StartCheckUpdate(ctx, trayManager)
 
 	// 启动托盘
-	manager.Start()
+	trayManager.Start()
 }

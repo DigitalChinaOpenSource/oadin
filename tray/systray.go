@@ -228,11 +228,11 @@ func (m *Manager) handleStartStop() {
 		}
 	} else {
 		// 启动服务器
-		err := utils.StartOADINServer(m.logPath, m.pidPath)
+		err := StartOADINServerTray(m.logPath, m.pidPath)
 		if err == nil {
 			m.serverRunning = true
 			// 启动成功后打开浏览器
-			go m.waitAndOpenBrowser()
+			// go m.waitAndOpenBrowser()
 		} else {
 			dialog.Message("Start server failed: %v", err).Title("Error").Error()
 		}
@@ -245,7 +245,7 @@ func (m *Manager) handleOpenConsole() {
 	if !utils.IsServerRunning() {
 		// 如果服务器没运行，询问是否启动
 		if confirmed := dialog.Message("Oadin server is not running. Start it now?").Title("Start Server").YesNo(); confirmed {
-			err := utils.StartOADINServer(m.logPath, m.pidPath)
+			err := StartOADINServerTray(m.logPath, m.pidPath)
 			if err != nil {
 				dialog.Message("Failed to start server: %v", err).Title("Error").Error()
 				return

@@ -7,14 +7,16 @@ import (
 	"log/slog"
 	"os/exec"
 	"syscall"
-
-	"oadin/config"
+	"path/filepath"
+	"oadin/internal/utils"
 )
 
 func ShowLogs() error {
 	// Windows implementation (your existing code)
 	cmd_path := "c:\\Windows\\system32\\cmd.exe"
-	cmd := exec.Command(cmd_path, "/c", "start", config.GlobalOADINEnvironment.LogDir)
+	rootDir, _ := utils.GetOADINDataDir()
+	logPath := filepath.Join(rootDir, "logs")
+	cmd := exec.Command(cmd_path, "/c", "start", logPath)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: false, CreationFlags: 0x08000000}
 
 	err := cmd.Start()
