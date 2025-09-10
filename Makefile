@@ -59,7 +59,7 @@ copy-mac-artifacts:
 	chmod +x installer/mac/create-app.sh
 
 build-mac-app: copy-mac-artifacts
-	cd installer/mac && ./create-app.sh
+	cd installer/mac && sudo ./create-app.sh
 
 build-win-installer: build-cli-win copy-win-artifacts
 	cd installer\win && makensis oadin.nsi
