@@ -34,12 +34,12 @@ sudo cp oadin "${MACOS_DIR}/"
 sudo cp oadin-tray "${MACOS_DIR}/"
 
 # 复制应用图标（如果存在）
-if [ -f "tray/icon/oadin.icns" ]; then
-    sudo cp "tray/icon/oadin.icns" "${RESOURCES_DIR}/AppIcon.icns"
+if [ -f "tray/icon/oadin-icon.icns" ]; then
+    sudo cp "tray/icon/oadin-icon.icns" "${RESOURCES_DIR}/AppIcon.icns"
     echo "✅ Added application icon"
-elif [ -f "tray/icon/oadin.png" ]; then
+elif [ -f "tray/icon/oadin-icon.png" ]; then
     # 如果没有icns文件，可以从png转换
-    sudo cp "tray/icon/oadin.png" "${RESOURCES_DIR}/AppIcon.png"
+    sudo cp "tray/icon/oadin-icon.png" "${RESOURCES_DIR}/AppIcon.png"
     echo "✅ Added PNG application icon"
 fi
 
