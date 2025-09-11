@@ -40,7 +40,7 @@ func TestDownloadUvBinaryWindows(t *testing.T) {
 }
 
 func TestFileName(t *testing.T) {
-	var name = "bun-darwin-aarch64/bun"
+	name := "bun-darwin-aarch64/bun"
 	res := filepath.Base(name)
 	t.Log(res)
 

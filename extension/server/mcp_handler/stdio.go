@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"sync"
 	"time"
+
+	"oadin/internal/logger"
 
 	ConfigRoot "oadin/config"
 	types "oadin/extension/api/dto"
@@ -76,7 +77,7 @@ func (s *StdioTransport) Start(ctx context.Context, config *types.MCPServerConfi
 	fmt.Printf("ClientMcpStart 运行时间: %v\n", elapsed)
 
 	fmt.Printf("[MCP] Initialized client for server: %s\n", config.Id)
-	slog.Info("[MCP] Initialized client for server", "server_id", config.Id)
+	logger.LogicLogger.Info("[MCP] Initialized client for server", "server_id", config.Id)
 	s.mu.Lock()
 	s.clients[serverKey] = cli
 	s.mu.Unlock()
@@ -138,9 +139,18 @@ func (s *StdioTransport) CallTool(ctx context.Context, mcpId string, params mcp.
 	fetchRequest := mcp.CallToolRequest{}
 	fetchRequest.Params.Name = params.Name
 	fetchRequest.Params.Arguments = params.Arguments
+
+	timeout := 1.9 * 60 * time.Second
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	result, err := cli.CallTool(ctx, fetchRequest)
 	if err != nil {
-		return nil, err
+		errContent := mcp.TextContent{
+			Type: "text",
+			Text: err.Error(),
+		}
+		return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{errContent}}, nil
 	}
 	return result, nil
 }

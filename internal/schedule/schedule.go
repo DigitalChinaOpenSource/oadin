@@ -29,9 +29,16 @@ import (
 
 	"oadin/internal/datastore"
 	"oadin/internal/logger"
+	"oadin/internal/manager"
+	"oadin/internal/provider"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
+)
+
+const (
+	// ModelPreparationTimeout 模型准备超时时间
+	ModelPreparationTimeout = 5 * time.Minute
 )
 
 type ServiceTaskEventType int
@@ -209,57 +216,96 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 		}
 	}
 	ds := datastore.GetDefaultDatastore()
-	service := &types.Service{
-		Name: task.Request.Service,
-	}
-
-	err := ds.Get(context.Background(), service)
-	if err != nil {
-		logger.LogicLogger.Error("[Schedule] Failed to get service", "error", err, "service", task.Request.Service)
-		return nil, bcode.ErrServiceRecordNotFound
-	}
-
-	if service.LocalProvider == "" && service.RemoteProvider == "" {
-		logger.LogicLogger.Error("[Schedule] Service ", task.Request.Service, " does not have local or remote provider")
-		return nil, bcode.ErrNotExistDefaultProvider
-	}
-
-	m := &types.Model{
-		ModelName:   task.Request.Model,
-		ServiceName: task.Request.Service,
-	}
+	//service := &types.Service{
+	//	Name: task.Request.Service,
+	//}
+	//
+	//err := ds.Get(context.Background(), service)
+	//if err != nil {
+	//	logger.LogicLogger.Error("[Schedule] Failed to get service", "error", err, "service", task.Request.Service)
+	//	return nil, bcode.ErrServiceRecordNotFound
+	//}
+	//
+	//if service.LocalProvider == "" && service.RemoteProvider == "" {
+	//	logger.LogicLogger.Error("[Schedule] Service ", task.Request.Service, " does not have local or remote provider")
+	//	return nil, bcode.ErrNotExistDefaultProvider
+	//}
 
 	// Provider Selection
 	// ================
-	providerName := service.LocalProvider
+	//providerName := service.LocalProvider
+	sortOption := []datastore.SortOption{
+		{Key: "updated_at", Order: -1},
+	}
+	var m *types.Model
 	if model == "" {
-		if location == types.ServiceSourceRemote {
-			if service.RemoteProvider == "" {
-				providerName = service.LocalProvider
-			} else {
-				providerName = service.RemoteProvider
+		mObj := new(types.Model)
+		queries := []datastore.FuzzyQueryOption{}
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "service_name", Query: task.Request.Service})
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "is_default", Query: "true"})
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "service_source", Query: location})
+		ms, err := ds.List(context.Background(), mObj, &datastore.ListOptions{
+			FilterOptions: datastore.FilterOptions{
+				Queries: queries,
+			},
+			SortBy: sortOption,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if len(ms) == 0 {
+			newQueries := []datastore.FuzzyQueryOption{}
+			newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "service_name", Query: task.Request.Service})
+			newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "service_source", Query: location})
+			newMs, err := ds.List(context.Background(), mObj, &datastore.ListOptions{
+				FilterOptions: datastore.FilterOptions{
+					Queries: newQueries,
+				},
+				SortBy: sortOption,
+			})
+			if err != nil {
+				return nil, err
 			}
-		} else if service.LocalProvider == "" {
-			providerName = service.RemoteProvider
+			if len(newMs) == 0 {
+				logger.LogicLogger.Error("[Schedule] model not found", "error", err, "model", task.Request.Model)
+				return nil, bcode.ErrModelRecordNotFound
+			}
+			m = newMs[0].(*types.Model)
+		} else {
+			m = ms[0].(*types.Model)
 		}
 	} else {
-		err := ds.Get(context.Background(), m)
+		mObj := new(types.Model)
+		mObj.ModelName = model
+		queries := []datastore.FuzzyQueryOption{}
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "service_source", Query: location})
+		queries = append(queries, datastore.FuzzyQueryOption{Key: "service_name", Query: task.Request.Service})
+		ms, err := ds.List(context.Background(), mObj, &datastore.ListOptions{
+			FilterOptions: datastore.FilterOptions{
+				Queries: queries,
+			},
+			SortBy: sortOption,
+		})
 		if err != nil {
 			logger.LogicLogger.Error("[Schedule] model not found", "error", err, "model", task.Request.Model)
 			return nil, bcode.ErrModelRecordNotFound
 		}
+		if len(ms) == 0 {
+			logger.LogicLogger.Error("[Schedule] model installing", "model", task.Request.Model)
+			return nil, bcode.ErrModelUnDownloaded
+		}
+		m = ms[0].(*types.Model)
 		if m.Status != "downloaded" {
 			logger.LogicLogger.Error("[Schedule] model installing", "model", task.Request.Model, "status", m.Status)
 			return nil, bcode.ErrModelUnDownloaded
 		}
-
-		providerName = m.ProviderName
 	}
+	providerName := m.ProviderName
 
 	sp := &types.ServiceProvider{
 		ProviderName: providerName,
 	}
-	err = ds.Get(context.Background(), sp)
+	err := ds.Get(context.Background(), sp)
 	if err != nil {
 		logger.LogicLogger.Error("[Schedule] service provider not found for ", location, " of Service ", task.Request.Service)
 		return nil, bcode.ErrProviderNotExist
@@ -353,6 +399,57 @@ func (ss *BasicServiceScheduler) dispatch(task *ServiceTask) (*types.ServiceTarg
 	protocol := ""
 	if serviceDef, exists := flavorDef.Services[task.Request.Service]; exists {
 		protocol = serviceDef.Protocol
+	}
+
+	// 模型内存管理：确保本地模型已加载
+	if location == types.ServiceSourceLocal && model != "" {
+		// 获取模型引擎实例
+		modelEngine := provider.GetModelEngine(sp.Flavor)
+		if modelEngine != nil {
+			mmm := manager.GetModelManager()
+			ctx := context.Background()
+
+			// 请求分流：判断是否需要进入排队机制
+			if manager.NeedsQueuing(location, task.Request.Service) {
+				// 本地非embed请求：进入排队机制
+				logger.LogicLogger.Debug("[Schedule] Enqueueing local non-embed model request",
+					"model", model, "service", task.Request.Service, "provider", sp.ProviderName)
+
+				readyChan, errorChan, err := mmm.EnqueueLocalModelRequest(ctx, model, modelEngine, sp.ProviderName, sp.Flavor, task.Schedule.Id)
+				if err != nil {
+					logger.LogicLogger.Error("[Schedule] Failed to enqueue local model request",
+						"model", model, "provider", sp.ProviderName, "error", err)
+					return nil, fmt.Errorf("failed to enqueue model request %s: %w", model, err)
+				}
+
+				logger.LogicLogger.Info("[Schedule] Local model request enqueued, waiting for model preparation",
+					"model", model, "provider", sp.ProviderName, "taskID", task.Schedule.Id)
+
+				// 等待队列处理完成（模型切换和准备）
+				select {
+				case <-readyChan:
+					// 检查是否有错误
+					select {
+					case queueErr := <-errorChan:
+						logger.LogicLogger.Error("[Schedule] Model preparation failed",
+							"model", model, "taskID", task.Schedule.Id, "error", queueErr)
+						return nil, fmt.Errorf("model preparation failed for %s: %w", model, queueErr)
+					default:
+						logger.LogicLogger.Info("[Schedule] Model preparation completed, ready to execute task",
+							"model", model, "taskID", task.Schedule.Id)
+					}
+				case <-ctx.Done():
+					logger.LogicLogger.Warn("[Schedule] Context cancelled while waiting for model preparation",
+						"model", model, "taskID", task.Schedule.Id, "error", ctx.Err())
+					return nil, ctx.Err()
+				case <-time.After(ModelPreparationTimeout):
+					logger.LogicLogger.Error("[Schedule] Timeout waiting for model preparation",
+						"model", model, "taskID", task.Schedule.Id, "timeout", ModelPreparationTimeout)
+					return nil, fmt.Errorf("timeout waiting for model preparation: %s (timeout: %v)", model, ModelPreparationTimeout)
+				}
+			}
+			// 远程请求或本地embed请求：直接走原有流程，不需要特殊处理
+		}
 	}
 
 	return &types.ServiceTarget{

@@ -24,7 +24,6 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
-	"oadin/tray"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -36,11 +35,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
-
 	"oadin/config"
-	"oadin/console"
+	// "oadin/console"
 	extensionApi "oadin/extension/api"
 	server2 "oadin/extension/server"
 	ex_utils "oadin/extension/utils"
@@ -52,13 +48,19 @@ import (
 	jsondsTemplate "oadin/internal/datastore/jsonds/data"
 	"oadin/internal/datastore/sqlite"
 	"oadin/internal/logger"
+	"oadin/internal/manager"
 	"oadin/internal/provider"
 	"oadin/internal/schedule"
 	"oadin/internal/types"
 	"oadin/internal/utils"
 	"oadin/internal/utils/bcode"
 	"oadin/internal/utils/progress"
+	serverUtils "oadin/internal/utils/server"
+	"oadin/tray"
 	"oadin/version"
+
+	// "github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 // NewCommand will contain all commands
@@ -171,7 +173,7 @@ func NewEditServiceCommand() *cobra.Command {
 			}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/%s/%s/service", constants.AppName, version.OADINVersion)
+			routerPath := fmt.Sprintf("/%s/%s/service", constants.AppName, version.OADINSpecVersion)
 
 			err = c.Client.Do(context.Background(), http.MethodPut, routerPath, req, &resp)
 			if err != nil {
@@ -193,7 +195,7 @@ func NewEditServiceCommand() *cobra.Command {
 
 func Run(ctx context.Context) error {
 	// Initialize the datastore
-	ds, err := sqlite.New(config.GlobalOADINEnvironment.Datastore)
+	ds, err := sqlite.New(config.GlobalEnvironment.Datastore)
 	if err != nil {
 		slog.Error("[Init] Failed to load datastore", "error", err)
 		return err
@@ -218,7 +220,7 @@ func Run(ctx context.Context) error {
 
 	if server2.UseVSSForPlayground() {
 		go func() {
-			dbPath := config.GlobalOADINEnvironment.Datastore
+			dbPath := config.GlobalEnvironment.Datastore
 			if err := server2.InitPlaygroundVec(ctx, dbPath); err != nil {
 				slog.Error("Failed to initialize VSS database", "error", err)
 			} else {
@@ -229,8 +231,8 @@ func Run(ctx context.Context) error {
 
 	logger.InitLogger(
 		logger.LogConfig{
-			LogLevel: config.GlobalOADINEnvironment.LogLevel,
-			LogPath:  config.GlobalOADINEnvironment.LogDir,
+			LogLevel: config.GlobalEnvironment.LogLevel,
+			LogPath:  config.GlobalEnvironment.LogDir,
 		})
 	// Initialize core core app server
 	oadinServer := extensionApi.NewOadinExtensionServer()
@@ -250,6 +252,14 @@ func Run(ctx context.Context) error {
 	// start
 	schedule.StartScheduler("basic")
 
+	// Initialize the model memory manager
+	mmm := manager.GetModelManager()
+	mmm.SetIdleTimeout(config.GlobalEnvironment.ModelIdleTimeout)
+	mmm.Start(config.GlobalEnvironment.ModelCleanupInterval)
+	logger.LogicLogger.Info("[Init] Model memory manager started",
+		"idle_timeout", config.GlobalEnvironment.ModelIdleTimeout,
+		"cleanup_interval", config.GlobalEnvironment.ModelCleanupInterval)
+
 	// Inject the router
 	api.InjectRouter(oadinServer.CoreServer)
 
@@ -260,14 +270,14 @@ func Run(ctx context.Context) error {
 		schedule.InitProviderDefaultModelTemplate(flavor)
 	}
 
-	pidFile := filepath.Join(config.GlobalOADINEnvironment.RootDir, constants.AppName+".pid")
+	pidFile := filepath.Join(config.GlobalEnvironment.RootDir, constants.AppName+".pid")
 	err = os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0o644)
 	if err != nil {
 		slog.Error("[Run] Failed to write pid file", "error", err)
 		return err
 	}
 
-	go ListenModelEngineHealth()
+	go ListenModelEngineHealthTotal()
 
 	// Run the server
 	if err != nil {
@@ -288,7 +298,7 @@ func Run(ctx context.Context) error {
 
 	// start oadin server
 	oadinSrv := &http.Server{
-		Addr:    config.GlobalOADINEnvironment.ApiHost,
+		Addr:    config.GlobalEnvironment.ApiHost,
 		Handler: oadinServer.Router,
 	}
 	globalServerManager.oadinServer = oadinSrv
@@ -300,25 +310,65 @@ func Run(ctx context.Context) error {
 	}()
 
 	// start console server
-	consoleSrv, err := console.StartConsoleServer(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to start console server: %v", err)
-	}
-	globalServerManager.consoleServer = consoleSrv
+	// consoleSrv, err := console.StartConsoleServer(ctx)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to start console server: %v", err)
+	// }
+	// globalServerManager.consoleServer = consoleSrv
 
-	_, _ = color.New(color.FgHiGreen).Println("Oadin Gateway starting on port", config.GlobalOADINEnvironment.ApiHost)
-	_, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
+	// _, _ = color.New(color.FgHiGreen).Println("Oadin Gateway starting on port", config.GlobalEnvironment.ApiHost)
+	// _, _ = color.New(color.FgHiGreen).Println("Console server starting on port :16699")
 
 	// create tray manager
 	// trayManager := tray.NewManager(
+	// 	func() error {
+	// 		if globalServerManager.oadinServer != nil {
+	// 			return fmt.Errorf("server is already running")
+	// 		}
+	// 		oadinSrv = &http.Server{
+	// 			Addr:    config.GlobalEnvironment.ApiHost,
+	// 			Handler: oadinServer.Router,
+	// 		}
+	// 		go func() {
+	// 			if err := oadinSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 				errChan <- fmt.Errorf("oadin server error: %v", err)
+	// 			}
+	// 		}()
+	// 		globalServerManager.oadinServer = oadinSrv
+	// 		return nil
+	// 	},
+	// 	func() error {
+	// 		if globalServerManager.oadinServer == nil {
+	// 			return fmt.Errorf("server is not running")
+	// 		}
+	// 		return globalServerManager.StopServer("oadin")
+	// 	},
+	// 	func() error {
+	// 		var errs []error
+	// 		if globalServerManager.oadinServer != nil {
+	// 			if err := globalServerManager.StopServer("oadin"); err != nil {
+	// 				errs = append(errs, fmt.Errorf("failed to stop oadin server: %v", err))
+	// 			}
+	// 		}
+	// 		if globalServerManager.consoleServer != nil {
+	// 			if err := globalServerManager.StopServer("console"); err != nil {
+	// 				errs = append(errs, fmt.Errorf("failed to stop console server: %v", err))
+	// 			}
+	// 		}
+	// 		if len(errs) > 0 {
+	// 			return fmt.Errorf("errors stopping servers: %v", errs)
+	// 		}
+	// 		return nil
+	// 	},
+	// 	func() error {
+	// 		stopCmd := exec.Command("oadin", "server", "stop")
+	// 		return stopCmd.Run()
+	// 	},
 	// 	true,
-	// 	config.GlobalOADINEnvironment.LogDir,
-	// 	config.GlobalOADINEnvironment.LogDir,
 	// )
 	// globalServerManager.trayManager = trayManager
 
 	// tray.StartCheckUpdate(ctx, trayManager)
-	// // start tray
 	// trayManager.Start()
 
 	sigChan := make(chan os.Signal, 1)
@@ -374,7 +424,7 @@ func updateServiceProviderHandler(providerName, configFile string) error {
 	resp := dto.UpdateServiceProviderResponse{}
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/%s/%s/service_provider", constants.AppName, version.OADINVersion)
+	routerPath := fmt.Sprintf("/%s/%s/service_provider", constants.AppName, version.OADINSpecVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPut, routerPath, spConf, &resp)
 	if err != nil {
@@ -441,73 +491,8 @@ func NewStopApiServerCommand() *cobra.Command {
 }
 
 func stopOadinServer(cmd *cobra.Command, args []string) error {
-	files, err := filepath.Glob(filepath.Join(config.GlobalOADINEnvironment.RootDir, "*.pid"))
-	if err != nil {
-		return fmt.Errorf("failed to list pid files: %v", err)
-	}
-
-	if len(files) == 0 {
-		fmt.Println("No running processes found")
-		return nil
-	}
-
-	// Traverse all pid files.
-	for _, pidFile := range files {
-		pidData, err := os.ReadFile(pidFile)
-		if err != nil {
-			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
-		if err != nil {
-			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		process, err := os.FindProcess(pid)
-		if err != nil {
-			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
-			continue
-		}
-
-		if err := process.Kill(); err != nil {
-			if strings.Contains(err.Error(), "process already finished") {
-				fmt.Printf("Process with PID %d is already stopped\n", pid)
-			} else {
-				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
-				continue
-			}
-		} else {
-			fmt.Printf("Successfully stopped process with PID %d\n", pid)
-		}
-
-		// remove pid file
-		if err := os.Remove(pidFile); err != nil {
-			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
-		}
-	}
-	if runtime.GOOS == "windows" {
-		extraProcessName := "ollama-lib.exe"
-		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-		_, err := extraCmd.CombinedOutput()
-		if err != nil {
-			// fmt.Printf("failed to kill process: %s", extraProcessName)
-			return nil
-		}
-
-		ovmsProcessName := "ovms.exe"
-		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
-		_, err = ovmsCmd.CombinedOutput()
-		if err != nil {
-			// fmt.Printf("failed to kill process: %s", ovmsProcessName)
-			return nil
-		}
-
-		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
-	}
-
-	return nil
+	pidPath := filepath.Join(config.GlobalEnvironment.RootDir, "oadin.pid")
+	return serverUtils.StopOadinServer(pidPath)
 }
 
 // NewInstallServiceCommand will install a service
@@ -539,7 +524,7 @@ func NewInstallServiceCommand() *cobra.Command {
 	installServiceCmd.Flags().StringVar(&authType, "auth_type", "none", "Authentication type (apikey/token/none)")
 	installServiceCmd.Flags().StringVar(&method, "method", "POST", "HTTP method (default POST)")
 	installServiceCmd.Flags().StringVar(&authKey, "auth_key", "", "Authentication key json format")
-	installServiceCmd.Flags().StringVar(&flavor, "flavor", "", "Flavor (tencent/deepseek)")
+	installServiceCmd.Flags().StringVar(&flavor, "flavor", "", "Flavor (tencent/deepseek/ollama/llamacpp/openvino)")
 	installServiceCmd.Flags().StringP("file", "f", "", "Path to the service provider file (required for service_provider)")
 	installServiceCmd.Flags().BoolVarP(&skipModelFlag, "skip_model", "", false, "Skip the model download")
 	installServiceCmd.Flags().StringVarP(&model, "model_name", "m", "", "Pull model name")
@@ -554,8 +539,18 @@ func NewVersionCommand() *cobra.Command {
 		Short: "Prints build version information.",
 		Long:  "Prints build version information.",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf(`OADIN Version: %s`,
-				version.OADINVersion)
+			// 增加奥丁真正的主版本号
+			fmt.Println(`Oadin Release Version:`, version.OADINVersion)
+			// 子版本号
+			fmt.Println(`Oadin SubVersion:`, version.OadinSubVersion)
+			// SDK需要Oadin Version是/oadin/v0.4/api_flavors/smartvision/v1/embeddings中的v0.4
+			// 因为动这里的参数会导致老sdk不兼容，所以只能先这样, 因此添加注释加以说明
+			fmt.Printf("Oadin Version: %s    # Open API Version for SDK\n", version.OADINSpecVersion)
+
+			fmt.Println()
+			// 应用简介
+			fmt.Println(version.OADINDescription)
+
 		},
 	}
 
@@ -564,8 +559,8 @@ func NewVersionCommand() *cobra.Command {
 
 // NewStartApiServerCommand  Create a new cobra.Command Object with default values.
 func NewStartApiServerCommand() *cobra.Command {
-	config.GlobalOADINEnvironment = config.NewOADINEnvironment()
-	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalOADINEnvironment.LogLevel, LogPath: config.GlobalOADINEnvironment.LogDir})
+	config.GlobalEnvironment = config.NewOADINEnvironment()
+	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalEnvironment.LogLevel, LogPath: config.GlobalEnvironment.LogDir})
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "apiserver is a aipc open gateway",
@@ -590,12 +585,7 @@ func NewStartApiServerCommand() *cobra.Command {
 				startMode = types.EngineStartModeStandard
 			}
 
-			err = StartModelEngine("openvino", startMode)
-			if err != nil {
-				return err
-			}
-
-			err = StartModelEngine("ollama", startMode)
+			err = StartEngineTotall(startMode)
 			if err != nil {
 				return err
 			}
@@ -692,7 +682,7 @@ func NewListServicesCommand() *cobra.Command {
 			}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service", version.OADINSpecVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -741,7 +731,7 @@ func NewListModelsCommand() *cobra.Command {
 			}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINSpecVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -792,7 +782,7 @@ func NewListProvidersCommand() *cobra.Command {
 			}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINSpecVersion)
 
 			err := c.Client.Do(context.Background(), http.MethodGet, routerPath, req, &resp)
 			if err != nil {
@@ -861,7 +851,7 @@ func installServiceProviderHandler(configFile string) error {
 	go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINSpecVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPost, routerPath, spConf, &resp)
 	if err != nil {
@@ -954,7 +944,24 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 			req.Method = method
 		} else {
 			req.ServiceSource = types.ServiceSourceLocal
-			req.ApiFlavor = types.FlavorOllama
+			// Retrieve the flavor type specified by the user
+			flavorType, err := cmd.Flags().GetString("flavor")
+			if err != nil || flavorType == "" {
+				flavorType = "ollama"
+			}
+
+			// Set ApiFlavor based on the flavor type specified by the user
+			switch flavorType {
+			case "llamacpp":
+				req.ApiFlavor = types.FlavorLlamaCpp
+			case "openvino":
+				req.ApiFlavor = types.FlavorOpenvino
+			case "ollama":
+				req.ApiFlavor = types.FlavorOllama
+			default:
+				req.ApiFlavor = types.FlavorOllama
+			}
+
 			if serviceName == types.ServiceTextToImage || serviceName == types.ServiceSpeechToText || serviceName == types.ServiceSpeechToTextWS {
 				req.ApiFlavor = types.FlavorOpenvino
 			}
@@ -984,7 +991,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 		go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
 		c := config.NewOADINClient()
-		routerPath := fmt.Sprintf("/oadin/%s/service/install", version.OADINVersion)
+		routerPath := fmt.Sprintf("/oadin/%s/service/install", version.OADINSpecVersion)
 
 		err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 		if err != nil {
@@ -1039,7 +1046,7 @@ func InstallServiceHandler(cmd *cobra.Command, args []string) {
 }
 
 func CheckOADINServer(cmd *cobra.Command, args []string) {
-	if !utils.IsServerRunning() {
+	if !serverUtils.IsServerRunning() {
 		fmt.Println("OADIN server is not running, Please run 'oadin server start' first")
 		os.Exit(1)
 		return
@@ -1047,7 +1054,7 @@ func CheckOADINServer(cmd *cobra.Command, args []string) {
 }
 
 func StartOADINServer(cmd *cobra.Command, args []string) {
-	if utils.IsServerRunning() {
+	if serverUtils.IsServerRunning() {
 		return
 	}
 
@@ -1059,18 +1066,14 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 
 	time.Sleep(6 * time.Second)
 
-	if !utils.IsServerRunning() {
+	if !serverUtils.IsServerRunning() {
 		log.Fatal("Failed to start OADIN server.")
 		return
 	}
 
-	err := StartModelEngine("openvino", types.EngineStartModeDaemon)
+	err := StartEngineTotall(types.EngineStartModeDaemon)
 	if err != nil {
-		return
-	}
-
-	err = StartModelEngine("ollama", types.EngineStartModeDaemon)
-	if err != nil {
+		log.Fatal("Failed to start Engine.")
 		return
 	}
 
@@ -1087,60 +1090,60 @@ func StartModelEngine(engineName, mode string) error {
 
 	err := engineProvider.HealthCheck()
 	if err != nil {
-		cmd := exec.Command(engineConfig.ExecPath+engineConfig.ExecFile, "-h")
+		cmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 		err := cmd.Run()
 		if err != nil {
-			slog.Info("Check model engine " + engineName + " status")
+			logger.LogicLogger.Info("Check model engine " + engineName + " status")
 			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 			err = reCheckCmd.Run()
 			_, isExistErr := os.Stat(engineConfig.ExecPath + "/" + engineConfig.ExecFile)
 			if err != nil && isExistErr != nil {
-				slog.Info("Model engine " + engineName + " status: not downloaded")
+				logger.LogicLogger.Info("Model engine " + engineName + " status: not downloaded")
 				return nil
 			}
 		}
 
-		slog.Info("Setting env...")
+		logger.LogicLogger.Info("Setting env...")
 		err = engineProvider.InitEnv()
 		if err != nil {
 			slog.Error("Setting env error: ", err.Error())
 			return err
 		}
 
-		slog.Info("Start " + engineName + "...")
+		logger.LogicLogger.Info("Start " + engineName + "...")
 		err = engineProvider.StartEngine(mode)
 		if err != nil {
 			slog.Error("Start engine "+engineName+" error: ", err.Error())
 			return err
 		}
 
-		slog.Info("Waiting model engine " + engineName + " start 60s...")
+		logger.LogicLogger.Info("Waiting model engine " + engineName + " start 60s...")
 		for i := 60; i > 0; i-- {
 			time.Sleep(time.Second * 1)
 			err = engineProvider.HealthCheck()
 			if err == nil {
-				slog.Info("Start " + engineName + " completed...")
+				logger.LogicLogger.Info("Start " + engineName + " completed...")
 				break
 			}
-			slog.Info("Waiting "+engineName+" start ...", strconv.Itoa(i), "s")
+			logger.LogicLogger.Info("Waiting "+engineName+" start ...", strconv.Itoa(i), "s")
 		}
 	}
 
 	err = engineProvider.HealthCheck()
 	if err != nil {
-		slog.Error(engineName + " failed start, Please try again later...")
+		logger.LogicLogger.Error(engineName + " failed start, Please try again later...")
 		return err
 	}
 
-	slog.Info(engineName + " start successfully.")
+	logger.LogicLogger.Info(engineName + " start successfully.")
 
 	return nil
 }
 
 func startOadinServer() error {
-	logPath := config.GlobalOADINEnvironment.ConsoleLog
-	rootDir := config.GlobalOADINEnvironment.RootDir
-	err := utils.StartOADINServer(logPath, rootDir)
+	logPath := config.GlobalEnvironment.ConsoleLog
+	rootDir := config.GlobalEnvironment.RootDir
+	err := serverUtils.StartOadinServer(logPath, rootDir)
 	if err != nil {
 		fmt.Printf("OADIN server start failed: %s", err.Error())
 		return err
@@ -1211,7 +1214,7 @@ func PullHandler(cmd *cobra.Command, args []string) {
 	req.ProviderName = providerName
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
+	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINSpecVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 	if err != nil {
@@ -1258,7 +1261,7 @@ func DeleteModelHandler(cmd *cobra.Command, args []string) {
 	req.ProviderName = providerName
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINVersion)
+	routerPath := fmt.Sprintf("/oadin/%s/model", version.OADINSpecVersion)
 
 	err = c.Client.Do(context.Background(), http.MethodDelete, routerPath, req, &resp)
 	if err != nil {
@@ -1283,7 +1286,7 @@ func DeleteProviderHandler(cmd *cobra.Command, args []string) {
 	req.ProviderName = providerName
 
 	c := config.NewOADINClient()
-	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINVersion)
+	routerPath := fmt.Sprintf("/oadin/%s/service_provider", version.OADINSpecVersion)
 
 	err := c.Client.Do(context.Background(), http.MethodDelete, routerPath, req, &resp)
 	if err != nil {
@@ -1331,7 +1334,7 @@ func NewImportServiceCommand() *cobra.Command {
 			go progress.ShowLoadingAnimation(stopChan, &wg, msg)
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service/import", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service/import", version.OADINSpecVersion)
 
 			err = c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
 			if err != nil {
@@ -1350,25 +1353,21 @@ func NewImportServiceCommand() *cobra.Command {
 }
 
 func NewExportServiceCommand() *cobra.Command {
-	var service, serviceProvider, model string
 	exportCmd := &cobra.Command{
 		Use:   "export",
 		Short: "Export service",
 		Long:  "Export service",
 	}
 
-	exportCmd.Flags().StringVar(&service, "service", "", "Service name")
-	exportCmd.Flags().StringVar(&serviceProvider, "provider", "", "Provider name")
-	exportCmd.Flags().StringVar(&model, "model", "", "Model name")
-
-	exportCmd.AddCommand(NewExportServiceToFileCommand(service, serviceProvider, model))
-	exportCmd.AddCommand(NewExportServiceToStdoutCommand(service, serviceProvider, model))
+	exportCmd.AddCommand(NewExportServiceToFileCommand())
+	exportCmd.AddCommand(NewExportServiceToStdoutCommand())
 
 	return exportCmd
 }
 
-func NewExportServiceToFileCommand(service, provider, model string) *cobra.Command {
-	var filePath string
+// NewExportServiceToFileCommand creates the export to file command
+func NewExportServiceToFileCommand() *cobra.Command {
+	var filePath, service, providerName, model string
 
 	cmd := &cobra.Command{
 		Use:    "to-file",
@@ -1378,15 +1377,15 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
-				ProviderName: provider,
+				ProviderName: providerName,
 				ModelName:    model,
 			}
 			resp := &dto.ExportServiceResponse{}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINVersion)
+			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINSpecVersion)
 
-			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
+			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, resp)
 			if err != nil {
 				fmt.Println("Error exporting service:", err)
 				return
@@ -1407,12 +1406,19 @@ func NewExportServiceToFileCommand(service, provider, model string) *cobra.Comma
 		},
 	}
 
-	cmd.Flags().StringVarP(&filePath, "file", "f", "./.oadin", "Output file path")
+	// 在子命令上定义所有参数
+	cmd.Flags().StringVarP(&filePath, "file", "f", "./.aog", "Output file path")
+	cmd.Flags().StringVar(&service, "service", "", "Service name")
+	cmd.Flags().StringVar(&providerName, "provider", "", "Provider name")
+	cmd.Flags().StringVar(&model, "model", "", "Model name")
 
 	return cmd
 }
 
-func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Command {
+// NewExportServiceToStdoutCommand creates the export to stdout command
+func NewExportServiceToStdoutCommand() *cobra.Command {
+	var service, providerName, model string
+
 	cmd := &cobra.Command{
 		Use:    "to-stdout",
 		Short:  "Export service to stdout",
@@ -1421,15 +1427,15 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 		Run: func(cmd *cobra.Command, args []string) {
 			req := &dto.ExportServiceRequest{
 				ServiceName:  service,
-				ProviderName: provider,
+				ProviderName: providerName,
 				ModelName:    model,
 			}
 			resp := &dto.ExportServiceResponse{}
 
 			c := config.NewOADINClient()
-			routerPath := fmt.Sprintf("/oadin/%s/service/export", version.OADINVersion)
+			routerPath := fmt.Sprintf("/aog/%s/service/export", version.OADINSpecVersion)
 
-			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, &resp)
+			err := c.Client.Do(context.Background(), http.MethodPost, routerPath, req, resp)
 			if err != nil {
 				fmt.Println("Error exporting service:", err)
 				return
@@ -1443,6 +1449,12 @@ func NewExportServiceToStdoutCommand(service, provider, model string) *cobra.Com
 			fmt.Println(string(data))
 		},
 	}
+
+	// 在子命令上定义参数
+	cmd.Flags().StringVar(&service, "service", "", "Service name")
+	cmd.Flags().StringVar(&providerName, "provider", "", "Provider name")
+	cmd.Flags().StringVar(&model, "model", "", "Model name")
+
 	return cmd
 }
 
@@ -1455,6 +1467,7 @@ func ListenModelEngineHealth() {
 
 	OpenVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
 	OllamaEngine := provider.GetModelEngine(types.FlavorOllama)
+	LlamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
 
 	for {
 		list, err := ds.List(context.Background(), sp, &datastore.ListOptions{Page: 0, PageSize: 100})
@@ -1493,6 +1506,76 @@ func ListenModelEngineHealth() {
 						continue
 					}
 				}
+			}
+			if runtime.GOOS == "windows" {
+				if engine == types.FlavorOpenvino {
+					err := OpenVINOEngine.HealthCheck()
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Openvino engine health check failed: ", err.Error())
+						err := OpenVINOEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							logger.EngineLogger.Error("[Engine Listen]Openvino engine start failed: ", err.Error())
+							continue
+						}
+					}
+				}
+				if engine == types.FlavorLlamaCpp {
+					err := LlamaCppEngine.HealthCheck()
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+						err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+						if err != nil {
+							logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+							continue
+						}
+					}
+				}
+			}
+		}
+
+		time.Sleep(60 * time.Second)
+	}
+}
+
+func ListenModelEngineHealthTotal() {
+	OllamaEngine := provider.GetModelEngine(types.FlavorOllama)
+	OpenVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
+	LlamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
+
+	engineList := make([]string, 0)
+
+	execPath := filepath.Join(OllamaEngine.GetConfig().ExecPath, OllamaEngine.GetConfig().ExecFile)
+	if _, err := os.Stat(execPath); err == nil {
+		engineList = append(engineList, types.FlavorOllama)
+	}
+
+	execPath = OpenVINOEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		engineList = append(engineList, types.FlavorOpenvino)
+	}
+
+	execPath = LlamaCppEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		engineList = append(engineList, types.FlavorLlamaCpp)
+	}
+
+	for {
+		for _, engine := range engineList {
+			if engine == types.FlavorOllama {
+				err := OllamaEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Ollama engine health check failed: ", err.Error())
+					err := OllamaEngine.InitEnv()
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Ollama engine init env failed: ", err.Error())
+						return
+					}
+					err = OllamaEngine.StartEngine(types.EngineStartModeDaemon)
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Ollama engine start failed: ", err.Error())
+						continue
+					}
+				}
 			} else if engine == types.FlavorOpenvino {
 				err := OpenVINOEngine.HealthCheck()
 				if err != nil {
@@ -1503,11 +1586,53 @@ func ListenModelEngineHealth() {
 						continue
 					}
 				}
+			} else if engine == types.FlavorLlamaCpp {
+				err := LlamaCppEngine.HealthCheck()
+				if err != nil {
+					logger.EngineLogger.Error("[Engine Listen]Llamacpp engine health check failed: ", err.Error())
+					err := LlamaCppEngine.StartEngine(types.EngineStartModeDaemon)
+					if err != nil {
+						logger.EngineLogger.Error("[Engine Listen]Llamacpp engine start failed: ", err.Error())
+						continue
+					}
+				}
 			}
 		}
 
 		time.Sleep(60 * time.Second)
 	}
+}
+
+func StartEngineTotall(startMode string) error {
+	ollamaEngine := provider.GetModelEngine(types.FlavorOllama)
+	openVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
+	llamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
+
+	execPath := filepath.Join(ollamaEngine.GetConfig().ExecPath, ollamaEngine.GetConfig().ExecFile)
+	if _, err := os.Stat(execPath); err == nil {
+		err = StartModelEngine(types.FlavorOllama, startMode)
+		if err != nil {
+			return err
+		}
+	}
+
+	execPath = openVINOEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		err := StartModelEngine(types.FlavorOpenvino, startMode)
+		if err != nil {
+			return err
+		}
+	}
+
+	execPath = llamaCppEngine.GetConfig().ExecPath
+	if _, err := os.Stat(execPath); err == nil {
+		err = StartModelEngine(types.FlavorLlamaCpp, startMode)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ServerManager 用于管理服务器实例

@@ -197,6 +197,129 @@ func DownloadFile(downloadURL string, saveDir string) (string, error) {
 	return savePath, nil
 }
 
+/*
+DownloadFileWithProgress 下载文件并支持进度回调
+path, err := DownloadFileWithProgress(url, saveDir, func(downloaded, total int64) {
+    fmt.Printf("下载进度: %.2f%%\n", float64(downloaded)*100/float64(total))
+})
+*/
+func DownloadFileWithProgress(downloadURL string, saveDir string, onProgress func(downloaded, total int64)) (string, error) {
+    parsedURL, err := url.Parse(downloadURL)
+    if err != nil {
+        return "", fmt.Errorf("failed to parse URL: %v", err)
+    }
+
+    fileName := filepath.Base(parsedURL.Path)
+    if fileName == "" || fileName == "." || fileName == "/" {
+        return "", fmt.Errorf("could not determine file name from URL: %s", downloadURL)
+    }
+
+    savePath := filepath.Join(saveDir, fileName)
+
+    if _, err := os.Stat(savePath); err == nil {
+        fmt.Printf("%s already exists, skip download.\n", savePath)
+        return savePath, nil
+    } else if !os.IsNotExist(err) {
+        return "", fmt.Errorf("failed to check file %s: %v", savePath, err)
+    }
+
+    proxyURL, err := http.ProxyFromEnvironment(&http.Request{URL: parsedURL})
+    if err != nil {
+        return "", fmt.Errorf("failed to get proxy URL: %v", err)
+    }
+
+    transport := &http.Transport{
+        Proxy: http.ProxyURL(proxyURL),
+    }
+
+    client := &http.Client{
+        Transport: transport,
+    }
+
+    resp, err := client.Get(downloadURL)
+    if err != nil {
+        return "", fmt.Errorf("failed to download file: %v, url: %s", err, downloadURL)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return "", fmt.Errorf("failed to download file: HTTP status %s, url: %s", resp.Status, downloadURL)
+    }
+
+    file, err := os.Create(savePath)
+    if err != nil {
+        return "", fmt.Errorf("failed to create file: %v, url: %s", err, downloadURL)
+    }
+    defer file.Close()
+
+    var total int64 = 0
+    if resp.ContentLength > 0 {
+        total = resp.ContentLength
+    }
+
+    var downloaded int64 = 0
+    var lastProgressTime time.Time
+    var lastProgressBytes int64
+    
+    // 如果文件小于10MB 进度更新间隔：100ms 或者每1MB
+	progressInterval := 100 * time.Millisecond
+	progressThreshold := 1024 * 1024
+	buf := make([]byte, 16*1024)
+
+	if total > 100*1024*1024 {
+		progressInterval = 500 * time.Millisecond
+		progressThreshold = 5 * 1024 * 1024
+		buf = make([]byte, 64*1024) // 增大缓冲区到64KB
+	}
+
+	if total > 1000*1024*1024 {
+		progressInterval = 1000 * time.Millisecond
+		progressThreshold = 10 * 1024 * 1024
+		buf = make([]byte, 256*1024)
+	}
+
+    for {
+        nr, er := resp.Body.Read(buf)
+        if nr > 0 {
+            nw, ew := file.Write(buf[0:nr])
+            if nw > 0 {
+                downloaded += int64(nw)
+                
+                // 优化进度回调：只在时间间隔或字节阈值满足时调用
+                now := time.Now()
+                bytesFromLastProgress := downloaded - lastProgressBytes
+                
+                if onProgress != nil && total > 0 && 
+                   (now.Sub(lastProgressTime) >= progressInterval || 
+                    bytesFromLastProgress >= int64(progressThreshold) || 
+                    downloaded == total) {
+                    onProgress(downloaded, total)
+                    lastProgressTime = now
+                    lastProgressBytes = downloaded
+                }
+            }
+            if ew != nil {
+                return "", fmt.Errorf("failed to write file: %v", ew)
+            }
+            if nr != nw {
+                return "", fmt.Errorf("short write")
+            }
+        }
+        if er != nil {
+            if er == io.EOF {
+                // 确保最终进度为100%
+                if onProgress != nil && total > 0 {
+                    onProgress(total, total)
+                }
+                break
+            }
+            return "", fmt.Errorf("failed to read response body: %v", er)
+        }
+    }
+
+    return savePath, nil
+}
+
 func Sha256hex(s string) string {
 	b := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(b[:])
@@ -386,96 +509,6 @@ func UnzipFile(zipFile, destDir string) error {
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 
-	return nil
-}
-
-func IsServerRunning() bool {
-	serverUrl := "http://127.0.0.1:16688" + "/health"
-	resp, err := http.Get(serverUrl)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-
-	return resp.StatusCode == http.StatusOK
-}
-
-func StartOADINServer(logPath string, pidFilePath string) error {
-	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-	if err != nil {
-		return fmt.Errorf("failed to open log file: %v", err)
-	}
-	defer logFile.Close()
-	execFile, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %v", err)
-	}
-	cmd := exec.Command(execFile, "server", "start")
-	cmd.Stdout = logFile
-	cmd.Stderr = logFile
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start oadin server: %v", err)
-	}
-
-	// Save PID to file.
-	pid := cmd.Process.Pid
-	pidFile := filepath.Join(pidFilePath, "oadin.pid")
-	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
-		return fmt.Errorf("failed to save PID to file: %v", err)
-	}
-
-	fmt.Printf("\roadin server started with PID: %d\n", cmd.Process.Pid)
-	return nil
-}
-
-func StopOADINServer(pidFilePath string) error {
-	files, err := filepath.Glob(pidFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to list pid files: %v", err)
-	}
-
-	if len(files) == 0 {
-		fmt.Println("No running processes found")
-		return nil
-	}
-
-	// Traverse all pid files.
-	for _, pidFile := range files {
-		pidData, err := os.ReadFile(pidFile)
-		if err != nil {
-			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
-		if err != nil {
-			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		process, err := os.FindProcess(pid)
-		if err != nil {
-			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
-			continue
-		}
-
-		if err := process.Kill(); err != nil {
-			if strings.Contains(err.Error(), "process already finished") {
-				fmt.Printf("Process with PID %d is already stopped\n", pid)
-			} else {
-				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
-				continue
-			}
-		} else {
-			fmt.Printf("Successfully stopped process with PID %d\n", pid)
-		}
-
-		// remove pid file
-		if err := os.Remove(pidFile); err != nil {
-			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
-		}
-	}
 	return nil
 }
 
@@ -757,6 +790,7 @@ func FormatSecondsToSRT(secondsStr string) string {
 
 	return fmt.Sprintf("%02d:%02d:%02d,%03d", hours, minutes, secs, milliseconds)
 }
+
 func IsDirEmpty(path string) bool {
 	f, err := os.Open(path)
 	if err != nil {
@@ -845,67 +879,6 @@ func ClearDir(path string) error {
 		}
 	}
 
-	return nil
-}
-func StopOadinServer(pidFilePath string) error {
-	files, err := filepath.Glob(pidFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to list pid files: %v", err)
-	}
-
-	if len(files) == 0 {
-		fmt.Println("No running processes found")
-		return nil
-	}
-
-	if runtime.GOOS == "windows" && IpexOllamaSupportGPUStatus() {
-		extraProcessName := "ollama-lib.exe"
-		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-		_, err := extraCmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("failed to kill process: %s", extraProcessName)
-			return nil
-		}
-
-		fmt.Printf("Successfully killed process: %s\n", extraProcessName)
-	}
-
-	// Traverse all pid files.
-	for _, pidFile := range files {
-		pidData, err := os.ReadFile(pidFile)
-		if err != nil {
-			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
-		if err != nil {
-			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
-			continue
-		}
-
-		process, err := os.FindProcess(pid)
-		if err != nil {
-			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
-			continue
-		}
-
-		if err := process.Kill(); err != nil {
-			if strings.Contains(err.Error(), "process already finished") {
-				fmt.Printf("Process with PID %d is already stopped\n", pid)
-			} else {
-				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
-				continue
-			}
-		} else {
-			fmt.Printf("Successfully stopped process with PID %d\n", pid)
-		}
-
-		// remove pid file
-		if err := os.Remove(pidFile); err != nil {
-			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
-		}
-	}
 	return nil
 }
 
@@ -1001,7 +974,7 @@ func checkDirPermission(path string) bool {
 
 	// check dictionary write permission
 	testFile := filepath.Join(path, ".permission_test_file")
-	err = os.WriteFile(testFile, []byte("test"), 0644)
+	err = os.WriteFile(testFile, []byte("test"), 0o644)
 	if err != nil {
 		return false
 	}

@@ -5,8 +5,10 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -135,4 +137,26 @@ func SetCmdSysProcAttr(cmd *exec.Cmd) {
 		CreationFlags: syscall.CERT_TRUST_HAS_NOT_SUPPORTED_CRITICAL_EXT | syscall.CREATE_NEW_PROCESS_GROUP,
 		HideWindow:    true,
 	}
+}
+
+func CheckDllExists(dllName string) bool {
+	winDir := os.Getenv("WINDIR")
+
+	if runtime.GOARCH == "amd64" {
+		path := filepath.Join(winDir, "System32", dllName)
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+	} else {
+		path := filepath.Join(winDir, "SysWOW64", dllName)
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+		path = filepath.Join(winDir, "System32", dllName)
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+	}
+
+	return false
 }

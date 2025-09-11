@@ -2,9 +2,10 @@ package cache
 
 import (
 	"encoding/json"
-	"oadin/config"
 	"os"
 	"path/filepath"
+
+	"oadin/config"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 )
 
 func CacheFilePath() string {
-	return filepath.Join(config.GlobalOADINEnvironment.RootDir, "cache")
+	return filepath.Join(config.GlobalEnvironment.RootDir, "cache")
 }
 
 // 获取本地配置文件路径
@@ -22,7 +23,7 @@ func getConfigFilePath(appName string, filename string) (string, error) {
 	configDir := CacheFilePath()
 
 	dir := filepath.Join(configDir, appName)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
 	return filepath.Join(dir, filename), nil

@@ -19,7 +19,7 @@ package constants
 // Application information
 const (
 	AppName           = "oadin"
-	BaseDownloadURL   = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin"
+	BaseDownloadURL   = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog"
 	UrlDirPathWindows = "/windows"
 )
 
@@ -61,3 +61,9 @@ const (
 	MebiByte = KibiByte * 1024
 	GibiByte = MebiByte * 1024
 )
+
+// Model types
+const (
+	GGUFModelType = "ggufFile"
+)
+

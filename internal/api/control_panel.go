@@ -22,7 +22,6 @@ import (
 	"net/http"
 
 	"oadin/internal/api/dto"
-	"oadin/internal/server"
 	"oadin/internal/utils/bcode"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +29,7 @@ import (
 
 func (t *OADINCoreServer) GetDashBoardHandler(c *gin.Context) {
 	ctx := c.Request.Context()
-	data, err := server.GetDashboard(ctx)
+	data, err := t.ControlPanel.GetDashboard(ctx)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
@@ -51,7 +50,7 @@ func (t *OADINCoreServer) GetSupportModelListCombine(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	data, err := server.GetSupportModelListCombine(ctx, request)
+	data, err := t.ControlPanel.GetSupportModelListCombine(ctx, request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
@@ -70,7 +69,7 @@ func (t *OADINCoreServer) SetDefaultModelHandler(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	err := server.SetDefaultModel(ctx, request)
+	err := t.ControlPanel.SetDefaultModel(ctx, request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
@@ -79,7 +78,7 @@ func (t *OADINCoreServer) SetDefaultModelHandler(c *gin.Context) {
 }
 
 func (t *OADINCoreServer) GetProductInfoHandler(c *gin.Context) {
-	resp, err := server.GetProductInfo(c.Request.Context())
+	resp, err := t.ControlPanel.GetProductInfo(c.Request.Context())
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
@@ -100,7 +99,7 @@ func (t *OADINCoreServer) GetModelkeyHandler(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	resp, err := server.GetModelkey(ctx, request)
+	resp, err := t.ControlPanel.GetModelkey(ctx, request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return

@@ -2,13 +2,13 @@ package server
 
 import (
 	"context"
-	"oadin/internal/logger"
 	"os"
 	"path/filepath"
 	"time"
 
 	"oadin/extension/api/dto"
 	"oadin/extension/utils/bcode"
+	"oadin/internal/logger"
 	"oadin/internal/provider"
 	"oadin/internal/types"
 	"oadin/internal/utils"
@@ -45,7 +45,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	if err := engine.HealthCheck(); err != nil {
 		return nil, bcode.ErrModelEngineNotRun
 	}
-	runningModels, _ := engine.GetRunModels(ctx)
+	runningModels, _ := engine.GetRunningModels(ctx)
 	if len(runningModels.Models) > 0 {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ErrModelIsRunning
 	}
@@ -55,7 +55,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	}
 	engine.SetOperateStatus(0)
 	defer engine.SetOperateStatus(1)
-	_ = engine.StopEngine()
+	_ = engine.StopEngine(ctx)
 	if req.TargetPath == req.SourcePath {
 		return &dto.ModifyModelFilePathResponse{}, bcode.ControlPanelPathStatusError
 	}
@@ -73,7 +73,7 @@ func ModifyModelFilePath(ctx context.Context, req *dto.ModifyModelFilePathReques
 	}
 
 	// Stop the engine before migration to avoid errors caused by processes still using the files.
-	_ = engine.StopEngine()
+	_ = engine.StopEngine(ctx)
 	isSourceDirEmpty := utils.IsDirEmpty(req.SourcePath)
 	if !isSourceDirEmpty {
 		sourcePathSize, err := utils.GetFilePathTotalSize(req.SourcePath)

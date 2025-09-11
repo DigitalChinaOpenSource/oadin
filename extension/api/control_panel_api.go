@@ -12,8 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ControlPanelApi struct {
-}
+type ControlPanelApi struct{}
 
 func NewControlPanelApi() *ControlPanelApi {
 	return &ControlPanelApi{}

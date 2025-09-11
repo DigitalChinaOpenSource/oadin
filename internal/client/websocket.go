@@ -20,10 +20,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"oadin/internal/logger"
 	"oadin/internal/types"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
 
 // WebSocketConnection 表示单个WebSocket连接
@@ -248,7 +249,7 @@ func (c *WebSocketConnection) SetTaskStatus(taskID uint64, started bool, timesta
 	c.LastTaskID = taskID
 }
 
-// SetConnectionTaskStatus 设置连接基础任务状态（向后兼容）
+// SetConnectionTaskStatus 设置连接基础任务状态
 func (c *WebSocketConnection) SetConnectionTaskStatus(started bool, timestamp int64) {
 	if c.LastTaskID > 0 {
 		c.SetTaskStatus(c.LastTaskID, started, timestamp)
@@ -293,7 +294,7 @@ func (c *WebSocketConnection) SetTaskFinished(taskID uint64) {
 	c.LastTaskID = taskID
 }
 
-// SetConnectionTaskFinished 设置连接基础任务完成状态（向后兼容）
+// SetConnectionTaskFinished 设置连接基础任务完成状态
 func (c *WebSocketConnection) SetConnectionTaskFinished() {
 	if c.LastTaskID > 0 {
 		c.SetTaskFinished(c.LastTaskID)

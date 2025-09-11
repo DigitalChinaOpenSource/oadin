@@ -4,6 +4,7 @@ import (
 	"embed"
 	_ "embed"
 	"fmt"
+
 	"github.com/spf13/viper"
 	"oadin/config/condition_build"
 )
@@ -16,7 +17,7 @@ func init() {
 	// 根据条件编译来选择配置文件
 	configFile = condition_build.GetConfigFile()
 
-	//使用 viper
+	// 使用 viper
 	ViperInstance := viper.New()
 	ViperInstance.SetConfigType("yaml")
 
@@ -34,5 +35,4 @@ func init() {
 	if err := ViperInstance.Unmarshal(&ConfigRootInstance); err != nil {
 		panic(fmt.Errorf("unmarshal config failed: %s \n", err))
 	}
-
 }

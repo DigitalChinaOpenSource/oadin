@@ -61,7 +61,7 @@ func downloadWithRedirects(url string, destinationPath string) error {
 		return fmt.Errorf("unexpected HTTP status code: %d", resp.StatusCode)
 	}
 	destDir := filepath.Dir(destinationPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create directory: %v", err)
 	}
 	file, err := os.Create(destinationPath)
@@ -74,6 +74,7 @@ func downloadWithRedirects(url string, destinationPath string) error {
 	}
 	return nil
 }
+
 func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 	var platformKey string
 	if isMusl {
@@ -86,7 +87,7 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 		return fmt.Errorf("no binary available for %s", platformKey)
 	}
 	binDir := RuntimePath()
-	if err := os.MkdirAll(binDir, 0755); err != nil {
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create directory: %v", err)
 	}
 	downloadURL := fmt.Sprintf("%s/%s/%s", uvReleaseBaseURL, version, packageName)
@@ -116,7 +117,7 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 				continue
 			}
 			filePath := filepath.Join(binDir, filepath.Base(file.Name))
-			if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
 				return fmt.Errorf("无法创建目录: %v", err)
 			}
 
@@ -155,7 +156,7 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 			defer dest.Close()
 
 			// 设置文件执行权限
-			if err := os.Chmod(filePath, 0755); err != nil {
+			if err := os.Chmod(filePath, 0o755); err != nil {
 				return fmt.Errorf("无法设置文件 %s 执行权限: %v", filePath, err)
 			}
 		}
@@ -199,7 +200,7 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 
 			target := filepath.Join(binDir, filepath.Base(header.Name))
 
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 				return fmt.Errorf("无法创建目录: %v", err)
 			}
 			file, err := os.Create(target)
@@ -224,7 +225,7 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 			}
 
 			// 设置文件执行权限
-			if err := os.Chmod(target, 0755); err != nil {
+			if err := os.Chmod(target, 0o755); err != nil {
 				return fmt.Errorf("无法设置文件 %s 执行权限: %v", target, err)
 			}
 		}
@@ -246,6 +247,7 @@ func downloadUvBinary(platform, arch, version string, isMusl bool) error {
 
 	return nil
 }
+
 func detectPlatformAndArchUV() (string, string, bool) {
 	platform := runtime.GOOS
 	arch := runtime.GOARCH
@@ -259,6 +261,7 @@ func detectPlatformAndArchUV() (string, string, bool) {
 	}
 	return platform, arch, isMusl
 }
+
 func InstallUv() error {
 	version := defaultUVVersion
 	fmt.Printf("Using uv version: %s\n", version)

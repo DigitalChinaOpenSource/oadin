@@ -11,6 +11,7 @@ import (
 
 	"oadin/config"
 	"oadin/internal/utils"
+	serverUtils "oadin/internal/utils/server"
 	trayTemplate "oadin/tray/icon"
 	tray "oadin/tray/utils"
 
@@ -18,6 +19,8 @@ import (
 	"github.com/pkg/browser"
 
 	"github.com/getlantern/systray"
+	"github.com/getlantern/systray/example/icon"
+	"github.com/pkg/browser"
 	"github.com/sqweek/dialog"
 )
 
@@ -148,7 +151,7 @@ func (m *Manager) onReady() {
 	// Add menu items
 	mStartStop := systray.AddMenuItem("Start Server", "Start/Stop Oadin server")
 	systray.AddSeparator()
-	mConsole := systray.AddMenuItem("Web Console", "Open Control Panel")
+	// mConsole := systray.AddMenuItem("Web Console", "Open Control Panel")
 	m.mRestartUpdate = systray.AddMenuItem("Restart and Update", "Restart and install update")
 	if !m.updateAvailable {
 		m.mRestartUpdate.Hide()
@@ -165,12 +168,36 @@ func (m *Manager) onReady() {
 		for {
 			select {
 			case <-mStartStop.ClickedCh:
-				m.handleStartStop()
-				m.updateStartStopMenuItem(mStartStop)
+				oadinServerStatus := serverUtils.IsServerRunning()
+				if oadinServerStatus != m.serverRunning {
+					m.serverRunning = oadinServerStatus
+					m.updateStartStopMenuItem(mStartStop)
+				} else {
+					if m.serverRunning {
+						// Show confirmation dialog before stopping
+						if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
+							if err := m.onServerStop(); err == nil {
+								m.serverRunning = false
+								m.updateStartStopMenuItem(mStartStop)
+							} else {
+								dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
+							}
+						}
+					} else {
+						if err := m.onServerStart(); err == nil {
+							m.serverRunning = true
+							m.updateStartStopMenuItem(mStartStop)
+						} else {
+							dialog.Message("Failed to start server: %v", err).Title("Error").Error()
+						}
+					}
+				}
 
-			case <-mConsole.ClickedCh:
-				m.handleOpenConsole()
-
+			// case <-mConsole.ClickedCh:
+			// 	err := m.openControlPanel()
+			// 	if err != nil {
+			// 		dialog.Message("Failed to open control panel: %v", err).Title("Error").Error()
+			// 	}
 			case <-m.mRestartUpdate.ClickedCh:
 				if confirmed := dialog.Message("This will stop all servers and install the update. Continue?").Title("Confirm Update").YesNo(); confirmed {
 					err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
@@ -322,19 +349,19 @@ func (m *Manager) performUpdate() error {
 
 // installUpdate
 func (m *Manager) installUpdate() error {
-	emptyStatus := utils.IsDirEmpty(config.GlobalOADINEnvironment.UpdateDir)
+	emptyStatus := utils.IsDirEmpty(config.GlobalEnvironment.UpdateDir)
 	if emptyStatus {
 		return fmt.Errorf("installation directory is empty")
 	}
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		installFilaPath := filepath.Join(config.GlobalOADINEnvironment.UpdateDir, "oadin-installer-latest.pkg")
+		installFilaPath := filepath.Join(config.GlobalEnvironment.UpdateDir, "oadin-installer-latest.pkg")
 		cmd = exec.Command("open", installFilaPath)
 	case "linux":
 		return fmt.Errorf("auto update not supported on Linux yet")
 	case "windows":
-		installFilaPath := filepath.Join(config.GlobalOADINEnvironment.UpdateDir, "oadin-installer-latest.exe")
+		installFilaPath := filepath.Join(config.GlobalEnvironment.UpdateDir, "oadin-installer-latest.exe")
 		cmd = exec.Command(installFilaPath, "/S")
 	}
 	err := cmd.Run()

@@ -43,7 +43,7 @@ func DownloadWithRedirects(url string, destinationPath string, opts *DownloadOpt
 
 	// 创建目标目录
 	destDir := filepath.Dir(destinationPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0o755); err != nil {
 		return fmt.Errorf("创建目录失败 %s: %w", destDir, err)
 	}
 

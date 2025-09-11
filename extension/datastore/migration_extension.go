@@ -10,8 +10,7 @@ type OadinDatastoreExtension interface {
 }
 
 // OadinMigrationExtensionImpl implements the OadinDatastoreExtension interface.
-type OadinMigrationExtensionImpl struct {
-}
+type OadinMigrationExtensionImpl struct{}
 
 func NewOadinDatastoreExtension() OadinDatastoreExtension {
 	return &OadinMigrationExtensionImpl{}
@@ -19,7 +18,6 @@ func NewOadinDatastoreExtension() OadinDatastoreExtension {
 
 // MigrationSchema returns the schema for the migration extension.
 func (d *OadinMigrationExtensionImpl) MigrationSchema() []interface{} {
-
 	// todo: 需要替换为扩展包的entity中的实体定义
 	return []interface{}{
 		&entity.McpUserConfig{},
@@ -30,5 +28,4 @@ func (d *OadinMigrationExtensionImpl) MigrationSchema() []interface{} {
 		&entity.FileChunk{},
 		&entity.ToolMessage{},
 	}
-
 }

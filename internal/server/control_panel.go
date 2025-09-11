@@ -34,6 +34,26 @@ import (
 	"oadin/internal/utils/bcode"
 )
 
+type ControlPanel interface {
+	GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportModelRequest) (*dto.GetSupportModelResponse, error)
+	SetDefaultModel(ctx context.Context, req *dto.SetDefaultModelRequest) error
+	GetDashboard(ctx context.Context) (*dto.DashboardResponse, error)
+	GetProductInfo(ctx context.Context) (*dto.GetProductInfoResponse, error)
+	GetModelkey(ctx context.Context, req *dto.GetModelkeyRequest) (*dto.GetModelkeyResponse, error)
+}
+
+type ControlPanelImpl struct {
+	Ds  datastore.Datastore
+	JDs datastore.JsonDatastore
+}
+
+func NewControlPanel() *ControlPanelImpl {
+	return &ControlPanelImpl{
+		Ds:  datastore.GetDefaultDatastore(),
+		JDs: datastore.GetDefaultJsonDatastore(),
+	}
+}
+
 func myModelFilter(modelList *[]dto.RecommendModelData) {
 	var finalDataList []dto.RecommendModelData
 	if modelList == nil || len(*modelList) == 0 {
@@ -50,12 +70,7 @@ func myModelFilter(modelList *[]dto.RecommendModelData) {
 	*modelList = finalDataList
 }
 
-func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportModelRequest) (*dto.GetSupportModelResponse, error) {
-	jds := datastore.GetDefaultJsonDatastore()
-	if jds == nil {
-		return nil, errors.New("json datastore is nil, please check initialization")
-	}
-	ds := datastore.GetDefaultDatastore()
+func (c *ControlPanelImpl) GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportModelRequest) (*dto.GetSupportModelResponse, error) {
 
 	if request.ServiceName == types.ServiceGenerate {
 		request.ServiceName = types.ServiceChat
@@ -118,7 +133,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 			return nil, errors.New(fmt.Sprintf("%s flavor is not local flavor", request.Flavor))
 		}
 		// 查全部
-		supportModelList, err := jds.List(ctx, sm, options)
+		supportModelList, err := c.JDs.List(ctx, sm, options)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +167,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				ProviderName: providerName,
 			}
 			canSelect := true
-			err := ds.Get(context.Background(), modelQuery)
+			err := c.Ds.Get(context.Background(), modelQuery)
 			if err != nil || modelQuery.Status != "downloaded" {
 				canSelect = false
 			}
@@ -194,7 +209,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 		}
 	} else {
 		// 远程模型
-		supportModelList, err := jds.List(ctx, sm, options)
+		supportModelList, err := c.JDs.List(ctx, sm, options)
 		if err != nil {
 			return nil, err
 		}
@@ -208,7 +223,7 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 				ServiceSource: smInfo.ServiceSource,
 			}
 			canSelect := true
-			err := ds.Get(context.Background(), modelQuery)
+			err := c.Ds.Get(context.Background(), modelQuery)
 			if err != nil || modelQuery.Status != "downloaded" {
 				canSelect = false
 			}
@@ -295,13 +310,12 @@ func GetSupportModelListCombine(ctx context.Context, request *dto.GetSupportMode
 	}, nil
 }
 
-func SetDefaultModel(ctx context.Context, req *dto.SetDefaultModelRequest) error {
-	ds := datastore.GetDefaultDatastore()
+func (c *ControlPanelImpl) SetDefaultModel(ctx context.Context, req *dto.SetDefaultModelRequest) error {
 	m := &types.Model{
 		ServiceName:   req.ServiceName,
 		ServiceSource: req.ServiceSource,
 	}
-	list, err := ds.List(ctx, m, &datastore.ListOptions{Page: 0, PageSize: 1000})
+	list, err := c.Ds.List(ctx, m, &datastore.ListOptions{Page: 0, PageSize: 1000})
 	if err != nil {
 		return err
 	}
@@ -321,7 +335,7 @@ func SetDefaultModel(ctx context.Context, req *dto.SetDefaultModelRequest) error
 		} else {
 			model.IsDefault = false
 		}
-		if err := ds.Put(ctx, model); err != nil {
+		if err := c.Ds.Put(ctx, model); err != nil {
 			return err
 		}
 	}
@@ -331,12 +345,10 @@ func SetDefaultModel(ctx context.Context, req *dto.SetDefaultModelRequest) error
 	return nil
 }
 
-func GetDashboard(ctx context.Context) (*dto.DashboardResponse, error) {
-	ds := datastore.GetDefaultDatastore()
-	jds := datastore.GetDefaultJsonDatastore()
+func (c *ControlPanelImpl) GetDashboard(ctx context.Context) (*dto.DashboardResponse, error) {
 
 	// 获取所有模型
-	modelList, err := ds.List(ctx, &types.Model{}, &datastore.ListOptions{
+	modelList, err := c.Ds.List(ctx, &types.Model{}, &datastore.ListOptions{
 		Page: 0, PageSize: 1000,
 	})
 	if err != nil {
@@ -354,7 +366,7 @@ func GetDashboard(ctx context.Context) (*dto.DashboardResponse, error) {
 			ServiceName:   m.ServiceName,
 			ServiceSource: m.ServiceSource,
 		}
-		smList, err := jds.List(ctx, sm, nil)
+		smList, err := c.JDs.List(ctx, sm, nil)
 		avatar := ""
 		if err == nil && len(smList) > 0 {
 			for _, s := range smList {
@@ -386,7 +398,7 @@ func GetDashboard(ctx context.Context) (*dto.DashboardResponse, error) {
 		return models[i].IsDefault && !models[j].IsDefault
 	})
 	// 只查 can_install = true 的服务
-	serviceList, err := ds.List(ctx, &types.Service{}, &datastore.ListOptions{
+	serviceList, err := c.Ds.List(ctx, &types.Service{}, &datastore.ListOptions{
 		FilterOptions: datastore.FilterOptions{
 			Queries: []datastore.FuzzyQueryOption{
 				{Key: "can_install", Query: "1"},
@@ -418,7 +430,7 @@ func GetDashboard(ctx context.Context) (*dto.DashboardResponse, error) {
 	}, nil
 }
 
-func GetProductInfo(ctx context.Context) (*dto.GetProductInfoResponse, error) {
+func (c *ControlPanelImpl) GetProductInfo(ctx context.Context) (*dto.GetProductInfoResponse, error) {
 	return &dto.GetProductInfoResponse{
 		Icon:        version.OADINIcon,
 		ProductName: version.OADINName,
@@ -427,14 +439,13 @@ func GetProductInfo(ctx context.Context) (*dto.GetProductInfoResponse, error) {
 	}, nil
 }
 
-func GetModelkey(ctx context.Context, req *dto.GetModelkeyRequest) (*dto.GetModelkeyResponse, error) {
-	ds := datastore.GetDefaultDatastore()
+func (c *ControlPanelImpl) GetModelkey(ctx context.Context, req *dto.GetModelkeyRequest) (*dto.GetModelkeyResponse, error) {
 
 	// 构造查询条件
 	sp := &types.ServiceProvider{
 		ProviderName: req.ProviderName,
 	}
-	err := ds.Get(ctx, sp)
+	err := c.Ds.Get(ctx, sp)
 	if err != nil {
 		return nil, err
 	}

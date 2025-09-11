@@ -155,7 +155,7 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 					return nil, bcode.ErrServer
 				} else if errors.Is(err, datastore.ErrEntityInvalid) {
 					m.Status = "downloading"
-					err = s.Ds.Put(ctx, m)
+					err = s.Ds.Add(ctx, m)
 					if err != nil {
 						return nil, bcode.ErrAddModel
 					}
@@ -163,22 +163,43 @@ func (s *ServiceProviderImpl) CreateServiceProvider(ctx context.Context, request
 				if m.Status == "failed" {
 					m.Status = "downloading"
 				}
-				if err != nil {
-				}
 				go AsyncPullModel(sp, m, pullReq)
+			} else {
+				m := new(types.Model)
+				m.ModelName = mName
+				m.ProviderName = request.ProviderName
+				err = s.Ds.Get(ctx, m)
+				if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
+					return nil, bcode.ErrServer
+				} else if errors.Is(err, datastore.ErrEntityInvalid) {
+					m.Status = "downloaded"
+					m.ServiceSource = request.ServiceSource
+					m.ServiceName = request.ServiceName
+					err = s.Ds.Add(ctx, m)
+					if err != nil {
+						return nil, bcode.ErrAddModel
+					}
+				} else {
+					m.Status = "downloaded"
+					m.ServiceSource = request.ServiceSource
+					m.ServiceName = request.ServiceName
+					err = s.Ds.Put(ctx, m)
+					if err != nil {
+						return nil, bcode.ErrAddModel
+					}
+				}
+
 			}
 		}
 	} else if request.ServiceSource == types.ServiceSourceRemote {
 		for _, mName := range request.Models {
 			server := ChooseCheckServer(*sp, mName)
 			if server == nil {
-				// return nil, bcode.ErrProviderIsUnavailable
-				continue
+				return nil, bcode.ErrProviderIsUnavailable
 			}
 			checkRes := server.CheckServer()
 			if !checkRes {
-				// return nil, bcode.ErrProviderIsUnavailable
-				continue
+				return nil, bcode.ErrProviderIsUnavailable
 			}
 
 			model := &types.Model{
@@ -403,74 +424,6 @@ func (s *ServiceProviderImpl) UpdateServiceProvider(ctx context.Context, request
 	}
 	sp.UpdatedAt = time.Now()
 
-	for _, modelName := range request.Models {
-		model := types.Model{ProviderName: sp.ProviderName, ModelName: modelName, ServiceSource: sp.ServiceSource, ServiceName: sp.ServiceName}
-		if request.ServiceSource == types.ServiceSourceLocal && request.ProviderName == types.FlavorOllama {
-			model = types.Model{ProviderName: sp.ProviderName, ModelName: modelName}
-		}
-
-		err = ds.Get(ctx, &model)
-		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
-			return nil, err
-		}
-		server := ChooseCheckServer(*sp, model.ModelName)
-		if server == nil {
-			model.Status = "failed"
-			err = ds.Put(ctx, sp)
-			if err != nil {
-				return nil, err
-			}
-			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
-				return nil, err
-			} else if errors.Is(err, datastore.ErrEntityInvalid) {
-				err = ds.Add(ctx, &model)
-				if err != nil {
-					return nil, err
-				}
-			}
-			err = ds.Put(ctx, &model)
-			if err != nil {
-				return nil, err
-			}
-			return nil, bcode.ErrProviderIsUnavailable
-		}
-		checkRes := server.CheckServer()
-		if !checkRes {
-			model.Status = "failed"
-			err = ds.Put(ctx, sp)
-			if err != nil {
-				return nil, err
-			}
-			if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
-				return nil, err
-			} else if errors.Is(err, datastore.ErrEntityInvalid) {
-				err = ds.Add(ctx, &model)
-				if err != nil {
-					return nil, err
-				}
-			}
-			err = ds.Put(ctx, &model)
-			if err != nil {
-				return nil, err
-			}
-			return nil, bcode.ErrProviderIsUnavailable
-		}
-		err = ds.Get(ctx, &model)
-		model.Status = "downloaded"
-		if err != nil && !errors.Is(err, datastore.ErrEntityInvalid) {
-			return nil, err
-		} else if errors.Is(err, datastore.ErrEntityInvalid) {
-			err = ds.Add(ctx, &model)
-			if err != nil {
-				return nil, err
-			}
-		}
-		err = ds.Put(ctx, &model)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	err = ds.Put(ctx, sp)
 	if err != nil {
 		return nil, err
@@ -521,7 +474,6 @@ func (s *ServiceProviderImpl) GetServiceProvider(ctx context.Context, request *d
 					break
 				}
 			}
-
 		}
 	}
 
@@ -808,6 +760,10 @@ type ModelServiceManager interface {
 	CheckServer() bool
 }
 
+type CheckLocalServer struct {
+	ServiceProvider types.ServiceProvider
+}
+
 type CheckModelsServer struct {
 	ServiceProvider types.ServiceProvider
 }
@@ -828,6 +784,15 @@ type CheckEmbeddingServer struct {
 type CheckTextToImageServer struct {
 	ServiceProvider types.ServiceProvider
 	ModelName       string
+}
+
+func (l *CheckLocalServer) CheckServer() bool {
+	engine := provider.GetModelEngine(l.ServiceProvider.Flavor)
+	status := true
+	if err := engine.HealthCheck(); err != nil {
+		status = false
+	}
+	return status
 }
 
 func (m *CheckModelsServer) CheckServer() bool {
@@ -979,20 +944,24 @@ func (e *CheckTextToImageServer) CheckServer() bool {
 
 func ChooseCheckServer(sp types.ServiceProvider, modelName string) ModelServiceManager {
 	var server ModelServiceManager
-	switch sp.ServiceName {
-	case types.ServiceModels:
-		server = &CheckModelsServer{ServiceProvider: sp}
-	case types.ServiceChat:
-		server = &CheckChatServer{ServiceProvider: sp, ModelName: modelName}
-	case types.ServiceGenerate:
-		server = &CheckGenerateServer{ServiceProvider: sp, ModelName: modelName}
-	case types.ServiceEmbed:
-		server = &CheckEmbeddingServer{ServiceProvider: sp, ModelName: modelName}
-	case types.ServiceTextToImage:
-		server = &CheckTextToImageServer{ServiceProvider: sp, ModelName: modelName}
-	default:
-		logger.LogicLogger.Error("[Schedule] Unknown service name", "error", sp.ServiceName)
-		return nil
+	if sp.ServiceSource == types.ServiceSourceLocal {
+		server = &CheckLocalServer{ServiceProvider: sp}
+	} else {
+		switch sp.ServiceName {
+		case types.ServiceModels:
+			server = &CheckModelsServer{ServiceProvider: sp}
+		case types.ServiceChat:
+			server = &CheckChatServer{ServiceProvider: sp, ModelName: modelName}
+		case types.ServiceGenerate:
+			server = &CheckGenerateServer{ServiceProvider: sp, ModelName: modelName}
+		case types.ServiceEmbed:
+			server = &CheckEmbeddingServer{ServiceProvider: sp, ModelName: modelName}
+		case types.ServiceTextToImage:
+			server = &CheckTextToImageServer{ServiceProvider: sp, ModelName: modelName}
+		default:
+			logger.LogicLogger.Error("[Schedule] Unknown service name", "error", sp.ServiceName)
+			return nil
+		}
 	}
 	return server
 }

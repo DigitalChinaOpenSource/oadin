@@ -18,7 +18,7 @@ endif
 
 
 build-cli-win:
-	set CGO_ENABLED=1 && go build -o oadin.exe -ldflags="-s -w"  cmd/cli/main.go
+	set CGO_ENABLED=1 ; go build -o oadin.exe -ldflags="-s -w"  cmd/cli/main.go
 	$(MAKE) trayapp
 
 build-cli-darwin:

@@ -1,10 +1,23 @@
 package api
 
 import (
+	"fmt"
+	"strings"
+	"net/http"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"oadin/extension/api/dto"
 	"oadin/extension/server"
+	"oadin/internal/utils"
 	"oadin/extension/utils/bcode"
+	"oadin/internal/provider"
+	"oadin/internal/types"
+	dto2 "oadin/internal/api/dto"
+	"oadin/internal/logger"
 )
 
 type EngineApi struct {
@@ -19,6 +32,11 @@ func NewEngineApi() *EngineApi {
 
 func (e *EngineApi) InjectRoutes(api *gin.RouterGroup) {
 	api.GET("/exist", e.exist)
+	api.POST("/install", e.install)
+	api.POST("/download/streamEngine", e.DownloadStreamEngine)
+	api.GET("/download/checkMemoryConfig", e.CheckMemoryConfig)
+	api.POST("/download/streamModel", e.DownloadStreamModel)
+	api.POST("/download/checkDist", e.DownloadCheckDist)
 }
 
 // exist 检查引擎是否存在
@@ -52,3 +70,344 @@ func (e *EngineApi) install(c *gin.Context) {
 
 	dto.Success(c, "引擎安装成功")
 }
+
+// 根据引擎名称下载引擎，流式返回下载进度
+func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
+	request := dto.EngineDownloadRequest{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		dto.ValidFailure(c, err.Error())
+		return
+	}
+	if !strings.Contains("ollama,openvino,llamacpp", request.EngineName) {
+		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
+		return
+	}
+
+	if request.Stream {
+		c.Writer.Header().Set("Content-Type", "text/event-stream")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	}
+
+	ctx := c.Request.Context()
+
+	w := c.Writer
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.NotFound(w, c.Request)
+		return
+	}
+
+	modelEngine := provider.GetModelEngine(request.EngineName)
+
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
+	execPath := filepath.Join(modelEngine.GetConfig().ExecPath, modelEngine.GetConfig().ExecFile)
+	if _, err := os.Stat(execPath); err == nil {
+		err = modelEngine.HealthCheck()
+		if err != nil {
+			err = modelEngine.InitEnv()
+			if err != nil {
+				res.Status = "error"
+			} else {
+				err = modelEngine.StartEngine(types.EngineStartModeDaemon)
+				if err != nil {
+					res.Status = "error"
+				}
+				time.Sleep(3 * time.Second)
+			}
+		}
+
+		if request.Stream {
+			dataBytes, _ := json.Marshal(res)
+			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+			flusher.Flush()
+		} else {
+			c.JSON(http.StatusOK, res)
+		}
+		return
+	}
+
+	dataCh := make(chan []byte, 100)
+	errCh := make(chan error, 1)
+	go modelEngine.InstallEngineStream(ctx, dataCh, errCh)
+
+	for {
+		select {
+		case data, ok := <-dataCh:
+			if !ok {
+				// 数据通道关闭，发送结束标记
+				if _, err := os.Stat(execPath); err == nil {
+					err = modelEngine.HealthCheck()
+					if err != nil {
+						err = modelEngine.InitEnv()
+						if err != nil {
+							res.Status = "error"
+						} else {
+							err = modelEngine.StartEngine(types.EngineStartModeDaemon)
+							if err != nil {
+								res.Status = "error"
+							}
+							time.Sleep(3 * time.Second)
+						}
+					}
+				} else {
+					res.Status = "error"
+				}
+
+				if request.Stream {
+					dataBytes, _ := json.Marshal(res)
+					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+					flusher.Flush()
+				} else {
+					c.JSON(http.StatusOK, res)
+				}
+				return
+			}
+
+			if request.Stream && data != nil {
+				fmt.Fprintf(w, "data: %s\n\n", string(data))
+				flusher.Flush()
+			}
+		case err, _ := <-errCh:
+			if err != nil {
+				logger.EngineLogger.Error("DownloadStreamEngine", err)
+				res.Status = "error"
+				res.Data = err.Error()
+				if request.Stream {
+					dataBytes, _ := json.Marshal(res)
+					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+					flusher.Flush()
+				} else {
+					c.JSON(http.StatusInternalServerError, res)
+				}
+			}
+		case <-ctx.Done():
+			res.Status = "error"
+			res.Data = "timeout"
+			if request.Stream {
+				dataBytes, _ := json.Marshal(res)
+				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+				flusher.Flush()
+			} else {
+				c.JSON(http.StatusInternalServerError, res)
+			}
+			return
+		}
+	}
+}
+
+func (e *EngineApi) CheckMemoryConfig(c *gin.Context) {
+	// 检查引擎配置
+	memoryInfo, err := utils.GetMemoryInfo()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, memoryInfo)
+}
+
+func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
+	request := dto.ModelDownloadRequest{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		dto.ValidFailure(c, err.Error())
+		return
+	}
+	if !strings.Contains("ollama,openvino,llamacpp", request.EngineName) {
+		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
+		return
+	}
+
+	if request.Stream {
+		c.Writer.Header().Set("Content-Type", "text/event-stream")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	}
+
+	ctx := c.Request.Context()
+
+	w := c.Writer
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.NotFound(w, c.Request)
+		return
+	}
+
+	logger.EngineLogger.Info("DownloadStreamModel request: ", request)
+	modelEngine := provider.GetModelEngine(request.EngineName)
+
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
+	if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
+		logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
+		if request.Stream {
+			dataBytes, _ := json.Marshal(res)
+			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+			flusher.Flush()
+		} else {
+			c.JSON(http.StatusOK, res)
+		}
+		return
+	}
+
+	req := types.PullModelRequest{
+		Model:    request.ModelName,
+		ModelType: request.ModelType,
+	}
+	// dataCh, errCh := t.Model.CreateModelStream(ctx, request)
+	dataCh, errCh := modelEngine.PullModelStream(ctx, &req)
+
+	for {
+		select {
+		case data, ok := <-dataCh:
+			if !ok {
+				// 数据通道关闭，发送结束标记
+				if data == nil {
+					// 更新service表和model表
+					time.Sleep(3 * time.Second)
+					newReq := &dto2.CreateAIGCServiceRequest{
+						ServiceName: request.ModelType,
+						ServiceSource: "local",
+						ApiFlavor: request.EngineName,
+						ModelName: request.ModelName,
+					}
+					err := e.EngineManageService.CreateAIGCServiceSync(ctx, newReq)
+					if err != nil && err.Error() != "provider model already exist" {
+						logger.EngineLogger.Error("CreateAIGCServiceSync error: ", err)
+						res.Status = err.Error()
+						if request.Stream {
+							dataBytes, _ := json.Marshal(res)
+							fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+							flusher.Flush()
+						} else {
+							c.JSON(http.StatusInternalServerError, res)
+						}
+						return
+					}
+
+					if request.Stream {
+						dataBytes, _ := json.Marshal(res)
+						fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+						flusher.Flush()
+					} else {
+						c.JSON(http.StatusOK, res)
+					}
+					return
+				}
+			}
+
+			if request.Stream && data != nil {
+				fmt.Fprintf(w, "data: %s\n\n", string(data))
+				flusher.Flush()
+			}
+		case err, _ := <-errCh:
+			if err != nil {
+				logger.EngineLogger.Error("DownloadStreamModel err: ", err)
+				res.Status = err.Error()
+				if request.Stream {
+					dataBytes, _ := json.Marshal(res)
+					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+					flusher.Flush()
+				} else {
+					c.JSON(http.StatusInternalServerError, res)
+				}
+				return
+			}
+
+		case <-ctx.Done():
+			res.Status = "timeout"
+			logger.EngineLogger.Error("DownloadStreamModel timeout")
+			if request.Stream {
+				dataBytes, _ := json.Marshal(res)
+				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+				flusher.Flush()
+			} else {
+				c.JSON(http.StatusInternalServerError, res)
+			}
+			return
+		}
+	}
+}
+
+func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
+	request := dto.DownloadCheckDistRequest{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		dto.ValidFailure(c, err.Error())
+		return
+	}
+	if !strings.Contains("ollama,openvino,llamacpp", request.EngineName) {
+		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
+		return
+	}
+
+	modelEngine := provider.GetModelEngine(request.EngineName)
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
+
+	err := modelEngine.HealthCheck()
+	if err != nil {
+		res.Status = "engine error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	modelList, err := modelEngine.ListModels(c)
+	if err != nil {
+		res.Status = "list error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	if modelList == nil || len(modelList.Models) == 0 {
+		res.Status = "no model error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	// 检查引擎配置
+	var models []string
+	memoryInfo, err := utils.GetMemoryInfo()
+	if err != nil {
+		res.Status = "size error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	if memoryInfo.Size > 32 {
+		models = []string{"qwen3:14b", "bge-m3:567m"}
+	} else {
+		models = []string{"qwen3:8b", "quentinz/bge-large-zh-v1.5:f16"}
+	}
+
+	// 判断modelList.Models是否包含models的模型 如果缺少models的模型，则报错
+	for _, requiredModel := range models {
+		found := false
+		for _, existingModel := range modelList.Models {
+			if existingModel.Name == requiredModel || existingModel.Model == requiredModel {
+				found = true
+				break
+			}
+		}
+		
+		// 如果找不到必需的模型，设置错误状态
+		if !found {
+			res.Status = fmt.Sprintf("missing required model: %s", requiredModel)
+			c.JSON(http.StatusOK, res)
+			return
+		}
+	}
+
+	// 如果所有必需模型都存在，继续执行
+	c.JSON(http.StatusOK, res)
+}
+
+

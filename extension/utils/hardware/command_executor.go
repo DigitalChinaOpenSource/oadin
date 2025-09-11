@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"oadin/extension/utils/hardware/installer"
 	"os"
 	"os/exec"
 	"runtime"
 	"time"
+
+	"oadin/extension/utils/hardware/installer"
 )
 
 // Platform 声明操作系统类型

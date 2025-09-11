@@ -43,6 +43,7 @@ const (
 	// Download URLs
 	OllamaEngineDownloadURL   = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ipex-llm-ollama-win.zip"
 	OpenvinoEngineDownloadURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/windows/ovms_windows.zip"
+	LlamaCppEngineDownloadURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/llamacpp-windows-vulkan.zip"
 )
 
 type AIGCService interface {
@@ -116,16 +117,39 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 		m.ServiceName = request.ServiceName
 		m.ModelName = providerServiceInfo.DefaultModel
 
-		// 在创建后置为0
 		err := s.Ds.Get(ctx, service)
 		if err == nil {
 			service.Status = 0
 			_ = s.Ds.Put(ctx, service)
 		}
+
+		if sp.AuthType != types.AuthTypeNone {
+			checkSp := ChooseCheckServer(*sp, m.ModelName)
+			if checkSp != nil {
+				return nil, bcode.ErrProviderIsUnavailable
+			}
+			if !checkSp.CheckServer() {
+				return nil, bcode.ErrProviderIsUnavailable
+			}
+		}
+		// model auth successfully, update service status
+		service.Status = 0
+		_ = s.Ds.Put(ctx, service)
 	} else {
 		recommendConfig := getRecommendConfig(request.ServiceName)
-		// Check if ollama is installed locally and if it is available.
-		// If it is available, proceed to the next step. Otherwise, prompt that ollama is not installed.
+		// Check if engine is installed locally and if it is available.
+		// If it is available, proceed to the next step. Otherwise, prompt that engine is not installed.
+
+		// Use user-specified ApiFlavor if provided, otherwise use recommended engine
+		if request.ApiFlavor != "" && utils.Contains(types.SupportModelEngine, request.ApiFlavor) {
+			// User specified a valid engine flavor, use it
+			recommendConfig.ModelEngine = request.ApiFlavor
+		}
+		if request.ApiFlavor != "" && !utils.Contains(types.SupportModelEngine, request.ApiFlavor) {
+			// User specified an unsupported engine flavor
+			logger.LogicLogger.Warn("Unsupported ApiFlavor provided: " + request.ApiFlavor + ", using recommended engine instead")
+		}
+
 		engineProvider := provider.GetModelEngine(recommendConfig.ModelEngine)
 		engineConfig := engineProvider.GetConfig()
 		if request.ModelName != "" {
@@ -140,14 +164,12 @@ func (s *AIGCServiceImpl) CreateAIGCService(ctx context.Context, request *dto.Cr
 			sp.ProviderName = fmt.Sprintf("%s_%s_%s", request.ServiceSource, request.ApiFlavor, request.ServiceName)
 		}
 
-		cmd := exec.Command(engineConfig.ExecFile, "-h")
+		cmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
 		err := cmd.Run()
 		if err != nil {
 			logger.LogicLogger.Info("Check model engine " + recommendConfig.ModelEngine + "  not exist...")
-			reCheckCmd := exec.Command(engineConfig.ExecPath+"/"+engineConfig.ExecFile, "-h")
-			err = reCheckCmd.Run()
 			_, isExistErr := os.Stat(engineConfig.ExecPath + "/" + engineConfig.ExecFile)
-			if err != nil && isExistErr != nil {
+			if isExistErr != nil {
 				logger.LogicLogger.Info("Model engine " + recommendConfig.ModelEngine + " not exist, start download...")
 				err := engineProvider.InstallEngine()
 				if err != nil {
@@ -702,21 +724,23 @@ func (s *AIGCServiceImpl) GetAIGCServices(ctx context.Context, request *dto.GetA
 				serviceStatus = 0
 				continue
 			}
-			remoteModel := &types.Model{
-				ProviderName: dsService.RemoteProvider,
-			}
-			err = s.Ds.Get(ctx, remoteModel)
-			if err != nil {
-				serviceStatus = 0
-				continue
-			}
-			if dsService.Name == types.ServiceTextToImage {
-				continue
-			}
-			checkServerObj := ChooseCheckServer(*remoteSp, remoteModel.ModelName)
-			status := checkServerObj.CheckServer()
-			if status {
-				serviceStatus = 1
+			if dsService.LocalProvider == "" {
+				remoteModel := &types.Model{
+					ProviderName: dsService.RemoteProvider,
+				}
+				err = s.Ds.Get(ctx, remoteModel)
+				if err != nil {
+					serviceStatus = 0
+					continue
+				}
+				if dsService.Name == types.ServiceTextToImage {
+					continue
+				}
+				checkServerObj := ChooseCheckServer(*remoteSp, remoteModel.ModelName)
+				status := checkServerObj.CheckServer()
+				if status {
+					serviceStatus = 1
+				}
 			}
 		}
 		tmp.HybridPolicy = dsService.HybridPolicy

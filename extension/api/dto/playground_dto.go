@@ -1,8 +1,9 @@
 package dto
 
 import (
-	"github.com/mark3labs/mcp-go/mcp"
 	"time"
+
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 type MCPServerConfig struct {

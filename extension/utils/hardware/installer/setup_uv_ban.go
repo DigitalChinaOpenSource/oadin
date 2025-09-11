@@ -122,12 +122,10 @@ type InstallInfo struct {
 
 // 在另一个 Goroutine 中运行检查
 func (i *InstallNpxUv) RunCheckBinaries() {
-
 	if err := i.CheckBinaries(); err != nil {
 		// 处理错误
 		fmt.Printf("Error checking binaries: %v\n", err)
 	}
-
 }
 
 // isBinaryExist 检查二进制是否存在

@@ -28,7 +28,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"oadin/internal/api/dto"
 	"oadin/internal/logger"
-	"oadin/internal/server"
 	"oadin/internal/types"
 	"oadin/internal/utils/bcode"
 )
@@ -84,7 +83,7 @@ func (t *OADINCoreServer) CreateModelStream(c *gin.Context) {
 		return
 	}
 
-	dataCh, errCh := server.CreateModelStream(ctx, *request)
+	dataCh, errCh := t.Model.CreateModelStream(ctx, request)
 
 	for {
 		select {
@@ -207,7 +206,7 @@ func (t *OADINCoreServer) CancelModelStream(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	data, err := server.ModelStreamCancel(ctx, request)
+	data, err := t.Model.ModelStreamCancel(ctx, request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
@@ -219,7 +218,7 @@ func (t *OADINCoreServer) CancelModelStream(c *gin.Context) {
 
 func (t *OADINCoreServer) GetRecommendModels(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] GetRecommendModels request params:", c.Request.Body)
-	data, err := server.GetRecommendModel()
+	data, err := t.Model.GetRecommendModel()
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return
@@ -231,7 +230,7 @@ func (t *OADINCoreServer) GetRecommendModels(c *gin.Context) {
 
 func (t *OADINCoreServer) GetModelList(c *gin.Context) {
 	logger.ApiLogger.Debug("[API] GetModelList request params:", c.Request.Body)
-	request := new(dto.GetModelListRequest)
+	request := new(dto.GetSupportModelRequest)
 	if err := c.Bind(request); err != nil {
 		bcode.ReturnError(c, bcode.ErrModelBadRequest)
 		return
@@ -242,7 +241,7 @@ func (t *OADINCoreServer) GetModelList(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	data, err := server.GetSupportModelList(ctx, *request)
+	data, err := t.Model.GetSupportModelList(ctx, request)
 	if err != nil {
 		bcode.ReturnError(c, err)
 		return

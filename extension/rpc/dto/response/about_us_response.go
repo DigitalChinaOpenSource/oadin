@@ -13,5 +13,4 @@ type AboutUsResponse struct {
 	Copyright string `json:"copyright"`
 }
 
-type ChangeListResponse struct {
-}
+type ChangeListResponse struct{}

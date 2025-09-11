@@ -51,7 +51,6 @@ func GetMCPList(client *resty.Client, req MCPListRequest) (*MCPListResponse, err
 		SetBody(req).
 		SetResult(&resp).
 		Post("/api/mcp/search")
-
 	if err != nil {
 		return nil, fmt.Errorf("请求失败: %v", err)
 	}
@@ -124,7 +123,6 @@ func GetMCPDetail(client *resty.Client, id string) (*MCPDetailResponse, error) {
 		SetPathParam("id", id).
 		SetResult(&resp).
 		Get("/api/mcp/search/{id}")
-
 	if err != nil {
 		return nil, fmt.Errorf("请求失败: %v", err)
 	}
@@ -185,7 +183,6 @@ func SearchTools(client *resty.Client, id string, req *ToolSearchRequest) (*Tool
 		SetBody(req).
 		SetResult(&resp).
 		Post("/api/mcp/tools/search/{id}")
-
 	if err != nil {
 		return nil, fmt.Errorf("请求失败: %v", err)
 	}
@@ -219,7 +216,6 @@ func GetRecommendedClients(client *resty.Client) (*ClientListResponse, error) {
 		SetHeader("Content-Type", "application/json").
 		SetResult(&resp).
 		Get("/api/clients")
-
 	if err != nil {
 		return nil, fmt.Errorf("请求失败: %v", err)
 	}
@@ -247,7 +243,6 @@ func GetCategories(client *resty.Client) (*CategoryListResponse, error) {
 		SetHeader("Content-Type", "application/json").
 		SetResult(&resp).
 		Get("/api/mcp/categories")
-
 	if err != nil {
 		return nil, fmt.Errorf("请求失败: %v", err)
 	}

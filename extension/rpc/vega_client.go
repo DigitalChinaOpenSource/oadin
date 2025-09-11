@@ -11,7 +11,6 @@ func About() (response.AboutUsResponse, error) {
 		SetHeader("Content-Type", "application/json").
 		SetResult(&res).
 		Get("/api/system/about")
-
 	if err != nil {
 		return response.AboutUsResponse{}, err
 	}
@@ -25,10 +24,8 @@ func ChangeList() (response.ChangeListResponse, error) {
 		SetHeader("Content-Type", "application/json").
 		SetResult(&res).
 		Get("/api/system/changelist")
-
 	if err != nil {
 		return response.ChangeListResponse{}, err
 	}
 	return response.ChangeListResponse{}, err
-
 }

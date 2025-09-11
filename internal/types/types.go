@@ -38,6 +38,7 @@ const (
 	FlavorAliYun      = "aliyun"
 	FlavorSmartVision = "smartvision"
 	FlavorOpenvino    = "openvino"
+	FlavorLlamaCpp    = "llamacpp"
 
 	AuthTypeNone        = "none"
 	AuthTypeApiKey      = "apikey"
@@ -109,8 +110,8 @@ var (
 	SupportService      = []string{ServiceEmbed, ServiceModels, ServiceChat, ServiceGenerate, ServiceTextToImage, ServiceSpeechToText, ServiceSpeechToTextWS}
 	SupportHybridPolicy = []string{HybridPolicyDefault, HybridPolicyLocal, HybridPolicyRemote}
 	SupportAuthType     = []string{AuthTypeNone, AuthTypeApiKey, AuthTypeSign, AuthTypeToken}
-	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorOpenvino, FlavorSmartVision}
-	SupportModelEngine  = []string{FlavorOpenvino, FlavorOllama}
+	SupportFlavor       = []string{FlavorDeepSeek, FlavorOpenAI, FlavorTencent, FlavorOllama, FlavorBaidu, FlavorAliYun, FlavorOpenvino, FlavorSmartVision, FlavorLlamaCpp}
+	SupportModelEngine  = []string{FlavorOpenvino, FlavorOllama, FlavorLlamaCpp}
 	SupportImageType    = []string{ImageTypeUrl, ImageTypeBase64, ImageTypePath}
 	SupportAudioType    = []string{AudioWav, AudioMp3}
 )
@@ -258,4 +259,8 @@ type UnloadModelRequest struct {
 type OllamaUnloadModelRequest struct {
 	Model     string `json:"model"`
 	KeepAlive int64  `json:"keep_alive"`
+}
+
+type LoadRequest struct {
+	Model string `json:"model"`
 }
