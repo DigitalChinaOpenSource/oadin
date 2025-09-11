@@ -327,7 +327,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 
 	case "linux":
 		execFile = "ollama"
-		execPath = filepath.Join(userDir, "ollama")
+		execPath = filepath.Join(homeDir, "ollama")
 		downloadUrl = LinuxAmdURL
 		if runtime.GOARCH == "arm64" {
 			downloadUrl = LinuxArmURL
@@ -682,6 +682,7 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 										if !shouldRetry{
 											shouldRetry = true
 										    cancelPull() // 取消当前的下载
+											time.Sleep(2 * time.Second) // 等待一会，确保通道关闭
 										}
 										break
 									}
