@@ -140,7 +140,7 @@ Function ServicePageLeave
   Call StrStr
   Pop $R2
   ${If} $R2 != ""
-    MessageBox MB_YESNO|MB_ICONWARNING "32-Bit directory detected. 64-bit directory is recommended. Do you want to continue?" /SD IDYES continue_install IDNO change_dir
+    MessageBox MB_YESNO|MB_ICONWARNING "32-Bit directory detected. 64-bit directory is recommended. Do you want to continue?" /SD IDNO IDYES continue_install IDNO change_dir
     Goto end_check
   ${EndIf}
 
