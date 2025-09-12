@@ -3,19 +3,21 @@
 !endif
 
 ; CI/CD Compatible NSIS Script for 64-bit Installation
-; Designed to work with 32-bit NSIS compiler in CI environment
+; 集成改进版start-oadin.bat脚本，支持服务和手动启动模式
 
-; Include 64-bit support libraries
 !include "x64.nsh"
 !include "LogicLib.nsh"
+!include "nsDialogs.nsh"
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
-; Use hard-coded 64-bit path to avoid CI environment issues
-!define INSTALL_DIR "C:\Program Files\Oadin"
+!define SERVICE_NAME "OadinService"
+!define SERVICE_DISPLAY_NAME "${APP_NAME} Service"
+!define SERVICE_DESCRIPTION "Oadin CLI 后台服务"
+!define DEFAULT_INSTALL_DIR "$PROGRAMFILES64\Oadin"
 
 Outfile "..\..\oadin-installer.exe"
-InstallDir "${INSTALL_DIR}"
+InstallDir "${DEFAULT_INSTALL_DIR}"
 RequestExecutionLevel admin
 SetCompress auto
 SetCompressor lzma
@@ -23,66 +25,55 @@ SetCompressor lzma
 Name "${APP_NAME}"
 Caption "${APP_NAME} ${VERSION} Setup"
 
-; Force 64-bit installation - CI optimized
+Page directory
+Page custom ServicePageCreate ServicePageLeave
+Page instfiles
+UninstPage uninstConfirm
+UninstPage instfiles
+
+; 变量定义
+Var CHECK_SERVICE
+Var CHECK_AUTOSTART
+Var TEMP_INSTDIR
+
+; 初始化函数
 Function .onInit
-  ; Verify 64-bit system
   ${IfNot} ${RunningX64}
-    MessageBox MB_OK|MB_ICONSTOP "This application requires 64-bit Windows system."
+    MessageBox MB_OK|MB_ICONSTOP "此应用程序需要64位Windows系统。"
     Abort
   ${EndIf}
 
-  ; Enable 64-bit mode
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; Force 64-bit Program Files - CI compatible approach
-  ; Priority 1: Use PROGRAMFILES64 if available
+  ; 设置默认安装路径
   StrCpy $R0 "$PROGRAMFILES64"
   ${If} $R0 != ""
-    ${AndIf} $R0 != "\$PROGRAMFILES64"
     StrCpy $INSTDIR "$R0\Oadin"
   ${Else}
-    ; Priority 2: Use ProgramW6432 environment variable
     ReadEnvStr $R1 "ProgramW6432"
     ${If} $R1 != ""
       StrCpy $INSTDIR "$R1\Oadin"
     ${Else}
-      ; Priority 3: Hard-coded 64-bit path
       StrCpy $INSTDIR "C:\Program Files\Oadin"
     ${EndIf}
   ${EndIf}
 
-  ; Validate we're not installing to x86 directory
-  Push $INSTDIR
-  Push "(x86)"
-  Call StrStr
-  Pop $R2
-  ${If} $R2 != ""
-    ; Found (x86) in path, force correct path
-    StrCpy $INSTDIR "C:\Program Files\Oadin"
-  ${EndIf}
-
-  ; Log installation path for CI debugging
-  DetailPrint "Target installation directory: $INSTDIR"
-  
-  ; No MessageBox - silent installation
+  StrCpy $TEMP_INSTDIR $INSTDIR
+  DetailPrint "默认安装目录: $INSTDIR"
+  ${EnableX64FSRedirection}
 FunctionEnd
 
-; String search function
+; 字符串搜索函数
 Function StrStr
-  Exch $R1 ; st=haystack,old$R1, $R1=needle
-  Exch    ; st=old$R1,haystack, $R1=needle
-  Exch $R2 ; st=old$R1,old$R2, $R2=haystack, $R1=needle
+  Exch $R1
+  Exch
+  Exch $R2
   Push $R3
   Push $R4
   Push $R5
   StrLen $R3 $R1
   StrCpy $R4 0
-  ; $R1=needle
-  ; $R2=haystack
-  ; $R3=len(needle)
-  ; $R4=cnt
-  ; $R5=tmp
   loop:
     StrCpy $R5 $R2 $R3 $R4
     StrCmp $R5 $R1 done
@@ -98,78 +89,197 @@ Function StrStr
   Exch $R1
 FunctionEnd
 
+; 服务配置页面
+Function ServicePageCreate
+  nsDialogs::Create 1018
+  Pop $0
+
+  ${If} $0 == error
+    Abort
+  ${EndIf}
+
+  ${NSD_CreateLabel} 0 0 100% 12u "服务配置"
+  Pop $0
+  ${NSD_SetFont} $0 "Arial" 10 true
+
+  ${NSD_CreateCheckbox} 0 30u 100% 12u "将 Oadin 注册为 Windows 服务"
+  Pop $CHECK_SERVICE
+  ${NSD_Check} $CHECK_SERVICE
+
+  ${NSD_CreateCheckbox} 0 50u 100% 12u "设置为开机自启（需要注册服务）"
+  Pop $CHECK_AUTOSTART
+  ${NSD_Check} $CHECK_AUTOSTART
+
+  ${NSD_OnClick} $CHECK_SERVICE OnServiceCheckboxChange
+
+  nsDialogs::Show
+FunctionEnd
+
+; 服务复选框事件
+Function OnServiceCheckboxChange
+  ${NSD_GetState} $CHECK_SERVICE $R0
+  ${If} $R0 == 0
+    ${NSD_SetState} $CHECK_AUTOSTART 0
+    EnableWindow $CHECK_AUTOSTART 0
+  ${Else}
+    EnableWindow $CHECK_AUTOSTART 1
+  ${EndIf}
+FunctionEnd
+
+; 离开服务配置页面
+Function ServicePageLeave
+  ${NSD_GetState} $CHECK_SERVICE $R0
+  StrCpy $CHECK_SERVICE $R0
+
+  ${NSD_GetState} $CHECK_AUTOSTART $R0
+  StrCpy $CHECK_AUTOSTART $R0
+
+  Push $INSTDIR
+  Push "(x86)"
+  Call StrStr
+  Pop $R2
+  ${If} $R2 != ""
+    MessageBox MB_YESNO|MB_ICONWARNING "检测到32位目录。建议使用64位目录，是否继续？" IDYES continue_install IDNO change_dir
+    Goto end_check
+  ${EndIf}
+
+  continue_install:
+  Goto end_check
+
+  change_dir:
+  StrCpy $INSTDIR $TEMP_INSTDIR
+  Abort
+
+  end_check:
+FunctionEnd
+
+; 安装服务函数 - 关键改进：使用start-oadin.bat作为服务启动程序
+Function InstallService
+  ${If} $CHECK_SERVICE == 1
+    DetailPrint "正在注册 Windows 服务..."
+
+    ; 构建服务安装命令，使用改进后的start-oadin.bat作为服务启动程序
+    ; 注意：服务模式需要传递-service参数
+    StrCpy $R0 '"$INSTDIR\start-oadin.bat" -service'
+    StrCpy $R1 'sc create ${SERVICE_NAME} binPath= "$R0" start= ${If} $CHECK_AUTOSTART == 1 auto ${Else} demand ${EndIf} DisplayName= "${SERVICE_DISPLAY_NAME}"'
+
+    ; 执行服务安装命令
+    nsExec::ExecToLog $R1
+    Pop $R2
+    ${If} $R2 != 0
+      DetailPrint "服务注册失败，错误代码: $R2"
+      MessageBox MB_OK|MB_ICONWARNING "服务注册失败，您可以手动运行以下命令：`$R1`"
+    ${Else}
+      ; 设置服务描述
+      nsExec::ExecToLog '"sc description ${SERVICE_NAME} "${SERVICE_DESCRIPTION}""'
+
+      ; 启动服务
+      nsExec::ExecToLog '"sc start ${SERVICE_NAME}"'
+      DetailPrint "Windows 服务注册成功"
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+
+; 卸载服务函数
+Function UninstallService
+  DetailPrint "正在卸载 Windows 服务..."
+
+  ; 停止服务
+  nsExec::ExecToLog '"sc stop ${SERVICE_NAME}"'
+
+  ; 删除服务
+  nsExec::ExecToLog '"sc delete ${SERVICE_NAME}"'
+  Pop $R0
+
+  ${If} $R0 == 0
+    DetailPrint "Windows 服务卸载成功"
+  ${Else}
+    DetailPrint "服务卸载失败，可能服务未安装"
+  ${EndIf}
+FunctionEnd
+
+; 安装部分 - 关键改进：正确处理start-oadin.bat脚本
 Section "Install"
-  ; Ensure 64-bit environment
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; Log actual installation path
-  DetailPrint "Installing to: $INSTDIR"
-  DetailPrint "PROGRAMFILES64: $PROGRAMFILES64"
-  DetailPrint "PROGRAMFILES: $PROGRAMFILES"
+  DetailPrint "正在安装到: $INSTDIR"
 
-  ; Create installation directory
+  ; 创建安装目录
   CreateDirectory "$INSTDIR"
   SetOutPath "$INSTDIR"
 
-  ; Verify directory creation success
   IfFileExists "$INSTDIR" 0 install_error
-  DetailPrint "SUCCESS: 64-bit installation directory created"
+  DetailPrint "安装目录创建成功"
 
-  ; Copy files
+  ; 复制文件（确保包含改进后的start-oadin.bat）
   File "..\..\oadin.exe"
   File "preinstall.bat"
   File "postinstall.bat"
-  File "start-oadin.bat"
+  File "start-oadin.bat" ; 复制改进后的启动脚本
 
-  ; Write registry (64-bit view)
+  ; 设置启动脚本的执行权限
+  nsExec::ExecToLog 'icacls "$INSTDIR\start-oadin.bat" /grant:r "Users:(RX)"'
+
+  ; 写入注册表
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Architecture" "x64"
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "UninstallString" "$INSTDIR\uninstall.exe"
-  
+
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
-  ; Execute installation scripts
-  DetailPrint "Running pre-install script..."
+  ; 执行安装脚本
+  DetailPrint "运行预安装脚本..."
   nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
 
-  DetailPrint "Running post-install script..."
+  DetailPrint "运行后安装脚本..."
   nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
-  DetailPrint "Starting Oadin service..."
-  nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
+  ; 安装服务
+  Call InstallService
+
+  ; 如果未注册服务，使用启动脚本手动启动（普通模式）
+  ${If} $CHECK_SERVICE == 0
+    DetailPrint "启动 Oadin 应用程序..."
+    nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"' ; 不传递参数，使用普通模式
+  ${EndIf}
 
   ${EnableX64FSRedirection}
-  
-  DetailPrint "Installation completed successfully to: $INSTDIR"
+
+  DetailPrint "安装成功，路径: $INSTDIR"
   Goto install_end
 
   install_error:
-  DetailPrint "ERROR: Failed to create installation directory: $INSTDIR"
-  MessageBox MB_OK|MB_ICONSTOP "Installation failed: Unable to create directory $INSTDIR"
+  DetailPrint "错误: 无法创建安装目录: $INSTDIR"
+  MessageBox MB_OK|MB_ICONSTOP "安装失败: 无法创建目录 $INSTDIR"
   Abort
 
   install_end:
 SectionEnd
 
+; 卸载初始化
 Function un.onInit
   SetRegView 64
   ${DisableX64FSRedirection}
 FunctionEnd
 
+; 卸载部分
 Section "Uninstall"
   SetRegView 64
   ${DisableX64FSRedirection}
-  
+
+  ; 先卸载服务
+  Call UninstallService
+
+  ; 删除文件
   Delete "$INSTDIR\oadin.exe"
   Delete "$INSTDIR\preinstall.bat"
   Delete "$INSTDIR\postinstall.bat"
-  Delete "$INSTDIR\start-oadin.bat"
+  Delete "$INSTDIR\start-oadin.bat" ; 删除启动脚本
   Delete "$INSTDIR\uninstall.exe"
 
   RMDir "$INSTDIR"
-
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
 
   ${EnableX64FSRedirection}
