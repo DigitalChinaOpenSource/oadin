@@ -5,6 +5,7 @@
 ; CI/CD Compatible NSIS Script for 64-bit Installation
 ; 集成改进版start-oadin.bat脚本，支持服务和手动启动模式
 
+; Include 64-bit support libraries
 !include "x64.nsh"
 !include "LogicLib.nsh"
 !include "nsDialogs.nsh"
