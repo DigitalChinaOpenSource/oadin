@@ -55,7 +55,7 @@ jobs:
           file oadin
           echo "符号表大小分析:"
           go tool nm -size oadin 2>/dev/null | head -10 || echo "符号表已被strip"
-          codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
+          codesign --verbose --force --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
           echo "--------- 📦 安装包构建与签名 ----------"
           # 确保完全清理 pkgroot 目录
           rm -rf pkgroot

@@ -42,7 +42,7 @@ jobs:
           echo "--------- 🛠️ 制品构建与签名 ----------"
           go mod tidy
           CGO_ENABLED=1 CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec" GOOS=darwin GOARCH=arm64  go build -o oadin -tags "$ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG'"  cmd/cli/main.go
-          codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
+          codesign --verbose --force --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
           echo "--------- 📦 安装包构建与签名 ----------"
           mkdir -p pkgroot/oadin
           mv oadin pkgroot/oadin/oadin
