@@ -9,11 +9,6 @@
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
 !include "nsDialogs.nsh"
-!include "nsDialogsMacros.nsh"
-
-!ifndef NSD_SetFont
-  !define NSD_SetFont `nsd_setfont`
-!endif
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
@@ -106,7 +101,7 @@ Function ServicePageCreate
 
   ${NSD_CreateLabel} 0 0 100% 12u "Service Configuration"
   Pop $0
-  ${NSD_SetFont} $0 "Arial" 10 true
+  SendMessage $0 ${WM_SETFONT} $FONT_BOLD 1
 
   ${NSD_CreateCheckbox} 0 30u 100% 12u "Register Oadin as a Windows service"
   Pop $CHECK_SERVICE
