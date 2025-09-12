@@ -13,7 +13,7 @@
 !define COMPANY_NAME "Digital China"
 !define SERVICE_NAME "OadinService"
 !define SERVICE_DISPLAY_NAME "${APP_NAME} Service"
-!define SERVICE_DESCRIPTION "Oadin CLI 后台服务"
+!define SERVICE_DESCRIPTION "Oadin CLI Backed Service"
 !define DEFAULT_INSTALL_DIR "$PROGRAMFILES64\Oadin"
 
 Outfile "..\..\oadin-installer.exe"
@@ -39,7 +39,7 @@ Var TEMP_INSTDIR
 ; initialization function
 Function .onInit
   ${IfNot} ${RunningX64}
-    MessageBox MB_OK|MB_ICONSTOP "此应用程序需要64位Windows系统。"
+    MessageBox MB_OK|MB_ICONSTOP "This application requires a 64-bit Windows system."
     Abort
   ${EndIf}
 
@@ -60,7 +60,7 @@ Function .onInit
   ${EndIf}
 
   StrCpy $TEMP_INSTDIR $INSTDIR
-  DetailPrint "默认安装目录: $INSTDIR"
+  DetailPrint "default installation directory: $INSTDIR"
   ${EnableX64FSRedirection}
 FunctionEnd
 
@@ -98,15 +98,15 @@ Function ServicePageCreate
     Abort
   ${EndIf}
 
-  ${NSD_CreateLabel} 0 0 100% 12u "服务配置"
+  ${NSD_CreateLabel} 0 0 100% 12u "Service Configuration"
   Pop $0
   ${NSD_SetFont} $0 "Arial" 10 true
 
-  ${NSD_CreateCheckbox} 0 30u 100% 12u "将 Oadin 注册为 Windows 服务"
+  ${NSD_CreateCheckbox} 0 30u 100% 12u "Register Oadin as a Windows service"
   Pop $CHECK_SERVICE
   ${NSD_Check} $CHECK_SERVICE
 
-  ${NSD_CreateCheckbox} 0 50u 100% 12u "设置为开机自启（需要注册服务）"
+  ${NSD_CreateCheckbox} 0 50u 100% 12u "Set to boot-up"
   Pop $CHECK_AUTOSTART
   ${NSD_Check} $CHECK_AUTOSTART
 
@@ -139,7 +139,7 @@ Function ServicePageLeave
   Call StrStr
   Pop $R2
   ${If} $R2 != ""
-    MessageBox MB_YESNO|MB_ICONWARNING "检测到32位目录。建议使用64位目录，是否继续？" IDYES continue_install IDNO change_dir
+    MessageBox MB_YESNO|MB_ICONWARNING "32-Bit directory detected. 64-bit directory is recommended. Do you want to continue?" IDYES continue_install IDNO change_dir
     Goto end_check
   ${EndIf}
 
@@ -156,7 +156,7 @@ FunctionEnd
 ; Installing Service Functions - Key Improvement: Using start-oadin.bat as a service starter
 Function InstallService
   ${If} $CHECK_SERVICE == 1
-    DetailPrint "正在注册 Windows 服务..."
+    DetailPrint "Registering Windows Services..."
 
     ; Build the service installation command, using the improved start-oadin.bat as the service starter
     ; Note: Service mode requires passing the -service parameter
@@ -167,22 +167,22 @@ Function InstallService
     nsExec::ExecToLog $R1
     Pop $R2
     ${If} $R2 != 0
-      DetailPrint "服务注册失败，错误代码: $R2"
-      MessageBox MB_OK|MB_ICONWARNING "服务注册失败，您可以手动运行以下命令：`$R1`"
+      DetailPrint "Service registration failed, BigInt: $R2"
+      MessageBox MB_OK|MB_ICONWARNING "Service registration failed. You can run the following command manually: `$R1`"
     ${Else}
       ; Set service description
       nsExec::ExecToLog '"sc description ${SERVICE_NAME} "${SERVICE_DESCRIPTION}""'
 
       ; Set service description
       nsExec::ExecToLog '"sc start ${SERVICE_NAME}"'
-      DetailPrint "Windows 服务注册成功"
+      DetailPrint "Windows service registration was successful"
     ${EndIf}
   ${EndIf}
 FunctionEnd
 
 ; Unload service function
 Function UninstallService
-  DetailPrint "正在卸载 Windows 服务..."
+  DetailPrint "Uninstalling Windows Services..."
 
   ; stop service
   nsExec::ExecToLog '"sc stop ${SERVICE_NAME}"'
@@ -192,9 +192,9 @@ Function UninstallService
   Pop $R0
 
   ${If} $R0 == 0
-    DetailPrint "Windows 服务卸载成功"
+    DetailPrint "Windows service uninstalled successfully"
   ${Else}
-    DetailPrint "服务卸载失败，可能服务未安装"
+    DetailPrint "Service uninstallation failed, maybe the service is not installed"
   ${EndIf}
 FunctionEnd
 
@@ -203,14 +203,14 @@ Section "Install"
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  DetailPrint "正在安装到: $INSTDIR"
+  DetailPrint "Installing to: $INSTDIR"
 
   ; Create installation directory
   CreateDirectory "$INSTDIR"
   SetOutPath "$INSTDIR"
 
   IfFileExists "$INSTDIR" 0 install_error
-  DetailPrint "安装目录创建成功"
+  DetailPrint "Installation directory created successfully"
 
   ; Copy the file (make sure to include the improved start-oadin.bat)
   File "..\..\oadin.exe"
@@ -230,10 +230,10 @@ Section "Install"
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
   ; Execute the installation script
-  DetailPrint "运行预安装脚本..."
+  DetailPrint "Run the pre-installation script..."
   nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
 
-  DetailPrint "运行后安装脚本..."
+  DetailPrint "Install the script after running..."
   nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
   ; installation service
@@ -241,18 +241,18 @@ Section "Install"
 
   ; If the service is not registered, start it manually using a startup script (normal mode).
   ${If} $CHECK_SERVICE == 0
-    DetailPrint "启动 Oadin 应用程序..."
+    DetailPrint "Launch the Oadin application..."
     nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
   ${EndIf}
 
   ${EnableX64FSRedirection}
 
-  DetailPrint "安装成功，路径: $INSTDIR"
+  DetailPrint "Installation successful, path: $INSTDIR"
   Goto install_end
 
   install_error:
-  DetailPrint "错误: 无法创建安装目录: $INSTDIR"
-  MessageBox MB_OK|MB_ICONSTOP "安装失败: 无法创建目录 $INSTDIR"
+  DetailPrint "Error: Unable to create installation directory: $INSTDIR"
+  MessageBox MB_OK|MB_ICONSTOP "Installation failed: Could not create directory $INSTDIR"
   Abort
 
   install_end:
