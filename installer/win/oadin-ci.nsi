@@ -3,7 +3,6 @@
 !endif
 
 ; CI/CD Compatible NSIS Script for 64-bit Installation
-; 集成改进版start-oadin.bat脚本，支持服务和手动启动模式
 
 ; Include 64-bit support libraries
 !include "x64.nsh"
@@ -32,12 +31,12 @@ Page instfiles
 UninstPage uninstConfirm
 UninstPage instfiles
 
-; 变量定义
+; variable definition
 Var CHECK_SERVICE
 Var CHECK_AUTOSTART
 Var TEMP_INSTDIR
 
-; 初始化函数
+; initialization function
 Function .onInit
   ${IfNot} ${RunningX64}
     MessageBox MB_OK|MB_ICONSTOP "此应用程序需要64位Windows系统。"
@@ -47,7 +46,7 @@ Function .onInit
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; 设置默认安装路径
+  ; Set the default installation path
   StrCpy $R0 "$PROGRAMFILES64"
   ${If} $R0 != ""
     StrCpy $INSTDIR "$R0\Oadin"
@@ -65,7 +64,7 @@ Function .onInit
   ${EnableX64FSRedirection}
 FunctionEnd
 
-; 字符串搜索函数
+; String search function
 Function StrStr
   Exch $R1
   Exch
@@ -90,7 +89,7 @@ Function StrStr
   Exch $R1
 FunctionEnd
 
-; 服务配置页面
+; service configuration page
 Function ServicePageCreate
   nsDialogs::Create 1018
   Pop $0
@@ -116,7 +115,7 @@ Function ServicePageCreate
   nsDialogs::Show
 FunctionEnd
 
-; 服务复选框事件
+; Service checkbox event
 Function OnServiceCheckboxChange
   ${NSD_GetState} $CHECK_SERVICE $R0
   ${If} $R0 == 0
@@ -127,7 +126,7 @@ Function OnServiceCheckboxChange
   ${EndIf}
 FunctionEnd
 
-; 离开服务配置页面
+; Leave the service configuration page
 Function ServicePageLeave
   ${NSD_GetState} $CHECK_SERVICE $R0
   StrCpy $CHECK_SERVICE $R0
@@ -154,41 +153,41 @@ Function ServicePageLeave
   end_check:
 FunctionEnd
 
-; 安装服务函数 - 关键改进：使用start-oadin.bat作为服务启动程序
+; Installing Service Functions - Key Improvement: Using start-oadin.bat as a service starter
 Function InstallService
   ${If} $CHECK_SERVICE == 1
     DetailPrint "正在注册 Windows 服务..."
 
-    ; 构建服务安装命令，使用改进后的start-oadin.bat作为服务启动程序
-    ; 注意：服务模式需要传递-service参数
+    ; Build the service installation command, using the improved start-oadin.bat as the service starter
+    ; Note: Service mode requires passing the -service parameter
     StrCpy $R0 '"$INSTDIR\start-oadin.bat" -service'
     StrCpy $R1 'sc create ${SERVICE_NAME} binPath= "$R0" start= ${If} $CHECK_AUTOSTART == 1 auto ${Else} demand ${EndIf} DisplayName= "${SERVICE_DISPLAY_NAME}"'
 
-    ; 执行服务安装命令
+    ; Execute the service installation command
     nsExec::ExecToLog $R1
     Pop $R2
     ${If} $R2 != 0
       DetailPrint "服务注册失败，错误代码: $R2"
       MessageBox MB_OK|MB_ICONWARNING "服务注册失败，您可以手动运行以下命令：`$R1`"
     ${Else}
-      ; 设置服务描述
+      ; Set service description
       nsExec::ExecToLog '"sc description ${SERVICE_NAME} "${SERVICE_DESCRIPTION}""'
 
-      ; 启动服务
+      ; Set service description
       nsExec::ExecToLog '"sc start ${SERVICE_NAME}"'
       DetailPrint "Windows 服务注册成功"
     ${EndIf}
   ${EndIf}
 FunctionEnd
 
-; 卸载服务函数
+; Unload service function
 Function UninstallService
   DetailPrint "正在卸载 Windows 服务..."
 
-  ; 停止服务
+  ; stop service
   nsExec::ExecToLog '"sc stop ${SERVICE_NAME}"'
 
-  ; 删除服务
+  ; Delete service
   nsExec::ExecToLog '"sc delete ${SERVICE_NAME}"'
   Pop $R0
 
@@ -199,30 +198,30 @@ Function UninstallService
   ${EndIf}
 FunctionEnd
 
-; 安装部分 - 关键改进：正确处理start-oadin.bat脚本
+; Installation section - Key improvements: Correct handling of start-oadin.bat scripts
 Section "Install"
   SetRegView 64
   ${DisableX64FSRedirection}
 
   DetailPrint "正在安装到: $INSTDIR"
 
-  ; 创建安装目录
+  ; Create installation directory
   CreateDirectory "$INSTDIR"
   SetOutPath "$INSTDIR"
 
   IfFileExists "$INSTDIR" 0 install_error
   DetailPrint "安装目录创建成功"
 
-  ; 复制文件（确保包含改进后的start-oadin.bat）
+  ; Copy the file (make sure to include the improved start-oadin.bat)
   File "..\..\oadin.exe"
   File "preinstall.bat"
   File "postinstall.bat"
-  File "start-oadin.bat" ; 复制改进后的启动脚本
+  File "start-oadin.bat"
 
-  ; 设置启动脚本的执行权限
+  ; Set execution permissions for startup scripts
   nsExec::ExecToLog 'icacls "$INSTDIR\start-oadin.bat" /grant:r "Users:(RX)"'
 
-  ; 写入注册表
+  ; Write regedit
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Architecture" "x64"
@@ -230,20 +229,20 @@ Section "Install"
 
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
-  ; 执行安装脚本
+  ; Execute the installation script
   DetailPrint "运行预安装脚本..."
   nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
 
   DetailPrint "运行后安装脚本..."
   nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
-  ; 安装服务
+  ; installation service
   Call InstallService
 
-  ; 如果未注册服务，使用启动脚本手动启动（普通模式）
+  ; If the service is not registered, start it manually using a startup script (normal mode).
   ${If} $CHECK_SERVICE == 0
     DetailPrint "启动 Oadin 应用程序..."
-    nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"' ; 不传递参数，使用普通模式
+    nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
   ${EndIf}
 
   ${EnableX64FSRedirection}
@@ -259,25 +258,25 @@ Section "Install"
   install_end:
 SectionEnd
 
-; 卸载初始化
+; uninstall initialization
 Function un.onInit
   SetRegView 64
   ${DisableX64FSRedirection}
 FunctionEnd
 
-; 卸载部分
+; uninstall part
 Section "Uninstall"
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; 先卸载服务
+  ; Uninstall the service first
   Call UninstallService
 
-  ; 删除文件
+  ; Delete file
   Delete "$INSTDIR\oadin.exe"
   Delete "$INSTDIR\preinstall.bat"
   Delete "$INSTDIR\postinstall.bat"
-  Delete "$INSTDIR\start-oadin.bat" ; 删除启动脚本
+  Delete "$INSTDIR\start-oadin.bat"
   Delete "$INSTDIR\uninstall.exe"
 
   RMDir "$INSTDIR"
