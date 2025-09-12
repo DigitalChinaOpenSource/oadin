@@ -7,7 +7,13 @@
 ; Include 64-bit support libraries
 !include "x64.nsh"
 !include "LogicLib.nsh"
+!include "MUI2.nsh"
 !include "nsDialogs.nsh"
+!include "nsDialogsMacros.nsh"
+
+!ifndef NSD_SetFont
+  !define NSD_SetFont `nsd_setfont`
+!endif
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
