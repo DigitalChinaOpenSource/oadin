@@ -12,7 +12,6 @@
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
-!define SERVICE_NAME "OadinService"
 !define DEFAULT_INSTALL_DIR "C:\Program Files\Oadin"
 
 Outfile "..\..\oadin-installer.exe"
@@ -31,6 +30,16 @@ Caption "${APP_NAME} ${VERSION} Setup"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
+
+; Finish page with checkboxes
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_TEXT "Start Oadin Service"
+!define MUI_FINISHPAGE_RUN_FUNCTION LaunchOadinService
+!define MUI_FINISHPAGE_SHOWREADME
+!define MUI_FINISHPAGE_SHOWREADME_TEXT "Enable Oadin Auto-Start"
+!define MUI_FINISHPAGE_SHOWREADME_FUNCTION EnableAutoStart
+!define MUI_FINISHPAGE_RUN_NOTCHECKED
+!define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
@@ -42,18 +51,16 @@ Caption "${APP_NAME} ${VERSION} Setup"
 ; Language files
 !insertmacro MUI_LANGUAGE "English"
 
-; Force 64-bit installation - CI optimized
+; Initialization
 Function .onInit
-  ; Verify 64-bit system
   ${IfNot} ${RunningX64}
-    MessageBox MB_OK|MB_ICONSTOP "This application requires 64-bit Windows system."
+    MessageBox MB_OK|MB_ICONSTOP "This application requires a 64-bit Windows system."
     Abort
   ${EndIf}
 
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; Check for previous installation
   ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $R0 != ""
     StrCpy $INSTDIR $R0
@@ -67,12 +74,10 @@ Function .onInit
       ${If} $R2 != ""
         StrCpy $INSTDIR "$R2\Oadin"
       ${Else}
-        ; Priority 3: Hard-coded 64-bit path
         StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
       ${EndIf}
     ${EndIf}
 
-    ; Validate we're not installing to x86 directory
     Push $INSTDIR
     Push "(x86)"
     Call StrStr
@@ -82,28 +87,24 @@ Function .onInit
     ${EndIf}
   ${EndIf}
 
-  ; Log installation path for CI debugging
   DetailPrint "Target installation directory: $INSTDIR"
-  IfSilent end_init
-  end_init:
 FunctionEnd
 
-; Directory page validation function
+; Verify directory selection
 Function .onVerifyInstDir
   Push $INSTDIR
   Push "(x86)"
   Call StrStr
   Pop $R0
   ${If} $R0 != ""
-    MessageBox MB_OK|MB_ICONEXCLAMATION "Please select a 64-bit installation directory (not in Program Files (x86))."
+    MessageBox MB_OK|MB_ICONEXCLAMATION "Please select a 64-bit installation directory (not under Program Files (x86))."
     Abort
   ${EndIf}
 
-  ; Ensure the directory is writable
   ClearErrors
   CreateDirectory "$INSTDIR"
   ${If} ${Errors}
-    MessageBox MB_OK|MB_ICONEXCLAMATION "Cannot create directory. Please choose a different location or run as administrator."
+    MessageBox MB_OK|MB_ICONEXCLAMATION "Cannot create directory. Please choose another location or run as administrator."
     Abort
   ${EndIf}
   RMDir "$INSTDIR"
@@ -134,27 +135,21 @@ Function StrStr
   Exch $R1
 FunctionEnd
 
+; Install Section
 Section "Install"
-  ; Ensure 64-bit environment
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; Log actual installation path
   DetailPrint "Installing to: $INSTDIR"
   CreateDirectory "$INSTDIR"
   SetOutPath "$INSTDIR"
 
-  ; Verify directory creation success
   IfFileExists "$INSTDIR" 0 install_error
-  DetailPrint "SUCCESS: 64-bit installation directory created"
-
-  ; Copy files
   File "..\..\oadin.exe"
   File "preinstall.bat"
   File "postinstall.bat"
   File "start-oadin.bat"
 
-  ; Write registry (64-bit view)
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Architecture" "x64"
@@ -166,32 +161,11 @@ Section "Install"
 
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
-  ; Execute installation scripts
-  DetailPrint "Running pre-install script..."
-  nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
-
+  ; Execute post-install script (for PATH setup)
   DetailPrint "Running post-install script..."
   nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
-  ; Register Windows service
-  DetailPrint "Registering Windows Service: ${SERVICE_NAME}"
-  nsExec::ExecToLog 'sc.exe create "${SERVICE_NAME}" binPath= "\"$INSTDIR\oadin.exe\" server start -d" DisplayName= "Oadin Service" start= demand'
-
-  ; Ask if user wants to start service now
-  MessageBox MB_YESNO "Do you want to start the Oadin service now?" IDNO skip_start
-    DetailPrint "Starting ${SERVICE_NAME}..."
-    nsExec::ExecToLog 'sc.exe start "${SERVICE_NAME}"'
-  skip_start:
-
-  ; Ask if user wants to enable auto start
-  MessageBox MB_YESNO "Do you want the Oadin service to start automatically at boot?" IDNO skip_autostart
-    DetailPrint "Configuring ${SERVICE_NAME} for auto start..."
-    nsExec::ExecToLog 'sc.exe config "${SERVICE_NAME}" start= auto'
-  skip_autostart:
-
   ${EnableX64FSRedirection}
-
-  DetailPrint "Installation completed successfully to: $INSTDIR"
   Goto install_end
 
   install_error:
@@ -202,6 +176,19 @@ Section "Install"
   install_end:
 SectionEnd
 
+; Finish Page Functions
+Function LaunchOadinService
+  DetailPrint "Registering and starting Oadin service..."
+  nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start -d" start= auto DisplayName= "Oadin Service"'
+  nsExec::ExecToLog 'sc start "OadinService"'
+FunctionEnd
+
+Function EnableAutoStart
+  DetailPrint "Enabling Oadin auto-start..."
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin.exe" server start -d'
+FunctionEnd
+
+; Uninstaller
 Function un.onInit
   SetRegView 64
   ${DisableX64FSRedirection}
@@ -211,7 +198,6 @@ Section "Uninstall"
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; Read installation directory from registry
   ReadRegStr $INSTDIR HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $INSTDIR == ""
     StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
@@ -219,21 +205,20 @@ Section "Uninstall"
 
   DetailPrint "Uninstalling from: $INSTDIR"
 
-  ; Stop and delete Windows service
-  DetailPrint "Stopping and deleting service ${SERVICE_NAME}..."
-  nsExec::ExecToLog 'sc.exe stop "${SERVICE_NAME}"'
-  nsExec::ExecToLog 'sc.exe delete "${SERVICE_NAME}"'
+  ; Stop and delete service if it exists
+  nsExec::ExecToLog 'sc stop "OadinService"'
+  nsExec::ExecToLog 'sc delete "OadinService"'
 
   Delete "$INSTDIR\oadin.exe"
   Delete "$INSTDIR\preinstall.bat"
   Delete "$INSTDIR\postinstall.bat"
   Delete "$INSTDIR\start-oadin.bat"
   Delete "$INSTDIR\uninstall.exe"
-
   RMDir "$INSTDIR"
 
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
 
   ${EnableX64FSRedirection}
 SectionEnd
