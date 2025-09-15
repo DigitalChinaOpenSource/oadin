@@ -17,7 +17,7 @@ set "OADIN_INSTALL_DIR=%ProgramFiles%\Oadin"
 set "AI_SMARTVISION_FILE=ai-smartvision-2.0.0-x64.exe"
 set "AI_SMARTVISION_INSTALL_DIR=%ProgramFiles%\ai-smartvision"
 
-set "OLLAMA_ZIP=ollama-windows-amd64.7z"
+set "OLLAMA_ZIP=ollama-windows-amd64.zip"
 set "OLLAMA_DIR=%OADIN_INSTALL_DIR%\ollama"
 
 set "MODEL_ZIP=models.zip"
