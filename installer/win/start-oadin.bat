@@ -46,7 +46,7 @@ if "%1"=="-service" (
 ) else (
     REM 手动模式：使用 start 命令创建独立窗口
     echo [%date% %time%] Starting in normal mode >> "%LOG_FILE%"
-    start "Oadin Server" "%CURRENT_OADIN_HOME%\oadin.exe" server start
+    start "Oadin Server" "%CURRENT_OADIN_HOME%\oadin.exe" server start -d
     echo Oadin 服务器已启动
     echo 日志文件：%LOG_FILE%
 )

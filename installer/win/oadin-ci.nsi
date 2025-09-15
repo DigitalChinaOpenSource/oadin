@@ -12,7 +12,7 @@
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
-; Use hard-coded 64-bit path as default
+!define SERVICE_NAME "OadinService"
 !define DEFAULT_INSTALL_DIR "C:\Program Files\Oadin"
 
 Outfile "..\..\oadin-installer.exe"
@@ -50,7 +50,6 @@ Function .onInit
     Abort
   ${EndIf}
 
-  ; Enable 64-bit mode
   SetRegView 64
   ${DisableX64FSRedirection}
 
@@ -59,14 +58,11 @@ Function .onInit
   ${If} $R0 != ""
     StrCpy $INSTDIR $R0
   ${Else}
-    ; Set default 64-bit directory if no previous installation
-    ; Priority 1: Use PROGRAMFILES64 if available
     StrCpy $R1 "$PROGRAMFILES64"
     ${If} $R1 != ""
       ${AndIf} $R1 != "\$PROGRAMFILES64"
       StrCpy $INSTDIR "$R1\Oadin"
     ${Else}
-      ; Priority 2: Use ProgramW6432 environment variable
       ReadEnvStr $R2 "ProgramW6432"
       ${If} $R2 != ""
         StrCpy $INSTDIR "$R2\Oadin"
@@ -82,22 +78,18 @@ Function .onInit
     Call StrStr
     Pop $R3
     ${If} $R3 != ""
-      ; Found (x86) in path, force correct path
       StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
     ${EndIf}
   ${EndIf}
 
   ; Log installation path for CI debugging
   DetailPrint "Target installation directory: $INSTDIR"
-
-  ; Skip MessageBox in silent mode (CI)
   IfSilent end_init
   end_init:
 FunctionEnd
 
 ; Directory page validation function
 Function .onVerifyInstDir
-  ; Ensure the directory doesn't contain (x86) for 64-bit installation
   Push $INSTDIR
   Push "(x86)"
   Call StrStr
@@ -114,24 +106,19 @@ Function .onVerifyInstDir
     MessageBox MB_OK|MB_ICONEXCLAMATION "Cannot create directory. Please choose a different location or run as administrator."
     Abort
   ${EndIf}
-  RMDir "$INSTDIR" ; Remove test directory
+  RMDir "$INSTDIR"
 FunctionEnd
 
 ; String search function
 Function StrStr
-  Exch $R1 ; st=haystack,old$R1, $R1=needle
-  Exch    ; st=old$R1,haystack, $R1=needle
-  Exch $R2 ; st=old$R1,old$R2, $R2=haystack, $R1=needle
+  Exch $R1
+  Exch
+  Exch $R2
   Push $R3
   Push $R4
   Push $R5
   StrLen $R3 $R1
   StrCpy $R4 0
-  ; $R1=needle
-  ; $R2=haystack
-  ; $R3=len(needle)
-  ; $R4=cnt
-  ; $R5=tmp
   loop:
     StrCpy $R5 $R2 $R3 $R4
     StrCmp $R5 $R1 done
@@ -154,10 +141,6 @@ Section "Install"
 
   ; Log actual installation path
   DetailPrint "Installing to: $INSTDIR"
-  DetailPrint "PROGRAMFILES64: $PROGRAMFILES64"
-  DetailPrint "PROGRAMFILES: $PROGRAMFILES"
-
-  ; Create installation directory
   CreateDirectory "$INSTDIR"
   SetOutPath "$INSTDIR"
 
@@ -190,8 +173,21 @@ Section "Install"
   DetailPrint "Running post-install script..."
   nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
-  DetailPrint "Starting Oadin service..."
-  nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
+  ; Register Windows service
+  DetailPrint "Registering Windows Service: ${SERVICE_NAME}"
+  nsExec::ExecToLog 'sc.exe create "${SERVICE_NAME}" binPath= "\"$INSTDIR\oadin.exe\" server start -d" DisplayName= "Oadin Service" start= demand'
+
+  ; Ask if user wants to start service now
+  MessageBox MB_YESNO "Do you want to start the Oadin service now?" IDNO skip_start
+    DetailPrint "Starting ${SERVICE_NAME}..."
+    nsExec::ExecToLog 'sc.exe start "${SERVICE_NAME}"'
+  skip_start:
+
+  ; Ask if user wants to enable auto start
+  MessageBox MB_YESNO "Do you want the Oadin service to start automatically at boot?" IDNO skip_autostart
+    DetailPrint "Configuring ${SERVICE_NAME} for auto start..."
+    nsExec::ExecToLog 'sc.exe config "${SERVICE_NAME}" start= auto'
+  skip_autostart:
 
   ${EnableX64FSRedirection}
 
@@ -223,8 +219,10 @@ Section "Uninstall"
 
   DetailPrint "Uninstalling from: $INSTDIR"
 
-  ; Stop service if running (add this if you have a service)
-  ; nsExec::ExecToLog 'net stop "OadinService"'
+  ; Stop and delete Windows service
+  DetailPrint "Stopping and deleting service ${SERVICE_NAME}..."
+  nsExec::ExecToLog 'sc.exe stop "${SERVICE_NAME}"'
+  nsExec::ExecToLog 'sc.exe delete "${SERVICE_NAME}"'
 
   Delete "$INSTDIR\oadin.exe"
   Delete "$INSTDIR\preinstall.bat"
