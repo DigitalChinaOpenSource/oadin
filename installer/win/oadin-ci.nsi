@@ -178,9 +178,11 @@ SectionEnd
 
 ; Finish Page Functions
 Function LaunchOadinService
-  DetailPrint "Registering and starting Oadin service..."
+  DetailPrint "Registering Oadin service..."
   nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start -d" start= auto DisplayName= "Oadin Service"'
-  nsExec::ExecToLog 'sc start "OadinService"'
+
+  DetailPrint "Starting Oadin service in background..."
+  Exec 'sc start "OadinService"'
 FunctionEnd
 
 Function EnableAutoStart
