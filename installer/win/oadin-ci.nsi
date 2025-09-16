@@ -193,6 +193,9 @@ Section "Install"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "Publisher" "${COMPANY_NAME}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayIcon" "$INSTDIR\oadin.exe"
 
+  DetailPrint "Registering Oadin service..."
+  nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start" start= auto DisplayName= "Oadin Service"'
+
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
   ; Execute post-install script (for PATH setup)
@@ -212,8 +215,6 @@ SectionEnd
 
 ; Finish Page Functions
 Function LaunchOadinService
-  DetailPrint "Registering Oadin service..."
-  nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start" start= auto DisplayName= "Oadin Service"'
 
   DetailPrint "Starting Oadin service in background..."
   Exec 'sc start "OadinService"'
