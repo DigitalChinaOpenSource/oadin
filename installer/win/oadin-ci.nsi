@@ -217,7 +217,7 @@ SectionEnd
 Function LaunchOadinService
 
   DetailPrint "Starting Oadin service in background..."
-  Exec 'sc start "OadinService"'
+  nsExec::Exec 'sc start "OadinService"'
 FunctionEnd
 
 Function EnableAutoStart
