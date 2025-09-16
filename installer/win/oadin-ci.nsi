@@ -179,7 +179,7 @@ SectionEnd
 ; Finish Page Functions
 Function LaunchOadinService
   DetailPrint "Registering Oadin service..."
-  nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start -d" start= auto DisplayName= "Oadin Service"'
+  nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start" start= auto DisplayName= "Oadin Service"'
 
   DetailPrint "Starting Oadin service in background..."
   Exec 'sc start "OadinService"'
@@ -187,7 +187,7 @@ FunctionEnd
 
 Function EnableAutoStart
   DetailPrint "Enabling Oadin auto-start..."
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin.exe" server start -d'
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin.exe" server start'
 FunctionEnd
 
 ; Uninstaller
