@@ -61,6 +61,20 @@ Function .onInit
   SetRegView 64
   ${DisableX64FSRedirection}
 
+  ; Check if OadinService exists
+  nsExec::ExecToStack 'sc query "OadinService"'
+  Pop $R0 ; Return code
+  Pop $R1 ; Output
+
+  ${If} $R0 == 0
+    ; Service found, ask user
+    MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
+    cancel_install:
+      Abort
+    do_uninstall:
+      Call RemoveOldOadin
+  ${EndIf}
+
   ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $R0 != ""
     StrCpy $INSTDIR $R0
@@ -133,6 +147,26 @@ Function StrStr
   Pop $R3
   Pop $R2
   Exch $R1
+FunctionEnd
+
+
+Function RemoveOldOadin
+  DetailPrint "Stopping and removing existing Oadin service..."
+  nsExec::ExecToLog 'sc stop "OadinService"'
+  nsExec::ExecToLog 'sc delete "OadinService"'
+
+  ; Clean old installation directory
+  ReadRegStr $R3 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+  ${If} $R3 != ""
+    DetailPrint "Removing old installation directory: $R3"
+    RMDir /r "$R3"
+  ${EndIf}
+
+  ; Clean registry entries
+  DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
+  DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+
 FunctionEnd
 
 ; Install Section
