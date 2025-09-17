@@ -404,6 +404,24 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 			c.JSON(http.StatusOK, res)
 			return
 		}
+
+		modelType := "chat"
+		if requiredModel == "bge-m3:567m" || requiredModel == "quentinz/bge-large-zh-v1.5:f16" {
+			modelType = "embed"
+		}
+
+		req := dto.ModelDownloadRequest{
+			EngineName: request.EngineName,
+			ModelName:  requiredModel,
+			ModelType:  modelType,
+		}
+
+		err := e.EngineManageService.CheckLocalModelExist(c, req);
+		if err != nil {
+			res.Status = fmt.Sprintf("table model not found: %s", err.Error())
+			c.JSON(http.StatusOK, res)
+			return
+		}
 	}
 
 	// 如果所有必需模型都存在，继续执行
