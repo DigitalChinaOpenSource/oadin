@@ -17,9 +17,8 @@
 package main
 
 import (
-	"os"
-
 	cli "oadin/cmd/cli/core"
+	"os"
 )
 
 func main() {
