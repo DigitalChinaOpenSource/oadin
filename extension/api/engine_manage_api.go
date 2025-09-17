@@ -279,7 +279,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 						ModelName: request.ModelName,
 					}
 					err := e.EngineManageService.CreateAIGCServiceSync(ctx, newReq)
-					if err != nil && err.Error() != "provider model already exist" {
+					if err != nil {
 						logger.EngineLogger.Error("CreateAIGCServiceSync error: ", err)
 						res.Status = err.Error()
 						if request.Stream {

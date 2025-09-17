@@ -207,6 +207,31 @@ func (s *EngineManageServiceImpl) performInstallWithContext(ctx context.Context,
 func (s *EngineManageServiceImpl) CreateAIGCServiceSync(ctx context.Context, req *interalDTO.CreateAIGCServiceRequest) error {
 	// Synchronously create the AIGC service
 	_, err := s.AIGCService.CreateAIGCService(ctx, req)
+	if err != nil && err.Error() == "provider model already exist" {
+		err = nil
+	}
+	if err == nil && req.ServiceName == "chat" {
+		relatedM := &types.Model{}
+		relatedM.ModelName = req.ModelName
+		relatedM.ProviderName = fmt.Sprintf("local_%s_%s", req.ApiFlavor, "generate")
+		relatedM.Status = "downloaded"
+		relatedM.ServiceName = "generate"
+		relatedM.ServiceSource = req.ServiceSource
+
+		relatedMIsExist, err := s.Ds.IsExist(ctx, relatedM)
+		if err != nil {
+			relatedMIsExist = false
+			err = nil
+		}
+		if !relatedMIsExist {
+			err = s.Ds.Add(ctx, relatedM)
+			if err != nil {
+				err = nil
+			}
+		}
+
+	}
+	fmt.Printf("CreateAIGCServiceSync err", err)
 	return err
 }
 
