@@ -68,7 +68,6 @@ Function .onInit
 
   ${If} $R0 == 0
     ; Service found, ask user
-    Call PopupPrompt
     MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
     cancel_install:
       Abort
