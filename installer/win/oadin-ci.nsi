@@ -175,6 +175,7 @@ Function PopupPrompt
    MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
    cancel_install:
       Abort
+FunctionEnd
 
 ; String search function
 Function StrStr
