@@ -279,7 +279,7 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 						ModelName: request.ModelName,
 					}
 					err := e.EngineManageService.CreateAIGCServiceSync(ctx, newReq)
-					if err != nil && err.Error() != "provider model already exist" {
+					if err != nil {
 						logger.EngineLogger.Error("CreateAIGCServiceSync error: ", err)
 						res.Status = err.Error()
 						if request.Stream {
@@ -401,6 +401,24 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 		// 如果找不到必需的模型，设置错误状态
 		if !found {
 			res.Status = fmt.Sprintf("missing required model: %s", requiredModel)
+			c.JSON(http.StatusOK, res)
+			return
+		}
+
+		modelType := "chat"
+		if requiredModel == "bge-m3:567m" || requiredModel == "quentinz/bge-large-zh-v1.5:f16" {
+			modelType = "embed"
+		}
+
+		req := dto.ModelDownloadRequest{
+			EngineName: request.EngineName,
+			ModelName:  requiredModel,
+			ModelType:  modelType,
+		}
+
+		err := e.EngineManageService.CheckLocalModelExist(c, req);
+		if err != nil {
+			res.Status = fmt.Sprintf("table model not found: %s", err.Error())
 			c.JSON(http.StatusOK, res)
 			return
 		}

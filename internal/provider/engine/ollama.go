@@ -339,7 +339,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	default:
 		return nil
 	}
-	logger.EngineLogger.Error("[Ollama] GetConfig execPath: ", execPath)
+	logger.EngineLogger.Info("[Ollama] GetConfig execPath: ", execPath)
 	return &types.EngineRecommendConfig{
 		Host:           DefaultHost,
 		Origin:         constants.DefaultHost,
@@ -359,7 +359,7 @@ func (o *OllamaProvider) HealthCheck() error {
 		logger.EngineLogger.Error("[Ollama] Health check failed: " + err.Error())
 		return err
 	}
-	logger.EngineLogger.Info("[Ollama] Ollama server health")
+	logger.EngineLogger.Debug("[Ollama] Ollama server health")
 
 	return nil
 }
@@ -559,16 +559,29 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 
     // logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
 
-    logger.EngineLogger.Info("[Ollama] Pull model: " + req.Model + " , mode: stream")
-
     c := o.GetDefaultClient()
-    // 创建主数据和错误通道，这是返回给调用方的
     dataCh := make(chan []byte, 100)
     errCh := make(chan error, 1)
 
     go func() {
         defer close(dataCh)
         defer close(errCh)
+
+		logger.EngineLogger.Info("[Ollama] Pull model: " + req.Model + " , mode: stream")
+		fmt.Println("[Ollama] Pull model: " + req.Model + " , mode: stream")
+		modelList, err := o.ListModels(ctx)
+		if err != nil {
+			errCh <- err
+			return
+		}
+
+		for _, model := range modelList.Models {
+			if model.Name == req.Model || model.Model == req.Model {
+				logger.EngineLogger.Info("[Ollama] Model already exists, skipping download: " + req.Model)
+				fmt.Println("[Ollama] Model already exists, skipping download: " + req.Model)
+				return
+			}
+		}
 
         var lastProgress int64 = 0
         var lastTime time.Time = time.Now()
