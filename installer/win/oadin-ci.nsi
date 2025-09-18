@@ -68,9 +68,7 @@ Function .onInit
 
   ${If} $R0 == 0
     ; Service found, ask user
-    MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
-    cancel_install:
-      Abort
+    Call PopupPrompt
     do_uninstall:
       Call RemoveOldOadin
   ${Else}
@@ -78,9 +76,7 @@ Function .onInit
     IfFileExists "$PROGRAMFILES\oadin\*.*" folder_found no_folder
 
     folder_found:
-      MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
-      cancel_install:
-        Abort
+      Call PopupPrompt
       do_remove_folder:
         ; Remove folder
         RMDir /r "$PROGRAMFILES\oadin"
@@ -142,6 +138,12 @@ Function .onVerifyInstDir
   ${EndIf}
   RMDir "$INSTDIR"
 FunctionEnd
+
+; Check PopupPrompt
+Function PopupPrompt
+   MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
+   cancel_install:
+      Abort
 
 ; String search function
 Function StrStr
