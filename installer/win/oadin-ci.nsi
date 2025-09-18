@@ -69,6 +69,9 @@ Function .onInit
   ${If} $R0 == 0
     ; Service found, ask user
     Call PopupPrompt
+    MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
+    cancel_install:
+      Abort
     do_uninstall:
       Call RemoveOldOadin
   ${Else}
@@ -76,72 +79,74 @@ Function .onInit
     IfFileExists "$PROGRAMFILES\oadin\*.*" folder_found no_folder
 
     folder_found:
-      Call PopupPrompt
-      ; Check if Oadin process is running
-      nsExec::ExecToStack 'tasklist /FI "IMAGENAME eq oadin.exe"'
-      Pop $R0  ; Return code
-      Pop $R1  ; Command output
+      MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_overwrite IDNO cancel_overwrite
+      cancel_overwrite:
+         Abort
+      do_overwrite:
+        ; Check if Oadin process is running
+        nsExec::ExecToStack 'tasklist /FI "IMAGENAME eq oadin.exe"'
+        Pop $R0  ; Return code
+        Pop $R1  ; Command output
 
-      StrCpy $R2 $R1
-      StrCpy $R3 "oadin.exe"
+        StrCpy $R2 $R1
+        StrCpy $R3 "oadin.exe"
 
-      ; Search for "oadin.exe" in tasklist output
-      Push $R3
-      Push $R2
-      Call StrStr
-      Pop $R4
-      StrCmp $R4 "" no_process
+        ; Search for "oadin.exe" in tasklist output
+        Push $R3
+        Push $R2
+        Call StrStr
+        Pop $R4
+        StrCmp $R4 "" no_process
 
-      DetailPrint "Oadin process detected, stopping it..."
-      nsExec::ExecToLog '"$PROGRAMFILES\oadin\oadin.exe" server stop'
+        DetailPrint "Oadin process detected, stopping it..."
+        nsExec::ExecToLog '"$PROGRAMFILES\oadin\oadin.exe" server stop'
 
-      no_process:
+        no_process:
+          do_remove_folder:
+            ; Remove folder
+            RMDir /r "$PROGRAMFILES\oadin"
 
-        do_remove_folder:
-          ; Remove folder
-          RMDir /r "$PROGRAMFILES\oadin"
+            ; Read user PATH
+            ReadRegStr $R2 HKCU "Environment" "Path"
 
-          ; Read user PATH
-          ReadRegStr $R2 HKCU "Environment" "Path"
+            ; Check if PATH contains $PROGRAMFILES\oadin
+            StrCpy $R0 "$PROGRAMFILES\oadin"
+            Push $R0
+            Push $R2
+            Call StrStr
+            Pop $R0
+            StrCmp $R0 "" no_path ; if empty, PATH does not contain it
 
-          ; Check if PATH contains $PROGRAMFILES\oadin
-          StrCpy $R0 "$PROGRAMFILES\oadin"
-          Push $R0
-          Push $R2
-          Call StrStr
-          Pop $R0
-          StrCmp $R0 "" no_path ; if empty, PATH does not contain it
+            ; Remove oadin path from PATH (handle different cases)
+            ; Case 1: starts with path
+            StrCpy $R0 "$PROGRAMFILES\oadin;"
+            Push $R0
+            Push ""
+            Push $R2
+            Call StrReplace
+            Pop $R2
 
-          ; Remove oadin path from PATH (handle different cases)
-          ; Case 1: starts with path
-          StrCpy $R0 "$PROGRAMFILES\oadin;"
-          Push $R0
-          Push ""
-          Push $R2
-          Call StrReplace
-          Pop $R2
+            ; Case 2: ends with path
+            StrCpy $R0 ";$PROGRAMFILES\oadin"
+            Push $R0
+            Push ""
+            Push $R2
+            Call StrReplace
+            Pop $R2
 
-          ; Case 2: ends with path
-          StrCpy $R0 ";$PROGRAMFILES\oadin"
-          Push $R0
-          Push ""
-          Push $R2
-          Call StrReplace
-          Pop $R2
-
-          ; Case 3: middle path
-          StrCpy $R0 "$PROGRAMFILES\oadin"
-          Push $R0
-          Push ""
-          Push $R2
-          Call StrReplace
-          Pop $R2
-        no_path:
-          ; if empty, PATH does not contain it
-          DetailPrint "PATH does not contain it"
-        no_folder:
-          ; Do nothing
-          DetailPrint "no folder"
+            ; Case 3: middle path
+            StrCpy $R0 "$PROGRAMFILES\oadin"
+            Push $R0
+            Push ""
+            Push $R2
+            Call StrReplace
+            Pop $R2
+          no_path:
+            ; if empty, PATH does not contain it
+            DetailPrint "PATH does not contain it"
+          no_folder:
+            ; Do nothing
+            DetailPrint "no folder"
   ${EndIf}
 
   ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
