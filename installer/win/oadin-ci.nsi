@@ -9,6 +9,8 @@
 !include "x64.nsh"
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
+!include StrFunc.nsh
+${StrFunc_StrReplace}
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
