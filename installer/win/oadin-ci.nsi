@@ -9,8 +9,6 @@
 !include "x64.nsh"
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
-!include StrFunc.nsh
-${StrFunc_StrReplace}
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
@@ -81,15 +79,43 @@ Function .onInit
       Call PopupPrompt
       do_remove_folder:
         ; Remove folder
-        RMDir /r "$PROGRAMFILES\oadin"
+          RMDir /r "$PROGRAMFILES\oadin"
 
-        ; Read user PATH
-        ReadRegStr $R2 HKCU "Environment" "Path"
+          ; Read user PATH
+          ReadRegStr $R2 HKCU "Environment" "Path"
 
-        ; Remove oadin path from PATH (handle different cases)
-        ${StrReplace} $R2 "$PROGRAMFILES\oadin\bin;" "" $R2
-        ${StrReplace} $R2 ";$PROGRAMFILES\oadin\bin" "" $R2
-        ${StrReplace} $R2 "$PROGRAMFILES\oadin\bin" "" $R2
+          ; Check if PATH contains $PROGRAMFILES\oadin
+          StrCpy $R0 "$PROGRAMFILES\oadin"
+          StrStr $R0 $R2
+          StrCmp $R0 "" no_path ; if empty, PATH does not contain it
+
+          ; Remove oadin path from PATH (handle different cases)
+          ; Case 1: starts with path
+          StrCpy $R0 "$PROGRAMFILES\oadin;"
+          Push $R0
+          Push ""
+          Push $R2
+          Call StrReplace
+          Pop $R2
+
+          ; Case 2: ends with path
+          StrCpy $R0 ";$PROGRAMFILES\oadin"
+          Push $R0
+          Push ""
+          Push $R2
+          Call StrReplace
+          Pop $R2
+
+          ; Case 3: middle path
+          StrCpy $R0 "$PROGRAMFILES\oadin"
+          Push $R0
+          Push ""
+          Push $R2
+          Call StrReplace
+          Pop $R2
+      no_path:
+        ; if empty, PATH does not contain it
+        DetailPrint "PATH does not contain it"
   ${EndIf}
 
   ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
@@ -170,6 +196,40 @@ Function StrStr
   Pop $R3
   Pop $R2
   Exch $R1
+FunctionEnd
+
+; String replace
+Function StrReplace
+  Exch $R2 ; new substring
+  Exch
+  Exch $R1 ; old substring
+  Exch 2
+  Exch $R0 ; original string
+
+  Push $R3
+  Push $R4
+  Push $R5
+
+  StrCpy $R3 ""
+loop:
+  StrCpy $R4 $R0 "" 0
+  StrCmp $R4 "" done
+  StrCpy $R5 $R0 ${NSIS_MAX_STRLEN}
+  StrCpy $R5 $R5 "" 0
+  StrCpy $R5 $R5 "" 0
+  StrCmp $R5 $R1 0 no_match
+    StrCpy $R3 "$R3$R2"
+    StrCpy $R0 $R0 "" ${NSIS_MAX_STRLEN}
+    Goto loop
+no_match:
+  StrCpy $R3 "$R3$R4"
+  StrCpy $R0 $R0 "" ${NSIS_MAX_STRLEN}
+  Goto loop
+done:
+  Pop $R5
+  Pop $R4
+  Pop $R3
+  Exch $R3
 FunctionEnd
 
 
