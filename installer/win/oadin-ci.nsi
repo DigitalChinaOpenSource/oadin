@@ -77,8 +77,28 @@ Function .onInit
 
     folder_found:
       Call PopupPrompt
-      do_remove_folder:
-        ; Remove folder
+      ; Check if Oadin process is running
+      nsExec::ExecToStack 'tasklist /FI "IMAGENAME eq oadin.exe"'
+      Pop $R0  ; Return code
+      Pop $R1  ; Command output
+
+      StrCpy $R2 $R1
+      StrCpy $R3 "oadin.exe"
+
+      ; Search for "oadin.exe" in tasklist output
+      Push $R3
+      Push $R2
+      Call StrStr
+      Pop $R4
+      StrCmp $R4 "" no_process
+
+      DetailPrint "Oadin process detected, stopping it..."
+      nsExec::ExecToLog '"$PROGRAMFILES\oadin\oadin.exe" server stop'
+
+      no_process:
+
+        do_remove_folder:
+          ; Remove folder
           RMDir /r "$PROGRAMFILES\oadin"
 
           ; Read user PATH
@@ -116,9 +136,12 @@ Function .onInit
           Push $R2
           Call StrReplace
           Pop $R2
-      no_path:
-        ; if empty, PATH does not contain it
-        DetailPrint "PATH does not contain it"
+        no_path:
+          ; if empty, PATH does not contain it
+          DetailPrint "PATH does not contain it"
+        no_folder:
+          ; Do nothing
+          DetailPrint "no folder"
   ${EndIf}
 
   ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
