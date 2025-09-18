@@ -73,6 +73,25 @@ Function .onInit
       Abort
     do_uninstall:
       Call RemoveOldOadin
+  ${Else}
+    ; Service not found, check folder
+    IfFileExists "$PROGRAMFILES\oadin\*.*" folder_found no_folder
+
+    folder_found:
+      MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
+      cancel_install:
+        Abort
+      do_remove_folder:
+        ; Remove folder
+        RMDir /r "$PROGRAMFILES\oadin"
+
+        ; Read user PATH
+        ReadRegStr $R2 HKCU "Environment" "Path"
+
+        ; Remove oadin path from PATH (handle different cases)
+        ${StrReplace} $R2 "$PROGRAMFILES\oadin\bin;" "" $R2
+        ${StrReplace} $R2 ";$PROGRAMFILES\oadin\bin" "" $R2
+        ${StrReplace} $R2 "$PROGRAMFILES\oadin\bin" "" $R2
   ${EndIf}
 
   ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
@@ -217,7 +236,8 @@ SectionEnd
 Function LaunchOadinService
 
   DetailPrint "Starting Oadin service in background..."
-  nsExec::Exec 'sc start "OadinService"'
+  ; nsExec::Exec 'sc start "OadinService"'
+  Exec 'sc start "OadinService"'
 FunctionEnd
 
 Function EnableAutoStart
