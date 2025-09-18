@@ -86,7 +86,10 @@ Function .onInit
 
           ; Check if PATH contains $PROGRAMFILES\oadin
           StrCpy $R0 "$PROGRAMFILES\oadin"
-          StrStr $R0 $R2
+          Push $R0
+          Push $R2
+          Call StrStr
+          Pop $R0
           StrCmp $R0 "" no_path ; if empty, PATH does not contain it
 
           ; Remove oadin path from PATH (handle different cases)
