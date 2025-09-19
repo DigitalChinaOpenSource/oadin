@@ -22,7 +22,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	"golang.org/x/sys/windows/svc"
@@ -36,7 +35,7 @@ type oadinService struct{}
 
 // Execute is the entry point of the Windows service
 func (m *oadinService) Execute(args []string, r <-chan svc.ChangeRequest, s chan<- svc.Status) (bool, uint32) {
-	// Notify the service manager: Starting
+	// Notify SCM: service is starting
 	s <- svc.Status{State: svc.StartPending}
 
 	// open EventLog
@@ -46,70 +45,86 @@ func (m *oadinService) Execute(args []string, r <-chan svc.ChangeRequest, s chan
 		elog.Info(1, "OadinService 启动中...")
 	}
 
-	// Redirect stdout/stderr to a log file to avoid console output
-	logDir := "C:\\ProgramData\\Oadin"
-	os.MkdirAll(logDir, 0755)
-	logFile, err := os.OpenFile(filepath.Join(logDir, "oadin.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err == nil {
-		os.Stdout = logFile
-		os.Stderr = logFile
-	}
-
 	// Create a context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Notify the service manager: Running
+	runErrChan := make(chan error, 1)
+
 	s <- svc.Status{State: svc.Running, Accepts: svc.AcceptStop | svc.AcceptShutdown}
+	if elog != nil {
+		elog.Info(1, "OadinService 已进入运行状态（后台继续初始化）")
+	}
 
-	command := cli.NewCommand()
-	command.SetContext(ctx)
-
-	// Goroutine to listen for Stop/Shutdown requests
+	// start CLI server
 	go func() {
-		for c := range r {
-			switch c.Cmd {
-			case svc.Stop, svc.Shutdown:
-				if elog != nil {
-					elog.Info(1, "OadinService 收到停止信号，准备退出")
-				}
-				cancel() // Notify the CLI to stop
-				// Give the service manager some time to process
-				s <- svc.Status{State: svc.StopPending}
-			}
+		command := cli.NewCommand()
+		command.SetContext(ctx)
+
+		if elog != nil {
+			elog.Info(1, "OadinService 开始执行 CLI 服务器...")
+		}
+
+		if err := command.Execute(); err != nil {
+			runErrChan <- err
 		}
 	}()
 
-	// Block and execute CLI (until ctx.Done() or command finishes)
-	if err := command.Execute(); err != nil {
-		if elog != nil {
-			elog.Error(1, "OadinService 执行失败: "+err.Error())
+	// Main loop
+	for {
+		select {
+		case c := <-r:
+			switch c.Cmd {
+			case svc.Stop, svc.Shutdown:
+				if elog != nil {
+					elog.Info(1, "OadinService 收到停止信号，正在关闭...")
+				}
+				s <- svc.Status{State: svc.StopPending}
+				cancel()
+
+				// 等待服务关闭
+				select {
+				case <-runErrChan:
+				case <-time.After(5 * time.Second):
+				}
+
+				s <- svc.Status{State: svc.Stopped}
+				if elog != nil {
+					elog.Info(1, "OadinService 已停止")
+				}
+				return false, 0
+			}
+		case err := <-runErrChan:
+			if elog != nil {
+				elog.Error(1, "OadinService 出现错误: "+err.Error())
+			}
+			s <- svc.Status{State: svc.Stopped}
+			return false, 1
+		case <-ctx.Done():
+			if elog != nil {
+				elog.Info(1, "OadinService 上下文取消，准备退出")
+			}
+			s <- svc.Status{State: svc.Stopped}
+			return false, 0
 		}
 	}
-
-	// Wait a short time to ensure resources are released
-	time.Sleep(500 * time.Millisecond)
-
-	// Notify the service manager: Stopped
-	s <- svc.Status{State: svc.Stopped}
-	return false, 0
 }
 
 func main() {
 	isService, err := svc.IsWindowsService()
 	if err != nil {
-		log.Fatalf("Unable to determine if running as a Windows service: %v", err)
+		log.Fatalf("无法检测是否在服务模式下运行: %v", err)
 	}
 
 	if isService {
 		err = svc.Run("OadinService", &oadinService{})
 		if err != nil {
-			log.Fatalf("Service failed to run: %v", err)
+			log.Fatalf("服务运行失败: %v", err)
 		}
 		return
 	}
 
-	// Console mode (for debugging)
+	// Console 模式（方便调试）
 	command := cli.NewCommand()
 	if err := command.Execute(); err != nil {
 		os.Exit(1)
