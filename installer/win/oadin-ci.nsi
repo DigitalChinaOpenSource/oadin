@@ -75,8 +75,8 @@ Function .onInit
       Call RemoveOldOadin
   ${Else}
     ; Service not found, check folder
-    MessageBox MB_OK "Current Path: $PROGRAMFILES\Oadin"
-    IfFileExists "$PROGRAMFILES\Oadin\*.*" folder_found no_folder
+    MessageBox MB_OK "Current Path: $PROGRAMFILES64\Oadin"
+    IfFileExists "$PROGRAMFILES64\Oadin\*.*" folder_found no_folder
 
     folder_found:
       MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_overwrite IDNO cancel_overwrite
@@ -99,18 +99,18 @@ Function .onInit
         StrCmp $R4 "" no_process
 
         DetailPrint "Oadin process detected, stopping it..."
-        nsExec::ExecToLog '"$PROGRAMFILES\oadin\oadin.exe" server stop'
+        nsExec::ExecToLog '"$PROGRAMFILES64\oadin\oadin.exe" server stop'
 
         no_process:
           do_remove_folder:
             ; Remove folder
-            RMDir /r "$PROGRAMFILES\Oadin"
+            RMDir /r "$PROGRAMFILES64\Oadin"
 
             ; Read user PATH
             ReadRegStr $R2 HKCU "Environment" "Path"
 
-            ; Check if PATH contains $PROGRAMFILES\Oadin
-            StrCpy $R0 "$PROGRAMFILES\Oadin"
+            ; Check if PATH contains $PROGRAMFILES64\Oadin
+            StrCpy $R0 "$PROGRAMFILES64\Oadin"
             Push $R0
             Push $R2
             Call StrStr
@@ -119,7 +119,7 @@ Function .onInit
 
             ; Remove oadin path from PATH (handle different cases)
             ; Case 1: starts with path
-            StrCpy $R0 "$PROGRAMFILES\Oadin;"
+            StrCpy $R0 "$PROGRAMFILES64\Oadin;"
             Push $R0
             Push ""
             Push $R2
@@ -127,7 +127,7 @@ Function .onInit
             Pop $R2
 
             ; Case 2: ends with path
-            StrCpy $R0 ";$PROGRAMFILES\Oadin"
+            StrCpy $R0 ";$PROGRAMFILES64\Oadin"
             Push $R0
             Push ""
             Push $R2
@@ -135,7 +135,7 @@ Function .onInit
             Pop $R2
 
             ; Case 3: middle path
-            StrCpy $R0 "$PROGRAMFILES\Oadin"
+            StrCpy $R0 "$PROGRAMFILES64\Oadin"
             Push $R0
             Push ""
             Push $R2
