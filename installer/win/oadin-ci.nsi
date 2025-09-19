@@ -75,7 +75,7 @@ Function .onInit
       Call RemoveOldOadin
   ${Else}
     ; Service not found, check folder
-    IfFileExists "$PROGRAMFILES\oadin\*.*" folder_found no_folder
+    IfFileExists "$PROGRAMFILES\Oadin\*.*" folder_found no_folder
 
     folder_found:
       MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_overwrite IDNO cancel_overwrite
@@ -108,8 +108,8 @@ Function .onInit
             ; Read user PATH
             ReadRegStr $R2 HKCU "Environment" "Path"
 
-            ; Check if PATH contains $PROGRAMFILES\oadin
-            StrCpy $R0 "$PROGRAMFILES\oadin"
+            ; Check if PATH contains $PROGRAMFILES\Oadin
+            StrCpy $R0 "$PROGRAMFILES\Oadin"
             Push $R0
             Push $R2
             Call StrStr
@@ -118,7 +118,7 @@ Function .onInit
 
             ; Remove oadin path from PATH (handle different cases)
             ; Case 1: starts with path
-            StrCpy $R0 "$PROGRAMFILES\oadin;"
+            StrCpy $R0 "$PROGRAMFILES\Oadin;"
             Push $R0
             Push ""
             Push $R2
@@ -126,7 +126,7 @@ Function .onInit
             Pop $R2
 
             ; Case 2: ends with path
-            StrCpy $R0 ";$PROGRAMFILES\oadin"
+            StrCpy $R0 ";$PROGRAMFILES\Oadin"
             Push $R0
             Push ""
             Push $R2
@@ -134,7 +134,7 @@ Function .onInit
             Pop $R2
 
             ; Case 3: middle path
-            StrCpy $R0 "$PROGRAMFILES\oadin"
+            StrCpy $R0 "$PROGRAMFILES\Oadin"
             Push $R0
             Push ""
             Push $R2
