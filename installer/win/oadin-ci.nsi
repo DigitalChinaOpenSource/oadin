@@ -75,6 +75,7 @@ Function .onInit
       Call RemoveOldOadin
   ${Else}
     ; Service not found, check folder
+    MessageBox MB_OK "Current Path: $PROGRAMFILES\Oadin"
     IfFileExists "$PROGRAMFILES\Oadin\*.*" folder_found no_folder
 
     folder_found:
@@ -103,7 +104,7 @@ Function .onInit
         no_process:
           do_remove_folder:
             ; Remove folder
-            RMDir /r "$PROGRAMFILES\oadin"
+            RMDir /r "$PROGRAMFILES\Oadin"
 
             ; Read user PATH
             ReadRegStr $R2 HKCU "Environment" "Path"
