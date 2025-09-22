@@ -246,15 +246,25 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 	}
 
 	if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
-		logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
-		if request.Stream {
-			dataBytes, _ := json.Marshal(res)
-			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-			flusher.Flush()
-		} else {
-			c.JSON(http.StatusOK, res)
+		modelList, _ := modelEngine.ListModels(c)
+		modelFileExist := false
+		for _, model := range modelList.Models {
+			if model.Name == request.ModelName || model.Model == request.ModelName {
+				modelFileExist = true
+				break
+			}
 		}
-		return
+		if modelFileExist {
+			logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
+			if request.Stream {
+				dataBytes, _ := json.Marshal(res)
+				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+				flusher.Flush()
+			} else {
+				c.JSON(http.StatusOK, res)
+			}
+			return
+		}
 	}
 
 	req := types.PullModelRequest{
