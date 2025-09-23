@@ -99,7 +99,7 @@ Function .onInit
         StrCmp $R4 "" no_process
 
         DetailPrint "Oadin process detected, stopping it..."
-        nsExec::ExecToLog '"$PROGRAMFILES64\oadin\oadin.exe" server stop'
+        nsExec::ExecToLog '"$PROGRAMFILES64\Oadin\oadin.exe" server stop'
 
         no_process:
           do_remove_folder:
@@ -352,6 +352,8 @@ Section "Uninstall"
   DetailPrint "Uninstalling from: $INSTDIR"
 
   ; Stop and delete service if it exists
+  DetailPrint "Oadin process detected, stopping it..."
+  nsExec::ExecToLog '"$INSTDIR\oadin.exe" server stop'
   nsExec::ExecToLog 'sc stop "OadinService"'
   nsExec::ExecToLog 'sc delete "OadinService"'
 
