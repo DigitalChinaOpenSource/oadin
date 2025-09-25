@@ -365,9 +365,9 @@ Function RemoveOldOadin
 
     Push $R3
     Call RemoveSystemPath
-    IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 delete_link
+    IfFileExists "$DEFAULT_INSTALL_DIR" 0 delete_link
     delete_link:
-      Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
+      RMDir "$DEFAULT_INSTALL_DIR"
   ${EndIf}
 
   ; Clean registry entries
@@ -401,9 +401,9 @@ Section "Install"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "Publisher" "${COMPANY_NAME}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayIcon" "$INSTDIR\oadin.exe"
   ${If} $INSTDIR != $DEFAULT_INSTALL_DIR
-    IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 create_link
+    IfFileExists "$DEFAULT_INSTALL_DIR" 0 create_link
     create_link:
-      ExecWait 'cmd /c mklink "$DEFAULT_INSTALL_DIR\oadin.exe" "$INSTDIR\oadin.exe" '
+      ExecWait 'cmd /c mklink /d "$DEFAULT_INSTALL_DIR" "$INSTDIR"'
   ${Endif}
 
   DetailPrint "Registering Oadin service..."
@@ -431,7 +431,7 @@ Function LaunchOadinService
 
   DetailPrint "Starting Oadin service in background..."
   ; nsExec::Exec 'sc start "OadinService"'
-  Exec 'sc start "OadinService"'
+  nsExec::Exec 'sc start "OadinService"'
 FunctionEnd
 
 Function EnableAutoStart
@@ -469,9 +469,9 @@ Section "Uninstall"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
 
-  IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 delete_link
+  IfFileExists "$DEFAULT_INSTALL_DIR" 0 delete_link
   delete_link:
-    Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
+    RMDir "$DEFAULT_INSTALL_DIR"
 
   Push $INSTDIR
   Call un.RemoveSystemPath
