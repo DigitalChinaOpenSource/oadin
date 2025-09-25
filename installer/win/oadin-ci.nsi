@@ -9,6 +9,7 @@
 !include "x64.nsh"
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
+!include "EnvVarUpdate.nsh"
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
@@ -269,7 +270,7 @@ Function RemoveOldOadin
     DetailPrint "Removing old installation directory: $R3"
     RMDir /r "$R3"
 
-    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$R3"
+    !insertmacro EnvVarUpdate "PATH" "R" "HKLM" "$R3"
     System::Call 'User32::SendMessageTimeoutA(i 0xffff, i 0x1A, i 0, t "Environment", i 0, i 1000, *i .r0)'
   ${EndIf}
 
@@ -367,7 +368,7 @@ Section "Uninstall"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
 
-  ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR"
+  !insertmacro EnvVarUpdate "PATH" "R" "HKLM" "$R3"
   System::Call 'User32::SendMessageTimeoutA(i 0xffff, i 0x1A, i 0, t "Environment", i 0, i 1000, *i .r0)'
 
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
