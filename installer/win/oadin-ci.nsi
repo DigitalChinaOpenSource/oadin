@@ -262,7 +262,6 @@ RequestExecutionLevel admin
 Function RemoveSystemPath
     Exch $R0
 
-    ; 读取系统 PATH
     ReadRegStr $R2 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
     StrCmp $R2 "" done
 
@@ -304,8 +303,8 @@ Function RemoveOldOadin
     Push $R3
     call RemoveSystemPath
     IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 delete_link
-        delete_link:
-          Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
+    delete_link:
+      Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
   ${EndIf}
 
   ; Clean registry entries
@@ -408,8 +407,8 @@ Section "Uninstall"
   RMDir "$INSTDIR"
 
   IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 delete_link
-      delete_link:
-        Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
+  delete_link:
+    Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
 
   Push $INSTDIR
   call RemoveSystemPath
