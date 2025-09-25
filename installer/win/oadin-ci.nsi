@@ -353,13 +353,13 @@ FunctionEnd
 
 
 Function RemoveOldOadin
-  DetailPrint "Stopping and removing existing Oadin service..."
-  nsExec::ExecToLog 'sc stop "OadinService"'
-  nsExec::ExecToLog 'sc delete "OadinService"'
-
   ; Clean old installation directory
   ReadRegStr $R3 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $R3 != ""
+    DetailPrint "Stopping and removing existing Oadin service..."
+    nsExec::ExecToLog '"$R3\oadin.exe" server stop'
+    nsExec::ExecToLog 'sc stop "OadinService"'
+    nsExec::ExecToLog 'sc delete "OadinService"'
     DetailPrint "Removing old installation directory: $R3"
     RMDir /r "$R3"
 
@@ -400,8 +400,8 @@ Section "Install"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayVersion" "${VERSION}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "Publisher" "${COMPANY_NAME}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayIcon" "$INSTDIR\oadin.exe"
-  ${If} $INSTDIR != ${DEFAULT_INSTALL_DIR}
-    IfFileExists "${DEFAULT_INSTALL_DIR}" 0 create_link
+  ${If} "$INSTDIR" != ${DEFAULT_INSTALL_DIR}
+    IfFileExists "${DEFAULT_INSTALL_DIR}\*" 0 create_link
     create_link:
       ExecWait 'cmd /c mklink /d "${DEFAULT_INSTALL_DIR}" "$INSTDIR"'
   ${Endif}
@@ -458,7 +458,7 @@ Section "Uninstall"
 
   ; Stop and delete service if it exists
   DetailPrint "Oadin process detected, stopping it..."
-  nsExec::ExecToLog '"$INSTDIR\oadi n.exe" server stop'
+  nsExec::ExecToLog '"$INSTDIR\oadin.exe" server stop'
   nsExec::ExecToLog 'sc stop "OadinService"'
   nsExec::ExecToLog 'sc delete "OadinService"'
 
