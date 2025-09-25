@@ -400,7 +400,7 @@ Section "Install"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayVersion" "${VERSION}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "Publisher" "${COMPANY_NAME}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayIcon" "$INSTDIR\oadin.exe"
-  ${If} $INSTDIR != ${DEFAULT_INSTALL_DIR}
+  ${If} $INSTDIR != "${DEFAULT_INSTALL_DIR}"
     IfFileExists "${DEFAULT_INSTALL_DIR}\*" 0 create_link
     create_link:
       ExecWait 'cmd /c mklink /d "${DEFAULT_INSTALL_DIR}" "$INSTDIR"'
