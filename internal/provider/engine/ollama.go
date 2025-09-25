@@ -60,6 +60,10 @@ const (
 	WindowsDDLDependsX64URL = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 	WindowsDDLDependsX86URL = "https://aka.ms/vs/17/release/vc_redist.x86.exe"
 
+	// AMD GPU ROCM download URL
+	WindowsAMD_780M  = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-780M.zip"
+	WindowsAMD_8060S = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-8060S.zip"
+
 	// Linux download URLs
 	LinuxAmdURL = constants.BaseDownloadURL + "linux" + "/ollama-linux-amd64.tgz"
 	LinuxArmURL = constants.BaseDownloadURL + "linux" + "/ollama-linux-arm64.tgz"
@@ -317,6 +321,17 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		case types.GPUTypeNvidia:
 			downloadUrl = WindowsNvidiaURL
 		case types.GPUTypeAmd:
+			// amd系列的进行显卡型号区分
+			amdGPU := utils.VerifyAmdGPU()
+			// 获取对应型号的下载地址
+			if amdGPU == types.GPUTypeAmd780M {
+				downloadUrl = WindowsAMD_780M
+			} else if amdGPU == types.GPUTypeAmd8060S {
+				downloadUrl = WindowsAMD_8060S
+			} else {
+				downloadUrl = WindowsAMDURL
+
+			}
 			downloadUrl = WindowsAMDURL
 		case types.GPUTypeIntelArc:
 			execPath = fmt.Sprintf("%s/%s", executableDir.ProgramFiles, "/Oadin/ipex-llm-ollama")
