@@ -726,7 +726,8 @@ func DetectGpuModel() string {
 		productName := strings.ToLower(card.DeviceInfo.Product.Name)
 		if strings.Contains(productName, "nvidia") {
 			hasNvidia = true
-		} else if strings.Contains(productName, "amd") {
+		} else if strings.Contains(productName, "amd") ||
+			strings.Contains(productName, "radeon") {
 			hasAMD = true
 		} else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
 			hasIntel = true
@@ -744,6 +745,69 @@ func DetectGpuModel() string {
 	} else {
 		return types.GPUTypeNone
 	}
+}
+
+func VerifyAmdGPU() string {
+	gpu, err := ghw.GPU()
+	if err != nil {
+		return types.GPUTypeNone
+	}
+
+	logger.EngineLogger.Info("GPU Info:", gpu)
+	for _, card := range gpu.GraphicsCards {
+		// 转为小写并去除多余空格进行匹配，确保兼容各种大小写格式
+		productName := strings.ToLower(strings.TrimSpace(card.DeviceInfo.Product.Name))
+		// 记录原始产品名用于调试
+		logger.EngineLogger.Info("Detecting AMD GPU:", card.DeviceInfo.Product.Name, "->", productName)
+
+		// APU系列 (集成显卡) - 按性能从高到低排序
+		switch {
+		case strings.Contains(productName, "790m"):
+			return types.GPUTypeAmd790M
+		case strings.Contains(productName, "780m"):
+			return types.GPUTypeAmd780M
+		case strings.Contains(productName, "680m"):
+			return types.GPUTypeAmd680M
+		case strings.Contains(productName, "660m"):
+			return types.GPUTypeAmd660M
+		case strings.Contains(productName, "640m"):
+			return types.GPUTypeAmd640M
+		case strings.Contains(productName, "610m"):
+			return types.GPUTypeAmd610M
+		case strings.Contains(productName, "8060s"):
+			return types.GPUTypeAmd8060S
+
+		// RX系列 (独立显卡) - 按性能从高到低排序，支持多种命名格式
+		case strings.Contains(productName, "rx 7900") || strings.Contains(productName, "rx7900"):
+			return types.GPUTypeAmdRX7900
+		case strings.Contains(productName, "rx 7800") || strings.Contains(productName, "rx7800"):
+			return types.GPUTypeAmdRX7800
+		case strings.Contains(productName, "rx 7700") || strings.Contains(productName, "rx7700"):
+			return types.GPUTypeAmdRX7700
+		case strings.Contains(productName, "rx 7600") || strings.Contains(productName, "rx7600"):
+			return types.GPUTypeAmdRX7600
+		case strings.Contains(productName, "rx 6900") || strings.Contains(productName, "rx6900"):
+			return types.GPUTypeAmdRX6900
+		case strings.Contains(productName, "rx 6800") || strings.Contains(productName, "rx6800"):
+			return types.GPUTypeAmdRX6800
+		case strings.Contains(productName, "rx 6700") || strings.Contains(productName, "rx6700"):
+			return types.GPUTypeAmdRX6700
+		case strings.Contains(productName, "rx 6600") || strings.Contains(productName, "rx6600"):
+			return types.GPUTypeAmdRX6600
+		case strings.Contains(productName, "rx 6500") || strings.Contains(productName, "rx6500"):
+			return types.GPUTypeAmdRX6500
+		case strings.Contains(productName, "rx 6400") || strings.Contains(productName, "rx6400"):
+			return types.GPUTypeAmdRX6400
+
+		// 通用匹配 - 按优先级从具体到通用
+		case strings.Contains(productName, "radeon"):
+			return types.GPUTypeAmdRadeon
+		case strings.Contains(productName, "amd"):
+			return types.GPUTypeAmd
+		}
+	}
+
+	return types.GPUTypeNone
 }
 
 func SystemDiskSize(path string) (*types.PathDiskSizeInfo, error) {
