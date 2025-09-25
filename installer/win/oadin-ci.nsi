@@ -9,7 +9,6 @@
 !include "x64.nsh"
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
-!include "EnvVarUpdate.nsh"
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
