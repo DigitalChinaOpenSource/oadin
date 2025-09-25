@@ -288,6 +288,40 @@ Function RemoveSystemPath
 done:
 FunctionEnd
 
+; String replace
+Function un.StrReplace
+  Exch $R2 ; new substring
+  Exch
+  Exch $R1 ; old substring
+  Exch 2
+  Exch $R0 ; original string
+
+  Push $R3
+  Push $R4
+  Push $R5
+
+  StrCpy $R3 ""
+loop:
+  StrCpy $R4 $R0 "" 0
+  StrCmp $R4 "" done
+  StrCpy $R5 $R0 ${NSIS_MAX_STRLEN}
+  StrCpy $R5 $R5 "" 0
+  StrCpy $R5 $R5 "" 0
+  StrCmp $R5 $R1 0 no_match
+    StrCpy $R3 "$R3$R2"
+    StrCpy $R0 $R0 "" ${NSIS_MAX_STRLEN}
+    Goto loop
+no_match:
+  StrCpy $R3 "$R3$R4"
+  StrCpy $R0 $R0 "" ${NSIS_MAX_STRLEN}
+  Goto loop
+done:
+  Pop $R5
+  Pop $R4
+  Pop $R3
+  Exch $R3
+FunctionEnd
+
 Function un.RemoveSystemPath
     Exch $R0
 
@@ -304,7 +338,7 @@ Function un.RemoveSystemPath
     Push $R0
     Push $R1
     Push $R2
-    Call StrReplace
+    Call un.StrReplace
     Pop $R2  ;
 
     StrCpy $R2 $R2 "" 1
@@ -330,7 +364,7 @@ Function RemoveOldOadin
     RMDir /r "$R3"
 
     Push $R3
-    call RemoveSystemPath
+    Call RemoveSystemPath
     IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 delete_link
     delete_link:
       Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
@@ -440,7 +474,7 @@ Section "Uninstall"
     Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
 
   Push $INSTDIR
-  call un.RemoveSystemPath
+  Call un.RemoveSystemPath
 
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
