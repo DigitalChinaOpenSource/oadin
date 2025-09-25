@@ -288,6 +288,35 @@ Function RemoveSystemPath
 done:
 FunctionEnd
 
+Function un.RemoveSystemPath
+    Exch $R0
+
+    ReadRegStr $R2 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
+    StrCmp $R2 "" done
+
+    StrCpy $R1 ";$R0;"
+    StrCpy $R2 $R2
+    StrCpy $R0 $R2
+    StrCpy $R2 $R1
+    StrCpy $R1 ";"
+
+
+    Push $R0
+    Push $R1
+    Push $R2
+    Call StrReplace
+    Pop $R2  ;
+
+    StrCpy $R2 $R2 "" 1
+    StrCpy $R2 $R2 "" -1
+
+    WriteRegStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$R2"
+
+    System::Call 'User32::SendMessageTimeoutA(i 0xffff, i ${WM_SETTINGCHANGE}, i 0, t "Environment", i 0, i 5000, *i .r0)'
+
+done:
+FunctionEnd
+
 
 Function RemoveOldOadin
   DetailPrint "Stopping and removing existing Oadin service..."
@@ -411,7 +440,7 @@ Section "Uninstall"
     Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
 
   Push $INSTDIR
-  call RemoveSystemPath
+  call un.RemoveSystemPath
 
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
