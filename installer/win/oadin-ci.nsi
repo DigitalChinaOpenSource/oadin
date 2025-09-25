@@ -268,6 +268,9 @@ Function RemoveOldOadin
   ${If} $R3 != ""
     DetailPrint "Removing old installation directory: $R3"
     RMDir /r "$R3"
+
+    ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$R3"
+    System::Call 'User32::SendMessageTimeoutA(i 0xffff, i 0x1A, i 0, t "Environment", i 0, i 1000, *i .r0)'
   ${EndIf}
 
   ; Clean registry entries
@@ -302,7 +305,7 @@ Section "Install"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayIcon" "$INSTDIR\oadin.exe"
 
   DetailPrint "Registering Oadin service..."
-  nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start -d" start= auto DisplayName= "Oadin Service"'
+  nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start" start= auto DisplayName= "Oadin Service"'
 
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
@@ -331,7 +334,7 @@ FunctionEnd
 
 Function EnableAutoStart
   DetailPrint "Enabling Oadin auto-start..."
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin.exe" server start -d'
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin.exe" server start'
 FunctionEnd
 
 ; Uninstaller
@@ -353,7 +356,7 @@ Section "Uninstall"
 
   ; Stop and delete service if it exists
   DetailPrint "Oadin process detected, stopping it..."
-  nsExec::ExecToLog '"$INSTDIR\oadin.exe" server stop'
+  nsExec::ExecToLog '"$INSTDIR\oadi n.exe" server stop'
   nsExec::ExecToLog 'sc stop "OadinService"'
   nsExec::ExecToLog 'sc delete "OadinService"'
 
@@ -363,6 +366,9 @@ Section "Uninstall"
   Delete "$INSTDIR\start-oadin.bat"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
+
+  ${un.EnvVarUpdate} $0 "PATH" "R" "HKLM" "$INSTDIR"
+  System::Call 'User32::SendMessageTimeoutA(i 0xffff, i 0x1A, i 0, t "Environment", i 0, i 1000, *i .r0)'
 
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"

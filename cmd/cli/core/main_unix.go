@@ -1,3 +1,5 @@
+//go:build !windows
+
 //*****************************************************************************
 // Copyright 2025 Intel Corporation
 //
@@ -14,10 +16,16 @@
 // limitations under the License.
 //*****************************************************************************
 
-package main
+package cli
 
-import cli "oadin/cmd/cli/core"
+import (
+	"os"
+)
 
-func main() {
-	cli.MainPlatform()
+func MainPlatform() {
+	command := NewCommand()
+
+	if err := command.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
