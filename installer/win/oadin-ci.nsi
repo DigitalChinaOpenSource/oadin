@@ -365,9 +365,9 @@ Function RemoveOldOadin
 
     Push $R3
     Call RemoveSystemPath
-    IfFileExists "$DEFAULT_INSTALL_DIR" 0 delete_link
+    IfFileExists "${DEFAULT_INSTALL_DIR}" 0 delete_link
     delete_link:
-      RMDir "$DEFAULT_INSTALL_DIR"
+      RMDir "${DEFAULT_INSTALL_DIR}"
   ${EndIf}
 
   ; Clean registry entries
@@ -400,10 +400,10 @@ Section "Install"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayVersion" "${VERSION}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "Publisher" "${COMPANY_NAME}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayIcon" "$INSTDIR\oadin.exe"
-  ${If} $INSTDIR != $DEFAULT_INSTALL_DIR
-    IfFileExists "$DEFAULT_INSTALL_DIR" 0 create_link
+  ${If} $INSTDIR != ${DEFAULT_INSTALL_DIR}
+    IfFileExists "${DEFAULT_INSTALL_DIR}" 0 create_link
     create_link:
-      ExecWait 'cmd /c mklink /d "$DEFAULT_INSTALL_DIR" "$INSTDIR"'
+      ExecWait 'cmd /c mklink /d "${DEFAULT_INSTALL_DIR}" "$INSTDIR"'
   ${Endif}
 
   DetailPrint "Registering Oadin service..."
