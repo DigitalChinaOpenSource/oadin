@@ -258,6 +258,38 @@ done:
   Exch $R3
 FunctionEnd
 
+RequestExecutionLevel admin
+
+Function RemoveSystemPath
+    Exch $R0
+
+    ; 读取系统 PATH
+    ReadRegStr $R2 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
+    StrCmp $R2 "" done
+
+    StrCpy $R1 ";$R0;"
+    StrCpy $R2 $R2
+    StrCpy $R0 $R2
+    StrCpy $R2 $R1
+    StrCpy $R1 ";"
+
+
+    Push $R0
+    Push $R1
+    Push $R2
+    Call StrReplace
+    Pop $R2  ;
+
+    StrCpy $R2 $R2 "" 1
+    StrCpy $R2 $R2 "" -1
+
+    WriteRegStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$R2"
+
+    System::Call 'User32::SendMessageTimeoutA(i 0xffff, i ${WM_SETTINGCHANGE}, i 0, t "Environment", i 0, i 5000, *i .r0)'
+
+done:
+FunctionEnd
+
 
 Function RemoveOldOadin
   DetailPrint "Stopping and removing existing Oadin service..."
@@ -270,8 +302,11 @@ Function RemoveOldOadin
     DetailPrint "Removing old installation directory: $R3"
     RMDir /r "$R3"
 
-    !insertmacro EnvVarUpdate "PATH" "R" "HKLM" "$R3"
-    System::Call 'User32::SendMessageTimeoutA(i 0xffff, i 0x1A, i 0, t "Environment", i 0, i 1000, *i .r0)'
+    Push $R3
+    call RemoveSystemPath
+    IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 delete_link
+        delete_link:
+          Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
   ${EndIf}
 
   ; Clean registry entries
@@ -304,6 +339,11 @@ Section "Install"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayVersion" "${VERSION}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "Publisher" "${COMPANY_NAME}"
   WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayIcon" "$INSTDIR\oadin.exe"
+  ${If} $INSTDIR != $DEFAULT_INSTALL_DIR
+    IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 create_link
+    create_link:
+      ExecWait 'cmd /c mklink "$DEFAULT_INSTALL_DIR\oadin.exe" "$INSTDIR\oadin.exe" '
+  ${Endif}
 
   DetailPrint "Registering Oadin service..."
   nsExec::ExecToLog 'sc create "OadinService" binPath= "\"$INSTDIR\oadin.exe\" server start" start= auto DisplayName= "Oadin Service"'
@@ -368,8 +408,12 @@ Section "Uninstall"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
 
-  !insertmacro EnvVarUpdate "PATH" "R" "HKLM" "$R3"
-  System::Call 'User32::SendMessageTimeoutA(i 0xffff, i 0x1A, i 0, t "Environment", i 0, i 1000, *i .r0)'
+  IfFileExists "$DEFAULT_INSTALL_DIR\oadin.exe" 0 delete_link
+      delete_link:
+        Delete "$DEFAULT_INSTALL_DIR\oadin.exe"
+
+  Push $INSTDIR
+  call RemoveSystemPath
 
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
