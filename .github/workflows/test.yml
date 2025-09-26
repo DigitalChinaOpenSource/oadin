@@ -13,6 +13,7 @@ env:
   # 根据触发方式使用不同的标识符
   VERSION: ${{ github.event.inputs.version }}
   BRANCH: ${{ github.event.inputs.branch }}
+  CI_COMMIT_TAG: "${{ github.ref_name }}"
   MAC_FILE_NAME: "oadin-installer-${{ github.event.inputs.version }}.pkg"
   WIN_FILE_NAME: "oadin-installer-${{ github.event.inputs.version }}.exe"
   NEXUS_HOST_PORT: ${{ secrets.NEXUS_HOST_PORT }}
