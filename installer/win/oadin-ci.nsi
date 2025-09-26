@@ -27,26 +27,24 @@ Caption "${APP_NAME} ${VERSION} Setup"
 !define MUI_ABORTWARNING
 
 ; Installer pages (only shown if not silent)
-!ifndef SILENT
-  !insertmacro MUI_PAGE_WELCOME
-  !insertmacro MUI_PAGE_DIRECTORY
-  !insertmacro MUI_PAGE_INSTFILES
-  !define MUI_FINISHPAGE_RUN
-  !define MUI_FINISHPAGE_RUN_TEXT "Start Oadin Service"
-  !define MUI_FINISHPAGE_RUN_FUNCTION LaunchOadinService
-  !define MUI_FINISHPAGE_SHOWREADME
-  !define MUI_FINISHPAGE_SHOWREADME_TEXT "Enable Oadin Auto-Start"
-  !define MUI_FINISHPAGE_SHOWREADME_FUNCTION EnableAutoStart
-  !define MUI_FINISHPAGE_RUN_NOTCHECKED
-  !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
-  !insertmacro MUI_PAGE_FINISH
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_TEXT "Start Oadin Service"
+!define MUI_FINISHPAGE_RUN_FUNCTION LaunchOadinService
+!define MUI_FINISHPAGE_SHOWREADME
+!define MUI_FINISHPAGE_SHOWREADME_TEXT "Enable Oadin Auto-Start"
+!define MUI_FINISHPAGE_SHOWREADME_FUNCTION EnableAutoStart
+!define MUI_FINISHPAGE_RUN_NOTCHECKED
+!define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
+!insertmacro MUI_PAGE_FINISH
 
-  ; Uninstaller pages
-  !insertmacro MUI_UNPAGE_WELCOME
-  !insertmacro MUI_UNPAGE_CONFIRM
-  !insertmacro MUI_UNPAGE_INSTFILES
-  !insertmacro MUI_UNPAGE_FINISH
-!endif
+; Uninstaller pages
+!insertmacro MUI_UNPAGE_WELCOME
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_UNPAGE_FINISH
 
 ; Language files
 !insertmacro MUI_LANGUAGE "English"
@@ -430,6 +428,11 @@ Section "Install"
   ; Execute post-install script (for PATH setup)
   DetailPrint "Running post-install script..."
   nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
+
+  ; Auto-start service for silent mode
+  ${If} $SILENT == 1
+    Call LaunchOadinService
+  ${EndIf}
 
   ${EnableX64FSRedirection}
   Goto install_end
