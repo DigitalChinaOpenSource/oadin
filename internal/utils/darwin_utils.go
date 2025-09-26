@@ -104,3 +104,7 @@ func SetCmdSysProcAttr(cmd *exec.Cmd) {
 func CheckDllExists(dllName string) bool {
 	return true
 }
+
+func GetActiveUserAppData() (string, error) {
+	return "", nil
+}

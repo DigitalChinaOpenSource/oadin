@@ -56,9 +56,8 @@ Var SILENT
 
 Function .onInit
   StrCpy $SILENT 0
-  ${If} ${SilentInstall}
+  IfSilent 0 +3
     StrCpy $SILENT 1
-  ${EndIf}
 
   ${IfNot} ${RunningX64}
     ${If} $SILENT == 0
