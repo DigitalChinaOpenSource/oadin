@@ -53,11 +53,11 @@ Caption "${APP_NAME} ${VERSION} Setup"
 
 ; Initialization
 Var SILENT
+
 Function .onInit
+  StrCpy $SILENT 0
   ${If} ${SilentInstall}
     StrCpy $SILENT 1
-  ${Else}
-    StrCpy $SILENT 0
   ${EndIf}
 
   ${IfNot} ${RunningX64}
