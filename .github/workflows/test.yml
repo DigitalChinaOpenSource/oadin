@@ -37,6 +37,7 @@ jobs:
           cd /Users/dcone/WebstormProjects/oadin/
           git reset --hard
           git clean -fd
+          echo CI_COMMIT_TAG: $CI_COMMIT_TAG
           echo "--------- 🔖 拉取代码准备构建 ----------"
           git fetch
           echo $BRANCH ; git checkout $BRANCH
@@ -84,6 +85,7 @@ jobs:
           cd C:\Users\Administrator\WebstormProjects\oadin
           git reset --hard
           git clean -fd
+          echo CI_COMMIT_TAG: $CI_COMMIT_TAG
           echo "--------- 🔖 拉取代码准备构建 ----------"
           git fetch
           echo $env:BRANCH ; git checkout $env:BRANCH
