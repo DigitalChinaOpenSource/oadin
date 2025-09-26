@@ -39,7 +39,7 @@ jobs:
           git clean -fd
           echo CI_COMMIT_TAG: $CI_COMMIT_TAG
           echo ENV: $ENV
-          echo NEXUS_HOST_PORT: $EXUS_HOST_PORT
+          echo NEXUS_HOST_PORT: $NEXUS_HOST_PORT
           echo "--------- 🔖 拉取代码准备构建 ----------"
           git fetch
           echo $BRANCH ; git checkout $BRANCH
@@ -89,7 +89,7 @@ jobs:
           git clean -fd
           echo CI_COMMIT_TAG: $CI_COMMIT_TAG
           echo ENV: $ENV
-          echo NEXUS_HOST_PORT: $EXUS_HOST_PORT
+          echo NEXUS_HOST_PORT: $NEXUS_HOST_PORT
           echo "--------- 🔖 拉取代码准备构建 ----------"
           git fetch
           echo $env:BRANCH ; git checkout $env:BRANCH
