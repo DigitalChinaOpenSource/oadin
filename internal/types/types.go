@@ -99,11 +99,36 @@ const (
 	AudioAac  = "aac"
 	AudioMp4  = "mp4"
 
+	// 基础GPU类型
 	GPUTypeNvidia    = "Nvidia"
 	GPUTypeAmd       = "AMD"
 	GPUTypeIntelArc  = "Intel Arc"
 	GPUTypeIntelCore = "Intel Core"
 	GPUTypeNone      = "None"
+
+	// AMD APU系列 (集成显卡)
+	GPUTypeAmd790M  = "AMD_790M"
+	GPUTypeAmd780M  = "AMD_780M"
+	GPUTypeAmd680M  = "AMD_680M"
+	GPUTypeAmd660M  = "AMD_660M"
+	GPUTypeAmd640M  = "AMD_640M"
+	GPUTypeAmd610M  = "AMD_610M"
+	GPUTypeAmd8060S = "AMD_8060S"
+
+	// AMD RX系列 (独立显卡)
+	GPUTypeAmdRX7900 = "AMD_RX7900"
+	GPUTypeAmdRX7800 = "AMD_RX7800"
+	GPUTypeAmdRX7700 = "AMD_RX7700"
+	GPUTypeAmdRX7600 = "AMD_RX7600"
+	GPUTypeAmdRX6900 = "AMD_RX6900"
+	GPUTypeAmdRX6800 = "AMD_RX6800"
+	GPUTypeAmdRX6700 = "AMD_RX6700"
+	GPUTypeAmdRX6600 = "AMD_RX6600"
+	GPUTypeAmdRX6500 = "AMD_RX6500"
+	GPUTypeAmdRX6400 = "AMD_RX6400"
+
+	// AMD 通用类型
+	GPUTypeAmdRadeon = "AMD_Radeon"
 )
 
 var (
