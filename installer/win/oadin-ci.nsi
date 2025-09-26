@@ -26,40 +26,79 @@ Caption "${APP_NAME} ${VERSION} Setup"
 ; MUI Settings
 !define MUI_ABORTWARNING
 
-; Installer pages
-!insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_DIRECTORY
-!insertmacro MUI_PAGE_INSTFILES
+; Installer pages (only shown if not silent)
+!ifndef SILENT
+  !insertmacro MUI_PAGE_WELCOME
+  !insertmacro MUI_PAGE_DIRECTORY
+  !insertmacro MUI_PAGE_INSTFILES
+  !define MUI_FINISHPAGE_RUN
+  !define MUI_FINISHPAGE_RUN_TEXT "Start Oadin Service"
+  !define MUI_FINISHPAGE_RUN_FUNCTION LaunchOadinService
+  !define MUI_FINISHPAGE_SHOWREADME
+  !define MUI_FINISHPAGE_SHOWREADME_TEXT "Enable Oadin Auto-Start"
+  !define MUI_FINISHPAGE_SHOWREADME_FUNCTION EnableAutoStart
+  !define MUI_FINISHPAGE_RUN_NOTCHECKED
+  !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
+  !insertmacro MUI_PAGE_FINISH
 
-; Finish page with checkboxes
-!define MUI_FINISHPAGE_RUN
-!define MUI_FINISHPAGE_RUN_TEXT "Start Oadin Service"
-!define MUI_FINISHPAGE_RUN_FUNCTION LaunchOadinService
-!define MUI_FINISHPAGE_SHOWREADME
-!define MUI_FINISHPAGE_SHOWREADME_TEXT "Enable Oadin Auto-Start"
-!define MUI_FINISHPAGE_SHOWREADME_FUNCTION EnableAutoStart
-!define MUI_FINISHPAGE_RUN_NOTCHECKED
-!define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
-!insertmacro MUI_PAGE_FINISH
-
-; Uninstaller pages
-!insertmacro MUI_UNPAGE_WELCOME
-!insertmacro MUI_UNPAGE_CONFIRM
-!insertmacro MUI_UNPAGE_INSTFILES
-!insertmacro MUI_UNPAGE_FINISH
+  ; Uninstaller pages
+  !insertmacro MUI_UNPAGE_WELCOME
+  !insertmacro MUI_UNPAGE_CONFIRM
+  !insertmacro MUI_UNPAGE_INSTFILES
+  !insertmacro MUI_UNPAGE_FINISH
+!endif
 
 ; Language files
 !insertmacro MUI_LANGUAGE "English"
 
 ; Initialization
+Var SILENT
 Function .onInit
+  ${If} ${SilentInstall}
+    StrCpy $SILENT 1
+  ${Else}
+    StrCpy $SILENT 0
+  ${EndIf}
+
   ${IfNot} ${RunningX64}
-    MessageBox MB_OK|MB_ICONSTOP "This application requires a 64-bit Windows system."
-    Abort
+    ${If} $SILENT == 0
+      MessageBox MB_OK|MB_ICONSTOP "This application requires a 64-bit Windows system."
+    ${EndIf}
+      Abort
   ${EndIf}
 
   SetRegView 64
   ${DisableX64FSRedirection}
+
+  ; Determine installation directory
+  ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+
+  ${If} $R0 != ""
+    StrCpy $INSTDIR $R0
+  ${Else}
+    StrCpy $R1 "$PROGRAMFILES64"
+    ${If} $R1 != ""
+      ${AndIf} $R1 != "\$PROGRAMFILES64"
+      StrCpy $INSTDIR "$R1\Oadin"
+    ${Else}
+      ReadEnvStr $R2 "ProgramW6432"
+      ${If} $R2 != ""
+        StrCpy $INSTDIR "$R2\Oadin"
+      ${Else}
+        StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
+      ${EndIf}
+    ${EndIf}
+
+    Push $INSTDIR
+    Push "(x86)"
+    Call StrStr
+    Pop $R3
+    ${If} $R3 != ""
+      StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
+    ${EndIf}
+  ${EndIf}
+
+  DetailPrint "Target installation directory: $INSTDIR"
 
   ; Check if OadinService exists
   nsExec::ExecToStack 'sc query "OadinService"'
@@ -68,20 +107,26 @@ Function .onInit
 
   ${If} $R0 == 0
     ; Service found, ask user
-    MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
-    cancel_install:
-      Abort
-    do_uninstall:
-      Call RemoveOldOadin
+    ${If} $SILENT == 0
+      MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_uninstall IDNO cancel_install
+      cancel_install:
+        Abort
+      do_uninstall:
+        Call RemoveOldOadin
+    ${EndIf}
+    Call RemoveOldOadin
   ${Else}
     ; Service not found, check folder
-    MessageBox MB_OK "Current Path: $PROGRAMFILES64\Oadin"
     IfFileExists "$PROGRAMFILES64\Oadin\*.*" folder_found no_folder
 
     folder_found:
-      MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_overwrite IDNO cancel_overwrite
-      cancel_overwrite:
-         Abort
+      ${If} $SILENT == 0
+        MessageBox MB_YESNO|MB_ICONQUESTION "Oadin service is already installed. Do you want to uninstall the old version and continue installation?" IDYES do_overwrite IDNO cancel_overwrite
+        cancel_overwrite:
+           Abort
+      ${Else}
+        Goto do_overwrite
+      ${EndIf}
       do_overwrite:
         ; Check if Oadin process is running
         nsExec::ExecToStack 'tasklist /FI "IMAGENAME eq oadin.exe"'
@@ -148,34 +193,6 @@ Function .onInit
             ; Do nothing
             DetailPrint "no folder"
   ${EndIf}
-
-  ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
-  ${If} $R0 != ""
-    StrCpy $INSTDIR $R0
-  ${Else}
-    StrCpy $R1 "$PROGRAMFILES64"
-    ${If} $R1 != ""
-      ${AndIf} $R1 != "\$PROGRAMFILES64"
-      StrCpy $INSTDIR "$R1\Oadin"
-    ${Else}
-      ReadEnvStr $R2 "ProgramW6432"
-      ${If} $R2 != ""
-        StrCpy $INSTDIR "$R2\Oadin"
-      ${Else}
-        StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
-      ${EndIf}
-    ${EndIf}
-
-    Push $INSTDIR
-    Push "(x86)"
-    Call StrStr
-    Pop $R3
-    ${If} $R3 != ""
-      StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
-    ${EndIf}
-  ${EndIf}
-
-  DetailPrint "Target installation directory: $INSTDIR"
 FunctionEnd
 
 ; Verify directory selection
