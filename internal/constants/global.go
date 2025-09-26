@@ -21,6 +21,7 @@ const (
 	AppName           = "oadin"
 	BaseDownloadURL   = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog"
 	UrlDirPathWindows = "/windows"
+	OssURL            = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com"
 )
 
 // model related
@@ -66,4 +67,3 @@ const (
 const (
 	GGUFModelType = "ggufFile"
 )
-
