@@ -377,8 +377,8 @@ Function RemoveOldOadin
     DetailPrint "Removing old installation directory: $R3"
     RMDir /r "$R3"
 
-    Push $R3
-    Call RemoveSystemPath
+    ; Push $R3
+    ; Call RemoveSystemPath
     IfFileExists "${DEFAULT_INSTALL_DIR}" 0 delete_link
     delete_link:
       RMDir "${DEFAULT_INSTALL_DIR}"
@@ -492,8 +492,8 @@ Section "Uninstall"
   delete_link:
     RMDir "$DEFAULT_INSTALL_DIR"
 
-  Push $INSTDIR
-  Call un.RemoveSystemPath
+  ; Push $INSTDIR
+  ; Call un.RemoveSystemPath
 
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
