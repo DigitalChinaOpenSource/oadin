@@ -5,6 +5,6 @@ package condition_build
 import "fmt"
 
 func GetConfigFile() string {
-	fmt.Println(" setup local config file")
+	fmt.Println("Launch Local Environment")
 	return "config-local.yaml"
 }

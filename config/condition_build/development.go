@@ -5,6 +5,6 @@ package condition_build
 import "fmt"
 
 func GetConfigFile() string {
-	fmt.Println(" setup develop config file")
+	fmt.Println("Launch Development Environment")
 	return "config-dev.yaml"
 }
