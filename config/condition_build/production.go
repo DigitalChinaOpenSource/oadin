@@ -5,6 +5,6 @@ package condition_build
 import "fmt"
 
 func GetConfigFile() string {
-	fmt.Println(" setup production config file")
+	fmt.Println("Launch Production Environment")
 	return "config-prod.yaml"
 }

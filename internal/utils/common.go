@@ -757,12 +757,9 @@ func VerifyAmdGPU() string {
 		return types.GPUTypeNone
 	}
 
-	logger.EngineLogger.Info("GPU Info:", gpu)
 	for _, card := range gpu.GraphicsCards {
 		// 转为小写并去除多余空格进行匹配，确保兼容各种大小写格式
 		productName := strings.ToLower(strings.TrimSpace(card.DeviceInfo.Product.Name))
-		// 记录原始产品名用于调试
-		logger.EngineLogger.Info("Detecting AMD GPU:", card.DeviceInfo.Product.Name, "->", productName)
 
 		// APU系列 (集成显卡) - 按性能从高到低排序
 		switch {
