@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"oadin/internal/logger"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -76,7 +77,7 @@ func (j *JSONDatastore) Init() error {
 		return fmt.Errorf("failed to read embedded directory: %w", err)
 	}
 
-	fmt.Printf("Found %d embedded files\n", len(entries))
+	logger.EngineLogger.Info(fmt.Sprintf("Found %d embedded files", len(entries)))
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -85,7 +86,7 @@ func (j *JSONDatastore) Init() error {
 			continue
 		}
 
-		fmt.Printf("Processing embedded file: %s\n", entry.Name())
+		logger.EngineLogger.Info(fmt.Sprintf("Processing embedded file: %s", entry.Name()))
 		data, err := j.fs.ReadFile(entry.Name())
 		if err != nil {
 			return fmt.Errorf("failed to read embedded file %s: %w", entry.Name(), err)
@@ -104,7 +105,7 @@ func (j *JSONDatastore) Init() error {
 			return fmt.Errorf("failed to parse JSON file %s: %w", entry.Name(), err)
 		}
 
-		fmt.Printf("Loaded %d items from %s\n", len(items), tableName)
+		logger.EngineLogger.Info(fmt.Sprintf("Loaded %d items from %s", len(items), tableName))
 		for i := range items {
 			// Check if id exists
 			if _, hasID := items[i]["id"]; !hasID {
