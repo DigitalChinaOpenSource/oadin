@@ -100,18 +100,18 @@ func StopOadinServer(pidFilePath string) error {
 
 		if err := process.Kill(); err != nil {
 			if strings.Contains(err.Error(), "process already finished") {
-				logger.EngineLogger.Info("Process with PID %d is already stopped\n", pid)
+				logger.EngineLogger.Info("Process is already stopped", "pid", pid)
 			} else {
-				logger.EngineLogger.Info("Failed to kill process with PID %d: %v\n", pid, err)
+				logger.EngineLogger.Info("Failed to kill process", "pid", pid, "error", err)
 				continue
 			}
 		} else {
-			logger.EngineLogger.Info("Successfully stopped process with PID %d\n", pid)
+			logger.EngineLogger.Info("Successfully stopped process", "pid", pid)
 		}
 
 		// remove pid file
 		if err := os.Remove(pidFile); err != nil {
-			logger.EngineLogger.Info("Failed to remove PID file %s: %v\n", pidFile, err)
+			logger.EngineLogger.Info("Failed to remove PID file", "file", pidFile, "error", err)
 		}
 	}
 	if runtime.GOOS == "windows" {
@@ -120,20 +120,20 @@ func StopOadinServer(pidFilePath string) error {
 			extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
 			_, err := extraCmd.CombinedOutput()
 			if err != nil {
-				logger.EngineLogger.Info("failed to kill process: %s", extraProcessName)
+				logger.EngineLogger.Info("Failed to kill process", "process", extraProcessName, "error", err)
 				return nil
 			}
-			logger.EngineLogger.Info("Successfully killed process: %s\n", extraProcessName)
+			logger.EngineLogger.Info("Successfully killed process", "process", extraProcessName)
 		}
 
 		ovmsProcessName := "ovms.exe"
 		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
 		_, err = ovmsCmd.CombinedOutput()
 		if err != nil {
-			logger.EngineLogger.Info("failed to kill process: %s", ovmsProcessName)
+			logger.EngineLogger.Info("Failed to kill process", "process", ovmsProcessName, "error", err)
 			return nil
 		}
-		logger.EngineLogger.Info("Successfully killed process: %s\n", ovmsProcessName)
+		logger.EngineLogger.Info("Successfully killed process", "process", ovmsProcessName)
 
 	}
 
