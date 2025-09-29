@@ -99,6 +99,12 @@ Function StrStr
 FunctionEnd
 
 Section "Install"
+  nsExec::ExecToLog 'tasklist /FI "IMAGENAME eq oadin.exe" | find /I "oadin.exe"'
+  Pop $R0
+  StrCmp $R0 "" continue_install
+    nsExec::ExecToLog 'taskkill /F /IM oadin.exe'
+    Sleep 2000
+  continue_install:
   ; Ensure 64-bit environment
   SetRegView 64
   ${DisableX64FSRedirection}
