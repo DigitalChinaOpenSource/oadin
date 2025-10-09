@@ -246,15 +246,25 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 	}
 
 	if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
-		logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
-		if request.Stream {
-			dataBytes, _ := json.Marshal(res)
-			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-			flusher.Flush()
-		} else {
-			c.JSON(http.StatusOK, res)
+		modelList, _ := modelEngine.ListModels(c)
+		modelFileExist := false
+		for _, model := range modelList.Models {
+			if model.Name == request.ModelName || model.Model == request.ModelName {
+				modelFileExist = true
+				break
+			}
 		}
-		return
+		if modelFileExist {
+			logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
+			if request.Stream {
+				dataBytes, _ := json.Marshal(res)
+				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+				flusher.Flush()
+			} else {
+				c.JSON(http.StatusOK, res)
+			}
+			return
+		}
 	}
 
 	req := types.PullModelRequest{
@@ -384,8 +394,10 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 
 	if memoryInfo.Size > 32 {
 		models = []string{"qwen3:14b", "bge-m3:567m"}
-	} else {
+	} else if memoryInfo.Size > 16 || memoryInfo.Size <= 32 {
 		models = []string{"qwen3:8b", "quentinz/bge-large-zh-v1.5:f16"}
+	} else {
+		models = []string{"qwen3:4b", "quentinz/bge-large-zh-v1.5:f16"}
 	}
 
 	// 判断modelList.Models是否包含models的模型 如果缺少models的模型，则报错
@@ -401,6 +413,24 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 		// 如果找不到必需的模型，设置错误状态
 		if !found {
 			res.Status = fmt.Sprintf("missing required model: %s", requiredModel)
+			c.JSON(http.StatusOK, res)
+			return
+		}
+
+		modelType := "chat"
+		if requiredModel == "bge-m3:567m" || requiredModel == "quentinz/bge-large-zh-v1.5:f16" {
+			modelType = "embed"
+		}
+
+		req := dto.ModelDownloadRequest{
+			EngineName: request.EngineName,
+			ModelName:  requiredModel,
+			ModelType:  modelType,
+		}
+
+		err := e.EngineManageService.CheckLocalModelExist(c, req);
+		if err != nil {
+			res.Status = fmt.Sprintf("table model not found: %s", err.Error())
 			c.JSON(http.StatusOK, res)
 			return
 		}
