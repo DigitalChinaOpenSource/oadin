@@ -9,6 +9,30 @@ OADIN_FOLDER="$HOME/Oadin"
 
 echo "--- Oadin 安装前置检查 ---"
 
+echo "--- 检查并停止正在运行的 Oadin 服务 ---"
+OADIN_COMMAND_EXISTS=$(command -v oadin)
+if [ -n "$OADIN_COMMAND_EXISTS" ]; then
+    # 检查 oadin 是否在运行
+    OADIN_RUNNING=$(pgrep -f "oadin")
+    if [ -n "$OADIN_RUNNING" ]; then
+        echo "检测到 Oadin 正在运行，尝试执行 'oadin server stop'..."
+        oadin server stop
+        sleep 2
+        # 再次检查
+        OADIN_RUNNING=$(pgrep -f "oadin")
+        if [ -n "$OADIN_RUNNING" ]; then
+            echo "Oadin 未能成功停止，请手动关闭后重试安装。"
+            exit 1
+        else
+            echo "Oadin 已成功停止。"
+        fi
+    else
+        echo "未检测到正在运行的 Oadin 服务。"
+    fi
+else
+    echo "未找到 oadin 命令，跳过停止服务步骤。"
+fi
+
 # 尝试执行 oadin --version 并捕获输出
 OADIN_COMMAND_EXISTS=$(command -v oadin)
 
