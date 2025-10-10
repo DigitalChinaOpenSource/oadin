@@ -105,7 +105,7 @@ Section "Install"
     nsExec::ExecToLog 'oadin server stop'
   continue_install:
   DetailPrint "kill oadin.exe"
-  Sleep 5000
+  Sleep 3000
   ; Ensure 64-bit environment
   SetRegView 64
   ${DisableX64FSRedirection}
@@ -147,7 +147,7 @@ Section "Install"
 
   DetailPrint "Starting Oadin service..."
   nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
-  Sleep 5000
+  Sleep 3000
 
   ${EnableX64FSRedirection}
   
