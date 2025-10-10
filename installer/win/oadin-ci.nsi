@@ -105,6 +105,8 @@ Section "Install"
     nsExec::ExecToLog 'taskkill /F /IM oadin.exe'
     Sleep 2000
   continue_install:
+  DetailPrint "kill oadin.exe"
+  Sleep 2000
   ; Ensure 64-bit environment
   SetRegView 64
   ${DisableX64FSRedirection}
@@ -127,6 +129,7 @@ Section "Install"
   File "preinstall.bat"
   File "postinstall.bat"
   File "start-oadin.bat"
+  DetailPrint "Copy files"
 
   ; Write registry (64-bit view)
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
