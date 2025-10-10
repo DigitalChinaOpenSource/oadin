@@ -103,9 +103,9 @@ Section "Install"
   Pop $R0
   StrCmp $R0 "" continue_install
     nsExec::ExecToLog 'oadin server stop'
+    DetailPrint "oadin server stop"
+    Sleep 3000
   continue_install:
-  DetailPrint "kill oadin.exe"
-  Sleep 3000
   ; Ensure 64-bit environment
   SetRegView 64
   ${DisableX64FSRedirection}
