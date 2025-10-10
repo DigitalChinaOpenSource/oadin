@@ -102,11 +102,10 @@ Section "Install"
   nsExec::ExecToLog 'tasklist /FI "IMAGENAME eq oadin.exe" | find /I "oadin.exe"'
   Pop $R0
   StrCmp $R0 "" continue_install
-    nsExec::ExecToLog 'taskkill /F /IM oadin.exe'
-    Sleep 2000
+    nsExec::ExecToLog 'oadin server stop'
   continue_install:
   DetailPrint "kill oadin.exe"
-  Sleep 2000
+  Sleep 5000
   ; Ensure 64-bit environment
   SetRegView 64
   ${DisableX64FSRedirection}
@@ -148,6 +147,7 @@ Section "Install"
 
   DetailPrint "Starting Oadin service..."
   nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
+  Sleep 5000
 
   ${EnableX64FSRedirection}
   
