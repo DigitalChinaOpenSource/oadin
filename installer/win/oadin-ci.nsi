@@ -147,7 +147,6 @@ Section "Install"
 
   DetailPrint "Starting Oadin service..."
   nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
-  Sleep 3000
 
   ${EnableX64FSRedirection}
   
