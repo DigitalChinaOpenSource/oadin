@@ -593,8 +593,8 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 		// 用于存储最新的进度信息
 		var latestProgressData []byte
 
-        const maxRetries = 3
-        const maxSlowSpeedDetections = 3 // 允许连续几次检测到低速率
+        const maxRetries = 10
+        const maxSlowSpeedDetections = 2 // 允许连续几次检测到低速率
         const minExpectedSpeed = 500 * 1024 // 500KB/s最低期望速度
         const checkInterval = 5 * time.Second // 每5秒检查一次下载速度
 
