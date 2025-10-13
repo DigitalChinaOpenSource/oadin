@@ -57,11 +57,11 @@ fi
 
 # 复制 oadin 二进制文件到用户目录
 mkdir -p "$USER_HOME/Oadin"
-cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
+sudo cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
 chmod +x "$USER_HOME/Oadin/oadin"
 
 # 链接到 /usr/local/bin
-ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
+sudo ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
 
 # 启动 oadin 服务
 su - "$USER_NAME" -c "source $RC_FILE && oadin server start -d"
