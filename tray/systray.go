@@ -9,24 +9,22 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/getlantern/systray"
+	"github.com/getlantern/systray/example/icon"
+	"github.com/pkg/browser"
+	"github.com/sqweek/dialog"
 	"oadin/config"
 	"oadin/internal/utils"
 	serverUtils "oadin/internal/utils/server"
 	trayTemplate "oadin/tray/icon"
 	tray "oadin/tray/utils"
-
-	"github.com/getlantern/systray/example/icon"
-	"github.com/pkg/browser"
-
-	"github.com/getlantern/systray"
-	"github.com/getlantern/systray/example/icon"
-	"github.com/pkg/browser"
-	"github.com/sqweek/dialog"
 )
 
 // Manager handles the system tray functionality
 type Manager struct {
 	serverRunning   bool
+	onServerStart   func() error
+	onServerStop    func() error
 	updateAvailable bool
 	mRestartUpdate  *systray.MenuItem
 	execPath        string
@@ -40,9 +38,15 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 	return &Manager{
 		serverRunning:   false,
 		updateAvailable: false,
-		execPath:        execPath,
-		logPath:         logPath,
-		pidPath:         pidPath,
+		onServerStart: func() error {
+			return serverUtils.StartOadinServer(logPath, pidPath)
+		},
+		onServerStop: func() error {
+			return serverUtils.StopOadinServer(pidPath)
+		},
+		execPath: execPath,
+		logPath:  logPath,
+		pidPath:  pidPath,
 	}
 }
 
@@ -54,7 +58,7 @@ func (m *Manager) Start() {
 	trayTemplate.DebugListFiles()
 
 	// 检查服务器状态
-	m.serverRunning = utils.IsServerRunning()
+	m.serverRunning = serverUtils.IsServerRunning()
 	fmt.Printf("Initial server status: %v\n", m.serverRunning)
 
 	// 启动时如果服务器没运行，自动启动并打开浏览器
@@ -200,7 +204,7 @@ func (m *Manager) onReady() {
 			// 	}
 			case <-m.mRestartUpdate.ClickedCh:
 				if confirmed := dialog.Message("This will stop all servers and install the update. Continue?").Title("Confirm Update").YesNo(); confirmed {
-					err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
+					err := serverUtils.StopOadinServer(filepath.Join(m.pidPath, "oadin.pid"))
 					if err != nil {
 						dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
 					}
@@ -219,7 +223,7 @@ func (m *Manager) onReady() {
 			case <-mQuit.ClickedCh:
 				if m.serverRunning {
 					if confirmed := dialog.Message("Server is still running. Do you want to stop it and quit?").Title("Confirm Quit").YesNo(); confirmed {
-						err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
+						err := serverUtils.StopOadinServer(filepath.Join(m.pidPath, "oadin.pid"))
 						if err != nil {
 							dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
 						}
@@ -240,13 +244,13 @@ func (m *Manager) onReady() {
 // 处理启动/停止服务
 func (m *Manager) handleStartStop() {
 	// 检查实际服务器状态
-	actualStatus := utils.IsServerRunning()
+	actualStatus := serverUtils.IsServerRunning()
 	m.serverRunning = actualStatus
 
 	if m.serverRunning {
 		// 停止服务器
 		if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
-			err := utils.StopOADINServer(filepath.Join(m.pidPath, "oadin.pid"))
+			err := serverUtils.StopOadinServer(filepath.Join(m.pidPath, "oadin.pid"))
 			if err == nil {
 				m.serverRunning = false
 			} else {
@@ -269,7 +273,7 @@ func (m *Manager) handleStartStop() {
 // 处理打开控制台
 func (m *Manager) handleOpenConsole() {
 	// 检查服务器是否运行
-	if !utils.IsServerRunning() {
+	if !serverUtils.IsServerRunning() {
 		// 如果服务器没运行，询问是否启动
 		if confirmed := dialog.Message("Oadin server is not running. Start it now?").Title("Start Server").YesNo(); confirmed {
 			err := StartOADINServerTray(m.logPath, m.pidPath)
@@ -451,7 +455,6 @@ func isMacDarkMode() bool {
 	return string(out) == "Dark\n"
 }
 
-
 func StartOADINServerTray(logPath string, pidFilePath string) error {
 	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
@@ -466,7 +469,7 @@ func StartOADINServerTray(logPath string, pidFilePath string) error {
 	oadinExe := "oadin"
 	if runtime.GOOS == "windows" {
 		oadinExe = "oadin.exe"
-	} 
+	}
 	execFile := filepath.Join(filepath.Dir(appExe), oadinExe)
 	fmt.Println("Starting oadin server: ", execFile)
 	cmd := exec.Command(execFile, "server", "start")

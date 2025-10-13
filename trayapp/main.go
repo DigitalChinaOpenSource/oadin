@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
-	"context"
 
-	"oadin/tray"
-	"oadin/internal/utils"
+	"oadin/config"
+	"oadin/internal/logger"
+	"
 )
 
 var (
@@ -71,6 +72,9 @@ func main() {
 	trayManager := tray.NewManager(true, logPath, pidPath)
 	ctx := context.Background()
 	tray.StartCheckUpdate(ctx, trayManager)
+
+	config.GlobalEnvironment = config.NewOADINEnvironment()
+	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalEnvironment.LogLevel, LogPath: config.GlobalEnvironment.LogDir})
 
 	// 启动托盘
 	trayManager.Start()
