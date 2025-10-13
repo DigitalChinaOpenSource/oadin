@@ -45,12 +45,12 @@ ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
 # 先判断旧版本oadin是否运行，如果运行，则停止它
 if pgrep -x "oadin" > /dev/null; then
     echo "oadin 正在运行，正在停止它..."
-    su - "$USER_NAME" -c "$USER_HOME/Oadin/oadin server stop"
-    sleep 5  # 等待几秒钟以确保服务已停止
+    su - "$USER_NAME" -c "oadin server stop >> /tmp/oadin_su.log 2>&1"
+    sleep 6  # 等待几秒钟以确保服务已停止
     echo "oadin 已停止。"
 else
     echo "oadin 未在运行。"
 fi
 
 # 启动 oadin 服务
-su - "$USER_NAME" -c "$USER_HOME/Oadin/oadin server start -d"
+su - "$USER_NAME" -c "oadin server start -d >> /tmp/oadin_su.log 2>&1"
