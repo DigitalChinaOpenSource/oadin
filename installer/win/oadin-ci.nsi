@@ -18,7 +18,7 @@
 !define DEFAULT_PARAMS_DATA_DIR "C:\ProgramData\oadin_phase.txt"
 !define DEFAULT_PARAMS_DATA_DIR1 "C:\ProgramData\oadin_phase1.txt"
 
-Outfile "oadin-installer.exe"
+Outfile "..\..\oadin-installer.exe"
 InstallDir "${DEFAULT_INSTALL_DIR}"
 RequestExecutionLevel user
 SetCompress auto
@@ -132,8 +132,8 @@ Section "Install"
   SetOutPath "$INSTDIR"
   CreateDirectory "$INSTDIR"
 
-  File "../../oadin.exe"
-  File "../../oadin-app.exe"
+  File "..\..\oadin.exe"
+  File "..\..\oadin-app.exe"
   File "oadin.ico"
 
   ; Write registry and PATH
