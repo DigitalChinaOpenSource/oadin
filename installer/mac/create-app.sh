@@ -25,7 +25,7 @@ if [ ! -f "oadin" ]; then
 fi
 
 if [ ! -f "oadin-app" ]; then
-    echo "Error: oadin-tray executable not found"
+    echo "Error: oadin-app executable not found"
     exit 1
 fi
 
