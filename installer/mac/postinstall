@@ -51,9 +51,12 @@ fi
 mkdir -p "$USER_HOME/Oadin"
 sudo cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
 chmod +x "$USER_HOME/Oadin/oadin"
+echo "已复制 oadin 二进制文件到 $USER_HOME/Oadin 并设置可执行权限"
 
 # 链接到 /usr/local/bin
 sudo ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
+echo "已创建 /usr/local/bin/oadin 的符号链接"
 
 # 启动 oadin 服务
 su - "$USER_NAME" -c "source $RC_FILE && oadin server start -d"
+echo "已启动 Oadin 服务"
