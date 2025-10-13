@@ -9,6 +9,7 @@ USER_HOME=$(eval echo ~$REAL_USER)
 # 应用安装路径
 APP_BUNDLE="/Applications/Oadin.app"
 MACOS_DIR="${APP_BUNDLE}/Contents/MacOS"
+RESOURCE_DIR ="${APP_BUNDLE}/Contents/Resources"
 
 echo "Starting Oadin postinstall process..."
 
@@ -20,19 +21,19 @@ chown -R "$REAL_USER:staff" "$USER_HOME/Oadin"
 mkdir -p /usr/local/bin
 
 # 创建软链接到 /usr/local/bin
-if [ -f "${MACOS_DIR}/oadin" ]; then
-    ln -sf "${MACOS_DIR}/oadin" /usr/local/bin/oadin
-    echo "Created symlink: /usr/local/bin/oadin -> ${MACOS_DIR}/oadin"
+if [ -f "${RESOURCE_DIR}/oadin" ]; then
+    ln -sf "${RESOURCE_DIR}/oadin" /usr/local/bin/oadin
+    echo "Created symlink: /usr/local/bin/oadin -> ${RESOURCE_DIR}/oadin"
 else
-    echo "Warning: oadin executable not found in ${MACOS_DIR}"
+    echo "Warning: oadin executable not found in ${RESOURCE_DIR}"
 fi
 
 # 确保权限正确
-chmod +x "${APP_BUNDLE}/Contents/MacOS/oadin"
-chmod +x "${APP_BUNDLE}/Contents/MacOS/oadin-tray"
+chmod +x "${RESOURCE_DIR}/oadin"
+chmod +x "${MACOS_DIR}/oadin-app"
 
 # 启动 oadin-tray (作为登录项)
-open "${APP_BUNDLE}"
+open "${MACOS_DIR}/oadin-app"
 
 echo "Oadin installation completed successfully"
 exit 0

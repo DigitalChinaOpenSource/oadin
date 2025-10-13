@@ -41,7 +41,7 @@ jobs:
           echo "--------- 🛠️ 制品构建与签名 ----------"
           go mod tidy
           # 清理可能存在的旧二进制文件和目录
-          rm -f oadin oadin-tray oadin.pkg
+          rm -f oadin oadin-app oadin.pkg
           rm -rf pkgroot upload
           echo "$ENV active"
           echo "=== 构建参数 ==="
@@ -51,6 +51,7 @@ jobs:
           echo "Tags: $ENV"
           echo "LDFLAGS: -s -w"
           CGO_ENABLED=1 CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec" GOOS=darwin GOARCH=arm64  go build -o oadin -tags "$ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG'"  cmd/cli/main.go
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o oadin-app -tags "$ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG'" trayapp/main.go
           echo "=== 二进制分析 ==="
           file oadin
           echo "符号表大小分析:"
@@ -58,59 +59,11 @@ jobs:
           codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
           
           # 签名托盘程序
-          codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin-tray
+          codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin-app
           
           echo "--------- 📦 创建 .app 应用程序包 ----------"
-          # 创建 .app 目录结构
-          mkdir -p "Oadin.app/Contents/MacOS"
-          mkdir -p "Oadin.app/Contents/Resources"
-          
-          # 复制可执行文件
-          cp oadin "Oadin.app/Contents/MacOS/"
-          cp oadin-tray "Oadin.app/Contents/MacOS/"
-          
-          # 复制图标文件（如果存在）
-          if [ -f "installer/mac/oadin.icns" ]; then
-              cp installer/mac/oadin.icns "Oadin.app/Contents/Resources/"
-          fi
-          
-          # 创建 Info.plist
-          cat > "Oadin.app/Contents/Info.plist" << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>CFBundleDevelopmentRegion</key>
-              <string>en</string>
-              <key>CFBundleDisplayName</key>
-              <string>Oadin</string>
-              <key>CFBundleExecutable</key>
-              <string>oadin-tray</string>
-              <key>CFBundleIconFile</key>
-              <string>oadin.icns</string>
-              <key>CFBundleIdentifier</key>
-              <string>com.digitalchina.oadin</string>
-              <key>CFBundleInfoDictionaryVersion</key>
-              <string>6.0</string>
-              <key>CFBundleName</key>
-              <string>Oadin</string>
-              <key>CFBundlePackageType</key>
-              <string>APPL</string>
-              <key>CFBundleShortVersionString</key>
-              <string>${CI_COMMIT_TAG}</string>
-              <key>CFBundleVersion</key>
-              <string>${CI_COMMIT_TAG}</string>
-              <key>LSMinimumSystemVersion</key>
-              <string>11.0</string>
-              <key>LSUIElement</key>
-              <true/>
-              <key>NSHighResolutionCapable</key>
-              <true/>
-              <key>NSHumanReadableCopyright</key>
-              <string>Copyright © 2024 Digital China. All rights reserved.</string>
-          </dict>
-          </plist>
-          EOF
+          chmod +x installer/mac/preinstall/create-app.sh
+          installer/mac/preinstall/create-app.sh
           
           # 签名 .app
           codesign --verbose --force --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" "Oadin.app"
@@ -120,18 +73,18 @@ jobs:
           rm -rf pkgroot
           # 使用正确的目录名称，确保一致性
           mkdir -p pkgroot/Oadin
-          mv oadin pkgroot/Oadin/oadin
+          mv Oadin.app pkgroot/Oadin/Oadin.app
           chmod +x installer/mac/preinstall
           chmod +x installer/mac/postinstall
           # 添加文件大小检查
           echo "=== Mac 二进制文件详细信息 ==="
-          echo "二进制文件大小: $(du -h pkgroot/Oadin/oadin | cut -f1)"
-          echo "二进制文件大小(字节): $(stat -f%z pkgroot/Oadin/oadin)"
+          # echo "二进制文件大小: $(du -h pkgroot/Oadin/oadin | cut -f1)"
+          # echo "二进制文件大小(字节): $(stat -f%z pkgroot/Oadin/oadin)"
           echo "pkgroot目录内容:"
           ls -la pkgroot/Oadin/
           # 确保只包含我们想要的文件
           echo "pkgroot目录总大小: $(du -sh pkgroot | cut -f1)"
-          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
+          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Applications --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin/Oadin.app --scripts ./installer/mac oadin.pkg
           echo "安装包大小: $(du -h oadin.pkg | cut -f1)"
           echo "--------- 📬 安装包公证 ----------"
           xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
@@ -208,11 +161,13 @@ jobs:
           echo "Tags: $($env:ENV)"
           echo "LDFLAGS: -s -w"
           go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG'"  cmd/cli/main.go
+          go build -o oadin-app.exe -tags "$env:ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG' -H=windowsgui" trayapp/main.go
           # 添加详细的文件大小检查
           echo "=== Windows 二进制文件详细信息 ==="
           Get-ChildItem -Path "oadin.exe" | Format-Table Name, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB,2)}}, Length -AutoSize
           echo "二进制文件大小(字节): $((Get-Item 'oadin.exe').Length)"
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
+          signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-app.exe"
           
           echo "--------- 📦 安装包构建与签名 ----------"
           echo "使用CI兼容的64位NSIS脚本..."

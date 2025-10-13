@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"oadin/internal/utils"
+	"oadin/tray"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"oadin/config"
 	"oadin/internal/logger"
-	"
 )
 
 var (
@@ -61,15 +62,17 @@ func main() {
 		return
 	}
 
-	logPath := filepath.Join(rootDir, "logs", "console.log")
+	logDirPath := filepath.Join(rootDir, "logs")
+	logFilePath := filepath.Join(logDirPath, "oadin.log")
 	pidPath := rootDir
 
 	// 确保目录存在
-	os.MkdirAll(logPath, 0755)
+	os.MkdirAll(logDirPath, 0755)
 	os.MkdirAll(pidPath, 0755)
+	os.Create(logFilePath)
 
 	// 创建托盘管理器
-	trayManager := tray.NewManager(true, logPath, pidPath)
+	trayManager := tray.NewManager(true, logFilePath, pidPath)
 	ctx := context.Background()
 	tray.StartCheckUpdate(ctx, trayManager)
 

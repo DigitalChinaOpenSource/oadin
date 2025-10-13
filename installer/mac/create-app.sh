@@ -4,7 +4,7 @@ set -e
 APP_NAME="Oadin"
 # "/Applications/Oadin.app/Contents/MacOS"
 # "/Applications/Oadin.app/Contents/Resources"
-APP_BUNDLE="/Applications/${APP_NAME}.app"
+APP_BUNDLE="$(pwd)/${APP_NAME}.app"
 CONTENTS_DIR="${APP_BUNDLE}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
@@ -24,14 +24,14 @@ if [ ! -f "oadin" ]; then
     exit 1
 fi
 
-if [ ! -f "oadin-tray" ]; then
+if [ ! -f "oadin-app" ]; then
     echo "Error: oadin-tray executable not found"
     exit 1
 fi
 
 # 复制可执行文件
-sudo cp oadin "${MACOS_DIR}/"
-sudo cp oadin-tray "${MACOS_DIR}/"
+sudo cp $(pwd)/oadin "${RESOURCES_DIR}/"
+sudo cp $(pwd)/oadin-app "${MACOS_DIR}/"
 
 # 复制应用图标（如果存在）
 if [ -f "tray/icon/oadin-icon.icns" ]; then
@@ -50,7 +50,7 @@ sudo cat > "${CONTENTS_DIR}/Info.plist" << EOF
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>oadin-tray</string>
+    <string>oadin-app</string>
     <key>CFBundleIdentifier</key>
     <string>com.digitalchina.oadin</string>
     <key>CFBundleName</key>
@@ -76,8 +76,8 @@ sudo cat > "${CONTENTS_DIR}/Info.plist" << EOF
 EOF
 
 # 设置权限
-sudo chmod +x "${MACOS_DIR}/oadin"
-sudo chmod +x "${MACOS_DIR}/oadin-tray"
+sudo chmod +x "${RESOURCES_DIR}/oadin"
+sudo chmod +x "${MACOS_DIR}/oadin-app"
 sudo chown -R root:wheel "${APP_BUNDLE}"
 
 echo "Oadin.app created successfully at ${APP_BUNDLE}"
