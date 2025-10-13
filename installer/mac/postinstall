@@ -1,4 +1,5 @@
 #!/bin/bash
+exec > /tmp/oadin_postinstall.log 2>&1
 
 # 获取当前用户家目录
 USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
