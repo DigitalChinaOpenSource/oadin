@@ -62,7 +62,7 @@ jobs:
           codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin-app
           
           echo "--------- 📦 创建 .app 应用程序包 ----------"
-          chmod +x installer/mac/preinstall/create-app.sh
+          chmod +x installer/mac/create-app.sh
           installer/mac/create-app.sh
           
           # 签名 .app
