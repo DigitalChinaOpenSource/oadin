@@ -45,5 +45,5 @@ ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
 echo "已创建 /usr/local/bin/oadin 的符号链接"
 
 # 启动 oadin 服务
-su - "$USER_NAME" -c "echo su ok >> /tmp/oadin_su.log && oadin server stop >> /tmp/oadin_su.log 2>&1 && oadin server start -d >> /tmp/oadin_su.log 2>&1"
+su - "$USER_NAME" -c "echo su ok >> /tmp/oadin_su.log && which oadin >> /tmp/oadin_su.log && oadin server stop >> /tmp/oadin_su.log 2>&1 && oadin server start -d >> /tmp/oadin_su.log 2>&1"
 echo "已启动 Oadin 服务"
