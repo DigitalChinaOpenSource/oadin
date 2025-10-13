@@ -1,5 +1,4 @@
 #!/bin/bash
-exec > /tmp/oadin_postinstall.log 2>&1
 
 # 获取当前用户家目录
 USER_HOME=$(eval echo ~${SUDO_USER:-$USER})
@@ -30,7 +29,6 @@ if [ -n "$RC_FILE" ]; then
   if ! grep -q '/usr/local/bin' "$RC_FILE"; then
     echo 'export PATH="/usr/local/bin:$PATH"' >> "$RC_FILE"
     echo "已将 /usr/local/bin 添加到 PATH 中（$RC_FILE）"
-    source $RC_FILE
   fi
 fi
 
@@ -42,17 +40,5 @@ chmod +x "$USER_HOME/Oadin/oadin"
 # 链接到 /usr/local/bin
 ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
 
-# 先判断旧版本oadin是否运行，如果运行，则停止它
-if pgrep -x "oadin" > /dev/null; then
-    echo "oadin 正在运行，正在停止它..."
-    /usr/local/bin/oadin server stop >> /tmp/oadin_postinstall.log 2>&1
-    sleep 6  # 等待几秒钟以确保服务已停止
-    echo "oadin 已停止。"
-else
-    echo "oadin 未在运行。"
-fi
-
 # 启动 oadin 服务
-rm -f /tmp/oadin_su.log
-su - "$USER_NAME" -c "oadin server start -d >> /tmp/oadin_su.log 2>&1"
-echo "oadin 服务已启动。"
+su - "$USER_NAME" -c "source $RC_FILE && oadin server start -d"
