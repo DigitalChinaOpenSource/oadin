@@ -16,7 +16,7 @@
 
 Outfile "..\..\oadin-installer.exe"
 InstallDir "${INSTALL_DIR}"
-RequestExecutionLevel admin
+; RequestExecutionLevel admin
 SetCompress auto
 SetCompressor lzma
 
