@@ -54,3 +54,4 @@ fi
 
 # 启动 oadin 服务
 su - "$USER_NAME" -c "oadin server start -d >> /tmp/oadin_su.log 2>&1"
+echo "oadin 服务已启动。"
