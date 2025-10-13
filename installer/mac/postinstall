@@ -33,31 +33,16 @@ if [ -n "$RC_FILE" ]; then
   fi
 fi
 
-# 检查并停止正在运行的 Oadin 服务
-OADIN_CMD=$(oadin version)
-if [ -n "$OADIN_CMD" ]; then
-  OADIN_RUNNING=$(pgrep -f "oadin")
-  if [ -n "$OADIN_RUNNING" ]; then
-    echo "检测到 Oadin 正在运行，尝试停止服务..."
-    oadin server stop
-    sleep 6
-  else
-    echo "未检测到正在运行的 Oadin 服务。"
-  fi
-else
-  echo "未找到 oadin 命令，跳过停止服务步骤。"
-fi
-
 # 复制 oadin 二进制文件到用户目录
 mkdir -p "$USER_HOME/Oadin"
-sudo cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
+cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
 chmod +x "$USER_HOME/Oadin/oadin"
 echo "已复制 oadin 二进制文件到 $USER_HOME/Oadin 并设置可执行权限"
 
 # 链接到 /usr/local/bin
-sudo ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
+ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
 echo "已创建 /usr/local/bin/oadin 的符号链接"
 
 # 启动 oadin 服务
-su - "$USER_NAME" -c "source $RC_FILE && oadin server start -d"
+su - "$USER_NAME" -c "source $RC_FILE && oadin server start -d"  >> /tmp/oadin_postinstall.log 2>&1
 echo "已启动 Oadin 服务"
