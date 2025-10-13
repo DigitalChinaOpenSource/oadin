@@ -39,15 +39,7 @@ if [ -n "$OADIN_CMD" ]; then
   if [ -n "$OADIN_RUNNING" ]; then
     echo "检测到 Oadin 正在运行，尝试停止服务..."
     oadin server stop
-    sleep 3
-    # 再次检查
-    OADIN_RUNNING=$(pgrep -f "oadin")
-    if [ -n "$OADIN_RUNNING" ]; then
-      echo "Oadin 未能成功停止，请手动关闭后重试安装。"
-      exit 1
-    else
-      echo "Oadin 服务已成功停止。"
-    fi
+    sleep 6
   else
     echo "未检测到正在运行的 Oadin 服务。"
   fi
@@ -57,11 +49,11 @@ fi
 
 # 复制 oadin 二进制文件到用户目录
 mkdir -p "$USER_HOME/Oadin"
-sudo cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
+cp -f /Users/Shared/Oadin/oadin "$USER_HOME/Oadin/oadin"
 chmod +x "$USER_HOME/Oadin/oadin"
 
 # 链接到 /usr/local/bin
-sudo ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
+ln -sf "$USER_HOME/Oadin/oadin" /usr/local/bin/oadin
 
 # 启动 oadin 服务
 su - "$USER_NAME" -c "source $RC_FILE && oadin server start -d"
