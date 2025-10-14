@@ -32,6 +32,7 @@ fi
 # 复制可执行文件
 cp $(pwd)/oadin "${RESOURCES_DIR}/"
 cp $(pwd)/oadin-app "${MACOS_DIR}/"
+cp oadin-launcher.sh "${MACOS_DIR}/"
 
 # 复制应用图标（如果存在）
 if [ -f "tray/icon/oadin-icon.icns" ]; then
@@ -71,7 +72,8 @@ cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <true/>
     <key>LSUIElement</key>
     <true/>
-</dict>
+    <key>CFBundleExecutable</key>
+    <string>oadin-launcher</string>
 </plist>
 EOF
 

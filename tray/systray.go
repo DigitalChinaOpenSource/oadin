@@ -468,18 +468,18 @@ func StartOADINServerTray(logPath string, pidFilePath string) error {
 		return fmt.Errorf("failed to open log file: %v", err)
 	}
 	defer logFile.Close()
-	appExe, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %v", err)
-	}
+	//appExe, err := os.Executable()
+	//if err != nil {
+	//	return fmt.Errorf("failed to get executable path: %v", err)
+	//}
 
 	oadinExe := "oadin"
 	if runtime.GOOS == "windows" {
 		oadinExe = "oadin.exe"
 	}
-	execFile := filepath.Join(filepath.Dir(appExe), oadinExe)
-	fmt.Println("Starting oadin server: ", execFile)
-	cmd := exec.Command(execFile, "server", "start")
+	//execFile := filepath.Join(filepath.Dir(appExe), oadinExe)
+	//fmt.Println("Starting oadin server: ", execFile)
+	cmd := exec.Command(oadinExe, "server", "start")
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 	utils.SetCmdSysProcAttr(cmd)
