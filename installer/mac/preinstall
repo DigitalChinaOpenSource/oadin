@@ -9,16 +9,27 @@ THIS_VERSION="${CI_COMMIT_TAG:-1.0.0}"
 REAL_USER="${SUDO_USER:-$USER}"
 USER_HOME=$(eval echo ~$REAL_USER)
 OADIN_FOLDER="$USER_HOME/Oadin"
+APP_PATH="/Applications/Oadin.app"
 
 echo "--- Oadin 安装前置检查 ---"
 
 # 检查是否存在 oadin 命令
-if command -v oadin >/dev/null 2>&1; then
+if [ -d "$APP_PATH" ]; then
     OADIN_OUTPUT=$(oadin --version 2>&1 || echo "")
     echo "当前 Oadin 版本: $OADIN_OUTPUT"
     
     if [ "$OADIN_OUTPUT" != "$THIS_VERSION" ]; then
         echo "版本不匹配，清理旧版本..."
+        # stop server
+        if [ -f "/Applications/Oadin.app/Contents/Resource/oadin" ]; then
+            "/Applications/Oadin.app/Contents/Resource/oadin" server stop 2>/dev/null || true
+        fi
+        sleep 2
+
+        pkill -f "oadin" 2>/dev/null || true
+        pkill -f "oadin-app" 2>/dev/null || true
+
+        sleep 2
         
         # 删除用户目录
         if [ -d "$OADIN_FOLDER" ]; then
