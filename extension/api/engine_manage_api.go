@@ -397,7 +397,7 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 	} else if memoryInfo.Size > 16 && memoryInfo.Size <= 32 {
 		models = []string{"qwen3:8b", "quentinz/bge-large-zh-v1.5:f16"}
 	} else {
-		models = []string{"qwen3:1.7b", "quentinz/bge-large-zh-v1.5:f16"}
+		models = []string{"qwen3:1.7b-fp16", "quentinz/bge-large-zh-v1.5:f16"}
 	}
 
 	// 判断modelList.Models是否包含models的模型 如果缺少models的模型，则报错
