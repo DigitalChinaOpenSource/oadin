@@ -35,16 +35,16 @@ cp $(pwd)/oadin-app "${MACOS_DIR}/"
 
 # 复制应用图标（如果存在）
 if [ -f "tray/icon/oadin-icon.icns" ]; then
-    sudo cp "tray/icon/oadin-icon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+    cp "tray/icon/oadin-icon.icns" "${RESOURCES_DIR}/AppIcon.icns"
     echo "✅ Added application icon"
 elif [ -f "tray/icon/oadin-icon.png" ]; then
     # 如果没有icns文件，可以从png转换
-    sudo cp "tray/icon/oadin-icon.png" "${RESOURCES_DIR}/AppIcon.png"
+    cp "tray/icon/oadin-icon.png" "${RESOURCES_DIR}/AppIcon.png"
     echo "✅ Added PNG application icon"
 fi
 
 # 创建 Info.plist
-sudo cat > "${CONTENTS_DIR}/Info.plist" << EOF
+cat > "${CONTENTS_DIR}/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
