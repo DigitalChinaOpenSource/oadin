@@ -12,11 +12,11 @@ RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 echo "Creating Oadin.app bundle..."
 
 # 清理旧的应用包
-sudo rm -rf "${APP_BUNDLE}"
+rm -rf "${APP_BUNDLE}"
 
 # 创建应用包结构
-sudo mkdir -p "${MACOS_DIR}"
-sudo mkdir -p "${RESOURCES_DIR}"
+mkdir -p "${MACOS_DIR}"
+mkdir -p "${RESOURCES_DIR}"
 
 # 检查文件是否存在
 if [ ! -f "oadin" ]; then
@@ -30,8 +30,8 @@ if [ ! -f "oadin-app" ]; then
 fi
 
 # 复制可执行文件
-sudo cp $(pwd)/oadin "${RESOURCES_DIR}/"
-sudo cp $(pwd)/oadin-app "${MACOS_DIR}/"
+cp $(pwd)/oadin "${RESOURCES_DIR}/"
+cp $(pwd)/oadin-app "${MACOS_DIR}/"
 
 # 复制应用图标（如果存在）
 if [ -f "tray/icon/oadin-icon.icns" ]; then
@@ -76,8 +76,8 @@ sudo cat > "${CONTENTS_DIR}/Info.plist" << EOF
 EOF
 
 # 设置权限
-sudo chmod +x "${RESOURCES_DIR}/oadin"
-sudo chmod +x "${MACOS_DIR}/oadin-app"
-sudo chown -R root:wheel "${APP_BUNDLE}"
+chmod +x "${RESOURCES_DIR}/oadin"
+chmod +x "${MACOS_DIR}/oadin-app"
+chown -R root:wheel "${APP_BUNDLE}"
 
 echo "Oadin.app created successfully at ${APP_BUNDLE}"
