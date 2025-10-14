@@ -78,6 +78,6 @@ EOF
 # 设置权限
 chmod +x "${RESOURCES_DIR}/oadin"
 chmod +x "${MACOS_DIR}/oadin-app"
-chown -R root:wheel "${APP_BUNDLE}"
+# chown -R root:wheel "${APP_BUNDLE}"
 
 echo "Oadin.app created successfully at ${APP_BUNDLE}"
