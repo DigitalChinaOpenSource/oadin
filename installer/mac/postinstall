@@ -9,7 +9,7 @@ USER_HOME=$(eval echo ~$REAL_USER)
 # 应用安装路径
 APP_BUNDLE="/Applications/Oadin.app"
 MACOS_DIR="${APP_BUNDLE}/Contents/MacOS"
-RESOURCE_DIR ="${APP_BUNDLE}/Contents/Resources"
+RESOURCE_DIR="${APP_BUNDLE}/Contents/Resources"
 
 echo "Starting Oadin postinstall process..."
 

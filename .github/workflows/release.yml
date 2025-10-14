@@ -84,7 +84,7 @@ jobs:
           ls -la pkgroot/Oadin/
           # 确保只包含我们想要的文件
           echo "pkgroot目录总大小: $(du -sh pkgroot | cut -f1)"
-          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Applications --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin/Oadin.app --scripts ./installer/mac oadin.pkg
+          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Applications --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
           echo "安装包大小: $(du -h oadin.pkg | cut -f1)"
           echo "--------- 📬 安装包公证 ----------"
           xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
