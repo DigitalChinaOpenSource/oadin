@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"oadin/internal/constants"
 
 	"os"
 	"os/exec"
@@ -47,6 +48,12 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 	execCmd := "oadin.exe"
 	if runtime.GOOS != "windows" {
 		execCmd = "oadin"
+	}
+	if runtime.GOOS == "darwin" {
+		execCmd = filepath.Join(constants.MacOadinExecPath, "oadin")
+		if _, err = os.Stat(execCmd); err != nil {
+			return fmt.Errorf("failed to find oadin executable: %v", err)
+		}
 	}
 	cmd := exec.Command(execCmd, "server", "start")
 	cmd.Stdout = logFile

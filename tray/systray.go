@@ -3,6 +3,7 @@ package tray
 import (
 	"fmt"
 	"net"
+	"oadin/internal/constants"
 	"oadin/internal/logger"
 	"os"
 	"os/exec"
@@ -476,6 +477,12 @@ func StartOADINServerTray(logPath string, pidFilePath string) error {
 	oadinExe := "oadin"
 	if runtime.GOOS == "windows" {
 		oadinExe = "oadin.exe"
+	}
+	if runtime.GOOS == "darwin" {
+		oadinExe = filepath.Join(constants.MacOadinExecPath, "oadin")
+		if _, err = os.Stat(oadinExe); err != nil {
+			return fmt.Errorf("failed to find oadin executable: %v", err)
+		}
 	}
 	//execFile := filepath.Join(filepath.Dir(appExe), oadinExe)
 	//fmt.Println("Starting oadin server: ", execFile)
