@@ -33,7 +33,9 @@ chmod +x "${RESOURCE_DIR}/oadin"
 chmod +x "${MACOS_DIR}/oadin-app"
 
 # 启动 oadin-tray (作为登录项)
-"${MACOS_DIR}/oadin-app" &
+env
+
+env -i "PATH=$PATH" "HOME=$HOME" "${MACOS_DIR}/oadin-app" &
 
 echo "Oadin installation completed successfully"
 exit 0
