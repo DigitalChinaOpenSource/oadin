@@ -19,12 +19,12 @@ mkdir -p "${MACOS_DIR}"
 mkdir -p "${RESOURCES_DIR}"
 
 # 检查文件是否存在
-if [ ! -f "oadin" ]; then
+if [ ! -f "$(pwd)/oadin" ]; then
     echo "Error: oadin executable not found"
     exit 1
 fi
 
-if [ ! -f "oadin-app" ]; then
+if [ ! -f "$(pwd)/oadin-app" ]; then
     echo "Error: oadin-app executable not found"
     exit 1
 fi
