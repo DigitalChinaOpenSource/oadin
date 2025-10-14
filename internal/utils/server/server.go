@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"oadin/internal/logger"
 	"oadin/internal/provider"
 	"oadin/internal/types"
 	"oadin/internal/utils"
@@ -33,6 +35,7 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 		return fmt.Errorf("failed to open log file: %v", err)
 	}
 	defer logFile.Close()
+	logger.LogicLogger.Error("Start OADIN----------------------")
 	execCmd := "oadin.exe"
 	if runtime.GOOS != "windows" {
 		execCmd = "oadin"
@@ -44,6 +47,7 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 		utils.SetCmdSysProcAttr(cmd)
 	}
 	if err := cmd.Start(); err != nil {
+		logger.LogicLogger.Error("start server error: %v", err)
 		return fmt.Errorf("failed to start Oadin server: %v", err)
 	}
 	// Save PID to file.
@@ -54,6 +58,7 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 	}
 
 	fmt.Printf("\rOadin server started with PID: %d\n", cmd.Process.Pid)
+	logger.LogicLogger.Error("\rOadin server started with PID: %d\n", cmd.Process.Pid)
 	return nil
 }
 

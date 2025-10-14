@@ -70,9 +70,7 @@ cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>LSUIElement</key>
-    <false/>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Oadin needs to access system services for proper functionality.</string>
+    <true/>
 </dict>
 </plist>
 EOF

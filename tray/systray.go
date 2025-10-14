@@ -3,6 +3,7 @@ package tray
 import (
 	"fmt"
 	"net"
+	"oadin/internal/logger"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -52,7 +53,7 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 
 // Start initializes the system tray
 func (m *Manager) Start() {
-	fmt.Println("=== Oadin Tray Starting ===")
+	logger.LogicLogger.Error("=== Oadin Tray Starting ===")
 
 	// 调试：列出嵌入的图标文件
 	trayTemplate.DebugListFiles()
@@ -63,18 +64,20 @@ func (m *Manager) Start() {
 
 	// 启动时如果服务器没运行，自动启动并打开浏览器
 	if !m.serverRunning {
+		logger.LogicLogger.Error("=== Server not running, attempting to start...===")
 		fmt.Println("Server not running, attempting to start...")
 		err := StartOADINServerTray(m.logPath, m.pidPath)
 		if err == nil {
 			m.serverRunning = true
+			logger.LogicLogger.Info("Server started successfully")
 			fmt.Println("Server started successfully")
 			// 启动成功后自动打开浏览器
 			// go m.waitAndOpenBrowser()
 		} else {
-			fmt.Printf("Failed to start server: %v\n", err)
+			logger.LogicLogger.Error("Failed to start server: %v\n" + err.Error())
 		}
 	} else {
-		fmt.Println("Server is already running")
+		logger.LogicLogger.Info("Server is already running")
 		// 如果服务器已经运行，直接打开浏览器
 		// go m.waitAndOpenBrowser()
 	}
@@ -183,15 +186,19 @@ func (m *Manager) onReady() {
 							if err := m.onServerStop(); err == nil {
 								m.serverRunning = false
 								m.updateStartStopMenuItem(mStartStop)
+								logger.LogicLogger.Error("Oadin Server stop successfully")
 							} else {
+								logger.LogicLogger.Error("Oadin Server stop Failed %v", err)
 								dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
 							}
 						}
 					} else {
 						if err := m.onServerStart(); err == nil {
+							logger.LogicLogger.Error("Oadin Server startup successfully")
 							m.serverRunning = true
 							m.updateStartStopMenuItem(mStartStop)
 						} else {
+							logger.LogicLogger.Error("Oadin Server startup Failed %v", err)
 							dialog.Message("Failed to start server: %v", err).Title("Error").Error()
 						}
 					}
