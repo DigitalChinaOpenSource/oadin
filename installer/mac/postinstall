@@ -33,7 +33,7 @@ chmod +x "${RESOURCE_DIR}/oadin"
 chmod +x "${MACOS_DIR}/oadin-app"
 
 # 启动 oadin-tray (作为登录项)
-nohup env PATH="/usr/local/bin:$PATH" "${MACOS_DIR}/oadin-app" > /tmp/oadin-app.log 2>&1 &
+"${MACOS_DIR}/oadin-app" &
 
 echo "Oadin installation completed successfully"
 exit 0
