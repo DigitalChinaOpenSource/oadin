@@ -56,7 +56,7 @@ cat > "Oadin.app/Contents/Info.plist" << EOF
     <key>CFBundleExecutable</key>
     <string>oadin-app</string>
     <key>CFBundleIconFile</key>
-    <string>oadin.icns</string>
+    <string>AppIcon.icns</string>
     <key>CFBundleIdentifier</key>
     <string>com.digitalchina.oadin</string>
     <key>CFBundleInfoDictionaryVersion</key>

@@ -94,7 +94,7 @@ func StopOadinServer(pidFilePath string) error {
 		if err != nil {
 			fmt.Printf("failed to stop engine %s: %v", modelEngine, err)
 		}
-		fmt.Printf("Stop engine successfully %s: %v", modelEngine, err)
+		logger.LogicLogger.Error("Stop engine successfully %s: %v", modelEngine, err)
 	}
 
 	// Traverse all pid files.
@@ -102,18 +102,21 @@ func StopOadinServer(pidFilePath string) error {
 		pidData, err := os.ReadFile(pidFile)
 		if err != nil {
 			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
+			logger.LogicLogger.Error("Failed to read PID file %s: %v\n", pidFile, err)
 			continue
 		}
 
 		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
 		if err != nil {
 			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
+			logger.LogicLogger.Error("Invalid PID in file %s: %v\n", pidFile, err)
 			continue
 		}
 
 		process, err := os.FindProcess(pid)
 		if err != nil {
 			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
+			logger.LogicLogger.Error("Failed to find process with PID %d: %v\n", pid, err)
 			continue
 		}
 
@@ -121,6 +124,7 @@ func StopOadinServer(pidFilePath string) error {
 			if strings.Contains(err.Error(), "process already finished") {
 				fmt.Printf("Process with PID %d is already stopped\n", pid)
 			} else {
+				logger.LogicLogger.Error("Failed to kill process with PID %d: %v", pid, err)
 				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
 				continue
 			}
@@ -130,6 +134,7 @@ func StopOadinServer(pidFilePath string) error {
 
 		// remove pid file
 		if err := os.Remove(pidFile); err != nil {
+			logger.LogicLogger.Error("Failed to remove PID file %s: %v\n", pidFile, err)
 			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
 		}
 	}
