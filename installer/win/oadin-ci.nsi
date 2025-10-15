@@ -497,7 +497,6 @@ FunctionEnd
 Function LaunchOadin
   ;nsExec::Exec '"$INSTDIR\oadin.exe" server start -d'
   ExecShell "open" "$INSTDIR\oadin-app.exe" "" SW_HIDE
-  ExecShell "open" "$INSTDIR\oadin.exe" "server start -d" SW_HIDE
 FunctionEnd
 
 Function EnableAutoStart
