@@ -38,13 +38,20 @@ env
 if [ "$REAL_USER" != "root" ] && [ -n "$REAL_USER" ]; then
     echo "Launching Oadin as user: $REAL_USER"
     su -l "$REAL_USER" -c "
-        export PATH=\"$PATH\"
+        if [ -f ~/.zshrc ]; then
+            source ~/.zshrc
+        elif [ -f ~/.bash_profile ]; then
+            source ~/.bash_profile
+        elif [ -f ~/.bashrc ]; then
+            source ~/.bashrc
+        fi
         export HOME=\"$USER_HOME\"
         \"${MACOS_DIR}/oadin-app\" &
     "
+    echo "Oadin installation completed successfully"
 else
     echo "Warning: Cannot determine real user, skipping auto-launch"
 fi
 
-echo "Oadin installation completed successfully"
+
 exit 0

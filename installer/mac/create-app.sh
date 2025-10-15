@@ -44,15 +44,23 @@ elif [ -f "tray/icon/oadin-icon.png" ]; then
 fi
 
 # 创建 Info.plist
-cat > "${CONTENTS_DIR}/Info.plist" << EOF
+cat > "Oadin.app/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>Oadin</string>
     <key>CFBundleExecutable</key>
     <string>oadin-app</string>
+    <key>CFBundleIconFile</key>
+    <string>oadin.icns</string>
     <key>CFBundleIdentifier</key>
     <string>com.digitalchina.oadin</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
     <key>CFBundleName</key>
     <string>Oadin</string>
     <key>CFBundleDisplayName</key>
@@ -65,12 +73,19 @@ cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <string>6.0</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
+    <key>CFBundleShortVersionString</key>
+    <string>${CI_COMMIT_TAG}</string>
+    <key>CFBundleVersion</key>
+    <string>${CI_COMMIT_TAG}</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>11.0</string>
     <key>LSUIElement</key>
     <true/>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2024 Digital China. All rights reserved.</string>
+</dict>
 </plist>
 EOF
 
