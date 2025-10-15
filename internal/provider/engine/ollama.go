@@ -60,6 +60,10 @@ const (
 	WindowsDDLDependsX64URL = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 	WindowsDDLDependsX86URL = "https://aka.ms/vs/17/release/vc_redist.x86.exe"
 
+	// AMD GPU ROCM download URL
+	WindowsAMD_780M  = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-780M.zip"
+	WindowsAMD_8060S = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-8060S.zip"
+
 	// Linux download URLs
 	LinuxAmdURL = constants.BaseDownloadURL + "linux" + "/ollama-linux-amd64.tgz"
 	LinuxArmURL = constants.BaseDownloadURL + "linux" + "/ollama-linux-arm64.tgz"
@@ -270,7 +274,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		return o.EngineConfig
 	}
 
-	userDir, err := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		logger.EngineLogger.Error("[Ollama] Get user home dir failed: ", err.Error())
 		return nil
@@ -317,7 +321,17 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		case types.GPUTypeNvidia:
 			downloadUrl = WindowsNvidiaURL
 		case types.GPUTypeAmd:
-			downloadUrl = WindowsAMDURL
+			// amd系列的进行显卡型号区分
+			amdGPU := utils.VerifyAmdGPU()
+			// 获取对应型号的下载地址
+			if amdGPU == types.GPUTypeAmd780M {
+				downloadUrl = WindowsAMD_780M
+			} else if amdGPU == types.GPUTypeAmd8060S {
+				downloadUrl = WindowsAMD_8060S
+			} else {
+				downloadUrl = WindowsAMDURL
+
+			}
 		case types.GPUTypeIntelArc:
 			execPath = fmt.Sprintf("%s/%s", executableDir.ProgramFiles, "/Oadin/ipex-llm-ollama")
 			downloadUrl = WindowsIntelArcURL
@@ -327,7 +341,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 
 	case "linux":
 		execFile = "ollama"
-		execPath = filepath.Join(userDir, "ollama")
+		execPath = filepath.Join(homeDir, "ollama")
 		downloadUrl = LinuxAmdURL
 		if runtime.GOARCH == "arm64" {
 			downloadUrl = LinuxArmURL
@@ -339,7 +353,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	default:
 		return nil
 	}
-	logger.EngineLogger.Error("[Ollama] GetConfig execPath: ", execPath)
+	logger.EngineLogger.Info("[Ollama] GetConfig execPath: ", execPath)
 	return &types.EngineRecommendConfig{
 		Host:           DefaultHost,
 		Origin:         constants.DefaultHost,
@@ -359,7 +373,7 @@ func (o *OllamaProvider) HealthCheck() error {
 		logger.EngineLogger.Error("[Ollama] Health check failed: " + err.Error())
 		return err
 	}
-	logger.EngineLogger.Info("[Ollama] Ollama server health")
+	logger.EngineLogger.Debug("[Ollama] Ollama server health")
 
 	return nil
 }
@@ -559,30 +573,43 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 
 	// logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
 
-	logger.EngineLogger.Info("[Ollama] Pull model: " + req.Model + " , mode: stream")
-
-	c := o.GetDefaultClient()
-	// 创建主数据和错误通道，这是返回给调用方的
-	dataCh := make(chan []byte, 100)
-	errCh := make(chan error, 1)
+    c := o.GetDefaultClient()
+    dataCh := make(chan []byte, 100)
+    errCh := make(chan error, 1)
 
 	go func() {
 		defer close(dataCh)
 		defer close(errCh)
 
-		var lastProgress int64 = 0
-		var lastTime time.Time = time.Now()
-		var lastTotal int64 = 0
-		var retry int = 0
-		var fileCounter int = 0
-		var slowSpeedCounter int = 0
-		// 用于存储最新的进度信息
-		var latestProgressData []byte
+		logger.EngineLogger.Info("[Ollama] Pull model: " + req.Model + " , mode: stream")
+		fmt.Println("[Ollama] Pull model: " + req.Model + " , mode: stream")
+		modelList, err := o.ListModels(ctx)
+		if err != nil {
+			errCh <- err
+			return
+		}
 
-		const maxRetries = 3
-		const maxSlowSpeedDetections = 3      // 允许连续几次检测到低速率
-		const minExpectedSpeed = 100 * 1024   // 100KB/s最低期望速度
-		const checkInterval = 5 * time.Second // 每5秒检查一次下载速度
+		for _, model := range modelList.Models {
+			if model.Name == req.Model || model.Model == req.Model {
+				logger.EngineLogger.Info("[Ollama] Model already exists, skipping download: " + req.Model)
+				fmt.Println("[Ollama] Model already exists, skipping download: " + req.Model)
+				return
+			}
+		}
+
+        var lastProgress int64 = 0
+        var lastTime time.Time = time.Now()
+        var lastTotal int64 = 0
+        var retry int = 0
+        var fileCounter int = 0
+        var slowSpeedCounter int = 0
+        // 用于存储最新的进度信息
+        var latestProgressData []byte
+
+        const maxRetries = 3
+        const maxSlowSpeedDetections = 3 // 允许连续几次检测到低速率
+        const minExpectedSpeed = 500 * 1024 // 500KB/s最低期望速度
+        const checkInterval = 5 * time.Second // 每5秒检查一次下载速度
 
 		for retry < maxRetries {
 			// 为每次尝试创建新的上下文
@@ -681,7 +708,8 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 										fmt.Println(fmt.Sprintf("[Ollama] Persistent slow speed detected, attempting retry"))
 										if !shouldRetry {
 											shouldRetry = true
-											cancelPull() // 取消当前的下载
+										    cancelPull() // 取消当前的下载
+											time.Sleep(2 * time.Second) // 等待一会，确保通道关闭
 										}
 										break
 									}

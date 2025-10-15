@@ -191,7 +191,7 @@ func (l *llamacppProvider) GetDefaultClient() *client.Client {
 	if l.EngineConfig.Scheme == types.ProtocolHTTPS {
 		scheme = types.ProtocolHTTPS
 	}
-	logger.EngineLogger.Info("[llamacpp] Create client", "scheme", scheme, "host", host)
+	logger.EngineLogger.Debug("[llamacpp] Create client", "scheme", scheme, "host", host)
 	return client.NewClient(&url.URL{
 		Scheme: scheme,
 		Host:   host,
@@ -333,7 +333,7 @@ func (l *llamacppProvider) GetConfig() *types.EngineRecommendConfig {
 	default:
 		return nil
 	}
-	logger.EngineLogger.Error("[llamacpp] GetConfig: ", execFile, execPath, downloadUrl)
+	logger.EngineLogger.Info("[llamacpp] GetConfig: ", execFile, execPath, downloadUrl)
 	return &types.EngineRecommendConfig{
 		Host:           llamacppDefaultHost,
 		Origin:         constants.DefaultHost,
@@ -354,7 +354,7 @@ func (l *llamacppProvider) HealthCheck() error {
 		return err
 	}
 
-	logger.EngineLogger.Info("[llamacpp] llamacpp server health")
+	logger.EngineLogger.Debug("[llamacpp] llamacpp server health")
 	return nil
 }
 

@@ -1,3 +1,5 @@
+//go:build !windows
+
 //*****************************************************************************
 // Copyright 2025 Intel Corporation
 //
@@ -14,15 +16,15 @@
 // limitations under the License.
 //*****************************************************************************
 
-package main
+package cli
 
 import (
-	cli "oadin/cmd/cli/core"
 	"os"
 )
 
-func main() {
-	command := cli.NewStartApiServerCommand()
+func MainPlatform() {
+	command := NewCommand()
+
 	if err := command.Execute(); err != nil {
 		os.Exit(1)
 	}
