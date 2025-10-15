@@ -21,13 +21,13 @@ if [ -d "$APP_PATH" ]; then
     if [ "$OADIN_OUTPUT" != "$THIS_VERSION" ]; then
         echo "版本不匹配，清理旧版本..."
         # stop server
-        if [ -f "/Applications/Oadin.app/Contents/Resource/oadin" ]; then
-            "/Applications/Oadin.app/Contents/Resource/oadin" server stop 2>/dev/null || true
+        if [ -f "/Applications/Oadin.app/Contents/Resources/oadin" ]; then
+            "/Applications/Oadin.app/Contents/Resources/oadin" server stop 2>/dev/null || true
         fi
         sleep 2
 
         pkill -f "oadin" 2>/dev/null || true
-        pkill -f "oadin-app" 2>/dev/null || true
+        pkill -f "Oadin AI Service Manager" 2>/dev/null || true
 
         sleep 2
         
