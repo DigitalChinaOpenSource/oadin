@@ -310,7 +310,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		}
 
 		execFile = "ollama.exe"
-		execPath = fmt.Sprintf("%s/%s", executableDir.ProgramFiles, "/Oadin/ollama")
+		execPath = fmt.Sprintf("%s/%s", executableDir.ProgramData, "/Oadin/ollama")
 		// 针对预装的windows系统, 放在 ProgramData 目录下
 		dataDir = executableDir.ProgramData + "/Oadin"
 		enginePath = fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
