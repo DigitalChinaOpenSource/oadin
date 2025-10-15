@@ -256,7 +256,6 @@ func (l *llamacppProvider) StopEngine(ctx context.Context) error {
 	}
 	pidFile := filepath.Join(rootPath, "llamacpp.pid")
 	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
-		logger.EngineLogger.Info("[LLAMACPP] Stop openvino Model Server not found pidfile: " + pidFile)
 		return nil
 	}
 
@@ -333,7 +332,6 @@ func (l *llamacppProvider) GetConfig() *types.EngineRecommendConfig {
 	default:
 		return nil
 	}
-	logger.EngineLogger.Error("[llamacpp] GetConfig: ", execFile, execPath, downloadUrl)
 	return &types.EngineRecommendConfig{
 		Host:           llamacppDefaultHost,
 		Origin:         constants.DefaultHost,
