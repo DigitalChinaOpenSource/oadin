@@ -35,7 +35,16 @@ chmod +x "${MACOS_DIR}/oadin-app"
 # 启动 oadin-tray (作为登录项)
 env
 
-env -i "PATH=$PATH" "HOME=$HOME" "${MACOS_DIR}/oadin-app" &
+if [ "$REAL_USER" != "root" ] && [ -n "$REAL_USER" ]; then
+    echo "Launching Oadin as user: $REAL_USER"
+    su -l "$REAL_USER" -c "
+        export PATH=\"$PATH\"
+        export HOME=\"$USER_HOME\"
+        \"${MACOS_DIR}/oadin-app\" &
+    "
+else
+    echo "Warning: Cannot determine real user, skipping auto-launch"
+fi
 
 echo "Oadin installation completed successfully"
 exit 0
