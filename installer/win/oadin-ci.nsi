@@ -151,8 +151,6 @@ Section "Install"
     Call AddPathUser
   ${EndIf}
 
-  Call CreateDesktopShortcut
-
   WriteUninstaller "$INSTDIR\uninstall.exe"
   ; nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 SectionEnd
@@ -505,14 +503,10 @@ FunctionEnd
 Function EnableAutoStart
   SetRegView 64
   ${If} $INSTALL_SCOPE == 1
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin.exe" server start -d'
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
   ${Else}
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin.exe" server start -d'
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
   ${EndIf}
-FunctionEnd
-
-Function CreateDesktopShortcut
-  CreateShortcut "$DESKTOP\Oadin.lnk" "$INSTDIR\oadin-app.exe" "" "$INSTDIR\oadin.ico" 0
 FunctionEnd
 
 ; ------------------ Remove Previous Installation ------------------

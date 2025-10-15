@@ -44,7 +44,7 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 			return serverUtils.StartOadinServer(logPath, pidPath)
 		},
 		onServerStop: func() error {
-			return serverUtils.StopOadinServer(pidPath)
+			return serverUtils.StopOadinServer(filepath.Join(pidPath, "oadin.pid"))
 		},
 		execPath: execPath,
 		logPath:  logPath,
