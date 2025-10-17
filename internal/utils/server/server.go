@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"oadin/internal/constants"
-	"syscall"
-
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -154,7 +152,6 @@ func StopOadinServer(pidFilePath string) error {
 
 		ovmsProcessName := "ovms.exe"
 		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
-		ovmsCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		utils.SetCmdSysProcAttr(ovmsCmd)
 		_, err = ovmsCmd.CombinedOutput()
 		if err != nil {
