@@ -501,7 +501,11 @@ FunctionEnd
 
 Function EnableAutoStart
   SetRegView 64
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
+  ${If} $INSTALL_SCOPE == 1
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
+  ${Else}
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
+  ${EndIf}
 FunctionEnd
 
 ; ------------------ Remove Previous Installation ------------------
@@ -520,6 +524,7 @@ Function RemoveOldOadin
     Call RemovePathEnv
     DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
     DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
   ${EndIf}
   ReadRegStr $R3 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $R3 != ""
@@ -533,6 +538,7 @@ Function RemoveOldOadin
     Call RemovePathEnv
     DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
     DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
   ${EndIf}
 FunctionEnd
 
