@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"oadin/internal/constants"
+	"syscall"
 
 	"os"
 	"os/exec"
@@ -142,6 +143,7 @@ func StopOadinServer(pidFilePath string) error {
 		if utils.IpexOllamaSupportGPUStatus() {
 			extraProcessName := "ollama-lib.exe"
 			extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+			extraCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 			_, err := extraCmd.CombinedOutput()
 			if err != nil {
 				fmt.Printf("failed to kill process: %s", extraProcessName)
@@ -152,6 +154,7 @@ func StopOadinServer(pidFilePath string) error {
 
 		ovmsProcessName := "ovms.exe"
 		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
+		ovmsCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		_, err = ovmsCmd.CombinedOutput()
 		if err != nil {
 			fmt.Printf("failed to kill process: %s", ovmsProcessName)
