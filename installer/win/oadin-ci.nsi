@@ -501,11 +501,7 @@ FunctionEnd
 
 Function EnableAutoStart
   SetRegView 64
-  ${If} $INSTALL_SCOPE == 1
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
-  ${Else}
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
-  ${EndIf}
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
 FunctionEnd
 
 ; ------------------ Remove Previous Installation ------------------
