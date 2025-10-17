@@ -332,9 +332,11 @@ Section "Uninstall"
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
   DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
   DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
 SectionEnd
 
 Function RemovePathEnv
@@ -525,6 +527,7 @@ Function RemoveOldOadin
     DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
     DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
   ${EndIf}
   ReadRegStr $R3 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $R3 != ""
@@ -539,6 +542,8 @@ Function RemoveOldOadin
     DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
     DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
     DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
   ${EndIf}
 FunctionEnd
 
