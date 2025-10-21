@@ -123,10 +123,10 @@ Function .onInit
         ; --- Dynamic elevation ---
         UserInfo::GetAccountType
         Pop $0
-        StrCmp $0 "Admin" done_elevated  ; Already administrator, continue
+        StrCmp $0 "Admin" already_elevated  ; Already administrator, continue
         ExecShell "runas" "$EXEPATH" "/S"
         Quit  ; Exit current process so the elevated process can take over
-        done_elevated:
+        already_elevated:
           ;Already administrator,
       ${EndIf}
       Call RemoveOldOadin
@@ -136,10 +136,10 @@ Function .onInit
       ; --- Dynamic elevation ---
       UserInfo::GetAccountType
       Pop $0
-      StrCmp $0 "Admin" done_elevated  ; Already administrator, continue
+      StrCmp $0 "Admin" elevated  ; Already administrator, continue
       ExecShell "runas" "$EXEPATH" "/S"
       Quit  ; Exit current process so the elevated process can take over
-      done_elevated:
+      elevated:
         ;Already administrator,
     ${EndIf}
     ; Not installed, ask installation scope in non-silent mode
