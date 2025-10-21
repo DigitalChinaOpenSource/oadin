@@ -119,9 +119,29 @@ Function .onInit
       do_fix:
         Call RemoveOldOadin
     ${Else}
+      ${If} $INSTALL_SCOPE == 1
+        ; --- Dynamic elevation ---
+        UserInfo::GetAccountType
+        Pop $0
+        StrCmp $0 "Admin" done_elevated  ; Already administrator, continue
+        ExecShell "runas" "$EXEPATH" "/S"
+        Quit  ; Exit current process so the elevated process can take over
+        done_elevated:
+          ;Already administrator,
+      ${EndIf}
       Call RemoveOldOadin
     ${EndIf}
   ${Else}
+    ${If} $SILENT == 1
+      ; --- Dynamic elevation ---
+      UserInfo::GetAccountType
+      Pop $0
+      StrCmp $0 "Admin" done_elevated  ; Already administrator, continue
+      ExecShell "runas" "$EXEPATH" "/S"
+      Quit  ; Exit current process so the elevated process can take over
+      done_elevated:
+        ;Already administrator,
+    ${EndIf}
     ; Not installed, ask installation scope in non-silent mode
   ${EndIf}
 FunctionEnd
@@ -153,6 +173,9 @@ Section "Install"
 
   WriteUninstaller "$INSTDIR\uninstall.exe"
   ; nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
+  ${If} $SILENT == 1
+    Call LaunchOadin
+  ${EndIf}
 SectionEnd
 
 ; ------------------ PATH Functions ------------------

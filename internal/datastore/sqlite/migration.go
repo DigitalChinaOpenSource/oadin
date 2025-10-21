@@ -10,7 +10,7 @@ import (
 	"oadin/internal/types"
 )
 
-var allTables = []interface{}{new(types.ServiceProvider), new(types.Service), new(types.Model), new(types.VersionUpdateRecord)}
+var allTables = []interface{}{new(types.ServiceProvider), new(types.Service), new(types.Model)}
 
 // VersionManager
 type VersionManager interface {
@@ -166,39 +166,6 @@ func Migrate(ds *SQLite, m Migration) error {
 				}
 				if err = tx.CreateInBatches(mDataList, len(mDataList)).Error; err != nil {
 					logger.LogicLogger.Error("[Migrate running] failed to migrate data model : %v", err)
-					return err
-				}
-				// drop old table
-				if err = tx.Migrator().DropTable(tableName + "_old"); err != nil {
-					logger.LogicLogger.Error("[Migrate running] drop table err", "err", err)
-					return err
-				}
-			case *types.VersionUpdateRecord:
-				tableName = tableType.TableName()
-				modifyFields := m.GetModifyFields(tableName)
-				if len(modifyFields) == 0 {
-					return tx.Migrator().AutoMigrate(&types.VersionUpdateRecord{})
-				}
-				var oldDataRows []map[string]interface{}
-				tx.Table(tableName).Find(&oldDataRows)
-				vDataList := make([]*types.ServiceProvider, 0)
-				for _, oldDataRow := range oldDataRows {
-					sp := &types.ServiceProvider{}
-					setField(sp, oldDataRow, modifyFields)
-					vDataList = append(vDataList, sp)
-				}
-				// rename old table name
-				err := tx.Migrator().RenameTable(tableName, tableName+"_old")
-				if err != nil {
-					logger.LogicLogger.Error("[Migrate running] rename table err", "err", err)
-					return err
-				}
-				if err = tx.Migrator().AutoMigrate(&types.Model{}); err != nil {
-					logger.LogicLogger.Error("[Migrate running] auto migrate err", "err", err)
-					return err
-				}
-				if err = tx.CreateInBatches(vDataList, len(vDataList)).Error; err != nil {
-					logger.LogicLogger.Error("[Migrate running] failed to migrate data version record : %v", err)
 					return err
 				}
 				// drop old table

@@ -28,6 +28,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"syscall"
+	"unsafe"
+
 	"io"
 	"math/rand"
 	"net/http"
@@ -47,6 +50,7 @@ import (
 	"github.com/shirou/gopsutil/disk"
 	"gorm.io/gorm/utils"
 
+	"oadin/internal/constants"
 	"oadin/internal/types"
 )
 
@@ -145,13 +149,14 @@ func Contains(slice []string, target string) bool {
 	return false
 }
 
-func DownloadFile(downloadURL string, saveDir string) (string, error) {
+func DownloadFile(downloadURL, saveDir, fileName string) (string, error) {
 	parsedURL, err := url.Parse(downloadURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse URL: %v", err)
 	}
-
-	fileName := filepath.Base(parsedURL.Path)
+	if fileName == "" {
+		fileName = filepath.Base(parsedURL.Path)
+	}
 	if fileName == "" || fileName == "." || fileName == "/" {
 		return "", fmt.Errorf("could not determine file name from URL: %s", downloadURL)
 	}
@@ -708,7 +713,7 @@ func DownloadImageUrlToPath(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get download dir failed: %w", err)
 	}
-	savePath, err := DownloadFile(url, downLoadPath)
+	savePath, err := DownloadFile(url, downLoadPath, "")
 	if err != nil {
 		return "", fmt.Errorf("download image file failed: %w", err)
 	}
@@ -1125,4 +1130,50 @@ func GetOadinDataDir() (string, error) {
 		return "", fmt.Errorf("failed to create directory %s: %v", dir, err)
 	}
 	return dir, nil
+}
+
+// GetSystemOadinDataDir GetSystemDataDir returns the system-level data directory (cross-platform)
+func GetSystemOadinDataDir() (string, error) {
+	switch runtime.GOOS {
+	case "windows":
+		// %PROGRAMDATA% -> C:\ProgramData
+		if programData := os.Getenv("PROGRAMDATA"); programData != "" {
+			return filepath.Join(programData, constants.AppName), nil
+		}
+		return filepath.Join("C:\\ProgramData", constants.AppName), nil
+
+	case "darwin":
+		// macOS 系统范围 -> /Library/Application Support
+		return filepath.Join("/Library", "Application Support", constants.AppName), nil
+
+	default: // Linux, BSD, etc.
+		// 遵循 FHS 规范
+		return filepath.Join("/usr", "share", constants.AppName), nil
+	}
+}
+
+var (
+	shell32           = syscall.NewLazyDLL("shell32.dll")
+	procShellExecuteW = shell32.NewProc("ShellExecuteW")
+)
+
+func ShellExecute(hwnd uintptr, verb, file, args, dir string, showCmd int) error {
+	verbPtr, _ := syscall.UTF16PtrFromString(verb)
+	filePtr, _ := syscall.UTF16PtrFromString(file)
+	argsPtr, _ := syscall.UTF16PtrFromString(args)
+	dirPtr, _ := syscall.UTF16PtrFromString(dir)
+
+	ret, _, _ := procShellExecuteW.Call(
+		hwnd,
+		uintptr(unsafe.Pointer(verbPtr)),
+		uintptr(unsafe.Pointer(filePtr)),
+		uintptr(unsafe.Pointer(argsPtr)),
+		uintptr(unsafe.Pointer(dirPtr)),
+		uintptr(showCmd),
+	)
+
+	if ret <= 32 {
+		return syscall.Errno(ret)
+	}
+	return nil
 }

@@ -32,20 +32,20 @@ const (
 	LlamaSwapConfigFile  = "config.yaml"
 	llamacppDefaultModel = "Qwen3-8B-GGUF"
 
-	llamacppServerExec   = "llama-swap.exe"
-	LlamaVulkanPath      = "llamacpp-windows-vulkan"
-	LlamaCppPath         = "llama-b5757-bin-win-vulkan-x64"
-	LlamaSwapPath        = "llama-swap_148_windows_amd64"
+	llamacppServerExec = "llama-swap.exe"
+	LlamaVulkanPath    = "llamacpp-windows-vulkan"
+	LlamaCppPath       = "llama-b5757-bin-win-vulkan-x64"
+	LlamaSwapPath      = "llama-swap_148_windows_amd64"
 
-	llamacppServerExecLinux   = "llama-swap"
-	LlamaVulkanPathLinux      = "llamacpp-linux-vulkan"
-	LlamaCppPathLinux         = "llama-b6316-bin-ubuntu-vulkan-x64"
-	LlamaSwapPathLinuxAmd     = "llama-swap_156_linux_amd64"
-	LlamaSwapPathLinuxArm     = "llama-swap_156_linux_arm64"
+	llamacppServerExecLinux = "llama-swap"
+	LlamaVulkanPathLinux    = "llamacpp-linux-vulkan"
+	LlamaCppPathLinux       = "llama-b6316-bin-ubuntu-vulkan-x64"
+	LlamaSwapPathLinuxAmd   = "llama-swap_156_linux_amd64"
+	LlamaSwapPathLinuxArm   = "llama-swap_156_linux_arm64"
 
 	// Windows download URLs for llamacpp
 	llamacppWindowsBaseURL = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/llamacpp-windows-vulkan.zip"
-	llamacppLinuxBaseURL = constants.BaseDownloadURL + "linux" + "/llamacpp-linux-vulkan.zip"
+	llamacppLinuxBaseURL   = constants.BaseDownloadURL + "linux" + "/llamacpp-linux-vulkan.zip"
 
 	// 模型默认都在modelscope的
 	// ggml-org组织下载 	https://www.modelscope.cn/organization/ggml-org
@@ -378,7 +378,7 @@ func (l *llamacppProvider) InstallEngine() error {
 		}
 	}
 
-	file, err := utils.DownloadFile(l.EngineConfig.DownloadUrl, l.EngineConfig.DownloadPath)
+	file, err := utils.DownloadFile(l.EngineConfig.DownloadUrl, l.EngineConfig.DownloadPath, "")
 	if err != nil {
 		return fmt.Errorf("failed to download llamacpp-server: %v, url: %v", err, l.EngineConfig.DownloadUrl)
 	}
@@ -407,15 +407,15 @@ func (l *llamacppProvider) InstallEngine() error {
 		logger.EngineLogger.Warn("[llamacpp] darwin installation not implemented yet")
 
 	case "linux":
-			filePath := l.EngineConfig.ExecPath
-			if _, err = os.Stat(filePath); os.IsNotExist(err) {
-				os.MkdirAll(filePath, 0o755)
-				cmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, filePath)
-				if err := cmd.Run(); err != nil {
-					logger.EngineLogger.Info("[llamacpp] model engine install completed err : " + err.Error())
-					return fmt.Errorf("failed to tar file: %v", err)
-				}
+		filePath := l.EngineConfig.ExecPath
+		if _, err = os.Stat(filePath); os.IsNotExist(err) {
+			os.MkdirAll(filePath, 0o755)
+			cmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, filePath)
+			if err := cmd.Run(); err != nil {
+				logger.EngineLogger.Info("[llamacpp] model engine install completed err : " + err.Error())
+				return fmt.Errorf("failed to tar file: %v", err)
 			}
+		}
 
 	default:
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
@@ -851,15 +851,15 @@ func (l *llamacppProvider) InstallEngineStream(ctx context.Context, newDataCh ch
 		logger.EngineLogger.Warn("[llamacpp] darwin installation not implemented yet")
 
 	case "linux":
-			filePath := l.EngineConfig.ExecPath
-			if _, err = os.Stat(filePath); os.IsNotExist(err) {
-				os.MkdirAll(filePath, 0o755)
-				cmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, filePath)
-				if err := cmd.Run(); err != nil {
-					newErrChan <- fmt.Errorf("failed to unzip file to engine directory: %v", err)
-					return
-				}
+		filePath := l.EngineConfig.ExecPath
+		if _, err = os.Stat(filePath); os.IsNotExist(err) {
+			os.MkdirAll(filePath, 0o755)
+			cmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, filePath)
+			if err := cmd.Run(); err != nil {
+				newErrChan <- fmt.Errorf("failed to unzip file to engine directory: %v", err)
+				return
 			}
+		}
 	default:
 		err := fmt.Errorf("[llamacpp] unsupported operating system: %s", runtime.GOOS)
 		newErrChan <- err

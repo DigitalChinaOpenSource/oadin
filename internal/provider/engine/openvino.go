@@ -657,7 +657,7 @@ func (o *OpenvinoProvider) InstallEngine() error {
 		return fmt.Errorf("failed to save config.json: %v", err)
 	}
 
-	file, err := utils.DownloadFile(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath)
+	file, err := utils.DownloadFile(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath, "")
 	if err != nil {
 		slog.Error("Failed to download OpenVINO Model Server", "error", err)
 		logger.EngineLogger.Error("[OpenVINO] Failed to download OpenVINO Model Server: " + err.Error())
@@ -675,7 +675,7 @@ func (o *OpenvinoProvider) InstallEngine() error {
 	// 下载py 脚本文件压缩包
 	// scriptZipUrl := "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/scripts.zip"
 	scriptZipUrl := ScriptsDownloadURL
-	scriptZipFile, err := utils.DownloadFile(scriptZipUrl, o.EngineConfig.EnginePath)
+	scriptZipFile, err := utils.DownloadFile(scriptZipUrl, o.EngineConfig.EnginePath, "")
 	if err != nil {
 		slog.Error("Failed to download scripts.zip", "error", err)
 		logger.EngineLogger.Error("[OpenVINO] Failed to download scripts.zip: " + err.Error())
@@ -1297,7 +1297,7 @@ func (o *OpenvinoProvider) InstallEngineStream(ctx context.Context, newDataChan 
 	// 下载py 脚本文件压缩包
 	// scriptZipUrl := "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/byze/windows/scripts.zip"
 	scriptZipUrl := ScriptsDownloadURL
-	scriptZipFile, err := utils.DownloadFile(scriptZipUrl, o.EngineConfig.EnginePath)
+	scriptZipFile, err := utils.DownloadFile(scriptZipUrl, o.EngineConfig.EnginePath, "")
 	if err != nil {
 		logger.EngineLogger.Error("[OpenVINO] Failed to download scripts.zip: " + err.Error())
 		newErrChan <- err

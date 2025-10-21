@@ -388,7 +388,7 @@ func (o *OllamaProvider) GetVersion(ctx context.Context, resp *types.EngineVersi
 }
 
 func (o *OllamaProvider) InstallEngine() error {
-	file, err := utils.DownloadFile(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath)
+	file, err := utils.DownloadFile(o.EngineConfig.DownloadUrl, o.EngineConfig.DownloadPath, "")
 	if err != nil {
 		return fmt.Errorf("failed to download ollama: %v, url: %v", err, o.EngineConfig.DownloadUrl)
 	}
@@ -573,9 +573,9 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 
 	// logger.EngineLogger.Info("[Ollama] Pull model: " + req.Name + " , mode: stream")
 
-    c := o.GetDefaultClient()
-    dataCh := make(chan []byte, 100)
-    errCh := make(chan error, 1)
+	c := o.GetDefaultClient()
+	dataCh := make(chan []byte, 100)
+	errCh := make(chan error, 1)
 
 	go func() {
 		defer close(dataCh)
@@ -597,19 +597,19 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 			}
 		}
 
-        var lastProgress int64 = 0
-        var lastTime time.Time = time.Now()
-        var lastTotal int64 = 0
-        var retry int = 0
-        var fileCounter int = 0
-        var slowSpeedCounter int = 0
-        // 用于存储最新的进度信息
-        var latestProgressData []byte
+		var lastProgress int64 = 0
+		var lastTime time.Time = time.Now()
+		var lastTotal int64 = 0
+		var retry int = 0
+		var fileCounter int = 0
+		var slowSpeedCounter int = 0
+		// 用于存储最新的进度信息
+		var latestProgressData []byte
 
-        const maxRetries = 3
-        const maxSlowSpeedDetections = 3 // 允许连续几次检测到低速率
-        const minExpectedSpeed = 500 * 1024 // 500KB/s最低期望速度
-        const checkInterval = 5 * time.Second // 每5秒检查一次下载速度
+		const maxRetries = 3
+		const maxSlowSpeedDetections = 3      // 允许连续几次检测到低速率
+		const minExpectedSpeed = 500 * 1024   // 500KB/s最低期望速度
+		const checkInterval = 5 * time.Second // 每5秒检查一次下载速度
 
 		for retry < maxRetries {
 			// 为每次尝试创建新的上下文
@@ -708,7 +708,7 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 										fmt.Println(fmt.Sprintf("[Ollama] Persistent slow speed detected, attempting retry"))
 										if !shouldRetry {
 											shouldRetry = true
-										    cancelPull() // 取消当前的下载
+											cancelPull()                // 取消当前的下载
 											time.Sleep(2 * time.Second) // 等待一会，确保通道关闭
 										}
 										break
@@ -1066,7 +1066,7 @@ func (o *OllamaProvider) InstallEngineExtraDepends(ctx context.Context) error {
 		} else {
 			downloadUrl = WindowsDDLDependsX86URL
 		}
-		file, err := utils.DownloadFile(downloadUrl, o.EngineConfig.ExecPath)
+		file, err := utils.DownloadFile(downloadUrl, o.EngineConfig.ExecPath, "")
 		if err != nil {
 			logger.LogicLogger.Error("[Install Engine DDL Depends] download url failed: ", downloadUrl)
 			return err

@@ -15,7 +15,6 @@ import (
 	"github.com/getlantern/systray/example/icon"
 	"github.com/pkg/browser"
 	"github.com/sqweek/dialog"
-	"oadin/config"
 	"oadin/internal/utils"
 	serverUtils "oadin/internal/utils/server"
 	trayTemplate "oadin/tray/icon"
@@ -212,15 +211,8 @@ func (m *Manager) onReady() {
 			// 	}
 			case <-m.mRestartUpdate.ClickedCh:
 				if confirmed := dialog.Message("This will stop all servers and install the update. Continue?").Title("Confirm Update").YesNo(); confirmed {
-					err := serverUtils.StopOadinServer(filepath.Join(m.pidPath, "oadin.pid"))
-					if err != nil {
-						dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
-					}
 					if err := m.performUpdate(); err != nil {
 						dialog.Message("Failed to perform update: %v", err).Title("Error").Error()
-					} else {
-						systray.Quit()
-						os.Exit(0)
 					}
 				}
 			case <-mViewLogs.ClickedCh:
@@ -353,52 +345,10 @@ func (m *Manager) SetUpdateAvailable(available bool) {
 func (m *Manager) performUpdate() error {
 	// 1. 停止服务（已在菜单逻辑中处理）
 	// 2. 执行更新
-	if err := m.installUpdate(); err != nil {
+	if err := DoUpdate(); err != nil {
 		return fmt.Errorf("failed to install update: %v", err)
 	}
-	return nil
-}
-
-// installUpdate
-func (m *Manager) installUpdate() error {
-	emptyStatus := utils.IsDirEmpty(config.GlobalEnvironment.UpdateDir)
-	if emptyStatus {
-		return fmt.Errorf("installation directory is empty")
-	}
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "darwin":
-		installFilaPath := filepath.Join(config.GlobalEnvironment.UpdateDir, "oadin-installer-latest.pkg")
-		cmd = exec.Command("open", installFilaPath)
-	case "linux":
-		return fmt.Errorf("auto update not supported on Linux yet")
-	case "windows":
-		installFilaPath := filepath.Join(config.GlobalEnvironment.UpdateDir, "oadin-installer-latest.exe")
-		cmd = exec.Command(installFilaPath, "/S")
-	}
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("failed to install update: %v", err)
-	}
-
-	return nil
-}
-
-// restartApplication 重启应用
-func (m *Manager) restartApplication() error {
-	// 获取当前可执行文件路径
-	dir := filepath.Dir(m.execPath)
-
-	// 创建新进程
-	cmd := exec.Command(m.execPath)
-	cmd.Dir = dir
-	cmd.Env = os.Environ()
-
-	// 启动新进程
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start new process: %v", err)
-	}
-
+	os.Exit(0)
 	return nil
 }
 

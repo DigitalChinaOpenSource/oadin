@@ -78,7 +78,8 @@ func main() {
 
 	config.GlobalEnvironment = config.NewOADINEnvironment()
 	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalEnvironment.LogLevel, LogPath: config.GlobalEnvironment.LogDir})
-
+	// check updates
+	go tray.StartCheckUpdate(ctx, trayManager)
 	// 启动托盘
 	trayManager.Start()
 }
