@@ -21,7 +21,7 @@
 
 Outfile "..\..\oadin-installer.exe"
 InstallDir "${DEFAULT_INSTALL_DIR}"
-RequestExecutionLevel user
+RequestExecutionLevel admin
 SetCompress auto
 SetCompressor lzma
 
@@ -36,7 +36,8 @@ Caption "${APP_NAME} ${VERSION} Setup"
 ; ------------------ Install Pages ------------------
 !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfPhase
 !insertmacro MUI_PAGE_WELCOME
-Page custom SelectInstallScopePage SelectInstallScopePageLeave
+; Page custom SelectInstallScopePage SelectInstallScopePageLeave
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW DisableDirPageControls
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN
@@ -60,12 +61,20 @@ UninstPage custom un.SelectUninstallModePage un.SelectUninstallModePageLeave
 
 Var SILENT
 Var INSTALL_SCOPE  ; 1=System-wide (HKLM), 0=Current user (HKCU)
-Var ExecutionLevelPhase
+;Var ExecutionLevelPhase
 
 Function SkipIfPhase
   ${If} $ExecutionLevelPhase == 2
     Abort
   ${EndIf}
+FunctionEnd
+
+Function DisableDirPageControls
+  FindWindow $0 "#32770" "" $HWNDPARENT
+  GetDlgItem $1 $0 1019
+  EnableWindow $1 0
+  GetDlgItem $1 $0 1001
+  EnableWindow $1 0
 FunctionEnd
 
 ; ------------------ Initialization ------------------
@@ -76,73 +85,73 @@ Function .onInit
     StrCpy $SILENT 1
   
   Sleep 200
-  ${If} ${FileExists} "${DEFAULT_PARAMS_DATA_DIR}"
-    FileOpen $0 "${DEFAULT_PARAMS_DATA_DIR}" r
-    FileClose $0
-    Delete "${DEFAULT_PARAMS_DATA_DIR}"
-    StrCpy $ExecutionLevelPhase 2
-  ${Else}
-    StrCpy $ExecutionLevelPhase 1
-  ${EndIf}
+  ;${If} ${FileExists} "${DEFAULT_PARAMS_DATA_DIR}"
+  ;  FileOpen $0 "${DEFAULT_PARAMS_DATA_DIR}" r
+  ;  FileClose $0
+  ;  Delete "${DEFAULT_PARAMS_DATA_DIR}"
+  ;  StrCpy $ExecutionLevelPhase 2
+  ;${Else}
+  ;  StrCpy $ExecutionLevelPhase 1
+  ;${EndIf}
 
   ; Check previous installation path
-  ReadRegStr $R0 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
-  ${If} $R0 != ""
-    StrCpy $INSTDIR $R0
-    StrCpy $INSTALL_SCOPE 0
-  ${Else}
-    ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+  ; ReadRegStr $R0 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+  ;${If} $R0 != ""
+  ;  StrCpy $INSTDIR $R0
+  ;  StrCpy $INSTALL_SCOPE 0
+  ;${Else}
+  ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
     ${If} $R0 != ""
       StrCpy $INSTDIR $R0
       StrCpy $INSTALL_SCOPE 1
     ${Else}
-      StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
-      StrCpy $INSTALL_SCOPE 1
+       StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
+       StrCpy $INSTALL_SCOPE 1
     ${EndIf}
-  ${EndIf}
+  ;${EndIf}
 
   ${If} $R0 != ""
     ; Already installed
     ${If} $SILENT == 0
-      ${If} $INSTALL_SCOPE == 1
-        ; --- Dynamic elevation ---
-        UserInfo::GetAccountType
-        Pop $0
-        StrCmp $0 "Admin" done_elevated  ; Already administrator, continue
-        ExecShell "runas" "$EXEPATH" ""
-        Quit  ; Exit current process so the elevated process can take over
-        done_elevated:
-          ;Already administrator,
-      ${EndIf}
+      ;${If} $INSTALL_SCOPE == 1
+      ;  ; --- Dynamic elevation ---
+      ;  UserInfo::GetAccountType
+      ;  Pop $0
+      ;  StrCmp $0 "Admin" done_elevated  ; Already administrator, continue
+      ;  ExecShell "runas" "$EXEPATH" ""
+      ;  Quit  ; Exit current process so the elevated process can take over
+      ;  done_elevated:
+      ;    ;Already administrator,
+      ;${EndIf}
       MessageBox MB_YESNO|MB_ICONQUESTION "${APP_NAME} is already installed at $R0. Do you want to repair the installation?" IDYES do_fix IDNO cancel_install
       cancel_install:
         Abort
       do_fix:
         Call RemoveOldOadin
     ${Else}
-      ${If} $INSTALL_SCOPE == 1
-        ; --- Dynamic elevation ---
-        UserInfo::GetAccountType
-        Pop $0
-        StrCmp $0 "Admin" already_elevated  ; Already administrator, continue
-        ExecShell "runas" "$EXEPATH" "/S"
-        Quit  ; Exit current process so the elevated process can take over
-        already_elevated:
-          ;Already administrator,
-      ${EndIf}
+      ;${If} $INSTALL_SCOPE == 1
+      ;  ; --- Dynamic elevation ---
+      ;  UserInfo::GetAccountType
+      ;  Pop $0
+      ;  StrCmp $0 "Admin" already_elevated  ; Already administrator, continue
+      ;  ExecShell "runas" "$EXEPATH" "/S"
+      ;  Quit  ; Exit current process so the elevated process can take over
+      ;  already_elevated:
+      ;    ;Already administrator,
+      ;${EndIf}
       Call RemoveOldOadin
     ${EndIf}
   ${Else}
-    ${If} $SILENT == 1
-      ; --- Dynamic elevation ---
-      UserInfo::GetAccountType
-      Pop $0
-      StrCmp $0 "Admin" elevated  ; Already administrator, continue
-      ExecShell "runas" "$EXEPATH" "/S"
-      Quit  ; Exit current process so the elevated process can take over
-      elevated:
-        ;Already administrator,
-    ${EndIf}
+    ;${If} $SILENT == 1
+    ;  ; --- Dynamic elevation ---
+    ;  UserInfo::GetAccountType
+    ;  Pop $0
+    ;  StrCmp $0 "Admin" elevated  ; Already administrator, continue
+    ;  ExecShell "runas" "$EXEPATH" "/S"
+    ;  Quit  ; Exit current process so the elevated process can take over
+    ;  elevated:
+    ;    ;Already administrator,
+    ;${EndIf}
     ; Not installed, ask installation scope in non-silent mode
   ${EndIf}
 FunctionEnd
@@ -164,12 +173,12 @@ Section "Install"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayName" "${APP_NAME}"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString" "$INSTDIR\uninstall.exe"
     Call AddPathSystem
-  ${Else}
-    WriteRegStr HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
-    WriteRegStr HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
-    WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayName" "${APP_NAME}"
-    WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString" "$INSTDIR\uninstall.exe"
-    Call AddPathUser
+  ;${Else}
+  ;  WriteRegStr HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
+  ;  WriteRegStr HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
+  ;  WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayName" "${APP_NAME}"
+  ;  WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString" "$INSTDIR\uninstall.exe"
+  ;  Call AddPathUser
   ${EndIf}
 
   WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -310,28 +319,28 @@ FunctionEnd
 Function un.onInit
   SetRegView 64
   ; Determine installation scope
-  ReadRegStr $INSTDIR HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
-  ${If} $INSTDIR != ""
-    StrCpy $INSTALL_SCOPE 0
-  ${Else}
-    ReadRegStr $INSTDIR HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
-    ${If} $INSTDIR != ""
-      StrCpy $INSTALL_SCOPE 1
-    ${Else}
-      StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
-      StrCpy $INSTALL_SCOPE 1
-    ${EndIf}
-  ${EndIf}
-  ${If} $INSTALL_SCOPE == 1
-    ; --- Dynamic elevation ---
-    UserInfo::GetAccountType
-    Pop $0
-    StrCmp $0 "Admin" done_elevated  ; Already administrator, continue
-    ExecShell "runas" "$EXEPATH" ""
-    Quit  ; Exit current process so the elevated process can take over
-    done_elevated:
-      ;Already administrator,
-  ${EndIf} 
+ ;ReadRegStr $INSTDIR HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+ ;${If} $INSTDIR != ""
+ ;  StrCpy $INSTALL_SCOPE 0
+ ;${Else}
+ ReadRegStr $INSTDIR HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+ ${If} $INSTDIR != ""
+   StrCpy $INSTALL_SCOPE 1
+ ${Else}
+   StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
+   StrCpy $INSTALL_SCOPE 1
+ ${EndIf}
+  ;${EndIf}
+ ;${If} $INSTALL_SCOPE == 1
+ ;  ; --- Dynamic elevation ---
+ ;  UserInfo::GetAccountType
+ ;  Pop $0
+ ;  StrCmp $0 "Admin" done_elevated  ; Already administrator, continue
+ ;  ExecShell "runas" "$EXEPATH" ""
+ ;  Quit  ; Exit current process so the elevated process can take over
+ ;  done_elevated:
+ ;    ;Already administrator,
+ ; ${EndIf}
 FunctionEnd
 
 Section "Uninstall"
@@ -357,11 +366,11 @@ Section "Uninstall"
     DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
-  ${Else}
-    DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
-    DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
-    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
-    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+  ;${Else}
+  ;  DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
+  ;  DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
   ${EndIf}
 SectionEnd
 
@@ -377,15 +386,15 @@ Function RemovePathEnv
       ; Pop $R2
       WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$0"
     ${EndIf}
-  ${Else}
-    ReadRegStr $R0 HKCU "Environment" "Path"
-    ${If} $R0 != ""
-      Push $R0
-      Push $R1
-      Call StrRemove
-      ; Pop $R2
-      WriteRegExpandStr HKCU "Environment" "Path" "$0"
-    ${EndIf}
+  ;${Else}
+  ;  ReadRegStr $R0 HKCU "Environment" "Path"
+  ;  ${If} $R0 != ""
+  ;    Push $R0
+  ;    Push $R1
+  ;    Call StrRemove
+  ;    ; Pop $R2
+  ;    WriteRegExpandStr HKCU "Environment" "Path" "$0"
+  ;  ${EndIf}
   ${EndIf}
   ; SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment"
 FunctionEnd
@@ -402,15 +411,15 @@ Function un.RemovePathEnv
       ; Pop $R2
       WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$0"
     ${EndIf}
-  ${Else}
-    ReadRegStr $R0 HKCU "Environment" "Path"
-    ${If} $R0 != ""
-      Push $R0
-      Push $R1
-      Call un.StrRemove
-      ; Pop $R2
-      WriteRegExpandStr HKCU "Environment" "Path" "$0"
-    ${EndIf}
+  ;${Else}
+  ;  ReadRegStr $R0 HKCU "Environment" "Path"
+  ;  ${If} $R0 != ""
+  ;    Push $R0
+  ;    Push $R1
+  ;    Call un.StrRemove
+  ;    ; Pop $R2
+  ;    WriteRegExpandStr HKCU "Environment" "Path" "$0"
+  ;  ${EndIf}
   ${EndIf}
   ; SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment"
 FunctionEnd
@@ -531,8 +540,8 @@ Function EnableAutoStart
   SetRegView 64
   ${If} $INSTALL_SCOPE == 1
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
-  ${Else}
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
+  ;${Else}
+  ;  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin" '"$INSTDIR\oadin-app.exe"'
   ${EndIf}
 FunctionEnd
 
@@ -555,22 +564,22 @@ Function RemoveOldOadin
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
   ${EndIf}
-  ReadRegStr $R3 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
-  ${If} $R3 != ""
-    nsExec::Exec '"$R3\oadin.exe" server stop'
-    nsExec::ExecToStack 'taskkill /F /IM oadin.exe' 
-    nsExec::ExecToStack 'taskkill /F /IM oadin-app.exe'
-    Sleep 200
-    RMDir /r "$R3"
-    Delete "$DESKTOP\Oadin.lnk"
-    Push $R3
-    Call RemovePathEnv
-    DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
-    DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
-    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
-    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
-    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
-  ${EndIf}
+  ;ReadRegStr $R3 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+  ;${If} $R3 != ""
+  ;  nsExec::Exec '"$R3\oadin.exe" server stop'
+  ;  nsExec::ExecToStack 'taskkill /F /IM oadin.exe'
+  ;  nsExec::ExecToStack 'taskkill /F /IM oadin-app.exe'
+  ;  Sleep 200
+  ;  RMDir /r "$R3"
+  ;  Delete "$DESKTOP\Oadin.lnk"
+  ;  Push $R3
+  ;  Call RemovePathEnv
+  ;  DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
+  ;  DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+  ;${EndIf}
 FunctionEnd
 
 Function SelectInstallScopePage
