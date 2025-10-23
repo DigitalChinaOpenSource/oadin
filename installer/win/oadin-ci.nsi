@@ -101,13 +101,13 @@ Function .onInit
   ;  StrCpy $INSTALL_SCOPE 0
   ;${Else}
   ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
-    ${If} $R0 != ""
-      StrCpy $INSTDIR $R0
-      StrCpy $INSTALL_SCOPE 1
-    ${Else}
-       StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
-       StrCpy $INSTALL_SCOPE 1
-    ${EndIf}
+    ;${If} $R0 != ""
+    ;  StrCpy $INSTDIR $R0
+    ;  StrCpy $INSTALL_SCOPE 1
+    ;${Else}
+    StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
+    StrCpy $INSTALL_SCOPE 1
+    ;${EndIf}
   ;${EndIf}
 
   ${If} $R0 != ""
