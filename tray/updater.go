@@ -206,10 +206,6 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponseData) {
 }
 
 func DownloadNewVersion(ctx context.Context, updateResponse UpdateResponseData) error {
-	err := CleanOldVersionFile()
-	if err != nil {
-		return err
-	}
 	systemDataDir, err := utils.GetSystemOadinDataDir()
 	if err != nil {
 		return err
@@ -220,9 +216,19 @@ func DownloadNewVersion(ctx context.Context, updateResponse UpdateResponseData) 
 	}
 	fileName := ""
 	if runtime.GOOS == "windows" {
-		fileName = "oadin-installer.exe"
+		fileName = fmt.Sprintf("oadin-installer-%s.exe", updateResponse.UpdateVersion)
 	} else if runtime.GOOS == "darwin" {
-		fileName = "oadin-installer.pkg"
+		fileName = fmt.Sprintf("oadin-installer-%s.pkg", updateResponse.UpdateVersion)
+	}
+	installerPath := filepath.Join(downloadDir, fileName)
+	_, err = os.Stat(installerPath)
+	if err == nil {
+		slog.Info("update already downloaded")
+		return nil
+	}
+	err = CleanOldVersionFile()
+	if err != nil {
+		return err
 	}
 	_, err = utils.DownloadFile(updateResponse.UpdateURL, downloadDir, fileName)
 	if err != nil {
@@ -286,13 +292,22 @@ func DoUpdate() error {
 	if err != nil {
 		return err
 	}
-	fileName := ""
-	if runtime.GOOS == "darwin" {
-		fileName = "oadin-installer.pkg"
-	} else if runtime.GOOS == "windows" {
-		fileName = "oadin-installer.exe"
+	var files []string
+	if runtime.GOOS == "windows" {
+		files, _ = filepath.Glob(filepath.Join(oadinDir, "*.exe"))
+	} else if runtime.GOOS == "darwin" {
+		files, _ = filepath.Glob(filepath.Join(oadinDir, "*.pkg"))
 	}
-	newVersionFile := filepath.Join(oadinDir, "updates", fileName)
+	if err != nil {
+		return fmt.Errorf("failed to lookup downloads: %s", err)
+	}
+	if len(files) == 0 {
+		return errors.New("no update downloads found")
+	} else if len(files) > 1 {
+		// Shouldn't happen
+		slog.Warn(fmt.Sprintf("multiple downloads found, using first one %v", files))
+	}
+	newVersionFile := files[0]
 	if _, err := os.Stat(newVersionFile); os.IsNotExist(err) {
 		return err
 	}

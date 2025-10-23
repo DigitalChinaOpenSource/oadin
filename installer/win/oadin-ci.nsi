@@ -15,6 +15,7 @@
 !define COMPANY_NAME "Digital China"
 !define DEFAULT_INSTALL_DIR "C:\Program Files\Oadin"
 !define DEFAULT_INSTALL_DATA_DIR "C:\ProgramData\Oadin"
+!define DEFAULT_USER_DATA_DIR "$APPDATA\Oadin"
 !define DEFAULT_PARAMS_DATA_DIR "C:\ProgramData\oadin_phase.txt"
 !define DEFAULT_PARAMS_DATA_DIR1 "C:\ProgramData\oadin_phase1.txt"
 
@@ -85,15 +86,15 @@ Function .onInit
   ${EndIf}
 
   ; Check previous installation path
-  ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+  ReadRegStr $R0 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $R0 != ""
     StrCpy $INSTDIR $R0
-    StrCpy $INSTALL_SCOPE 1
+    StrCpy $INSTALL_SCOPE 0
   ${Else}
-    ReadRegStr $R0 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+    ReadRegStr $R0 HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
     ${If} $R0 != ""
       StrCpy $INSTDIR $R0
-      StrCpy $INSTALL_SCOPE 0
+      StrCpy $INSTALL_SCOPE 1
     ${Else}
       StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
       StrCpy $INSTALL_SCOPE 1
@@ -346,9 +347,9 @@ Section "Uninstall"
   ${EndIf}
   ${If} $UNINSTALL_DATA == 1
     RMDir /r "${DEFAULT_INSTALL_DATA_DIR}"
+    RMDir /r "${DEFAULT_USER_DATA_DIR}"
   ${EndIf}
   Push $INSTDIR
-  Delete "$DESKTOP\Oadin.lnk"
 
   Call un.RemovePathEnv
 
