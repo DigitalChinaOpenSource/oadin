@@ -310,13 +310,13 @@ FunctionEnd
 Function un.onInit
   SetRegView 64
   ; Determine installation scope
-  ReadRegStr $INSTDIR HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+  ReadRegStr $INSTDIR HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $INSTDIR != ""
-    StrCpy $INSTALL_SCOPE 1
+    StrCpy $INSTALL_SCOPE 0
   ${Else}
-    ReadRegStr $INSTDIR HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+    ReadRegStr $INSTDIR HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
     ${If} $INSTDIR != ""
-      StrCpy $INSTALL_SCOPE 0
+      StrCpy $INSTALL_SCOPE 1
     ${Else}
       StrCpy $INSTDIR "${DEFAULT_INSTALL_DIR}"
       StrCpy $INSTALL_SCOPE 1
@@ -352,15 +352,17 @@ Section "Uninstall"
   Push $INSTDIR
 
   Call un.RemovePathEnv
-
-  DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
-  DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
-  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
-  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
-  DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
-  DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
-  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
-  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+  ${If} $INSTALL_SCOPE == 1
+    DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
+    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+    DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+  ${Else}
+    DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
+    DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+  ${EndIf}
 SectionEnd
 
 Function RemovePathEnv
