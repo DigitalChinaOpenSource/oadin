@@ -19,7 +19,7 @@ package version
 import "log/slog"
 
 // OADINVersion 奥丁主版本号
-const OADINVersion = "2.0.2"
+const OADINVersion = "2.0.3"
 
 // OADINSpecVersion 奥丁API版本号
 const OADINSpecVersion = "v0.4"
