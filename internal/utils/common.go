@@ -27,9 +27,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"syscall"
-	"unsafe"
-
 	"io"
 	"math/rand"
 	"net/http"
@@ -1148,30 +1145,4 @@ func GetSystemOadinDataDir() (string, error) {
 		// 遵循 FHS 规范
 		return filepath.Join("/usr", "share", "Oadin"), nil
 	}
-}
-
-var (
-	shell32           = syscall.NewLazyDLL("shell32.dll")
-	procShellExecuteW = shell32.NewProc("ShellExecuteW")
-)
-
-func ShellExecute(hwnd uintptr, verb, file, args, dir string, showCmd int) error {
-	verbPtr, _ := syscall.UTF16PtrFromString(verb)
-	filePtr, _ := syscall.UTF16PtrFromString(file)
-	argsPtr, _ := syscall.UTF16PtrFromString(args)
-	dirPtr, _ := syscall.UTF16PtrFromString(dir)
-
-	ret, _, _ := procShellExecuteW.Call(
-		hwnd,
-		uintptr(unsafe.Pointer(verbPtr)),
-		uintptr(unsafe.Pointer(filePtr)),
-		uintptr(unsafe.Pointer(argsPtr)),
-		uintptr(unsafe.Pointer(dirPtr)),
-		uintptr(showCmd),
-	)
-
-	if ret <= 32 {
-		return syscall.Errno(ret)
-	}
-	return nil
 }
