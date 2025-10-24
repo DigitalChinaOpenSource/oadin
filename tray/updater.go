@@ -313,10 +313,14 @@ func DoUpdate() error {
 	}
 	// Just silently execute the installation package.
 	if runtime.GOOS == "windows" {
-		excuteCmd := exec.Command(newVersionFile, "/S")
-		excuteCmd.Stdout = os.Stdout
-		excuteCmd.Stderr = os.Stderr
-		_ = excuteCmd.Run()
+		//excuteCmd := exec.Command(newVersionFile, "/S")
+		//excuteCmd.Stdout = os.Stdout
+		//excuteCmd.Stderr = os.Stderr
+		//_ = excuteCmd.Run()
+		err = utils.ShellExecute(0, "runas", newVersionFile, "/S", "", 1)
+		if err != nil {
+			return err
+		}
 	} else if runtime.GOOS == "darwin" {
 		installer := MacPKGInstaller(newVersionFile)
 		err := installer.Install()
