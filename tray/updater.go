@@ -294,9 +294,9 @@ func DoUpdate() error {
 	}
 	var files []string
 	if runtime.GOOS == "windows" {
-		files, _ = filepath.Glob(filepath.Join(oadinDir, "*.exe"))
+		files, err = filepath.Glob(filepath.Join(oadinDir, "updates", "*.exe"))
 	} else if runtime.GOOS == "darwin" {
-		files, _ = filepath.Glob(filepath.Join(oadinDir, "*.pkg"))
+		files, err = filepath.Glob(filepath.Join(oadinDir, "updates", "*.pkg"))
 	}
 	if err != nil {
 		return fmt.Errorf("failed to lookup downloads: %s", err)

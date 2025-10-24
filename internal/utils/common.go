@@ -47,7 +47,6 @@ import (
 	"github.com/shirou/gopsutil/disk"
 	"gorm.io/gorm/utils"
 
-	"oadin/internal/constants"
 	"oadin/internal/types"
 )
 
@@ -1135,16 +1134,16 @@ func GetSystemOadinDataDir() (string, error) {
 	case "windows":
 		// %PROGRAMDATA% -> C:\ProgramData
 		if programData := os.Getenv("PROGRAMDATA"); programData != "" {
-			return filepath.Join(programData, constants.AppName), nil
+			return filepath.Join(programData, "Oadin"), nil
 		}
-		return filepath.Join("C:\\ProgramData", constants.AppName), nil
+		return filepath.Join("C:\\ProgramData", "Oadin"), nil
 
 	case "darwin":
 		// macOS 系统范围 -> /Library/Application Support
-		return filepath.Join("/Library", "Application Support", constants.AppName), nil
+		return filepath.Join("/Library", "Application Support", "Oadin"), nil
 
 	default: // Linux, BSD, etc.
 		// 遵循 FHS 规范
-		return filepath.Join("/usr", "share", constants.AppName), nil
+		return filepath.Join("/usr", "share", "Oadin"), nil
 	}
 }
