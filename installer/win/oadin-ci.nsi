@@ -152,7 +152,7 @@ Function .onInit
       elevated:
         ;Already administrator,
     ${EndIf}
-      Not installed, ask installation scope in non-silent mode
+      ;Not installed, ask installation scope in non-silent mode
   ${EndIf}
 FunctionEnd
 
