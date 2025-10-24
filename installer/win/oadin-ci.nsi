@@ -129,30 +129,30 @@ Function .onInit
       do_fix:
         Call RemoveOldOadin
     ${Else}
-      ;${If} $INSTALL_SCOPE == 1
-      ;  ; --- Dynamic elevation ---
-      ;  UserInfo::GetAccountType
-      ;  Pop $0
-      ;  StrCmp $0 "Admin" already_elevated  ; Already administrator, continue
-      ;  ExecShell "runas" "$EXEPATH" "/S"
-      ;  Quit  ; Exit current process so the elevated process can take over
-      ;  already_elevated:
-      ;    ;Already administrator,
-      ;${EndIf}
+      ${If} $INSTALL_SCOPE == 1
+        ; --- Dynamic elevation ---
+        UserInfo::GetAccountType
+        Pop $0
+        StrCmp $0 "Admin" already_elevated  ; Already administrator, continue
+        ExecShell "runas" "$EXEPATH" "/S"
+        Quit  ; Exit current process so the elevated process can take over
+        already_elevated:
+          ;Already administrator,
+      ${EndIf}
       Call RemoveOldOadin
     ${EndIf}
   ${Else}
-    ;${If} $SILENT == 1
-    ;  ; --- Dynamic elevation ---
-    ;  UserInfo::GetAccountType
-    ;  Pop $0
-    ;  StrCmp $0 "Admin" elevated  ; Already administrator, continue
-    ;  ExecShell "runas" "$EXEPATH" "/S"
-    ;  Quit  ; Exit current process so the elevated process can take over
-    ;  elevated:
-    ;    ;Already administrator,
-    ;${EndIf}
-    ; Not installed, ask installation scope in non-silent mode
+    ${If} $SILENT == 1
+      ; --- Dynamic elevation ---
+      UserInfo::GetAccountType
+      Pop $0
+      StrCmp $0 "Admin" elevated  ; Already administrator, continue
+      ExecShell "runas" "$EXEPATH" "/S"
+      Quit  ; Exit current process so the elevated process can take over
+      elevated:
+        ;Already administrator,
+    ${EndIf}
+      Not installed, ask installation scope in non-silent mode
   ${EndIf}
 FunctionEnd
 
