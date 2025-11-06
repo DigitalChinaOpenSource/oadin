@@ -57,8 +57,8 @@ const (
 	WindowsAMDURL           = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm.zip"
 	WindowsIntelArcURL      = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ipex-llm-ollama.zip"
 	WindowsBaseURL          = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-base.zip"
-	WindowsDDLDependsX64URL = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-	WindowsDDLDependsX86URL = "https://aka.ms/vs/17/release/vc_redist.x86.exe"
+	WindowsDDLDependsX64URL = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/dependency/VcRuntime_x64.zip"
+	WindowsDDLDependsX86URL = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/dependency/VcRuntime_x86.zip"
 
 	// AMD GPU ROCM download URL
 	WindowsAMD_780M  = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-780M.zip"
@@ -592,10 +592,10 @@ func (o *OllamaProvider) PullModelStream(ctx context.Context, req *types.PullMod
 		// 用于存储最新的进度信息
 		var latestProgressData []byte
 
-        const maxRetries = 10
-        const maxSlowSpeedDetections = 2 // 允许连续几次检测到低速率
-        const minExpectedSpeed = 500 * 1024 // 500KB/s最低期望速度
-        const checkInterval = 5 * time.Second // 每5秒检查一次下载速度
+		const maxRetries = 10
+		const maxSlowSpeedDetections = 2      // 允许连续几次检测到低速率
+		const minExpectedSpeed = 500 * 1024   // 500KB/s最低期望速度
+		const checkInterval = 5 * time.Second // 每5秒检查一次下载速度
 
 		for retry < maxRetries {
 			// 为每次尝试创建新的上下文
