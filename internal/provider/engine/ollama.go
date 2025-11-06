@@ -57,8 +57,8 @@ const (
 	WindowsAMDURL           = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm.zip"
 	WindowsIntelArcURL      = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ipex-llm-ollama.zip"
 	WindowsBaseURL          = constants.BaseDownloadURL + constants.UrlDirPathWindows + "/ollama-windows-amd64-base.zip"
-	WindowsDDLDependsX64URL = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/dependency/vc_redist.x64.exe"
-	WindowsDDLDependsX86URL = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/dependency/vc_redist.x86.exe"
+	WindowsDDLDependsX64URL = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/dependency/VC_redist.x64.exe"
+	WindowsDDLDependsX86URL = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/dependency/VC_redist.x86.exe"
 
 	// AMD GPU ROCM download URL
 	WindowsAMD_780M  = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-780M.zip"
