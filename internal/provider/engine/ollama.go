@@ -333,7 +333,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 
 			}
 		case types.GPUTypeIntelArc:
-			execPath = fmt.Sprintf("%s/%s", executableDir.ProgramData, "/Oadin/ipex-llm-ollama")
+			execPath = fmt.Sprintf("%s/%s", executableDir.ProgramData, "/Oadin")
 			downloadUrl = WindowsIntelArcURL
 		default:
 			downloadUrl = WindowsBaseURL
