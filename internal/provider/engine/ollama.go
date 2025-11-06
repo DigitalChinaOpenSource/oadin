@@ -333,7 +333,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 
 			}
 		case types.GPUTypeIntelArc:
-			execPath = fmt.Sprintf("%s/%s", executableDir.ProgramData, "/Oadin")
+			execPath = fmt.Sprintf("%s/%s", executableDir.ProgramData, "/Oadin/ipex-llm-ollama")
 			downloadUrl = WindowsIntelArcURL
 		default:
 			downloadUrl = WindowsBaseURL
@@ -429,7 +429,7 @@ func (o *OllamaProvider) InstallEngine() error {
 				logger.EngineLogger.Error("Get user home dir failed: ", err.Error())
 				return err
 			}
-			ipexPath := filepath.Join(o.GetConfig().ExecPath, "ipex-llm-ollama")
+			ipexPath := o.GetConfig().ExecPath
 			if _, err = os.Stat(ipexPath); os.IsNotExist(err) {
 				os.MkdirAll(ipexPath, 0o755)
 				if runtime.GOOS == "windows" {
