@@ -102,80 +102,33 @@ Function StrStr
   Exch $R1
 FunctionEnd
 
-; Function to check if Visual C++ Redistributable is installed
-Function CheckVCRedist
-  Push $0
-  Push $1
-  Push $2
-  
-  ; Check for VC++ 2015-2022 redistributable (x64)
-  ; These registry keys indicate VC++ redistributable installation
-  ClearErrors
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Version"
-  IfErrors check_2017 vc_found
-  
-  check_2017:
-  ClearErrors
-  ReadRegStr $1 HKLM "SOFTWARE\Microsoft\VisualStudio\15.0\VC\Runtimes\x64" "Version"
-  IfErrors check_2019 vc_found
-  
-  check_2019:
-  ClearErrors
-  ReadRegStr $2 HKLM "SOFTWARE\Microsoft\VisualStudio\16.0\VC\Runtimes\x64" "Version"
-  IfErrors check_2022 vc_found
-  
-  check_2022:
-  ClearErrors
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\17.0\VC\Runtimes\x64" "Version"
-  IfErrors check_winsxs vc_found
-  
-  check_winsxs:
-  ; Check Windows Side-by-Side (alternative method)
-  IfFileExists "$SYSDIR\msvcp140.dll" vc_found vc_not_found
-  
-  vc_found:
-  DetailPrint "Visual C++ Redistributable found"
-  StrCpy $0 "found"
-  Goto vc_check_done
-  
-  vc_not_found:
-  DetailPrint "Visual C++ Redistributable NOT found"
-  StrCpy $0 "not_found"
-  
-  vc_check_done:
-  Pop $2
-  Pop $1
-  Exch $0
-FunctionEnd
-
 ; Function to download and install VC++ Redistributable
 Function InstallVCRedist
   Push $0
   Push $1
   
-  DetailPrint "Downloading Visual C++ Redistributable..."
+  DetailPrint "Downloading Visual C++ Redistributable (ensuring latest version)..."
   
   ; Create temp directory for download
   CreateDirectory "$TEMP\OadinInstaller"
   
-  ; Download VC++ redistributable using NSISdl plugin or inetc plugin
-  ; Using NSISdl (built-in) for better compatibility
+  ; Download VC++ redistributable using NSISdl plugin
   NSISdl::download "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/dependency/VC_redist.x64.exe" "$TEMP\OadinInstaller\VC_redist.x64.exe"
   Pop $0
   
   ${If} $0 == "success"
     DetailPrint "VC++ Redistributable downloaded successfully"
     
-    ; Install VC++ redistributable silently
-    DetailPrint "Installing Visual C++ Redistributable..."
+    ; Install VC++ redistributable silently (will update if already installed)
+    DetailPrint "Installing/updating Visual C++ Redistributable..."
     nsExec::ExecToLog '"$TEMP\OadinInstaller\VC_redist.x64.exe" /install /quiet /norestart'
     Pop $1
     
     ${If} $1 == "0"
-      DetailPrint "Visual C++ Redistributable installed successfully"
+      DetailPrint "Visual C++ Redistributable installed/updated successfully"
     ${Else}
-      DetailPrint "Warning: VC++ installation returned code $1"
-      ; Continue installation even if VC++ installation has warnings
+      DetailPrint "VC++ installation completed with code $1 (may already be installed)"
+      ; Continue installation - VC++ installer returns non-zero even for successful updates
     ${EndIf}
     
     ; Clean up downloaded file
@@ -199,14 +152,9 @@ Section "Install"
   SetRegView 64
   ${DisableX64FSRedirection}
 
-  ; Check and install Visual C++ Redistributable
-  DetailPrint "Checking Visual C++ Redistributable..."
-  Call CheckVCRedist
-  Pop $0
-  ${If} $0 == "not_found"
-    DetailPrint "Installing required Visual C++ Redistributable..."
-    Call InstallVCRedist
-  ${EndIf}
+  ; Always install Visual C++ Redistributable to ensure compatibility
+  DetailPrint "Installing Visual C++ Redistributable (required dependency)..."
+  Call InstallVCRedist
 
   ; Log actual installation path
   DetailPrint "Installing to: $INSTDIR"
