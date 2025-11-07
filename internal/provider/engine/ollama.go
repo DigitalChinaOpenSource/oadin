@@ -452,10 +452,6 @@ func (o *OllamaProvider) InstallEngine() error {
 				}
 			}
 		}
-		err = o.InstallEngineExtraDepends(context.Background())
-		if err != nil {
-			return fmt.Errorf("[Install Engine DDL Depends] completed")
-		}
 	} else if runtime.GOOS == "linux" {
 		filePath := o.EngineConfig.ExecPath
 		if _, err = os.Stat(filePath); os.IsNotExist(err) {
