@@ -8,6 +8,10 @@
 ; Include 64-bit support libraries
 !include "x64.nsh"
 !include "LogicLib.nsh"
+!include "WinMessages.nsh"
+
+; Include downloader plugin (requires NSIS with inetc plugin)
+; !addplugindir plugins
 
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
@@ -98,17 +102,111 @@ Function StrStr
   Exch $R1
 FunctionEnd
 
+; Function to check if Visual C++ Redistributable is installed
+Function CheckVCRedist
+  Push $0
+  Push $1
+  Push $2
+  
+  ; Check for VC++ 2015-2022 redistributable (x64)
+  ; These registry keys indicate VC++ redistributable installation
+  ClearErrors
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Version"
+  IfErrors check_2017 vc_found
+  
+  check_2017:
+  ClearErrors
+  ReadRegStr $1 HKLM "SOFTWARE\Microsoft\VisualStudio\15.0\VC\Runtimes\x64" "Version"
+  IfErrors check_2019 vc_found
+  
+  check_2019:
+  ClearErrors
+  ReadRegStr $2 HKLM "SOFTWARE\Microsoft\VisualStudio\16.0\VC\Runtimes\x64" "Version"
+  IfErrors check_2022 vc_found
+  
+  check_2022:
+  ClearErrors
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\17.0\VC\Runtimes\x64" "Version"
+  IfErrors check_winsxs vc_found
+  
+  check_winsxs:
+  ; Check Windows Side-by-Side (alternative method)
+  IfFileExists "$SYSDIR\msvcp140.dll" vc_found vc_not_found
+  
+  vc_found:
+  DetailPrint "Visual C++ Redistributable found"
+  StrCpy $0 "found"
+  Goto vc_check_done
+  
+  vc_not_found:
+  DetailPrint "Visual C++ Redistributable NOT found"
+  StrCpy $0 "not_found"
+  
+  vc_check_done:
+  Pop $2
+  Pop $1
+  Exch $0
+FunctionEnd
+
+; Function to download and install VC++ Redistributable
+Function InstallVCRedist
+  Push $0
+  Push $1
+  
+  DetailPrint "Downloading Visual C++ Redistributable..."
+  
+  ; Create temp directory for download
+  CreateDirectory "$TEMP\OadinInstaller"
+  
+  ; Download VC++ redistributable using NSISdl plugin or inetc plugin
+  ; Using NSISdl (built-in) for better compatibility
+  NSISdl::download "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/dependency/VC_redist.x64.exe" "$TEMP\OadinInstaller\VC_redist.x64.exe"
+  Pop $0
+  
+  ${If} $0 == "success"
+    DetailPrint "VC++ Redistributable downloaded successfully"
+    
+    ; Install VC++ redistributable silently
+    DetailPrint "Installing Visual C++ Redistributable..."
+    nsExec::ExecToLog '"$TEMP\OadinInstaller\VC_redist.x64.exe" /install /quiet /norestart'
+    Pop $1
+    
+    ${If} $1 == "0"
+      DetailPrint "Visual C++ Redistributable installed successfully"
+    ${Else}
+      DetailPrint "Warning: VC++ installation returned code $1"
+      ; Continue installation even if VC++ installation has warnings
+    ${EndIf}
+    
+    ; Clean up downloaded file
+    Delete "$TEMP\OadinInstaller\VC_redist.x64.exe"
+  ${Else}
+    DetailPrint "Failed to download VC++ Redistributable: $0"
+    MessageBox MB_YESNO|MB_ICONQUESTION "Failed to download Visual C++ Redistributable automatically.$\r$\nThis may cause application startup issues.$\r$\n$\r$\nDo you want to continue installation anyway?" IDYES continue_install
+    Abort
+    continue_install:
+  ${EndIf}
+  
+  ; Clean up temp directory
+  RMDir "$TEMP\OadinInstaller"
+  
+  Pop $1
+  Pop $0
+FunctionEnd
+
 Section "Install"
-  nsExec::ExecToLog 'tasklist /FI "IMAGENAME eq oadin.exe" | find /I "oadin.exe"'
-  Pop $R0
-  StrCmp $R0 "" continue_install
-    nsExec::ExecToLog 'oadin server stop'
-    DetailPrint "oadin server stop"
-    Sleep 3000
-  continue_install:
   ; Ensure 64-bit environment
   SetRegView 64
   ${DisableX64FSRedirection}
+
+  ; Check and install Visual C++ Redistributable
+  DetailPrint "Checking Visual C++ Redistributable..."
+  Call CheckVCRedist
+  Pop $0
+  ${If} $0 == "not_found"
+    DetailPrint "Installing required Visual C++ Redistributable..."
+    Call InstallVCRedist
+  ${EndIf}
 
   ; Log actual installation path
   DetailPrint "Installing to: $INSTDIR"
@@ -128,7 +226,6 @@ Section "Install"
   File "preinstall.bat"
   File "postinstall.bat"
   File "start-oadin.bat"
-  DetailPrint "Copy files"
 
   ; Write registry (64-bit view)
   WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
@@ -176,9 +273,14 @@ Section "Uninstall"
   Delete "$INSTDIR\start-oadin.bat"
   Delete "$INSTDIR\uninstall.exe"
 
+  ; Clean up any remaining temp files
+  Delete "$TEMP\OadinInstaller\VC_redist.x64.exe"
+  RMDir "$TEMP\OadinInstaller"
+
   RMDir "$INSTDIR"
 
   DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
 
   ${EnableX64FSRedirection}
 SectionEnd
+ 
