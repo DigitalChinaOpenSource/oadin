@@ -151,16 +151,26 @@ Function InstallVCRedist
   ${If} $0 == "success"
     DetailPrint "VC++ Redistributable downloaded successfully"
     
-    ; Install VC++ redistributable silently
-    DetailPrint "Installing Visual C++ Redistributable..."
-    nsExec::ExecToLog '"$TEMP\OadinInstaller\VC_redist.x64.exe" /install /quiet /norestart'
+    ; Install/Repair VC++ redistributable silently
+    ; Use /repair to force reinstallation even if registry shows it's installed
+    DetailPrint "Installing/Repairing Visual C++ Redistributable..."
+    nsExec::ExecToLog '"$TEMP\OadinInstaller\VC_redist.x64.exe" /repair /quiet /norestart'
     Pop $1
 
     ${If} $1 == "0"
-      DetailPrint "Visual C++ Redistributable installed successfully"
+      DetailPrint "Visual C++ Redistributable installed/repaired successfully"
     ${Else}
-      DetailPrint "Warning: VC++ installation returned code $1"
-      ; Continue installation even if VC++ installation has warnings
+      DetailPrint "Warning: VC++ repair returned code $1"
+      DetailPrint "Attempting alternative installation method..."
+      ; Try with /install if /repair fails
+      nsExec::ExecToLog '"$TEMP\OadinInstaller\VC_redist.x64.exe" /install /quiet /norestart'
+      Pop $1
+      ${If} $1 == "0"
+        DetailPrint "Visual C++ Redistributable installed successfully"
+      ${Else}
+        DetailPrint "Warning: VC++ installation returned code $1"
+        ; Continue installation even if VC++ installation has warnings
+      ${EndIf}
     ${EndIf}
     
     ; Clean up downloaded file
