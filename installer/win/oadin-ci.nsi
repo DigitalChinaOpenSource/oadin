@@ -109,32 +109,17 @@ Function CheckVCRedist
   Push $2
   
   ; Check for VC++ 2015-2022 redistributable (x64)
-  ; These registry keys indicate VC++ redistributable installation
-  ClearErrors
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Version"
-  IfErrors check_2017 vc_found
+  ; Always check DLL files first (most reliable method)
+  ; Registry keys can be stale if VC++ was uninstalled improperly
   
-  check_2017:
-  ClearErrors
-  ReadRegStr $1 HKLM "SOFTWARE\Microsoft\VisualStudio\15.0\VC\Runtimes\x64" "Version"
-  IfErrors check_2019 vc_found
+  ; Check both critical DLLs: vcruntime140.dll (core runtime) and msvcp140.dll (C++ standard library)
+  IfFileExists "$SYSDIR\vcruntime140.dll" check_msvcp vc_not_found
   
-  check_2019:
-  ClearErrors
-  ReadRegStr $2 HKLM "SOFTWARE\Microsoft\VisualStudio\16.0\VC\Runtimes\x64" "Version"
-  IfErrors check_2022 vc_found
-  
-  check_2022:
-  ClearErrors
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\17.0\VC\Runtimes\x64" "Version"
-  IfErrors check_winsxs vc_found
-  
-  check_winsxs:
-  ; Check Windows Side-by-Side (alternative method)
+  check_msvcp:
   IfFileExists "$SYSDIR\msvcp140.dll" vc_found vc_not_found
   
   vc_found:
-  DetailPrint "Visual C++ Redistributable found"
+  DetailPrint "Visual C++ Redistributable found (vcruntime140.dll and msvcp140.dll)"
   StrCpy $0 "found"
   Goto vc_check_done
   
