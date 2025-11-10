@@ -102,15 +102,34 @@ FunctionEnd
 ; Function to check if Visual C++ Redistributable is installed (based on reference script)
 
 Function checkVCRedist
+  Push $1
+  
   ; Initialize $0 to 0 (not installed) before checking
   StrCpy $0 "0"
   
   ; Check for VC++ 2015+ redistributable (x64) installation status
   ; This registry key indicates if VC++ redistributable is properly installed
-  ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
+  ReadRegDWORD $1 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
+  DetailPrint "VC++ Registry check result: $1"
   
-  ; $0 will be 1 if installed, 0 if not installed
-  DetailPrint "VC++ Registry check result: $0"
+  ; Even if registry says installed, verify the actual DLL files exist
+  ; Check for critical VC++ runtime DLL
+  ${If} $1 == "1"
+    DetailPrint "Registry indicates VC++ installed, verifying DLL files..."
+    IfFileExists "$SYSDIR\vcruntime140.dll" 0 +3
+      DetailPrint "Found vcruntime140.dll - VC++ is properly installed"
+      StrCpy $0 "1"
+      Goto vc_check_done
+    DetailPrint "vcruntime140.dll NOT found - VC++ needs to be installed"
+    StrCpy $0 "0"
+  ${Else}
+    DetailPrint "Registry indicates VC++ not installed"
+    StrCpy $0 "0"
+  ${EndIf}
+  
+  vc_check_done:
+  Pop $1
+  ; $0 will be 1 if truly installed (both registry and files), 0 otherwise
 FunctionEnd
 
 ; Function to download and install VC++ Redistributable
