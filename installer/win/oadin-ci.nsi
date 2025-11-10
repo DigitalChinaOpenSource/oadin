@@ -102,10 +102,15 @@ FunctionEnd
 ; Function to check if Visual C++ Redistributable is installed (based on reference script)
 
 Function checkVCRedist
+  ; Initialize $0 to 0 (not installed) before checking
+  StrCpy $0 "0"
+  
   ; Check for VC++ 2015+ redistributable (x64) installation status
   ; This registry key indicates if VC++ redistributable is properly installed
   ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
-  ; $0 will be 1 if installed, empty/error if not installed
+  
+  ; $0 will be 1 if installed, 0 if not installed
+  DetailPrint "VC++ Registry check result: $0"
 FunctionEnd
 
 ; Function to download and install VC++ Redistributable
@@ -152,19 +157,24 @@ Section "Install"
   ; Check and install Visual C++ Redistributable if needed
   DetailPrint "Checking Visual C++ Redistributable..."
   Call checkVCRedist
+  DetailPrint "Detection result: $0 (1=installed, 0=not installed)"
+  
   ${If} $0 != "1"
     DetailPrint "Visual C++ Redistributable not found - installing required dependency..."
     Call InstallVCRedist
     
     ; Verify installation was successful
+    DetailPrint "Verifying VC++ installation..."
     Call checkVCRedist
+    DetailPrint "Verification result: $0"
+    
     ${If} $0 != "1"
       DetailPrint "Warning: VC++ installation verification failed, but continuing..."
     ${Else}
       DetailPrint "Visual C++ Redistributable installation verified successfully"
     ${EndIf}
   ${Else}
-    DetailPrint "Visual C++ Redistributable already installed - continuing..."
+    DetailPrint "Visual C++ Redistributable already installed (registry value: $0) - skipping..."
   ${EndIf}
 
   ; Log actual installation path
