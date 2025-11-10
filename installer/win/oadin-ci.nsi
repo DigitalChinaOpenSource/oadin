@@ -136,6 +136,7 @@ FunctionEnd
 Function InstallVCRedist
   Push $0
   Push $1
+  Push $2
   
   DetailPrint "Downloading Visual C++ Redistributable..."
   
@@ -146,24 +147,39 @@ Function InstallVCRedist
   Pop $0
   
   ${If} $0 == "success"
-    DetailPrint "VC++ Redistributable downloaded successfully"
+    DetailPrint "VC++ Redistributable downloaded successfully to $TEMP\vc_redist.x64.exe"
     
-    ; Install VC++ redistributable silently with norestart
+    ; Verify downloaded file exists
+    IfFileExists "$TEMP\vc_redist.x64.exe" 0 download_verify_failed
+    DetailPrint "Download file verified - proceeding with installation"
+    
+    ; Install VC++ redistributable silently
+    ; Try with /install /quiet /norestart first
     DetailPrint "Installing Visual C++ Redistributable..."
     ExecWait '"$TEMP\vc_redist.x64.exe" /install /quiet /norestart' $1
+    DetailPrint "VC++ installer exit code: $1"
+    
+    ; Wait a moment for installation to complete
+    Sleep 2000
     
     ; Clean up downloaded file
     Delete "$TEMP\vc_redist.x64.exe"
+    DetailPrint "Installation files cleaned up"
+    Goto install_vc_done
     
-    ; Note: VC++ installer exit code is unreliable, so we don't check $1
-    DetailPrint "Visual C++ Redistributable installation completed (exit code: $1)"
+    download_verify_failed:
+    DetailPrint "ERROR: Downloaded file not found at $TEMP\vc_redist.x64.exe"
+    MessageBox MB_ICONSTOP "Failed to download Microsoft Visual C++ Redistributable.$\r$\nThe downloaded file could not be verified.$\r$\nPlease install it manually from Microsoft's website."
+    
+    install_vc_done:
     
   ${Else}
     DetailPrint "Failed to download VC++ Redistributable: $0"
-    MessageBox MB_ICONSTOP "Failed to download Microsoft Visual C++ Redistributable.$\r$\nThis may cause application startup issues.$\r$\nPlease install it manually from Microsoft's website."
+    MessageBox MB_ICONSTOP "Failed to download Microsoft Visual C++ Redistributable.$\r$\nError: $0$\r$\nThis may cause application startup issues.$\r$\nPlease install it manually from Microsoft's website."
     ; Don't abort - continue installation but warn user
   ${EndIf}
   
+  Pop $2
   Pop $1
   Pop $0
 FunctionEnd
@@ -182,13 +198,20 @@ Section "Install"
     DetailPrint "Visual C++ Redistributable not found - installing required dependency..."
     Call InstallVCRedist
     
+    ; Wait a bit longer before verification (VC++ needs time to fully install)
+    DetailPrint "Waiting for VC++ installation to complete..."
+    Sleep 3000
+    
     ; Verify installation was successful
     DetailPrint "Verifying VC++ installation..."
     Call checkVCRedist
     DetailPrint "Verification result: $0"
     
     ${If} $0 != "1"
-      DetailPrint "Warning: VC++ installation verification failed, but continuing..."
+      DetailPrint "Warning: VC++ installation verification failed"
+      DetailPrint "The application may not run correctly without VC++ runtime"
+      DetailPrint "You may need to restart your computer and run the installer again"
+      DetailPrint "Or install VC++ manually from: https://support.microsoft.com/en-us/help/2977003"
     ${Else}
       DetailPrint "Visual C++ Redistributable installation verified successfully"
     ${EndIf}
