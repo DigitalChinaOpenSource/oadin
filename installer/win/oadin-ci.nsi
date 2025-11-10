@@ -155,7 +155,7 @@ Function InstallVCRedist
     DetailPrint "Installing Visual C++ Redistributable..."
     nsExec::ExecToLog '"$TEMP\OadinInstaller\VC_redist.x64.exe" /install /quiet /norestart'
     Pop $1
-    
+
     ${If} $1 == "0"
       DetailPrint "Visual C++ Redistributable installed successfully"
     ${Else}
