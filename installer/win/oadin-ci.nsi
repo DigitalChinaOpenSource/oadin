@@ -107,29 +107,39 @@ Function checkVCRedist
   ; Initialize $0 to 0 (not installed) before checking
   StrCpy $0 "0"
   
-  ; Check for VC++ 2015+ redistributable (x64) installation status
-  ; This registry key indicates if VC++ redistributable is properly installed
-  ReadRegDWORD $1 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
-  DetailPrint "VC++ Registry check result: $1"
+  ; Don't rely on registry alone - it can be left behind after uninstall
+  ; Instead, check for the actual DLL files that VC++ runtime needs
   
-  ; Even if registry says installed, verify the actual DLL files exist
-  ; Check for critical VC++ runtime DLL
-  ${If} $1 == "1"
-    DetailPrint "Registry indicates VC++ installed, verifying DLL files..."
-    IfFileExists "$SYSDIR\vcruntime140.dll" 0 +3
-      DetailPrint "Found vcruntime140.dll - VC++ is properly installed"
-      StrCpy $0 "1"
-      Goto vc_check_done
-    DetailPrint "vcruntime140.dll NOT found - VC++ needs to be installed"
-    StrCpy $0 "0"
-  ${Else}
-    DetailPrint "Registry indicates VC++ not installed"
-    StrCpy $0 "0"
-  ${EndIf}
+  ; Check for critical VC++ 2015+ runtime DLL (x64)
+  DetailPrint "Checking for VC++ runtime DLL files..."
+  
+  ; Primary check: vcruntime140.dll (most critical)
+  DetailPrint "  Checking: $SYSDIR\vcruntime140.dll"
+  IfFileExists "$SYSDIR\vcruntime140.dll" found_vc_dll 0
+  
+  ; Secondary check: msvcp140.dll (standard C++ library)
+  DetailPrint "  Checking: $SYSDIR\msvcp140.dll"
+  IfFileExists "$SYSDIR\msvcp140.dll" found_vc_dll 0
+  
+  ; Try System32 directory directly (for some Windows installations)
+  DetailPrint "  Checking: $WINDIR\System32\vcruntime140.dll"
+  IfFileExists "$WINDIR\System32\vcruntime140.dll" found_vc_dll 0
+  
+  ; Last resort: check SysWOW64 for 32-bit compatibility
+  DetailPrint "  Checking: $SYSWOW64\vcruntime140.dll"
+  IfFileExists "$SYSWOW64\vcruntime140.dll" found_vc_dll 0
+  
+  DetailPrint "Result: VC++ runtime DLL NOT found - installation needed"
+  StrCpy $0 "0"
+  Goto vc_check_done
+  
+  found_vc_dll:
+  DetailPrint "Result: VC++ runtime DLL found - properly installed"
+  StrCpy $0 "1"
   
   vc_check_done:
   Pop $1
-  ; $0 will be 1 if truly installed (both registry and files), 0 otherwise
+  ; $0 will be 1 if DLL files exist, 0 otherwise
 FunctionEnd
 
 ; Function to download and install VC++ Redistributable
@@ -154,13 +164,25 @@ Function InstallVCRedist
     DetailPrint "Download file verified - proceeding with installation"
     
     ; Install VC++ redistributable silently
-    ; Try with /install /quiet /norestart first
+    ; Use more reliable installation parameters
     DetailPrint "Installing Visual C++ Redistributable..."
-    ExecWait '"$TEMP\vc_redist.x64.exe" /install /quiet /norestart' $1
+    DetailPrint "Running: $TEMP\vc_redist.x64.exe /quiet /norestart"
+    ExecWait '"$TEMP\vc_redist.x64.exe" /quiet /norestart' $1
     DetailPrint "VC++ installer exit code: $1"
     
-    ; Wait a moment for installation to complete
-    Sleep 2000
+    ; If exit code is 3010, it means success but system restart is recommended
+    ; This is acceptable for silent installation
+    ${If} $1 == "3010"
+      DetailPrint "VC++ install successful (restart recommended)"
+    ${ElseIf} $1 == "0"
+      DetailPrint "VC++ install successful"
+    ${Else}
+      DetailPrint "VC++ install returned code $1 (may still have succeeded)"
+    ${EndIf}
+    
+    ; Wait longer for installation to complete and files to be copied
+    DetailPrint "Waiting for file system to stabilize..."
+    Sleep 5000
     
     ; Clean up downloaded file
     Delete "$TEMP\vc_redist.x64.exe"
@@ -198,9 +220,10 @@ Section "Install"
     DetailPrint "Visual C++ Redistributable not found - installing required dependency..."
     Call InstallVCRedist
     
-    ; Wait a bit longer before verification (VC++ needs time to fully install)
-    DetailPrint "Waiting for VC++ installation to complete..."
-    Sleep 3000
+    ; Wait for VC++ installation to fully complete
+    ; The installer runs asynchronously, so we need to wait for DLL files to be copied
+    DetailPrint "Waiting for VC++ installation to complete and files to be copied..."
+    Sleep 8000
     
     ; Verify installation was successful
     DetailPrint "Verifying VC++ installation..."
@@ -246,15 +269,16 @@ Section "Install"
   
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
-  ; Execute installation scripts
+  ; Execute installation scripts with proper working directory
   DetailPrint "Running pre-install script..."
-  nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
+  ; Set working directory to installation directory and execute
+  ExecWait 'cmd.exe /c cd "$INSTDIR" && call preinstall.bat'
 
   DetailPrint "Running post-install script..."
-  nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
+  ExecWait 'cmd.exe /c cd "$INSTDIR" && call postinstall.bat "$INSTDIR"'
 
   DetailPrint "Starting Oadin service..."
-  nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
+  ExecWait 'cmd.exe /c cd "$INSTDIR" && call start-oadin.bat'
 
   ${EnableX64FSRedirection}
   
