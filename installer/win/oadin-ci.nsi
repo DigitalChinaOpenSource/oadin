@@ -100,13 +100,12 @@ Function StrStr
 FunctionEnd
 
 ; Function to check if Visual C++ Redistributable is installed (based on reference script)
+
 Function checkVCRedist
-  Push $0
   ; Check for VC++ 2015+ redistributable (x64) installation status
   ; This registry key indicates if VC++ redistributable is properly installed
   ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
   ; $0 will be 1 if installed, empty/error if not installed
-  Pop $0
 FunctionEnd
 
 ; Function to download and install VC++ Redistributable
