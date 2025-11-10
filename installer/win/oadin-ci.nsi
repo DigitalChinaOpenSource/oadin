@@ -10,9 +10,6 @@
 !include "LogicLib.nsh"
 !include "WinMessages.nsh"
 
-; inetc plugin provides more reliable downloading than NSISdl
-; Ensure the plugin is available in your NSIS installation
-
 !define APP_NAME "Oadin CLI"
 !define COMPANY_NAME "Digital China"
 ; Use hard-coded 64-bit path to avoid CI environment issues
@@ -119,14 +116,13 @@ Function InstallVCRedist
   
   DetailPrint "Downloading Visual C++ Redistributable..."
   
-  ; Download VC++ redistributable using inetc plugin (more reliable than NSISdl)
+  ; Download VC++ redistributable using NSISdl (NSIS built-in download)
   ; Use Microsoft's official download link
-  inetc::get /CAPTION "Downloading..." /BANNER "Downloading Microsoft Visual C++ Redistributable..." \
-    "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/dependency/VC_redist.x64.exe" \
+  NSISdl::download "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin/windows/dependency/VC_redist.x64.exe" \
     "$TEMP\vc_redist.x64.exe"
   Pop $0
   
-  ${If} $0 == "OK"
+  ${If} $0 == "success"
     DetailPrint "VC++ Redistributable downloaded successfully"
     
     ; Install VC++ redistributable silently with norestart
