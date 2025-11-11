@@ -12,6 +12,25 @@ set "OADIN_FOLDER=%ProgramFiles%\Oadin"
 
 echo --- Oadin 安装前置检查 ---
 
+:: Step 1: Stop Oadin Server if running
+echo.
+echo [INFO] Attempting to stop Oadin server...
+oadin server stop >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo [INFO] Oadin server not running or stop command failed (continuing anyway)
+) else (
+    echo [OK] Oadin server stopped successfully
+)
+
+:: Wait a moment for server to fully shutdown
+timeout /t 2 /nobreak >nul 2>&1
+
+echo.
+echo --- Oadin 版本检查 ---
+
+:: Step 2: Check Oadin version and cleanup if needed
+echo.
+echo [INFO] Checking Oadin version...
 :: 尝试执行 oadin --version 并捕获输出
 :: 使用 2>&1 将标准错误重定向到标准输出，然后用 findstr 检查输出
 :: 注意：oadin --version 的输出格式必须是明确的版本号，例如 "1.3.12"
