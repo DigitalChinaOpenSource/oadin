@@ -208,6 +208,19 @@ Section "Install"
   DetailPrint "PROGRAMFILES64: $PROGRAMFILES64"
   DetailPrint "PROGRAMFILES: $PROGRAMFILES"
 
+  ; Stop Oadin server if running (to avoid file lock issues)
+  DetailPrint "Attempting to stop Oadin server..."
+  nsExec::Exec 'oadin server stop'
+  Pop $0
+  ${If} $0 == "0"
+    DetailPrint "Oadin server stopped successfully"
+  ${Else}
+    DetailPrint "Oadin server not running or stop command failed (continuing anyway)"
+  ${EndIf}
+  
+  ; Wait for server to fully shutdown
+  Sleep 2000
+
   ; Create installation directory
   CreateDirectory "$INSTDIR"
   SetOutPath "$INSTDIR"

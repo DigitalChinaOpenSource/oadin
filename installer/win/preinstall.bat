@@ -10,22 +10,6 @@ set "THIS_VERSION=1.3.12"
 :: %ProgramFiles% 环境变量指向 Program Files 目录
 set "OADIN_FOLDER=%ProgramFiles%\Oadin"
 
-echo --- Oadin 安装前置检查 ---
-
-:: Step 1: Stop Oadin Server if running
-echo.
-echo [INFO] Attempting to stop Oadin server...
-oadin server stop >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    echo [INFO] Oadin server not running or stop command failed (continuing anyway)
-) else (
-    echo [OK] Oadin server stopped successfully
-)
-
-:: Wait a moment for server to fully shutdown
-timeout /t 2 /nobreak >nul 2>&1
-
-echo.
 echo --- Oadin 版本检查 ---
 
 :: Step 2: Check Oadin version and cleanup if needed
