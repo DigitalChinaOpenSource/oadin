@@ -210,7 +210,7 @@ Section "Install"
 
   ; Stop Oadin server if running (to avoid file lock issues)
   DetailPrint "Attempting to stop Oadin server..."
-  nsExec::Exec 'oadin server stop'
+  nsExec::Exec '$INSTDIR\oadin server stop'
   Pop $0
   ${If} $0 == "0"
     DetailPrint "Oadin server stopped successfully"
