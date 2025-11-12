@@ -251,8 +251,8 @@ Section "Install"
   nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
   DetailPrint "Starting Oadin service..."
-  ; nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
-  ShellExecAsUser::ShellExecAsUser "open" "$INSTDIR\start-oadin.bat" "" SW_HIDE
+  nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
+ 
 
   ${EnableX64FSRedirection}
   
