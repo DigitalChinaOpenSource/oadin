@@ -198,7 +198,7 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponseData) {
 		slog.Warn(fmt.Sprintf("malformed response checking for update: %s", err))
 		return false, updateResp.Data
 	}
-	currentVersion := version.OADINVersion
+	currentVersion := version.OadinSubVersion
 	if updateResp.Data.UpdateVersion == currentVersion {
 		return false, updateResp.Data
 	}

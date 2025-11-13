@@ -64,10 +64,6 @@ const (
 	WindowsAMD_780M  = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-780M.zip"
 	WindowsAMD_8060S = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-8060S.zip"
 
-	// AMD GPU ROCM download URL
-	WindowsAMD_780M  = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-780M.zip"
-	WindowsAMD_8060S = constants.OssURL + "/" + constants.AppName + constants.UrlDirPathWindows + "/ollama-windows-amd64-rocm-8060S.zip"
-
 	// Linux download URLs
 	LinuxAmdURL = constants.BaseDownloadURL + "linux" + "/ollama-linux-amd64.tgz"
 	LinuxArmURL = constants.BaseDownloadURL + "linux" + "/ollama-linux-arm64.tgz"
