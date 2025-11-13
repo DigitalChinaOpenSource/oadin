@@ -74,7 +74,6 @@ func main() {
 	// 创建托盘管理器
 	trayManager := tray.NewManager(true, logFilePath, pidPath)
 	ctx := context.Background()
-	tray.StartCheckUpdate(ctx, trayManager)
 
 	config.GlobalEnvironment = config.NewOADINEnvironment()
 	logger.InitLogger(logger.LogConfig{LogLevel: config.GlobalEnvironment.LogLevel, LogPath: config.GlobalEnvironment.LogDir})

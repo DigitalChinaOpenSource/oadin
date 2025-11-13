@@ -5,6 +5,7 @@
 !include "MUI2.nsh"
 !include Sections.nsh
 !include FileFunc.nsh
+!include UAC.nsh
 
 
 !ifndef VERSION
@@ -162,11 +163,13 @@ Section "Install"
   SetOutPath "$INSTDIR"
   CreateDirectory "$INSTDIR"
 
+  DetailPrint "Copy file..."
   File "..\..\oadin.exe"
   File "..\..\oadin-app.exe"
   File "oadin.ico"
 
   ; Write registry and PATH
+  DetailPrint "Write registry and PATH"
   ${If} $INSTALL_SCOPE == 1
     WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
     WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
@@ -345,6 +348,7 @@ FunctionEnd
 
 Section "Uninstall"
   SetRegView 64
+  DetailPrint "stop oadin server"
   ; stop oadin server
   nsExec::Exec '"$INSTDIR\oadin.exe" server stop'
   nsExec::ExecToStack 'taskkill /F /IM oadin.exe' 
@@ -533,7 +537,9 @@ FunctionEnd
 ; ------------------ Finish Page Functions ------------------
 Function LaunchOadin
   ;nsExec::Exec '"$INSTDIR\oadin.exe" server start -d'
-  ExecShell "open" "$INSTDIR\oadin-app.exe" "" SW_HIDE
+  ;ExecShell "open" "$INSTDIR\oadin-app.exe" "" SW_HIDE
+  DetailPrint "Starting Oadin service..."
+  ShellExecAsUser::ShellExecAsUser "open" "$INSTDIR\oadin-app.exe" "" SW_HIDE
 FunctionEnd
 
 Function EnableAutoStart

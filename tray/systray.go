@@ -2,6 +2,8 @@ package tray
 
 import (
 	"fmt"
+	"github.com/gofrs/flock"
+	"log"
 	"net"
 	"oadin/internal/constants"
 	"oadin/internal/logger"
@@ -31,6 +33,7 @@ type Manager struct {
 	execPath        string
 	logPath         string
 	pidPath         string
+	fileLock        *flock.Flock
 }
 
 // NewManager creates a new system tray manager
@@ -48,6 +51,7 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 		execPath: execPath,
 		logPath:  logPath,
 		pidPath:  pidPath,
+		fileLock: flock.New(filepath.Join(pidPath, "oadin.lock")),
 	}
 }
 
@@ -77,11 +81,19 @@ func (m *Manager) Start() {
 			logger.LogicLogger.Error("Failed to start server: %v\n" + err.Error())
 		}
 	} else {
+		m.serverRunning = true
 		logger.LogicLogger.Info("Server is already running")
 		// 如果服务器已经运行，直接打开浏览器
 		// go m.waitAndOpenBrowser()
 	}
-
+	locked, err := m.fileLock.TryLock()
+	if err != nil {
+		log.Fatalf("failed to acquire file lock: %v", err)
+	}
+	if !locked {
+		fmt.Println("Oadin tray already running. Exiting...")
+		return
+	}
 	fmt.Println("Starting system tray...")
 	systray.Run(m.onReady, m.onExit)
 }
@@ -296,6 +308,9 @@ func (m *Manager) handleOpenConsole() {
 func (m *Manager) onExit() {
 	fmt.Println("=== Oadin Tray Exiting ===")
 	// 确保完全退出
+	if m.fileLock != nil {
+		_ = m.fileLock.Unlock() // ✅ 在退出时释放锁
+	}
 	os.Exit(0)
 }
 
@@ -345,6 +360,11 @@ func (m *Manager) SetUpdateAvailable(available bool) {
 func (m *Manager) performUpdate() error {
 	// 1. 停止服务（已在菜单逻辑中处理）
 	// 2. 执行更新
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		systray.Quit()
+	}()
+
 	if err := DoUpdate(); err != nil {
 		return fmt.Errorf("failed to install update: %v", err)
 	}

@@ -264,7 +264,7 @@ func CleanOldVersionFile() error {
 
 func StartCheckUpdate(ctx context.Context, trayManger *Manager) {
 	go func() {
-		time.Sleep(3 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		for {
 			available, resp := IsNewVersionAvailable(ctx)
