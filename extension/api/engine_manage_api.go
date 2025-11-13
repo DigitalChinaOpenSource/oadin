@@ -119,7 +119,6 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 					res.Status = "error"
 					logger.EngineLogger.Error("DownloadStreamEngine StartEngine error 1: ", err)
 				}
-				time.Sleep(3 * time.Second)
 			}
 		}
 
@@ -155,7 +154,6 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 								res.Status = "error"
 								logger.EngineLogger.Error("DownloadStreamEngine StartEngine error 2: ", err)
 							}
-							time.Sleep(3 * time.Second)
 						}
 					}
 				} else {
@@ -251,28 +249,6 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		Status: "success",
 	}
 
-	// if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
-	// 	modelList, _ := modelEngine.ListModels(c)
-	// 	modelFileExist := false
-	// 	for _, model := range modelList.Models {
-	// 		if model.Name == request.ModelName || model.Model == request.ModelName {
-	// 			modelFileExist = true
-	// 			break
-	// 		}
-	// 	}
-	// 	if modelFileExist {
-	// 		logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
-	// 		if request.Stream {
-	// 			dataBytes, _ := json.Marshal(res)
-	// 			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-	// 			flusher.Flush()
-	// 		} else {
-	// 			c.JSON(http.StatusOK, res)
-	// 		}
-	// 		return
-	// 	}
-	// }
-
 	modelList, _ := modelEngine.ListModels(c)
 	modelFileExist := false
 	for _, model := range modelList.Models {
@@ -316,7 +292,6 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 				// 数据通道关闭，发送结束标记
 				if data == nil {
 					// 更新service表和model表
-					time.Sleep(3 * time.Second)
 					newReq := &dto2.CreateAIGCServiceRequest{
 						ServiceName: request.ModelType,
 						ServiceSource: "local",
