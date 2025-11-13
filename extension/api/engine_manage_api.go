@@ -245,56 +245,56 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		Status: "success",
 	}
 
-	if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
-		modelList, _ := modelEngine.ListModels(c)
-		modelFileExist := false
-		for _, model := range modelList.Models {
-			if model.Name == request.ModelName || model.Model == request.ModelName {
-				modelFileExist = true
-				break
-			}
-		}
-		if modelFileExist {
-			logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
-			if request.Stream {
-				dataBytes, _ := json.Marshal(res)
-				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-				flusher.Flush()
-			} else {
-				c.JSON(http.StatusOK, res)
-			}
-			return
-		}
-	}
-
-	// modelList, _ := modelEngine.ListModels(c)
-	// modelFileExist := false
-	// for _, model := range modelList.Models {
-	// 	if model.Name == request.ModelName || model.Model == request.ModelName {
-	// 		modelFileExist = true
-	// 		break
-	// 	}
-	// }
-	// if modelFileExist {
-	// 	logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
-	// 	err := e.EngineManageService.CheckLocalModelExist(ctx, request)
-	// 	if err != nil {
-	// 		err = e.EngineManageService.InsertLocalModel(ctx, request)
-	// 		if err != nil {
-	// 			logger.EngineLogger.Error("InsertLocalModel error: ", err)
-	// 			res.Status = err.Error()
+	// if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
+	// 	modelList, _ := modelEngine.ListModels(c)
+	// 	modelFileExist := false
+	// 	for _, model := range modelList.Models {
+	// 		if model.Name == request.ModelName || model.Model == request.ModelName {
+	// 			modelFileExist = true
+	// 			break
 	// 		}
 	// 	}
-
-	// 	if request.Stream {
-	// 		dataBytes, _ := json.Marshal(res)
-	// 		fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-	// 		flusher.Flush()
-	// 	} else {
-	// 		c.JSON(http.StatusOK, res)
+	// 	if modelFileExist {
+	// 		logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
+	// 		if request.Stream {
+	// 			dataBytes, _ := json.Marshal(res)
+	// 			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+	// 			flusher.Flush()
+	// 		} else {
+	// 			c.JSON(http.StatusOK, res)
+	// 		}
+	// 		return
 	// 	}
-	// 	return
 	// }
+
+	modelList, _ := modelEngine.ListModels(c)
+	modelFileExist := false
+	for _, model := range modelList.Models {
+		if model.Name == request.ModelName || model.Model == request.ModelName {
+			modelFileExist = true
+			break
+		}
+	}
+	if modelFileExist {
+		logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
+		err := e.EngineManageService.CheckLocalModelExist(ctx, request)
+		if err != nil {
+			err = e.EngineManageService.InsertLocalModel(ctx, request)
+			if err != nil {
+				logger.EngineLogger.Error("InsertLocalModel error: ", err)
+				res.Status = err.Error()
+			}
+		}
+
+		if request.Stream {
+			dataBytes, _ := json.Marshal(res)
+			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+			flusher.Flush()
+		} else {
+			c.JSON(http.StatusOK, res)
+		}
+		return
+	}
 
 	req := types.PullModelRequest{
 		Model:    request.ModelName,
