@@ -10,8 +10,11 @@ set "THIS_VERSION=1.3.12"
 :: %ProgramFiles% 环境变量指向 Program Files 目录
 set "OADIN_FOLDER=%ProgramFiles%\Oadin"
 
-echo --- Oadin 安装前置检查 ---
+echo --- Oadin 版本检查 ---
 
+:: Step 2: Check Oadin version and cleanup if needed
+echo.
+echo [INFO] Checking Oadin version...
 :: 尝试执行 oadin --version 并捕获输出
 set "OADIN_OUTPUT="
 oadin --version 2>nul > "%TEMP%\oadin_version_output.txt"

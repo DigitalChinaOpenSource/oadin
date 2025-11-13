@@ -4,13 +4,16 @@ setlocal enabledelayedexpansion
 REM ========================================
 REM OADIN Auto Installation Script (Simple)
 REM This script will install:
+REM 0. VC++ Redistributable
 REM 1. OADIN Main Program
 REM 2. AI SmartVision
 REM 3. Ollama (IPEX-LLM version)
 REM 4. Model Files
+REM 5. Set Directory Permissions
 REM ========================================
 
 REM === Configuration Section ===
+set "VCRUNTIME=VC_redist.x64.exe"
 set "SETUP_FILE=oadin-installer-latest.exe"
 set "OADIN_INSTALL_DIR=%ProgramFiles%\Oadin"
 
@@ -43,6 +46,24 @@ echo.
 echo ========================================
 echo Starting Installation Process
 echo ========================================
+
+REM === Step 0: Install VC++ Redistributable ===
+echo.
+echo === Step 0: Install VC++ Redistributable ===
+echo [INFO] Checking VC++ installer: %VCRUNTIME%
+if not exist "%VCRUNTIME%" (
+    echo [ERROR] VC++ installer not found: %VCRUNTIME%
+    goto :install_failed
+)
+echo [OK] VC++ installer check passed
+
+echo [INFO] Installing VC++ Redistributable (silent)...
+"%VCRUNTIME%" /install /quiet /norestart
+if !errorlevel! NEQ 0 (
+    echo [ERROR] VC++ installation failed, error code: !errorlevel!
+    goto :install_failed
+)
+echo [OK] VC++ Redistributable installation successful
 
 REM === Step 1: Install OADIN Main Program ===
 echo.
@@ -122,6 +143,41 @@ if !errorlevel! NEQ 0 (
 )
 echo [OK] Model files extraction successful
 
+REM === Step 5: Set Directory Permissions ===
+echo.
+echo === Step 5: Set Directory Permissions ===
+echo [INFO] Setting permissions for application directories...
+echo [INFO] This allows normal users to run applications without permission issues
+
+REM Set permissions for ProgramData\Oadin (highest priority - data directory)
+echo [INFO] Setting permissions for %ProgramData%\Oadin...
+icacls "%ProgramData%\Oadin" /grant Users:(OI)(CI)F /T >nul 2>&1
+if !errorlevel! NEQ 0 (
+    echo [WARNING] Failed to set permissions for %ProgramData%\Oadin
+) else (
+    echo [OK] Permissions set for %ProgramData%\Oadin
+)
+
+REM Set permissions for OADIN installation directory
+echo [INFO] Setting permissions for %OADIN_INSTALL_DIR%...
+icacls "%OADIN_INSTALL_DIR%" /grant Users:(OI)(CI)F /T >nul 2>&1
+if !errorlevel! NEQ 0 (
+    echo [WARNING] Failed to set permissions for %OADIN_INSTALL_DIR%
+) else (
+    echo [OK] Permissions set for %OADIN_INSTALL_DIR%
+)
+
+REM Set permissions for AI SmartVision directory
+echo [INFO] Setting permissions for %AI_SMARTVISION_INSTALL_DIR%...
+icacls "%AI_SMARTVISION_INSTALL_DIR%" /grant Users:(OI)(CI)F /T >nul 2>&1
+if !errorlevel! NEQ 0 (
+    echo [WARNING] Failed to set permissions for %AI_SMARTVISION_INSTALL_DIR%
+) else (
+    echo [OK] Permissions set for %AI_SMARTVISION_INSTALL_DIR%
+)
+
+echo [OK] Directory permissions configuration completed
+
 REM === Verify Installation Results ===
 echo.
 echo === Verify Installation Results ===
@@ -167,6 +223,7 @@ echo ========================================
 echo [OK] All components installed successfully!
 echo ========================================
 echo Installation details:
+echo   - VC++ Redistributable: Installed/Repaired
 echo   - OADIN: %OADIN_INSTALL_DIR%
 echo   - AI SmartVision: %AI_SMARTVISION_INSTALL_DIR%
 echo   - Ollama: %OLLAMA_DIR%

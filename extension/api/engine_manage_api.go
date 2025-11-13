@@ -267,6 +267,35 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		}
 	}
 
+	// modelList, _ := modelEngine.ListModels(c)
+	// modelFileExist := false
+	// for _, model := range modelList.Models {
+	// 	if model.Name == request.ModelName || model.Model == request.ModelName {
+	// 		modelFileExist = true
+	// 		break
+	// 	}
+	// }
+	// if modelFileExist {
+	// 	logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
+	// 	err := e.EngineManageService.CheckLocalModelExist(ctx, request)
+	// 	if err != nil {
+	// 		err = e.EngineManageService.InsertLocalModel(ctx, request)
+	// 		if err != nil {
+	// 			logger.EngineLogger.Error("InsertLocalModel error: ", err)
+	// 			res.Status = err.Error()
+	// 		}
+	// 	}
+
+	// 	if request.Stream {
+	// 		dataBytes, _ := json.Marshal(res)
+	// 		fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+	// 		flusher.Flush()
+	// 	} else {
+	// 		c.JSON(http.StatusOK, res)
+	// 	}
+	// 	return
+	// }
+
 	req := types.PullModelRequest{
 		Model:    request.ModelName,
 		ModelType: request.ModelType,
@@ -394,8 +423,10 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 
 	if memoryInfo.Size > 32 {
 		models = []string{"qwen3:14b", "bge-m3:567m"}
-	} else {
+	} else if memoryInfo.Size > 16 && memoryInfo.Size <= 32 {
 		models = []string{"qwen3:8b", "quentinz/bge-large-zh-v1.5:f16"}
+	} else {
+		models = []string{"qwen3:1.7b", "quentinz/bge-large-zh-v1.5:f16"}
 	}
 
 	// 判断modelList.Models是否包含models的模型 如果缺少models的模型，则报错

@@ -256,7 +256,6 @@ func (l *llamacppProvider) StopEngine(ctx context.Context) error {
 	}
 	pidFile := filepath.Join(rootPath, "llamacpp.pid")
 	if _, err := os.Stat(pidFile); os.IsNotExist(err) {
-		logger.EngineLogger.Info("[LLAMACPP] Stop openvino Model Server not found pidfile: " + pidFile)
 		return nil
 	}
 

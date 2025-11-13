@@ -45,6 +45,7 @@ type EngineManageService interface {
 
 	CreateAIGCServiceSync(ctx context.Context, req *interalDTO.CreateAIGCServiceRequest) error
 	CheckLocalModelExist(ctx context.Context, request dto.ModelDownloadRequest) error
+	InsertLocalModel(ctx context.Context, request dto.ModelDownloadRequest) error
 }
 
 // EngineManageServiceImpl implements the EngineManageService interface
@@ -257,6 +258,37 @@ func (s *EngineManageServiceImpl) CheckLocalModelExist(ctx context.Context, requ
 	if len(list) == 0 {
 		return fmt.Errorf("local model not found: %s", m.ModelName)
 	}
+	return nil
+}
+
+func (s *EngineManageServiceImpl) InsertLocalModel(ctx context.Context, request dto.ModelDownloadRequest) error {
+	m := &types.Model{}
+	m.ModelName = request.ModelName
+	m.ProviderName = fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)
+	m.Status = "downloaded"
+	m.ServiceName = request.ModelType
+	m.ServiceSource = "local"
+	err := s.Ds.Add(ctx, m)
+	if err != nil {
+		return err
+	}
+
+	// 更新指定service的记录
+	service := &types.Service{
+		Name: request.ModelType,
+	}
+	err = s.Ds.Get(ctx, service)
+	if err != nil {
+		return err
+	}
+
+	service.LocalProvider = fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)
+	service.Status = 1
+	err = s.Ds.Put(ctx, service)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

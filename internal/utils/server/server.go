@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"oadin/internal/constants"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"oadin/internal/constants"
 	"oadin/internal/logger"
 	"oadin/internal/provider"
 	"oadin/internal/types"
@@ -91,50 +91,45 @@ func StopOadinServer(pidFilePath string) error {
 		engine := provider.GetModelEngine(modelEngine)
 		err = engine.StopEngine(context.Background())
 		if err != nil {
-			fmt.Printf("failed to stop engine %s: %v", modelEngine, err)
+			logger.EngineLogger.Info(fmt.Sprintf("failed to stop engine %s: %v", modelEngine, err))
 		}
-		logger.LogicLogger.Error("Stop engine successfully %s: %v", modelEngine, err)
+		logger.EngineLogger.Info(fmt.Sprintf("Stop engine successfully %s", modelEngine))
 	}
 
 	// Traverse all pid files.
 	for _, pidFile := range files {
 		pidData, err := os.ReadFile(pidFile)
 		if err != nil {
-			fmt.Printf("Failed to read PID file %s: %v\n", pidFile, err)
-			logger.LogicLogger.Error("Failed to read PID file %s: %v\n", pidFile, err)
+			logger.EngineLogger.Info(fmt.Sprintf("Failed to read PID file %s: %v", pidFile, err))
 			continue
 		}
 
 		pid, err := strconv.Atoi(strings.TrimSpace(string(pidData)))
 		if err != nil {
-			fmt.Printf("Invalid PID in file %s: %v\n", pidFile, err)
-			logger.LogicLogger.Error("Invalid PID in file %s: %v\n", pidFile, err)
+			logger.EngineLogger.Info(fmt.Sprintf("Invalid PID in file %s: %v", pidFile, err))
 			continue
 		}
 
 		process, err := os.FindProcess(pid)
 		if err != nil {
-			fmt.Printf("Failed to find process with PID %d: %v\n", pid, err)
-			logger.LogicLogger.Error("Failed to find process with PID %d: %v\n", pid, err)
+			logger.EngineLogger.Info(fmt.Sprintf("Failed to find process with PID %d: %v", pid, err))
 			continue
 		}
 
 		if err := process.Kill(); err != nil {
 			if strings.Contains(err.Error(), "process already finished") {
-				fmt.Printf("Process with PID %d is already stopped\n", pid)
+				logger.EngineLogger.Info("Process is already stopped", "pid", pid)
 			} else {
-				logger.LogicLogger.Error("Failed to kill process with PID %d: %v", pid, err)
-				fmt.Printf("Failed to kill process with PID %d: %v\n", pid, err)
+				logger.EngineLogger.Info("Failed to kill process", "pid", pid, "error", err)
 				continue
 			}
 		} else {
-			fmt.Printf("Successfully stopped process with PID %d\n", pid)
+			logger.EngineLogger.Info("Successfully stopped process", "pid", pid)
 		}
 
 		// remove pid file
 		if err := os.Remove(pidFile); err != nil {
-			logger.LogicLogger.Error("Failed to remove PID file %s: %v\n", pidFile, err)
-			fmt.Printf("Failed to remove PID file %s: %v\n", pidFile, err)
+			logger.EngineLogger.Info("Failed to remove PID file", "file", pidFile, "error", err)
 		}
 	}
 	if runtime.GOOS == "windows" {
@@ -144,10 +139,10 @@ func StopOadinServer(pidFilePath string) error {
 			utils.SetCmdSysProcAttr(extraCmd)
 			_, err := extraCmd.CombinedOutput()
 			if err != nil {
-				fmt.Printf("failed to kill process: %s", extraProcessName)
+				logger.EngineLogger.Info("Failed to kill process", "process", extraProcessName, "error", err)
 				return nil
 			}
-			fmt.Printf("Successfully killed process: %s\n", extraProcessName)
+			logger.EngineLogger.Info("Successfully killed process", "process", extraProcessName)
 		}
 
 		ovmsProcessName := "ovms.exe"
@@ -155,10 +150,10 @@ func StopOadinServer(pidFilePath string) error {
 		utils.SetCmdSysProcAttr(ovmsCmd)
 		_, err = ovmsCmd.CombinedOutput()
 		if err != nil {
-			fmt.Printf("failed to kill process: %s", ovmsProcessName)
+			logger.EngineLogger.Info("Failed to kill process", "process", ovmsProcessName, "error", err)
 			return nil
 		}
-		fmt.Printf("Successfully killed process: %s\n", ovmsProcessName)
+		logger.EngineLogger.Info("Successfully killed process", "process", ovmsProcessName)
 
 	}
 
