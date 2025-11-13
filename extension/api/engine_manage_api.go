@@ -112,10 +112,12 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 			err = modelEngine.InitEnv()
 			if err != nil {
 				res.Status = "error"
+				logger.EngineLogger.Error("DownloadStreamEngine InitEnv error 1: ", err)
 			} else {
 				err = modelEngine.StartEngine(types.EngineStartModeDaemon)
 				if err != nil {
 					res.Status = "error"
+					logger.EngineLogger.Error("DownloadStreamEngine StartEngine error 1: ", err)
 				}
 				time.Sleep(3 * time.Second)
 			}
@@ -146,16 +148,19 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 						err = modelEngine.InitEnv()
 						if err != nil {
 							res.Status = "error"
+							logger.EngineLogger.Error("DownloadStreamEngine InitEnv error 2: ", err)
 						} else {
 							err = modelEngine.StartEngine(types.EngineStartModeDaemon)
 							if err != nil {
 								res.Status = "error"
+								logger.EngineLogger.Error("DownloadStreamEngine StartEngine error 2: ", err)
 							}
 							time.Sleep(3 * time.Second)
 						}
 					}
 				} else {
 					res.Status = "error"
+					logger.EngineLogger.Error("DownloadStreamEngine exec file not found after install")
 				}
 
 				if request.Stream {
@@ -186,6 +191,7 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 				}
 			}
 		case <-ctx.Done():
+			logger.EngineLogger.Error("DownloadStreamEngine context done")
 			res.Status = "error"
 			res.Data = "timeout"
 			if request.Stream {
