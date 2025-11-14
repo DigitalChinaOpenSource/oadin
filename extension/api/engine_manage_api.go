@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"oadin/extension/api/dto"
@@ -112,12 +111,13 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 			err = modelEngine.InitEnv()
 			if err != nil {
 				res.Status = "error"
+				logger.EngineLogger.Error("DownloadStreamEngine InitEnv error 1: ", err)
 			} else {
 				err = modelEngine.StartEngine(types.EngineStartModeDaemon)
 				if err != nil {
 					res.Status = "error"
+					logger.EngineLogger.Error("DownloadStreamEngine StartEngine error 1: ", err)
 				}
-				time.Sleep(3 * time.Second)
 			}
 		}
 
@@ -146,16 +146,18 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 						err = modelEngine.InitEnv()
 						if err != nil {
 							res.Status = "error"
+							logger.EngineLogger.Error("DownloadStreamEngine InitEnv error 2: ", err)
 						} else {
 							err = modelEngine.StartEngine(types.EngineStartModeDaemon)
 							if err != nil {
 								res.Status = "error"
+								logger.EngineLogger.Error("DownloadStreamEngine StartEngine error 2: ", err)
 							}
-							time.Sleep(3 * time.Second)
 						}
 					}
 				} else {
 					res.Status = "error"
+					logger.EngineLogger.Error("DownloadStreamEngine exec file not found after install")
 				}
 
 				if request.Stream {
@@ -186,6 +188,7 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 				}
 			}
 		case <-ctx.Done():
+			logger.EngineLogger.Error("DownloadStreamEngine context done")
 			res.Status = "error"
 			res.Data = "timeout"
 			if request.Stream {
@@ -245,26 +248,33 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		Status: "success",
 	}
 
-	if err := e.EngineManageService.CheckLocalModelExist(ctx, request); err == nil {
-		modelList, _ := modelEngine.ListModels(c)
-		modelFileExist := false
-		for _, model := range modelList.Models {
-			if model.Name == request.ModelName || model.Model == request.ModelName {
-				modelFileExist = true
-				break
+	modelList, _ := modelEngine.ListModels(c)
+	modelFileExist := false
+	for _, model := range modelList.Models {
+		if model.Name == request.ModelName || model.Model == request.ModelName {
+			modelFileExist = true
+			break
+		}
+	}
+	if modelFileExist {
+		logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
+		err := e.EngineManageService.CheckLocalModelExist(ctx, request)
+		if err != nil {
+			err = e.EngineManageService.InsertLocalModel(ctx, request)
+			if err != nil {
+				logger.EngineLogger.Error("InsertLocalModel error: ", err)
+				res.Status = err.Error()
 			}
 		}
-		if modelFileExist {
-			logger.EngineLogger.Info("Model already downloaded: ", request.ModelName)
-			if request.Stream {
-				dataBytes, _ := json.Marshal(res)
-				fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
-				flusher.Flush()
-			} else {
-				c.JSON(http.StatusOK, res)
-			}
-			return
+
+		if request.Stream {
+			dataBytes, _ := json.Marshal(res)
+			fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
+			flusher.Flush()
+		} else {
+			c.JSON(http.StatusOK, res)
 		}
+		return
 	}
 
 	req := types.PullModelRequest{
@@ -281,7 +291,6 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 				// 数据通道关闭，发送结束标记
 				if data == nil {
 					// 更新service表和model表
-					time.Sleep(3 * time.Second)
 					newReq := &dto2.CreateAIGCServiceRequest{
 						ServiceName: request.ModelType,
 						ServiceSource: "local",

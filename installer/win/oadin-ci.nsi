@@ -210,7 +210,7 @@ Section "Install"
 
   ; Stop Oadin server if running (to avoid file lock issues)
   DetailPrint "Attempting to stop Oadin server..."
-  nsExec::Exec 'oadin server stop'
+  nsExec::Exec '$INSTDIR\oadin server stop'
   Pop $0
   ${If} $0 == "0"
     DetailPrint "Oadin server stopped successfully"
@@ -251,7 +251,9 @@ Section "Install"
   nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
   DetailPrint "Starting Oadin service..."
-  nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
+  ; nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
+  ShellExecAsUser::ShellExecAsUser "open" "$INSTDIR\start-oadin.bat" "" SW_HIDE
+ 
 
   ${EnableX64FSRedirection}
   
