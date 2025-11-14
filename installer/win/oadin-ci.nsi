@@ -25,11 +25,6 @@ RequestExecutionLevel admin
 SetCompress auto
 SetCompressor lzma
 
-IfFileExists "${DEFAULT_INSTALL_DIR}\ollama\*" 0 +2
-  RMDir /r "${DEFAULT_INSTALL_DIR}\ollama"
-IfFileExists "${DEFAULT_INSTALL_DIR}\ipex-llm-ollama\*" 0 +2
-  RMDir /r "${DEFAULT_INSTALL_DIR}\ipex-llm-ollama"
-
 Name "${APP_NAME}"
 Caption "${APP_NAME} ${VERSION} Setup"
 
@@ -170,6 +165,12 @@ Section "Install"
     DetailPrint "Installing required Visual C++ Redistributable..."
     Call InstallVCRedist
   ${EndIf}
+
+  ; --------- 删除ollama和ipex-llm-ollama文件夹 ---------
+  IfFileExists "${DEFAULT_INSTALL_DIR}\ollama\*" 0 +2
+    RMDir /r "${DEFAULT_INSTALL_DIR}\ollama"
+  IfFileExists "${DEFAULT_INSTALL_DIR}\ipex-llm-ollama\*" 0 +2
+    RMDir /r "${DEFAULT_INSTALL_DIR}\ipex-llm-ollama"
 
   SetOutPath "$INSTDIR"
   CreateDirectory "$INSTDIR"
