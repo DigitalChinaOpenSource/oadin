@@ -5,7 +5,6 @@
 !include "MUI2.nsh"
 !include Sections.nsh
 !include FileFunc.nsh
-!include UAC.nsh
 
 
 !ifndef VERSION
