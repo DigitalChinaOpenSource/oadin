@@ -9,24 +9,6 @@ OADIN_FOLDER="$HOME/Oadin"
 
 echo "--- Oadin 安装前置检查 ---"
 
-# Step 1: Stop Oadin Server if running
-echo ""
-echo "[INFO] Attempting to stop Oadin server..."
-oadin server stop >/dev/null 2>&1
-STOP_RESULT=$?
-
-if [ $STOP_RESULT -eq 0 ]; then
-    echo "[OK] Oadin server stopped successfully"
-else
-    echo "[INFO] Oadin server not running or stop command failed (continuing anyway)"
-fi
-
-# Wait for server to fully shutdown
-sleep 2
-
-echo ""
-echo "--- Oadin 版本检查 ---"
-
 # 尝试执行 oadin --version 并捕获输出
 OADIN_COMMAND_EXISTS=$(command -v oadin)
 
