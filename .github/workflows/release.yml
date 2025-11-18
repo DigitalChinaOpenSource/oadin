@@ -161,7 +161,7 @@ jobs:
           echo "GOARCH: $($env:GOARCH)"
           echo "Tags: $($env:ENV)"
           echo "LDFLAGS: -s -w"
-          go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG'"  cmd/cli/main.go
+          go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$env:CI_COMMIT_TAG'"  cmd/cli/main.go
           go build -o oadin-app.exe -tags "$env:ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG' -H=windowsgui" trayapp/main.go
           # 添加详细的文件大小检查
           echo "=== Windows 二进制文件详细信息 ==="
