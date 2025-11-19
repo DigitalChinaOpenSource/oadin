@@ -711,40 +711,48 @@ func DownloadImageUrlToPath(url string) (string, error) {
 	return savePath, nil
 }
 
+var (
+    gpuTypeCache string
+)
+
+// DetectGpuModel 优化：首次调用检测并缓存，后续直接返回缓存（避免每次 ghw.GPU()）
 func DetectGpuModel() string {
+	if gpuTypeCache != "" {
+		return gpuTypeCache
+	}
 	gpu, err := ghw.GPU()
 	if err != nil {
-		return types.GPUTypeNone
+		gpuTypeCache = types.GPUTypeNone
+		return gpuTypeCache
 	}
-
 	hasNvidia := false
 	hasAMD := false
 	hasIntel := false
+	// 可选：只在首次记录日志
 	logger.EngineLogger.Info("GPU Info:", gpu)
 	for _, card := range gpu.GraphicsCards {
-		// 转为小写
 		productName := strings.ToLower(card.DeviceInfo.Product.Name)
 		if strings.Contains(productName, "nvidia") {
 			hasNvidia = true
-		} else if strings.Contains(productName, "amd") ||
-			strings.Contains(productName, "radeon") {
+		} else if strings.Contains(productName, "amd") || strings.Contains(productName, "radeon") {
 			hasAMD = true
-		} else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
+		} else if strings.Contains(productName, "intel") &&
+			(strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
 			hasIntel = true
 		}
 	}
-
 	if hasNvidia && hasAMD {
-		return types.GPUTypeNvidia + "," + types.GPUTypeAmd
+		gpuTypeCache = types.GPUTypeNvidia + "," + types.GPUTypeAmd
 	} else if hasNvidia {
-		return types.GPUTypeNvidia
+		gpuTypeCache = types.GPUTypeNvidia
 	} else if hasAMD {
-		return types.GPUTypeAmd
+		gpuTypeCache = types.GPUTypeAmd
 	} else if hasIntel {
-		return types.GPUTypeIntelArc
+		gpuTypeCache = types.GPUTypeIntelArc
 	} else {
-		return types.GPUTypeNone
+		gpuTypeCache = types.GPUTypeNone
 	}
+    return gpuTypeCache
 }
 
 func VerifyAmdGPU() string {
