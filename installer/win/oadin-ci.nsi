@@ -219,7 +219,7 @@ Section "Install"
   ${EndIf}
   
   ; Wait for server to fully shutdown
-  Sleep 2000
+  ; Sleep 2000
 
   ; Create installation directory
   CreateDirectory "$INSTDIR"
@@ -244,11 +244,11 @@ Section "Install"
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
   ; Execute installation scripts
-  DetailPrint "Running pre-install script..."
-  nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
+  ; DetailPrint "Running pre-install script..."
+  ; nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
 
-  DetailPrint "Running post-install script..."
-  nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
+  ; DetailPrint "Running post-install script..."
+  ; nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
   DetailPrint "Starting Oadin service..."
   ; nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
