@@ -221,6 +221,7 @@ Section "Install"
     ${Else}
       DetailPrint "Oadin server stop command returned code $0 (continuing)"
     ${EndIf}
+    nsExec::Exec 'taskkill /F /IM oadin.exe'
   ${Else}
     DetailPrint "Oadin process not running. Skipping stop."
   ${EndIf}
