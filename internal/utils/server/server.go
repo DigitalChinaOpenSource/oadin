@@ -71,13 +71,33 @@ func StopOadinServer(pidFilePath string) error {
 	// stop model engine
 	for _, modelEngine := range types.SupportModelEngine {
 		engine := provider.GetModelEngine(modelEngine)
-		execPath := filepath.Join(engine.GetConfig().ExecPath, engine.GetConfig().ExecFile)
-		if _, err := os.Stat(execPath); err == nil {
+		err := engine.HealthCheck()
+		if err == nil {
 			err = engine.StopEngine(context.Background())
 			if err != nil {
 				logger.EngineLogger.Info(fmt.Sprintf("failed to stop engine %s: %v", modelEngine, err))
 			}
-			logger.EngineLogger.Info(fmt.Sprintf("Stop engine successfully %s", modelEngine))
+			if modelEngine == types.FlavorOllama && runtime.GOOS == "windows" && utils.IpexOllamaSupportGPUStatus() {
+				extraProcessName := "ollama-lib.exe"
+				extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+				_, err := extraCmd.CombinedOutput()
+				if err != nil {
+					logger.EngineLogger.Info("Failed to kill process", "process", extraProcessName, "error", err)
+					return nil
+				}
+				logger.EngineLogger.Info("Successfully killed process", "process", extraProcessName)
+			}
+
+			if modelEngine == types.FlavorOpenvino && runtime.GOOS == "windows" {
+				ovmsProcessName := "ovms.exe"
+				ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
+				_, err = ovmsCmd.CombinedOutput()
+				if err != nil {
+					logger.EngineLogger.Info("Failed to kill process", "process", ovmsProcessName, "error", err)
+					return nil
+				}
+				logger.EngineLogger.Info("Successfully killed process", "process", ovmsProcessName)				
+			}
 		}
 	}
 
@@ -116,28 +136,6 @@ func StopOadinServer(pidFilePath string) error {
 		if err := os.Remove(pidFile); err != nil {
 			logger.EngineLogger.Info("Failed to remove PID file", "file", pidFile, "error", err)
 		}
-	}
-	if runtime.GOOS == "windows" {
-		if utils.IpexOllamaSupportGPUStatus() {
-			extraProcessName := "ollama-lib.exe"
-			extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-			_, err := extraCmd.CombinedOutput()
-			if err != nil {
-				logger.EngineLogger.Info("Failed to kill process", "process", extraProcessName, "error", err)
-				return nil
-			}
-			logger.EngineLogger.Info("Successfully killed process", "process", extraProcessName)
-		}
-
-		ovmsProcessName := "ovms.exe"
-		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
-		_, err = ovmsCmd.CombinedOutput()
-		if err != nil {
-			logger.EngineLogger.Info("Failed to kill process", "process", ovmsProcessName, "error", err)
-			return nil
-		}
-		logger.EngineLogger.Info("Successfully killed process", "process", ovmsProcessName)
-
 	}
 
 	return nil

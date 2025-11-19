@@ -1064,14 +1064,39 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	time.Sleep(6 * time.Second)
+    // 替换固定等待6秒为轮询，每500ms检测一次，最多等待6秒
+    const (
+        maxWait   = 6 * time.Second
+        interval  = 500 * time.Millisecond
+    )
+    start := time.Now()
+    for {
+        if serverUtils.IsServerRunning() {
+            break
+        }
+        if time.Since(start) >= maxWait {
+            break
+        }
+        time.Sleep(interval)
+    }
+
+    if !serverUtils.IsServerRunning() {
+        log.Fatal("Failed to start OADIN server.")
+        return
+    }
+
+    err := StartEngineTotall(types.EngineStartModeDaemon)
+    if err != nil {
+        log.Fatal("Failed to start Engine.")
+        return
+    }
 
 	if !serverUtils.IsServerRunning() {
 		log.Fatal("Failed to start OADIN server.")
 		return
 	}
 
-	err := StartEngineTotall(types.EngineStartModeDaemon)
+	err = StartEngineTotall(types.EngineStartModeDaemon)
 	if err != nil {
 		log.Fatal("Failed to start Engine.")
 		return
