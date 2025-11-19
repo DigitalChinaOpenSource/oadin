@@ -71,11 +71,14 @@ func StopOadinServer(pidFilePath string) error {
 	// stop model engine
 	for _, modelEngine := range types.SupportModelEngine {
 		engine := provider.GetModelEngine(modelEngine)
-		err = engine.StopEngine(context.Background())
-		if err != nil {
-			logger.EngineLogger.Info(fmt.Sprintf("failed to stop engine %s: %v", modelEngine, err))
+		execPath := filepath.Join(engine.GetConfig().ExecPath, engine.GetConfig().ExecFile)
+		if _, err := os.Stat(execPath); err == nil {
+			err = engine.StopEngine(context.Background())
+			if err != nil {
+				logger.EngineLogger.Info(fmt.Sprintf("failed to stop engine %s: %v", modelEngine, err))
+			}
+			logger.EngineLogger.Info(fmt.Sprintf("Stop engine successfully %s", modelEngine))
 		}
-		logger.EngineLogger.Info(fmt.Sprintf("Stop engine successfully %s", modelEngine))
 	}
 
 	// Traverse all pid files.

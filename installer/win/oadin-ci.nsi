@@ -209,13 +209,20 @@ Section "Install"
   DetailPrint "PROGRAMFILES: $PROGRAMFILES"
 
   ; Stop Oadin server if running (to avoid file lock issues)
-  DetailPrint "Attempting to stop Oadin server..."
-  nsExec::Exec '$INSTDIR\oadin server stop'
+  DetailPrint "Checking if Oadin process is running..."
+  nsExec::Exec 'cmd /c tasklist /FI "IMAGENAME eq oadin.exe" | find /I "oadin.exe"'
   Pop $0
   ${If} $0 == "0"
-    DetailPrint "Oadin server stopped successfully"
+    DetailPrint "Oadin process detected. Attempting to stop..."
+    nsExec::Exec '$INSTDIR\oadin server stop'
+    Pop $0
+    ${If} $0 == "0"
+      DetailPrint "Oadin server stopped successfully"
+    ${Else}
+      DetailPrint "Oadin server stop command returned code $0 (continuing)"
+    ${EndIf}
   ${Else}
-    DetailPrint "Oadin server not running or stop command failed (continuing anyway)"
+    DetailPrint "Oadin process not running. Skipping stop."
   ${EndIf}
   
   ; Wait for server to fully shutdown
