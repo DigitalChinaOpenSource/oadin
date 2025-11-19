@@ -1,25 +1,23 @@
 @echo off
-chcp 65001 >nul
 echo Pre-install: i am running
 
 setlocal
 
-REM 定义当前版本，你需要根据实际情况修改
+REM Define the expected version (modify as needed)
 set "THIS_VERSION=1.3.12"
 
-REM 定义 Oadin 文件夹路径
-REM %ProgramFiles% 环境变量指向 Program Files 目录
+REM Define Oadin folder path
 set "OADIN_FOLDER=%ProgramFiles%\Oadin"
 
-echo --- Oadin 版本检查 ---
+echo --- Oadin Version Check ---
 
 REM Step 2: Check Oadin version and cleanup if needed
 echo.
 echo [INFO] Checking Oadin version...
-REM 尝试执行 oadin --version 并捕获输出
-REM 使用 2>&1 将标准错误重定向到标准输出，然后用 findstr 检查输出
-REM 注意：oadin --version 的输出格式必须是明确的版本号，例如 "1.3.12"
-REM 如果 oadin --version 报错，它的错误信息会通过 findstr 管道，findstr 不会找到版本号，ERRORLEVEL 会被设置
+REM Attempt to run 'oadin --version' and capture output
+REM Redirect stderr to stdout with 2>nul (separate capture file) then read it
+REM NOTE: 'oadin --version' must output a plain version string like "1.3.12"
+REM If the command fails the file may be empty and ERRORLEVEL will be set
 set "OADIN_OUTPUT="
 oadin --version 2>nul > "%TEMP%\oadin_version_output.txt"
 if exist "%TEMP%\oadin_version_output.txt" (
@@ -29,45 +27,43 @@ if exist "%TEMP%\oadin_version_output.txt" (
     del "%TEMP%\oadin_version_output.txt"
 )
 
-REM 检查 oadin 命令是否成功执行（即是否有输出）
-REM 这种方法无法精确判断是命令不存在还是命令执行了但输出不符合预期
-REM 我们依赖 ERRORLEVEL 来判断命令是否“报错”
+REM Check whether command executed (any output captured)
+REM This cannot distinguish between missing command vs unexpected output precisely
+REM Rely on ERRORLEVEL to detect execution failure
 oadin --version >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo 执行 "oadin --version" 时可能发生错误或命令未找到，忽略错误并继续安装。
+    echo WARNING: "oadin --version" may have failed or command not found. Continuing installation.
     echo.
 ) else (
-    echo 当前 Oadin 版本输出: "%OADIN_OUTPUT%"
+    echo Current Oadin version output: "%OADIN_OUTPUT%"
 
-    REM 检查输出是否等于定义的版本
+    REM Compare output with expected version
     if /i "%OADIN_OUTPUT%" NEQ "%THIS_VERSION%" (
-        echo Oadin 版本 "%OADIN_OUTPUT%" 与预期版本 "%THIS_VERSION%" 不匹配。
-        echo 正在删除 Program Files 下的 Oadin 文件夹及其内容: "%OADIN_FOLDER%"
+        echo Oadin version "%OADIN_OUTPUT%" does NOT match expected "%THIS_VERSION%".
+        echo Deleting Oadin folder under Program Files: "%OADIN_FOLDER%"
 
-        REM 检查程序文件夹是否存在并删除
+        REM Check folder exists then delete
         if exist "%OADIN_FOLDER%" (
-            REM 使用 rmdir /s /q 删除文件夹及其内容
-            REM /s 表示删除目录和所有子目录和文件
-            REM /q 表示静默模式，不提示确认
+            REM Use rmdir /s /q to remove folder recursively (/s all subdirs, /q quiet)
             rmdir /s /q "%OADIN_FOLDER%"
             if %ERRORLEVEL% NEQ 0 (
                 echo.
-                echo 错误: 删除 Oadin 程序文件夹时发生错误。
-                echo 请手动删除 "%OADIN_FOLDER%" 文件夹并重试安装。
-                exit /b 1 REM 退出脚本，表示删除失败，阻止安装
+                echo ERROR: Failed to delete Oadin program folder.
+                echo Please manually delete "%OADIN_FOLDER%" and retry installation.
+                exit /b 1 REM Abort install due to failed cleanup
             ) else (
-                echo Oadin 程序文件夹已成功删除。
+                echo Oadin program folder deleted successfully.
             )
         ) else (
-            echo Oadin 程序文件夹 "%OADIN_FOLDER%" 不存在，无需删除。
+            echo Oadin program folder "%OADIN_FOLDER%" does not exist, nothing to delete.
         )
     ) else (
-        echo Oadin 版本 "%OADIN_OUTPUT%" 与预期版本 "%THIS_VERSION%" 匹配，继续安装。
+        echo Oadin version "%OADIN_OUTPUT%" matches expected "%THIS_VERSION%". Proceeding.
     )
 )
 
-echo --- 前置检查完成 ---
+echo --- Pre-check Finished ---
 
 endlocal
-exit /b 0 REM 成功退出
+exit /b 0 REM Successful exit
