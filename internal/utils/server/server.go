@@ -71,7 +71,8 @@ func StopOadinServer(pidFilePath string) error {
 	// stop model engine
 	for _, modelEngine := range types.SupportModelEngine {
 		engine := provider.GetModelEngine(modelEngine)
-		err := engine.HealthCheck()
+		execPath := filepath.Join(engine.GetConfig().ExecPath, engine.GetConfig().ExecFile)
+		_, err := os.Stat(execPath)
 		if err == nil {
 			err = engine.StopEngine(context.Background())
 			if err != nil {

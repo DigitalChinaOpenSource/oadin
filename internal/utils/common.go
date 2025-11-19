@@ -712,18 +712,18 @@ func DownloadImageUrlToPath(url string) (string, error) {
 }
 
 var (
-    gpuTypeCache string
+    GpuTypeCache string
 )
 
 // DetectGpuModel 优化：首次调用检测并缓存，后续直接返回缓存（避免每次 ghw.GPU()）
 func DetectGpuModel() string {
-	if gpuTypeCache != "" {
-		return gpuTypeCache
+	if GpuTypeCache != "" {
+		return GpuTypeCache
 	}
 	gpu, err := ghw.GPU()
 	if err != nil {
-		gpuTypeCache = types.GPUTypeNone
-		return gpuTypeCache
+		GpuTypeCache = types.GPUTypeNone
+		return GpuTypeCache
 	}
 	hasNvidia := false
 	hasAMD := false
@@ -742,17 +742,17 @@ func DetectGpuModel() string {
 		}
 	}
 	if hasNvidia && hasAMD {
-		gpuTypeCache = types.GPUTypeNvidia + "," + types.GPUTypeAmd
+		GpuTypeCache = types.GPUTypeNvidia + "," + types.GPUTypeAmd
 	} else if hasNvidia {
-		gpuTypeCache = types.GPUTypeNvidia
+		GpuTypeCache = types.GPUTypeNvidia
 	} else if hasAMD {
-		gpuTypeCache = types.GPUTypeAmd
+		GpuTypeCache = types.GPUTypeAmd
 	} else if hasIntel {
-		gpuTypeCache = types.GPUTypeIntelArc
+		GpuTypeCache = types.GPUTypeIntelArc
 	} else {
-		gpuTypeCache = types.GPUTypeNone
+		GpuTypeCache = types.GPUTypeNone
 	}
-    return gpuTypeCache
+    return GpuTypeCache
 }
 
 func VerifyAmdGPU() string {
