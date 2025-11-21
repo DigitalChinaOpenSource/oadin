@@ -1066,7 +1066,7 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 
     const (
         maxWait   = 5 * time.Second
-        interval  = 500 * time.Millisecond
+        interval  = 200 * time.Millisecond
     )
     start := time.Now()
     for {
