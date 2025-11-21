@@ -1064,9 +1064,8 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-    // 替换固定等待6秒为轮询，每500ms检测一次，最多等待6秒
     const (
-        maxWait   = 6 * time.Second
+        maxWait   = 5 * time.Second
         interval  = 500 * time.Millisecond
     )
     start := time.Now()
@@ -1616,9 +1615,6 @@ func ListenModelEngineHealthTotal() {
 
 func StartEngineTotall(startMode string) error {
 	ollamaEngine := provider.GetModelEngine(types.FlavorOllama)
-	openVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
-	llamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
-
 	engineConfig := ollamaEngine.GetConfig()
 	execPath := filepath.Join(engineConfig.ExecPath, engineConfig.ExecFile)
 	if _, err := os.Stat(execPath); err == nil {
@@ -1628,6 +1624,7 @@ func StartEngineTotall(startMode string) error {
 		}
 	}
 
+	openVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
 	execPath = openVINOEngine.GetConfig().ExecPath
 	if _, err := os.Stat(execPath); err == nil {
 		err := StartModelEngine(types.FlavorOpenvino, startMode)
@@ -1636,6 +1633,7 @@ func StartEngineTotall(startMode string) error {
 		}
 	}
 
+	llamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
 	execPath = llamaCppEngine.GetConfig().ExecPath
 	if _, err := os.Stat(execPath); err == nil {
 		err = StartModelEngine(types.FlavorLlamaCpp, startMode)
