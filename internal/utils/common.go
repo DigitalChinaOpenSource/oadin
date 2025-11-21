@@ -81,10 +81,9 @@ func getCachedGPU() (*ghw.GPUInfo, error) {
     gpuOnce.Do(func() {
         gpuInfo, gpuErr = ghw.GPU()
         if gpuErr == nil {
-            logger.EngineLogger.Info("GPU Info cached:", gpuInfo)  // 只打印一次
+            logger.EngineLogger.Debug("GPU Info cached:", gpuInfo)  // 只打印一次
         }
     })
-	logger.EngineLogger.Debug("GPU Info:", gpuInfo)
     return gpuInfo, gpuErr
 }
 
