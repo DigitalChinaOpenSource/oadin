@@ -70,6 +70,24 @@ const (
 
 var textContentTypes = []string{ContentTypeText, ContentTypeJSON, ContentTypeXML, ContentTypeJS, ContentTypeNDJSON}
 
+var (
+    gpuOnce sync.Once
+    gpuInfo *ghw.GPUInfo
+    gpuErr  error
+)
+
+// getCachedGPU 缓存 ghw.GPU() 调用，避免重复检测
+func getCachedGPU() (*ghw.GPUInfo, error) {
+    gpuOnce.Do(func() {
+        gpuInfo, gpuErr = ghw.GPU()
+        if gpuErr == nil {
+            logger.EngineLogger.Info("GPU Info cached:", gpuInfo)  // 只打印一次
+        }
+    })
+	logger.EngineLogger.Debug("GPU Info:", gpuInfo)
+    return gpuInfo, gpuErr
+}
+
 func IsHTTPText(header http.Header) bool {
 	if contentType := header.Get("Content-Type"); contentType != "" {
 		ct := strings.ToLower(contentType)
@@ -404,7 +422,7 @@ func GetDownloadDir() (string, error) {
 }
 
 func IpexOllamaSupportGPUStatus() bool {
-	gpu, err := ghw.GPU()
+	gpu, err := getCachedGPU()
 	if err != nil {
 		return false
 	}
@@ -712,53 +730,43 @@ func DownloadImageUrlToPath(url string) (string, error) {
 	return savePath, nil
 }
 
-var (
-    detectGpuOnce sync.Once
-    gpuTypeCache  string
-)
-
 func DetectGpuModel() string {
-    detectGpuOnce.Do(func() {
-        gpu, err := ghw.GPU()
-        if err != nil {
-            gpuTypeCache = types.GPUTypeNone
-            return
-        }
+	gpu, err := getCachedGPU()
+	if err != nil {
+		return types.GPUTypeNone
+	}
 
-        hasNvidia := false
-        hasAMD := false
-        hasIntel := false
-        logger.EngineLogger.Info("GPU Info:", gpu)
-        for _, card := range gpu.GraphicsCards {
-            // 转为小写
-            productName := strings.ToLower(card.DeviceInfo.Product.Name)
-            if strings.Contains(productName, "nvidia") {
-                hasNvidia = true
-            } else if strings.Contains(productName, "amd") ||
-                strings.Contains(productName, "radeon") {
-                hasAMD = true
-            } else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
-                hasIntel = true
-            }
-        }
+	hasNvidia := false
+	hasAMD := false
+	hasIntel := false
+	for _, card := range gpu.GraphicsCards {
+		// 转为小写
+		productName := strings.ToLower(card.DeviceInfo.Product.Name)
+		if strings.Contains(productName, "nvidia") {
+			hasNvidia = true
+		} else if strings.Contains(productName, "amd") ||
+			strings.Contains(productName, "radeon") {
+			hasAMD = true
+		} else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
+			hasIntel = true
+		}
+	}
 
-        if hasNvidia && hasAMD {
-            gpuTypeCache = types.GPUTypeNvidia + "," + types.GPUTypeAmd
-        } else if hasNvidia {
-            gpuTypeCache = types.GPUTypeNvidia
-        } else if hasAMD {
-            gpuTypeCache = types.GPUTypeAmd
-        } else if hasIntel {
-            gpuTypeCache = types.GPUTypeIntelArc
-        } else {
-            gpuTypeCache = types.GPUTypeNone
-        }
-    })
-    return gpuTypeCache
+	if hasNvidia && hasAMD {
+		return types.GPUTypeNvidia + "," + types.GPUTypeAmd
+	} else if hasNvidia {
+		return types.GPUTypeNvidia
+	} else if hasAMD {
+		return types.GPUTypeAmd
+	} else if hasIntel {
+		return types.GPUTypeIntelArc
+	} else {
+		return types.GPUTypeNone
+	}
 }
 
 func VerifyAmdGPU() string {
-	gpu, err := ghw.GPU()
+	gpu, err := getCachedGPU()
 	if err != nil {
 		return types.GPUTypeNone
 	}
