@@ -80,6 +80,10 @@ const (
 	MoveCommand    = "mv"
 )
 
+var (
+    GpuTypeCache string = ""
+)
+
 var OllamaDDLDependsList = []string{
 	"vcruntime140.dll",
 	"vcruntime140_1.dll",
@@ -315,7 +319,10 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		dataDir = executableDir.ProgramData + "/Oadin"
 		enginePath = fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 
-		switch utils.DetectGpuModel() {
+		if GpuTypeCache == "" {
+			GpuTypeCache = utils.DetectGpuModel()
+		}
+		switch GpuTypeCache {
 		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
 			downloadUrl = WindowsAllGPUURL
 		case types.GPUTypeNvidia:
