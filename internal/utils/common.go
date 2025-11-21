@@ -41,6 +41,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 
 	"gorm.io/gorm/utils"
 
@@ -711,40 +712,49 @@ func DownloadImageUrlToPath(url string) (string, error) {
 	return savePath, nil
 }
 
+var (
+    detectGpuOnce sync.Once
+    gpuTypeCache  string
+)
+
 func DetectGpuModel() string {
-	gpu, err := ghw.GPU()
-	if err != nil {
-		return types.GPUTypeNone
-	}
+    detectGpuOnce.Do(func() {
+        gpu, err := ghw.GPU()
+        if err != nil {
+            gpuTypeCache = types.GPUTypeNone
+            return
+        }
 
-	hasNvidia := false
-	hasAMD := false
-	hasIntel := false
-	logger.EngineLogger.Info("GPU Info:", gpu)
-	for _, card := range gpu.GraphicsCards {
-		// 转为小写
-		productName := strings.ToLower(card.DeviceInfo.Product.Name)
-		if strings.Contains(productName, "nvidia") {
-			hasNvidia = true
-		} else if strings.Contains(productName, "amd") ||
-			strings.Contains(productName, "radeon") {
-			hasAMD = true
-		} else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
-			hasIntel = true
-		}
-	}
+        hasNvidia := false
+        hasAMD := false
+        hasIntel := false
+        logger.EngineLogger.Info("GPU Info:", gpu)
+        for _, card := range gpu.GraphicsCards {
+            // 转为小写
+            productName := strings.ToLower(card.DeviceInfo.Product.Name)
+            if strings.Contains(productName, "nvidia") {
+                hasNvidia = true
+            } else if strings.Contains(productName, "amd") ||
+                strings.Contains(productName, "radeon") {
+                hasAMD = true
+            } else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
+                hasIntel = true
+            }
+        }
 
-	if hasNvidia && hasAMD {
-		return types.GPUTypeNvidia + "," + types.GPUTypeAmd
-	} else if hasNvidia {
-		return types.GPUTypeNvidia
-	} else if hasAMD {
-		return types.GPUTypeAmd
-	} else if hasIntel {
-		return types.GPUTypeIntelArc
-	} else {
-		return types.GPUTypeNone
-	}
+        if hasNvidia && hasAMD {
+            gpuTypeCache = types.GPUTypeNvidia + "," + types.GPUTypeAmd
+        } else if hasNvidia {
+            gpuTypeCache = types.GPUTypeNvidia
+        } else if hasAMD {
+            gpuTypeCache = types.GPUTypeAmd
+        } else if hasIntel {
+            gpuTypeCache = types.GPUTypeIntelArc
+        } else {
+            gpuTypeCache = types.GPUTypeNone
+        }
+    })
+    return gpuTypeCache
 }
 
 func VerifyAmdGPU() string {
