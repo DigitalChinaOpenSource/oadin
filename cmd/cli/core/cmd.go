@@ -1085,22 +1085,7 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
         return
     }
 
-    err := StartEngineTotall(types.EngineStartModeDaemon)
-    if err != nil {
-        log.Fatal("Failed to start Engine.")
-        return
-    }
-
-	if !serverUtils.IsServerRunning() {
-		log.Fatal("Failed to start OADIN server.")
-		return
-	}
-
-	err = StartEngineTotall(types.EngineStartModeDaemon)
-	if err != nil {
-		log.Fatal("Failed to start Engine.")
-		return
-	}
+    go StartEngineTotall(types.EngineStartModeDaemon)
 
 	fmt.Println("OADIN server start successfully.")
 }
