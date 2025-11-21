@@ -214,14 +214,13 @@ Section "Install"
   Pop $0
   ${If} $0 == "0"
     DetailPrint "Oadin process detected. Attempting to stop..."
-    nsExec::Exec '$INSTDIR\oadin server stop'
+    nsExec::Exec 'taskkill /F /IM oadin.exe'
     Pop $0
     ${If} $0 == "0"
       DetailPrint "Oadin server stopped successfully"
     ${Else}
       DetailPrint "Oadin server stop command returned code $0 (continuing)"
     ${EndIf}
-    nsExec::Exec 'taskkill /F /IM oadin.exe'
   ${Else}
     DetailPrint "Oadin process not running. Skipping stop."
   ${EndIf}
