@@ -209,17 +209,25 @@ Section "Install"
   DetailPrint "PROGRAMFILES: $PROGRAMFILES"
 
   ; Stop Oadin server if running (to avoid file lock issues)
-  DetailPrint "Attempting to stop Oadin server..."
-  nsExec::Exec '$INSTDIR\oadin server stop'
+  DetailPrint "Checking if Oadin process is running..."
+  nsExec::Exec 'cmd /c tasklist /FI "IMAGENAME eq oadin.exe" | find /I "oadin.exe"'
   Pop $0
   ${If} $0 == "0"
-    DetailPrint "Oadin server stopped successfully"
+    DetailPrint "Oadin process detected. Attempting to stop..."
+    nsExec::Exec '$INSTDIR\oadin server stop'
+    Pop $0
+    ${If} $0 == "0"
+      DetailPrint "Oadin server stopped successfully"
+    ${Else}
+      DetailPrint "Oadin server stop command returned code $0 (continuing)"
+    ${EndIf}
+    nsExec::Exec 'taskkill /F /IM oadin.exe'
   ${Else}
-    DetailPrint "Oadin server not running or stop command failed (continuing anyway)"
+    DetailPrint "Oadin process not running. Skipping stop."
   ${EndIf}
   
   ; Wait for server to fully shutdown
-  Sleep 2000
+  ; Sleep 2000
 
   ; Create installation directory
   CreateDirectory "$INSTDIR"
@@ -244,11 +252,11 @@ Section "Install"
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
   ; Execute installation scripts
-  DetailPrint "Running pre-install script..."
-  nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
+  ; DetailPrint "Running pre-install script..."
+  ; nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
 
-  DetailPrint "Running post-install script..."
-  nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
+  ; DetailPrint "Running post-install script..."
+  ; nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
 
   DetailPrint "Starting Oadin service..."
   ; nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'

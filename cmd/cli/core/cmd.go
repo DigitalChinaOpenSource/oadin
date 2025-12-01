@@ -1064,18 +1064,27 @@ func StartOADINServer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	time.Sleep(6 * time.Second)
+    const (
+        maxWait   = 5 * time.Second
+        interval  = 200 * time.Millisecond
+    )
+    start := time.Now()
+    for {
+        if serverUtils.IsServerRunning() {
+            break
+        }
+        if time.Since(start) >= maxWait {
+            break
+        }
+        time.Sleep(interval)
+    }
 
-	if !serverUtils.IsServerRunning() {
-		log.Fatal("Failed to start OADIN server.")
-		return
-	}
+    if !serverUtils.IsServerRunning() {
+        log.Fatal("Failed to start OADIN server.")
+        return
+    }
 
-	err := StartEngineTotall(types.EngineStartModeDaemon)
-	if err != nil {
-		log.Fatal("Failed to start Engine.")
-		return
-	}
+    go StartEngineTotall(types.EngineStartModeDaemon)
 
 	fmt.Println("OADIN server start successfully.")
 }
@@ -1544,7 +1553,8 @@ func ListenModelEngineHealthTotal() {
 
 	engineList := make([]string, 0)
 
-	execPath := filepath.Join(OllamaEngine.GetConfig().ExecPath, OllamaEngine.GetConfig().ExecFile)
+	engineConfig := OllamaEngine.GetConfig()
+	execPath := filepath.Join(engineConfig.ExecPath, engineConfig.ExecFile)
 	if _, err := os.Stat(execPath); err == nil {
 		engineList = append(engineList, types.FlavorOllama)
 	}
@@ -1605,10 +1615,8 @@ func ListenModelEngineHealthTotal() {
 
 func StartEngineTotall(startMode string) error {
 	ollamaEngine := provider.GetModelEngine(types.FlavorOllama)
-	openVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
-	llamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
-
-	execPath := filepath.Join(ollamaEngine.GetConfig().ExecPath, ollamaEngine.GetConfig().ExecFile)
+	engineConfig := ollamaEngine.GetConfig()
+	execPath := filepath.Join(engineConfig.ExecPath, engineConfig.ExecFile)
 	if _, err := os.Stat(execPath); err == nil {
 		err = StartModelEngine(types.FlavorOllama, startMode)
 		if err != nil {
@@ -1616,6 +1624,7 @@ func StartEngineTotall(startMode string) error {
 		}
 	}
 
+	openVINOEngine := provider.GetModelEngine(types.FlavorOpenvino)
 	execPath = openVINOEngine.GetConfig().ExecPath
 	if _, err := os.Stat(execPath); err == nil {
 		err := StartModelEngine(types.FlavorOpenvino, startMode)
@@ -1624,6 +1633,7 @@ func StartEngineTotall(startMode string) error {
 		}
 	}
 
+	llamaCppEngine := provider.GetModelEngine(types.FlavorLlamaCpp)
 	execPath = llamaCppEngine.GetConfig().ExecPath
 	if _, err := os.Stat(execPath); err == nil {
 		err = StartModelEngine(types.FlavorLlamaCpp, startMode)

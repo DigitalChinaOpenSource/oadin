@@ -104,7 +104,8 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 		Status: "success",
 	}
 
-	execPath := filepath.Join(modelEngine.GetConfig().ExecPath, modelEngine.GetConfig().ExecFile)
+	engineConfig := modelEngine.GetConfig()
+	execPath := filepath.Join(engineConfig.ExecPath, engineConfig.ExecFile)
 	if _, err := os.Stat(execPath); err == nil {
 		err = modelEngine.HealthCheck()
 		if err != nil {

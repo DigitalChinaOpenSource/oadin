@@ -41,6 +41,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 
 	"gorm.io/gorm/utils"
 
@@ -68,6 +69,23 @@ const (
 )
 
 var textContentTypes = []string{ContentTypeText, ContentTypeJSON, ContentTypeXML, ContentTypeJS, ContentTypeNDJSON}
+
+var (
+    gpuOnce sync.Once
+    gpuInfo *ghw.GPUInfo
+    gpuErr  error
+)
+
+// getCachedGPU 缓存 ghw.GPU() 调用，避免重复检测
+func getCachedGPU() (*ghw.GPUInfo, error) {
+    gpuOnce.Do(func() {
+        gpuInfo, gpuErr = ghw.GPU()
+        if gpuErr == nil {
+            logger.EngineLogger.Debug("GPU Info cached:", gpuInfo)  // 只打印一次
+        }
+    })
+    return gpuInfo, gpuErr
+}
 
 func IsHTTPText(header http.Header) bool {
 	if contentType := header.Get("Content-Type"); contentType != "" {
@@ -403,7 +421,7 @@ func GetDownloadDir() (string, error) {
 }
 
 func IpexOllamaSupportGPUStatus() bool {
-	gpu, err := ghw.GPU()
+	gpu, err := getCachedGPU()
 	if err != nil {
 		return false
 	}
@@ -712,7 +730,7 @@ func DownloadImageUrlToPath(url string) (string, error) {
 }
 
 func DetectGpuModel() string {
-	gpu, err := ghw.GPU()
+	gpu, err := getCachedGPU()
 	if err != nil {
 		return types.GPUTypeNone
 	}
@@ -720,7 +738,6 @@ func DetectGpuModel() string {
 	hasNvidia := false
 	hasAMD := false
 	hasIntel := false
-	logger.EngineLogger.Info("GPU Info:", gpu)
 	for _, card := range gpu.GraphicsCards {
 		// 转为小写
 		productName := strings.ToLower(card.DeviceInfo.Product.Name)
@@ -748,7 +765,7 @@ func DetectGpuModel() string {
 }
 
 func VerifyAmdGPU() string {
-	gpu, err := ghw.GPU()
+	gpu, err := getCachedGPU()
 	if err != nil {
 		return types.GPUTypeNone
 	}
