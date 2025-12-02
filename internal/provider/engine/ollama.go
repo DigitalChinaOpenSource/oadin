@@ -355,7 +355,6 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 	default:
 		return nil
 	}
-	logger.EngineLogger.Info("[Ollama] GetConfig execPath: ", execPath)
 	return &types.EngineRecommendConfig{
 		Host:           DefaultHost,
 		Origin:         constants.DefaultHost,

@@ -119,7 +119,6 @@ func StopOadinServer(pidFilePath string) error {
 				logger.EngineLogger.Info("Successfully killed process", "process", ovmsProcessName)
 			}
 		}
-		logger.EngineLogger.Info(fmt.Sprintf("Stop engine successfully %s", modelEngine))
 	}
 
 	// Traverse all pid files.

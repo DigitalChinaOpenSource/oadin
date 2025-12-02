@@ -332,7 +332,6 @@ func (l *llamacppProvider) GetConfig() *types.EngineRecommendConfig {
 	default:
 		return nil
 	}
-	logger.EngineLogger.Info("[llamacpp] GetConfig: ", execFile, execPath, downloadUrl)
 	return &types.EngineRecommendConfig{
 		Host:           llamacppDefaultHost,
 		Origin:         constants.DefaultHost,
