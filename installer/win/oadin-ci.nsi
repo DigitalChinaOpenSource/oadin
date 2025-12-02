@@ -758,3 +758,117 @@ Function InstallVCRedist
   Pop $1
   Pop $0
 FunctionEnd
+
+Section "Install"
+  ; Ensure 64-bit environment
+  SetRegView 64
+  ${DisableX64FSRedirection}
+
+  ; Check and install Visual C++ Redistributable
+  DetailPrint "Checking Visual C++ Redistributable..."
+  Call CheckVCRedist
+  Pop $0
+  ${If} $0 == "not_found"
+    DetailPrint "Installing required Visual C++ Redistributable..."
+    Call InstallVCRedist
+  ${EndIf}
+
+  ; Log actual installation path
+  DetailPrint "Installing to: $INSTDIR"
+  DetailPrint "PROGRAMFILES64: $PROGRAMFILES64"
+  DetailPrint "PROGRAMFILES: $PROGRAMFILES"
+
+  ; Stop Oadin server if running (to avoid file lock issues)
+  DetailPrint "Checking if Oadin process is running..."
+  nsExec::Exec 'cmd /c tasklist /FI "IMAGENAME eq oadin.exe" | find /I "oadin.exe"'
+  Pop $0
+  ${If} $0 == "0"
+    DetailPrint "Oadin process detected. Attempting to stop..."
+    nsExec::Exec '$INSTDIR\oadin server stop'
+    Pop $0
+    ${If} $0 == "0"
+      DetailPrint "Oadin server stopped successfully"
+    ${Else}
+      DetailPrint "Oadin server stop command returned code $0 (continuing)"
+    ${EndIf}
+    nsExec::Exec 'taskkill /F /IM oadin.exe'
+  ${Else}
+    DetailPrint "Oadin process not running. Skipping stop."
+  ${EndIf}
+  
+  ; Wait for server to fully shutdown
+  ; Sleep 2000
+
+  ; Create installation directory
+  CreateDirectory "$INSTDIR"
+  SetOutPath "$INSTDIR"
+
+  ; Verify directory creation success
+  IfFileExists "$INSTDIR" 0 install_error
+  DetailPrint "SUCCESS: 64-bit installation directory created"
+
+  ; Copy files
+  File "..\..\oadin.exe"
+  File "preinstall.bat"
+  File "postinstall.bat"
+  File "start-oadin.bat"
+
+  ; Write registry (64-bit view)
+  WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
+  WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
+  WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Architecture" "x64"
+  WriteRegStr HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "UninstallString" "$INSTDIR\uninstall.exe"
+  
+  WriteUninstaller "$INSTDIR\uninstall.exe"
+
+  ; Execute installation scripts
+  ; DetailPrint "Running pre-install script..."
+  ; nsExec::ExecToLog '"$INSTDIR\preinstall.bat"'
+
+  ; DetailPrint "Running post-install script..."
+  ; nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
+
+  DetailPrint "Starting Oadin service..."
+  ; nsExec::ExecToLog '"$INSTDIR\start-oadin.bat"'
+  ShellExecAsUser::ShellExecAsUser "open" "$INSTDIR\start-oadin.bat" "" SW_HIDE
+ 
+
+  ${EnableX64FSRedirection}
+  
+  DetailPrint "Installation completed successfully to: $INSTDIR"
+  Goto install_end
+
+  install_error:
+  DetailPrint "ERROR: Failed to create installation directory: $INSTDIR"
+  MessageBox MB_OK|MB_ICONSTOP "Installation failed: Unable to create directory $INSTDIR"
+  Abort
+
+  install_end:
+SectionEnd
+
+Function un.onInit
+  SetRegView 64
+  ${DisableX64FSRedirection}
+FunctionEnd
+
+Section "Uninstall"
+  SetRegView 64
+  ${DisableX64FSRedirection}
+  
+  Delete "$INSTDIR\oadin.exe"
+  Delete "$INSTDIR\preinstall.bat"
+  Delete "$INSTDIR\postinstall.bat"
+  Delete "$INSTDIR\start-oadin.bat"
+  Delete "$INSTDIR\uninstall.exe"
+
+  ; Clean up any remaining temp files
+  Delete "$TEMP\OadinInstaller\VC_redist.x64.exe"
+  RMDir "$TEMP\OadinInstaller"
+
+  RMDir "$INSTDIR"
+
+  DeleteRegKey HKLM "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
+
+  ${EnableX64FSRedirection}
+SectionEnd
+ 

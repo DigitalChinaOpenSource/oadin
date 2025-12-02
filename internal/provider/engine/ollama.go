@@ -80,6 +80,7 @@ const (
 	MoveCommand    = "mv"
 )
 
+
 var OllamaDDLDependsList = []string{
 	"vcruntime140.dll",
 	"vcruntime140_1.dll",
@@ -315,7 +316,8 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		dataDir = executableDir.ProgramData + "/Oadin"
 		enginePath = fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 
-		switch utils.DetectGpuModel() {
+		gpuTypeCache := utils.DetectGpuModel()
+		switch gpuTypeCache {
 		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
 			downloadUrl = WindowsAllGPUURL
 		case types.GPUTypeNvidia:
@@ -1003,7 +1005,8 @@ func (o *OllamaProvider) InstallEngineStream(ctx context.Context, newDataChan ch
 					}
 				}
 			} else {
-				execPath := filepath.Join(o.GetConfig().ExecPath, o.GetConfig().ExecFile)
+				engineConfig := o.GetConfig()
+				execPath := filepath.Join(engineConfig.ExecPath, engineConfig.ExecFile)
 				if _, err = os.Stat(execPath); os.IsNotExist(err) {
 					unzipCmd := exec.Command(TarCommand, TarExtractFlag, file, TarDestFlag, ipexPath)
 					if err := unzipCmd.Run(); err != nil {
