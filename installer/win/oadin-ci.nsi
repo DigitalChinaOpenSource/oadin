@@ -17,7 +17,6 @@
 !define DEFAULT_INSTALL_DATA_DIR "C:\ProgramData\Oadin"
 !define DEFAULT_USER_DATA_DIR "$APPDATA\Oadin"
 !define DEFAULT_PARAMS_DATA_DIR "C:\ProgramData\oadin_phase.txt"
-!define DEFAULT_PARAMS_DATA_DIR1 "C:\ProgramData\oadin_phase1.txt"
 
 Outfile "..\..\oadin-installer.exe"
 InstallDir "${DEFAULT_INSTALL_DIR}"
