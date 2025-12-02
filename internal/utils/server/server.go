@@ -30,15 +30,6 @@ func IsServerRunning() bool {
 }
 
 func StartOadinServer(logPath string, pidFilePath string) error {
-	envVars := os.Environ()
-
-	// logger.LogicLogger.Error("All Environment Variables:")
-	// logger.LogicLogger.Error("==========================")
-
-	// for _, env := range envVars {
-	// 	logger.LogicLogger.Error(env)
-	// }
-
 	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %v", err)
