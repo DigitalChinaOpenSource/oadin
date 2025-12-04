@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/user"
 	"strings"
+	"syscall"
 
 	"github.com/shirou/gopsutil/mem"
 )
@@ -43,7 +44,7 @@ func SamePartitionStatus(srcPath, targetPath string) (bool, error) {
 	return stat1.Dev == stat2.Dev, nil
 }
 
-func ModifySystemUserVariables(envInfo *types.EnvVariables) error {
+func ModifySystemUserVariables(envInfo *EnvVariables) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		return err
@@ -92,4 +93,12 @@ func SetCmdSysProcAttr(cmd *exec.Cmd) {
 
 func CheckDllExists(dllName string) bool {
 	return true
+}
+
+func GetActiveUserAppData() (string, error) {
+	return "", nil
+}
+
+func ShellExecute(hwnd uintptr, verb, file, args, dir string, showCmd int) error {
+	return nil
 }

@@ -41,7 +41,7 @@ jobs:
           echo "--------- 🛠️ 制品构建与签名 ----------"
           go mod tidy
           # 清理可能存在的旧二进制文件和目录
-          rm -f oadin oadin-tray oadin.pkg
+          rm -f oadin oadin-app oadin.pkg
           rm -rf pkgroot upload
           echo "$ENV active"
           echo "=== 构建参数 ==="
@@ -50,29 +50,41 @@ jobs:
           echo "GOARCH=arm64"
           echo "Tags: $ENV"
           echo "LDFLAGS: -s -w"
-          CGO_ENABLED=1 CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec" GOOS=darwin GOARCH=arm64  go build -o oadin -tags "$ENV" -ldflags="-s -w"  cmd/cli/main.go
+          CGO_ENABLED=1 CGO_CFLAGS="-I$PWD\internal\datastore\sqlite\sqlite-vec" GOOS=darwin GOARCH=arm64  go build -o oadin -tags "$ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG'"  cmd/cli/main.go
+          CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -o oadin-app -tags "$ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG'" trayapp/main.go
           echo "=== 二进制分析 ==="
           file oadin
           echo "符号表大小分析:"
           go tool nm -size oadin 2>/dev/null | head -10 || echo "符号表已被strip"
           codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin
+          
+          # 签名托盘程序
+          codesign --verbose --force  --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" oadin-app
+          
+          echo "--------- 📦 创建 .app 应用程序包 ----------"
+          chmod +x installer/mac/create-app.sh
+          installer/mac/create-app.sh
+          
+          # 签名 .app
+          codesign --verbose --force --timestamp --options=runtime --sign "Developer ID Application: Digital China (China) Limited (US7ZG73N89)" "Oadin.app"
+          
           echo "--------- 📦 安装包构建与签名 ----------"
           # 确保完全清理 pkgroot 目录
           rm -rf pkgroot
           # 使用正确的目录名称，确保一致性
           mkdir -p pkgroot/Oadin
-          mv oadin pkgroot/Oadin/oadin
+          mv Oadin.app pkgroot/Oadin/Oadin.app
           chmod +x installer/mac/preinstall
           chmod +x installer/mac/postinstall
           # 添加文件大小检查
           echo "=== Mac 二进制文件详细信息 ==="
-          echo "二进制文件大小: $(du -h pkgroot/Oadin/oadin | cut -f1)"
-          echo "二进制文件大小(字节): $(stat -f%z pkgroot/Oadin/oadin)"
+          # echo "二进制文件大小: $(du -h pkgroot/Oadin/oadin | cut -f1)"
+          # echo "二进制文件大小(字节): $(stat -f%z pkgroot/Oadin/oadin)"
           echo "pkgroot目录内容:"
           ls -la pkgroot/Oadin/
           # 确保只包含我们想要的文件
           echo "pkgroot目录总大小: $(du -sh pkgroot | cut -f1)"
-          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Users/Shared/Oadin --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
+          pkgbuild --identifier com.digitalchina.oadin --version "${CI_COMMIT_TAG}" --install-location /Applications --sign "Developer ID Installer: Digital China (China) Limited (US7ZG73N89)" --root pkgroot/Oadin --scripts ./installer/mac oadin.pkg
           echo "安装包大小: $(du -h oadin.pkg | cut -f1)"
           echo "--------- 📬 安装包公证 ----------"
           xcrun notarytool store-credentials "ci-profile" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID"  --password "$APPLE_APP_SPECIFIC_PASSWORD"
@@ -90,8 +102,8 @@ jobs:
         run: |
           echo "========== 🔧 Mac Upload Begin =========="
           echo "-------- 📤 上传到 Nexus 私服 --------"
-          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/${MAC_FILE_NAME}"
-          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/releases/mac/oadin-installer-latest.pkg"
+          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/dist/mac/${MAC_FILE_NAME}"
+          curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" --upload-file "/Users/dcone/WebstormProjects/oadin/upload/${MAC_FILE_NAME}" "http://${NEXUS_HOST_PORT}/repository/raw-hosted/intel-ai-pc/oadin/dist/mac/oadin-installer-latest.pkg"
           echo "========== 🔧 Mac Upload End =========="
       - name: upload oss
         if: ${{ !startsWith(github.ref_name, 'test') }}
@@ -99,8 +111,8 @@ jobs:
           echo "========== 🔧 Mac Upload Begin =========="
           echo "-------- 📤 上传到 阿里云 OSS --------"
           cd /Users/dcone/WebstormProjects/oadin/upload
-          ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/oadin/releases/macos/${MAC_FILE_NAME}" --force
-          ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/oadin/releases/macos/oadin-installer-latest.pkg" --force
+          ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/oadin/dist/macos/${MAC_FILE_NAME}" --force
+          ossutil cp "${MAC_FILE_NAME}" "oss://smartvision-aipc/oadin/dist/macos/oadin-installer-latest.pkg" --force
           echo "--------- 🧹 环境清理 ----------"
           git reset --hard
           git clean -fd
@@ -108,7 +120,7 @@ jobs:
           git checkout main
           git tag -d $CI_COMMIT_TAG
           echo "--------- ♻️ 刷新CND ----------"
-          aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/oadin/releases/macos/oadin-installer-latest.pkg" --ObjectType File
+          aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/oadin/dist/macos/oadin-installer-latest.pkg" --ObjectType File
           echo "========== 🔧 Mac Upload End =========="
 
   build-win:
@@ -134,6 +146,7 @@ jobs:
           git fetch
           echo $env:CI_COMMIT_TAG ; git checkout $env:CI_COMMIT_TAG
           echo "--------- 🛠️ 制品构建与签名 ----------"
+          go env -w GOPROXY=https://goproxy.cn,direct
           go mod tidy
           # 清理可能存在的旧二进制文件
           Remove-Item -Path "oadin.exe" -Force -ErrorAction SilentlyContinue
@@ -148,14 +161,18 @@ jobs:
           echo "GOARCH: $($env:GOARCH)"
           echo "Tags: $($env:ENV)"
           echo "LDFLAGS: -s -w"
-          go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w"  cmd/cli/main.go
+          go build -o oadin.exe -tags "$env:ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$env:CI_COMMIT_TAG'"  cmd/cli/main.go
+          go build -o oadin-app.exe -tags "$env:ENV" -ldflags="-s -w -X 'oadin/version.OadinSubVersion=$CI_COMMIT_TAG' -H=windowsgui" trayapp/main.go
           # 添加详细的文件大小检查
           echo "=== Windows 二进制文件详细信息 ==="
           Get-ChildItem -Path "oadin.exe" | Format-Table Name, @{Name="Size(MB)";Expression={[math]::Round($_.Length/1MB,2)}}, Length -AutoSize
           echo "二进制文件大小(字节): $((Get-Item 'oadin.exe').Length)"
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin.exe"
+          signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-app.exe"
+          
           echo "--------- 📦 安装包构建与签名 ----------"
-          makensis.exe -DVERSION=$env:CI_COMMIT_TAG installer\win\oadin.nsi
+          echo "使用CI兼容的64位NSIS脚本..."
+          makensis.exe -DVERSION=$env:CI_COMMIT_TAG installer\win\oadin-ci.nsi
           signtool sign /f C:\Users\Administrator\Desktop\u.cer /tr http://timestamp.digicert.com /td sha256 /fd sha256 /csp "eToken Base Cryptographic Provider" /k "[{{$($WIN_SIGN_PASSWORD)}}]=p11#942acfc7f5754f2e" "oadin-installer.exe"
           # 检查安装包大小
           echo "安装包信息:"
@@ -170,8 +187,8 @@ jobs:
           echo "========== 🔧 Win Upload Begin =========="
           echo "-------- 📤 上传到 Nexus 私服 --------"
           cd C:\Users\Administrator\WebstormProjects\oadin
-          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/$($env:WIN_FILE_NAME)"
-          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/releases/win/oadin-installer-latest.exe"
+          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/dist/win/$($env:WIN_FILE_NAME)"
+          curl.exe -v -u "$($env:NEXUS_USERNAME):$($env:NEXUS_PASSWORD)" --upload-file "upload/$($env:WIN_FILE_NAME)" "http://$($env:NEXUS_HOST_PORT)/repository/raw-hosted/intel-ai-pc/oadin/dist/win/oadin-installer-latest.exe"
           echo "========== 🔧 Win Upload End =========="
       - name: upload oss
         if: ${{ !startsWith(github.ref_name, 'test') }}
@@ -179,8 +196,8 @@ jobs:
           echo "========== 🔧 Win Upload Begin =========="
           echo "-------- 📤 上传到 阿里云 OSS --------"
           cd C:\Users\Administrator\WebstormProjects\oadin
-          ossutil cp "upload/$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/oadin/releases/windows/$($env:WIN_FILE_NAME)" --force
-          ossutil cp "upload/$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/oadin/releases/windows/oadin-installer-latest.exe" --force
+          ossutil cp "upload/$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/oadin/dist/windows/$($env:WIN_FILE_NAME)" --force
+          ossutil cp "upload/$($env:WIN_FILE_NAME)" "oss://smartvision-aipc/oadin/dist/windows/oadin-installer-latest.exe" --force
           echo "--------- 🧹 环境清理 ----------"
           git reset --hard
           git clean -fd
@@ -188,7 +205,7 @@ jobs:
           git checkout main
           git tag -d $env:CI_COMMIT_TAG
           echo "--------- ♻️ 刷新CDN ----------"
-          aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/oadin/releases/windows/oadin-installer-latest.exe" --ObjectType File
+          aliyun cdn RefreshObjectCaches --ObjectPath "https://oss-aipc.dcclouds.com/oadin/dist/windows/oadin-installer-latest.exe" --ObjectType File
           echo "========== 🔧 Win Upload End =========="
 
   notify-feishu:

@@ -160,3 +160,71 @@ func CheckDllExists(dllName string) bool {
 
 	return false
 }
+
+func GetActiveUserAppData() (string, error) {
+	// 打开 HKEY_USERS
+	key, err := registry.OpenKey(registry.USERS, "", registry.READ)
+	if err != nil {
+		return "", err
+	}
+	defer key.Close()
+
+	// 枚举所有子键
+	sids, err := key.ReadSubKeyNames(-1)
+	if err != nil {
+		return "", err
+	}
+
+	for _, sid := range sids {
+		// 跳过系统账号
+		if sid == "S-1-5-18" || sid == "S-1-5-19" || sid == "S-1-5-20" {
+			continue
+		}
+
+		// 尝试读取 AppData
+		path := sid + `\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders`
+		subKey, err := registry.OpenKey(registry.USERS, path, registry.READ)
+		if err != nil {
+			continue
+		}
+
+		appdata, _, err := subKey.GetStringValue("AppData")
+		subKey.Close()
+		if err != nil {
+			continue
+		}
+
+		// 返回第一个成功的
+		if strings.TrimSpace(appdata) != "" {
+			return appdata, nil
+		}
+	}
+
+	return "", fmt.Errorf("no active user AppData found")
+}
+
+var (
+	shell32           = syscall.NewLazyDLL("shell32.dll")
+	procShellExecuteW = shell32.NewProc("ShellExecuteW")
+)
+
+func ShellExecute(hwnd uintptr, verb, file, args, dir string, showCmd int) error {
+	verbPtr, _ := syscall.UTF16PtrFromString(verb)
+	filePtr, _ := syscall.UTF16PtrFromString(file)
+	argsPtr, _ := syscall.UTF16PtrFromString(args)
+	dirPtr, _ := syscall.UTF16PtrFromString(dir)
+
+	ret, _, _ := procShellExecuteW.Call(
+		hwnd,
+		uintptr(unsafe.Pointer(verbPtr)),
+		uintptr(unsafe.Pointer(filePtr)),
+		uintptr(unsafe.Pointer(argsPtr)),
+		uintptr(unsafe.Pointer(dirPtr)),
+		uintptr(showCmd),
+	)
+
+	if ret <= 32 {
+		return syscall.Errno(ret)
+	}
+	return nil
+}

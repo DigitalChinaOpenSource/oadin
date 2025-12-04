@@ -135,7 +135,7 @@ func (m *TextToImageMiddleware) handleRemoteToLocal(body map[string]interface{},
 	if err != nil {
 		return fmt.Errorf("get download directory: %w", err)
 	}
-	savePath, err := utils.DownloadFile(imageUrl, downLoadPath)
+	savePath, err := utils.DownloadFile(imageUrl, downLoadPath, "")
 	if err != nil {
 		return fmt.Errorf("download file: %w", err)
 	}

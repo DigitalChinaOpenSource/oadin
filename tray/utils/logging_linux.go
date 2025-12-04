@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"log/slog"
 	"os/exec"
-
-	"oadin/config"
+	"path/filepath"
+	"oadin/internal/utils"
 )
 
 func ShowLogs() error {
-	cmd = exec.Command("xdg-open", config.GlobalEnvironment.LogDir)
+	rootDir, _ := utils.GetOADINDataDir()
+	logPath := filepath.Join(rootDir, "logs")
+	cmd := exec.Command("xdg-open", logPath)
 	err := cmd.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to open log dir: %s", err))

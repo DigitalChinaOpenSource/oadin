@@ -19,8 +19,10 @@ package constants
 // Application information
 const (
 	AppName           = "oadin"
-	BaseDownloadURL   = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/aog"
+	BaseDownloadURL   = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com/oadin"
 	UrlDirPathWindows = "/windows"
+	OssURL            = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com"
+	MacOadinExecPath  = "/Applications/Oadin.app/Contents/Resources"
 )
 
 // model related
@@ -66,4 +68,3 @@ const (
 const (
 	GGUFModelType = "ggufFile"
 )
-

@@ -18,17 +18,20 @@ package version
 
 import "log/slog"
 
+// OADINVersion 奥丁主版本号
 const OADINVersion = "2.0.0"
 
+// OADINSpecVersion 奥丁API版本号
 const OADINSpecVersion = "v0.4"
 
 const OADINIcon = ""
 
 const OADINName = "OADIN"
 
-const OADINDescription = "OADIN (AIPC Open Gateway) aims to decouple AI applications on AI PCs from the AI services they rely on. It is designed to provide developers with an extremely simple and easy-to-use infrastructure to install local AI services in their development environments and publish their AI applications without packaging their own AI stacks and models."
+const OADINDescription = "OADIN (Open AIPC Development INfra.) aims to decouple AI applications on AI PCs from the AI services they rely on. It is designed to provide developers with an extremely simple and easy-to-use infrastructure to install local AI services in their development environments and publish their AI applications without packaging their own AI stacks and models."
 
-var OadinSubVersion = "test-2.0.40"
+// OadinSubVersion 奥丁子版本号 (定义为var, 以便在编译时通过 -ldflags "-X 'package.path.OadinSubVersion=value'" 进行覆盖)
+var OadinSubVersion = "Uninitialized Version Number"
 
 // GetOADINVersion slog打印奥丁版本信息
 func GetOADINVersion() {

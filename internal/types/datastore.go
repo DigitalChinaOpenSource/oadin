@@ -165,41 +165,6 @@ func (t *Model) Index() map[string]interface{} {
 	return index
 }
 
-// VersionUpdateRecord  table structure
-type VersionUpdateRecord struct {
-	ID           int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`
-	Version      string    `gorm:"column:version;not null" json:"version"`
-	ReleaseNotes string    `gorm:"column:release_notes;not null" json:"release_notes"`
-	Status       int       `gorm:"column:status;not null" json:"status"`
-	CreatedAt    time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt    time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
-}
-
-func (t *VersionUpdateRecord) SetCreateTime(time time.Time) {
-	t.CreatedAt = time
-}
-
-func (t *VersionUpdateRecord) SetUpdateTime(time time.Time) {
-	t.UpdatedAt = time
-}
-
-func (t *VersionUpdateRecord) PrimaryKey() string {
-	return "id"
-}
-
-func (t *VersionUpdateRecord) TableName() string {
-	return TableVersionUpdate
-}
-
-func (t *VersionUpdateRecord) Index() map[string]interface{} {
-	index := make(map[string]interface{})
-	if t.Version != "" {
-		index["version"] = t.Version
-	}
-
-	return index
-}
-
 // DataMigrateVersion  table structure
 type DataMigrateVersion struct {
 	ID        int       `gorm:"primaryKey;column:id;autoIncrement" json:"id"`

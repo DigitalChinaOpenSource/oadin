@@ -45,6 +45,7 @@ type EngineManageService interface {
 
 	CreateAIGCServiceSync(ctx context.Context, req *interalDTO.CreateAIGCServiceRequest) error
 	CheckLocalModelExist(ctx context.Context, request dto.ModelDownloadRequest) error
+	InsertLocalModel(ctx context.Context, request dto.ModelDownloadRequest) error
 }
 
 // EngineManageServiceImpl implements the EngineManageService interface
@@ -207,6 +208,31 @@ func (s *EngineManageServiceImpl) performInstallWithContext(ctx context.Context,
 func (s *EngineManageServiceImpl) CreateAIGCServiceSync(ctx context.Context, req *interalDTO.CreateAIGCServiceRequest) error {
 	// Synchronously create the AIGC service
 	_, err := s.AIGCService.CreateAIGCService(ctx, req)
+	if err != nil && err.Error() == "provider model already exist" {
+		err = nil
+	}
+	if err == nil && req.ServiceName == "chat" {
+		relatedM := &types.Model{}
+		relatedM.ModelName = req.ModelName
+		relatedM.ProviderName = fmt.Sprintf("local_%s_%s", req.ApiFlavor, "generate")
+		relatedM.Status = "downloaded"
+		relatedM.ServiceName = "generate"
+		relatedM.ServiceSource = req.ServiceSource
+
+		relatedMIsExist, err := s.Ds.IsExist(ctx, relatedM)
+		if err != nil {
+			relatedMIsExist = false
+			err = nil
+		}
+		if !relatedMIsExist {
+			err = s.Ds.Add(ctx, relatedM)
+			if err != nil {
+				err = nil
+			}
+		}
+
+	}
+	fmt.Printf("CreateAIGCServiceSync err", err)
 	return err
 }
 
@@ -215,9 +241,55 @@ func (s *EngineManageServiceImpl) CheckLocalModelExist(ctx context.Context, requ
 	m.ModelName = request.ModelName
 	m.ProviderName = fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)
 	m.Status = "downloaded"
-	err := s.Ds.Get(ctx, m)
-	fmt.Println("CheckLocalModelExist:", err)
-	return err
+
+	newQueries := []datastore.FuzzyQueryOption{}
+	newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "model_name", Query: request.ModelName})
+	newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "provider_name", Query: fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)})
+	newQueries = append(newQueries, datastore.FuzzyQueryOption{Key: "status", Query: "downloaded"})
+
+	list, err := s.Ds.List(ctx, m, &datastore.ListOptions{
+		FilterOptions: datastore.FilterOptions{
+			Queries: newQueries,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if len(list) == 0 {
+		return fmt.Errorf("local model not found: %s", m.ModelName)
+	}
+	return nil
+}
+
+func (s *EngineManageServiceImpl) InsertLocalModel(ctx context.Context, request dto.ModelDownloadRequest) error {
+	m := &types.Model{}
+	m.ModelName = request.ModelName
+	m.ProviderName = fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)
+	m.Status = "downloaded"
+	m.ServiceName = request.ModelType
+	m.ServiceSource = "local"
+	err := s.Ds.Add(ctx, m)
+	if err != nil {
+		return err
+	}
+
+	// 更新指定service的记录
+	service := &types.Service{
+		Name: request.ModelType,
+	}
+	err = s.Ds.Get(ctx, service)
+	if err != nil {
+		return err
+	}
+
+	service.LocalProvider = fmt.Sprintf("local_%s_%s", request.EngineName, request.ModelType)
+	service.Status = 1
+	err = s.Ds.Put(ctx, service)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // IsDownloading checks if an engine is currently being downloaded

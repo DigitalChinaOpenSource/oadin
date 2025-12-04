@@ -17,22 +17,14 @@
 package api
 
 import (
-	"fmt"
+	"github.com/gin-gonic/gin"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
-	"runtime"
-
 	"oadin/config"
 	"oadin/internal/constants"
-	"oadin/internal/datastore"
 	"oadin/internal/provider"
 	"oadin/internal/types"
-	serverUtils "oadin/internal/utils/server"
 	"oadin/version"
-
-	"github.com/gin-gonic/gin"
 )
 
 func InjectRouter(e *OADINCoreServer) {
@@ -41,8 +33,6 @@ func InjectRouter(e *OADINCoreServer) {
 	e.Router.Handle(http.MethodGet, "/engine/health", engineHealthHandler)
 	e.Router.Handle(http.MethodGet, "/version", getVersion)
 	e.Router.Handle(http.MethodGet, "/engine/version", getEngineVersion)
-	e.Router.Handle(http.MethodGet, "/update/status", updateAvailableHandler)
-	e.Router.Handle(http.MethodPost, "/update", updateHandler)
 
 	r := e.Router.Group("/" + constants.AppName + "/" + version.OADINSpecVersion)
 
@@ -119,74 +109,4 @@ func getEngineVersion(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, data)
-}
-
-func updateAvailableHandler(c *gin.Context) {
-	ctx := c.Request.Context()
-	status, updateResp := version.IsNewVersionAvailable(ctx)
-	if status {
-		c.JSON(http.StatusOK, map[string]string{"message": fmt.Sprintf("Ollama version %s is ready to install", updateResp.UpdateVersion)})
-	} else {
-		c.JSON(http.StatusOK, map[string]string{"message": ""})
-	}
-}
-
-func updateHandler(c *gin.Context) {
-	// check server
-	status := serverUtils.IsServerRunning()
-	if status {
-		// stop server
-		pidFilePath := filepath.Join(config.GlobalEnvironment.RootDir, "oadin.pid")
-		err := serverUtils.StopOadinServer(pidFilePath)
-		if err != nil {
-			c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
-		}
-	}
-	// rm old version file
-	oadinFileName := "oadin.exe"
-	if runtime.GOOS != "windows" {
-		oadinFileName = "oadin"
-	}
-	oadinFilePath := filepath.Join(config.GlobalEnvironment.RootDir, oadinFileName)
-	err := os.Remove(oadinFilePath)
-	if err != nil {
-		slog.Error("[Update] Failed to remove oadin file %s: %v\n", oadinFilePath, err)
-		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
-	}
-	// install new version
-	downloadPath := filepath.Join(config.GlobalEnvironment.RootDir, "download", oadinFileName)
-	err = os.Rename(downloadPath, oadinFilePath)
-	if err != nil {
-		slog.Error("[Update] Failed to rename oadin file %s: %v\n", downloadPath, err)
-		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
-	}
-	// start server
-	logPath := config.GlobalEnvironment.ConsoleLog
-	rootDir := config.GlobalEnvironment.RootDir
-	err = serverUtils.StartOadinServer(logPath, rootDir)
-	if err != nil {
-		slog.Error("[Update] Failed to start oadin log %s: %v\n", logPath, err)
-		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
-	}
-	ds := datastore.GetDefaultDatastore()
-	ctx := c.Request.Context()
-	vr := &types.VersionUpdateRecord{}
-	sortOption := []datastore.SortOption{
-		{Key: "created_at", Order: -1},
-	}
-	versionRecoreds, err := ds.List(ctx, vr, &datastore.ListOptions{SortBy: sortOption})
-	if err != nil {
-		slog.Error("[Update] Failed to list versions: %v\n", err)
-		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
-	}
-	versionRecord := versionRecoreds[0].(*types.VersionUpdateRecord)
-	if versionRecord.Status == types.VersionRecordStatusInstalled {
-		versionRecord.Status = types.VersionRecordStatusUpdated
-	}
-	err = ds.Put(ctx, versionRecord)
-	if err != nil {
-		slog.Error("[Update] Failed to update versions: %v\n", err)
-		c.JSON(http.StatusOK, map[string]string{"message": err.Error()})
-	}
-	c.JSON(http.StatusOK, map[string]string{"message": ""})
 }

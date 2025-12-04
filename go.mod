@@ -29,7 +29,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/sqweek/dialog v0.0.0-20240226140203-065105509627
 	github.com/xuri/excelize/v2 v2.9.1
-	golang.org/x/sys v0.33.0
+	golang.org/x/sys v0.37.0
 	golang.org/x/term v0.32.0
 	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.6
@@ -62,6 +62,7 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
+	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jaypipes/pcidb v1.0.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect

@@ -31,6 +31,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"oadin/internal/logger"
 	"os"
 	"os/exec"
 	"os/user"
@@ -40,13 +41,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"gorm.io/gorm/utils"
-
-	"oadin/internal/types"
+	"sync"
 
 	"github.com/jaypipes/ghw"
 	"github.com/shirou/gopsutil/disk"
+	"gorm.io/gorm/utils"
+
+	"oadin/internal/types"
 )
 
 const (
@@ -67,6 +68,23 @@ const (
 )
 
 var textContentTypes = []string{ContentTypeText, ContentTypeJSON, ContentTypeXML, ContentTypeJS, ContentTypeNDJSON}
+
+var (
+    gpuOnce sync.Once
+    gpuInfo *ghw.GPUInfo
+    gpuErr  error
+)
+
+// getCachedGPU 缓存 ghw.GPU() 调用，避免重复检测
+func getCachedGPU() (*ghw.GPUInfo, error) {
+    gpuOnce.Do(func() {
+        gpuInfo, gpuErr = ghw.GPU()
+        if gpuErr == nil {
+            logger.EngineLogger.Debug("GPU Info cached:", gpuInfo)  // 只打印一次
+        }
+    })
+    return gpuInfo, gpuErr
+}
 
 func IsHTTPText(header http.Header) bool {
 	if contentType := header.Get("Content-Type"); contentType != "" {
@@ -102,7 +120,11 @@ func GetUserDataDir() (string, error) {
 	case "darwin":
 		dir = filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
 	case "windows":
-		dir = filepath.Join(os.Getenv("APPDATA"))
+		appData, err := GetActiveUserAppData()
+		if err != nil {
+			return dir, err
+		}
+		dir = appData
 	case "linux":
 		dir = filepath.Join(os.Getenv("HOME"), ".config")
 	default:
@@ -140,13 +162,14 @@ func Contains(slice []string, target string) bool {
 	return false
 }
 
-func DownloadFile(downloadURL string, saveDir string) (string, error) {
+func DownloadFile(downloadURL, saveDir, fileName string) (string, error) {
 	parsedURL, err := url.Parse(downloadURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse URL: %v", err)
 	}
-
-	fileName := filepath.Base(parsedURL.Path)
+	if fileName == "" {
+		fileName = filepath.Base(parsedURL.Path)
+	}
 	if fileName == "" || fileName == "." || fileName == "/" {
 		return "", fmt.Errorf("could not determine file name from URL: %s", downloadURL)
 	}
@@ -199,69 +222,70 @@ func DownloadFile(downloadURL string, saveDir string) (string, error) {
 
 /*
 DownloadFileWithProgress 下载文件并支持进度回调
-path, err := DownloadFileWithProgress(url, saveDir, func(downloaded, total int64) {
-    fmt.Printf("下载进度: %.2f%%\n", float64(downloaded)*100/float64(total))
-})
+
+	path, err := DownloadFileWithProgress(url, saveDir, func(downloaded, total int64) {
+	    fmt.Printf("下载进度: %.2f%%\n", float64(downloaded)*100/float64(total))
+	})
 */
 func DownloadFileWithProgress(downloadURL string, saveDir string, onProgress func(downloaded, total int64)) (string, error) {
-    parsedURL, err := url.Parse(downloadURL)
-    if err != nil {
-        return "", fmt.Errorf("failed to parse URL: %v", err)
-    }
+	parsedURL, err := url.Parse(downloadURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse URL: %v", err)
+	}
 
-    fileName := filepath.Base(parsedURL.Path)
-    if fileName == "" || fileName == "." || fileName == "/" {
-        return "", fmt.Errorf("could not determine file name from URL: %s", downloadURL)
-    }
+	fileName := filepath.Base(parsedURL.Path)
+	if fileName == "" || fileName == "." || fileName == "/" {
+		return "", fmt.Errorf("could not determine file name from URL: %s", downloadURL)
+	}
 
-    savePath := filepath.Join(saveDir, fileName)
+	savePath := filepath.Join(saveDir, fileName)
 
-    if _, err := os.Stat(savePath); err == nil {
-        fmt.Printf("%s already exists, skip download.\n", savePath)
-        return savePath, nil
-    } else if !os.IsNotExist(err) {
-        return "", fmt.Errorf("failed to check file %s: %v", savePath, err)
-    }
+	if _, err := os.Stat(savePath); err == nil {
+		fmt.Printf("%s already exists, skip download.\n", savePath)
+		return savePath, nil
+	} else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("failed to check file %s: %v", savePath, err)
+	}
 
-    proxyURL, err := http.ProxyFromEnvironment(&http.Request{URL: parsedURL})
-    if err != nil {
-        return "", fmt.Errorf("failed to get proxy URL: %v", err)
-    }
+	proxyURL, err := http.ProxyFromEnvironment(&http.Request{URL: parsedURL})
+	if err != nil {
+		return "", fmt.Errorf("failed to get proxy URL: %v", err)
+	}
 
-    transport := &http.Transport{
-        Proxy: http.ProxyURL(proxyURL),
-    }
+	transport := &http.Transport{
+		Proxy: http.ProxyURL(proxyURL),
+	}
 
-    client := &http.Client{
-        Transport: transport,
-    }
+	client := &http.Client{
+		Transport: transport,
+	}
 
-    resp, err := client.Get(downloadURL)
-    if err != nil {
-        return "", fmt.Errorf("failed to download file: %v, url: %s", err, downloadURL)
-    }
-    defer resp.Body.Close()
+	resp, err := client.Get(downloadURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to download file: %v, url: %s", err, downloadURL)
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode != http.StatusOK {
-        return "", fmt.Errorf("failed to download file: HTTP status %s, url: %s", resp.Status, downloadURL)
-    }
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to download file: HTTP status %s, url: %s", resp.Status, downloadURL)
+	}
 
-    file, err := os.Create(savePath)
-    if err != nil {
-        return "", fmt.Errorf("failed to create file: %v, url: %s", err, downloadURL)
-    }
-    defer file.Close()
+	file, err := os.Create(savePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create file: %v, url: %s", err, downloadURL)
+	}
+	defer file.Close()
 
-    var total int64 = 0
-    if resp.ContentLength > 0 {
-        total = resp.ContentLength
-    }
+	var total int64 = 0
+	if resp.ContentLength > 0 {
+		total = resp.ContentLength
+	}
 
-    var downloaded int64 = 0
-    var lastProgressTime time.Time
-    var lastProgressBytes int64
-    
-    // 如果文件小于10MB 进度更新间隔：100ms 或者每1MB
+	var downloaded int64 = 0
+	var lastProgressTime time.Time
+	var lastProgressBytes int64
+
+	// 如果文件小于10MB 进度更新间隔：100ms 或者每1MB
 	progressInterval := 100 * time.Millisecond
 	progressThreshold := 1024 * 1024
 	buf := make([]byte, 16*1024)
@@ -278,46 +302,46 @@ func DownloadFileWithProgress(downloadURL string, saveDir string, onProgress fun
 		buf = make([]byte, 256*1024)
 	}
 
-    for {
-        nr, er := resp.Body.Read(buf)
-        if nr > 0 {
-            nw, ew := file.Write(buf[0:nr])
-            if nw > 0 {
-                downloaded += int64(nw)
-                
-                // 优化进度回调：只在时间间隔或字节阈值满足时调用
-                now := time.Now()
-                bytesFromLastProgress := downloaded - lastProgressBytes
-                
-                if onProgress != nil && total > 0 && 
-                   (now.Sub(lastProgressTime) >= progressInterval || 
-                    bytesFromLastProgress >= int64(progressThreshold) || 
-                    downloaded == total) {
-                    onProgress(downloaded, total)
-                    lastProgressTime = now
-                    lastProgressBytes = downloaded
-                }
-            }
-            if ew != nil {
-                return "", fmt.Errorf("failed to write file: %v", ew)
-            }
-            if nr != nw {
-                return "", fmt.Errorf("short write")
-            }
-        }
-        if er != nil {
-            if er == io.EOF {
-                // 确保最终进度为100%
-                if onProgress != nil && total > 0 {
-                    onProgress(total, total)
-                }
-                break
-            }
-            return "", fmt.Errorf("failed to read response body: %v", er)
-        }
-    }
+	for {
+		nr, er := resp.Body.Read(buf)
+		if nr > 0 {
+			nw, ew := file.Write(buf[0:nr])
+			if nw > 0 {
+				downloaded += int64(nw)
 
-    return savePath, nil
+				// 优化进度回调：只在时间间隔或字节阈值满足时调用
+				now := time.Now()
+				bytesFromLastProgress := downloaded - lastProgressBytes
+
+				if onProgress != nil && total > 0 &&
+					(now.Sub(lastProgressTime) >= progressInterval ||
+						bytesFromLastProgress >= int64(progressThreshold) ||
+						downloaded == total) {
+					onProgress(downloaded, total)
+					lastProgressTime = now
+					lastProgressBytes = downloaded
+				}
+			}
+			if ew != nil {
+				return "", fmt.Errorf("failed to write file: %v", ew)
+			}
+			if nr != nw {
+				return "", fmt.Errorf("short write")
+			}
+		}
+		if er != nil {
+			if er == io.EOF {
+				// 确保最终进度为100%
+				if onProgress != nil && total > 0 {
+					onProgress(total, total)
+				}
+				break
+			}
+			return "", fmt.Errorf("failed to read response body: %v", er)
+		}
+	}
+
+	return savePath, nil
 }
 
 func Sha256hex(s string) string {
@@ -401,7 +425,7 @@ func GetDownloadDir() (string, error) {
 }
 
 func IpexOllamaSupportGPUStatus() bool {
-	gpu, err := ghw.GPU()
+	gpu, err := getCachedGPU()
 	if err != nil {
 		return false
 	}
@@ -702,7 +726,7 @@ func DownloadImageUrlToPath(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get download dir failed: %w", err)
 	}
-	savePath, err := DownloadFile(url, downLoadPath)
+	savePath, err := DownloadFile(url, downLoadPath, "")
 	if err != nil {
 		return "", fmt.Errorf("download image file failed: %w", err)
 	}
@@ -710,7 +734,7 @@ func DownloadImageUrlToPath(url string) (string, error) {
 }
 
 func DetectGpuModel() string {
-	gpu, err := ghw.GPU()
+	gpu, err := getCachedGPU()
 	if err != nil {
 		return types.GPUTypeNone
 	}
@@ -718,13 +742,13 @@ func DetectGpuModel() string {
 	hasNvidia := false
 	hasAMD := false
 	hasIntel := false
-
 	for _, card := range gpu.GraphicsCards {
 		// 转为小写
 		productName := strings.ToLower(card.DeviceInfo.Product.Name)
 		if strings.Contains(productName, "nvidia") {
 			hasNvidia = true
-		} else if strings.Contains(productName, "amd") {
+		} else if strings.Contains(productName, "amd") ||
+			strings.Contains(productName, "radeon") {
 			hasAMD = true
 		} else if strings.Contains(productName, "intel") && (strings.Contains(productName, "arc") || strings.Contains(productName, "core")) {
 			hasIntel = true
@@ -742,6 +766,69 @@ func DetectGpuModel() string {
 	} else {
 		return types.GPUTypeNone
 	}
+}
+
+func VerifyAmdGPU() string {
+	gpu, err := getCachedGPU()
+	if err != nil {
+		return types.GPUTypeNone
+	}
+
+	logger.EngineLogger.Info("GPU Info:", gpu)
+	for _, card := range gpu.GraphicsCards {
+		// 转为小写并去除多余空格进行匹配，确保兼容各种大小写格式
+		productName := strings.ToLower(strings.TrimSpace(card.DeviceInfo.Product.Name))
+		// 记录原始产品名用于调试
+		logger.EngineLogger.Info("Detecting AMD GPU:", card.DeviceInfo.Product.Name, "->", productName)
+
+		// APU系列 (集成显卡) - 按性能从高到低排序
+		switch {
+		case strings.Contains(productName, "790m"):
+			return types.GPUTypeAmd790M
+		case strings.Contains(productName, "780m"):
+			return types.GPUTypeAmd780M
+		case strings.Contains(productName, "680m"):
+			return types.GPUTypeAmd680M
+		case strings.Contains(productName, "660m"):
+			return types.GPUTypeAmd660M
+		case strings.Contains(productName, "640m"):
+			return types.GPUTypeAmd640M
+		case strings.Contains(productName, "610m"):
+			return types.GPUTypeAmd610M
+		case strings.Contains(productName, "8060s"):
+			return types.GPUTypeAmd8060S
+
+		// RX系列 (独立显卡) - 按性能从高到低排序，支持多种命名格式
+		case strings.Contains(productName, "rx 7900") || strings.Contains(productName, "rx7900"):
+			return types.GPUTypeAmdRX7900
+		case strings.Contains(productName, "rx 7800") || strings.Contains(productName, "rx7800"):
+			return types.GPUTypeAmdRX7800
+		case strings.Contains(productName, "rx 7700") || strings.Contains(productName, "rx7700"):
+			return types.GPUTypeAmdRX7700
+		case strings.Contains(productName, "rx 7600") || strings.Contains(productName, "rx7600"):
+			return types.GPUTypeAmdRX7600
+		case strings.Contains(productName, "rx 6900") || strings.Contains(productName, "rx6900"):
+			return types.GPUTypeAmdRX6900
+		case strings.Contains(productName, "rx 6800") || strings.Contains(productName, "rx6800"):
+			return types.GPUTypeAmdRX6800
+		case strings.Contains(productName, "rx 6700") || strings.Contains(productName, "rx6700"):
+			return types.GPUTypeAmdRX6700
+		case strings.Contains(productName, "rx 6600") || strings.Contains(productName, "rx6600"):
+			return types.GPUTypeAmdRX6600
+		case strings.Contains(productName, "rx 6500") || strings.Contains(productName, "rx6500"):
+			return types.GPUTypeAmdRX6500
+		case strings.Contains(productName, "rx 6400") || strings.Contains(productName, "rx6400"):
+			return types.GPUTypeAmdRX6400
+
+		// 通用匹配 - 按优先级从具体到通用
+		case strings.Contains(productName, "radeon"):
+			return types.GPUTypeAmdRadeon
+		case strings.Contains(productName, "amd"):
+			return types.GPUTypeAmd
+		}
+	}
+
+	return types.GPUTypeNone
 }
 
 func SystemDiskSize(path string) (*types.PathDiskSizeInfo, error) {
@@ -1055,4 +1142,24 @@ func GetOadinDataDir() (string, error) {
 		return "", fmt.Errorf("failed to create directory %s: %v", dir, err)
 	}
 	return dir, nil
+}
+
+// GetSystemOadinDataDir GetSystemDataDir returns the system-level data directory (cross-platform)
+func GetSystemOadinDataDir() (string, error) {
+	switch runtime.GOOS {
+	case "windows":
+		// %PROGRAMDATA% -> C:\ProgramData
+		if programData := os.Getenv("PROGRAMDATA"); programData != "" {
+			return filepath.Join(programData, "Oadin"), nil
+		}
+		return filepath.Join("C:\\ProgramData", "Oadin"), nil
+
+	case "darwin":
+		// macOS 系统范围 -> /Library/Application Support
+		return filepath.Join("/Library", "Application Support", "Oadin"), nil
+
+	default: // Linux, BSD, etc.
+		// 遵循 FHS 规范
+		return filepath.Join("/usr", "share", "Oadin"), nil
+	}
 }
