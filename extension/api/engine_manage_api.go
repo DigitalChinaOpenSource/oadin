@@ -264,7 +264,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			err = e.EngineManageService.InsertLocalModel(ctx, request)
 			if err != nil {
 				logger.EngineLogger.Error("InsertLocalModel error: ", err)
-				res.Status = err.Error()
+				res.Status = "error"
+				res.Data = err.Error()
 			}
 		}
 
@@ -301,7 +302,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 					err := e.EngineManageService.CreateAIGCServiceSync(ctx, newReq)
 					if err != nil && err.Error() != "provider model already exist" {
 						logger.EngineLogger.Error("CreateAIGCServiceSync error: ", err)
-						res.Status = err.Error()
+						res.Status = "error"
+						res.Data = err.Error()
 						if request.Stream {
 							dataBytes, _ := json.Marshal(res)
 							fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -330,7 +332,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		case err, _ := <-errCh:
 			if err != nil {
 				logger.EngineLogger.Error("DownloadStreamModel err: ", err)
-				res.Status = err.Error()
+				res.Status = "error"
+				res.Data = err.Error()
 				if request.Stream {
 					dataBytes, _ := json.Marshal(res)
 					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -342,7 +345,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			}
 
 		case <-ctx.Done():
-			res.Status = "timeout"
+			res.Status = "error"
+			res.Data = "timeout"
 			logger.EngineLogger.Error("DownloadStreamModel timeout")
 			if request.Stream {
 				dataBytes, _ := json.Marshal(res)
@@ -375,20 +379,23 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 
 	err := modelEngine.HealthCheck()
 	if err != nil {
-		res.Status = "engine error"
+		res.Status = "error"
+		res.Data = "engine error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
 
 	modelList, err := modelEngine.ListModels(c)
 	if err != nil {
-		res.Status = "list error"
+		res.Status = "error"
+		res.Data = "list error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
 
 	if modelList == nil || len(modelList.Models) == 0 {
-		res.Status = "no model error"
+		res.Status = "error"
+		res.Data = "no model error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
@@ -397,7 +404,8 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 	var models []string
 	memoryInfo, err := utils.GetMemoryInfo()
 	if err != nil {
-		res.Status = "size error"
+		res.Status = "error"
+		res.Data = "size error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
@@ -422,7 +430,8 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 		
 		// 如果找不到必需的模型，设置错误状态
 		if !found {
-			res.Status = fmt.Sprintf("missing required model: %s", requiredModel)
+			res.Status = "error"
+			res.Data = fmt.Sprintf("missing required model: %s", requiredModel)
 			c.JSON(http.StatusOK, res)
 			return
 		}
@@ -440,7 +449,8 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 
 		err := e.EngineManageService.CheckLocalModelExist(c, req);
 		if err != nil {
-			res.Status = fmt.Sprintf("table model not found: %s", err.Error())
+			res.Status = "error"
+			res.Data = fmt.Sprintf("table model not found: %s", err.Error())
 			c.JSON(http.StatusOK, res)
 			return
 		}
