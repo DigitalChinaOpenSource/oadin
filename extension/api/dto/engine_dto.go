@@ -30,3 +30,8 @@ type ModelDownloadRequest struct {
 	ModelType     string `json:"modelType" validate:"required"`
 	Stream        bool   `json:"stream" validate:"required"`
 }
+
+type DownloadCheckModelRequest struct {
+	EngineName string `json:"engineName" validate:"required"`
+	ModelType  string `json:"modelType" validate:"required"`
+}
