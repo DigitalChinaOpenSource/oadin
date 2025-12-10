@@ -163,8 +163,8 @@ func (m *Manager) onReady() {
 	}
 
 	systray.SetIcon(data)
-	systray.SetTitle("Oadin")
-	systray.SetTooltip("Oadin AI Service Manager")
+	systray.SetTitle("")
+	systray.SetTooltip("Oadin")
 	fmt.Println("Tray icon and menu set up successfully")
 
 	// Add menu items
@@ -383,9 +383,9 @@ func getIcon() ([]byte, error) {
 
 	if runtime.GOOS == "darwin" {
 		if isMacDarkMode() {
-			files = []string{"oadin-icon-white.icns", "oadin-icon-white.png"}
+			files = []string{"oadin-icon-white.png"}
 		} else {
-			files = []string{"oadin.icns", "oadin-icon-black.png"}
+			files = []string{"oadin-icon-black.png"}
 		}
 	} else if runtime.GOOS == "windows" {
 		files = []string{"oadin-icon.ico", "oadin-icon.png"}
@@ -405,7 +405,7 @@ func getIcon() ([]byte, error) {
 
 	fmt.Println("Trying fallback icons...")
 	fallbackFiles := []string{
-		"oadin.icns", "oadin-icon.ico", "oadin-icon-black.ico",
+		 "oadin-icon.ico", "oadin-icon-black.ico",
 		"oadin-icon.png", "oadin-icon-black.png", "oadin-icon-white.png",
 	}
 

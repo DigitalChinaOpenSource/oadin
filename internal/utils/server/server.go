@@ -63,7 +63,7 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 	}
 
 	fmt.Printf("\rOadin server started with PID: %d\n", cmd.Process.Pid)
-	logger.LogicLogger.Error("\rOadin server started with PID: %d\n", cmd.Process.Pid)
+	logger.LogicLogger.Info("\rOadin server started with PID: %d\n", cmd.Process.Pid)
 	return nil
 }
 
