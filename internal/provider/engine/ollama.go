@@ -317,6 +317,7 @@ func (o *OllamaProvider) GetConfig() *types.EngineRecommendConfig {
 		enginePath = fmt.Sprintf("%s/%s", dataDir, "engine/ollama")
 
 		gpuTypeCache := utils.DetectGpuModel()
+		logger.EngineLogger.Debug("[Ollama] Detected GPU Type: " + gpuTypeCache)
 		switch gpuTypeCache {
 		case types.GPUTypeNvidia + "," + types.GPUTypeAmd:
 			downloadUrl = WindowsAllGPUURL

@@ -36,6 +36,7 @@ func (e *EngineApi) InjectRoutes(api *gin.RouterGroup) {
 	api.GET("/download/checkMemoryConfig", e.CheckMemoryConfig)
 	api.POST("/download/streamModel", e.DownloadStreamModel)
 	api.POST("/download/checkDist", e.DownloadCheckDist)
+	api.POST("/download/checkModel", e.DownloadCheckModel)
 }
 
 // exist 检查引擎是否存在
@@ -264,7 +265,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			err = e.EngineManageService.InsertLocalModel(ctx, request)
 			if err != nil {
 				logger.EngineLogger.Error("InsertLocalModel error: ", err)
-				res.Status = err.Error()
+				res.Status = "error"
+				res.Data = err.Error()
 			}
 		}
 
@@ -301,7 +303,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 					err := e.EngineManageService.CreateAIGCServiceSync(ctx, newReq)
 					if err != nil {
 						logger.EngineLogger.Error("CreateAIGCServiceSync error: ", err)
-						res.Status = err.Error()
+						res.Status = "error"
+						res.Data = err.Error()
 						if request.Stream {
 							dataBytes, _ := json.Marshal(res)
 							fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -330,7 +333,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 		case err, _ := <-errCh:
 			if err != nil {
 				logger.EngineLogger.Error("DownloadStreamModel err: ", err)
-				res.Status = err.Error()
+				res.Status = "error"
+				res.Data = err.Error()
 				if request.Stream {
 					dataBytes, _ := json.Marshal(res)
 					fmt.Fprintf(w, "data: %s\n\n", string(dataBytes))
@@ -342,7 +346,8 @@ func (e *EngineApi) DownloadStreamModel(c *gin.Context) {
 			}
 
 		case <-ctx.Done():
-			res.Status = "timeout"
+			res.Status = "error"
+			res.Data = "timeout"
 			logger.EngineLogger.Error("DownloadStreamModel timeout")
 			if request.Stream {
 				dataBytes, _ := json.Marshal(res)
@@ -375,20 +380,23 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 
 	err := modelEngine.HealthCheck()
 	if err != nil {
-		res.Status = "engine error"
+		res.Status = "error"
+		res.Data = "engine error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
 
 	modelList, err := modelEngine.ListModels(c)
 	if err != nil {
-		res.Status = "list error"
+		res.Status = "error"
+		res.Data = "list error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
 
 	if modelList == nil || len(modelList.Models) == 0 {
-		res.Status = "no model error"
+		res.Status = "error"
+		res.Data = "no model error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
@@ -397,7 +405,8 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 	var models []string
 	memoryInfo, err := utils.GetMemoryInfo()
 	if err != nil {
-		res.Status = "size error"
+		res.Status = "error"
+		res.Data = "size error"
 		c.JSON(http.StatusOK, res)
 		return
 	}
@@ -422,7 +431,8 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 		
 		// 如果找不到必需的模型，设置错误状态
 		if !found {
-			res.Status = fmt.Sprintf("missing required model: %s", requiredModel)
+			res.Status = "error"
+			res.Data = fmt.Sprintf("missing required model: %s", requiredModel)
 			c.JSON(http.StatusOK, res)
 			return
 		}
@@ -440,7 +450,8 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 
 		err := e.EngineManageService.CheckLocalModelExist(c, req);
 		if err != nil {
-			res.Status = fmt.Sprintf("table model not found: %s", err.Error())
+			res.Status = "error"
+			res.Data = fmt.Sprintf("table model not found: %s", err.Error())
 			c.JSON(http.StatusOK, res)
 			return
 		}
@@ -450,4 +461,114 @@ func (e *EngineApi) DownloadCheckDist(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// 支持了云端模型后，需要增加具体模型的判断，可以先下载embed模型，再下载chat模型
+func (e *EngineApi) DownloadCheckModel(c *gin.Context) {
+	request := dto.DownloadCheckModelRequest{}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		dto.ValidFailure(c, err.Error())
+		return
+	}
+	if !strings.Contains("ollama,openvino,llamacpp", request.EngineName) {
+		dto.ValidFailure(c, fmt.Sprintf("invalid engine name: %s", request.EngineName))
+		return
+	}
+
+	modelEngine := provider.GetModelEngine(request.EngineName)
+	res := dto.DownloadResponse{
+		Status: "success",
+	}
+
+
+	err := modelEngine.HealthCheck()
+	if err != nil {
+		res.Status = "error"
+		res.Data = "engine error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	modelList, err := modelEngine.ListModels(c)
+	if err != nil {
+		res.Status = "error"
+		res.Data = "list error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	if modelList == nil || len(modelList.Models) == 0 {
+		res.Status = "error"
+		res.Data = "no model error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	memoryInfo, err := utils.GetMemoryInfo()
+	if err != nil {
+		res.Status = "error"
+		res.Data = "size error"
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	var requiredModel string
+	if request.ModelType == "embed" {
+		if memoryInfo.Size > 32 {
+			requiredModel = "bge-m3:567m"
+		} else if memoryInfo.Size > 16 && memoryInfo.Size <= 32 {
+			requiredModel = "quentinz/bge-large-zh-v1.5:f16"
+		} else {
+			requiredModel = "quentinz/bge-large-zh-v1.5:f16"
+		}
+	}
+
+	if request.ModelType == "chat" {
+		if memoryInfo.Size > 32 {
+			requiredModel = "qwen3:14b"
+		} else if memoryInfo.Size > 16 && memoryInfo.Size <= 32 {
+			requiredModel = "qwen3:8b"
+		} else {
+			requiredModel = "qwen3:1.7b"
+		}
+	}
+
+
+
+	// 判断modelList.Models是否包含models的模型 如果缺少models的模型，则报错
+	found := false
+	for _, existingModel := range modelList.Models {
+		if existingModel.Name == requiredModel || existingModel.Model == requiredModel {
+			found = true
+			break
+		}
+	}
+	
+	// 如果找不到必需的模型，设置错误状态
+	if !found {
+		res.Status = "error"
+		res.Data = fmt.Sprintf("missing required model: %s", requiredModel)
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	modelType := "chat"
+	if requiredModel == "bge-m3:567m" || requiredModel == "quentinz/bge-large-zh-v1.5:f16" {
+		modelType = "embed"
+	}
+
+	req := dto.ModelDownloadRequest{
+		EngineName: request.EngineName,
+		ModelName:  requiredModel,
+		ModelType:  modelType,
+	}
+
+	err = e.EngineManageService.CheckLocalModelExist(c, req);
+	if err != nil {
+		res.Status = "error"
+		res.Data = fmt.Sprintf("table model not found: %s", err.Error())
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)	
+}
 

@@ -437,6 +437,17 @@ func IpexOllamaSupportGPUStatus() bool {
 			}
 		}
 	}
+
+	cpuInfo, err := ghw.CPU()
+	if err == nil {
+		if len(cpuInfo.Processors) > 0 {
+			cpuModel := strings.ToLower(cpuInfo.Processors[0].Model)
+			if strings.Contains(cpuModel, "intel") && (strings.Contains(cpuModel, "arc") || strings.Contains(cpuModel, "core")) {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 
@@ -742,6 +753,20 @@ func DetectGpuModel() string {
 	hasNvidia := false
 	hasAMD := false
 	hasIntel := false
+
+	cpuInfo, err := ghw.CPU()
+	if err == nil {
+		if len(cpuInfo.Processors) > 0 {
+			fmt.Println("CPU型号:", cpuInfo.Processors[0].Model)
+			// 例如输出: Intel(R) Core(TM) Ultra 9 275HX
+			// Intel(R) Core(TM) Ultra 7 155H
+			cpuModel := strings.ToLower(cpuInfo.Processors[0].Model)
+			if strings.Contains(cpuModel, "intel") && (strings.Contains(cpuModel, "arc") || strings.Contains(cpuModel, "core")) {
+				hasIntel = true
+			}
+		}
+	}
+
 	for _, card := range gpu.GraphicsCards {
 		// 转为小写
 		productName := strings.ToLower(card.DeviceInfo.Product.Name)
@@ -757,7 +782,7 @@ func DetectGpuModel() string {
 
 	if hasNvidia && hasAMD {
 		return types.GPUTypeNvidia + "," + types.GPUTypeAmd
-	} else if hasNvidia {
+	} else if hasNvidia && !hasIntel {
 		return types.GPUTypeNvidia
 	} else if hasAMD {
 		return types.GPUTypeAmd
