@@ -757,7 +757,6 @@ func DetectGpuModel() string {
 	cpuInfo, err := ghw.CPU()
 	if err == nil {
 		if len(cpuInfo.Processors) > 0 {
-			fmt.Println("CPU型号:", cpuInfo.Processors[0].Model)
 			// 例如输出: Intel(R) Core(TM) Ultra 9 275HX
 			// Intel(R) Core(TM) Ultra 7 155H
 			cpuModel := strings.ToLower(cpuInfo.Processors[0].Model)

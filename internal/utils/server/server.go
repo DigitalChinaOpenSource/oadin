@@ -35,7 +35,6 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 		return fmt.Errorf("failed to open log file: %v", err)
 	}
 	defer logFile.Close()
-	logger.LogicLogger.Error("Start OADIN----------------------")
 	execCmd := "oadin.exe"
 	if runtime.GOOS != "windows" {
 		execCmd = "oadin"
