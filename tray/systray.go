@@ -405,7 +405,7 @@ func getIcon() ([]byte, error) {
 
 	fmt.Println("Trying fallback icons...")
 	fallbackFiles := []string{
-		 "oadin-icon.ico", "oadin-icon-black.ico",
+		"oadin.icns", "oadin-icon.ico", "oadin-icon-black.ico",
 		"oadin-icon.png", "oadin-icon-black.png", "oadin-icon-white.png",
 	}
 
