@@ -385,7 +385,7 @@ func getIcon() ([]byte, error) {
 		if isMacDarkMode() {
 			files = []string{"oadin-icon-white.png"}
 		} else {
-			files = []string{"oadin-icon-black.png"}
+			files = []string{"oadin-icon-white.png"}
 		}
 	} else if runtime.GOOS == "windows" {
 		files = []string{"oadin-icon.ico", "oadin-icon.png"}
