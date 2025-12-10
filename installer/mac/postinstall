@@ -46,7 +46,7 @@ if [ "$REAL_USER" != "root" ] && [ -n "$REAL_USER" ]; then
             source ~/.bashrc
         fi
         export HOME=\"$USER_HOME\"
-        \"${MACOS_DIR}/oadin\" &
+        \"${MACOS_DIR}/oadin-app\" &
     "
     echo "Oadin installation completed successfully"
 else
