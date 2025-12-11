@@ -57,7 +57,7 @@ UninstPage custom un.SelectUninstallModePage un.SelectUninstallModePageLeave
 !insertmacro MUI_UNPAGE_FINISH
 
 !insertmacro MUI_LANGUAGE "English"
-!insertmacro MUI_LANGUAGE "SimpChinese"
+;!insertmacro MUI_LANGUAGE "SimpChinese"
 
 Var SILENT
 Var INSTALL_SCOPE  ; 1=System-wide (HKLM), 0=Current user (HKCU)
