@@ -76,7 +76,7 @@ jobs:
           mv Oadin.app pkgroot/Oadin/Oadin.app
           chmod +x installer/mac/preinstall
           chmod +x installer/mac/postinstall
-          chmod +x installer/mac/uninstall
+          chmod +x installer/mac/uninstall.sh
           # 添加文件大小检查
           echo "=== Mac 二进制文件详细信息 ==="
           # echo "二进制文件大小: $(du -h pkgroot/Oadin/oadin | cut -f1)"
