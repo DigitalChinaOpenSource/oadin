@@ -267,6 +267,17 @@ func (o *OllamaProvider) StopEngine(ctx context.Context) error {
 		return fmt.Errorf("failed to remove pid file: %v", err)
 	}
 
+	if runtime.GOOS == "windows" && utils.IpexOllamaSupportGPUStatus() {
+		extraProcessName := "ollama-lib.exe"
+		extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+		_, err := extraCmd.CombinedOutput()
+		if err != nil {
+			logger.EngineLogger.Info("Failed to kill process", "process", extraProcessName, "error", err)
+			return nil
+		}
+		logger.EngineLogger.Info("Successfully killed process", "process", extraProcessName)
+	}
+
 	return nil
 }
 

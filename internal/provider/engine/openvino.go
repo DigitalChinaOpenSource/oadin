@@ -548,6 +548,17 @@ func (o *OpenvinoProvider) StopEngine(ctx context.Context) error {
 		return err
 	}
 
+	if runtime.GOOS == "windows" {
+		ovmsProcessName := "ovms.exe"
+		ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
+		_, err = ovmsCmd.CombinedOutput()
+		if err != nil {
+			logger.EngineLogger.Info("Failed to kill process", "process", ovmsProcessName, "error", err)
+			return nil
+		}
+		logger.EngineLogger.Info("Successfully killed process", "process", ovmsProcessName)
+	}
+
 	return nil
 }
 

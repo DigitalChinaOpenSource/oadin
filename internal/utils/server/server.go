@@ -88,28 +88,6 @@ func StopOadinServer(pidFilePath string) error {
 			if err != nil {
 				logger.EngineLogger.Info(fmt.Sprintf("failed to stop engine %s: %v", modelEngine, err))
 			}
-			if modelEngine == types.FlavorOllama && runtime.GOOS == "windows" && utils.IpexOllamaSupportGPUStatus() {
-				extraProcessName := "ollama-lib.exe"
-				// extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
-				extraCmd := exec.Command("cmd", "/C", "taskkill /IM ollama-lib.exe /F")
-				_, err := extraCmd.CombinedOutput()
-				if err != nil {
-					logger.EngineLogger.Info("Failed to kill process", "process", extraProcessName, "error", err)
-					return nil
-				}
-				logger.EngineLogger.Info("Successfully killed process", "process", extraProcessName)
-			}
-
-			if modelEngine == types.FlavorOpenvino && runtime.GOOS == "windows" {
-				ovmsProcessName := "ovms.exe"
-				ovmsCmd := exec.Command("taskkill", "/IM", ovmsProcessName, "/F")
-				_, err = ovmsCmd.CombinedOutput()
-				if err != nil {
-					logger.EngineLogger.Info("Failed to kill process", "process", ovmsProcessName, "error", err)
-					return nil
-				}
-				logger.EngineLogger.Info("Successfully killed process", "process", ovmsProcessName)
-			}
 		}
 	}
 
@@ -150,5 +128,27 @@ func StopOadinServer(pidFilePath string) error {
 		}
 	}
 
+	return nil
+}
+
+func TrayStopOadinServer() error {
+	execCmd := "oadin.exe"
+	if runtime.GOOS != "windows" {
+		execCmd = "oadin"
+	}
+	if runtime.GOOS == "darwin" {
+		execCmd = filepath.Join(constants.MacOadinExecPath, "oadin")
+		if _, err := os.Stat(execCmd); err != nil {
+			return fmt.Errorf("failed to find oadin executable: %v", err)
+		}
+	}
+	cmd := exec.Command(execCmd, "server", "stop")
+	if runtime.GOOS == "windows" {
+		utils.SetCmdSysProcAttr(cmd)
+	}
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start Oadin server: %v", err)
+	}
+	fmt.Printf("Oadin server stopping")
 	return nil
 }

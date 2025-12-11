@@ -46,7 +46,7 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 			return serverUtils.StartOadinServer(logPath, pidPath)
 		},
 		onServerStop: func() error {
-			return serverUtils.StopOadinServer(filepath.Join(pidPath, "oadin.pid"))
+			return serverUtils.TrayStopOadinServer()
 		},
 		execPath: execPath,
 		logPath:  logPath,
@@ -235,7 +235,7 @@ func (m *Manager) onReady() {
 			case <-mQuit.ClickedCh:
 				if m.serverRunning {
 					if confirmed := dialog.Message("Server is still running. Do you want to stop it and quit?").Title("Confirm Quit").YesNo(); confirmed {
-						err := serverUtils.StopOadinServer(filepath.Join(m.pidPath, "oadin.pid"))
+						err := m.onServerStop()
 						if err != nil {
 							dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
 						}
@@ -262,7 +262,7 @@ func (m *Manager) handleStartStop() {
 	if m.serverRunning {
 		// 停止服务器
 		if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
-			err := serverUtils.StopOadinServer(filepath.Join(m.pidPath, "oadin.pid"))
+			err := m.onServerStop()
 			if err == nil {
 				m.serverRunning = false
 			} else {
