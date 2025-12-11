@@ -89,8 +89,9 @@ func StopOadinServer(pidFilePath string) error {
 				logger.EngineLogger.Info(fmt.Sprintf("failed to stop engine %s: %v", modelEngine, err))
 			}
 			if modelEngine == types.FlavorOllama && runtime.GOOS == "windows" && utils.IpexOllamaSupportGPUStatus() {
-				extraProcessName := "ollama-lib.exe"
-				extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+				// extraProcessName := "ollama-lib.exe"
+				// extraCmd := exec.Command("taskkill", "/IM", extraProcessName, "/F")
+				extraCmd := exec.Command("cmd", "/C", "taskkill /IM ollama-lib.exe /F")
 				_, err := extraCmd.CombinedOutput()
 				if err != nil {
 					logger.EngineLogger.Info("Failed to kill process", "process", extraProcessName, "error", err)
