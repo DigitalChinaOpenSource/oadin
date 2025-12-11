@@ -1,0 +1,42 @@
+#!/bin/bash
+set -e
+
+APP_BUNDLE="/Applications/Oadin.app"
+MACOS_DIR="${APP_BUNDLE}/Contents/MacOS"
+RESOURCE_DIR="${APP_BUNDLE}/Contents/Resources"
+USER_HOME="${HOME}"
+DATA_DIR="${USER_HOME}/Oadin"
+BIN_LINK="/usr/local/bin/oadin"
+PLIST_PATH="${USER_HOME}/Library/LaunchAgents/com.oadin.app.plist"
+
+echo "Uninstalling Oadin..."
+
+# 关闭 oadin-app 进程
+pkill -f "${MACOS_DIR}/oadin-app" || true
+
+# 删除 LaunchAgent（开机自启动）
+if [ -f "$PLIST_PATH" ]; then
+    launchctl unload "$PLIST_PATH" || true
+    rm -f "$PLIST_PATH"
+    echo "Removed launch agent: $PLIST_PATH"
+fi
+
+# 删除应用程序
+if [ -d "$APP_BUNDLE" ]; then
+    rm -rf "$APP_BUNDLE"
+    echo "Removed app bundle: $APP_BUNDLE"
+fi
+
+# 删除数据目录
+if [ -d "$DATA_DIR" ]; then
+    rm -rf "$DATA_DIR"
+    echo "Removed data directory: $DATA_DIR"
+fi
+
+# 删除软链接
+if [ -L "$BIN_LINK" ]; then
+    rm -f "$BIN_LINK"
+    echo "Removed symlink: $BIN_LINK"
+fi
+
+echo "Oadin has been uninstalled successfully."

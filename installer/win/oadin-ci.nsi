@@ -37,14 +37,15 @@ Caption "${APP_NAME} ${VERSION} Setup"
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW DisableDirPageControls
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
-!define MUI_FINISHPAGE_RUN
-!define MUI_FINISHPAGE_RUN_TEXT "Start Oadin"
-!define MUI_FINISHPAGE_RUN_FUNCTION LaunchOadin
+
+; !define MUI_FINISHPAGE_RUN
+; !define MUI_FINISHPAGE_RUN_TEXT "Start Oadin"
+; !define MUI_FINISHPAGE_RUN_FUNCTION LaunchOadin
 ; !define MUI_FINISHPAGE_RUN_NOTCHECKED
 
-!define MUI_FINISHPAGE_SHOWREADME
-!define MUI_FINISHPAGE_SHOWREADME_TEXT "Enable Auto-Start"
-!define MUI_FINISHPAGE_SHOWREADME_FUNCTION EnableAutoStart
+; !define MUI_FINISHPAGE_SHOWREADME
+; !define MUI_FINISHPAGE_SHOWREADME_TEXT "Enable Auto-Start"
+; !define MUI_FINISHPAGE_SHOWREADME_FUNCTION EnableAutoStart
 ; !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 !insertmacro MUI_PAGE_FINISH
 
@@ -199,9 +200,12 @@ Section "Install"
 
   WriteUninstaller "$INSTDIR\uninstall.exe"
   ; nsExec::ExecToLog '"$INSTDIR\postinstall.bat" "$INSTDIR"'
-  ${If} $SILENT == 1
-    Call LaunchOadin
-  ${EndIf}
+
+  ; ${If} $SILENT == 1
+  Call LaunchOadin
+
+  Call EnableAutoStart
+  ; ${EndIf}
 SectionEnd
 
 ; ------------------ PATH Functions ------------------

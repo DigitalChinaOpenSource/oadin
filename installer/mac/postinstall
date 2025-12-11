@@ -53,5 +53,28 @@ else
     echo "Warning: Cannot determine real user, skipping auto-launch"
 fi
 
+# 创建 LaunchAgent 用于开机自启
+PLIST_PATH="$USER_HOME/Library/LaunchAgents/com.oadin.app.plist"
+cat > "$PLIST_PATH" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.oadin.app</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${MACOS_DIR}/oadin-app</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
+EOF
+
+chown "$REAL_USER:staff" "$PLIST_PATH"
+chmod 644 "$PLIST_PATH"
 
 exit 0
