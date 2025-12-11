@@ -1,5 +1,5 @@
-!define MUI_HEADERICON "oadin.ico"
-!define MUI_UNICON "oadin.ico"
+!define MUI_HEADERICON "app.ico"
+!define MUI_UNICON "app.ico"
 
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
@@ -177,7 +177,7 @@ Section "Install"
   DetailPrint "Copy file..."
   File "..\..\oadin.exe"
   File "..\..\oadin-app.exe"
-  File "oadin.ico"
+  File "app.ico"
 
   ; Write registry and PATH
   DetailPrint "Write registry and PATH"

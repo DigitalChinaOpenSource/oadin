@@ -21,13 +21,15 @@ import (
 
 	"oadin/internal/utils"
 	"oadin/version"
+	"oadin/config"
 )
 
 var (
 	// awawit provide
 	//UpdateCheckUrlBase = "https://api-aipc-test.dcclouds.com"
 	//UpdateCheckUrlBase  = "http://10.3.74.123:3000"
-	UpdateCheckUrlBase  = "https://lumina.dcclouds.com"
+	// UpdateCheckUrlBase  = "https://lumina.dcclouds.com"
+	UpdateCheckUrlBase = config.ConfigRootInstance.UpdateCheckUrlBase.Url
 	UpdateCheckInterval = 60 * 60 * time.Second
 
 	AppKey = "oadin"

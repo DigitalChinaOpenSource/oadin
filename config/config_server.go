@@ -7,6 +7,7 @@ type ConfigRoot struct {
 	Oss      OssConfig      `yaml:"oss" mapstructure:"oss"`
 	Registry RegistryConfig `yaml:"registry" mapstructure:"registry"`
 	Ollama   OllamaRegistry `yaml:"ollama" mapstructure:"ollama"`
+	UpdateCheckUrlBase UpdateCheckUrlBase `yaml:"updateCheckUrlBase" mapstructure:"updateCheckUrlBase"`
 }
 
 type VegaConfig struct {
@@ -25,4 +26,8 @@ type OllamaRegistry struct {
 type RegistryConfig struct {
 	Npm string `yaml:"npm" mapstructure:"npm"`
 	Pip string `yaml:"pip" mapstructure:"pip"`
+}
+
+type UpdateCheckUrlBase struct {
+	Url string `yaml:"url" mapstructure:"url"`
 }

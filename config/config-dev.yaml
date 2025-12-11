@@ -11,3 +11,7 @@ ollama:
 registry:
   npm: https://registry.npmmirror.com
   pip: http://mirrors.aliyun.com/pypi/simple/
+
+updateCheckUrlBase:
+  url: https://api-aipc-test.dcclouds.com
+
