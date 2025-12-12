@@ -401,7 +401,7 @@ func (p *PKGInstaller) Install() error {
 func (p *PKGInstaller) installWithAppleScript() error {
 	// 使用AppleScript请求管理员权限并执行安装
 	script := fmt.Sprintf(`
-        set pkgPath to "${installerPath}"
+        set pkgPath to "%s"
         set installCommand to "installer -pkg " & quoted form of pkgPath & " -target /"
         try
             -- 执行 shell 命令并请求管理员权限
