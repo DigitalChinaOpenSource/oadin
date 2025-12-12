@@ -703,10 +703,10 @@ Function CheckVCRedist
   ; Registry keys can be stale if VC++ was uninstalled improperly
 
   ; Check both critical DLLs: vcruntime140.dll (core runtime) and msvcp140.dll (C++ standard library)
-  IfFileExists "$SYSDIR\vcruntime140.dll" check_msvcp vc_not_found
+  IfFileExists "$WINDIR\SysNative\vcruntime140.dll" check_msvcp vc_not_found
 
   check_msvcp:
-  IfFileExists "$SYSDIR\msvcp140.dll" vc_found vc_not_found
+  IfFileExists "$WINDIR\SysNative\msvcp140.dll" vc_found vc_not_found
 
   vc_found:
   DetailPrint "Visual C++ Redistributable found (vcruntime140.dll and msvcp140.dll)"
