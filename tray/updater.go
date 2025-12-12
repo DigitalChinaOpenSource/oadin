@@ -399,7 +399,7 @@ func (p *PKGInstaller) Install() error {
 }
 
 func (p *PKGInstaller) installWithAppleScript() error {
-	slog.Info("installing with AppleScript for elevated privileges", p.pkgPath)
+	slog.Info("installing with AppleScript for elevated privileges",)
 	// 使用AppleScript请求管理员权限并执行安装
 	script := fmt.Sprintf(`
 		set pkgPath to "%s"
