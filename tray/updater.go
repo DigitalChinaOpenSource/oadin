@@ -248,10 +248,12 @@ func DownloadNewVersion(ctx context.Context, updateResponse UpdateResponseData) 
 	}
 	err = CleanOldVersionFile()
 	if err != nil {
+		slog.Error("failed to clean old version files:", err)
 		return err
 	}
 	_, err = utils.DownloadFile(updateResponse.UpdateURL, downloadDir, fileName)
 	if err != nil {
+		slog.Error("failed to download new version:", err)
 		return err
 	}
 	return nil
@@ -399,16 +401,17 @@ func (p *PKGInstaller) Install() error {
 func (p *PKGInstaller) installWithAppleScript() error {
 	// 使用AppleScript请求管理员权限并执行安装
 	script := fmt.Sprintf(`
-    set pkgPath to "%s"
-    set logPath to "%s"
-    
-    try
-        do shell script "installer -pkg " & quoted form of pkgPath & " -target / -dumplog " & quoted form of logPath with administrator privileges
-        return "SUCCESS"
-    on error errMsg
-        return "ERROR: " & errMsg
-    end try
-    `, p.pkgPath, p.logPath)
+        set pkgPath to "${installerPath}"
+        set installCommand to "installer -pkg " & quoted form of pkgPath & " -target /"
+        try
+            -- 执行 shell 命令并请求管理员权限
+            -- 这将触发 macOS 的图形界面密码认证弹窗
+            do shell script installCommand with administrator privileges
+            return "INSTALL_SUCCESS" -- 安装成功
+        on error errMsg number errNum
+            return "INSTALL_FAILED: " & errMsg & " (错误码: " & errNum & ")" -- 安装失败及错误信息
+        end try
+    `, p.pkgPath)
 
 	cmd := exec.Command("osascript", "-e", script)
 
@@ -422,7 +425,7 @@ func (p *PKGInstaller) installWithAppleScript() error {
 		return fmt.Errorf("install failed: %s", result)
 	}
 
-	fmt.Printf("install successfully\n")
+	slog.Info("install successfully via AppleScript")
 	return nil
 }
 
