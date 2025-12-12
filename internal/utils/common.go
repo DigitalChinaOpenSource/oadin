@@ -1180,7 +1180,8 @@ func GetSystemOadinDataDir() (string, error) {
 
 	case "darwin":
 		// macOS 系统范围 -> /Library/Application Support
-		return filepath.Join("/Library", "Application Support", "Oadin"), nil
+		dir := filepath.Join(os.Getenv("HOME"), "Library", "Application Support")
+		return filepath.Join(dir, "Oadin"), nil
 
 	default: // Linux, BSD, etc.
 		// 遵循 FHS 规范
