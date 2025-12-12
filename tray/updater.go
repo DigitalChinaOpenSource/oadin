@@ -399,8 +399,12 @@ func (p *PKGInstaller) Install() error {
 }
 
 func (p *PKGInstaller) installWithAppleScript() error {
-	slog.Info("installing with AppleScript for elevated privileges", p.pkgPath)
-	// 使用AppleScript请求管理员权限并执行安装
+	slog.Info("installing with AppleScript for elevated privileges", "pkgPath", p.pkgPath)
+	
+	// 创建临时 AppleScript 文件，避免命令行参数问题
+	tempDir := os.TempDir()
+	scriptFile := filepath.Join(tempDir, "oadin_install.scpt")
+	
 	script := fmt.Sprintf(`
 		set pkgPath to "%s"
 		set installCommand to "installer -pkg " & quoted form of pkgPath & " -target /"
@@ -411,22 +415,59 @@ func (p *PKGInstaller) installWithAppleScript() error {
 			return "INSTALL_FAILED: " & errMsg & " (错误码: " & errNum & ")"
 		end try
     `, p.pkgPath)
-
-	cmd := exec.Command("osascript", "-e", script)
-
-	output, err := cmd.CombinedOutput()
+	
+	// 写入临时脚本文件
+	err := os.WriteFile(scriptFile, []byte(script), 0644)
 	if err != nil {
-		slog.Error("AppleScript execution failed:", err)
-		return fmt.Errorf("AppleScript excute failed: %v", err)
+		slog.Error("failed to create script file", "error", err)
+		return fmt.Errorf("failed to create script file: %v", err)
+	}
+	defer os.Remove(scriptFile) // 清理临时文件
+	
+	slog.Info("executing AppleScript via file", "scriptFile", scriptFile)
+	
+	// 使用文件方式执行，减少命令行解析问题
+	cmd := exec.Command("osascript", scriptFile)
+	
+	// 添加超时控制
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	
+	done := make(chan struct{})
+	var output []byte
+	var cmdErr error
+	
+	go func() {
+		defer close(done)
+		output, cmdErr = cmd.CombinedOutput()
+	}()
+	
+	select {
+	case <-done:
+		// 命令执行完成
+	case <-ctx.Done():
+		// 超时，杀掉进程
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		return fmt.Errorf("AppleScript execution timeout")
+	}
+	
+	if cmdErr != nil {
+		slog.Error("AppleScript execution failed", "error", cmdErr, "output", string(output))
+		return fmt.Errorf("AppleScript execute failed: %v, output: %s", cmdErr, string(output))
 	}
 
-	slog.Info("AppleScript output:", "output", string(output))
-	if !strings.Contains(string(output), "INSTALL_SUCCESS") {
-		return fmt.Errorf("installation failed via AppleScript: %s", string(output))
+	slog.Info("AppleScript execution completed", "output", string(output))
+	result := strings.TrimSpace(string(output))
+	
+	if strings.Contains(result, "INSTALL_SUCCESS") {
+		slog.Info("installation completed successfully via AppleScript")
+		return nil
+	} else {
+		slog.Error("installation failed", "result", result)
+		return fmt.Errorf("installation failed via AppleScript: %s", result)
 	}
-
-	slog.Info("install successfully via AppleScript")
-	return nil
 }
 
 func (p *PKGInstaller) VerifyInstallation() error {
