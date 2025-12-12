@@ -401,13 +401,14 @@ func (p *PKGInstaller) Install() error {
 func (p *PKGInstaller) installWithAppleScript() error {
 	slog.Info("installing with AppleScript for elevated privileges", "pkgPath", p.pkgPath)
 	
-	// 创建临时 AppleScript 文件，使用更安全的临时文件创建方式
-	tempFile, err := os.CreateTemp("", "oadin_install_*.scpt")
+	// 在用户主目录创建临时脚本文件，避免系统临时目录的沙箱限制
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		slog.Error("failed to create temp file", "error", err)
-		return fmt.Errorf("failed to create temp file: %v", err)
+		slog.Error("failed to get user home directory", "error", err)
+		return fmt.Errorf("failed to get user home directory: %v", err)
 	}
-	scriptFile := tempFile.Name()
+	
+	scriptFile := filepath.Join(homeDir, fmt.Sprintf("oadin_install_%d.scpt", time.Now().Unix()))
 	defer os.Remove(scriptFile) // 清理临时文件
 	
 	script := fmt.Sprintf(`
@@ -421,59 +422,40 @@ func (p *PKGInstaller) installWithAppleScript() error {
 		end try
     `, p.pkgPath)
 	
-	// 写入脚本内容并关闭文件
-	_, err = tempFile.WriteString(script)
+	// 写入脚本文件
+	err = os.WriteFile(scriptFile, []byte(script), 0644)
 	if err != nil {
-		tempFile.Close()
-		slog.Error("failed to write script content", "error", err)
-		return fmt.Errorf("failed to write script content: %v", err)
+		slog.Error("failed to create script file", "error", err)
+		return fmt.Errorf("failed to create script file: %v", err)
 	}
-	tempFile.Close()
 	
 	slog.Info("executing AppleScript via file", "scriptFile", scriptFile)
 	
-	// 使用文件方式执行，减少命令行解析问题
-	cmd := exec.Command("osascript", scriptFile)
+	// 使用独立进程执行 AppleScript，完全脱离当前进程
+	cmd := exec.Command("nohup", "osascript", scriptFile)
 	
-	// 添加超时控制
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
+	// 设置进程属性，使其成为独立进程
+	cmd.Stdin = nil
+	cmd.Stdout = nil
+	cmd.Stderr = nil
 	
-	done := make(chan struct{})
-	var output []byte
-	var cmdErr error
+	// 启动独立进程
+	err = cmd.Start()
+	if err != nil {
+		slog.Error("failed to start independent AppleScript process", "error", err)
+		return fmt.Errorf("failed to start independent AppleScript process: %v", err)
+	}
 	
+	// 不等待进程完成，让它独立运行
+	slog.Info("AppleScript process started independently", "pid", cmd.Process.Pid)
+	
+	// 释放进程资源，避免僵尸进程
 	go func() {
-		defer close(done)
-		output, cmdErr = cmd.CombinedOutput()
+		cmd.Wait() // 在后台等待进程结束，避免僵尸进程
 	}()
 	
-	select {
-	case <-done:
-		// 命令执行完成
-	case <-ctx.Done():
-		// 超时，杀掉进程
-		if cmd.Process != nil {
-			cmd.Process.Kill()
-		}
-		return fmt.Errorf("AppleScript execution timeout")
-	}
-	
-	if cmdErr != nil {
-		slog.Error("AppleScript execution failed", "error", cmdErr, "output", string(output))
-		return fmt.Errorf("AppleScript execute failed: %v, output: %s", cmdErr, string(output))
-	}
-
-	slog.Info("AppleScript execution completed", "output", string(output))
-	result := strings.TrimSpace(string(output))
-	
-	if strings.Contains(result, "INSTALL_SUCCESS") {
-		slog.Info("installation completed successfully via AppleScript")
-		return nil
-	} else {
-		slog.Error("installation failed", "result", result)
-		return fmt.Errorf("installation failed via AppleScript: %s", result)
-	}
+	slog.Info("installation process initiated independently")
+	return nil
 }
 
 func (p *PKGInstaller) VerifyInstallation() error {
