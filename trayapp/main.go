@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"oadin/internal/utils"
 	"oadin/tray"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -43,6 +44,17 @@ func cleanup() {
 	}
 }
 
+func InitSlogToFile(logPath string) error {
+    f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+    if err != nil {
+        return err
+    }
+    handler := slog.NewTextHandler(f, nil)
+    logger := slog.New(handler)
+    slog.SetDefault(logger)
+    return nil
+}
+
 func main() {
 	fmt.Println("Starting Oadin Tray Application...")
 
@@ -70,6 +82,11 @@ func main() {
 	os.MkdirAll(logDirPath, 0755)
 	os.MkdirAll(pidPath, 0755)
 	os.Create(logFilePath)
+
+	err = InitSlogToFile(filepath.Join(logDirPath, "tray-app.log"))
+	if err != nil {
+		panic(err)
+	}
 
 	// 创建托盘管理器
 	trayManager := tray.NewManager(true, logFilePath, pidPath)
