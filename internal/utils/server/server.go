@@ -46,6 +46,7 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 		}
 	}
 	cmd := exec.Command(execCmd, "server", "start")
+	// oadin-app启动oadin的日志打印
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 	if runtime.GOOS == "windows" {
