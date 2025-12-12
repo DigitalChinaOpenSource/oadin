@@ -114,7 +114,7 @@ func UpdaterAuth() (UpdateAuthResponseData, error) {
 	reqData, err := json.Marshal(reqBody)
 	req, err := http.NewRequest("POST", authUrl, bytes.NewBuffer(reqData))
 	if err != nil {
-		fmt.Println("failed to create auth request:", err)
+		slog.Info("failed to create auth request:", err)
 		return UpdateAuthResponseData{}, err
 	}
 
@@ -127,7 +127,7 @@ func UpdaterAuth() (UpdateAuthResponseData, error) {
 	client := &http.Client{Transport: transport}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("failed to perform auth request:", err)
+		slog.Info("failed to perform auth request:", err)
 		return UpdateAuthResponseData{}, err
 	}
 	defer resp.Body.Close()
@@ -136,17 +136,17 @@ func UpdaterAuth() (UpdateAuthResponseData, error) {
 	}
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("failed to read auth response body:", err)
+		slog.Info("failed to read auth response body:", err)
 		return UpdateAuthResponseData{}, err
 	}
 
 	err = json.Unmarshal(respBody, &res)
 	if err != nil {
-		fmt.Println("failed to unmarshal auth response:", err)
+		slog.Info("failed to unmarshal auth response:", err)
 		return UpdateAuthResponseData{}, err
 	}
 	if res.Code != 200 {
-		fmt.Println("auth error:", res.Message)
+		slog.Info("auth error:", res.Message)
 		return UpdateAuthResponseData{}, errors.New(res.Message)
 	}
 	return res.Data, nil
@@ -154,18 +154,18 @@ func UpdaterAuth() (UpdateAuthResponseData, error) {
 
 func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponseData) {
 	var updateResp UpdateResponse
-	fmt.Println("checking for new version...", UpdateCheckUrlBase)
+	slog.Info("checking for new version...", UpdateCheckUrlBase)
 
 	requestURL, err := url.Parse(UpdateCheckUrlBase + "/api/ota/oadin/updates")
 	if err != nil {
-		fmt.Println("failed to parse update URL:", err)
+		slog.Info("failed to parse update URL:", err)
 		return false, updateResp.Data
 	}
 
 	// todo auth
 	authResp, err := UpdaterAuth()
 	if err != nil {
-		fmt.Println("failed to authenticate for update:", err)
+		slog.Info("failed to authenticate for update:", err)
 		return false, updateResp.Data
 	}
 	reqBody := UpdateRequest{
@@ -174,48 +174,48 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponseData) {
 	}
 	reqData, err := json.Marshal(reqBody)
 	if err != nil {
-		fmt.Println("failed to marshal update request:", err)
+		slog.Info("failed to marshal update request:", err)
 		return false, updateResp.Data
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, requestURL.String(), bytes.NewBuffer(reqData))
 	if err != nil {
-		fmt.Println("failed to create update request:", err)
+		slog.Info("failed to create update request:", err)
 		return false, updateResp.Data
 	}
 
-	fmt.Println("checking for available update", "requestURL", requestURL)
+	slog.Info("checking for available update", "requestURL", requestURL)
 	// todo auth modify
 	req.Header.Set("X-Access-Code", authResp.Code)
 	//req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InBob25lXzE3NTU5NDA0NDU1NzRfNTQ5IiwiaWF0IjoxNzYwNDEyNzkyLCJleHAiOjE3NjgxODg3OTJ9.9NADexRKJ-OWx7kCmBEUog87MBkreRrdMnje1EyWeVg")
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("failed to perform update request:", err)
+		slog.Info("failed to perform update request:", err)
 		return false, updateResp.Data
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("failed to read update response body:", err)
+		slog.Info("failed to read update response body:", err)
 		return false, updateResp.Data
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		fmt.Println("unexpected update response status:", resp.Status)
+		slog.Info("unexpected update response status:", resp.Status)
 		return false, updateResp.Data
 	}
 	err = json.Unmarshal(body, &updateResp)
 	if err != nil {
-		fmt.Println("malformed response checking for update:", err)
+		slog.Info("malformed response checking for update:", err)
 		return false, updateResp.Data
 	}
 	currentVersion := version.OadinSubVersion
 	if updateResp.Data.UpdateVersion == currentVersion {
-		fmt.Println("no new version available")
+		slog.Info("no new version available")
 		return false, updateResp.Data
 	}
-	fmt.Println("new version available:", updateResp.Data.UpdateVersion)
+	slog.Info("new version available:", updateResp.Data.UpdateVersion)
 	return true, updateResp.Data
 }
 
@@ -280,7 +280,7 @@ func StartCheckUpdate(ctx context.Context, trayManger *Manager) {
 	// StartCheckUpdate 方法会在程序启动后延迟10秒执行第一次检查，之后每隔1小时自动检查一次更新
 	go func() {
 		time.Sleep(10 * time.Second)
-		fmt.Println("starting background update checker")
+		slog.Info("starting background update checker")
 
 		for {
 			available, resp := IsNewVersionAvailable(ctx)
