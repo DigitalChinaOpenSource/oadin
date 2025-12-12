@@ -20,8 +20,8 @@ import (
 	"log/slog"
 
 	"oadin/internal/utils"
-	"oadin/version"
 	"oadin/config"
+	serverUtils "oadin/internal/utils/server"
 )
 
 var (
@@ -211,7 +211,11 @@ func IsNewVersionAvailable(ctx context.Context) (bool, UpdateResponseData) {
 		slog.Info("malformed response checking for update:", err)
 		return false, updateResp.Data
 	}
-	currentVersion := version.OadinSubVersion
+	currentVersion, err := serverUtils.GetOadinServerVersion()
+	if err != nil {
+		slog.Info("failed to get current version:", err)
+		return false, updateResp.Data
+	}
 	slog.Info("current version:", currentVersion)
 	if updateResp.Data.UpdateVersion == currentVersion {
 		slog.Info("no new version available")

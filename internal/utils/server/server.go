@@ -152,3 +152,39 @@ func TrayStopOadinServer() error {
 	fmt.Printf("Oadin server stopping")
 	return nil
 }
+
+func GetOadinServerVersion() (string, error) {
+	execCmd := "oadin.exe"
+	if runtime.GOOS != "windows" {
+		execCmd = "oadin"
+	}
+	if runtime.GOOS == "darwin" {
+		execCmd = filepath.Join(constants.MacOadinExecPath, "oadin")
+		if _, err := os.Stat(execCmd); err != nil {
+			return "", fmt.Errorf("failed to find oadin executable: %v", err)
+		}
+	}
+	cmd := exec.Command(execCmd, "version")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get Oadin server version: %v", err)
+	}
+	/*
+		Launch Development Environment                                                                                          
+		Oadin Release Version: 2.0.0                                                                                            
+		Oadin SubVersion: test-2.4.21                                                                                           
+		Oadin Version: v0.4    # Open API Version for SDK                                                                       																										
+		OADIN (Open AIPC Development INfra.) aims to decouple AI applications on AI PCs from the AI services they rely on. It is designed to provide developers with an extremely simple and easy-to-use infrastructure to install local AI services in their development environments and publish their AI applications without packaging their own AI stacks and models. 
+	*/
+	lines := strings.Split(string(output), "\n")
+	// 获取SubVersion后面的 "test-2.4.21
+	if len(lines) < 3 {
+		return "", fmt.Errorf("unexpected version output: %s", string(output))
+	}
+	subVersionLine := lines[2]
+	parts := strings.Split(subVersionLine, ":")
+	if len(parts) < 2 {
+		return "", fmt.Errorf("unexpected SubVersion line: %s", subVersionLine)
+	}
+	return strings.TrimSpace(parts[1]), nil
+}
