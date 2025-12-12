@@ -14,3 +14,4 @@ registry:
 
 updateCheckUrlBase:
   url: https://lumina.dcclouds.com
+  secret: c2d183b2f00c4e54df6d16ab96db3c0e8033764d900109d7a2805c877bf22482

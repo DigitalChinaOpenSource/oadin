@@ -30,4 +30,5 @@ type RegistryConfig struct {
 
 type UpdateCheckUrlBase struct {
 	Url string `yaml:"url" mapstructure:"url"`
+	Secret string `yaml:"secret" mapstructure:"secret"`
 }

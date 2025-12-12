@@ -57,7 +57,7 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 
 // Start initializes the system tray
 func (m *Manager) Start() {
-	logger.LogicLogger.Error("=== Oadin Tray Starting ===")
+	logger.LogicLogger.Info("=== Oadin Tray Starting ===")
 
 	// 调试：列出嵌入的图标文件
 	trayTemplate.DebugListFiles()
