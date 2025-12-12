@@ -165,6 +165,9 @@ func GetOadinServerVersion() (string, error) {
 		}
 	}
 	cmd := exec.Command(execCmd, "version")
+	if runtime.GOOS == "windows" {
+		utils.SetCmdSysProcAttr(cmd)
+	}
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get Oadin server version: %v", err)
