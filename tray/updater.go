@@ -416,6 +416,7 @@ func (p *PKGInstaller) installWithAppleScript() error {
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		slog.Error("AppleScript execution failed:", err)
 		return fmt.Errorf("AppleScript excute failed: %v", err)
 	}
 
