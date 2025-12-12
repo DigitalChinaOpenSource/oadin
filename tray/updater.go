@@ -401,9 +401,14 @@ func (p *PKGInstaller) Install() error {
 func (p *PKGInstaller) installWithAppleScript() error {
 	slog.Info("installing with AppleScript for elevated privileges", "pkgPath", p.pkgPath)
 	
-	// 创建临时 AppleScript 文件，避免命令行参数问题
-	tempDir := os.TempDir()
-	scriptFile := filepath.Join(tempDir, "oadin_install.scpt")
+	// 创建临时 AppleScript 文件，使用更安全的临时文件创建方式
+	tempFile, err := os.CreateTemp("", "oadin_install_*.scpt")
+	if err != nil {
+		slog.Error("failed to create temp file", "error", err)
+		return fmt.Errorf("failed to create temp file: %v", err)
+	}
+	scriptFile := tempFile.Name()
+	defer os.Remove(scriptFile) // 清理临时文件
 	
 	script := fmt.Sprintf(`
 		set pkgPath to "%s"
@@ -416,13 +421,14 @@ func (p *PKGInstaller) installWithAppleScript() error {
 		end try
     `, p.pkgPath)
 	
-	// 写入临时脚本文件
-	err := os.WriteFile(scriptFile, []byte(script), 0644)
+	// 写入脚本内容并关闭文件
+	_, err = tempFile.WriteString(script)
 	if err != nil {
-		slog.Error("failed to create script file", "error", err)
-		return fmt.Errorf("failed to create script file: %v", err)
+		tempFile.Close()
+		slog.Error("failed to write script content", "error", err)
+		return fmt.Errorf("failed to write script content: %v", err)
 	}
-	defer os.Remove(scriptFile) // 清理临时文件
+	tempFile.Close()
 	
 	slog.Info("executing AppleScript via file", "scriptFile", scriptFile)
 	
