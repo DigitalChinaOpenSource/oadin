@@ -360,11 +360,12 @@ func (m *Manager) SetUpdateAvailable(available bool) {
 func (m *Manager) performUpdate() error {
 	// 1. 停止服务（已在菜单逻辑中处理）
 	// 2. 执行更新
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		systray.Quit()
-	}()
-
+	// go func() {
+	// 	time.Sleep(500 * time.Millisecond)
+	// 	systray.Quit()
+	// }()
+	// 上述代码执行会直接推出程序，导致后续更新无法进行
+	fmt.Println("Performing update...")
 	if err := DoUpdate(); err != nil {
 		return fmt.Errorf("failed to install update: %v", err)
 	}
