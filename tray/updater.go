@@ -399,18 +399,8 @@ func (p *PKGInstaller) Install() error {
 }
 
 func (p *PKGInstaller) installWithAppleScript() error {
-	slog.Info("installing with AppleScript for elevated privileges", "pkgPath", p.pkgPath)
-	
-	// 在用户主目录创建临时脚本文件，避免系统临时目录的沙箱限制
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		slog.Error("failed to get user home directory", "error", err)
-		return fmt.Errorf("failed to get user home directory: %v", err)
-	}
-	
-	scriptFile := filepath.Join(homeDir, fmt.Sprintf("oadin_install_%d.scpt", time.Now().Unix()))
-	defer os.Remove(scriptFile) // 清理临时文件
-	
+	slog.Info("installing with AppleScript for elevated privileges",)
+	// 使用AppleScript请求管理员权限并执行安装
 	script := fmt.Sprintf(`
 		set pkgPath to "%s"
 		set installCommand to "installer -pkg " & quoted form of pkgPath & " -target /"
@@ -421,40 +411,21 @@ func (p *PKGInstaller) installWithAppleScript() error {
 			return "INSTALL_FAILED: " & errMsg & " (错误码: " & errNum & ")"
 		end try
     `, p.pkgPath)
-	
-	// 写入脚本文件
-	err = os.WriteFile(scriptFile, []byte(script), 0644)
+
+	cmd := exec.Command("osascript", "-e", script)
+
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		slog.Error("failed to create script file", "error", err)
-		return fmt.Errorf("failed to create script file: %v", err)
+		slog.Error("AppleScript execution failed:", err)
+		return fmt.Errorf("AppleScript excute failed: %v", err)
 	}
-	
-	slog.Info("executing AppleScript via file", "scriptFile", scriptFile)
-	
-	// 使用独立进程执行 AppleScript，完全脱离当前进程
-	cmd := exec.Command("nohup", "osascript", scriptFile)
-	
-	// 设置进程属性，使其成为独立进程
-	cmd.Stdin = nil
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	
-	// 启动独立进程
-	err = cmd.Start()
-	if err != nil {
-		slog.Error("failed to start independent AppleScript process", "error", err)
-		return fmt.Errorf("failed to start independent AppleScript process: %v", err)
+
+	slog.Info("AppleScript output:", "output", string(output))
+	if !strings.Contains(string(output), "INSTALL_SUCCESS") {
+		return fmt.Errorf("installation failed via AppleScript: %s", string(output))
 	}
-	
-	// 不等待进程完成，让它独立运行
-	slog.Info("AppleScript process started independently", "pid", cmd.Process.Pid)
-	
-	// 释放进程资源，避免僵尸进程
-	go func() {
-		cmd.Wait() // 在后台等待进程结束，避免僵尸进程
-	}()
-	
-	slog.Info("installation process initiated independently")
+
+	slog.Info("install successfully via AppleScript")
 	return nil
 }
 
