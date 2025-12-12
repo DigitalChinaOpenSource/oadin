@@ -387,11 +387,10 @@ Section "Uninstall"
     DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
-  ;${Else}
-  ;  DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
-  ;  DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
-  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
-  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+    DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
+    DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
   ${EndIf}
 SectionEnd
 
@@ -406,6 +405,14 @@ Function RemovePathEnv
       Call StrRemove
       ; Pop $R2
       WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$0"
+    ${EndIf}
+    ReadRegStr $R0 HKCU "Environment" "Path"
+    ${If} $R0 != ""
+      Push $R0
+      Push $R1
+      Call StrRemove
+      ; Pop $R2
+      WriteRegExpandStr HKCU "Environment" "Path" "$0"
     ${EndIf}
   ;${Else}
   ;  ReadRegStr $R0 HKCU "Environment" "Path"
@@ -431,6 +438,14 @@ Function un.RemovePathEnv
       Call un.StrRemove
       ; Pop $R2
       WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$0"
+    ${EndIf}
+    ReadRegStr $R0 HKCU "Environment" "Path"
+    ${If} $R0 != ""
+      Push $R0
+      Push $R1
+      Call un.StrRemove
+      ; Pop $R2
+      WriteRegExpandStr HKCU "Environment" "Path" "$0"
     ${EndIf}
   ;${Else}
   ;  ReadRegStr $R0 HKCU "Environment" "Path"
@@ -587,22 +602,22 @@ Function RemoveOldOadin
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
   ${EndIf}
-  ;ReadRegStr $R3 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
-  ;${If} $R3 != ""
-  ;  nsExec::Exec '"$R3\oadin.exe" server stop'
-  ;  nsExec::ExecToStack 'taskkill /F /IM oadin.exe'
-  ;  nsExec::ExecToStack 'taskkill /F /IM oadin-app.exe'
-  ;  Sleep 200
-  ;  RMDir /r "$R3"
-  ;  Delete "$DESKTOP\Oadin.lnk"
-  ;  Push $R3
-  ;  Call RemovePathEnv
-  ;  DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
-  ;  DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
-  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
-  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
-  ;  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
-  ;${EndIf}
+  ReadRegStr $R3 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
+  ${If} $R3 != ""
+    nsExec::Exec '"$R3\oadin.exe" server stop'
+    nsExec::ExecToStack 'taskkill /F /IM oadin.exe'
+    nsExec::ExecToStack 'taskkill /F /IM oadin-app.exe'
+    Sleep 200
+    RMDir /r "$R3"
+    Delete "$DESKTOP\Oadin.lnk"
+    Push $R3
+    Call RemovePathEnv
+    DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
+    DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+  ${EndIf}
 FunctionEnd
 
 Function SelectInstallScopePage
