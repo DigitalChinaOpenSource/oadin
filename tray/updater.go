@@ -399,25 +399,8 @@ func (p *PKGInstaller) Install() error {
 }
 
 func (p *PKGInstaller) installWithAppleScript() error {
-   slog.Info("installing with AppleScript for elevated privileges")
+    slog.Info("直接打开安装包所在目录，等待用户手动安装")
 
-    // 弹出提示框，询问用户是否打开安装包目录
-    alertScript := fmt.Sprintf(`
-        display dialog "需要手动安装新版本。是否打开安装包所在目录？" buttons {"取消", "打开目录"} default button "打开目录"
-    `, p.pkgPath)
-
-    cmd := exec.Command("osascript", "-e", alertScript)
-    output, err := cmd.CombinedOutput()
-    if err != nil {
-        slog.Error("AppleScript alert failed:", err)
-        return fmt.Errorf("AppleScript alert failed: %v", err)
-    }
-
-    if !strings.Contains(string(output), "打开目录") {
-        return fmt.Errorf("用户取消了安装")
-    }
-
-    // 打开安装包所在目录
     dir := filepath.Dir(p.pkgPath)
     openCmd := exec.Command("open", dir)
     if err := openCmd.Run(); err != nil {
