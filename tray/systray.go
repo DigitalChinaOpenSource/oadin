@@ -222,17 +222,8 @@ func (m *Manager) onReady() {
 			// 		dialog.Message("Failed to open control panel: %v", err).Title("Error").Error()
 			// 	}
 			case <-m.mRestartUpdate.ClickedCh:
-				var msg, title string
-				if runtime.GOOS == "windows" {
-					msg = "This will stop all servers and install the update. Continue?"
-					title = "Confirm Update"
-				} else if runtime.GOOS == "darwin" {
-					msg = "the new installer folder will be opened. Please double-click the installer to complete the upgrade. Continue?"
-					title = "Confirm Update"
-				} else {
-					msg = "This will stop all servers and install the update. Continue?"
-					title = "Confirm Update"
-				}
+				msg := "This will stop all servers and install the update. Continue?"
+				title := "Confirm Update"
 				if confirmed := dialog.Message(msg).Title(title).YesNo(); confirmed {
 					if err := m.performUpdate(); err != nil {
 						dialog.Message("Failed to perform update: %v", err).Title("Error").Error()

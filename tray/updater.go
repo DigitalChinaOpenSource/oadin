@@ -408,7 +408,7 @@ func (p *PKGInstaller) installWithAppleScript() error {
         return fmt.Errorf("打开目录失败: %v", err)
     }
 
-    return fmt.Errorf("请手动双击安装包进行安装")
+    return nil
 }
 
 func (p *PKGInstaller) VerifyInstallation() error {
