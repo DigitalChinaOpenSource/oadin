@@ -46,10 +46,8 @@ if [ "$REAL_USER" != "root" ] && [ -n "$REAL_USER" ]; then
             source ~/.bashrc
         fi
         export HOME=\"$USER_HOME\"
-        # 必须用 Finder 双击 .app 或 open Oadin.app 启动，不能用终端 ./Oadin.app/Contents/MacOS/oadin-app 直接运行，否则 macOS 依然认为你是“无界面进程”。
-        # \"${MACOS_DIR}/oadin-app\" &
+        \"${MACOS_DIR}/oadin-app\" &
     "
-    open "/Applications/Oadin.app" &
     echo "Oadin installation completed successfully"
 else
     echo "Warning: Cannot determine real user, skipping auto-launch"

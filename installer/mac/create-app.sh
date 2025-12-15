@@ -1,5 +1,4 @@
 #!/bin/bash
-exec > /tmp/oadin_createapp.log 2>&1
 set -e
 
 APP_NAME="Oadin"
@@ -81,7 +80,7 @@ cat > "Oadin.app/Contents/Info.plist" << EOF
     <key>LSMinimumSystemVersion</key>
     <string>11.0</string>
     <key>LSUIElement</key>
-    <false/>
+    <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>

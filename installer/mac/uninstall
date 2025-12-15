@@ -1,4 +1,5 @@
 #!/bin/bash
+exec > /tmp/oadin_uninstall.log 2>&1
 set -e
 
 APP_BUNDLE="/Applications/Oadin.app"

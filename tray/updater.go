@@ -399,34 +399,33 @@ func (p *PKGInstaller) Install() error {
 }
 
 func (p *PKGInstaller) installWithAppleScript() error {
-	slog.Info("installing with AppleScript for elevated privileges",)
-	// 使用AppleScript请求管理员权限并执行安装
-	script := fmt.Sprintf(`
-		set pkgPath to "%s"
-		set installCommand to "installer -pkg " & quoted form of pkgPath & " -target /"
-		try
-			do shell script installCommand with administrator privileges
-			return "INSTALL_SUCCESS"
-		on error errMsg number errNum
-			return "INSTALL_FAILED: " & errMsg & " (错误码: " & errNum & ")"
-		end try
+   slog.Info("installing with AppleScript for elevated privileges")
+
+    // 弹出提示框，询问用户是否打开安装包目录
+    alertScript := fmt.Sprintf(`
+        display dialog "需要手动安装新版本。是否打开安装包所在目录？" buttons {"取消", "打开目录"} default button "打开目录"
     `, p.pkgPath)
 
-	cmd := exec.Command("osascript", "-e", script)
+    cmd := exec.Command("osascript", "-e", alertScript)
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        slog.Error("AppleScript alert failed:", err)
+        return fmt.Errorf("AppleScript alert failed: %v", err)
+    }
 
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		slog.Error("AppleScript execution failed:", err)
-		return fmt.Errorf("AppleScript excute failed: %v", err)
-	}
+    if !strings.Contains(string(output), "打开目录") {
+        return fmt.Errorf("用户取消了安装")
+    }
 
-	slog.Info("AppleScript output:", "output", string(output))
-	if !strings.Contains(string(output), "INSTALL_SUCCESS") {
-		return fmt.Errorf("installation failed via AppleScript: %s", string(output))
-	}
+    // 打开安装包所在目录
+    dir := filepath.Dir(p.pkgPath)
+    openCmd := exec.Command("open", dir)
+    if err := openCmd.Run(); err != nil {
+        slog.Error("打开目录失败:", err)
+        return fmt.Errorf("打开目录失败: %v", err)
+    }
 
-	slog.Info("install successfully via AppleScript")
-	return nil
+    return fmt.Errorf("请手动双击安装包进行安装")
 }
 
 func (p *PKGInstaller) VerifyInstallation() error {
