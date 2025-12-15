@@ -29,13 +29,13 @@ if [ -d "$APP_PATH" ]; then
         # pkill -f "oadin" 2>/dev/null || true
         # pkill -f "Oadin AI Service Manager" 2>/dev/null || true
         # 支持覆盖更新
-        # MY_PID=$$
-        # MY_PARENT_PID=$(ps -o ppid= -p $$ | tr -d ' ')
-        # for pid in $(pgrep -f "Oadin AI Service Manager"); do
-        #     if [ "$pid" != "$MY_PID" ] && [ "$pid" != "$MY_PARENT_PID" ]; then
-        #         kill -9 "$pid" 2>/dev/null || true
-        #     fi
-        # done
+        MY_PID=$$
+        MY_PARENT_PID=$(ps -o ppid= -p $$ | tr -d ' ')
+        for pid in $(pgrep -f "Oadin AI Service Manager"); do
+            if [ "$pid" != "$MY_PID" ] && [ "$pid" != "$MY_PARENT_PID" ]; then
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+        done
 
         sleep 2
         
