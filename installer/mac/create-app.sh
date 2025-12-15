@@ -1,4 +1,5 @@
 #!/bin/bash
+exec > /tmp/oadin_createapp.log 2>&1
 set -e
 
 APP_NAME="Oadin"
