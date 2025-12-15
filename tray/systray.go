@@ -194,14 +194,14 @@ func (m *Manager) onReady() {
 				} else {
 					if m.serverRunning {
 						// Show confirmation dialog before stopping
-						if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
+						if confirmed := dialog.Message("确定要停止 Oadin 服务吗？").Title("确认停止服务").YesNo(); confirmed {
 							if err := m.onServerStop(); err == nil {
 								m.serverRunning = false
 								m.updateStartStopMenuItem(mStartStop)
 								logger.LogicLogger.Error("Oadin Server stop successfully")
 							} else {
 								logger.LogicLogger.Error("Oadin Server stop Failed %v", err)
-								dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
+								dialog.Message("停止服务器失败: %v", err).Title("错误").Error()
 							}
 						}
 					} else {
@@ -211,7 +211,7 @@ func (m *Manager) onReady() {
 							m.updateStartStopMenuItem(mStartStop)
 						} else {
 							logger.LogicLogger.Error("Oadin Server startup Failed %v", err)
-							dialog.Message("Failed to start server: %v", err).Title("Error").Error()
+							dialog.Message("启动服务器失败: %v", err).Title("错误").Error()
 						}
 					}
 				}
@@ -235,26 +235,26 @@ func (m *Manager) onReady() {
 				}
 				if confirmed := dialog.Message(msg).Title(title).YesNo(); confirmed {
 					if err := m.performUpdate(); err != nil {
-						dialog.Message("Failed to perform update: %v", err).Title("Error").Error()
+						dialog.Message("执行更新失败: %v", err).Title("错误").Error()
 					}
 				}
 			case <-mViewLogs.ClickedCh:
 				err := m.viewLogs()
 				if err != nil {
-					dialog.Message("Failed to view logs: %v", err).Title("Error").Error()
+					dialog.Message("查看日志失败: %v", err).Title("错误").Error()
 				}
 			case <-mQuit.ClickedCh:
 				if m.serverRunning {
-					if confirmed := dialog.Message("Server is still running. Do you want to stop it and quit?").Title("Confirm Quit").YesNo(); confirmed {
+					if confirmed := dialog.Message("服务器仍在运行。是否停止并退出？").Title("确认退出").YesNo(); confirmed {
 						err := m.onServerStop()
 						if err != nil {
-							dialog.Message("Failed to stop server: %v", err).Title("Error").Error()
+							dialog.Message("停止服务器失败: %v", err).Title("错误").Error()
 						}
 						systray.Quit()
 						return
 					}
 				} else {
-					if confirmed := dialog.Message("Are you sure you want to quit Oadin?").Title("Confirm Quit").YesNo(); confirmed {
+					if confirmed := dialog.Message("确定要退出 Oadin 吗？").Title("确认退出").YesNo(); confirmed {
 						systray.Quit()
 						return
 					}
@@ -272,12 +272,12 @@ func (m *Manager) handleStartStop() {
 
 	if m.serverRunning {
 		// 停止服务器
-		if confirmed := dialog.Message("Are you sure you want to stop the Oadin server?").Title("Confirm Stop Server").YesNo(); confirmed {
+		if confirmed := dialog.Message("确定要停止 Oadin 服务吗？").Title("确认停止服务").YesNo(); confirmed {
 			err := m.onServerStop()
 			if err == nil {
 				m.serverRunning = false
 			} else {
-				dialog.Message("Stop server failed: %v", err).Title("Error").Error()
+				dialog.Message("停止服务器失败: %v", err).Title("错误").Error()
 			}
 		}
 	} else {
@@ -288,7 +288,7 @@ func (m *Manager) handleStartStop() {
 			// 启动成功后打开浏览器
 			// go m.waitAndOpenBrowser()
 		} else {
-			dialog.Message("Start server failed: %v", err).Title("Error").Error()
+			dialog.Message("启动服务器失败: %v", err).Title("错误").Error()
 		}
 	}
 }
@@ -298,10 +298,10 @@ func (m *Manager) handleOpenConsole() {
 	// 检查服务器是否运行
 	if !serverUtils.IsServerRunning() {
 		// 如果服务器没运行，询问是否启动
-		if confirmed := dialog.Message("Oadin server is not running. Start it now?").Title("Start Server").YesNo(); confirmed {
+		if confirmed := dialog.Message("Oadin 服务器未运行，是否立即启动？").Title("启动服务器").YesNo(); confirmed {
 			err := StartOADINServerTray(m.logPath, m.pidPath)
 			if err != nil {
-				dialog.Message("Failed to start server: %v", err).Title("Error").Error()
+				dialog.Message("启动服务器失败: %v", err).Title("错误").Error()
 				return
 			}
 			m.serverRunning = true
