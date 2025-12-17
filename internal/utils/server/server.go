@@ -52,7 +52,7 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 	if runtime.GOOS == "windows" {
 		utils.SetCmdSysProcAttr(cmd)
 	}
-	if err := cmd.Start(); err != nil {
+	if err := cmd.Run(); err != nil {
 		logger.LogicLogger.Error("start server error: %v", err)
 		return fmt.Errorf("failed to start Oadin server: %v", err)
 	}
@@ -147,7 +147,7 @@ func TrayStopOadinServer() error {
 	if runtime.GOOS == "windows" {
 		utils.SetCmdSysProcAttr(cmd)
 	}
-	if err := cmd.Start(); err != nil {
+	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to start Oadin server: %v", err)
 	}
 	fmt.Printf("Oadin server stopping")

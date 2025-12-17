@@ -222,7 +222,7 @@ func (l *llamacppProvider) StartEngine(mode string) error {
 		LlamaSwapConfigFilePath := filepath.Join(l.EngineConfig.ExecPath, LlamaSwapConfigFile)
 		logger.EngineLogger.Info("[llamacpp] exec file path: ", execFile, l.EngineConfig.Host, LlamaSwapConfigFilePath)
 		cmd := exec.Command(execFile, "-listen", l.EngineConfig.Host, "-config", LlamaSwapConfigFilePath)
-		err := cmd.Start()
+		err := cmd.Run()
 		if err != nil {
 			logger.EngineLogger.Error("[llamacpp] failed to start llamacpp-server: " + err.Error())
 			return fmt.Errorf("failed to start llamacpp-server: %v", err)

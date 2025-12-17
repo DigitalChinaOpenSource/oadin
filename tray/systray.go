@@ -467,7 +467,7 @@ func StartOADINServerTray(logPath string, pidFilePath string) error {
 	cmd.Stderr = logFile
 	utils.SetCmdSysProcAttr(cmd)
 
-	if err := cmd.Start(); err != nil {
+	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to start oadin server: %v", err)
 	}
 

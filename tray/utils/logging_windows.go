@@ -19,7 +19,7 @@ func ShowLogs() error {
 	cmd := exec.Command(cmd_path, "/c", "start", logPath)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: false, CreationFlags: 0x08000000}
 
-	err := cmd.Start()
+	err := cmd.Run()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to open log dir: %s", err))
 		return err
