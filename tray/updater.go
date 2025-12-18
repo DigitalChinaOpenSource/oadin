@@ -21,6 +21,7 @@ import (
 
 	"oadin/internal/utils"
 	"oadin/config"
+	"oadin/internal/logger"
 	serverUtils "oadin/internal/utils/server"
 )
 
@@ -399,15 +400,28 @@ func (p *PKGInstaller) Install() error {
 }
 
 func (p *PKGInstaller) installWithAppleScript() error {
-    slog.Info("直接打开安装包所在目录，等待用户手动安装")
+    // slog.Info("直接打开安装包所在目录，等待用户手动安装")
 
-    dir := filepath.Dir(p.pkgPath)
-    openCmd := exec.Command("open", dir)
-    if err := openCmd.Run(); err != nil {
-        slog.Error("打开目录失败:", err)
-        return fmt.Errorf("打开目录失败: %v", err)
+    // dir := filepath.Dir(p.pkgPath)
+    // openCmd := exec.Command("open", dir)
+    // if err := openCmd.Run(); err != nil {
+    //     slog.Error("打开目录失败:", err)
+    //     return fmt.Errorf("打开目录失败: %v", err)
+    // }
+
+    // return nil
+	
+	// 启动 Installer.app 打开 .pkg，不等待安装完成
+    logger.LogicLogger.Info("打开安装包，交由 Installer.app 安装（不等待）")
+
+    // 指定用 Installer 打开，避免被其他 App 关联
+    cmd := exec.Command("open", "-a", "Installer", p.pkgPath)
+    if err := cmd.Start(); err != nil {
+        logger.LogicLogger.Info("打开安装包失败:", err)
+        return fmt.Errorf("打开安装包失败: %v", err)
     }
-
+    // 后台等待以回收子进程资源，不影响返回
+    go func() { _ = cmd.Wait() }()
     return nil
 }
 
