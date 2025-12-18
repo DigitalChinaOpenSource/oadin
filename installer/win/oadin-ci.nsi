@@ -190,6 +190,8 @@ Section "Install"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "DisplayName" "${APP_NAME}"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" "UninstallString" "$INSTDIR\uninstall.exe"
     Call AddPathSystem
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\oadin.exe" "" "$INSTDIR\oadin.exe"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\oadin.exe" "Path" "$INSTDIR"
   ;${Else}
   ;  WriteRegStr HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir" "$INSTDIR"
   ;  WriteRegStr HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "Version" "${VERSION}"
@@ -387,6 +389,8 @@ Section "Uninstall"
     DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\oadin.exe"
+
     DeleteRegKey HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}"
     DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
     DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
@@ -601,6 +605,8 @@ Function RemoveOldOadin
     DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "Oadin"
     DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" "Oadin"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\oadin.exe"
+
   ${EndIf}
   ReadRegStr $R3 HKCU "SOFTWARE\${COMPANY_NAME}\${APP_NAME}" "InstallDir"
   ${If} $R3 != ""
