@@ -45,6 +45,9 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 			return fmt.Errorf("failed to find oadin executable: %v", err)
 		}
 	}
+	if runtime.GOOS == "windows" {
+		execCmd = constants.WindowsOadinExecPath + "\\" + "oadin.exe"
+	}
 	cmd := exec.Command(execCmd, "server", "start")
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
