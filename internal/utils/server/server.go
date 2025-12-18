@@ -46,7 +46,6 @@ func StartOadinServer(logPath string, pidFilePath string) error {
 		}
 	}
 	cmd := exec.Command(execCmd, "server", "start")
-	// oadin-app启动oadin的日志打印
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 	if runtime.GOOS == "windows" {
@@ -142,6 +141,9 @@ func TrayStopOadinServer() error {
 		if _, err := os.Stat(execCmd); err != nil {
 			return fmt.Errorf("failed to find oadin executable: %v", err)
 		}
+	}
+	if runtime.GOOS == "windows" {
+		execCmd = constants.WindowsOadinExecPath + "\\" + "oadin.exe"
 	}
 	cmd := exec.Command(execCmd, "server", "stop")
 	if runtime.GOOS == "windows" {

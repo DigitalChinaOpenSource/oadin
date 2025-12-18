@@ -43,6 +43,7 @@ func NewManager(debug bool, logPath, pidPath string) *Manager {
 		serverRunning:   false,
 		updateAvailable: false,
 		onServerStart: func() error {
+			// oadin-app启动oadin的日志打印
 			return serverUtils.StartOadinServer(logPath, pidPath)
 		},
 		onServerStop: func() error {

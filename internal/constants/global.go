@@ -23,6 +23,7 @@ const (
 	UrlDirPathWindows = "/windows"
 	OssURL            = "https://smartvision-aipc-open.oss-cn-hangzhou.aliyuncs.com"
 	MacOadinExecPath  = "/Applications/Oadin.app/Contents/Resources"
+	WindowsOadinExecPath = "C:\\Program Files\\Oadin"
 )
 
 // model related
