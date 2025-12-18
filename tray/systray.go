@@ -5,8 +5,6 @@ import (
 	"github.com/gofrs/flock"
 	"log"
 	"net"
-	"oadin/internal/constants"
-	"oadin/internal/logger"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,10 +15,10 @@ import (
 	"github.com/getlantern/systray/example/icon"
 	"github.com/pkg/browser"
 	"github.com/sqweek/dialog"
-	"oadin/internal/utils"
 	serverUtils "oadin/internal/utils/server"
 	trayTemplate "oadin/tray/icon"
 	tray "oadin/tray/utils"
+	"oadin/internal/logger"
 )
 
 // Manager handles the system tray functionality
@@ -71,7 +69,7 @@ func (m *Manager) Start() {
 	if !m.serverRunning {
 		logger.LogicLogger.Error("=== Server not running, attempting to start...===")
 		fmt.Println("Server not running, attempting to start...")
-		err := StartOADINServerTray(m.logPath, m.pidPath)
+		err := serverUtils.StartOadinServer(m.logPath, m.pidPath)
 		if err == nil {
 			m.serverRunning = true
 			logger.LogicLogger.Info("Server started successfully")
@@ -283,7 +281,7 @@ func (m *Manager) handleStartStop() {
 		}
 	} else {
 		// 启动服务器
-		err := StartOADINServerTray(m.logPath, m.pidPath)
+		err := serverUtils.StartOadinServer(m.logPath, m.pidPath)
 		if err == nil {
 			m.serverRunning = true
 			// 启动成功后打开浏览器
@@ -300,7 +298,7 @@ func (m *Manager) handleOpenConsole() {
 	if !serverUtils.IsServerRunning() {
 		// 如果服务器没运行，询问是否启动
 		if confirmed := dialog.Message("Oadin 服务器未运行，是否立即启动？").Title("启动服务器").YesNo(); confirmed {
-			err := StartOADINServerTray(m.logPath, m.pidPath)
+			err := serverUtils.StartOadinServer(m.logPath, m.pidPath)
 			if err != nil {
 				dialog.Message("启动服务器失败: %v", err).Title("错误").Error()
 				return
@@ -438,47 +436,4 @@ func isMacDarkMode() bool {
 		return false // 未设置暗色模式时会报错
 	}
 	return string(out) == "Dark\n"
-}
-
-func StartOADINServerTray(logPath string, pidFilePath string) error {
-	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
-	if err != nil {
-		return fmt.Errorf("failed to open log file: %v", err)
-	}
-	defer logFile.Close()
-	//appExe, err := os.Executable()
-	//if err != nil {
-	//	return fmt.Errorf("failed to get executable path: %v", err)
-	//}
-
-	oadinExe := "oadin"
-	if runtime.GOOS == "windows" {
-		oadinExe = "oadin.exe"
-	}
-	if runtime.GOOS == "darwin" {
-		oadinExe = filepath.Join(constants.MacOadinExecPath, "oadin")
-		if _, err = os.Stat(oadinExe); err != nil {
-			return fmt.Errorf("failed to find oadin executable: %v", err)
-		}
-	}
-	//execFile := filepath.Join(filepath.Dir(appExe), oadinExe)
-	//fmt.Println("Starting oadin server: ", execFile)
-	cmd := exec.Command(oadinExe, "server", "start")
-	cmd.Stdout = logFile
-	cmd.Stderr = logFile
-	utils.SetCmdSysProcAttr(cmd)
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start oadin server: %v", err)
-	}
-
-	// Save PID to file.
-	pid := cmd.Process.Pid
-	pidFile := filepath.Join(pidFilePath, "oadin.pid")
-	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
-		return fmt.Errorf("failed to save PID to file: %v", err)
-	}
-
-	fmt.Printf("\roadin server started with PID: %d\n", cmd.Process.Pid)
-	return nil
 }
