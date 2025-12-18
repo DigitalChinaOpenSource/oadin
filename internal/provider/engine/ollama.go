@@ -164,7 +164,7 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 		if runtime.GOOS == "windows" {
 			utils.SetCmdSysProcAttr(cmd)
 		}
-		err := cmd.Run()
+		err := cmd.Start()
 		if err != nil {
 			logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
 			return fmt.Errorf("failed to start ollama: %v", err)
@@ -181,13 +181,17 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 			logger.EngineLogger.Error("[Ollama] failed to write pid file: " + err.Error())
 			return fmt.Errorf("failed to write pid file: %v", err)
 		}
+
+		go func() {
+			cmd.Wait()
+		}()
 	} else {
 		if utils.IpexOllamaSupportGPUStatus() {
 			cmd := exec.Command(o.EngineConfig.ExecPath + "/" + OllamaBatchFile)
 			if runtime.GOOS == "windows" {
 				utils.SetCmdSysProcAttr(cmd)
 			}
-			err := cmd.Run()
+			err := cmd.Start()
 			if err != nil {
 				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
 				return fmt.Errorf("failed to start ollama: %v", err)
@@ -197,7 +201,7 @@ func (o *OllamaProvider) StartEngine(mode string) error {
 			if runtime.GOOS == "windows" {
 				utils.SetCmdSysProcAttr(cmd)
 			}
-			err := cmd.Run()
+			err := cmd.Start()
 			if err != nil {
 				logger.EngineLogger.Error("[Ollama] failed to start ollama: " + err.Error())
 				return fmt.Errorf("failed to start ollama: %v", err)

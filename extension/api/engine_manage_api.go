@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"oadin/extension/api/dto"
@@ -17,6 +18,7 @@ import (
 	"oadin/internal/types"
 	dto2 "oadin/internal/api/dto"
 	"oadin/internal/logger"
+	provider2 "oadin/internal/provider"
 )
 
 type EngineApi struct {
@@ -71,6 +73,32 @@ func (e *EngineApi) install(c *gin.Context) {
 	dto.Success(c, "引擎安装成功")
 }
 
+func waitEngineReady(modelEngine provider2.ModelServiceProvider) error {
+	// 启动成功后，增加就绪检测，启动后轮询健康检查直到成功或超时，再返回。这样接口只在服务就绪时响应
+	const (
+        maxWait   = 5 * time.Second
+        interval  = 200 * time.Millisecond
+    )
+    start := time.Now()
+    for {
+		err := modelEngine.HealthCheck()
+        if err == nil {
+            break
+        }
+        if time.Since(start) >= maxWait {
+            break
+        }
+        time.Sleep(interval)
+    }
+
+	err := modelEngine.HealthCheck()
+    if err != nil {
+        logger.EngineLogger.Error("waitEngineReady: Failed to start engine.")
+        return err
+    }
+	return nil
+}
+
 // 根据引擎名称下载引擎，流式返回下载进度
 func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 	request := dto.EngineDownloadRequest{}
@@ -113,12 +141,21 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 			err = modelEngine.InitEnv()
 			if err != nil {
 				res.Status = "error"
+				res.Data = "init env error"
 				logger.EngineLogger.Error("DownloadStreamEngine InitEnv error 1: ", err)
 			} else {
 				err = modelEngine.StartEngine(types.EngineStartModeDaemon)
 				if err != nil {
 					res.Status = "error"
+					res.Data = "start engine error"
 					logger.EngineLogger.Error("DownloadStreamEngine StartEngine error 1: ", err)
+				} else {
+					err = waitEngineReady(modelEngine)
+					if err != nil {
+						res.Status = "error"
+						res.Data = "engine not ready error"
+						logger.EngineLogger.Error("DownloadStreamEngine waitEngineReady error 1: ", err)
+					}
 				}
 			}
 		}
@@ -148,12 +185,21 @@ func (e *EngineApi) DownloadStreamEngine(c *gin.Context) {
 						err = modelEngine.InitEnv()
 						if err != nil {
 							res.Status = "error"
+							res.Data = "init env error"
 							logger.EngineLogger.Error("DownloadStreamEngine InitEnv error 2: ", err)
 						} else {
 							err = modelEngine.StartEngine(types.EngineStartModeDaemon)
 							if err != nil {
 								res.Status = "error"
+								res.Data = "start engine error"
 								logger.EngineLogger.Error("DownloadStreamEngine StartEngine error 2: ", err)
+							} else {
+								err = waitEngineReady(modelEngine)
+								if err != nil {
+									res.Status = "error"
+									res.Data = "engine not ready error"
+									logger.EngineLogger.Error("DownloadStreamEngine waitEngineReady error 2: ", err)
+								}
 							}
 						}
 					}
